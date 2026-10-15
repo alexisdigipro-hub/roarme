@@ -17,6 +17,11 @@ export const DEFAULTS = {
   autoEmoji: true,
   callsTab: true,
   lite: false, // power saving: no animations, no glass blur
+  peekBadge: false, // a click on the unread badge previews the chat
+  peerIds: false,
+  notifyPreview: true,
+  translateTo: 'auto', // auto = Greek to English and back
+  folderTabs: 'top', // top | left
   sound: true,
   folderTags: false,
   background: 'soft', // one of WALLS

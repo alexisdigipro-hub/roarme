@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { errText, fileLink, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
 import { Avatar, I, Modal, OnTop } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
+import { usePrefs } from './prefs.js'
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
 const monthOf = (iso) => new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }).toUpperCase()
@@ -13,6 +14,7 @@ const isAudio = (m) => m.kind === 'file' && isAudioFile(m.file)
    Video · More, what we know about the person, and everything shared in the chat by kind. */
 export default function Profile({ room, me, people, title, other, rooms, titleOf, toast, onClose, onChanged, onLeft, onMessage, onOpenRoom, loadPeople }) {
   const group = room.kind === 'group'
+  const showIds = usePrefs().peerIds
   const admin = room.role === 'admin'
   const [items, setItems] = useState(null)
   const [links, setLinks] = useState([])
@@ -162,6 +164,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
               <small>username</small><span>@{other.username}</span><i>{I.copy}</i>
             </button>
             {other.bio && <div className="pf-field"><small>about</small><span>{other.bio}</span></div>}
+            {showIds && <button type="button" className="pf-field" onClick={() => copy(other.id, 'ID copied')} title="Copy"><small>user id</small><span className="pf-id">{other.id}</span><i>{I.copy}</i></button>}
           </div>
         )}
         {err && <p className="auth-err">{err}</p>}

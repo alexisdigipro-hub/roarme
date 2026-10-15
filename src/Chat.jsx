@@ -3,7 +3,8 @@ import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, file
 import { Avatar, I, Modal, OnTop, colorOf, svg } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
-import { AttachSheet, AudioNote, MusicTile, isAudioFile, ChatSettings, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
+import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
+import { AttachSheet, AudioNote, MusicTile, isAudioFile, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
 
 /* people by @username or name */
 function usePeopleSearch(meId) {
@@ -33,7 +34,8 @@ export default function Chat({ me, setMe }) {
   const [q, setQ] = useState('')
   const [modal, setModal] = useState('') // '' | newchat | newgroup | info | folders | newfolder | pickfolder
   const [plus, setPlus] = useState(false)
-  const [tab, setTab] = useState('chats') // the bar at the foot: chats | calls | settings
+  const [tab, setTab] = useState('chats') // the bar at the foot: contacts | calls | chats | settings
+  const [cq, setCq] = useState('') // search in Contacts
   const [picking, setPicking] = useState(false)
   const [picked, setPicked] = useState([])
   const [hits, setHits] = useState([])
@@ -47,6 +49,9 @@ export default function Chat({ me, setMe }) {
   const [drafts] = useLocal('roarme-drafts', {})
   const [roomMenu, setRoomMenu] = useState(null) // { r, x, y, sub }
   const [peek, setPeek] = useState(null) // a chat looked at without opening it
+  const [folderMenu, setFolderMenu] = useState(null) // right click on a folder tab: {f, x, y}
+  const [folderChats, setFolderChats] = useState('') // the folder whose chats are being picked
+  const [setPage, setSetPage] = useState('') // the Settings page open on the right
   const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
   const searchRef = useRef(null)
   const [note, setNote] = useState('')
@@ -71,7 +76,10 @@ export default function Chat({ me, setMe }) {
   useEffect(() => { try { localStorage.setItem('roarme-folder', folder) } catch { /* private window */ } }, [folder])
   // ⌘K / Ctrl+K: the search
   useEffect(() => {
-    const k = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setTab('chats'); requestAnimationFrame(() => searchRef.current?.focus()) } }
+    const k = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setTab('chats'); requestAnimationFrame(() => searchRef.current?.focus()) }
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); setTab('settings'); setSetPage('keys') }
+    }
     document.addEventListener('keydown', k)
     return () => document.removeEventListener('keydown', k)
   }, [])
@@ -150,7 +158,7 @@ export default function Chat({ me, setMe }) {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     const who = peopleRef.current[m.user_id]
     const title = room?.kind === 'group' ? `${room.title}` : nameOf(who)
-    const body = (room?.kind === 'group' ? `${nameOf(who)}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : m.body)
+    const body = !prefsRef.current.notifyPreview ? 'New message' : (room?.kind === 'group' ? `${nameOf(who)}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : m.body)
     try {
       const n = new Notification(title, { body, icon: who?.avatar_url || './icon.svg', tag: m.room_id })
       n.onclick = () => { window.focus(); setTab('chats'); setActiveId(m.room_id); n.close() }
@@ -326,6 +334,18 @@ export default function Chat({ me, setMe }) {
   }
   const addToFolder = (fid) => { setMyFolders((list) => list.map((f) => (f.id === fid ? { ...f, rooms: [...new Set([...f.rooms, ...picked])] } : f))); setModal(''); toast('Added to the folder'); endPick() }
 
+  // Contacts: everyone you share a chat with, the most recently seen first (Alex, 16 Oct, as in Telegram)
+  const contacts = useMemo(() => {
+    const ids = [...new Set(rooms.flatMap((r) => r.members || []))].filter((id) => id !== me.id)
+    const seen = (p) => (onlineNow(p) ? Infinity : p.last_seen ? new Date(p.last_seen).getTime() : 0)
+    return ids.map((id) => people[id]).filter(Boolean).sort((a, b) => seen(b) - seen(a) || nameOf(a).localeCompare(nameOf(b)))
+  }, [rooms, people, me.id])
+  const chatWith = async (p) => {
+    const r = rooms.find((x) => x.kind === 'direct' && (x.members || []).includes(p.id))
+    if (r) { setTab('chats'); setActiveId(r.room_id); return }
+    const { data, error } = await supabase.rpc('roar_open_direct', { other: p.id })
+    if (error) toast(errText(error)); else openRoom(data)
+  }
   const calls = useMemo(() => {
     const ids = [...new Set(rooms.filter((r) => r.kind === 'direct').flatMap((r) => r.members || []))].filter((id) => id !== me.id)
     return ids.map((id) => people[id]).filter(Boolean).sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
@@ -360,11 +380,12 @@ export default function Chat({ me, setMe }) {
         {tab === 'chats' && (
           <>
             <label className="search">{I.search}<input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search (⌘K)" onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur() } }} /></label>
+            <div className={`rooms-area${prefs.folderTabs === 'left' && !q.trim() ? ' left' : ''}`}>
             {!q.trim() && (
               <nav className="tabs">
                 {allFolders.map((f) => {
                   const n = folderUnread(f)
-                  return <button key={f.id} type="button" className={folder === f.id ? 'on' : ''} onClick={() => setFolder(f.id)}>{f.name}{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                  return <button key={f.id} type="button" className={folder === f.id ? 'on' : ''} onClick={() => setFolder(f.id)} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
                 })}
               </nav>
             )}
@@ -385,7 +406,7 @@ export default function Chat({ me, setMe }) {
                     <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} />
                     <span className="room-main">
                       <span className="room-top"><strong>{titleOf(r)}</strong><small>{listTime(r.last_message_at)}</small></span>
-                      <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.unread > 0 ? <span className={`badge${r.muted ? ' quiet' : ''}`}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
+                      <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.unread > 0 ? <span className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
                       {prefs.folderTags && tagsOf(r).length > 0 && <span className="room-tags">{tagsOf(r).map((t) => <span key={t}>{t}</span>)}</span>}
                     </span>
                   </button>
@@ -410,31 +431,39 @@ export default function Chat({ me, setMe }) {
                 </>
               )}
             </div>
+            </div>
           </>
         )}
-        {tab === 'calls' && prefs.callsTab && (
-          <div className="side-scroll">
-            <div className="soon-note">{I.calls}<span>Voice and video calls are coming soon. The list of your calls will be here.</span></div>
-            <div className="hits-head">Recent</div>
-            <p className="muted rooms-none">No calls yet.</p>
-            <div className="hits-head">Everyone</div>
-            {calls.map((p) => (
-              <div key={p.id} className="person call-row">
-                <Avatar src={p.avatar_url} name={nameOf(p)} size={40} online={onlineNow(p)} />
-                <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
-                <button type="button" className="round" onClick={() => toast('Voice calls are coming soon')} aria-label="Voice call">{I.phone}</button>
-                <button type="button" className="round" onClick={() => toast('Video calls are coming soon')} aria-label="Video call">{I.video}</button>
-              </div>
+        {tab === 'contacts' && (
+          <div className="side-scroll contacts">
+            <div className="contacts-top">
+              <label className="search">{I.search}<input value={cq} onChange={(e) => setCq(e.target.value)} placeholder="Search" /></label>
+              <button type="button" className="round" onClick={() => setModal('newchat')} title="Find people" aria-label="Find people">{I.addPerson}</button>
+            </div>
+            {contacts.filter((p) => !cq.trim() || `${nameOf(p)} ${p.username}`.toLowerCase().includes(cq.trim().toLowerCase().replace(/^@/, ''))).map((p) => (
+              <button key={p.id} type="button" className="room contact" onClick={() => chatWith(p)}>
+                <Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} />
+                <span className="room-main">
+                  <span className="room-top"><strong>{nameOf(p)}</strong></span>
+                  <span className="room-bottom"><span className={`room-prev${onlineNow(p) ? ' is-online' : ''}`}>{lastSeenText(p)}</span></span>
+                </span>
+              </button>
             ))}
+            {!contacts.length && <div className="calls-empty"><span className="side-panel-ico">{I.person}</span><b>No contacts yet</b><p>People you chat with show up here.</p><button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find people</button></div>}
           </div>
         )}
-        {tab === 'settings' && (
-          <div className="side-scroll">
-            <Settings me={me} setMe={setMe} inline />
-            <h3 className="side-h">Chat settings</h3>
-            <ChatSettings />
+        {tab === 'calls' && prefs.callsTab && (
+          <div className="side-scroll calls">
+            <button type="button" className="new-call" onClick={() => setModal('newcall')}><span className="new-call-ico">{svg(<><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /><path d="M18 3v6M15 6h6" /></>, 20)}</span><span>Create New Call</span></button>
+            <div className="hits-head">Recent Calls</div>
+            <div className="calls-empty">
+              <span className="side-panel-ico">{I.calls}</span>
+              <b>No calls yet</b>
+              <p>Voice and video calls are coming soon. Your calls will be listed here: who, incoming or outgoing, how long, and the ones you missed in red.</p>
+            </div>
           </div>
         )}
+        {tab === 'settings' && <SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} />}
         {picking ? (
           <nav className="foot bulk">
             <button type="button" disabled={!picked.length} onClick={bulkRead}>{I.read}<span>Read</span></button>
@@ -444,6 +473,7 @@ export default function Chat({ me, setMe }) {
           </nav>
         ) : (
           <nav className="foot">
+            <button type="button" className={tab === 'contacts' ? 'on' : ''} onClick={() => setTab('contacts')}>{I.person}<span>Contacts</span></button>
             <button type="button" className={tab === 'chats' ? 'on' : ''} onClick={() => setTab('chats')}><span className="foot-ico">{I.chats}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Chats</span></button>
             {prefs.callsTab && <button type="button" className={tab === 'calls' ? 'on' : ''} onClick={() => setTab('calls')}>{I.calls}<span>Calls</span></button>}
             <button type="button" className={tab === 'settings' ? 'on' : ''} onClick={() => setTab('settings')}>{I.gear}<span>Settings</span></button>
@@ -452,7 +482,10 @@ export default function Chat({ me, setMe }) {
       </aside>
 
       <main className="main">
-        {active ? (
+        {tab === 'settings' ? (
+          <SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast}
+            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => setModal(m)} />
+        ) : active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]}
             onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }} />
@@ -470,6 +503,21 @@ export default function Chat({ me, setMe }) {
       </main>
 
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
+      {modal === 'newcall' && (
+        <Modal title="New call" onClose={() => setModal('')}>
+          <p className="muted">Calls are coming soon. Pick who to call and RoarMe will ring them once calls are on.</p>
+          <div className="people">
+            {calls.map((p) => (
+              <div key={p.id} className="person call-row">
+                <Avatar src={p.avatar_url} name={nameOf(p)} size={40} online={onlineNow(p)} />
+                <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
+                <button type="button" className="round" onClick={() => toast('Voice calls are coming soon')} aria-label="Voice call">{I.phone}</button>
+                <button type="button" className="round" onClick={() => toast('Video calls are coming soon')} aria-label="Video call">{I.video}</button>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
       {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null) }} onOpen={(id) => { setGroupWith(null); openRoom(id) }} />}
       {modal === 'info' && active && <Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
@@ -526,6 +574,51 @@ export default function Chat({ me, setMe }) {
           </div>
         </OnTop>
       )}
+      {folderMenu && (
+        <OnTop>
+          <button type="button" className="scrim" aria-label="Close" onClick={() => setFolderMenu(null)} onContextMenu={(e) => { e.preventDefault(); setFolderMenu(null) }} />
+          <div className="room-menu folder-menu menu-list" style={{ left: folderMenu.x, top: folderMenu.y }}>
+            {folderMenu.f.custom ? (
+              <>
+                <button type="button" onClick={() => { setFolderMenu(null); setModal('folders') }}>{I.edit}<span>Edit Folder</span></button>
+                <button type="button" onClick={() => { setFolderChats(folderMenu.f.id); setFolderMenu(null) }}>{I.plus}<span>Add Chats</span></button>
+                <hr />
+                <button type="button" className="danger" onClick={() => {
+                  const f = folderMenu.f
+                  setFolderMenu(null)
+                  if (!window.confirm(`Delete the folder ${f.name}? The chats in it stay.`)) return
+                  setMyFolders((list) => list.filter((x) => x.id !== f.id))
+                  if (folder === f.id) setFolder('all')
+                  toast('Folder deleted')
+                }}>{I.trash}<span>Delete</span></button>
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={() => { setFolderMenu(null); setModal('folders') }}>{I.edit}<span>Edit Folders</span></button>
+                <button type="button" onClick={() => { setFolderMenu(null); setModal('newfolder') }}>{I.plus}<span>New Folder</span></button>
+              </>
+            )}
+          </div>
+        </OnTop>
+      )}
+      {folderChats && (() => {
+        const f = myFolders.find((x) => x.id === folderChats)
+        if (!f) return null
+        const flip = (id) => setMyFolders((list) => list.map((x) => (x.id === f.id ? { ...x, rooms: x.rooms.includes(id) ? x.rooms.filter((y) => y !== id) : [...x.rooms, id] } : x)))
+        return (
+          <Modal title={`Chats in ${f.name}`} onClose={() => setFolderChats('')} foot={<button type="button" className="btn btn-main" onClick={() => setFolderChats('')}>Done</button>}>
+            <div className="people">
+              {visible.map((r) => (
+                <button key={r.room_id} type="button" className="person" onClick={() => flip(r.room_id)}>
+                  <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={40} group={r.kind === 'group'} />
+                  <span className="person-text"><b>{titleOf(r)}</b><small>{r.kind === 'group' ? 'Group' : 'Private chat'}</small></span>
+                  <span className={`tick${f.rooms.includes(r.room_id) ? ' on' : ''}`} />
+                </button>
+              ))}
+            </div>
+          </Modal>
+        )
+      })()}
       {peek && <Peek room={peek} me={me} people={people} title={titleOf(peek)} clearedAt={cleared[peek.room_id]} onClose={() => setPeek(null)} onOpen={() => { setActiveId(peek.room_id); setPeek(null) }} />}
       {note && <div className="toast" role="status">{note}</div>}
     </div>
@@ -865,7 +958,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const textOf = (m) => (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.body)
   const copy = async (s, what = 'Copied') => { try { await navigator.clipboard.writeText(s); toast(what) } catch { toast('Copy did not work here') } }
   const linkOf = (m) => `${window.location.origin}${window.location.pathname}#m=${room.room_id}/${m.id}`
-  const translate = (s) => window.open(`https://translate.google.com/?sl=auto&tl=${/[Ͱ-Ͽ]/.test(s) ? 'en' : 'el'}&op=translate&text=${encodeURIComponent(s)}`, '_blank', 'noopener')
+  const translate = (s) => window.open(`https://translate.google.com/?sl=auto&tl=${prefs.translateTo && prefs.translateTo !== 'auto' ? prefs.translateTo : /[Ͱ-Ͽ]/.test(s) ? 'en' : 'el'}&op=translate&text=${encodeURIComponent(s)}`, '_blank', 'noopener')
 
   // who has read a message of mine: everyone else whose read mark is past it
   const seenBy = (m) => Object.entries(reads).filter(([uid, at]) => uid !== me.id && at && at >= m.created_at).map(([uid]) => uid)

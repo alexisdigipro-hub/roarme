@@ -876,12 +876,6 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       </div>
 
       <footer className="compose-wrap">
-        {(replyTo || editing) && (
-          <div className="bar">
-            <span>{editing ? 'Editing your message' : <>Replying to <b>{replyTo.user_id === me.id ? 'yourself' : nameOf(people[replyTo.user_id])}</b>: {textOf(replyTo).slice(0, 90)}</>}</span>
-            <button type="button" onClick={() => { setReplyTo(null); if (editing) { setEditing(null); setText('') } }} aria-label="Cancel">{I.x}</button>
-          </div>
-        )}
         {(busy || err) && <div className={`bar${err ? ' bar-err' : ''}`}><span>{err || busy}</span>{err && <button type="button" onClick={() => setErr('')} aria-label="Close">{I.x}</button>}</div>}
         {mentionHits.length > 0 && (
           <div className="mention-pick">
@@ -899,7 +893,17 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         ) : (
           <div className="compose">
             {!editing && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.clip}</button>}
-            <span className="compose-box">
+            <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
+              {(replyTo || editing) && (
+                <span className="compose-ref" style={{ '--ref': editing ? 'var(--accent)' : replyTo.user_id === me.id ? 'var(--accent)' : colorOf(replyTo.user_id) }}>
+                  <span className="compose-ref-ico">{editing ? I.edit : I.reply}</span>
+                  <span className="compose-ref-text">
+                    <b>{editing ? 'Edit message' : `Reply to ${replyTo.user_id === me.id ? 'yourself' : nameOf(people[replyTo.user_id])}`}</b>
+                    <span>{textOf(editing || replyTo)}</span>
+                  </span>
+                  <button type="button" className="compose-ref-x" onClick={() => { setReplyTo(null); if (editing) { setEditing(null); setText('') } }} aria-label="Cancel">{I.x}</button>
+                </span>
+              )}
               <textarea ref={inputRef} rows={1} value={text} spellCheck={prefs.spell} autoCorrect={prefs.spell ? 'on' : 'off'}
                 onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart) }} onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)} onClick={(e) => setCaret(e.currentTarget.selectionStart)} onKeyDown={onKey}
                 onPaste={(e) => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); setAttach(f) } }}

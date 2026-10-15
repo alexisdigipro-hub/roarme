@@ -377,8 +377,24 @@ body.resizing { cursor: col-resize; user-select: none; }
 .mention-pick button { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border: 0; border-radius: 12px; background: none; text-align: left; }
 .mention-pick button:hover, .mention-pick button:first-child { background: var(--glass-2); }
 .mention-pick small { color: var(--muted); }
-.compose-box { position: relative; flex: 1; min-width: 0; display: flex; }
-.compose-box textarea { padding-right: 48px; }
+/* the message box: one glass card; a reply or an edit shows on top of it, inside the same card (Alex, 16 Oct) */
+.compose-box {
+  position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; border-radius: 22px;
+  background: var(--glass); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  transition: border-color .2s, border-radius .2s;
+}
+.compose-box:focus-within { border-color: rgba(124, 196, 255, .45); }
+.compose-box textarea, .compose-box textarea:focus { padding-right: 48px; background: none; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.compose-box.has-ref { border-radius: 20px; }
+.compose-ref { display: flex; align-items: center; gap: 12px; margin: 8px 8px 0; padding: 7px 6px 7px 12px; border-radius: 14px; background: color-mix(in srgb, var(--ref) 10%, rgba(255, 255, 255, .03)); border-left: 3px solid var(--ref); animation: ref-in .22s cubic-bezier(.25, .8, .3, 1) both; }
+@keyframes ref-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.compose-ref-ico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: color-mix(in srgb, var(--ref) 18%, transparent); color: var(--ref); }
+.compose-ref-ico svg { width: 15px; height: 15px; }
+.compose-ref-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.compose-ref-text b { color: var(--ref); font-size: 13px; font-weight: 700; }
+.compose-ref-text span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; color: rgba(255, 255, 255, .85); }
+.compose-ref-x { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: var(--muted); }
+.compose-ref-x:hover { background: var(--glass-2); color: var(--text); }
 .emoji-btn { position: absolute; right: 6px; bottom: 6px; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: none; color: var(--muted); }
 .emoji-btn:hover { color: var(--text); background: var(--glass-2); }
 .emoji-pick { position: absolute; right: 0; bottom: 54px; z-index: 31; display: grid; grid-template-columns: repeat(8, 36px); gap: 2px; padding: 8px; border-radius: 18px; background: rgba(24, 32, 46, .96); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 18px 50px rgba(0, 0, 0, .45); animation: pop .22s cubic-bezier(.25, .8, .3, 1) both; transform-origin: bottom right; }

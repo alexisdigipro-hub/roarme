@@ -94,7 +94,7 @@ export function Modal({ title, onClose, children, foot, wide = false }) {
 export const OnTop = ({ children }) => createPortal(children, document.body)
 
 /* motion is off in power saving and when the computer asks for less motion */
-export const calm = () => !!document.documentElement.dataset.lite || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+export const calm = () => !!document.documentElement.dataset.lite || !!document.documentElement.dataset.still || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 /* the glass lens that slides to the chosen tab (tabs, the foot bar, segmented choices) */
 export function useLens(dep) {

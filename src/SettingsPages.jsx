@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, colorOf, revealFrom, svg } from './ui.jsx'
-import { DEFAULTS, REACTIONS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
+import { ACCENTS, DEFAULTS, FONTS, REACTIONS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
@@ -20,7 +20,7 @@ export const PAGES = [
 export const pageTitle = (id) => (id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 const LANGS = [['en', 'English', 'English'], ['el', 'Greek', 'Ελληνικά'], ['de', 'German', 'Deutsch'], ['es', 'Spanish', 'Español'], ['fr', 'French', 'Français'], ['it', 'Italian', 'Italiano'], ['nl', 'Dutch', 'Nederlands'], ['pt', 'Portuguese', 'Português'], ['ru', 'Russian', 'Русский'], ['uk', 'Ukrainian', 'Українська'], ['tr', 'Turkish', 'Türkçe'], ['ar', 'Arabic', 'العربية'], ['zh-CN', 'Chinese', '中文'], ['ja', 'Japanese', '日本語'], ['ko', 'Korean', '한국어']]
-const THEMES = [['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['sepia', 'Sepia', ['#2f6f7a', '#e8dfcc']], ['mine', 'Mineshaft', ['#b39567', '#2b2b2b']], ['gray', 'Grayscale', ['#4a4a4a', '#222']], ['amoled', 'Amoled', ['#3a5fa0', '#000']], ['night', 'Midnight', ['#4b4f8a', '#1c1c35']]]
+const THEMES = [['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['ember', 'Ember', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['sepia', 'Sepia', ['#2f6f7a', '#e8dfcc']], ['mine', 'Mineshaft', ['#b39567', '#2b2b2b']], ['gray', 'Grayscale', ['#4a4a4a', '#222']], ['amoled', 'Amoled', ['#3a5fa0', '#000']], ['night', 'Midnight', ['#4b4f8a', '#1c1c35']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -92,7 +92,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
         {page === 'privacy' && <Privacy toast={toast} />}
         {page === 'data' && <Data p={p} />}
         {page === 'sessions' && <Sessions toast={toast} />}
-        {page === 'appearance' && <Appearance p={p} />}
+        {page === 'appearance' && <Appearance p={p} toast={toast} />}
         {page === 'language' && <Language p={p} />}
         {page === 'folders' && <Folders p={p} folders={folders} onFolders={onFolders} />}
         {page !== 'profile' && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
@@ -261,7 +261,7 @@ function Sessions({ toast }) {
   )
 }
 
-function Appearance({ p }) {
+function Appearance({ p, toast }) {
   return (
     <>
       <Box title="Colour theme">
@@ -273,17 +273,17 @@ function Appearance({ p }) {
         <div className="set-row set-col">
           <div className="themes">
             {THEMES.map(([k, l, [a, b]], i) => {
-              const ready = i < 3
+              const ready = i < 4
               return (
                 <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} disabled={!ready} title={ready ? l : 'Coming soon'}
-                  onClick={(e) => revealFrom(e, () => { document.documentElement.dataset.theme = k; setPrefs({ theme: k }) })}>
-                  <span className="theme-sw" style={{ background: b }}><i style={{ background: i === 0 ? 'rgba(255,255,255,.18)' : i < 3 ? 'rgba(255,255,255,.3)' : `${a}55` }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a }} /></span>
+                  onClick={(e) => { if (p.theme === k) return; revealFrom(e, () => { document.documentElement.dataset.theme = k; setPrefs({ theme: k }) }); toast(`Theme updated: ${l}`) }}>
+                  <span className="theme-sw" style={{ background: b }}><i style={{ background: i === 0 ? 'rgba(255,255,255,.18)' : i < 4 ? 'rgba(255,255,255,.3)' : `${a}55` }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : 'none' }} /></span>
                   <small>{l}</small>
                 </button>
               )
             })}
           </div>
-          <small className="muted">Glass: soft frosted panels. Aura: bright liquid glass with floating bars. Studio: sharp and graphic, with a side rail. Each has dark and light. More themes are coming soon.</small>
+          <small className="muted">Glass: soft frosted panels. Aura: bright liquid glass with floating bars. Ember: graphite glass with a glowing accent. Studio: sharp and graphic, with a side rail. Each has dark and light. More themes are coming soon.</small>
         </div>
       </Box>
       <Box>
@@ -291,6 +291,31 @@ function Appearance({ p }) {
           <span className="set-text">Dark Mode<small>Auto follows the computer, dark at night if the computer does</small></span>
           <Lens className="seg" dep={p.mode}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
         </div>
+        <div className="set-row set-col">
+          <span className="set-text">Accent Color<small>{p.accent ? ACCENTS.find(([k]) => k === p.accent)?.[1] : "The theme's own colour"}</small></span>
+          <div className="accents">
+            <button type="button" className={`acc acc-auto${!p.accent ? ' on' : ''}`} title="Theme colour" onClick={() => setPrefs({ accent: '' })}><small>Theme</small></button>
+            {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k })}><small>{l}</small></button>)}
+          </div>
+        </div>
+        <div className="set-row set-col">
+          <span className="set-text">Density</span>
+          <input type="range" min="0" max="2" step="1" value={['relaxed', 'standard', 'tight'].indexOf(p.density || 'standard')} onChange={(e) => setPrefs({ density: ['relaxed', 'standard', 'tight'][Number(e.target.value)] })} />
+          <span className="range-labels"><small>Relaxed</small><small>Standard</small><small>Tight</small></span>
+        </div>
+        <div className="set-row set-col">
+          <span className="set-text">Font</span>
+          <select className="input set-select" value={p.font || 'system'} onChange={(e) => setPrefs({ font: e.target.value })}>{FONTS.map(([k, l, f]) => <option key={k} value={k} style={{ fontFamily: f }}>{l}</option>)}</select>
+        </div>
+        {p.theme === 'ember' && (
+          <div className="set-row set-col">
+            <span className="set-text">Corner Radius<small>{p.radius || 12} px</small></span>
+            <input type="range" min="4" max="16" step="2" value={p.radius || 12} onChange={(e) => setPrefs({ radius: Number(e.target.value) })} />
+            <span className="range-labels"><small>4</small><small>8</small><small>12</small><small>16</small></span>
+          </div>
+        )}
+        <Switch on={p.motion !== false} set={(v) => setPrefs({ motion: v })} hint="Fluid transitions for messages, menus and windows">Smooth Animations</Switch>
+        <Switch on={p.focusRings} set={(v) => setPrefs({ focusRings: v })} hint="A clear ring around whatever the keyboard is on">Bold Focus Rings</Switch>
         <Switch on={p.compact} set={(v) => setPrefs({ compact: v })}>Compact Spacing</Switch>
         <Soon arrow>Your Name Colour</Soon>
       </Box>

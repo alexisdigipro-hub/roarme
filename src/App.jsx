@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib.js'
-import { applyMode, usePrefs } from './prefs.js'
+import { applyLook, applyMode, usePrefs } from './prefs.js'
 import { Auth, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 
@@ -9,7 +9,9 @@ export default function App() {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(undefined)
   const [recovering, setRecovering] = useState(false)
-  const { mode, lite, theme } = usePrefs()
+  const prefs = usePrefs()
+  const { mode, lite, theme } = prefs
+  useEffect(() => applyLook(prefs), [prefs.accent, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { document.documentElement.dataset.theme = theme || 'glass' }, [theme])
   useEffect(() => applyMode(mode), [mode])
   useEffect(() => { if (lite) document.documentElement.dataset.lite = '1'; else delete document.documentElement.dataset.lite }, [lite])

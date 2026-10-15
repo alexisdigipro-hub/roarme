@@ -1368,3 +1368,162 @@ html[data-theme='aura'] .new-call-ico { background: var(--grad); color: #fff; }
   html[data-theme='aura'] .room-head .round { width: 36px; height: 36px; border-radius: 12px; }
   html[data-theme='aura'] .head-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* =====================================================================
+   THE LOOK ON TOP OF ANY THEME: font, density, animations, focus rings
+   ===================================================================== */
+html[data-font] body, html[data-font] :is(button, input, textarea, select) { font-family: var(--font) !important; }
+html[data-still] *, html[data-still] *::before, html[data-still] *::after { animation: none !important; transition: none !important; }
+html[data-focus='bold'] :focus-visible { outline: 3px solid var(--accent) !important; outline-offset: 2px; box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 22%, transparent) !important; }
+html[data-density='tight'] .room { padding-top: 5px; padding-bottom: 5px; }
+html[data-density='tight'] .rooms { gap: 1px; }
+html[data-density='tight'] .msg.first { margin-top: 5px; }
+html[data-density='tight'] .set-row { min-height: 40px; }
+html[data-density='relaxed'] .room { padding-top: 14px; padding-bottom: 14px; }
+html[data-density='relaxed'] .rooms { gap: 8px; }
+html[data-density='relaxed'] .msg { margin-top: 4px; }
+html[data-density='relaxed'] .msg.first { margin-top: 18px; }
+html[data-density='relaxed'] .set-row { min-height: 56px; }
+
+/* accent dots that glow, as in Alex's reference */
+.accents { display: flex; flex-wrap: wrap; gap: 14px 12px; padding: 4px 2px 18px; }
+.acc { position: relative; flex: none; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  background: radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--c) 35%, #fff) 0%, var(--c) 46%, color-mix(in srgb, var(--c) 72%, #000) 100%);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--c) 55%, transparent), inset 0 1px 2px rgba(255, 255, 255, .45);
+  transition: transform .25s var(--spring, ease), box-shadow .25s; }
+.acc:hover { transform: scale(1.1); }
+.acc.on { transform: scale(1.2); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--c), 0 0 26px var(--c); }
+.acc-auto { --c: #8b93a1; background: conic-gradient(#3b82f6, #22c55e, #facc15, #f97316, #ef4444, #d946ef, #8b5cf6, #22d3ee, #3b82f6); box-shadow: inset 0 0 0 6px rgba(0, 0, 0, .25); }
+.acc small { position: absolute; top: calc(100% + 7px); left: 50%; transform: translateX(-50%); font-size: 10.5px; font-weight: 600; white-space: nowrap; color: var(--muted); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.acc.on small, .acc:hover small { opacity: 1; }
+.acc.on small { color: var(--text); }
+.range-labels { display: flex; justify-content: space-between; margin-top: -2px; }
+.range-labels small { color: var(--muted); font-size: 11.5px; }
+.set-select { height: 42px; padding: 0 14px; cursor: pointer; appearance: auto; }
+.set-select option { color: #111; }
+
+/* =====================================================================
+   EMBER THEME (Alex, 16 Oct, from his "Themes" reference image): graphite glass,
+   one accent that glows (coral unless another accent is chosen), the chosen thing
+   lit from inside with a soft halo, corners set by Settings > Appearance > Corner radius.
+   ===================================================================== */
+html[data-theme='ember'] {
+  --bg: #1b1e23; --panel: rgba(44, 49, 57, .62);
+  --glass: rgba(255, 255, 255, .055); --glass-2: rgba(255, 255, 255, .1);
+  --edge: rgba(255, 255, 255, .1);
+  --text: #eef0f3; --muted: rgba(214, 220, 228, .58);
+  --accent: #ff6b57; --accent-2: #ff8a78; --accent-ink: #ffffff;
+  --theirs: rgba(255, 255, 255, .075);
+  --danger: #ff5a5a; --ok: #4ade80;
+  --blur: blur(26px) saturate(140%);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 30px 70px rgba(0, 0, 0, .45);
+  --float: rgba(40, 45, 53, .88);
+  color-scheme: dark;
+}
+html[data-theme='ember'][data-mode='light'] {
+  --bg: #eceef1; --panel: rgba(255, 255, 255, .62);
+  --glass: rgba(255, 255, 255, .6); --glass-2: rgba(255, 255, 255, .92);
+  --edge: rgba(20, 24, 30, .1);
+  --text: #1b1f25; --muted: rgba(27, 31, 37, .55);
+  --theirs: rgba(255, 255, 255, .92);
+  --shadow: inset 0 1px 0 #fff, 0 22px 50px rgba(30, 36, 46, .14);
+  --float: rgba(255, 255, 255, .9);
+  color-scheme: light;
+}
+html[data-theme='ember'] body { background: radial-gradient(1200px 700px at 50% -12%, #4b525d 0%, transparent 62%), linear-gradient(180deg, #2b3038 0%, #1c1f24 55%, #15171b 100%); background-attachment: fixed; }
+html[data-theme='ember'][data-mode='light'] body { background: radial-gradient(1200px 700px at 50% -12%, #ffffff 0%, transparent 62%), linear-gradient(180deg, #f1f2f4 0%, #e3e6ea 100%); background-attachment: fixed; }
+html[data-theme='ember'] body::before { background: radial-gradient(520px 420px at 82% 88%, color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 70%), radial-gradient(420px 360px at 12% 10%, rgba(255, 255, 255, .05) 0%, transparent 70%); }
+
+html[data-theme='ember'] .app { padding: 18px; gap: 16px; }
+html[data-theme='ember'] .side-grip { left: calc(18px + var(--side-w, 370px)); top: 18px; bottom: 18px; width: 16px; }
+html[data-theme='ember'] :is(.side, .main) { border-radius: calc(var(--r, 12px) * 1.6); background: var(--panel); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+html[data-theme='ember'] .side { background: rgba(58, 64, 74, .55); }
+html[data-theme='ember'][data-mode='light'] .side { background: rgba(255, 255, 255, .5); }
+html[data-theme='ember'] .side-brand { font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+html[data-theme='ember'] .side-brand b { color: var(--accent); text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 60%, transparent); }
+
+/* controls: graphite glass with the chosen corner radius */
+html[data-theme='ember'] .round { border-radius: var(--r, 12px); background: var(--glass); border-color: var(--edge); }
+html[data-theme='ember'] .round:hover, html[data-theme='ember'] .round.on { background: var(--glass-2); }
+html[data-theme='ember'] :is(.btn, .pill-btn) { border-radius: var(--r, 12px); text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; background: var(--glass); border-color: var(--edge); }
+html[data-theme='ember'] :is(.btn, .pill-btn):hover { background: var(--glass-2); }
+html[data-theme='ember'] .btn-main, html[data-theme='ember'] .send.ready { background: var(--accent); color: var(--accent-ink); border-color: transparent; box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent), 0 6px 24px color-mix(in srgb, var(--accent) 45%, transparent); }
+html[data-theme='ember'] .btn-main:hover { background: var(--accent); filter: brightness(1.08); }
+html[data-theme='ember'] :is(.input, .search, .compose textarea) { border-radius: var(--r, 12px); background: rgba(0, 0, 0, .2); border-color: var(--edge); }
+html[data-theme='ember'][data-mode='light'] :is(.input, .search, .compose textarea) { background: rgba(255, 255, 255, .8); }
+html[data-theme='ember'] :is(.input, .compose textarea):focus { border-color: color-mix(in srgb, var(--accent) 70%, transparent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
+html[data-theme='ember'] textarea.input { border-radius: var(--r, 12px); }
+html[data-theme='ember'] .switch input:checked + span { background: var(--accent); box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 55%, transparent); }
+html[data-theme='ember'] input[type='range'] { accent-color: var(--accent); }
+html[data-theme='ember'] .link { color: var(--accent-2); }
+
+/* the chosen option: a pale glowing pill (choices) or lit from inside (lists, dock) */
+html[data-theme='ember'] :is(.seg, .tabs) { border-radius: 999px; background: rgba(0, 0, 0, .25); border: 1px solid var(--edge); }
+html[data-theme='ember'][data-mode='light'] :is(.seg, .tabs) { background: rgba(20, 24, 30, .06); }
+html[data-theme='ember'] :is(.seg, .tabs).lens::before { border-radius: 999px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 38%, #fff), color-mix(in srgb, var(--accent) 70%, #fff)); box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 50%, transparent); }
+html[data-theme='ember'] :is(.seg, .tabs).lens.lens-on > .on { color: #2a1410; }
+html[data-theme='ember'] .tabs button { text-transform: none; letter-spacing: 0; font-size: 13px; }
+html[data-theme='ember'] .tabs small { background: var(--accent); color: var(--accent-ink); }
+html[data-theme='ember'] .foot { border-radius: calc(var(--r, 12px) * 1.6); background: rgba(0, 0, 0, .22); border: 1px solid var(--edge); }
+html[data-theme='ember'][data-mode='light'] .foot { background: rgba(255, 255, 255, .6); }
+html[data-theme='ember'] .foot button { border-radius: var(--r, 12px); }
+html[data-theme='ember'] .foot.lens::before, html[data-theme='ember'] .rooms-area.left .tabs.lens::before { border-radius: var(--r, 12px); background: color-mix(in srgb, var(--accent) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent), 0 0 22px color-mix(in srgb, var(--accent) 30%, transparent); }
+html[data-theme='ember'] .foot.lens.lens-on > .on { color: var(--text); }
+html[data-theme='ember'] .foot-ico i { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent); }
+
+/* chats: the open one lit from inside */
+html[data-theme='ember'] .room { border-radius: var(--r, 12px); }
+html[data-theme='ember'] .room:hover { background: var(--glass); }
+html[data-theme='ember'] .room.on, html[data-theme='ember'] .room.menu-on, html[data-theme='ember'][data-mode='light'] .room.on, html[data-theme='ember'] .set-nav.on {
+  background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent), 0 0 24px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+html[data-theme='ember'] .set-nav.on .set-chev, html[data-theme='ember'] .set-nav.on .set-val { color: var(--muted); }
+html[data-theme='ember'] .av { background: linear-gradient(135deg, #4d5561, #2b3038); color: #e9ecf0; }
+html[data-theme='ember'][data-mode='light'] .av { background: linear-gradient(135deg, #d8dce2, #b9bfc8); color: #1b1f25; }
+html[data-theme='ember'] .av-group { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 80%, #fff), var(--accent)); color: var(--accent-ink); }
+html[data-theme='ember'] .badge { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 55%, transparent); }
+html[data-theme='ember'] .badge.quiet { background: var(--glass-2); color: var(--muted); box-shadow: none; }
+
+/* a conversation */
+html[data-theme='ember'] .head-card { border-radius: var(--r, 12px); background: var(--glass); border-color: var(--edge); }
+html[data-theme='ember'] .head-text strong { font-weight: 700; }
+html[data-theme='ember'] .bubble { border-radius: calc(var(--r, 12px) * 1.4); background: var(--theirs); border: 1px solid var(--edge); }
+html[data-theme='ember'] .msg.mine .bubble { background: var(--accent); color: var(--accent-ink); border-color: transparent; box-shadow: 0 6px 22px color-mix(in srgb, var(--accent) 32%, transparent); }
+html[data-theme='ember'] .msg.first:not(.mine) .bubble { border-bottom-left-radius: 5px; }
+html[data-theme='ember'] .msg.first.mine .bubble { border-bottom-right-radius: 5px; }
+html[data-theme='ember'] .msg.mine .bubble .meta, html[data-theme='ember'] .msg.mine .ticks { color: color-mix(in srgb, var(--accent-ink) 72%, transparent); }
+html[data-theme='ember'] .msg.mine .quote { background: rgba(0, 0, 0, .14); border-left-color: var(--accent-ink); }
+html[data-theme='ember'] .msg.mine .quote b, html[data-theme='ember'] .msg.mine .quote span { color: var(--accent-ink); }
+html[data-theme='ember'] .bubble.big-emoji, html[data-theme='ember'] .msg.mine .bubble.big-emoji { background: none; border: 0; box-shadow: none; }
+html[data-theme='ember'] .rx button.on { background: color-mix(in srgb, var(--accent) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent); }
+html[data-theme='ember'] .day span { border-radius: var(--r, 12px); text-transform: none; letter-spacing: 0; font-size: 12px; }
+html[data-theme='ember'] :is(.pinbar, .findbar, .bar, .compose-ref) { border-radius: var(--r, 12px); }
+
+/* floating things */
+html[data-theme='ember'] :is(.menu, .menu-list, .emoji-pick, .rx-pick, .mention-pick) { border-radius: calc(var(--r, 12px) * 1.4); background: var(--float); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+html[data-theme='ember'] :is(.menu, .menu-list) button { border-radius: calc(var(--r, 12px) * .75); }
+html[data-theme='ember'] :is(.menu, .menu-list) button:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+html[data-theme='ember'] .modal { border-radius: calc(var(--r, 12px) * 1.8); background: var(--float); box-shadow: var(--shadow); }
+html[data-theme='ember'] .modal-head h2 { font-weight: 800; letter-spacing: -.02em; }
+html[data-theme='ember'] .toast { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-radius: var(--r, 12px); background: var(--float); border: 1px solid var(--edge); }
+html[data-theme='ember'] .toast::before { content: ''; flex: none; width: 16px; height: 16px; border-radius: 5px; background: var(--accent); box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent); }
+html[data-theme='ember'] .auth-card { border-radius: calc(var(--r, 12px) * 2); }
+
+/* settings: line icons, a big bold title, lit choices */
+html[data-theme='ember'] .set-box { border-radius: calc(var(--r, 12px) * 1.4); background: var(--glass); border-color: var(--edge); }
+html[data-theme='ember'] .set-me { border-radius: calc(var(--r, 12px) * 1.4); }
+html[data-theme='ember'] .set-box > button.set-row:first-child { border-radius: calc(var(--r, 12px) * 1.4) calc(var(--r, 12px) * 1.4) 0 0; }
+html[data-theme='ember'] .set-box > button.set-row:last-child { border-radius: 0 0 calc(var(--r, 12px) * 1.4) calc(var(--r, 12px) * 1.4); }
+html[data-theme='ember'] .set-box > button.set-row:only-child { border-radius: calc(var(--r, 12px) * 1.4); }
+html[data-theme='ember'] .set-menu .set-box { background: none; border-color: transparent; }
+html[data-theme='ember'] .set-menu .set-row + .set-row { border-top: 0; }
+html[data-theme='ember'] .set-menu .set-nav { border-radius: var(--r, 12px) !important; margin: 2px 0; }
+html[data-theme='ember'] .nav-ico { background: none !important; color: var(--text); width: 26px; }
+html[data-theme='ember'] .nav-ico svg { width: 20px; height: 20px; }
+html[data-theme='ember'] .set-head strong { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+html[data-theme='ember'] .set-tick { background: var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 55%, transparent); }
+html[data-theme='ember'] .set-preview .pv.mine, html[data-theme='ember'] .wall-b.mine { background: var(--accent); color: var(--accent-ink); }
+html[data-theme='ember'] :is(.wall-tile, .theme-sw, .tv-pic) { border-radius: var(--r, 12px); }
+html[data-theme='ember'] .new-call-ico { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent); }
+html[data-theme='ember'][data-mode='light'] .av-group { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 80%, #fff), var(--accent)); color: var(--accent-ink); }

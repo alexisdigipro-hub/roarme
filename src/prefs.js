@@ -4,7 +4,13 @@ import { useEffect, useState } from 'react'
    A change is announced with the 'roarme-prefs' event so every open part of the app follows it. */
 export const DEFAULTS = {
   mode: 'dark', // dark | light | auto (follows the computer)
-  theme: 'glass', // glass | studio
+  theme: 'glass', // glass | aura | ember | studio
+  accent: '', // '' = the theme's own colour, or one of ACCENTS
+  density: 'standard', // relaxed | standard | tight
+  font: 'system', // one of FONTS
+  radius: 12, // corners of the Ember theme, 4 to 16
+  motion: true, // smooth animations
+  focusRings: false, // a bold ring around whatever has the keyboard
   textSize: 2, // 0..4
   bigEmoji: true,
   compact: false,
@@ -109,4 +115,32 @@ export function applyMode(mode) {
   if (mode !== 'auto' || !mq) return () => {}
   mq.addEventListener?.('change', set)
   return () => mq.removeEventListener?.('change', set)
+}
+
+/* the look that sits on top of any theme (Alex, 16 Oct, from his Themes reference):
+   accent colour, density, font, corner radius, animations, focus rings */
+export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#ef4444'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57']]
+export const FONTS = [
+  ['system', 'SF Pro / System', "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif"],
+  ['inter', 'Inter', "'Inter', -apple-system, sans-serif"],
+  ['manrope', 'Manrope', "'Manrope', -apple-system, sans-serif"],
+  ['dm', 'DM Sans', "'DM Sans', -apple-system, sans-serif"],
+  ['grotesk', 'Space Grotesk', "'Space Grotesk', -apple-system, sans-serif"],
+  ['serif', 'Serif', "Georgia, 'Times New Roman', serif"],
+  ['mono', 'Mono', "'JetBrains Mono', ui-monospace, Menlo, monospace"],
+]
+const inkOn = (hex) => {
+  const n = parseInt(hex.slice(1), 16)
+  return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 160 ? '#111111' : '#ffffff'
+}
+export function applyLook(p) {
+  const r = document.documentElement
+  const hex = ACCENTS.find(([k]) => k === p.accent)?.[2]
+  if (hex) { r.style.setProperty('--accent', hex); r.style.setProperty('--accent-2', hex); r.style.setProperty('--accent-ink', inkOn(hex)) } else { ['--accent', '--accent-2', '--accent-ink'].forEach((v) => r.style.removeProperty(v)) }
+  const f = FONTS.find(([k]) => k === p.font)
+  if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
+  r.dataset.density = p.density || 'standard'
+  r.style.setProperty('--r', `${Number(p.radius) || 12}px`)
+  if (p.motion === false) r.dataset.still = '1'; else delete r.dataset.still
+  if (p.focusRings) r.dataset.focus = 'bold'; else delete r.dataset.focus
 }

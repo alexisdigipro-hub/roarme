@@ -368,6 +368,9 @@ body.resizing { cursor: col-resize; user-select: none; }
 .bubble.big-emoji .text { font-size: 44px; line-height: 1.15; }
 .bubble.big-emoji .meta { float: none; display: block; text-align: right; margin: 0; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, .35); width: max-content; margin-left: auto; }
 .mention { color: #9fd4ff; font-weight: 600; }
+.msg-link { color: #9fd4ff; text-decoration: underline; text-decoration-color: rgba(159, 212, 255, .45); text-underline-offset: 2px; word-break: break-all; }
+.msg-link:hover { text-decoration-color: currentColor; }
+.msg.mine .msg-link { color: #fff; text-decoration-color: rgba(255, 255, 255, .6); }
 .msg.mine .mention { color: #fff; text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .5); }
 .rx-replies { color: var(--muted); }
 .rx-replies svg { width: 14px; height: 14px; }

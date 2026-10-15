@@ -751,9 +751,16 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     setViewer({ items, index: Math.max(0, photos.findIndex((x) => x.id === m.id)) })
   }
   // @username in a message, lit up
+  // links that open (in the browser, a new tab) and @usernames lit up, inside a message's text
   const withMentions = (s) => {
-    const parts = String(s).split(/(@[a-z0-9_]{3,24})/g)
-    return parts.map((p, i) => (i % 2 ? <span key={i} className="mention">{p}</span> : p))
+    const parts = String(s).split(/(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|@[a-z0-9_]{3,24})/g)
+    return parts.map((p, i) => {
+      if (!(i % 2)) return p
+      if (p.startsWith('@')) return <span key={i} className="mention">{p}</span>
+      const tail = (p.match(/[.,;:!?)\]]+$/) || [''])[0]
+      const url = tail ? p.slice(0, -tail.length) : p
+      return <span key={i}><a className="msg-link" href={url.startsWith('www.') ? `https://${url}` : url} target="_blank" rel="noreferrer noopener" onClick={(e) => e.stopPropagation()}>{url}</a>{tail}</span>
+    })
   }
 
   const sub = room.kind === 'group' ? `${(room.members || []).length} members` : [other ? `@${other.username}` : '', lastSeenText(other)].filter(Boolean).join(' · ')

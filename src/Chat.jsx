@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, I, Modal, OnTop, colorOf, svg } from './ui.jsx'
-import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, swapEmoji, useLocal, usePrefs } from './prefs.js'
+import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
-import { AttachSheet, AudioNote, MusicTile, isAudioFile, ChatSettings, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile } from './extras.jsx'
+import { AttachSheet, AudioNote, MusicTile, isAudioFile, ChatSettings, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
 
 /* people by @username or name */
 function usePeopleSearch(meId) {
@@ -47,6 +47,7 @@ export default function Chat({ me, setMe }) {
   const [drafts] = useLocal('roarme-drafts', {})
   const [roomMenu, setRoomMenu] = useState(null) // { r, x, y, sub }
   const [peek, setPeek] = useState(null) // a chat looked at without opening it
+  const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
   const searchRef = useRef(null)
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
@@ -256,8 +257,8 @@ export default function Chat({ me, setMe }) {
     // the side menus open to the left when there is no room on the right
     setRoomMenu({ r, x, y: Math.max(12, Math.min(e.clientY, window.innerHeight - h - 12)), sub: '', flip: x + w + 200 > window.innerWidth })
   }
-  const roomAct = async (what, arg) => {
-    const r = roomMenu?.r
+  const roomAct = async (what, arg, from) => {
+    const r = from || roomMenu?.r
     setRoomMenu(null)
     if (!r) return
     const mine = (patch) => supabase.from('roar_members').update(patch).eq('room_id', r.room_id).eq('user_id', me.id)
@@ -453,7 +454,8 @@ export default function Chat({ me, setMe }) {
       <main className="main">
         {active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
-            rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} />
+            rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]}
+            onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }} />
         ) : (
           <div className="pick">
             <img src="./icon.svg" alt="" />
@@ -468,7 +470,7 @@ export default function Chat({ me, setMe }) {
       </main>
 
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
-      {modal === 'newgroup' && <NewGroup me={me} onClose={() => setModal('')} onOpen={openRoom} />}
+      {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null) }} onOpen={(id) => { setGroupWith(null); openRoom(id) }} />}
       {modal === 'info' && active && <Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
         onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople} />}
@@ -555,7 +557,7 @@ function Peek({ room, me, people, title, clearedAt, onClose, onOpen }) {
 }
 
 /* ---------- one conversation ---------- */
-function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt }) {
+function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup }) {
   const [msgs, setMsgs] = useState([])
   const [more, setMore] = useState(true)
   // an unsent message waits for you, per chat (shown in the list as Draft:)
@@ -590,6 +592,10 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const [emoji, setEmoji] = useState(false)
   const [attach, setAttach] = useState(null) // files waiting in the send window
   const [media, setMedia] = useState(false)
+  const [headSub, setHeadSub] = useState('') // Mute › or Auto-Delete › open in the ⋯ menu
+  const [walls, setWalls] = useLocal('roarme-walls', {}) // a wallpaper of its own, per chat
+  const wall = walls[room.room_id] || prefs.background
+  const [wallPick, setWallPick] = useState(false)
   const [rec, setRec] = useState(null) // { started }
   const [outbox, setOutbox] = useState([]) // { id, name, preview, p, stage, holder }
   const [recSecs, setRecSecs] = useState(0)
@@ -947,14 +953,33 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && (!clearedAt || m.created_at > clearedAt)), [msgs, clearedAt])
   const pickedMsgs = picked ? msgs.filter((m) => picked.includes(m.id)) : []
   const soon = (what) => toast(`${what} are coming soon`)
-  const mute = async () => {
+  const act = (what, arg) => { setHeadMenu(false); onAct(what, arg) }
+  // the whole chat as a text file: date, time, who, what (deleted and cleared messages left out)
+  const exportChat = async () => {
     setHeadMenu(false)
-    const { error } = await supabase.from('roar_members').update({ muted: !room.muted }).eq('room_id', room.room_id).eq('user_id', me.id)
-    if (error) setErr(errText(error)); else { onRead(); toast(room.muted ? 'Sounds on' : 'Muted') }
+    toast('Preparing the file…')
+    let all = []
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase.from('roar_messages').select('user_id, kind, body, file, created_at').eq('room_id', room.room_id).is('deleted_at', null).order('created_at').range(from, from + 999)
+      if (error) { toast(errText(error)); return }
+      all = all.concat(data || [])
+      if (!data || data.length < 1000) break
+    }
+    if (clearedAt) all = all.filter((m) => m.created_at > clearedAt)
+    const two = (n) => String(n).padStart(2, '0')
+    const when = (s) => { const d = new Date(s); return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}` }
+    const what = (m) => (m.kind === 'image' ? `[Photo${m.file?.name ? `: ${m.file.name}` : ''}]${m.body ? ` ${m.body}` : ''}` : m.kind === 'voice' ? '[Voice message]' : m.kind === 'file' ? `[File: ${m.file?.name || 'file'}]${m.body ? ` ${m.body}` : ''}` : m.body)
+    const lines = all.map((m) => `[${when(m.created_at)}] ${m.user_id === me.id ? nameOf(me) : nameOf(people[m.user_id]) || 'Someone'}: ${what(m)}`)
+    const text = `RoarMe · ${title}\nExported ${when(new Date().toISOString())} · ${all.length} messages\n\n${lines.join('\n')}\n`
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }))
+    a.download = `RoarMe - ${title.replace(/[\\/:*?"<>|]/g, '')}.txt`
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000)
   }
 
   return (
-    <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={prefs.background} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 15.5}px` }}
+    <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={wall} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 15.5}px` }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) setAttach([...e.dataTransfer.files]) }}>
       <header className="room-head">
         <button type="button" className="round back" onClick={onBack} aria-label="Back">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
@@ -978,16 +1003,43 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
             <button type="button" className="round" onClick={() => soon('Video calls')} aria-label="Video call" title="Video call">{I.video}</button>
             <button type="button" className="round" onClick={() => { setFind(''); setFindAt(0) }} aria-label="Search in this chat" title="Search in this chat">{I.search}</button>
             <span className="plus-wrap">
-              <button type="button" className={`round${headMenu ? ' on' : ''}`} onClick={() => setHeadMenu((v) => !v)} aria-label="More" title="More">{I.more}</button>
+              <button type="button" className={`round${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More">{I.more}</button>
               {headMenu && (
                 <>
                   <button type="button" className="scrim" aria-label="Close" onClick={() => setHeadMenu(false)} />
-                  <div className="menu">
-                    <button type="button" onClick={() => { setHeadMenu(false); onInfo() }}>{room.kind === 'group' ? I.people : I.person}<span>{room.kind === 'group' ? 'Group info' : 'Profile'}</span></button>
-                    <button type="button" onClick={() => { setHeadMenu(false); setFind(''); setFindAt(0) }}>{I.search}<span>Search</span></button>
+                  <div className="menu head-menu" onMouseLeave={() => setHeadSub('')}>
+                    {room.kind === 'group' && room.role === 'admin' && <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onMouseEnter={() => setHeadSub('')}>{I.edit}<span>Edit</span></button>}
+                    <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onMouseEnter={() => setHeadSub('')}>{I.info}<span>Info</span></button>
+                    {room.muted
+                      ? <button type="button" onClick={() => act('mute')} onMouseEnter={() => setHeadSub('')}>{I.bell}<span>Unmute</span></button>
+                      : (
+                        <div className={`has-sub${headSub === 'mute' ? ' open' : ''}`} onMouseEnter={() => setHeadSub('mute')}>
+                          <button type="button" onClick={() => setHeadSub((s) => (s === 'mute' ? '' : 'mute'))}>{I.bellOff}<span>Mute</span><i className="sub-arrow">{I.right}</i></button>
+                          {headSub === 'mute' && (
+                            <div className="sub-menu menu-list">
+                              {[[1, 'For 1 hour'], [8, 'For 8 hours'], [24, 'For 1 day'], [168, 'For 7 days'], [0, 'Forever']].map(([h, l]) => <button key={h} type="button" onClick={() => act('mute', h)}><span>{l}</span></button>)}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    <button type="button" onClick={() => { setHeadMenu(false); soon('Video calls') }} onMouseEnter={() => setHeadSub('')}>{I.video}<span>Video</span></button>
+                    {room.kind !== 'group' && other && <button type="button" onClick={() => { setHeadMenu(false); onNewGroup(other) }}>{I.people}<span>Create Group</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setMedia(true) }}>{I.image}<span>Photos, videos & files</span></button>
                     {pinned && <button type="button" onClick={() => { setHeadMenu(false); goTo(pinned.id) }}>{I.pin}<span>Pinned message</span></button>}
-                    <button type="button" onClick={mute}>{I.bell}<span>{room.muted ? 'Unmute sounds' : 'Mute sounds'}</span></button>
+                    <button type="button" onClick={() => { setHeadMenu(false); setWallPick(true) }}>{I.brush}<span>Change Wallpaper</span></button>
+                    <button type="button" onClick={exportChat} onMouseEnter={() => setHeadSub('')}>{I.file}<span>Export Chat History…</span></button>
+                    <hr />
+                    <div className={`has-sub${headSub === 'auto' ? ' open' : ''}`} onMouseEnter={() => setHeadSub('auto')}>
+                      <button type="button" onClick={() => setHeadSub((s) => (s === 'auto' ? '' : 'auto'))}>{I.timer}<span>Auto-Delete Messages</span><i className="sub-arrow">{I.right}</i></button>
+                      {headSub === 'auto' && (
+                        <div className="sub-menu menu-list">
+                          {['Off', 'After 1 day', 'After 1 week', 'After 1 month'].map((l) => <button key={l} type="button" disabled><span>{l}</span>{l === 'Off' && <i className="sub-check">{I.check}</i>}</button>)}
+                          <p className="sub-note">Coming soon</p>
+                        </div>
+                      )}
+                    </div>
+                    <button type="button" onClick={() => act('clear')} onMouseEnter={() => setHeadSub('')}>{I.clear}<span>Clear Chat History</span></button>
+                    <button type="button" className="danger" onClick={() => act('delete')}>{I.trash}<span>{room.kind === 'group' ? 'Delete and Leave' : 'Delete Chat'}</span></button>
                   </div>
                 </>
               )}
@@ -1183,6 +1235,12 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       )}
       {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} />}
       {media && <SharedMedia roomId={room.room_id} onClose={() => setMedia(false)} onOpen={async (list, index) => { setMedia(false); const items = await Promise.all(list.map(async (x) => ({ url: await fileLink(x.file?.path), type: x.file?.type, name: x.file?.name }))); setViewer({ items, index }) }} />}
+      {wallPick && (
+        <Modal title="Chat wallpaper" onClose={() => setWallPick(false)} foot={<><button type="button" className="btn" onClick={() => { setPrefs({ background: wall }); setWalls({}); setWallPick(false); toast('Wallpaper set for all chats') }}>Use for all chats</button><button type="button" className="btn btn-main" onClick={() => setWallPick(false)}>Done</button></>}>
+          <p className="muted">For this chat only, on this computer.</p>
+          <WallTiles value={wall} onPick={(k) => setWalls((w) => ({ ...w, [room.room_id]: k }))} />
+        </Modal>
+      )}
       {forward && <Forward msgs={forward} me={me} rooms={rooms} titleOf={titleOf} fromRoom={room.room_id} onClose={() => setForward(null)} onDone={(n) => { setForward(null); setPicked(null); toast(n > 1 ? `${n} messages forwarded` : 'Forwarded') }} />}
       {viewer && <OnTop><MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)} /></OnTop>}
     </div>
@@ -1275,9 +1333,9 @@ function NewChat({ me, onClose, onOpen }) {
   )
 }
 
-function NewGroup({ me, onClose, onOpen }) {
+function NewGroup({ me, start, onClose, onOpen }) {
   const [title, setTitle] = useState('')
-  const [picked, setPicked] = useState([])
+  const [picked, setPicked] = useState(start ? [start] : [])
   const [q, setQ, hits] = usePeopleSearch(me.id)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)

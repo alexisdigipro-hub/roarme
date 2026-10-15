@@ -19,8 +19,9 @@ export const DEFAULTS = {
   lite: false, // power saving: no animations, no glass blur
   sound: true,
   folderTags: false,
-  background: 'soft', // soft | dots
+  background: 'soft', // one of WALLS
 }
+export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], ['night', 'Night'], ['ocean', 'Ocean'], ['dusk', 'Dusk'], ['forest', 'Forest'], ['ember', 'Ember']]
 export const TEXT_SIZES = [13.5, 14.5, 15.5, 17, 18.5]
 const KEY = 'roarme-prefs'
 

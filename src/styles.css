@@ -680,3 +680,37 @@ html[data-mode='light'] .room.menu-on { background: rgba(255, 255, 255, .95); }
 /* Power saving: no motion, no glass blur */
 html[data-lite] *, html[data-lite] *::before, html[data-lite] *::after { animation: none !important; transition: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 .set-row.is-off > svg { margin-left: auto; width: 16px; height: 16px; color: var(--muted); }
+
+/* the ⋯ menu of an open chat: side menus open to the left */
+.head-menu { min-width: 250px; }
+.head-menu > button, .head-menu .has-sub > button { width: 100%; }
+.head-menu button.danger { color: var(--danger); }
+.head-menu hr { width: calc(100% - 20px); margin: 4px 10px; border: 0; border-top: 1px solid var(--edge); }
+.head-menu .has-sub { position: relative; display: flex; flex-direction: column; }
+.head-menu .has-sub.open > button { background: var(--glass-2); }
+.head-menu .sub-menu { position: absolute; top: -6px; right: calc(100% + 6px); min-width: 180px; animation: pop .16s ease both; transform-origin: top right; }
+.head-menu .sub-menu button { width: 100%; }
+.head-menu .sub-menu button:disabled { opacity: .5; cursor: default; }
+.head-menu .sub-arrow, .head-menu .sub-check { margin-left: auto; display: inline-flex; color: var(--muted); }
+.head-menu .sub-arrow svg { width: 15px; height: 15px; }
+.head-menu .sub-check { color: var(--accent); }
+.sub-note { margin: 4px 12px 6px; color: var(--muted); font-size: 12px; }
+
+/* wallpapers */
+:is(.room-view[data-bg='grid'] .scroll, .wall-tile[data-bg='grid']) { background-image: linear-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .045) 1px, transparent 1px); background-size: 26px 26px; }
+.wall-tile[data-bg='dots'] { background-image: radial-gradient(rgba(255, 255, 255, .1) 1px, transparent 1.2px); background-size: 12px 12px; }
+:is(.room-view[data-bg='night'] .scroll, .wall-tile[data-bg='night']) { background-image: linear-gradient(165deg, rgba(48, 70, 150, .38), rgba(14, 18, 40, .15) 70%); }
+:is(.room-view[data-bg='ocean'] .scroll, .wall-tile[data-bg='ocean']) { background-image: radial-gradient(circle at 15% 10%, rgba(60, 170, 230, .3), transparent 55%), radial-gradient(circle at 90% 95%, rgba(40, 90, 210, .28), transparent 55%); }
+:is(.room-view[data-bg='dusk'] .scroll, .wall-tile[data-bg='dusk']) { background-image: linear-gradient(170deg, rgba(150, 80, 210, .28), rgba(240, 120, 90, .2)); }
+:is(.room-view[data-bg='forest'] .scroll, .wall-tile[data-bg='forest']) { background-image: linear-gradient(160deg, rgba(40, 150, 110, .28), rgba(20, 60, 50, .12)); }
+:is(.room-view[data-bg='ember'] .scroll, .wall-tile[data-bg='ember']) { background-image: radial-gradient(circle at 85% 0%, rgba(235, 95, 60, .32), transparent 60%), radial-gradient(circle at 0% 100%, rgba(200, 60, 90, .2), transparent 55%); }
+.walls { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; width: 100%; }
+.wall-tile { position: relative; display: flex; flex-direction: column; gap: 5px; height: 112px; padding: 10px 8px 24px; border: 2px solid transparent; border-radius: 16px; background-color: rgba(0, 0, 0, .22); overflow: hidden; }
+.wall-tile.on { border-color: var(--accent); }
+.wall-b { align-self: flex-start; padding: 3px 8px; border-radius: 10px 10px 10px 4px; background: var(--glass-2); font-size: 11px; font-style: normal; }
+.wall-b.mine { align-self: flex-end; border-radius: 10px 10px 4px 10px; background: var(--mine); color: #fff; }
+.wall-tile small { position: absolute; left: 0; right: 0; bottom: 5px; color: var(--muted); font-size: 11.5px; font-weight: 600; text-align: center; }
+.wall-tile.on small { color: var(--accent); }
+html[data-mode='light'] .wall-tile { background-color: rgba(16, 32, 58, .06); }
+html[data-mode='light'] :is(.room-view[data-bg='grid'] .scroll, .wall-tile[data-bg='grid']) { background-image: linear-gradient(rgba(16, 32, 58, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 32, 58, .06) 1px, transparent 1px); }
+html[data-mode='light'] .wall-tile[data-bg='dots'] { background-image: radial-gradient(rgba(16, 32, 58, .14) 1px, transparent 1.2px); }

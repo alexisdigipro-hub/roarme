@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, fileLink, fmtBytes, supabase, timeOf } from './lib.js'
-import { DEFAULTS, EMOJIS, REACTIONS, TEXT_SIZES, chime, setPrefs, usePrefs } from './prefs.js'
+import { DEFAULTS, EMOJIS, REACTIONS, TEXT_SIZES, WALLS, chime, setPrefs, usePrefs } from './prefs.js'
 import { I, Modal } from './ui.jsx'
 
 /* ---------- emoji grid ---------- */
@@ -230,6 +230,18 @@ function MediaThumb({ m, onClick }) {
 }
 
 /* ---------- chat settings, as in the THEMADLIONS chat ---------- */
+/* the chat wallpapers as small tiles to pick from */
+export function WallTiles({ value, onPick }) {
+  return (
+    <div className="walls">
+      {WALLS.map(([k, l]) => (
+        <button key={k} type="button" className={`wall-tile${value === k ? ' on' : ''}`} data-bg={k} onClick={() => onPick(k)}>
+          <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>{l}</small>
+        </button>
+      ))}
+    </div>
+  )
+}
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
     <span className="set-text">{children}{hint && <small>{hint}</small>}</span>
@@ -248,8 +260,8 @@ export function ChatSettings() {
         </div>
         <div className="set-row"><span className="set-text">Chat colours<small>Glass. More colours are coming soon.</small></span><span className="theme-dot" /></div>
         <div className="set-row set-col">
-          <span className="set-text">Background</span>
-          <span className="seg">{[['soft', 'Plain'], ['dots', 'Pattern']].map(([k, l]) => <button key={k} type="button" className={p.background === k ? 'on' : ''} onClick={() => setPrefs({ background: k })}>{l}</button>)}</span>
+          <span className="set-text">Wallpaper<small>For every chat. One chat can have its own from its ⋯ menu.</small></span>
+          <WallTiles value={p.background} onPick={(k) => setPrefs({ background: k })} />
         </div>
         <div className="set-row set-col">
           <span className="set-text">Text size<small>{TEXT_SIZES[p.textSize]} px</small></span>

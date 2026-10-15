@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
    A change is announced with the 'roarme-prefs' event so every open part of the app follows it. */
 export const DEFAULTS = {
   mode: 'dark', // dark | light | auto (follows the computer)
-  theme: 'glass', // glass | aura | ember | studio
+  theme: 'ember', // ember (the main one, Alex 16 Oct) | glass | aura | studio
   accent: '', // '' = the theme's own colour, or one of ACCENTS
   density: 'standard', // relaxed | standard | tight
   font: 'system', // one of FONTS
@@ -36,6 +36,15 @@ export const DEFAULTS = {
 export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], ['night', 'Night'], ['ocean', 'Ocean'], ['dusk', 'Dusk'], ['forest', 'Forest'], ['ember', 'Ember']]
 export const TEXT_SIZES = [13.5, 14.5, 15.5, 17, 18.5]
 const KEY = 'roarme-prefs'
+
+// Ember became the main theme (Alex, 16 Oct): a device that still has the old default moves to it once
+try {
+  if (!localStorage.getItem('roarme-ember-main')) {
+    const saved = JSON.parse(localStorage.getItem('roarme-prefs') || 'null')
+    if (saved && (!saved.theme || saved.theme === 'glass')) localStorage.setItem('roarme-prefs', JSON.stringify({ ...saved, theme: 'ember' }))
+    localStorage.setItem('roarme-ember-main', '1')
+  }
+} catch { /* private window */ }
 
 export function getPrefs() {
   try { return { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY)) || {}) } } catch { return { ...DEFAULTS } }

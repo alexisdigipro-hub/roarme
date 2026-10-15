@@ -12,7 +12,7 @@ export default function App() {
   const prefs = usePrefs()
   const { mode, lite, theme } = prefs
   useEffect(() => applyLook(prefs), [prefs.accent, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { document.documentElement.dataset.theme = theme || 'glass' }, [theme])
+  useEffect(() => { document.documentElement.dataset.theme = theme || 'ember' }, [theme])
   useEffect(() => applyMode(mode), [mode])
   useEffect(() => { if (lite) document.documentElement.dataset.lite = '1'; else delete document.documentElement.dataset.lite }, [lite])
 

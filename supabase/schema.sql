@@ -221,3 +221,38 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.roar_my_rooms() from public, anon;
 grant execute on function public.roar_my_rooms() to authenticated;
+
+-- ---------- reactions (one per person per message) and a pinned message per chat (15 Oct) ----------
+create table if not exists public.roar_reactions (
+  message_id uuid not null references public.roar_messages(id) on delete cascade,
+  room_id uuid not null references public.roar_rooms(id) on delete cascade,
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  emoji text not null check (char_length(emoji) between 1 and 16),
+  created_at timestamptz not null default now(),
+  primary key (message_id, user_id)
+);
+create index if not exists roar_reactions_room on public.roar_reactions (room_id);
+alter table public.roar_reactions enable row level security;
+alter table public.roar_reactions replica identity full;
+drop policy if exists roar_reactions_read on public.roar_reactions;
+create policy roar_reactions_read on public.roar_reactions for select to authenticated using (public.roar_is_member(room_id));
+drop policy if exists roar_reactions_add on public.roar_reactions;
+create policy roar_reactions_add on public.roar_reactions for insert to authenticated
+  with check (user_id = auth.uid() and public.roar_is_member(room_id) and exists (select 1 from public.roar_messages m where m.id = message_id and m.room_id = roar_reactions.room_id));
+drop policy if exists roar_reactions_change on public.roar_reactions;
+create policy roar_reactions_change on public.roar_reactions for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists roar_reactions_remove on public.roar_reactions;
+create policy roar_reactions_remove on public.roar_reactions for delete to authenticated using (user_id = auth.uid());
+revoke all on public.roar_reactions from anon;
+do $$ begin alter publication supabase_realtime add table public.roar_reactions; exception when duplicate_object then null; end $$;
+
+alter table public.roar_rooms add column if not exists pinned_message_id uuid references public.roar_messages(id) on delete set null;
+create or replace function public.roar_pin(r uuid, msg uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not roar_is_member(r) then raise exception 'not allowed'; end if;
+  if msg is not null and not exists (select 1 from roar_messages where id = msg and room_id = r) then raise exception 'not in this chat'; end if;
+  update roar_rooms set pinned_message_id = msg where id = r;
+end $$;
+revoke all on function public.roar_pin(uuid, uuid) from public, anon;
+grant execute on function public.roar_pin(uuid, uuid) to authenticated;

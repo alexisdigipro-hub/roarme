@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { USERNAME_RE, cleanUsername, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, I, Modal, OnTop, colorOf, svg } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, useLocal, usePrefs } from './prefs.js'
+import Profile from './Profile.jsx'
 import { AttachSheet, AudioNote, ChatSettings, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile } from './extras.jsx'
 
 /* people by @username or name */
@@ -390,7 +391,9 @@ export default function Chat({ me, setMe }) {
 
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'newgroup' && <NewGroup me={me} onClose={() => setModal('')} onOpen={openRoom} />}
-      {modal === 'info' && active && <RoomInfo room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} toast={toast} onClose={() => setModal('')} onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople} />}
+      {modal === 'info' && active && <Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
+        onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
+        onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople} />}
       {(modal === 'folders' || modal === 'newfolder') && <FoldersModal folders={myFolders} rooms={visible} titleOf={titleOf} startNew={modal === 'newfolder'} onClose={() => setModal('')} onSave={(list) => { setMyFolders(list); setModal(''); if (!list.some((f) => f.id === folder) && !BUILTIN.some(([id]) => id === folder)) setFolder('all') }} />}
       {modal === 'pickfolder' && (
         <Modal title="Add to a folder" onClose={() => setModal('')}>
@@ -1083,65 +1086,6 @@ function NewGroup({ me, onClose, onOpen }) {
       <div className="people">
         {hits.map((p) => <PersonRow key={p.id} p={p} onClick={() => toggle(p)} right={<span className={`tick${picked.some((x) => x.id === p.id) ? ' on' : ''}`} />} />)}
       </div>
-    </Modal>
-  )
-}
-
-/* ---------- about a chat: members, mute, archive, leave ---------- */
-function RoomInfo({ room, me, people, title, other, toast, onClose, onChanged, onLeft, loadPeople }) {
-  const admin = room.role === 'admin'
-  const [name, setName] = useState(room.title)
-  const [adding, setAdding] = useState(false)
-  const [q, setQ, hits] = usePeopleSearch(me.id)
-  const [err, setErr] = useState('')
-  const setMine = async (patch) => {
-    const { error } = await supabase.from('roar_members').update(patch).eq('room_id', room.room_id).eq('user_id', me.id)
-    if (error) setErr(errText(error)); else onChanged()
-  }
-  const rename = async () => {
-    if (!name.trim() || name.trim() === room.title) return
-    const { error } = await supabase.from('roar_rooms').update({ title: name.trim() }).eq('id', room.room_id)
-    if (error) setErr(errText(error)); else onChanged()
-  }
-  const add = async (p) => {
-    const { error } = await supabase.rpc('roar_add_members', { r: room.room_id, people: [p.id] })
-    if (error) setErr(errText(error)); else { loadPeople([p.id]); onChanged() }
-  }
-  const leave = async () => {
-    if (!window.confirm(`Leave ${title}?`)) return
-    const { error } = await supabase.rpc('roar_leave', { r: room.room_id })
-    if (error) setErr(errText(error)); else onLeft()
-  }
-  const members = (room.members || []).map((id) => people[id] || { id, username: '…' })
-  return (
-    <Modal title={room.kind === 'group' ? 'Group' : 'Profile'} onClose={onClose}>
-      <div className="info-top">
-        <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={84} group={room.kind === 'group'} />
-        {room.kind === 'group' && admin
-          ? <input className="input info-name" value={name} onChange={(e) => setName(e.target.value)} onBlur={rename} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
-          : <h3>{title}</h3>}
-        {room.kind === 'direct' && other && <p className="muted">@{other.username} · {lastSeenText(other)}</p>}
-        {room.kind === 'direct' && other?.bio && <p className="info-bio">{other.bio}</p>}
-      </div>
-      <div className="info-acts">
-        <button type="button" className={`btn${room.muted ? ' btn-on' : ''}`} onClick={() => setMine({ muted: !room.muted })}>{I.bell} {room.muted ? 'Unmute' : 'Mute'}</button>
-        <button type="button" className={`btn${room.archived ? ' btn-on' : ''}`} onClick={() => setMine({ archived: !room.archived })}>{I.archive} {room.archived ? 'Unarchive' : 'Archive'}</button>
-        {room.kind === 'group' && <button type="button" className="btn btn-danger" onClick={leave}>Leave group</button>}
-      </div>
-      {err && <p className="auth-err">{err}</p>}
-      {room.kind === 'group' && (
-        <>
-          <div className="info-sub"><span>{members.length} members</span>{admin && <button type="button" className="link" onClick={() => setAdding((v) => !v)}>{adding ? 'Done' : 'Add people'}</button>}</div>
-          {adding && (
-            <>
-              <label className="search">{I.search}<input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="@username or name" /></label>
-              <div className="people">{hits.filter((p) => !(room.members || []).includes(p.id)).map((p) => <PersonRow key={p.id} p={p} onClick={() => add(p)} right={<span className="tick" />} />)}</div>
-            </>
-          )}
-          <div className="people">{members.map((p) => <PersonRow key={p.id} p={p} onClick={() => {}} right={p.id === me.id ? <small className="muted">You</small> : admin ? <span role="button" tabIndex={0} className="link soon" onClick={(e) => { e.stopPropagation(); toast('Removing people is coming soon') }}>Remove</span> : null} />)}</div>
-          {admin && <button type="button" className="btn btn-danger" onClick={() => toast('Deleting a group is coming soon')}>Delete group</button>}
-        </>
-      )}
     </Modal>
   )
 }

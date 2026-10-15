@@ -112,9 +112,13 @@ export function useLens(dep) {
       el.classList.add('lens-on')
     }
     put()
+    // follow size changes of the bar and of each tab, and a change of theme or text size
     const ro = new ResizeObserver(put)
     ro.observe(el)
-    return () => ro.disconnect()
+    ;[...el.children].forEach((c) => ro.observe(c))
+    const later = () => requestAnimationFrame(() => requestAnimationFrame(put))
+    window.addEventListener('roarme-prefs', later)
+    return () => { ro.disconnect(); window.removeEventListener('roarme-prefs', later) }
   }, [dep])
   return ref
 }

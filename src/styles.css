@@ -1184,3 +1184,187 @@ html[data-theme='studio'] .msg .bubble.big-emoji, html[data-theme='studio'][data
   html[data-theme='studio'] .head-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   html[data-theme='studio'] .room-head { padding: 10px 12px; }
 }
+
+/* =====================================================================
+   AURA THEME (Alex, 16 Oct: "commercial, for lots of people, more glassy, buttons a bit
+   more rounded, fresh, 2026, between WhatsApp, Telegram and Viber").
+   Liquid glass over a bright colour field: the panels float, the chat's top bar and the
+   message box float over the messages, folders are chips, buttons are soft squircles.
+   The signature: your messages in an aqua to blue gradient (WhatsApp's green-teal meeting
+   Telegram's blue), with Viber's violet glowing in the backdrop.
+   ===================================================================== */
+html[data-theme='aura'] {
+  --bg: #070b1a; --panel: rgba(16, 22, 42, .55);
+  --glass: rgba(255, 255, 255, .08); --glass-2: rgba(255, 255, 255, .16);
+  --edge: rgba(255, 255, 255, .14);
+  --text: #f5f7ff; --muted: rgba(225, 232, 255, .64);
+  --accent: #4c8dff; --accent-2: #7cc0ff; --accent-ink: #ffffff;
+  --mine: #3b6ff5; --theirs: rgba(255, 255, 255, .1);
+  --grad: linear-gradient(135deg, #1fb6e8 0%, #3b6ff5 100%);
+  --grad-wide: linear-gradient(135deg, #22d3ee 0%, #3b82f6 50%, #8b5cf6 100%);
+  --glow: 0 8px 22px rgba(59, 111, 245, .38);
+  --danger: #ff6b81; --ok: #34d399;
+  --blur: blur(30px) saturate(185%);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 24px 60px rgba(0, 0, 0, .35);
+  --float: rgba(18, 24, 46, .6);
+  color-scheme: dark;
+}
+html[data-theme='aura'][data-mode='light'] {
+  --bg: #f3f6ff; --panel: rgba(255, 255, 255, .5);
+  --glass: rgba(255, 255, 255, .55); --glass-2: rgba(255, 255, 255, .88);
+  --edge: rgba(255, 255, 255, .75);
+  --text: #0f172a; --muted: rgba(15, 23, 42, .56);
+  --accent: #2f6bff; --accent-2: #2563eb; --accent-ink: #ffffff;
+  --theirs: rgba(255, 255, 255, .82);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, .95), 0 16px 40px rgba(40, 60, 140, .14);
+  --float: rgba(255, 255, 255, .62);
+  color-scheme: light;
+}
+html[data-theme='aura'] body {
+  background:
+    radial-gradient(760px 560px at 12% 16%, rgba(37, 99, 235, .55) 0%, transparent 62%),
+    radial-gradient(640px 520px at 88% 12%, rgba(124, 58, 237, .5) 0%, transparent 62%),
+    radial-gradient(700px 560px at 86% 88%, rgba(6, 182, 212, .42) 0%, transparent 62%),
+    radial-gradient(560px 460px at 8% 92%, rgba(16, 185, 129, .3) 0%, transparent 62%),
+    #070b1a;
+  background-attachment: fixed;
+}
+html[data-theme='aura'][data-mode='light'] body {
+  background:
+    radial-gradient(760px 560px at 12% 16%, rgba(165, 243, 252, .85) 0%, transparent 62%),
+    radial-gradient(640px 520px at 88% 12%, rgba(196, 181, 253, .75) 0%, transparent 62%),
+    radial-gradient(700px 560px at 86% 88%, rgba(147, 197, 253, .8) 0%, transparent 62%),
+    radial-gradient(560px 460px at 8% 92%, rgba(187, 247, 208, .7) 0%, transparent 62%),
+    #f3f6ff;
+  background-attachment: fixed;
+}
+html[data-theme='aura'] body::before {
+  background:
+    radial-gradient(520px 400px at 30% 30%, rgba(59, 130, 246, .3) 0%, transparent 62%),
+    radial-gradient(480px 380px at 72% 68%, rgba(139, 92, 246, .26) 0%, transparent 62%),
+    radial-gradient(420px 340px at 60% 20%, rgba(34, 211, 238, .2) 0%, transparent 60%);
+}
+html[data-theme='aura'][data-mode='light'] body::before {
+  background:
+    radial-gradient(520px 400px at 30% 30%, rgba(125, 211, 252, .45) 0%, transparent 62%),
+    radial-gradient(480px 380px at 72% 68%, rgba(216, 180, 254, .4) 0%, transparent 62%),
+    radial-gradient(420px 340px at 60% 20%, rgba(134, 239, 172, .3) 0%, transparent 60%);
+}
+
+/* floating liquid-glass panels */
+html[data-theme='aura'] .app { padding: 16px; gap: 16px; }
+html[data-theme='aura'] .side-grip { left: calc(16px + var(--side-w, 370px)); top: 16px; bottom: 16px; width: 16px; }
+html[data-theme='aura'] :is(.side, .main) { border-radius: 32px; background: var(--panel); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+html[data-theme='aura'] .main { background: rgba(255, 255, 255, .03); }
+html[data-theme='aura'][data-mode='light'] .main { background: rgba(255, 255, 255, .28); }
+html[data-theme='aura'] .side { padding: 16px 14px 14px; }
+html[data-theme='aura'] .side-brand { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+html[data-theme='aura'] .side-brand b { background: var(--grad-wide); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* soft squircle buttons, quiet labels (no shouting capitals) */
+html[data-theme='aura'] .round { width: 42px; height: 42px; border-radius: 15px; background: var(--glass); border-color: var(--edge); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); }
+html[data-theme='aura'] .round:hover, html[data-theme='aura'] .round.on { background: var(--glass-2); }
+html[data-theme='aura'] :is(.btn, .pill-btn) { border-radius: 15px; text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; background: var(--glass); border-color: var(--edge); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); }
+html[data-theme='aura'] :is(.btn, .pill-btn):hover { background: var(--glass-2); }
+html[data-theme='aura'] .btn-main, html[data-theme='aura'] .send.ready { background: var(--grad); color: #fff; border-color: transparent; box-shadow: var(--glow); }
+html[data-theme='aura'] .btn-main:hover { background: var(--grad); filter: brightness(1.08); }
+html[data-theme='aura'] :is(.input, .search) { border-radius: 16px; background: var(--glass); border-color: var(--edge); }
+html[data-theme='aura'] textarea.input { border-radius: 18px; }
+html[data-theme='aura'] .input:focus { border-color: rgba(76, 141, 255, .6); box-shadow: 0 0 0 4px rgba(76, 141, 255, .15); }
+html[data-theme='aura'] .seg { border-radius: 16px; background: var(--glass); border: 1px solid var(--edge); }
+html[data-theme='aura'] .seg button { border-radius: 12px; }
+html[data-theme='aura'] .lens::before { border-radius: 12px; background: var(--grad); box-shadow: var(--glow); }
+html[data-theme='aura'] .lens.lens-on > .on { color: #fff; }
+html[data-theme='aura'] .switch input:checked + span { background: var(--grad); }
+html[data-theme='aura'] .link { color: var(--accent-2); }
+
+/* folders as chips with a gradient lens */
+html[data-theme='aura'] .tabs { gap: 6px; padding: 0; background: none; border: 0; border-radius: 0; overflow-x: auto; scrollbar-width: none; }
+html[data-theme='aura'] .tabs::-webkit-scrollbar { display: none; }
+html[data-theme='aura'] .tabs button { flex: none; height: 34px; padding: 0 14px; border-radius: 12px; background: var(--glass); border: 1px solid var(--edge); text-transform: none; letter-spacing: 0; font-size: 13.5px; font-weight: 600; }
+html[data-theme='aura'] .tabs small { background: var(--accent); color: #fff; }
+html[data-theme='aura'] .tabs .on small { background: #fff; color: var(--accent); }
+html[data-theme='aura'] .rooms-area.left .tabs button { height: auto; border-radius: 14px; }
+
+/* the dock: a floating glass bar, the chosen icon tinted */
+html[data-theme='aura'] .foot { padding: 6px; border-radius: 24px; background: var(--glass); border: 1px solid var(--edge); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 10px 30px rgba(0, 0, 0, .18); }
+html[data-theme='aura'] .foot button { border-radius: 18px; font-size: 11px; }
+html[data-theme='aura'] .foot.lens::before { border-radius: 18px; background: rgba(76, 141, 255, .2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2); }
+html[data-theme='aura'] .foot.lens.lens-on > .on { color: var(--accent-2); }
+html[data-theme='aura'] .foot-ico i { background: var(--grad); color: #fff; }
+
+/* chats: soft tiles, colourful initials, gradient counts */
+html[data-theme='aura'] .room { border-radius: 20px; padding: 10px; }
+html[data-theme='aura'] .room:hover { background: var(--glass); }
+html[data-theme='aura'] .room.on, html[data-theme='aura'] .room.menu-on, html[data-theme='aura'][data-mode='light'] .room.on { background: var(--glass-2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 8px 22px rgba(0, 0, 0, .14); }
+html[data-theme='aura'] .av { background: linear-gradient(135deg, #60a5fa, #a78bfa); color: #fff; }
+html[data-theme='aura'] .av-group { background: linear-gradient(135deg, #22d3ee, #3b82f6); }
+html[data-theme='aura'] .av-on { border-color: transparent; box-shadow: 0 0 0 2px rgba(10, 16, 32, .8); }
+html[data-theme='aura'][data-mode='light'] .av-on { box-shadow: 0 0 0 2px #fff; }
+html[data-theme='aura'] .badge { background: var(--grad); color: #fff; box-shadow: 0 4px 10px rgba(59, 111, 245, .35); }
+html[data-theme='aura'] .badge.quiet { background: var(--glass-2); color: var(--muted); box-shadow: none; }
+html[data-theme='aura'] .room-tags span { border-radius: 8px; text-transform: none; letter-spacing: 0; font-size: 11px; }
+
+/* a conversation: the top bar and the message box float over the messages */
+html[data-theme='aura'] .room-view { position: relative; }
+html[data-theme='aura'] .room-head { position: absolute; z-index: 6; top: 12px; left: 12px; right: 12px; padding: 8px; border-radius: 26px; background: var(--float); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+html[data-theme='aura'] .head-card { height: 44px; padding: 0 12px 0 2px; background: none; border: 0; }
+html[data-theme='aura'] .head-text strong { font-size: 16px; font-weight: 700; }
+html[data-theme='aura'] .scroll { padding: 92px 22px 104px; }
+html[data-theme='aura'] :is(.pinbar, .findbar) { position: absolute; z-index: 5; top: 84px; left: 22px; right: 22px; margin: 0; border-radius: 18px; background: var(--float); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 10px 26px rgba(0, 0, 0, .2); }
+html[data-theme='aura'] .room-view:has(.pinbar, .findbar) .scroll { padding-top: 146px; }
+html[data-theme='aura'] .compose-wrap { position: absolute; z-index: 6; left: 12px; right: 12px; bottom: 12px; padding: 8px; border-radius: 28px; background: var(--float); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+html[data-theme='aura'] .compose textarea { border-radius: 20px; background: rgba(255, 255, 255, .06); border-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='aura'][data-mode='light'] .compose textarea { background: rgba(255, 255, 255, .6); }
+html[data-theme='aura'] .compose .round { border-radius: 50%; }
+html[data-theme='aura'] .compose-ref { border-radius: 16px; }
+html[data-theme='aura'] .day span { border-radius: 12px; background: var(--float); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }
+
+/* bubbles: frosted for others, the gradient for yours */
+html[data-theme='aura'] .bubble { border-radius: 22px; background: var(--theirs); border: 1px solid var(--edge); box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
+html[data-theme='aura'] .msg.mine .bubble { background: var(--grad); border-color: transparent; color: #fff; box-shadow: 0 6px 18px rgba(59, 111, 245, .28); }
+html[data-theme='aura'] .msg.first:not(.mine) .bubble { border-bottom-left-radius: 8px; }
+html[data-theme='aura'] .msg.first.mine .bubble { border-bottom-right-radius: 8px; }
+html[data-theme='aura'] .bubble.big-emoji, html[data-theme='aura'] .msg.mine .bubble.big-emoji { background: none; border: 0; box-shadow: none; }
+html[data-theme='aura'] .msg.mine .quote { background: rgba(255, 255, 255, .18); border-left-color: #fff; }
+html[data-theme='aura'] .msg.mine .quote b { color: #fff; }
+html[data-theme='aura'] .rx button { border-radius: 12px; }
+html[data-theme='aura'] .rx button.on { background: var(--grad); color: #fff; border-color: transparent; }
+
+/* anything that floats: strong liquid glass */
+html[data-theme='aura'] :is(.menu, .menu-list, .emoji-pick, .rx-pick, .mention-pick, .toast) { border-radius: 22px; background: var(--float); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+html[data-theme='aura'][data-mode='light'] :is(.menu, .menu-list, .emoji-pick, .rx-pick, .mention-pick, .toast) { background: rgba(255, 255, 255, .78); }
+html[data-theme='aura'] :is(.menu, .menu-list) button { border-radius: 14px; }
+html[data-theme='aura'] .modal { border-radius: 30px; background: var(--float); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+html[data-theme='aura'][data-mode='light'] .modal { background: rgba(255, 255, 255, .82); }
+html[data-theme='aura'] .modal-back { background: rgba(6, 10, 24, .35); }
+html[data-theme='aura'] .auth-card { border-radius: 32px; }
+
+/* settings: grouped glass lists, iOS-style icons, the chosen page in the gradient */
+html[data-theme='aura'] .set-box { border-radius: 22px; background: var(--glass); border-color: var(--edge); }
+html[data-theme='aura'] .set-me { border-radius: 24px; }
+html[data-theme='aura'] .set-box > button.set-row:first-child { border-radius: 21px 21px 0 0; }
+html[data-theme='aura'] .set-box > button.set-row:last-child { border-radius: 0 0 21px 21px; }
+html[data-theme='aura'] .set-box > button.set-row:only-child { border-radius: 21px; }
+html[data-theme='aura'] .nav-ico { border-radius: 10px; }
+html[data-theme='aura'] .set-nav.on { background: var(--grad); color: #fff; }
+html[data-theme='aura'] .set-tick { background: var(--grad); }
+html[data-theme='aura'] .set-preview { border-radius: 21px 21px 0 0; }
+html[data-theme='aura'] .set-preview .pv { border-radius: 18px; }
+html[data-theme='aura'] .set-preview .pv.mine { background: var(--grad); }
+html[data-theme='aura'] .wall-b.mine { background: var(--grad); }
+html[data-theme='aura'] :is(.wall-tile, .theme-sw, .tv-pic) { border-radius: 16px; }
+html[data-theme='aura'] .new-call-ico { background: var(--grad); color: #fff; }
+
+@media (max-width: 760px) {
+  html[data-theme='aura'] .app { padding: 8px; }
+  html[data-theme='aura'] :is(.side, .main) { border-radius: 26px; }
+  html[data-theme='aura'] .room-head { top: 8px; left: 8px; right: 8px; }
+  html[data-theme='aura'] .compose-wrap { left: 8px; right: 8px; bottom: 8px; }
+  html[data-theme='aura'] .scroll { padding: 80px 12px 96px; }
+}
+@media (max-width: 760px) {
+  html[data-theme='aura'] .room-head { gap: 6px; padding: 6px; }
+  html[data-theme='aura'] .room-head .round { width: 36px; height: 36px; border-radius: 12px; }
+  html[data-theme='aura'] .head-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}

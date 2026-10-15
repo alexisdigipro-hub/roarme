@@ -9,8 +9,9 @@ export default function App() {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(undefined)
   const [recovering, setRecovering] = useState(false)
-  const { mode } = usePrefs()
+  const { mode, lite } = usePrefs()
   useEffect(() => applyMode(mode), [mode])
+  useEffect(() => { if (lite) document.documentElement.dataset.lite = '1'; else delete document.documentElement.dataset.lite }, [lite])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session || null))

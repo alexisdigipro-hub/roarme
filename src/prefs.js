@@ -13,7 +13,10 @@ export const DEFAULTS = {
   largePhotos: false,
   compress: true,
   quick: '🎥',
-  doubleTap: 'react', // react | reply
+  doubleTap: 'react', // react | reply | edit | forward
+  autoEmoji: true,
+  callsTab: true,
+  lite: false, // power saving: no animations, no glass blur
   sound: true,
   folderTags: false,
   background: 'soft', // soft | dots
@@ -82,6 +85,11 @@ export const isEmojiOnly = (s) => {
   const re = /^(?:\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic}|\p{Emoji_Modifier})*\s*){1,3}$/u
   return re.test(t)
 }
+
+/* :) and friends become emoji when the message is sent (only as words on their own, never inside a link) */
+const SMILEYS = { ':)': '🙂', ':-)': '🙂', ':D': '😀', ':-D': '😀', 'xD': '😆', 'XD': '😆', ':(': '🙁', ':-(': '🙁', ";)": '😉', ";-)": '😉', ':P': '😛', ':p': '😛', ':o': '😮', ':O': '😮', ":'(": '😢', ':*': '😘', '<3': '❤️', 'B)': '😎', '(y)': '👍', '(n)': '👎' }
+const SMILEY_RE = new RegExp(`(^|\\s)(${Object.keys(SMILEYS).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})(?=\\s|$)`, 'g')
+export const swapEmoji = (s) => String(s || '').replace(SMILEY_RE, (_, pre, k) => pre + SMILEYS[k])
 
 export const EMOJIS = ['😀', '😂', '🥹', '😍', '😘', '😎', '🤩', '🥳', '😉', '😊', '🙂', '🤔', '😮', '😢', '😭', '😡', '🙏', '👍', '👎', '👏', '🙌', '💪', '🤝', '✌️', '👌', '👀', '🔥', '❤️', '💙', '💯', '✨', '🎉', '🎬', '🎥', '📸', '🎧', '🎤', '🎶', '🏆', '⭐', '☕', '🍕', '🍻', '🚀', '✅', '❌', '⏰', '📍']
 export const REACTIONS = ['🎥', '❤️', '👍', '🔥', '🏆', '👏', '😂']

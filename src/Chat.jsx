@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, I, Modal, OnTop, colorOf, svg } from './ui.jsx'
-import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, useLocal, usePrefs } from './prefs.js'
+import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
 import { AttachSheet, AudioNote, MusicTile, isAudioFile, ChatSettings, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile } from './extras.jsx'
 
@@ -411,7 +411,7 @@ export default function Chat({ me, setMe }) {
             </div>
           </>
         )}
-        {tab === 'calls' && (
+        {tab === 'calls' && prefs.callsTab && (
           <div className="side-scroll">
             <div className="soon-note">{I.calls}<span>Voice and video calls are coming soon. The list of your calls will be here.</span></div>
             <div className="hits-head">Recent</div>
@@ -444,7 +444,7 @@ export default function Chat({ me, setMe }) {
         ) : (
           <nav className="foot">
             <button type="button" className={tab === 'chats' ? 'on' : ''} onClick={() => setTab('chats')}><span className="foot-ico">{I.chats}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Chats</span></button>
-            <button type="button" className={tab === 'calls' ? 'on' : ''} onClick={() => setTab('calls')}>{I.calls}<span>Calls</span></button>
+            {prefs.callsTab && <button type="button" className={tab === 'calls' ? 'on' : ''} onClick={() => setTab('calls')}>{I.calls}<span>Calls</span></button>}
             <button type="button" className={tab === 'settings' ? 'on' : ''} onClick={() => setTab('settings')}>{I.gear}<span>Settings</span></button>
           </nav>
         )}
@@ -709,7 +709,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   }
 
   const send = async () => {
-    const body = text.trim()
+    const body = prefs.autoEmoji ? swapEmoji(text.trim()) : text.trim()
     if (!body) return
     setErr('')
     if (editing) {
@@ -883,7 +883,10 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   }
   const onDouble = (m) => {
     if (m.deleted_at || picked) return
-    if (prefs.doubleTap === 'reply') setReplyTo(m)
+    const how = prefs.doubleTap
+    if (how === 'edit' && m.user_id === me.id && m.kind === 'text') { setReplyTo(null); setEditing(m); setText(m.body) }
+    else if (how === 'forward') setForward([m])
+    else if (how === 'reply' || how === 'edit') setReplyTo(m)
     else react(m, prefs.quick)
   }
 

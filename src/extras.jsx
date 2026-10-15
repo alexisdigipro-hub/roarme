@@ -260,15 +260,21 @@ export function ChatSettings() {
       </div>
       <h4>General</h4>
       <div className="set-box">
-        <Switch on={p.enterSends} set={(v) => setPrefs({ enterSends: v })} hint={p.enterSends ? 'Shift+Enter for a new line' : 'Cmd/Ctrl+Enter sends'}>Enter sends the message</Switch>
+        <div className="set-row set-col">
+          <span className="set-text">Send with<small>{p.enterSends ? 'Shift+Enter for a new line' : 'Enter for a new line'}</small></span>
+          <span className="seg">{[[true, 'Enter'], [false, '⌘ / Ctrl + Enter']].map(([k, l]) => <button key={l} type="button" className={p.enterSends === k ? 'on' : ''} onClick={() => setPrefs({ enterSends: k })}>{l}</button>)}</span>
+        </div>
         <Switch on={p.spell} set={(v) => setPrefs({ spell: v })}>Check spelling while typing</Switch>
+        <Switch on={p.autoEmoji} set={(v) => setPrefs({ autoEmoji: v })} hint=":) becomes 🙂 and <3 becomes ❤️ when you send">Replace emoji automatically</Switch>
         <Switch on={p.faces} set={(v) => setPrefs({ faces: v })}>Faces next to messages in groups</Switch>
         <Switch on={p.largePhotos} set={(v) => setPrefs({ largePhotos: v })} hint="2560 px instead of 1600 px">Send large photos</Switch>
+        <Switch on={p.callsTab} set={(v) => setPrefs({ callsTab: v })}>Show the Calls tab</Switch>
+        <Switch on={p.lite} set={(v) => setPrefs({ lite: v })} hint="No animations and no glass blur, easier on the battery">Power saving</Switch>
       </div>
       <h4>Reactions</h4>
       <div className="set-box">
         <div className="set-row set-col"><span className="set-text">Quick reaction</span><span className="seg seg-emoji">{REACTIONS.map((e) => <button key={e} type="button" className={p.quick === e ? 'on' : ''} onClick={() => setPrefs({ quick: e })}>{e}</button>)}</span></div>
-        <div className="set-row set-col"><span className="set-text">Double click on a message</span><span className="seg">{[['react', 'Quick reaction'], ['reply', 'Reply']].map(([k, l]) => <button key={k} type="button" className={p.doubleTap === k ? 'on' : ''} onClick={() => setPrefs({ doubleTap: k })}>{l}</button>)}</span></div>
+        <div className="set-row set-col"><span className="set-text">Double click on a message{p.doubleTap === 'edit' && <small>On someone else's message it replies</small>}</span><span className="seg">{[['react', 'React'], ['reply', 'Reply'], ['edit', 'Edit'], ['forward', 'Forward']].map(([k, l]) => <button key={k} type="button" className={p.doubleTap === k ? 'on' : ''} onClick={() => setPrefs({ doubleTap: k })}>{l}</button>)}</span></div>
       </div>
       <h4>Notifications and sounds</h4>
       <div className="set-box">
@@ -279,11 +285,21 @@ export function ChatSettings() {
           <span className="switch"><input type="checkbox" checked={p.sound} onChange={(e) => setPrefs({ sound: e.target.checked })} /><span /></span>
         </div>
       </div>
+      <h4>Calls</h4>
+      <div className="set-box">
+        <div className="set-row is-off"><span className="set-text">Microphone, speakers and camera<small>Coming soon</small></span>{I.right}</div>
+        <div className="set-row is-off"><span className="set-text">Who can call you<small>Coming soon</small></span>{I.right}</div>
+      </div>
+      <h4>Desktop app</h4>
+      <div className="set-box">
+        <div className="set-row is-off"><span className="set-text">Icon in the menu bar<small>Comes with the desktop app</small></span><span className="switch"><input type="checkbox" disabled /><span /></span></div>
+        <div className="set-row is-off"><span className="set-text">Open when the computer starts<small>Comes with the desktop app</small></span><span className="switch"><input type="checkbox" disabled /><span /></span></div>
+      </div>
       <h4>Chat folders</h4>
       <div className="set-box"><Switch on={p.folderTags} set={(v) => setPrefs({ folderTags: v })} hint="Your folders under each chat in the list">Show folder tags</Switch></div>
       <h4>Keyboard shortcuts</h4>
       <div className="set-box keys">
-        {[['⌘K / Ctrl+K', 'Search chats'], ['Enter', p.enterSends ? 'Send' : 'New line'], ['Shift+Enter', 'New line'], ['↑', 'Edit your last message'], ['Esc', 'Cancel, close'], ['Right click', 'Message menu'], ['Double click', p.doubleTap === 'reply' ? 'Reply' : 'Quick reaction']].map(([k, v]) => <div key={k} className="set-row"><span className="set-text">{v}</span><kbd>{k}</kbd></div>)}
+        {[['⌘K / Ctrl+K', 'Search chats'], ['Enter', p.enterSends ? 'Send' : 'New line'], ['Shift+Enter', 'New line'], ['↑', 'Edit your last message'], ['Esc', 'Cancel, close'], ['Right click', 'Message menu'], ['Double click', { react: 'Quick reaction', reply: 'Reply', edit: 'Edit', forward: 'Forward' }[p.doubleTap] || 'Quick reaction'], ['Right click on a chat', 'Chat menu']].map(([k, v]) => <div key={k} className="set-row"><span className="set-text">{v}</span><kbd>{k}</kbd></div>)}
       </div>
       <button type="button" className="btn set-reset" onClick={() => setPrefs(null)} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>
     </div>

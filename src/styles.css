@@ -676,3 +676,7 @@ html[data-mode='light'] .msg.mine .music-bar { background: rgba(255, 255, 255, .
 .peek-msg small { align-self: flex-end; color: var(--muted); font-size: 11px; }
 html[data-mode='light'] .peek-msg { background: rgba(16, 32, 58, .06); }
 html[data-mode='light'] .room.menu-on { background: rgba(255, 255, 255, .95); }
+
+/* Power saving: no motion, no glass blur */
+html[data-lite] *, html[data-lite] *::before, html[data-lite] *::after { animation: none !important; transition: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.set-row.is-off > svg { margin-left: auto; width: 16px; height: 16px; color: var(--muted); }

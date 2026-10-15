@@ -223,7 +223,7 @@ export default function Chat({ me, setMe }) {
 
   const preview = (r) => {
     if (!r.last_kind) return r.kind === 'group' ? 'Group created' : 'Say hi'
-    if (r.last_deleted) return 'Message deleted'
+    if (r.last_deleted) return ''
     const who = r.last_user === me.id ? 'You: ' : r.kind === 'group' && people[r.last_user] ? `${nameOf(people[r.last_user]).split(' ')[0]}: ` : ''
     const what = r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : r.last_body
     return who + what
@@ -781,7 +781,10 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   }
 
   const sub = room.kind === 'group' ? `${(room.members || []).length} members` : [other ? `@${other.username}` : '', lastSeenText(other)].filter(Boolean).join(' · ')
-  const pinned = room.pinned_message_id ? byId[room.pinned_message_id] || { id: room.pinned_message_id, body: 'Pinned message', kind: 'text' } : null
+  const pinnedRaw = room.pinned_message_id ? byId[room.pinned_message_id] || { id: room.pinned_message_id, body: 'Pinned message', kind: 'text' } : null
+  const pinned = pinnedRaw?.deleted_at ? null : pinnedRaw
+  // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
+  const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at), [msgs])
   const pickedMsgs = picked ? msgs.filter((m) => picked.includes(m.id)) : []
   const soon = (what) => toast(`${what} are coming soon`)
   const mute = async () => {
@@ -853,9 +856,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       )}
 
       <div className={`scroll${picked ? ' picking' : ''}`} ref={scrollRef} onScroll={onScroll}>
-        {!msgs.length && <p className="empty">{room.kind === 'group' ? 'No messages yet.' : `No messages with ${title} yet. Say hi.`}</p>}
-        {msgs.map((m, i) => {
-          const prev = msgs[i - 1]
+        {!shownMsgs.length && <p className="empty">{room.kind === 'group' ? 'No messages yet.' : `No messages with ${title} yet. Say hi.`}</p>}
+        {shownMsgs.map((m, i) => {
+          const prev = shownMsgs[i - 1]
           const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
           const mine = m.user_id === me.id
           const first = newDay || !prev || prev.user_id !== m.user_id || new Date(m.created_at) - new Date(prev.created_at) > 5 * 60 * 1000
@@ -879,7 +882,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                 <div className="bubble-col">
                   <div className={`bubble${(m.kind === 'image' || isVideo) && !m.deleted_at ? ' pic' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
-                    {quoted && <span className="quote" onClick={(e) => { e.stopPropagation(); goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
+                    {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
                     {m.deleted_at ? <i>Message deleted</i>
                       : m.kind === 'image' ? <Pic file={m.file} onOpen={() => openPhoto(m)} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />

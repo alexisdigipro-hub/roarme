@@ -534,3 +534,77 @@ button.pf-row:hover, a.pf-row:hover { background: rgba(255, 255, 255, .05); }
   .app:not(:has(.room-view)) .main { display: none; }
   .back { display: grid; }
 }
+
+/* ---------- light mode (Alex, 16 Oct: "keep the theme, just add a light mode") ----------
+   the same glass, tiles and buttons on a pale backdrop; your messages in blue, the others' in white */
+html[data-mode='light'] {
+  --bg: #eef2f7; --panel: #ffffff; --glass: rgba(255, 255, 255, .58); --glass-2: rgba(255, 255, 255, .92);
+  --edge: rgba(16, 32, 58, .1); --text: #101a28; --muted: rgba(30, 45, 65, .56);
+  --accent: #2b7de0; --accent-2: #2b7de0; --accent-ink: #ffffff; --mine: #3b8ef0; --theirs: rgba(255, 255, 255, .95);
+  --danger: #e04848; --ok: #22b36b;
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 10px 30px rgba(30, 50, 90, .1);
+  color-scheme: light;
+}
+html[data-mode='light'] body {
+  background:
+    radial-gradient(900px 600px at 10% 12%, rgba(120, 170, 240, .35) 0%, transparent 60%),
+    radial-gradient(800px 640px at 92% 85%, rgba(90, 200, 200, .28) 0%, transparent 62%),
+    radial-gradient(700px 520px at 75% 8%, rgba(170, 150, 240, .22) 0%, transparent 60%),
+    linear-gradient(160deg, #f4f7fb 0%, #eaf0f7 55%, #eef4f6 100%);
+  background-attachment: fixed;
+}
+html[data-mode='light'] :is(.auth-card, .side, .main) { background: rgba(255, 255, 255, .55); }
+html[data-mode='light'] :is(.menu, .msg-acts, .rx-pick, .menu-list, .mention-pick, .emoji-pick, .toast) { background: rgba(255, 255, 255, .96); box-shadow: 0 18px 50px rgba(30, 50, 90, .18); }
+html[data-mode='light'] .modal { background: rgba(255, 255, 255, .94); box-shadow: 0 30px 80px rgba(30, 50, 90, .25); }
+html[data-mode='light'] .modal-back { background: rgba(20, 30, 50, .25); }
+html[data-mode='light'] .scrim.blur { background: rgba(20, 30, 50, .12); }
+html[data-mode='light'] :is(.room:hover, .person:hover, button.pf-row:hover, a.pf-row:hover, .scroll.picking .msg:hover) { background: rgba(16, 32, 58, .05); }
+html[data-mode='light'] .room.on { background: rgba(255, 255, 255, .95); box-shadow: 0 2px 10px rgba(30, 50, 90, .08); }
+html[data-mode='light'] .bubble { color: var(--text); box-shadow: 0 1px 2px rgba(30, 50, 90, .08); }
+html[data-mode='light'] .msg.mine .bubble { color: #fff; }
+html[data-mode='light'] .bubble .meta { color: rgba(16, 32, 58, .48); }
+html[data-mode='light'] .msg.mine .bubble .meta, html[data-mode='light'] .msg.mine .ticks { color: rgba(255, 255, 255, .78); }
+html[data-mode='light'] .msg.mine .ticks.seen { color: #fff; }
+html[data-mode='light'] .quote { background: rgba(16, 32, 58, .06); }
+html[data-mode='light'] .quote span { color: rgba(16, 32, 58, .7); }
+html[data-mode='light'] .msg.mine .quote { background: rgba(255, 255, 255, .18); border-left-color: #fff; }
+html[data-mode='light'] .msg.mine .quote b, html[data-mode='light'] .msg.mine .quote span { color: #fff; }
+html[data-mode='light'] .day span { background: rgba(255, 255, 255, .75); }
+html[data-mode='light'] .file-ico { background: rgba(43, 125, 224, .12); color: var(--accent); }
+html[data-mode='light'] .msg.mine .file-ico { background: rgba(255, 255, 255, .22); color: #fff; }
+html[data-mode='light'] .file-text small { color: var(--muted); }
+html[data-mode='light'] .msg.mine .file-text small { color: rgba(255, 255, 255, .78); }
+html[data-mode='light'] .mention, html[data-mode='light'] .msg-link { color: var(--accent); }
+html[data-mode='light'] .msg-link { text-decoration-color: rgba(43, 125, 224, .4); }
+html[data-mode='light'] .voice-btn { background: rgba(43, 125, 224, .14); color: var(--accent); }
+html[data-mode='light'] .voice-bar { background: rgba(16, 32, 58, .14); }
+html[data-mode='light'] .voice-bar i { background: var(--accent); }
+html[data-mode='light'] .voice small { color: var(--muted); }
+html[data-mode='light'] .msg.mine .voice-btn { background: rgba(255, 255, 255, .25); color: #fff; }
+html[data-mode='light'] .msg.mine .voice-bar { background: rgba(255, 255, 255, .3); }
+html[data-mode='light'] .msg.mine .voice-bar i { background: #fff; }
+html[data-mode='light'] .msg.mine .voice small { color: rgba(255, 255, 255, .8); }
+html[data-mode='light'] .badge.quiet { background: rgba(16, 32, 58, .12); }
+html[data-mode='light'] .av { background: linear-gradient(135deg, #e3eaf3, #cbd7e6); color: #34475f; }
+html[data-mode='light'] .av-group { background: linear-gradient(135deg, #d3e4f8, #a9c6ea); color: #1f3d63; }
+html[data-mode='light'] .av-on, html[data-mode='light'] .menu-faces .av { border-color: #fff; }
+html[data-mode='light'] .auth-err, html[data-mode='light'] .bar-err { color: #c0392b; }
+html[data-mode='light'] .auth-note { color: #1e7a46; }
+html[data-mode='light'] .chip { background: rgba(43, 125, 224, .12); color: #1f4f86; }
+html[data-mode='light'] .chip.off { background: rgba(16, 32, 58, .06); color: var(--muted); }
+html[data-mode='light'] .chip.on { background: rgba(43, 125, 224, .16); color: #1f4f86; }
+html[data-mode='light'] .switch span { background: rgba(16, 32, 58, .18); }
+html[data-mode='light'] .seg { background: rgba(16, 32, 58, .06); }
+html[data-mode='light'] .keys kbd { background: rgba(16, 32, 58, .06); }
+html[data-mode='light'] :is(.pic-wait, .pf-thumb, .media-thumb) { background: rgba(16, 32, 58, .06); }
+html[data-mode='light'] .rx button.on { background: rgba(43, 125, 224, .14); border-color: rgba(43, 125, 224, .4); }
+html[data-mode='light'] .rx-pick button.on { background: rgba(43, 125, 224, .18); }
+html[data-mode='light'] .side-grip::after { background: rgba(16, 32, 58, .2); }
+html[data-mode='light'] .compose-ref-text span { color: var(--text); }
+html[data-mode='light'] .bubble.big-emoji .meta { background: rgba(16, 32, 58, .3); color: #fff; }
+html[data-mode='light'] .room-tags span, html[data-mode='light'] .pinbar-main b, html[data-mode='light'] .pf-field small, html[data-mode='light'] .pf-field i { color: var(--accent); }
+html[data-mode='light'] .theme-dot { background: linear-gradient(135deg, #3b8ef0, #f4f7fb 60%, #5ac8c8); }
+html[data-mode='light'] ::-webkit-scrollbar-thumb { background: rgba(16, 32, 58, .18); background-clip: padding-box; }
+html[data-mode='light'] .msg.flash .bubble { animation-name: flash-l; }
+@keyframes flash-l { 0%, 40% { box-shadow: 0 0 0 3px rgba(43, 125, 224, .55); } 100% { box-shadow: 0 0 0 0 rgba(43, 125, 224, 0); } }
+html[data-mode='light'] .menu-seen .ticks.seen { color: var(--accent); }

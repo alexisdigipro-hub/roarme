@@ -195,7 +195,11 @@ export function ChatSettings() {
     <div className="chat-settings">
       <h4>Appearance</h4>
       <div className="set-box">
-        <div className="set-row"><span className="set-text">Chat colours<small>Glass dark. More colours are coming soon.</small></span><span className="theme-dot" /></div>
+        <div className="set-row set-col">
+          <span className="set-text">Mode</span>
+          <span className="seg">{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={() => setPrefs({ mode: k })}>{l}</button>)}</span>
+        </div>
+        <div className="set-row"><span className="set-text">Chat colours<small>Glass. More colours are coming soon.</small></span><span className="theme-dot" /></div>
         <div className="set-row set-col">
           <span className="set-text">Background</span>
           <span className="seg">{[['soft', 'Plain'], ['dots', 'Pattern']].map(([k, l]) => <button key={k} type="button" className={p.background === k ? 'on' : ''} onClick={() => setPrefs({ background: k })}>{l}</button>)}</span>

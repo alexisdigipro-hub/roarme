@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 /* Chat settings, kept on this device (as in the THEMADLIONS chat): how the chat looks and behaves.
    A change is announced with the 'roarme-prefs' event so every open part of the app follows it. */
 export const DEFAULTS = {
+  mode: 'dark', // dark | light | auto (follows the computer)
   textSize: 2, // 0..4
   bigEmoji: true,
   compact: false,
@@ -84,3 +85,13 @@ export const isEmojiOnly = (s) => {
 
 export const EMOJIS = ['😀', '😂', '🥹', '😍', '😘', '😎', '🤩', '🥳', '😉', '😊', '🙂', '🤔', '😮', '😢', '😭', '😡', '🙏', '👍', '👎', '👏', '🙌', '💪', '🤝', '✌️', '👌', '👀', '🔥', '❤️', '💙', '💯', '✨', '🎉', '🎬', '🎥', '📸', '🎧', '🎤', '🎶', '🏆', '⭐', '☕', '🍕', '🍻', '🚀', '✅', '❌', '⏰', '📍']
 export const REACTIONS = ['🎥', '❤️', '👍', '🔥', '🏆', '👏', '😂']
+
+/* dark or light on the page: 'auto' follows the computer's own setting */
+export function applyMode(mode) {
+  const mq = window.matchMedia?.('(prefers-color-scheme: light)')
+  const set = () => { document.documentElement.dataset.mode = mode === 'auto' ? (mq?.matches ? 'light' : 'dark') : mode }
+  set()
+  if (mode !== 'auto' || !mq) return () => {}
+  mq.addEventListener?.('change', set)
+  return () => mq.removeEventListener?.('change', set)
+}

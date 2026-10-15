@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib.js'
+import { applyMode, usePrefs } from './prefs.js'
 import { Auth, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 
@@ -8,6 +9,8 @@ export default function App() {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(undefined)
   const [recovering, setRecovering] = useState(false)
+  const { mode } = usePrefs()
+  useEffect(() => applyMode(mode), [mode])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session || null))

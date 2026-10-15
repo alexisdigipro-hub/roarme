@@ -90,6 +90,53 @@ export function AttachSheet({ initial = [], onClose, onSend }) {
   )
 }
 
+/* ---------- a song or any sound file (mp3, wav, m4a…): a small player in the message (Alex, 16 Oct) ---------- */
+export const AUDIO_EXT = /\.(mp3|wav|m4a|aac|ogg|oga|opus|flac|aif|aiff|weba)$/i
+export const isAudioFile = (f) => !!f && (/^audio\//.test(f.type || '') || AUDIO_EXT.test(f.name || ''))
+export function MusicTile({ file }) {
+  const [url, setUrl] = useState('')
+  const [playing, setPlaying] = useState(false)
+  const [at, setAt] = useState(0)
+  const [dur, setDur] = useState(0)
+  const [bad, setBad] = useState(false)
+  const a = useRef(null)
+  useEffect(() => { let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
+  // one sound at a time across the app
+  useEffect(() => {
+    const stop = (e) => { if (e.detail !== a.current && a.current && !a.current.paused) a.current.pause() }
+    window.addEventListener('roarme-play', stop)
+    return () => window.removeEventListener('roarme-play', stop)
+  }, [])
+  const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+  const title = (file?.name || 'Audio').replace(AUDIO_EXT, '')
+  const ext = ((file?.name || '').match(AUDIO_EXT) || [])[1]?.toUpperCase() || 'AUDIO'
+  const toggle = (e) => {
+    e.stopPropagation()
+    const el = a.current
+    if (!el) return
+    if (el.paused) { window.dispatchEvent(new CustomEvent('roarme-play', { detail: el })); el.play().catch(() => setBad(true)) } else el.pause()
+  }
+  const seek = (e) => {
+    e.stopPropagation()
+    const el = a.current
+    if (!el || !dur) return
+    const r = e.currentTarget.getBoundingClientRect()
+    el.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * dur
+  }
+  return (
+    <span className="music" onClick={(e) => e.stopPropagation()}>
+      <button type="button" className={`music-btn${playing ? ' on' : ''}`} disabled={!url || bad} onClick={toggle} aria-label={playing ? 'Pause' : 'Play'}>{playing ? I.pause : I.play}</button>
+      <span className="music-main">
+        <span className="music-top"><b title={file?.name}>{title}</b><small>{bad ? 'Cannot play here' : `${ext} · ${fmtBytes(file?.size)}`}</small></span>
+        <span className="music-bar" onClick={seek}><i style={{ width: `${dur ? Math.min(100, (at / dur) * 100) : 0}%` }} /></span>
+        <span className="music-time"><small>{mmss(at)}</small><small>{dur ? mmss(dur) : '–:––'}</small></span>
+      </span>
+      {url && <a className="music-dl" href={url} download={file?.name} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title="Download">{I.download}</a>}
+      {url && <audio ref={a} src={url} preload="metadata" onLoadedMetadata={(e) => setDur(e.currentTarget.duration || 0)} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setAt(0) }} onTimeUpdate={(e) => setAt(e.currentTarget.currentTime)} onError={() => setBad(true)} />}
+    </span>
+  )
+}
+
 /* ---------- a voice message ---------- */
 export function AudioNote({ file }) {
   const [url, setUrl] = useState('')

@@ -608,3 +608,24 @@ html[data-mode='light'] ::-webkit-scrollbar-thumb { background: rgba(16, 32, 58,
 html[data-mode='light'] .msg.flash .bubble { animation-name: flash-l; }
 @keyframes flash-l { 0%, 40% { box-shadow: 0 0 0 3px rgba(43, 125, 224, .55); } 100% { box-shadow: 0 0 0 0 rgba(43, 125, 224, 0); } }
 html[data-mode='light'] .menu-seen .ticks.seen { color: var(--accent); }
+
+/* ---------- a sound file in a message: a small player ---------- */
+.music { display: flex; align-items: center; gap: 12px; width: 340px; max-width: 100%; padding: 4px 2px; }
+.music-btn { flex: none; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(0, 0, 0, .2); transition: transform .12s; }
+.music-btn:active { transform: scale(.94); }
+.music-btn:disabled { opacity: .5; }
+.msg.mine .music-btn { background: #fff; color: var(--mine); }
+.music-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.music-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.music-top b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; }
+.music-top small { flex: none; font-size: 11px; opacity: .65; }
+.music-bar { position: relative; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .2); cursor: pointer; }
+.music-bar::before { content: ''; position: absolute; inset: -6px 0; }
+.music-bar i { display: block; height: 100%; border-radius: inherit; background: currentColor; transition: width .15s linear; }
+.music-time { display: flex; justify-content: space-between; font-size: 11px; opacity: .65; font-variant-numeric: tabular-nums; }
+.music-dl { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: inherit; opacity: .6; }
+.music-dl:hover { opacity: 1; background: rgba(255, 255, 255, .1); }
+html[data-mode='light'] .music-bar { background: rgba(16, 32, 58, .14); }
+html[data-mode='light'] .msg:not(.mine) .music-bar i { background: var(--accent); }
+html[data-mode='light'] .msg.mine .music-bar { background: rgba(255, 255, 255, .3); }
+.pf-music .music { width: 100%; }

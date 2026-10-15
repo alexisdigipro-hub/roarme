@@ -3,7 +3,7 @@ import { USERNAME_RE, cleanUsername, dayLabel, errText, fileLink, fmtBytes, last
 import { Avatar, I, Modal, OnTop, colorOf, svg } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
-import { AttachSheet, AudioNote, ChatSettings, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile } from './extras.jsx'
+import { AttachSheet, AudioNote, MusicTile, isAudioFile, ChatSettings, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile } from './extras.jsx'
 
 /* people by @username or name */
 function usePeopleSearch(meId) {
@@ -572,9 +572,12 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const upload = async (file, kind, extra = {}) => {
     const safe = (file.name || 'file').normalize('NFKD').replace(/[^\w.-]+/g, '_').slice(-80) || 'file'
     const path = `${room.room_id}/${crypto.randomUUID()}-${safe}`
-    const up = await supabase.storage.from('roar-files').upload(path, file, { contentType: file.type || 'application/octet-stream' })
+    // a sound file the computer did not name (some .wav, .aiff, .flac) gets its type from its ending, so it plays
+    const ext = ((file.name || '').match(/\.(\w+)$/) || [])[1]?.toLowerCase()
+    const type = file.type || (ext && isAudioFile({ name: file.name }) ? `audio/${{ mp3: 'mpeg', m4a: 'mp4', aif: 'aiff', oga: 'ogg' }[ext] || ext}` : '')
+    const up = await supabase.storage.from('roar-files').upload(path, file, { contentType: type || 'application/octet-stream' })
     if (up.error) throw up.error
-    return { path, name: file.name, size: file.size, type: file.type, ...extra }
+    return { path, name: file.name, size: file.size, type, ...extra }
   }
 
   const sendFiles = async (files, caption = '', compress = true) => {
@@ -682,7 +685,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     else { onRead(); toast(m ? 'Pinned' : 'Unpinned') }
   }
 
-  const textOf = (m) => (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? m.file?.name || 'File' : m.body)
+  const textOf = (m) => (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.body)
   const copy = async (s, what = 'Copied') => { try { await navigator.clipboard.writeText(s); toast(what) } catch { toast('Copy did not work here') } }
   const linkOf = (m) => `${window.location.origin}${window.location.pathname}#m=${room.room_id}/${m.id}`
   const translate = (s) => window.open(`https://translate.google.com/?sl=auto&tl=${/[Ͱ-Ͽ]/.test(s) ? 'en' : 'el'}&op=translate&text=${encodeURIComponent(s)}`, '_blank', 'noopener')
@@ -867,6 +870,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                       : m.kind === 'image' ? <Pic file={m.file} onOpen={() => openPhoto(m)} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
                       : isVideo ? <VideoTile file={m.file} />
+                      : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
                     {!m.deleted_at && m.body && <span className="text">{withMentions(m.body)}</span>}

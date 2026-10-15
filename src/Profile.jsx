@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { errText, fileLink, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
 import { Avatar, I, Modal, OnTop } from './ui.jsx'
-import { AudioNote, MediaViewer } from './extras.jsx'
+import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
 const monthOf = (iso) => new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }).toUpperCase()
 const isVideo = (m) => /^video\//.test(m.file?.type || '')
 const isGif = (m) => /gif/.test(m.file?.type || '')
-const isAudio = (m) => m.kind === 'file' && /^audio\//.test(m.file?.type || '')
+const isAudio = (m) => m.kind === 'file' && isAudioFile(m.file)
 
 /* A chat's card, as in Telegram (Alex, 16 Oct): the big picture, the name, last seen, Message · Call ·
    Video · More, what we know about the person, and everything shared in the chat by kind. */
@@ -212,7 +212,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
           )) : <p className="muted pf-empty">No links yet.</p>)}
 
           {tab === 'music' && items && (sets.music.length ? sets.music.map((m) => (
-            <div key={m.id} className="pf-row"><span className="pf-row-ico">{I.play}</span><span className="pf-row-text"><b>{m.file?.name}</b><small>{fmtBytes(m.file?.size)}</small></span><AudioNote file={m.file} /></div>
+            <div key={m.id} className="pf-row pf-music"><MusicTile file={m.file} /></div>
           )) : <p className="muted pf-empty">No music yet.</p>)}
 
           {tab === 'voice' && items && (sets.voice.length ? sets.voice.map((m) => (

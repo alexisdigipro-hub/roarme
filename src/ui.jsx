@@ -47,6 +47,11 @@ export const I = {
   download: svg(<><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5" /><path d="M5 20h14" /></>, 18),
   check: svg(<path d="m5 12.5 4.5 4.5L19 7.5" />, 18),
   read: svg(<path d="m2 12.5 4.5 4.5L16 7.5M10 16.5l1 .5L21 7.5" />, 22),
+  popout: svg(<><path d="M14 4h6v6M20 4l-8 8" /><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" /></>, 16),
+  bellOff: svg(<><path d="M6 16V11a6 6 0 0 1 9.5-4.9M18 11v5l1.5 2H8" /><path d="M10 20a2 2 0 0 0 4 0M4 4l16 16" /></>, 16),
+  unread: svg(<><path d="M20 12a8 8 0 1 1-4.5-7.2" /><circle cx="19" cy="5" r="2.5" fill="currentColor" stroke="none" /></>, 16),
+  eye: svg(<><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>, 16),
+  clear: svg(<><circle cx="12" cy="12" r="9" /><path d="m9 9 6 6M15 9l-6 6" /></>, 16),
 }
 
 // each person's name in a group in a colour of their own, as in the hub's chat

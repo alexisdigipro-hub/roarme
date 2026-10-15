@@ -650,3 +650,29 @@ html[data-mode='light'] .msg.mine .music-bar { background: rgba(255, 255, 255, .
 .bubble.outbox.has-pic .out-text small { padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .45); color: #fff; }
 .msg.out { animation: ref-in .22s ease both; }
 
+
+/* ---------- right click on a chat in the list ---------- */
+.room-menu { position: fixed; z-index: 30; width: 230px; animation: pop .2s cubic-bezier(.25, .8, .3, 1) both; transform-origin: top left; }
+.room-menu .has-sub { position: relative; display: flex; flex-direction: column; }
+.room-menu .has-sub > button, .room-menu > button { width: 100%; }
+.room-menu .has-sub.open > button { background: var(--glass-2); }
+.room-menu .sub-menu { position: absolute; top: -6px; left: calc(100% + 4px); min-width: 180px; animation: pop .16s ease both; }
+.room-menu.flip .sub-menu { left: auto; right: calc(100% + 4px); }
+.room-menu .sub-menu button { width: 100%; }
+.room-menu .sub-arrow, .room-menu .sub-check { margin-left: auto; display: inline-flex; color: var(--muted); }
+.room-menu .sub-arrow svg { width: 15px; height: 15px; }
+.room-menu .sub-check { color: var(--accent); }
+.room.menu-on { background: var(--glass-2); box-shadow: inset 0 0 0 1px var(--edge); }
+.badge.dot { min-width: 12px; width: 12px; height: 12px; padding: 0; }
+.room-pin { flex: none; display: inline-flex; color: var(--muted); }
+.room-pin svg { width: 15px; height: 15px; }
+.room-prev .draft { color: var(--danger); font-weight: 600; }
+
+/* Preview window: the last messages as small bubbles */
+.peek { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; padding: 4px 2px; }
+.peek-msg { align-self: flex-start; display: flex; flex-direction: column; gap: 2px; max-width: 80%; padding: 7px 11px 5px; border-radius: 16px 16px 16px 6px; background: var(--glass-2); font-size: 14.5px; word-break: break-word; }
+.peek-msg.mine { align-self: flex-end; border-radius: 16px 16px 6px 16px; background: var(--mine); }
+.peek-msg b { font-size: 12.5px; }
+.peek-msg small { align-self: flex-end; color: var(--muted); font-size: 11px; }
+html[data-mode='light'] .peek-msg { background: rgba(16, 32, 58, .06); }
+html[data-mode='light'] .room.menu-on { background: rgba(255, 255, 255, .95); }

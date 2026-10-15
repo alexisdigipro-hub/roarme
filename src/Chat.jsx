@@ -39,6 +39,14 @@ export default function Chat({ me, setMe }) {
   const [hits, setHits] = useState([])
   const [myFolders, setMyFolders] = useLocal('roarme-folders', [])
   const [hidden, setHidden] = useLocal('roarme-hidden', {})
+  // per device: chats pinned to the top, history cleared, chats marked unread, a mute that ends, drafts
+  const [pins, setPins] = useLocal('roarme-pins', [])
+  const [cleared, setCleared] = useLocal('roarme-cleared', {})
+  const [marked, setMarked] = useLocal('roarme-marked', [])
+  const [muteUntil, setMuteUntil] = useLocal('roarme-mute-until', {})
+  const [drafts] = useLocal('roarme-drafts', {})
+  const [roomMenu, setRoomMenu] = useState(null) // { r, x, y, sub }
+  const [peek, setPeek] = useState(null) // a chat looked at without opening it
   const searchRef = useRef(null)
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
@@ -47,6 +55,8 @@ export default function Chat({ me, setMe }) {
   const [jump, setJump] = useState('')
   useEffect(() => {
     const go = () => {
+      const c = window.location.hash.match(/^#c=([0-9a-f-]{36})$/)
+      if (c) { setTab('chats'); setActiveId(c[1]); history.replaceState(null, '', window.location.pathname); return }
       const m = window.location.hash.match(/^#m=([0-9a-f-]{36})\/([0-9a-f-]{36})$/)
       if (!m) return
       setTab('chats'); setActiveId(m[1]); setJump(m[2])
@@ -196,8 +206,10 @@ export default function Chat({ me, setMe }) {
   }
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase()
-    return visible.filter((r) => (t ? titleOf(r).toLowerCase().includes(t) || (otherOf(r)?.username || '').includes(t.replace(/^@/, '')) : inFolder(r, folder)))
-  }, [visible, folder, q, titleOf, myFolders])
+    const list = visible.filter((r) => (t ? titleOf(r).toLowerCase().includes(t) || (otherOf(r)?.username || '').includes(t.replace(/^@/, '')) : inFolder(r, folder)))
+    // pinned chats first, in the order they were pinned
+    return [...list.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...list.filter((r) => !pins.includes(r.room_id))]
+  }, [visible, folder, q, titleOf, myFolders, pins])
 
   // messages that match the search, in every chat one is in (the database only gives one's own chats)
   useEffect(() => {
@@ -220,8 +232,74 @@ export default function Chat({ me, setMe }) {
 
   const active = rooms.find((r) => r.room_id === activeId) || null
   const openRoom = (id) => { setTab('chats'); setActiveId(id); setModal(''); loadRooms() }
+  useEffect(() => { if (activeId && marked.includes(activeId)) setMarked((l) => l.filter((x) => x !== activeId)) }, [activeId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // a mute for a while ends by itself
+  useEffect(() => {
+    const check = () => {
+      const now = Date.now()
+      const done = Object.entries(muteUntil).filter(([, t]) => t && t < now).map(([id]) => id)
+      if (!done.length) return
+      supabase.from('roar_members').update({ muted: false }).in('room_id', done).eq('user_id', me.id).then(() => loadRooms())
+      setMuteUntil((m) => { const n = { ...m }; done.forEach((id) => delete n[id]); return n })
+    }
+    check()
+    const id = setInterval(check, 30000)
+    return () => clearInterval(id)
+  }, [muteUntil, me.id, loadRooms]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // the menu of a chat in the list (right click), as in Telegram
+  const openRoomMenu = (e, r) => {
+    e.preventDefault()
+    const w = 230, h = 380
+    const x = Math.min(e.clientX, window.innerWidth - w - 12)
+    // the side menus open to the left when there is no room on the right
+    setRoomMenu({ r, x, y: Math.max(12, Math.min(e.clientY, window.innerHeight - h - 12)), sub: '', flip: x + w + 200 > window.innerWidth })
+  }
+  const roomAct = async (what, arg) => {
+    const r = roomMenu?.r
+    setRoomMenu(null)
+    if (!r) return
+    const mine = (patch) => supabase.from('roar_members').update(patch).eq('room_id', r.room_id).eq('user_id', me.id)
+    if (what === 'window') window.open(`${window.location.origin}${window.location.pathname}#c=${r.room_id}`, `roarme-${r.room_id}`, 'popup,width=900,height=780')
+    if (what === 'pin') { const on = pins.includes(r.room_id); setPins((l) => (on ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); toast(on ? 'Unpinned' : 'Pinned to the top') }
+    if (what === 'mute') {
+      if (r.muted) { await mine({ muted: false }); setMuteUntil((m) => { const n = { ...m }; delete n[r.room_id]; return n }); toast('Sounds on') }
+      else { await mine({ muted: true }); setMuteUntil((m) => ({ ...m, [r.room_id]: arg ? Date.now() + arg * 3600e3 : 0 })); toast(arg ? `Muted for ${arg >= 24 ? `${arg / 24} day${arg > 24 ? 's' : ''}` : `${arg} hour${arg > 1 ? 's' : ''}`}` : 'Muted') }
+      loadRooms()
+    }
+    if (what === 'unread') {
+      if (r.unread > 0 || marked.includes(r.room_id)) { await mine({ last_read_at: new Date().toISOString() }); setMarked((l) => l.filter((x) => x !== r.room_id)); toast('Marked as read') }
+      else { await mine({ last_read_at: new Date(new Date(r.last_message_at).getTime() - 1000).toISOString() }); setMarked((l) => [...new Set([...l, r.room_id])]); if (activeId === r.room_id) setActiveId(''); toast('Marked as unread') }
+      loadRooms()
+    }
+    if (what === 'preview') setPeek(r)
+    if (what === 'archive') { await mine({ archived: !r.archived }); toast(r.archived ? 'Unarchived' : 'Archived'); loadRooms() }
+    if (what === 'folder') { setMyFolders((list) => list.map((f) => (f.id === arg ? { ...f, rooms: f.rooms.includes(r.room_id) ? f.rooms.filter((x) => x !== r.room_id) : [...f.rooms, r.room_id] } : f))) }
+    if (what === 'newfolder') { setPicked([r.room_id]); setModal('newfolder') }
+    if (what === 'clear') {
+      if (!window.confirm(`Clear the history of ${titleOf(r)}? It goes for you only, on this computer.`)) return
+      setCleared((c) => ({ ...c, [r.room_id]: new Date().toISOString() })); toast('History cleared')
+    }
+    if (what === 'delete') {
+      if (r.kind === 'group') {
+        if (!window.confirm(`Delete ${titleOf(r)} and leave the group?`)) return
+        const { error } = await supabase.rpc('roar_leave', { r: r.room_id })
+        if (error) { toast(errText(error)); return }
+      } else {
+        if (!window.confirm(`Delete the chat with ${titleOf(r)} from your list? A new message brings it back.`)) return
+        const at = new Date().toISOString()
+        setHidden((h) => ({ ...h, [r.room_id]: at })); setCleared((c) => ({ ...c, [r.room_id]: at }))
+      }
+      if (activeId === r.room_id) setActiveId('')
+      setPins((l) => l.filter((x) => x !== r.room_id))
+      loadRooms()
+    }
+  }
 
   const preview = (r) => {
+    if (drafts[r.room_id] && r.room_id !== activeId) return <><span className="draft">Draft:</span> {drafts[r.room_id]}</>
+    if (cleared[r.room_id] && r.last_message_at <= cleared[r.room_id]) return ''
     if (!r.last_kind) return r.kind === 'group' ? 'Group created' : 'Say hi'
     if (r.last_deleted) return ''
     const who = r.last_user === me.id ? 'You: ' : r.kind === 'group' && people[r.last_user] ? `${nameOf(people[r.last_user]).split(' ')[0]}: ` : ''
@@ -301,12 +379,12 @@ export default function Chat({ me, setMe }) {
                 const other = otherOf(r)
                 const isPicked = picked.includes(r.room_id)
                 return (
-                  <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}`} onClick={() => (picking ? setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])) : setActiveId(r.room_id))}>
+                  <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => (picking ? setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])) : setActiveId(r.room_id))} onContextMenu={(e) => !picking && openRoomMenu(e, r)}>
                     {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
                     <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} />
                     <span className="room-main">
                       <span className="room-top"><strong>{titleOf(r)}</strong><small>{listTime(r.last_message_at)}</small></span>
-                      <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.unread > 0 && <span className={`badge${r.muted ? ' quiet' : ''}`}>{r.unread}</span>}</span>
+                      <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.unread > 0 ? <span className={`badge${r.muted ? ' quiet' : ''}`}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
                       {prefs.folderTags && tagsOf(r).length > 0 && <span className="room-tags">{tagsOf(r).map((t) => <span key={t}>{t}</span>)}</span>}
                     </span>
                   </button>
@@ -375,7 +453,7 @@ export default function Chat({ me, setMe }) {
       <main className="main">
         {active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
-            rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} />
+            rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} />
         ) : (
           <div className="pick">
             <img src="./icon.svg" alt="" />
@@ -404,16 +482,95 @@ export default function Chat({ me, setMe }) {
           )}
         </Modal>
       )}
+      {roomMenu && (
+        <OnTop>
+          <button type="button" className="scrim" aria-label="Close" onClick={() => setRoomMenu(null)} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }} />
+          <div className={`room-menu menu-list${roomMenu.flip ? ' flip' : ''}`} style={{ left: roomMenu.x, top: roomMenu.y }}>
+            <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>
+            <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
+            {roomMenu.r.muted
+              ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
+              : (
+                <div className={`has-sub${roomMenu.sub === 'mute' ? ' open' : ''}`} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: 'mute' }))}>
+                  <button type="button" onClick={() => setRoomMenu((m) => ({ ...m, sub: m.sub === 'mute' ? '' : 'mute' }))}>{I.bellOff}<span>Mute</span><i className="sub-arrow">{I.right}</i></button>
+                  {roomMenu.sub === 'mute' && (
+                    <div className="sub-menu menu-list">
+                      <button type="button" onClick={() => roomAct('mute', 1)}><span>For 1 hour</span></button>
+                      <button type="button" onClick={() => roomAct('mute', 8)}><span>For 8 hours</span></button>
+                      <button type="button" onClick={() => roomAct('mute', 24)}><span>For 1 day</span></button>
+                      <button type="button" onClick={() => roomAct('mute', 168)}><span>For 7 days</span></button>
+                      <button type="button" onClick={() => roomAct('mute', 0)}><span>Forever</span></button>
+                    </div>
+                  )}
+                </div>
+              )}
+            <button type="button" onClick={() => roomAct('unread')} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: '' }))}>{I.unread}<span>{roomMenu.r.unread > 0 || marked.includes(roomMenu.r.room_id) ? 'Mark As Read' : 'Mark As Unread'}</span></button>
+            <button type="button" onClick={() => roomAct('preview')}>{I.eye}<span>Preview</span></button>
+            <hr />
+            <button type="button" onClick={() => roomAct('archive')}>{I.archive}<span>{roomMenu.r.archived ? 'Unarchive' : 'Archive'}</span></button>
+            <div className={`has-sub${roomMenu.sub === 'folder' ? ' open' : ''}`} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: 'folder' }))}>
+              <button type="button" onClick={() => setRoomMenu((m) => ({ ...m, sub: m.sub === 'folder' ? '' : 'folder' }))}>{I.folder}<span>Add to folder…</span><i className="sub-arrow">{I.right}</i></button>
+              {roomMenu.sub === 'folder' && (
+                <div className="sub-menu menu-list">
+                  {myFolders.map((f) => <button key={f.id} type="button" onClick={() => roomAct('folder', f.id)}><span>{f.name}</span>{f.rooms.includes(roomMenu.r.room_id) && <i className="sub-check">{I.check}</i>}</button>)}
+                  {myFolders.length > 0 && <hr />}
+                  <button type="button" onClick={() => roomAct('newfolder')}>{I.plus}<span>New folder</span></button>
+                </div>
+              )}
+            </div>
+            <hr />
+            <button type="button" onClick={() => roomAct('clear')} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: '' }))}>{I.clear}<span>Clear History</span></button>
+            <button type="button" className="danger" onClick={() => roomAct('delete')}>{I.trash}<span>{roomMenu.r.kind === 'group' ? 'Delete and Leave' : 'Delete Chat'}</span></button>
+          </div>
+        </OnTop>
+      )}
+      {peek && <Peek room={peek} me={me} people={people} title={titleOf(peek)} clearedAt={cleared[peek.room_id]} onClose={() => setPeek(null)} onOpen={() => { setActiveId(peek.room_id); setPeek(null) }} />}
       {note && <div className="toast" role="status">{note}</div>}
     </div>
   )
 }
 
+/* Preview: a chat's last messages, looked at without opening it (so nothing is marked read) */
+function Peek({ room, me, people, title, clearedAt, onClose, onOpen }) {
+  const [list, setList] = useState(null)
+  useEffect(() => {
+    supabase.from('roar_messages').select('id, user_id, kind, body, file, created_at').eq('room_id', room.room_id).is('deleted_at', null).order('created_at', { ascending: false }).limit(30)
+      .then(({ data }) => setList((data || []).filter((m) => !clearedAt || m.created_at > clearedAt).reverse()))
+  }, [room.room_id, clearedAt])
+  return (
+    <Modal title={title} onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Close</button><button type="button" className="btn btn-main" onClick={onOpen}>Open chat</button></>}>
+      <div className="peek">
+        {list === null && <p className="muted">Loading…</p>}
+        {list && !list.length && <p className="muted">No messages.</p>}
+        {(list || []).map((m) => (
+          <div key={m.id} className={`peek-msg${m.user_id === me.id ? ' mine' : ''}`}>
+            {room.kind === 'group' && m.user_id !== me.id && <b style={{ color: colorOf(m.user_id) }}>{nameOf(people[m.user_id])}</b>}
+            <span>{m.kind === 'image' ? '📷 Photo' : m.kind === 'voice' ? '🎤 Voice message' : m.kind === 'file' ? `📎 ${m.file?.name || 'File'}` : m.body}</span>
+            <small>{timeOf(m.created_at)}</small>
+          </div>
+        ))}
+      </div>
+    </Modal>
+  )
+}
+
 /* ---------- one conversation ---------- */
-function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs }) {
+function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt }) {
   const [msgs, setMsgs] = useState([])
   const [more, setMore] = useState(true)
-  const [text, setText] = useState('')
+  // an unsent message waits for you, per chat (shown in the list as Draft:)
+  const [, setDrafts] = useLocal('roarme-drafts', {})
+  const [text, setText] = useState(() => { try { return (JSON.parse(localStorage.getItem('roarme-drafts')) || {})[room.room_id] || '' } catch { return '' } })
+  useEffect(() => {
+    const id = setTimeout(() => setDrafts((d) => {
+      const has = !!text.trim()
+      if (!has && !(room.room_id in d)) return d
+      const n = { ...d }
+      if (has) n[room.room_id] = text; else delete n[room.room_id]
+      return n
+    }), 400)
+    return () => clearTimeout(id)
+  }, [text, room.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
   const [caret, setCaret] = useState(0)
   const [replyTo, setReplyTo] = useState(null)
   const [editing, setEditing] = useState(null)
@@ -784,7 +941,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const pinnedRaw = room.pinned_message_id ? byId[room.pinned_message_id] || { id: room.pinned_message_id, body: 'Pinned message', kind: 'text' } : null
   const pinned = pinnedRaw?.deleted_at ? null : pinnedRaw
   // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
-  const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at), [msgs])
+  const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && (!clearedAt || m.created_at > clearedAt)), [msgs, clearedAt])
   const pickedMsgs = picked ? msgs.filter((m) => picked.includes(m.id)) : []
   const soon = (what) => toast(`${what} are coming soon`)
   const mute = async () => {

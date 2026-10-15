@@ -629,3 +629,24 @@ html[data-mode='light'] .music-bar { background: rgba(16, 32, 58, .14); }
 html[data-mode='light'] .msg:not(.mine) .music-bar i { background: var(--accent); }
 html[data-mode='light'] .msg.mine .music-bar { background: rgba(255, 255, 255, .3); }
 .pf-music .music { width: 100%; }
+/* ---------- on its way up: a tile with a ring that fills, and ✕ to stop ---------- */
+.bubble.outbox { padding: 8px 14px 8px 8px; min-width: 240px; }
+.bubble.outbox.has-pic { padding: 4px; }
+.bubble.outbox img { display: block; max-width: 280px; max-height: 220px; border-radius: 14px; opacity: .55; filter: blur(1px); }
+.bubble.outbox.has-pic .out-row { position: absolute; inset: 0; justify-content: center; flex-direction: column; text-align: center; }
+.out-row { display: flex; align-items: center; gap: 12px; }
+.ring { position: relative; flex: none; width: 44px; height: 44px; }
+.ring svg { display: block; transform: rotate(-90deg); }
+.ring-track { fill: rgba(0, 0, 0, .25); stroke: rgba(255, 255, 255, .25); stroke-width: 3; }
+.ring-fill { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .25s ease; }
+.ring-fill.spin { transform-origin: 22px 22px; animation: ring-spin 1s linear infinite; }
+@keyframes ring-spin { to { transform: rotate(360deg); } }
+.ring-x { position: absolute; inset: 7px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: none; color: #fff; }
+.ring-x svg { width: 16px; height: 16px; transform: none; }
+.out-text { min-width: 0; display: flex; flex-direction: column; }
+.out-text b { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 14px; }
+.out-text small { color: rgba(255, 255, 255, .78); font-size: 12px; font-variant-numeric: tabular-nums; }
+.bubble.outbox.has-pic .out-text b { display: none; }
+.bubble.outbox.has-pic .out-text small { padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .45); color: #fff; }
+.msg.out { animation: ref-in .22s ease both; }
+

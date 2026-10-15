@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { USERNAME_RE, cleanUsername, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
+import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, I, Modal, OnTop, colorOf, svg } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
@@ -434,6 +434,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const [attach, setAttach] = useState(null) // files waiting in the send window
   const [media, setMedia] = useState(false)
   const [rec, setRec] = useState(null) // { started }
+  const [outbox, setOutbox] = useState([]) // { id, name, preview, p, stage, holder }
   const [recSecs, setRecSecs] = useState(0)
   const recRef = useRef(null)
   const scrollRef = useRef(null)
@@ -491,7 +492,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   useLayoutEffect(() => {
     const el = scrollRef.current
     if (el && stick.current) el.scrollTop = el.scrollHeight
-  }, [msgs])
+  }, [msgs, outbox.length])
   const onScroll = async (e) => {
     const el = e.currentTarget
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
@@ -569,41 +570,52 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
   }
 
-  const upload = async (file, kind, extra = {}) => {
+  // what is on its way up: one tile each, with a ring that fills (Alex, 16 Oct)
+  const setOut = (id, patch) => setOutbox((l) => l.map((x) => (x.id === id ? { ...x, ...patch } : x)))
+  const dropOut = (id) => setOutbox((l) => { const x = l.find((y) => y.id === id); if (x?.preview) URL.revokeObjectURL(x.preview); return l.filter((y) => y.id !== id) })
+  const upload = async (file, kind, extra = {}, outId = null) => {
     const safe = (file.name || 'file').normalize('NFKD').replace(/[^\w.-]+/g, '_').slice(-80) || 'file'
     const path = `${room.room_id}/${crypto.randomUUID()}-${safe}`
     // a sound file the computer did not name (some .wav, .aiff, .flac) gets its type from its ending, so it plays
     const ext = ((file.name || '').match(/\.(\w+)$/) || [])[1]?.toLowerCase()
     const type = file.type || (ext && isAudioFile({ name: file.name }) ? `audio/${{ mp3: 'mpeg', m4a: 'mp4', aif: 'aiff', oga: 'ogg' }[ext] || ext}` : '')
-    const up = await supabase.storage.from('roar-files').upload(path, file, { contentType: type || 'application/octet-stream' })
-    if (up.error) throw up.error
+    const holder = {}
+    if (outId) setOut(outId, { holder, stage: 'up' })
+    await uploadWithProgress('roar-files', path, file, type, (p) => { if (outId) setOut(outId, { p }) }, holder)
+    if (outId) setOut(outId, { stage: 'send', p: 1 })
     return { path, name: file.name, size: file.size, type, ...extra }
   }
 
   const sendFiles = async (files, caption = '', compress = true) => {
     setAttach(null); setErr('')
+    const reply = replyTo
+    setReplyTo(null)
+    stick.current = true
+    const ok = files.filter((f) => { if (f.size > 50e6) { setErr(`${f.name} is over 50 MB.`); return false } return true })
+    const tiles = ok.map((f) => ({ id: crypto.randomUUID(), name: f.name, size: f.size, preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : '', p: 0, stage: 'prep' }))
+    setOutbox((l) => [...l, ...tiles])
     let n = 0
-    for (const raw of files) {
+    for (const raw of ok) {
+      const tile = tiles[n]
       n += 1
-      if (raw.size > 50e6) { setErr(`${raw.name} is over 50 MB.`); continue }
       const isImg = /^image\/(jpeg|png|webp)$/.test(raw.type)
-      setBusy(files.length > 1 ? `Sending ${n} of ${files.length}…` : `Sending ${raw.name}…`)
       try {
         const file = isImg && compress ? await shrinkImage(raw, prefs.largePhotos ? 2560 : 1600, prefs.largePhotos ? 0.88 : 0.82) : raw
-        const meta = await upload(file)
+        const meta = await upload(file, null, {}, tile.id)
         stick.current = true
-        const last = n === files.length
+        const last = n === ok.length
         const { data, error } = await supabase.from('roar_messages').insert({
           room_id: room.room_id, user_id: me.id, kind: /^image\//.test(file.type) && !/gif|svg/.test(file.type) ? 'image' : 'file', body: last ? caption : '',
-          file: meta, reply_to: replyTo?.id || null,
+          file: meta, reply_to: reply?.id || null,
         }).select().single()
         if (error) throw error
+        stick.current = true
         setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
       } catch (e) {
-        setErr(errText(e))
+        if (!e?.cancelled) setErr(`${raw.name}: ${errText(e)}`)
       }
+      dropOut(tile.id)
     }
-    setBusy(''); setReplyTo(null)
   }
 
   // voice messages: record, then send or throw away
@@ -640,18 +652,20 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       const dur = Math.max(1, Math.round((Date.now() - started) / 1000))
       const ext = /mp4/.test(r.type) ? 'm4a' : 'webm'
       const file = new File(r.chunks, `voice-${Date.now()}.${ext}`, { type: r.type.split(';')[0] })
-      setBusy('Sending the voice message…')
+      const tile = { id: crypto.randomUUID(), name: 'Voice message', size: file.size, preview: '', p: 0, stage: 'prep', voice: true }
+      setOutbox((l) => [...l, tile])
+      stick.current = true
       try {
-        const meta = await upload(file, 'voice', { dur })
+        const meta = await upload(file, 'voice', { dur }, tile.id)
         stick.current = true
         const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'voice', body: '', file: meta, reply_to: replyTo?.id || null }).select().single()
         if (error) throw error
         setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
         setReplyTo(null)
       } catch (e) {
-        setErr(errText(e))
+        if (!e?.cancelled) setErr(errText(e))
       }
-      setBusy('')
+      dropOut(tile.id)
     }
     r.mr.stop()
   }
@@ -882,6 +896,31 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                       {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
                     </span>
                   )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+        {outbox.map((o) => {
+          const c = 2 * Math.PI * 19
+          return (
+            <div key={o.id} className="msg mine first out">
+              <div className="bubble-col">
+                <div className={`bubble outbox${o.preview ? ' has-pic' : ''}`}>
+                  {o.preview && <img src={o.preview} alt="" />}
+                  <span className="out-row">
+                    <span className="ring" title={o.stage === 'up' ? `${Math.round(o.p * 100)}%` : ''}>
+                      <svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true">
+                        <circle cx="22" cy="22" r="19" className="ring-track" />
+                        <circle cx="22" cy="22" r="19" className={`ring-fill${o.stage !== 'up' ? ' spin' : ''}`} strokeDasharray={c} strokeDashoffset={o.stage === 'up' ? c * (1 - o.p) : c * 0.72} />
+                      </svg>
+                      <button type="button" className="ring-x" onClick={() => { o.holder?.abort?.(); if (!o.holder?.abort) dropOut(o.id) }} aria-label="Stop" title="Stop">{I.x}</button>
+                    </span>
+                    <span className="out-text">
+                      <b>{o.name}</b>
+                      <small>{o.stage === 'prep' ? 'Preparing…' : o.stage === 'send' ? 'Sending…' : `${Math.round(o.p * 100)}% · ${fmtBytes(o.size * o.p)} of ${fmtBytes(o.size)}`}</small>
+                    </span>
+                  </span>
                 </div>
               </div>
             </div>

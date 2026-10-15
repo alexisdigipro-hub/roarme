@@ -85,3 +85,28 @@ export const errText = (e) => {
   if (/Email not confirmed/i.test(m)) return 'Confirm your email first: open the link we sent you.'
   return m
 }
+
+/* An upload that tells how far it has got (the Supabase library does not), and can be stopped:
+   holder.abort() stops it. onProgress gets 0..1. */
+export async function uploadWithProgress(bucket, path, file, type, onProgress, holder = {}) {
+  const { data } = await supabase.auth.getSession()
+  const token = data?.session?.access_token
+  if (!token) throw new Error('Not signed in')
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${SUPABASE_URL}/storage/v1/object/${bucket}/${path.split('/').map(encodeURIComponent).join('/')}`)
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    xhr.setRequestHeader('apikey', SUPABASE_KEY)
+    xhr.setRequestHeader('x-upsert', 'false')
+    xhr.setRequestHeader('Content-Type', type || 'application/octet-stream')
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress?.(e.loaded / e.total) }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) { onProgress?.(1); resolve() }
+      else { let m = `Upload failed (${xhr.status})`; try { m = JSON.parse(xhr.responseText).message || m } catch { /* plain text */ } reject(new Error(m)) }
+    }
+    xhr.onerror = () => reject(new Error('The upload stopped. Check the connection and try again.'))
+    xhr.onabort = () => { const e = new Error('Cancelled'); e.cancelled = true; reject(e) }
+    holder.abort = () => xhr.abort()
+    xhr.send(file)
+  })
+}

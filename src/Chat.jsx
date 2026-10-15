@@ -21,6 +21,10 @@ const I = {
   archive: svg(<><rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v11h14V8M10 12h4" /></>, 16),
 }
 
+// each person's name in a group in a colour of their own, as in the hub's chat
+const NAME_COLORS = ['#ff8a65', '#7cc4ff', '#81c784', '#ffb74d', '#ba68c8', '#4dd0e1', '#f06292', '#aed581']
+const colorOf = (id) => NAME_COLORS[[...String(id || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % NAME_COLORS.length]
+
 function Avatar({ src, name, size = 44, online = false, group = false }) {
   return (
     <span className={`av${group ? ' av-group' : ''}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}>
@@ -412,7 +416,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack }
               <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}`}>
                 {!mine && room.kind === 'group' && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className={`bubble${m.kind === 'image' && !m.deleted_at ? ' pic' : ''}${m.deleted_at ? ' gone' : ''}`}>
-                  {!mine && room.kind === 'group' && first && <b className="who">{nameOf(who)}</b>}
+                  {!mine && room.kind === 'group' && first && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                   {quoted && <span className="quote"><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : quoted.kind === 'image' ? 'Photo' : quoted.kind === 'file' ? quoted.file?.name : quoted.body}</span></span>}
                   {m.deleted_at ? <i>Message deleted</i>
                     : m.kind === 'image' ? <Pic file={m.file} onOpen={setView} />

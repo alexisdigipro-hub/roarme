@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { initialsOf } from './lib.js'
 
 /* ---------- small pieces ---------- */
@@ -67,14 +68,19 @@ export function Modal({ title, onClose, children, foot, wide = false }) {
     document.addEventListener('keydown', k)
     return () => document.removeEventListener('keydown', k)
   }, [onClose])
-  return (
+  // on the page itself, not inside a glass panel (a panel's blur would hold it inside the panel)
+  return createPortal(
     <div className="modal-back" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className={`modal${wide ? ' modal-wide' : ''}`} role="dialog" aria-label={title}>
         <div className="modal-head"><h2>{title}</h2><button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button></div>
         <div className="modal-body">{children}</div>
         {foot && <div className="modal-foot">{foot}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
+
+/* on the page itself: menus and full-screen views that must sit where the pointer is */
+export const OnTop = ({ children }) => createPortal(children, document.body)

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { USERNAME_RE, cleanUsername, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
-import { Avatar, I, Modal, colorOf, svg } from './ui.jsx'
+import { Avatar, I, Modal, OnTop, colorOf, svg } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, useLocal, usePrefs } from './prefs.js'
 import { AttachSheet, AudioNote, ChatSettings, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile } from './extras.jsx'
 
@@ -915,7 +915,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       </footer>
 
       {menu && (
-        <>
+        <OnTop>
           <button type="button" className="scrim blur" aria-label="Close" onClick={() => setMenu(null)} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
           <div className="msg-menu" style={{ left: menu.x, top: menu.y }}>
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={() => react(menu.m, e)}>{e}</button>)}</div>
@@ -945,7 +945,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               )}
             </div>
           </div>
-        </>
+        </OnTop>
       )}
 
       {replies && (
@@ -964,7 +964,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} />}
       {media && <SharedMedia roomId={room.room_id} onClose={() => setMedia(false)} onOpen={async (list, index) => { setMedia(false); const items = await Promise.all(list.map(async (x) => ({ url: await fileLink(x.file?.path), type: x.file?.type, name: x.file?.name }))); setViewer({ items, index }) }} />}
       {forward && <Forward msgs={forward} me={me} rooms={rooms} titleOf={titleOf} fromRoom={room.room_id} onClose={() => setForward(null)} onDone={(n) => { setForward(null); setPicked(null); toast(n > 1 ? `${n} messages forwarded` : 'Forwarded') }} />}
-      {viewer && <MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)} />}
+      {viewer && <OnTop><MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)} /></OnTop>}
     </div>
   )
 }

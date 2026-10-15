@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
-import { Avatar, I, Modal, OnTop, colorOf, svg } from './ui.jsx'
+import { Avatar, I, Modal, OnTop, burst, colorOf, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
@@ -51,7 +51,9 @@ export default function Chat({ me, setMe }) {
   const [peek, setPeek] = useState(null) // a chat looked at without opening it
   const [folderMenu, setFolderMenu] = useState(null) // right click on a folder tab: {f, x, y}
   const [folderChats, setFolderChats] = useState('') // the folder whose chats are being picked
-  const [setPage, setSetPage] = useState('') // the Settings page open on the right
+  const [setPage, setSetPage] = useState('')
+  const tabsLens = useLens(`${tab}|${folder}|${prefs.folderTabs}|${myFolders.length}|${!q.trim()}`)
+  const footLens = useLens(`${tab}|${prefs.callsTab}|${picking}`) // the Settings page open on the right
   const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
   const searchRef = useRef(null)
   const [note, setNote] = useState('')
@@ -382,14 +384,14 @@ export default function Chat({ me, setMe }) {
             <label className="search">{I.search}<input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search (⌘K)" onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur() } }} /></label>
             <div className={`rooms-area${prefs.folderTabs === 'left' && !q.trim() ? ' left' : ''}`}>
             {!q.trim() && (
-              <nav className="tabs">
+              <nav ref={tabsLens} className="tabs lens">
                 {allFolders.map((f) => {
                   const n = folderUnread(f)
                   return <button key={f.id} type="button" className={folder === f.id ? 'on' : ''} onClick={() => setFolder(f.id)} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
                 })}
               </nav>
             )}
-            <div className="rooms">
+            <div className="rooms stagger" key={folder}>
               {!rooms.length && (
                 <div className="rooms-empty">
                   <p>No chats yet.</p>
@@ -406,7 +408,7 @@ export default function Chat({ me, setMe }) {
                     <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} />
                     <span className="room-main">
                       <span className="room-top"><strong>{titleOf(r)}</strong><small>{listTime(r.last_message_at)}</small></span>
-                      <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.unread > 0 ? <span className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
+                      <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
                       {prefs.folderTags && tagsOf(r).length > 0 && <span className="room-tags">{tagsOf(r).map((t) => <span key={t}>{t}</span>)}</span>}
                     </span>
                   </button>
@@ -472,7 +474,7 @@ export default function Chat({ me, setMe }) {
             <button type="button" className="danger" disabled={!picked.length} onClick={bulkDelete}>{I.trash}<span>Delete</span></button>
           </nav>
         ) : (
-          <nav className="foot">
+          <nav ref={footLens} className="foot lens">
             <button type="button" className={tab === 'contacts' ? 'on' : ''} onClick={() => setTab('contacts')}>{I.person}<span>Contacts</span></button>
             <button type="button" className={tab === 'chats' ? 'on' : ''} onClick={() => setTab('chats')}><span className="foot-ico">{I.chats}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Chats</span></button>
             {prefs.callsTab && <button type="button" className={tab === 'calls' ? 'on' : ''} onClick={() => setTab('calls')}>{I.calls}<span>Calls</span></button>}
@@ -980,13 +982,14 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     clearTimeout(tapTimer.current)
     tapTimer.current = setTimeout(() => openMenu(at, m), 230)
   }
-  const onDouble = (m) => {
+  const bornAt = useRef(Date.now()) // messages newer than the opening of the chat fly in
+  const onDouble = (m, e) => {
     if (m.deleted_at || picked) return
     const how = prefs.doubleTap
     if (how === 'edit' && m.user_id === me.id && m.kind === 'text') { setReplyTo(null); setEditing(m); setText(m.body) }
     else if (how === 'forward') setForward([m])
     else if (how === 'reply' || how === 'edit') setReplyTo(m)
-    else react(m, prefs.quick)
+    else { react(m, prefs.quick); if (!reactsOf[m.id]?.[prefs.quick]?.mine) burst(prefs.quick, e?.clientX, e?.clientY) }
   }
 
   const onKey = (e) => {
@@ -1178,9 +1181,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           return (
             <div key={m.id} id={`m-${m.id}`}>
               {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
-              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}`}
+              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}`}
                 onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => onTap(e, m)}
-                onDoubleClick={() => { clearTimeout(tapTimer.current); onDouble(m) }}
+                onDoubleClick={(e) => { clearTimeout(tapTimer.current); onDouble(m, e) }}
                 onContextMenu={(e) => openMenu(e, m)}>
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
@@ -1283,7 +1286,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         <OnTop>
           <button type="button" className="scrim blur" aria-label="Close" onClick={() => setMenu(null)} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
           <div className="msg-menu" style={{ left: menu.x, top: menu.y }}>
-            <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={() => react(menu.m, e)}>{e}</button>)}</div>
+            <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>
               {menu.m.body && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
@@ -1382,7 +1385,8 @@ function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
 function Pic({ file, onOpen }) {
   const [url, setUrl] = useState('')
   useEffect(() => { let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
-  return url ? <img className="pic-img" src={url} alt={file?.name || ''} onClick={(e) => { e.stopPropagation(); onOpen(url) }} /> : <span className="pic-wait" />
+  const [ready, setReady] = useState(false)
+  return url ? <img className={`pic-img${ready ? ' ready' : ''}`} src={url} alt={file?.name || ''} onLoad={() => setReady(true)} onClick={(e) => { e.stopPropagation(); onOpen(url) }} /> : <span className="pic-wait" />
 }
 
 function FileTile({ file }) {

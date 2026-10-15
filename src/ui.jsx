@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { initialsOf } from './lib.js'
 
@@ -92,3 +92,59 @@ export function Modal({ title, onClose, children, foot, wide = false }) {
 
 /* on the page itself: menus and full-screen views that must sit where the pointer is */
 export const OnTop = ({ children }) => createPortal(children, document.body)
+
+/* motion is off in power saving and when the computer asks for less motion */
+export const calm = () => !!document.documentElement.dataset.lite || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+/* the glass lens that slides to the chosen tab (tabs, the foot bar, segmented choices) */
+export function useLens(dep) {
+  const ref = useRef(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    const put = () => {
+      const on = el.querySelector(':scope > .on')
+      if (!on) { el.classList.remove('lens-on'); return }
+      el.style.setProperty('--lx', `${on.offsetLeft}px`)
+      el.style.setProperty('--ly', `${on.offsetTop}px`)
+      el.style.setProperty('--lw', `${on.offsetWidth}px`)
+      el.style.setProperty('--lh', `${on.offsetHeight}px`)
+      el.classList.add('lens-on')
+    }
+    put()
+    const ro = new ResizeObserver(put)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [dep])
+  return ref
+}
+export function Lens({ as: Tag = 'span', className = '', dep, children }) {
+  const ref = useLens(dep)
+  return <Tag ref={ref} className={`${className} lens`}>{children}</Tag>
+}
+
+/* a little burst of the emoji where you reacted */
+export function burst(emoji, x, y) {
+  if (calm() || x == null) return
+  for (let i = 0; i < 7; i += 1) {
+    const s = document.createElement('span')
+    s.className = 'burst'
+    s.textContent = emoji
+    const a = ((-90 + (i - 3) * 24) * Math.PI) / 180
+    const d = 46 + Math.random() * 42
+    s.style.cssText = `left:${x}px;top:${y}px;--bx:${Math.cos(a) * d}px;--by:${Math.sin(a) * d - 18}px;--br:${(Math.random() - 0.5) * 70}deg;animation-delay:${Math.abs(i - 3) * 30}ms;font-size:${i === 3 ? 34 : 17 + Math.random() * 9}px`
+    document.body.appendChild(s)
+    setTimeout(() => s.remove(), 1200)
+  }
+}
+
+/* dark to light (and back) as a circle that opens from where you clicked */
+export function revealFrom(e, change) {
+  if (calm() || !document.startViewTransition) { change(); return }
+  const r = document.documentElement
+  r.style.setProperty('--vx', `${e?.clientX ?? window.innerWidth / 2}px`)
+  r.style.setProperty('--vy', `${e?.clientY ?? 0}px`)
+  r.classList.add('vt-reveal')
+  const t = document.startViewTransition(change)
+  t.finished.finally(() => r.classList.remove('vt-reveal'))
+}

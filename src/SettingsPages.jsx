@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
-import { Avatar, I, colorOf, svg } from './ui.jsx'
-import { DEFAULTS, REACTIONS, TEXT_SIZES, chime, setPrefs, usePrefs } from './prefs.js'
+import { Avatar, I, Lens, colorOf, revealFrom, svg } from './ui.jsx'
+import { DEFAULTS, REACTIONS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
@@ -48,7 +48,7 @@ const Box = ({ title, note, children }) => (
 /* the list in the side panel */
 export function SettingsMenu({ me, page, onPage }) {
   return (
-    <div className="side-scroll set-menu">
+    <div className="side-scroll set-menu stagger">
       <button type="button" className={`set-me${page === 'profile' ? ' on' : ''}`} onClick={() => onPage('profile')}>
         <Avatar src={me.avatar_url} name={nameOf(me)} size={60} />
         <span className="set-me-text"><b>{nameOf(me)}</b><small>@{me.username}</small>{me.bio && <small>{me.bio}</small>}</span>
@@ -84,7 +84,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
           : <button type="button" className="round back" onClick={onBack} aria-label="Back">{svg(<path d="M15 5l-7 7 7 7" />)}</button>}
         <strong>{title}</strong>
       </header>
-      <div className="set-body">
+      <div className="set-body stagger" key={page}>
         {page === 'profile' && profile}
         {page === 'general' && <General p={p} onKeys={() => onPage('keys')} />}
         {page === 'keys' && <Keys p={p} />}
@@ -129,7 +129,7 @@ function General({ p, onKeys }) {
         {[['reply', 'Reply to Message'], ['edit', 'Edit Message'], ['forward', 'Forward Message'], ['react', 'Add Reaction']].map(([k, l]) => <Check key={k} on={p.doubleTap === k} onClick={() => setPrefs({ doubleTap: k })}>{l}</Check>)}
       </Box>
       <Box title="Quick reaction">
-        <div className="set-row set-col"><span className="seg seg-emoji">{REACTIONS.map((e) => <button key={e} type="button" className={p.quick === e ? 'on' : ''} onClick={() => setPrefs({ quick: e })}>{e}</button>)}</span></div>
+        <div className="set-row set-col"><Lens className="seg seg-emoji" dep={p.quick}>{REACTIONS.map((e) => <button key={e} type="button" className={p.quick === e ? 'on' : ''} onClick={() => setPrefs({ quick: e })}>{e}</button>)}</Lens></div>
       </Box>
       <Box title="Input settings">
         <Check on={p.enterSends} onClick={() => setPrefs({ enterSends: true })}>Send with Enter</Check>
@@ -285,7 +285,7 @@ function Appearance({ p }) {
       <Box>
         <div className="set-row set-col">
           <span className="set-text">Dark Mode<small>Auto follows the computer, dark at night if the computer does</small></span>
-          <span className="seg">{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={() => setPrefs({ mode: k })}>{l}</button>)}</span>
+          <Lens className="seg" dep={p.mode}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
         </div>
         <Switch on={p.compact} set={(v) => setPrefs({ compact: v })}>Compact Spacing</Switch>
         <Soon arrow>Your Name Colour</Soon>

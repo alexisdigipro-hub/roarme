@@ -78,6 +78,25 @@ export default function Chat({ me, setMe }) {
   const [q, setQ] = useState('')
   const [modal, setModal] = useState('') // '' | newchat | newgroup | settings | info
   const [plus, setPlus] = useState(false)
+  // the chats column: 370px at its narrowest, dragged wider by its right edge, remembered (Alex, 15 Oct)
+  const [sideW, setSideW] = useState(() => { try { return Math.max(370, Number(localStorage.getItem('roarme-side')) || 370) } catch { return 370 } })
+  const drag = (e) => {
+    e.preventDefault()
+    const x0 = e.clientX
+    const w0 = sideW
+    const max = () => Math.max(370, Math.min(720, window.innerWidth - 480))
+    let w = w0
+    const move = (ev) => { w = Math.round(Math.min(max(), Math.max(370, w0 + ev.clientX - x0))); setSideW(w) }
+    const up = () => {
+      document.removeEventListener('pointermove', move)
+      document.removeEventListener('pointerup', up)
+      document.body.classList.remove('resizing')
+      try { localStorage.setItem('roarme-side', String(w)) } catch { /* private window */ }
+    }
+    document.body.classList.add('resizing')
+    document.addEventListener('pointermove', move)
+    document.addEventListener('pointerup', up)
+  }
   const listeners = useRef(new Set())
   const roomsRef = useRef(rooms)
   roomsRef.current = rooms
@@ -189,7 +208,8 @@ export default function Chat({ me, setMe }) {
   const folders = [['all', 'All'], ['unread', 'Unread'], ['groups', 'Groups'], ['archived', 'Archived']]
 
   return (
-    <div className="app">
+    <div className="app" style={{ '--side-w': `${sideW}px` }}>
+      <span className="side-grip" onPointerDown={drag} onDoubleClick={() => { setSideW(370); try { localStorage.setItem('roarme-side', '370') } catch { /* private window */ } }} title="Drag to widen, double-click to reset" />
       <aside className="side">
         <div className="side-head">
           <button type="button" className="me-btn" onClick={() => setModal('settings')} title="Your profile and settings">

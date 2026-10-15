@@ -986,3 +986,201 @@ html.vt-reveal::view-transition-new(root) { animation: reveal .7s var(--wipe) bo
   body::before { animation: none; }
 }
 html[data-lite] body::before { display: none; }
+
+/* the side panel's column (Studio puts the foot bar beside it as a rail) */
+.side-col { display: contents; }
+
+/* =====================================================================
+   STUDIO THEME (Alex, 16 Oct: "another theme from scratch, other buttons, a completely
+   different setup, dark and light"). One idea: a film studio's slate and call sheet.
+   Flat ink surfaces, 1 px rules, sharp corners, mono labels, one loud colour.
+   Dark: ink with signal lime. Light: paper with ink, lime only as type on black.
+   Layout: panels edge to edge, the foot bar becomes a rail on the left, folders are
+   underlined text tabs, chats are ruled rows, hard offset shadows on anything that floats.
+   ===================================================================== */
+html[data-theme='studio'] {
+  --bg: #0f0f0d; --panel: #161614; --glass: #1d1d1a; --glass-2: #292925;
+  --edge: rgba(242, 240, 232, .11); --edge-2: rgba(242, 240, 232, .3);
+  --text: #f2f0e8; --muted: rgba(242, 240, 232, .52);
+  --accent: #d4ff3a; --accent-2: #d4ff3a; --accent-ink: #11110f;
+  --mine: #d4ff3a; --mine-ink: #11110f; --theirs: #22221f;
+  --danger: #ff5c39; --ok: #8fe36a;
+  --blur: none; --shadow: none; --hard: 6px 6px 0 rgba(0, 0, 0, .6);
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  --display: 'Space Grotesk', -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+html[data-theme='studio'][data-mode='light'] {
+  --bg: #efebe1; --panel: #f8f6f0; --glass: #ffffff; --glass-2: #e6e1d4;
+  --edge: rgba(17, 17, 15, .14); --edge-2: rgba(17, 17, 15, .5);
+  --text: #11110f; --muted: rgba(17, 17, 15, .55);
+  --accent: #11110f; --accent-2: #11110f; --accent-ink: #d4ff3a;
+  --mine: #11110f; --mine-ink: #f8f6f0; --theirs: #ffffff;
+  --danger: #e2401c; --ok: #2f9e44; --hard: 6px 6px 0 #11110f;
+  color-scheme: light;
+}
+html[data-theme='studio'] body, html[data-theme='studio'][data-mode='light'] body { font-family: var(--display); background: var(--bg); letter-spacing: -.005em; }
+html[data-theme='studio'] body::before {
+  inset: 0; animation: none; opacity: .07;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+html[data-theme='studio'] :is(button, input, textarea, select) { font-family: inherit; }
+
+/* panels edge to edge, ruled apart */
+html[data-theme='studio'] .app { padding: 0; gap: 0; grid-template-columns: calc(var(--side-w, 370px) + 76px) 1fr; }
+html[data-theme='studio'] .side-grip { top: 0; bottom: 0; left: calc(var(--side-w, 370px) + 76px - 7px); }
+html[data-theme='studio'] :is(.side, .main) { border-radius: 0; border: 0; background: var(--panel); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+html[data-theme='studio'] .main { background: transparent; }
+html[data-theme='studio'] .side { flex-direction: row; gap: 0; padding: 0; border-right: 1px solid var(--edge); }
+html[data-theme='studio'] .side-col { display: flex; flex-direction: column; gap: 12px; flex: 1; min-width: 0; min-height: 0; padding: 16px 14px 10px; }
+html[data-theme='studio'] .side-brand { text-align: left; font-size: 22px; font-weight: 700; letter-spacing: -.035em; text-transform: uppercase; }
+html[data-theme='studio'] .side-brand b { color: var(--accent-2); }
+
+/* the rail */
+html[data-theme='studio'] .foot { order: -1; flex: none; flex-direction: column; justify-content: flex-start; gap: 6px; width: 76px; padding: 16px 9px; border: 0; border-right: 1px solid var(--edge); border-radius: 0; background: var(--bg); }
+html[data-theme='studio'] .foot button { flex: none; gap: 5px; padding: 11px 0 9px; border-radius: 8px; font: 500 9.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+html[data-theme='studio'] .foot button.on { color: var(--accent-ink); }
+html[data-theme='studio'] .foot-ico i { border-radius: 4px; font-family: var(--mono); background: var(--danger); color: #fff; }
+html[data-theme='studio'] .side:has(.foot.bulk) { flex-direction: column; }
+html[data-theme='studio'] .foot.bulk { order: 1; flex-direction: row; width: auto; border-right: 0; border-top: 1px solid var(--edge); padding: 8px; }
+
+/* the lens becomes a solid block (rail, choices) or a line (folders) */
+html[data-theme='studio'] .lens::before { border-radius: 6px; background: var(--accent); box-shadow: none; }
+html[data-theme='studio'] .lens.lens-on > .on { color: var(--accent-ink); }
+html[data-theme='studio'] .tabs { padding: 0; gap: 0; border: 0; border-bottom: 1px solid var(--edge); border-radius: 0; background: none; }
+html[data-theme='studio'] .tabs button { height: 34px; border-radius: 0; font: 500 10.5px/1 var(--mono); letter-spacing: .08em; }
+html[data-theme='studio'] .tabs.lens::before { height: 2px; border-radius: 0; transform: translate(var(--lx, 0), calc(var(--ly, 0) + var(--lh, 0) - 2px)); }
+html[data-theme='studio'] .tabs.lens.lens-on > .on { color: var(--text); }
+html[data-theme='studio'] .tabs small { border-radius: 3px; font-family: var(--mono); }
+html[data-theme='studio'] .rooms-area.left .tabs { border-bottom: 0; border-right: 1px solid var(--edge); border-radius: 0; background: none; }
+html[data-theme='studio'] .rooms-area.left .tabs button { border-radius: 0; }
+html[data-theme='studio'] .rooms-area.left .tabs.lens::before { width: 3px; height: var(--lh, 0); transform: translate(var(--lx, 0), var(--ly, 0)); }
+
+/* buttons: square, ruled, mono; hover inverts; the main one lifts off a hard shadow */
+html[data-theme='studio'] .round { width: 40px; height: 40px; border-radius: 8px; background: transparent; border-color: var(--edge); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='studio'] .round:hover, html[data-theme='studio'] .round.on { background: var(--glass-2); border-color: var(--edge-2); }
+html[data-theme='studio'] :is(.btn, .pill-btn) { height: 40px; border-radius: 6px; background: transparent; border: 1px solid var(--edge-2); -webkit-backdrop-filter: none; backdrop-filter: none; font: 500 11px/1 var(--mono); letter-spacing: .1em; }
+html[data-theme='studio'] :is(.btn, .pill-btn):hover { background: var(--text); color: var(--bg); }
+html[data-theme='studio'] .btn-main, html[data-theme='studio'] .send.ready { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+html[data-theme='studio'] .btn-main:hover { background: var(--accent); color: var(--accent-ink); transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--edge-2); }
+html[data-theme='studio'] .btn-danger { color: var(--danger); border-color: var(--danger); }
+html[data-theme='studio'] :is(.input, .search, .compose textarea) { border-radius: 6px; background: var(--glass); border-color: var(--edge); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='studio'] :is(.input, .compose textarea):focus { border-color: var(--edge-2); }
+html[data-theme='studio'] textarea.input { border-radius: 6px; }
+html[data-theme='studio'] .seg { padding: 3px; border-radius: 8px; background: var(--glass); border: 1px solid var(--edge); }
+html[data-theme='studio'] .seg button { border-radius: 6px; font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+html[data-theme='studio'] .seg-emoji button { font: 18px/1 inherit; }
+html[data-theme='studio'] .switch span { border-radius: 4px; }
+html[data-theme='studio'] .switch span::after { border-radius: 2px; box-shadow: none; }
+html[data-theme='studio'] .switch input:checked + span::after { background: var(--accent-ink); }
+
+/* labels in mono */
+html[data-theme='studio'] :is(.hits-head, .field > span, .set-sec h4, .chat-settings h4, .day span, .room-top small, .set-val, .set-note, .set-version, kbd) { font-family: var(--mono); }
+html[data-theme='studio'] .day { align-items: center; gap: 12px; }
+html[data-theme='studio'] .day::before, html[data-theme='studio'] .day::after { content: ''; flex: 1; height: 1px; background: var(--edge); }
+html[data-theme='studio'] .day span { padding: 0; border-radius: 0; background: none; font-size: 10.5px; letter-spacing: .14em; }
+
+/* chats as ruled rows */
+html[data-theme='studio'] .room { border-radius: 0; padding: 12px 8px; border-bottom: 1px solid var(--edge); }
+html[data-theme='studio'] .rooms { gap: 0; }
+html[data-theme='studio'] .room:hover { background: var(--glass); }
+html[data-theme='studio'] .room.on, html[data-theme='studio'] .room.menu-on { background: var(--glass-2); box-shadow: inset 3px 0 0 var(--accent-2); }
+html[data-theme='studio'] .room-top strong { font-weight: 600; }
+html[data-theme='studio'] .room-top small { font-size: 10.5px; letter-spacing: .02em; }
+html[data-theme='studio'] .av, html[data-theme='studio'] .av img { border-radius: 30%; }
+html[data-theme='studio'] .av { background: var(--glass-2); color: var(--text); }
+html[data-theme='studio'] .av-group { background: var(--accent); color: var(--accent-ink); }
+html[data-theme='studio'] .av-on { border-radius: 3px; border-color: var(--panel); }
+html[data-theme='studio'] .badge { border-radius: 4px; font-family: var(--mono); font-weight: 700; }
+html[data-theme='studio'] .badge.quiet { background: var(--glass-2); color: var(--muted); }
+html[data-theme='studio'] .room-tags span { border-radius: 3px; font-family: var(--mono); background: none; border: 1px solid var(--edge-2); color: var(--muted); }
+
+/* a conversation: a big title over a rule, flat bubbles with one square corner */
+html[data-theme='studio'] .room-head { padding: 14px 18px 12px; border-bottom: 1px solid var(--edge); background: var(--panel); }
+html[data-theme='studio'] .head-card { height: auto; padding: 0; background: none; border: 0; border-radius: 0; }
+html[data-theme='studio'] .head-text strong { font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
+html[data-theme='studio'] .head-text small { font: 500 10.5px/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+html[data-theme='studio'] .bubble { border-radius: 6px; color: var(--text); background: var(--theirs); border: 1px solid var(--edge); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='studio'] .msg.mine .bubble { background: var(--mine); color: var(--mine-ink); border-color: transparent; }
+html[data-theme='studio'] .msg.first:not(.mine) .bubble { border-bottom-left-radius: 0; }
+html[data-theme='studio'] .msg.first.mine .bubble { border-bottom-right-radius: 0; }
+html[data-theme='studio'] .bubble .meta { font: 500 10px/1 var(--mono); color: var(--muted); }
+html[data-theme='studio'] .msg.mine .bubble .meta, html[data-theme='studio'] .msg.mine .ticks { color: color-mix(in srgb, var(--mine-ink) 62%, transparent); }
+html[data-theme='studio'] .msg.mine .ticks.seen { color: var(--mine-ink); }
+html[data-theme='studio'] .bubble.big-emoji { background: none; border: 0; }
+html[data-theme='studio'] .quote { border-radius: 3px; background: color-mix(in srgb, currentColor 8%, transparent); border-left-color: currentColor; }
+html[data-theme='studio'] .quote b { color: inherit; }
+html[data-theme='studio'] .msg.mine .text a { color: inherit; }
+html[data-theme='studio'] .rx button, html[data-theme='studio'] .rx-replies { border-radius: 4px; }
+html[data-theme='studio'] .compose-wrap { padding: 12px 18px 16px; border-top: 1px solid var(--edge); background: var(--panel); }
+html[data-theme='studio'] .compose-ref { border-radius: 4px; }
+html[data-theme='studio'] :is(.bar, .pinbar, .findbar, .day-chip) { border-radius: 6px; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='studio'] .pick h2 { font-size: clamp(48px, 7vw, 104px); font-weight: 700; letter-spacing: -.05em; line-height: .9; text-transform: uppercase; }
+html[data-theme='studio'] .pick h2 b { color: var(--accent-2); }
+html[data-theme='studio'] .pick p { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+
+/* anything that floats: solid, ruled, a hard offset shadow */
+html[data-theme='studio'] :is(.menu, .menu-list, .emoji-pick, .rx-pick, .mention-pick, .toast, .modal) { background: var(--panel); border: 1px solid var(--edge-2); border-radius: 8px; box-shadow: var(--hard); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='studio'] .msg-menu .menu-list { border-radius: 8px; }
+html[data-theme='studio'] :is(.menu, .menu-list) button { border-radius: 4px; }
+html[data-theme='studio'] :is(.menu, .menu-list) button:not(:disabled):hover { background: var(--accent); color: var(--accent-ink); }
+html[data-theme='studio'] :is(.menu, .menu-list) button.danger:hover { background: var(--danger); color: #fff; }
+html[data-theme='studio'] .modal { border-radius: 10px; box-shadow: 10px 10px 0 rgba(0, 0, 0, .6); }
+html[data-theme='studio'] .modal-head h2 { font-size: 21px; font-weight: 700; letter-spacing: -.03em; text-transform: uppercase; }
+html[data-theme='studio'] .modal-back { background: rgba(10, 10, 9, .62); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='studio'] .toast { border-radius: 6px; font: 500 12px/1.3 var(--mono); letter-spacing: .04em; }
+html[data-theme='studio'] .person { border-radius: 6px; }
+html[data-theme='studio'] .auth-card { border-radius: 10px; background: var(--panel); border: 1px solid var(--edge-2); box-shadow: 10px 10px 0 rgba(0, 0, 0, .6); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='studio'] .auth-card h1 { font-size: 34px; font-weight: 700; letter-spacing: -.04em; text-transform: uppercase; }
+
+/* settings: ruled boxes, square icons, the chosen row in the loud colour */
+html[data-theme='studio'] .set-box { border-radius: 8px; background: var(--panel); border-color: var(--edge); }
+html[data-theme='studio'] .set-menu .set-box, html[data-theme='studio'] .set-me { background: var(--glass); }
+html[data-theme='studio'] .set-me { border-radius: 8px; }
+html[data-theme='studio'] .set-box > button.set-row:first-child { border-radius: 7px 7px 0 0; }
+html[data-theme='studio'] .set-box > button.set-row:last-child { border-radius: 0 0 7px 7px; }
+html[data-theme='studio'] .set-box > button.set-row:only-child { border-radius: 7px; }
+html[data-theme='studio'] .nav-ico { border-radius: 6px; }
+html[data-theme='studio'] .set-nav.on { background: var(--accent); color: var(--accent-ink); }
+html[data-theme='studio'] .set-tick { border-radius: 4px; }
+html[data-theme='studio'] .set-head { background: var(--panel); border-bottom: 1px solid var(--edge); }
+html[data-theme='studio'] .set-head strong { font-size: 20px; font-weight: 700; letter-spacing: -.03em; text-transform: uppercase; }
+html[data-theme='studio'] .set-sec h4 { font-size: 10.5px; letter-spacing: .12em; }
+html[data-theme='studio'] .set-preview { border-radius: 7px 7px 0 0; }
+html[data-theme='studio'] .set-preview .pv { border-radius: 6px; }
+html[data-theme='studio'] .set-preview .pv.mine { background: var(--mine); color: var(--mine-ink); border-bottom-right-radius: 0; }
+html[data-theme='studio'] .set-preview .pv:not(.mine) { background: var(--theirs); border: 1px solid var(--edge); border-bottom-left-radius: 0; }
+html[data-theme='studio'] .set-preview .pv i { border-radius: 3px; border-left-color: currentColor; background: color-mix(in srgb, currentColor 8%, transparent); }
+html[data-theme='studio'] :is(.wall-tile, .theme-sw, .tv-pic) { border-radius: 6px; }
+html[data-theme='studio'] .wall-b { border-radius: 4px; }
+html[data-theme='studio'] .wall-b.mine { background: var(--mine); color: var(--mine-ink); }
+html[data-theme='studio'] .tv-tile.on, html[data-theme='studio'] .theme-tile.on small { color: var(--text); }
+html[data-theme='studio'] :is(.tv-tile.on .tv-pic, .theme-tile.on .theme-sw, .wall-tile.on) { border-color: var(--text); }
+html[data-theme='studio'] .new-call { border-radius: 6px; color: var(--text); }
+html[data-theme='studio'] .new-call-ico { border-radius: 8px; background: var(--accent); color: var(--accent-ink); }
+html[data-theme='studio'] .room-prev.is-online { color: var(--ok); }
+
+/* light studio: paper and ink */
+html[data-theme='studio'][data-mode='light'] :is(.menu, .menu-list, .emoji-pick, .rx-pick, .mention-pick, .toast, .modal, .auth-card) { background: var(--panel); border-color: #11110f; box-shadow: var(--hard); }
+html[data-theme='studio'][data-mode='light'] .modal, html[data-theme='studio'][data-mode='light'] .auth-card { box-shadow: 10px 10px 0 #11110f; }
+html[data-theme='studio'][data-mode='light'] .room.on { background: var(--glass-2); box-shadow: inset 3px 0 0 var(--accent-2); }
+html[data-theme='studio'][data-mode='light'] .seg { background: var(--glass); }
+html[data-theme='studio'][data-mode='light'] .modal-back { background: rgba(239, 235, 225, .7); }
+html[data-theme='studio'][data-mode='light'] .badge.quiet { background: var(--glass-2); color: var(--muted); }
+html[data-theme='studio'][data-mode='light'] .bubble.pic .meta { color: #fff; }
+html[data-theme='studio'][data-mode='light'] body::before { opacity: .05; }
+
+@media (max-width: 760px) {
+  html[data-theme='studio'] .app { grid-template-columns: 1fr; padding: 0; }
+  html[data-theme='studio'] .side { flex-direction: column; border-right: 0; }
+  html[data-theme='studio'] .foot { order: 1; flex-direction: row; width: auto; padding: 6px 8px; border-right: 0; border-top: 1px solid var(--edge); }
+  html[data-theme='studio'] .foot button { flex: 1 1 0; }
+}
+html[data-theme='studio'] .rx button { background: var(--glass); border: 1px solid var(--edge); color: var(--text); }
+html[data-theme='studio'] .rx button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+html[data-theme='studio'] .msg .bubble.big-emoji, html[data-theme='studio'][data-mode='light'] .msg.mine .bubble.big-emoji, html[data-theme='studio'][data-mode='light'] .msg .bubble.big-emoji { background: none; border: 0; box-shadow: none; }
+@media (max-width: 760px) {
+  html[data-theme='studio'] .head-text strong { font-size: 18px; }
+  html[data-theme='studio'] .head-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html[data-theme='studio'] .room-head { padding: 10px 12px; }
+}

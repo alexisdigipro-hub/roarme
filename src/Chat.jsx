@@ -357,6 +357,7 @@ export default function Chat({ me, setMe }) {
     <div className="app" style={{ '--side-w': `${sideW}px` }}>
       <span className="side-grip" onPointerDown={drag} onDoubleClick={() => { setSideW(370); try { localStorage.setItem('roarme-side', '370') } catch { /* private window */ } }} title="Drag to widen, double-click to reset" />
       <aside className="side">
+        <div className="side-col">
         <div className="side-head">
           <button type="button" className="pill-btn" onClick={() => { setPlus(false); if (picking) endPick(); else { setTab('chats'); setPicking(true) } }}>{picking ? 'Done' : 'Edit'}</button>
           <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <>Roar<b>Me</b></>}</span>
@@ -466,6 +467,7 @@ export default function Chat({ me, setMe }) {
           </div>
         )}
         {tab === 'settings' && <SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} />}
+        </div>
         {picking ? (
           <nav className="foot bulk">
             <button type="button" disabled={!picked.length} onClick={bulkRead}>{I.read}<span>Read</span></button>

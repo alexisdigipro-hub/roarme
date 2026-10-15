@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
    A change is announced with the 'roarme-prefs' event so every open part of the app follows it. */
 export const DEFAULTS = {
   mode: 'dark', // dark | light | auto (follows the computer)
+  theme: 'glass', // glass | studio
   textSize: 2, // 0..4
   bigEmoji: true,
   compact: false,

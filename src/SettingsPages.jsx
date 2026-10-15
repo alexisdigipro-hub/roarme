@@ -20,7 +20,7 @@ export const PAGES = [
 export const pageTitle = (id) => (id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 const LANGS = [['en', 'English', 'English'], ['el', 'Greek', 'Ελληνικά'], ['de', 'German', 'Deutsch'], ['es', 'Spanish', 'Español'], ['fr', 'French', 'Français'], ['it', 'Italian', 'Italiano'], ['nl', 'Dutch', 'Nederlands'], ['pt', 'Portuguese', 'Português'], ['ru', 'Russian', 'Русский'], ['uk', 'Ukrainian', 'Українська'], ['tr', 'Turkish', 'Türkçe'], ['ar', 'Arabic', 'العربية'], ['zh-CN', 'Chinese', '中文'], ['ja', 'Japanese', '日本語'], ['ko', 'Korean', '한국어']]
-const THEMES = [['glass', 'Glass', ['#2c5d93', '#1d2635']], ['sepia', 'Sepia', ['#2f6f7a', '#e8dfcc']], ['mine', 'Mineshaft', ['#b39567', '#2b2b2b']], ['gray', 'Grayscale', ['#4a4a4a', '#222']], ['amoled', 'Amoled', ['#3a5fa0', '#000']], ['night', 'Midnight', ['#4b4f8a', '#1c1c35']]]
+const THEMES = [['glass', 'Glass', ['#2c5d93', '#1d2635']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['sepia', 'Sepia', ['#2f6f7a', '#e8dfcc']], ['mine', 'Mineshaft', ['#b39567', '#2b2b2b']], ['gray', 'Grayscale', ['#4a4a4a', '#222']], ['amoled', 'Amoled', ['#3a5fa0', '#000']], ['night', 'Midnight', ['#4b4f8a', '#1c1c35']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -272,14 +272,18 @@ function Appearance({ p }) {
         </div>
         <div className="set-row set-col">
           <div className="themes">
-            {THEMES.map(([k, l, [a, b]], i) => (
-              <button key={k} type="button" className={`theme-tile${i === 0 ? ' on' : ''}`} disabled={i > 0} title={i > 0 ? 'Coming soon' : l}>
-                <span className="theme-sw" style={{ background: b }}><i style={{ background: i === 0 ? 'rgba(255,255,255,.18)' : `${a}55` }} /><i style={{ background: a }} /></span>
-                <small>{l}</small>
-              </button>
-            ))}
+            {THEMES.map(([k, l, [a, b]], i) => {
+              const ready = i < 2
+              return (
+                <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} disabled={!ready} title={ready ? l : 'Coming soon'}
+                  onClick={(e) => revealFrom(e, () => { document.documentElement.dataset.theme = k; setPrefs({ theme: k }) })}>
+                  <span className="theme-sw" style={{ background: b }}><i style={{ background: i === 0 ? 'rgba(255,255,255,.18)' : i === 1 ? 'rgba(255,255,255,.14)' : `${a}55` }} /><i style={{ background: a }} /></span>
+                  <small>{l}</small>
+                </button>
+              )
+            })}
           </div>
-          <small className="muted">Glass is the RoarMe look. More themes are coming soon.</small>
+          <small className="muted">Glass: soft frosted panels. Studio: sharp, graphic, with a side rail. Both have dark and light. More themes are coming soon.</small>
         </div>
       </Box>
       <Box>

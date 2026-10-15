@@ -9,7 +9,8 @@ export default function App() {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(undefined)
   const [recovering, setRecovering] = useState(false)
-  const { mode, lite } = usePrefs()
+  const { mode, lite, theme } = usePrefs()
+  useEffect(() => { document.documentElement.dataset.theme = theme || 'glass' }, [theme])
   useEffect(() => applyMode(mode), [mode])
   useEffect(() => { if (lite) document.documentElement.dataset.lite = '1'; else delete document.documentElement.dataset.lite }, [lite])
 

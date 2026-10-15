@@ -695,6 +695,15 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const y = Math.max(70, Math.min(e.clientY, window.innerHeight - h - 12))
     setMenu({ m, x, y })
   }
+  // a click on a message opens its menu, as in the THEMADLIONS chat (a double click is the quick reaction);
+  // a click on a photo, a link or a button inside it does its own thing
+  const tapTimer = useRef(0)
+  const onTap = (e, m) => {
+    if (e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx') || window.getSelection()?.toString()) return
+    const at = { preventDefault() {}, clientX: e.clientX, clientY: e.clientY }
+    clearTimeout(tapTimer.current)
+    tapTimer.current = setTimeout(() => openMenu(at, m), 230)
+  }
   const onDouble = (m) => {
     if (m.deleted_at || picked) return
     if (prefs.doubleTap === 'reply') setReplyTo(m)
@@ -835,8 +844,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
             <div key={m.id} id={`m-${m.id}`}>
               {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
               <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}`}
-                onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : undefined}
-                onDoubleClick={() => onDouble(m)}
+                onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => onTap(e, m)}
+                onDoubleClick={() => { clearTimeout(tapTimer.current); onDouble(m) }}
                 onContextMenu={(e) => openMenu(e, m)}>
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
@@ -860,12 +869,6 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                     </span>
                   )}
                 </div>
-                {!m.deleted_at && !picked && (
-                  <span className="msg-acts">
-                    <button type="button" onClick={() => setReplyTo(m)} title="Reply">{I.reply}</button>
-                    <button type="button" onClick={(e) => { const b = e.currentTarget.getBoundingClientRect(); openMenu({ preventDefault() {}, clientX: b.left, clientY: b.bottom + 6 }, m) }} title="More">{I.more}</button>
-                  </span>
-                )}
               </div>
             </div>
           )

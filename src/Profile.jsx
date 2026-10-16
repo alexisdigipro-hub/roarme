@@ -3,9 +3,10 @@ import { errText, fileLink, fmtBytes, lastSeenText, nameOf, supabase, timeOf } f
 import { Avatar, CropModal, I, Modal, OnTop } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { usePrefs } from './prefs.js'
+import { locale } from './i18n.js'
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
-const monthOf = (iso) => new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }).toUpperCase()
+const monthOf = (iso) => new Date(iso).toLocaleDateString(locale(), { month: 'long', year: 'numeric' }).toUpperCase()
 const isVideo = (m) => /^video\//.test(m.file?.type || '')
 const isGif = (m) => /gif/.test(m.file?.type || '')
 const isAudio = (m) => m.kind === 'file' && isAudioFile(m.file)
@@ -179,7 +180,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
       <span className="pf-row-text"><b>{label}</b><small>{sub}</small></span>
     </button>
   )
-  const when = (iso) => `${new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · ${timeOf(iso)}`
+  const when = (iso) => `${new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })} · ${timeOf(iso)}`
 
   return (
     <Modal title="" onClose={onClose} wide>

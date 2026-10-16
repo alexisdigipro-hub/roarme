@@ -5,6 +5,7 @@ import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLoca
 import Profile from './Profile.jsx'
 import { formatText, plainText, wrapSelection } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
+import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { AttachSheet, AudioNote, MusicTile, isAudioFile, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
 
@@ -183,7 +184,7 @@ export default function Chat({ me, setMe }) {
     const title = room?.kind === 'group' ? `${room.title}` : nameOf(who)
     const body = !prefsRef.current.notifyPreview ? 'New message' : (room?.kind === 'group' ? `${nameOf(who)}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : plainText(m.body))
     try {
-      const n = new Notification(title, { body, icon: who?.avatar_url || './icon.svg', tag: m.room_id })
+      const n = new Notification(title, { body: tr(body), icon: who?.avatar_url || './icon.svg', tag: m.room_id })
       n.onclick = () => { window.focus(); setTab('chats'); setActiveId(m.room_id); n.close() }
     } catch { /* not allowed here */ }
   }
@@ -475,13 +476,19 @@ export default function Chat({ me, setMe }) {
               <button type="button" className="round" onClick={() => setModal('newchat')} title="Find people" aria-label="Find people">{I.addPerson}</button>
             </div>
             {contacts.filter((p) => !cq.trim() || `${nameOf(p)} ${p.username}`.toLowerCase().includes(cq.trim().toLowerCase().replace(/^@/, ''))).map((p) => (
-              <button key={p.id} type="button" className="room contact" onClick={() => chatWith(p)}>
+              <div key={p.id} className="room contact" role="button" tabIndex={0} onClick={() => chatWith(p)} onKeyDown={(e) => { if (e.key === 'Enter') chatWith(p) }}>
                 <Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} />
                 <span className="room-main">
                   <span className="room-top"><strong>{nameOf(p)}</strong></span>
                   <span className="room-bottom"><span className={`room-prev${onlineNow(p) ? ' is-online' : ''}`}>{lastSeenText(p)}</span></span>
                 </span>
-              </button>
+                {/* call, video call, message: small icons on the right (Alex, 16 Oct) */}
+                <span className="contact-acts">
+                  <button type="button" onClick={(e) => { e.stopPropagation(); startCall(p, directWith(p), false) }} title="Call" aria-label="Call">{I.phone}</button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); startCall(p, directWith(p), true) }} title="Video call" aria-label="Video call">{I.video}</button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); chatWith(p) }} title="Message" aria-label="Message">{I.chats}</button>
+                </span>
+              </div>
             ))}
             {!contacts.length && <div className="calls-empty"><span className="side-panel-ico">{I.person}</span><b>No contacts yet</b><p>People you chat with show up here.</p><button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find people</button></div>}
           </div>

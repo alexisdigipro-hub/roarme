@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { errText, fileLink, fmtBytes, supabase, timeOf } from './lib.js'
 import { EMOJIS, WALLS, setPrefs, usePrefs } from './prefs.js'
 import { I, Modal } from './ui.jsx'
+import { locale } from './i18n.js'
 
 /* ---------- emoji grid ---------- */
 export function EmojiPicker({ onPick, onClose }) {
@@ -213,7 +214,7 @@ export function SharedMedia({ roomId, onOpen, onClose }) {
           {docs.map((m) => (
             <button key={m.id} type="button" className="person" onClick={async () => { const u = await fileLink(m.file?.path); if (u) window.open(u, '_blank', 'noopener') }}>
               <span className="file-ico">{I.file}</span>
-              <span className="person-text"><b>{m.kind === 'voice' ? 'Voice message' : m.file?.name}</b><small>{fmtBytes(m.file?.size)} · {new Date(m.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} {timeOf(m.created_at)}</small></span>
+              <span className="person-text"><b>{m.kind === 'voice' ? 'Voice message' : m.file?.name}</b><small>{fmtBytes(m.file?.size)} · {new Date(m.created_at).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })} {timeOf(m.created_at)}</small></span>
             </button>
           ))}
         </div>

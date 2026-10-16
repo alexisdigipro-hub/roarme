@@ -4,6 +4,7 @@ import { Avatar, I, Lens, NAME_COLORS, colorOf, revealFrom, svg } from './ui.jsx
 import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
+import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
    Anything that needs the database is shown switched off with "Coming soon". */
@@ -20,7 +21,6 @@ export const PAGES = [
 ]
 export const pageTitle = (id) => (id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
-const LANGS = [['en', 'English', 'English'], ['el', 'Greek', 'Ελληνικά'], ['de', 'German', 'Deutsch'], ['es', 'Spanish', 'Español'], ['fr', 'French', 'Français'], ['it', 'Italian', 'Italiano'], ['nl', 'Dutch', 'Nederlands'], ['pt', 'Portuguese', 'Português'], ['ru', 'Russian', 'Русский'], ['uk', 'Ukrainian', 'Українська'], ['tr', 'Turkish', 'Türkçe'], ['ar', 'Arabic', 'العربية'], ['zh-CN', 'Chinese', '中文'], ['ja', 'Japanese', '日本語'], ['ko', 'Korean', '한국어']]
 const THEMES = [['ember', 'Ember', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['sepia', 'Sepia', ['#2f6f7a', '#e8dfcc']], ['mine', 'Mineshaft', ['#b39567', '#2b2b2b']], ['gray', 'Grayscale', ['#4a4a4a', '#222']], ['amoled', 'Amoled', ['#3a5fa0', '#000']], ['night', 'Midnight', ['#4b4f8a', '#1c1c35']]]
 
 const Switch = ({ on, set, children, hint }) => (
@@ -103,7 +103,7 @@ export function SettingsMenu({ me, page, onPage }) {
       <div className="set-box">
         {PAGES.map(([id, label, c, ico]) => (
           <button key={id} type="button" className={`set-row set-pick set-nav${page === id ? ' on' : ''}`} onClick={() => onPage(id)}>
-            <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}</span>{id === 'language' && <small className="set-val">English</small>}<i className="set-chev">{I.right}</i>
+            <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}<i className="set-chev">{I.right}</i>
           </button>
         ))}
       </div>
@@ -467,7 +467,7 @@ const deviceOf = (u = navigator.userAgent) => {
 }
 const ago = (iso) => {
   const m = (Date.now() - new Date(iso).getTime()) / 60000
-  return m < 2 ? 'now' : m < 60 ? `${Math.round(m)} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  return m < 2 ? 'now' : m < 60 ? `${Math.round(m)} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })
 }
 function Sessions({ me, setMe, toast }) {
   const [list, setList] = useState(null)
@@ -602,27 +602,16 @@ function Appearance({ p, toast, me, setMe }) {
 }
 
 function Language({ p }) {
-  const [q, setQ] = useState('')
-  const [pick, setPick] = useState(false)
-  const to = LANGS.find(([k]) => k === p.translateTo)
-  const list = LANGS.filter(([, a, b]) => !q.trim() || `${a} ${b}`.toLowerCase().includes(q.trim().toLowerCase()))
+  const ui = p.lang === 'el' ? 'el' : 'en'
+  const setUi = (k) => { if (k === ui) return; setPrefs({ lang: k }); setTimeout(() => window.location.reload(), 150) }
+  const to = p.translateTo === 'el' || p.translateTo === 'en' ? p.translateTo : 'auto'
   return (
     <>
-      <Box title="Translate messages" note="Translate opens the message in Google Translate.">
-        <Nav onClick={() => setPick((v) => !v)} value={to ? to[1] : 'Greek ↔ English'}>Translate To</Nav>
-        {pick && (
-          <>
-            <Check on={!to} onClick={() => { setPrefs({ translateTo: 'auto' }); setPick(false) }}>Greek ↔ English</Check>
-            {LANGS.map(([k, a]) => <Check key={k} on={p.translateTo === k} onClick={() => { setPrefs({ translateTo: k }); setPick(false) }}>{a}</Check>)}
-          </>
-        )}
-        <Soon>Translate Entire Chats</Soon>
+      <Box title="Interface language" note="ROAR restarts in the language you pick.">
+        {UI_LANGS.map(([k, a, b]) => <Check key={k} on={ui === k} onClick={() => setUi(k)}><span data-raw="">{b}</span><small data-raw="">{a}</small></Check>)}
       </Box>
-      <Box title="Interface language" note="ROAR speaks English for now. More languages are coming soon.">
-        <div className="set-row"><label className="search set-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" /></label></div>
-        {list.map(([k, a, b]) => (
-          <div key={k} className={`set-row${k === 'en' ? '' : ' is-off'}`}><span className="set-text">{a}<small>{b}</small></span>{k === 'en' && <i className="set-tick">{I.check}</i>}</div>
-        ))}
+      <Box title="Translate messages" note="Translate opens the message in Google Translate.">
+        {[['auto', 'Greek ↔ English'], ['el', 'Into Greek'], ['en', 'Into English']].map(([k, l]) => <Check key={k} on={to === k} onClick={() => setPrefs({ translateTo: k })}>{l}</Check>)}
       </Box>
     </>
   )
@@ -636,7 +625,7 @@ function Folders({ p, folders, onFolders }) {
         {folders.map((f) => (
           <button key={f.id} type="button" className={`set-row set-pick${f.custom ? '' : ' set-fixed'}`} onClick={() => f.custom && onFolders('folders')}>
             <span className="fold-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span>
-            <span className="set-text">{f.name}{f.custom && <small>{f.rooms.length} chat{f.rooms.length === 1 ? '' : 's'}</small>}</span>
+            <span className="set-text">{f.name}{f.custom && <small>{`${f.rooms.length} chat${f.rooms.length === 1 ? '' : 's'}`}</small>}</span>
             {f.custom && <><i className="fold-dot" style={{ background: colorOf(f.id) }} /><i className="set-chev">{I.right}</i></>}
           </button>
         ))}

@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import './styles.css'
+import { startI18n } from './i18n.js'
+
+startI18n()
 
 // inside the ROAR app (Mac/Windows) with no title bar: the page keeps a band for the window buttons
 if (window.roarDesktop?.platform) document.documentElement.dataset.desktop = window.roarDesktop.platform

@@ -1668,3 +1668,12 @@ html[data-theme='studio'] .compose-box { border-radius: 6px; background: var(--g
 html[data-theme='studio'] .compose-box:focus-within { border-color: var(--edge-2); }
 html[data-theme='aura'] .compose-box { border-radius: 20px; background: rgba(255, 255, 255, .06); border-color: transparent; }
 html[data-theme='aura'][data-mode='light'] .compose-box { background: rgba(255, 255, 255, .6); }
+
+/* Contacts: call, video call and message as small icons on the right of each person */
+.room.contact { cursor: pointer; }
+.contact-acts { flex: none; display: flex; gap: 2px; margin-left: auto; }
+.contact-acts button { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); transition: background .15s, color .15s, transform .15s; }
+.contact-acts button svg { width: 18px; height: 18px; }
+.contact-acts button:hover { background: var(--glass-2); color: var(--accent); }
+.contact-acts button:active { transform: scale(.9); }
+.room.contact.on .contact-acts button, .room.contact:hover .contact-acts button { color: var(--text); }

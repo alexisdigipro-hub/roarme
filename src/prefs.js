@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
    A change is announced with the 'roarme-prefs' event so every open part of the app follows it. */
 export const DEFAULTS = {
   mode: 'dark', // dark | light | auto (follows the computer)
+  lang: 'en', // en | el, the interface language (i18n.js)
   theme: 'ember', // ember (the main one, Alex 16 Oct) | glass | aura | studio
   accent: '', // '' = the theme's own colour, or one of ACCENTS
   density: 'standard', // relaxed | standard | tight

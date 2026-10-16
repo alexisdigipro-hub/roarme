@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { locale } from './i18n.js'
 
 // RoarMe's own Supabase project (moved out of the THEMADLIONS hub's project on 16 Oct 2026).
 // The publishable key is public by design: what each person can read or write is enforced by the
@@ -22,7 +23,7 @@ export const initialsOf = (s) => String(s || '?').replace(/^@/, '').split(/\s+/)
 export const onlineNow = (p) => !!p?.last_seen && Date.now() - new Date(p.last_seen).getTime() < 3 * 60 * 1000
 
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-export const timeOf = (iso) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+export const timeOf = (iso) => new Date(iso).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
 export const listTime = (iso) => {
   if (!iso) return ''
   const d = new Date(iso)
@@ -30,8 +31,8 @@ export const listTime = (iso) => {
   if (sameDay(d, now)) return timeOf(iso)
   const y = new Date(now); y.setDate(now.getDate() - 1)
   if (sameDay(d, y)) return 'Yesterday'
-  if (now - d < 6 * 864e5) return d.toLocaleDateString('en-GB', { weekday: 'short' })
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  if (now - d < 6 * 864e5) return d.toLocaleDateString(locale(), { weekday: 'short' })
+  return d.toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
 }
 export const dayLabel = (iso) => {
   const d = new Date(iso)
@@ -39,7 +40,7 @@ export const dayLabel = (iso) => {
   if (sameDay(d, now)) return 'Today'
   const y = new Date(now); y.setDate(now.getDate() - 1)
   if (sameDay(d, y)) return 'Yesterday'
-  return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) })
+  return d.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) })
 }
 export const lastSeenText = (p) => {
   if (!p?.last_seen) return ''

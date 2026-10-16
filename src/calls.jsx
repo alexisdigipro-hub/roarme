@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { SUPABASE_KEY, SUPABASE_URL, errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, OnTop, svg } from './ui.jsx'
 import { getPrefs } from './prefs.js'
+import { locale, tr } from './i18n.js'
 
 /* Voice and video calls between two people (Alex, 16 Oct), straight from one computer to the other
    (WebRTC). The ringing, the answer and the network details travel through each person's private
@@ -222,7 +223,7 @@ export function useCalls({ me, people, loadPeople, toast }) {
           setCall({ id: payload.callId, peer, roomId: payload.roomId, video: !!payload.video, dir: 'in', stage: 'ringing', muted: false, camOff: false })
           stopRing.current = ringer('in')
           if (document.hidden && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            try { new Notification(nameOf(peer), { body: payload.video ? 'Incoming video call' : 'Incoming call', icon: peer.avatar_url || './icon.svg', tag: `call-${payload.callId}` }) } catch { /* not here */ }
+            try { new Notification(nameOf(peer), { body: tr(payload.video ? 'Incoming video call' : 'Incoming call'), icon: peer.avatar_url || './icon.svg', tag: `call-${payload.callId}` }) } catch { /* not here */ }
           }
           clearTimeout(ringTimer.current)
           ringTimer.current = setTimeout(() => { if (callRef.current?.id === payload.callId && callRef.current.stage === 'ringing') finish(`Missed call from ${nameOf(peer)}`) }, RING_FOR + 5000)
@@ -347,7 +348,7 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null }) {
           <button key={r.id} type="button" className="room call-log" onClick={() => onCall(other, r.room_id, r.video)} title={r.video ? 'Video call back' : 'Call back'}>
             <Avatar src={other.avatar_url} name={nameOf(other)} />
             <span className="room-main">
-              <span className="room-top"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong><small>{new Date(r.started_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric', year: '2-digit' })}</small></span>
+              <span className="room-top"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong><small>{new Date(r.started_at).toLocaleDateString(locale(), { day: 'numeric', month: 'numeric', year: '2-digit' })}</small></span>
               <span className="room-bottom"><span className="room-prev"><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}{dur && ` (${dur})`}</span></span>
             </span>
           </button>

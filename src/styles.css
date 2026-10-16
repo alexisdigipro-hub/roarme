@@ -2445,3 +2445,17 @@ html[data-mode='light'] .lib-tr:not(.soon) .pf-tr-left { color: #a35f00; backgro
 .search-wrap > div { min-height: 0; overflow: hidden; padding: 0 1px; }
 .search-wrap.open { grid-template-rows: 1fr; opacity: 1; margin-bottom: 0; }
 .search-wrap .search { margin: 1px 0; }
+
+/* Media page top row (Alex, 17 Oct): the tabs in the middle, roomier */
+.lib-top { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; column-gap: 16px; }
+.lib-top .lib-back { grid-column: 1; }
+.lib-title { margin-right: 0; }
+.lib-seg { justify-self: center; gap: 4px; padding: 4px; }
+.lib-seg button { flex: none; height: 36px; padding: 0 18px; gap: 8px; font-size: 13.5px; }
+.lib-search { justify-self: end; width: 100%; max-width: 240px; }
+@media (max-width: 760px) {
+  .lib-top { grid-template-columns: auto minmax(0, 1fr); row-gap: 10px; }
+  .lib-seg { grid-column: 1 / -1; justify-self: stretch; overflow-x: auto; }
+  .lib-seg button { flex: 1; padding: 0 12px; }
+  .lib-search { grid-column: 1 / -1; max-width: none; }
+}

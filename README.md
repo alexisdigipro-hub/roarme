@@ -26,6 +26,13 @@ Strikethrough, Code, Spoiler (press again to take the mark off; keys ⌘B, ⌘I,
 `__text__`. The send window opens on tinted tiles (Gallery, Camera on phones, File, RoarTransfer); once files are
 picked they shrink to small pills and the caption and Send come in.
 
+## Media from all chats (17 Oct)
+A Media tab in the bar at the foot (`src/media.jsx`): every photo and video, link, song and document from all the
+chats one is in, in four tabs (Media, Links, Music, Docs) with counts and a search, each with who sent it and in
+which chat. The list on the left narrows it to one chat. A click opens a photo or video in the viewer (step left and
+right), a link in the browser, a document as a download; the chat bubble button goes to the message in its chat.
+Expired RoarTransfer files are left out.
+
 ## The chat list (17 Oct)
 The list shows each chat's name, time and unread badge on one line, without the last message (a draft still shows).
 Settings > Interface > Show Last Message brings the last message back under each name.

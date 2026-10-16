@@ -7,6 +7,7 @@ import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
+import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
@@ -97,6 +98,11 @@ export default function Chat({ me, setMe }) {
     return () => window.removeEventListener('hashchange', go)
   }, [])
   const clearJump = useCallback(() => setJump(''), [])
+  // Media from all chats: its own tab (Alex, 17 Oct); read fresh each time the tab opens
+  const [libRoom, setLibRoom] = useState('')
+  const [lib, resetLib] = useLibrary(tab === 'media')
+  useEffect(() => { if (tab !== 'media') resetLib() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+  const libChat = (roomId, msgId) => { setTab('chats'); setActiveId(roomId); setJump(msgId) }
   useEffect(() => { try { localStorage.setItem('roarme-folder', folder) } catch { /* private window */ } }, [folder])
   // ⌘K / Ctrl+K: the search
   useEffect(() => {
@@ -528,6 +534,8 @@ export default function Chat({ me, setMe }) {
           </div>
         )}
         {tab === 'settings' && <SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} />}
+        {tab === 'media' && <LibrarySide data={lib} rooms={visible} titleOf={titleOf} room={libRoom} onRoom={setLibRoom}
+          face={(r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />} />}
         </div>
         {picking ? (
           <nav className="foot bulk">
@@ -540,6 +548,7 @@ export default function Chat({ me, setMe }) {
           <nav ref={footLens} className="foot lens">
             <button type="button" className={tab === 'contacts' ? 'on' : ''} onClick={() => setTab('contacts')}>{I.person}<span>Contacts</span></button>
             <button type="button" className={tab === 'chats' ? 'on' : ''} onClick={() => setTab('chats')}><span className="foot-ico">{I.chats}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Chats</span></button>
+            <button type="button" className={tab === 'media' ? 'on' : ''} onClick={() => setTab('media')}>{I.media}<span>Media</span></button>
             {prefs.callsTab && <button type="button" className={tab === 'calls' ? 'on' : ''} onClick={() => setTab('calls')}>{I.calls}<span>Calls</span></button>}
             <button type="button" className={tab === 'settings' ? 'on' : ''} onClick={() => setTab('settings')}>{I.gear}<span>Settings</span></button>
           </nav>
@@ -552,6 +561,8 @@ export default function Chat({ me, setMe }) {
             profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : openFolders())}
             folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} />
+        ) : tab === 'media' ? (
+          <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('chats')} />
         ) : active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]}

@@ -48,7 +48,6 @@ const PATTERNS = [
   [/^(\d+) files · (.+) of 3 GB$/, (_, n, s) => `${n} αρχεία · ${s} από 3 GB`],
   [/^1 file · (.+) of 3 GB$/, (_, s) => `1 αρχείο · ${s} από 3 GB`],
   [/^(.+) of (.+) · (\d+) of (\d+) sent$/, (_, a, b, x, y) => `${a} από ${b} · ${x} από ${y} στάλθηκαν`],
-  [/^Big files for (.+), as they are\. Up to 3 GB, kept 3 days, then gone\.$/, (_, w) => `Μεγάλα αρχεία για ${w}, όπως είναι. Έως 3 GB, μένουν 3 μέρες και μετά σβήνονται.`],
   [/^In (.+), and anyone with the link can download until (.+)\.$/, (_, w, d) => `Στο ${w}, και όποιος έχει το link μπορεί να το κατεβάσει ως ${d}.`],
   [/^Pinned messages · (\d+)$/, (_, n) => `Καρφιτσωμένα · ${n}`],
   [/^(\d+) pinned messages$/, (_, n) => `${n} καρφιτσωμένα μηνύματα`],

@@ -98,7 +98,7 @@ export function TransferWindow({ title, outbox, onStart, onClose }) {
         <TransferMark big />
         {phase === 'pick' && (
           <>
-            <p className="rt-sub">Big files for {title}, as they are. Up to 3 GB, kept 3 days, then gone.</p>
+            <p className="rt-sub">Big files up to 3 GB, kept 3 days, then gone.</p>
             <button type="button" className={`rt-drop${over ? ' over' : ''}${files.length ? ' has' : ''}`} onClick={() => pick.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setOver(true) }} onDragLeave={() => setOver(false)}
               onDrop={(e) => { e.preventDefault(); setOver(false); add([...(e.dataTransfer?.files || [])]) }}>

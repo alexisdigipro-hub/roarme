@@ -452,6 +452,7 @@ export const EL = {
   'Over 50 MB: it goes by RoarTransfer, kept 3 days.': 'Πάνω από 50 MB: πάει με RoarTransfer και μένει 3 μέρες.',
   'Over 50 MB goes by RoarTransfer: up to 3 GB, kept 3 days.': 'Πάνω από 50 MB πάει με RoarTransfer: έως 3 GB, μένει 3 μέρες.',
   'Expired': 'Έληξε',
+  'Big files up to 3 GB, kept 3 days, then gone.': 'Μεγάλα αρχεία έως 3 GB, μένουν 3 μέρες και μετά σβήνονται.',
   'Pinned messages': 'Καρφιτσωμένα μηνύματα',
   'All pinned messages': 'Όλα τα καρφιτσωμένα',
   '1 pinned message': '1 καρφιτσωμένο μήνυμα',

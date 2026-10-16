@@ -36,7 +36,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     try {
       const file = await shrinkImage(raw, 640, 0.86)
       const path = `${me.id}/${group ? `group-${room.room_id}` : `contact-${other.id}`}-${Date.now()}.jpg`
-      const up = await supabase.storage.from('roar-avatars').upload(path, file, { contentType: 'image/jpeg', upsert: true })
+      const up = await supabase.storage.from('roar-avatars').upload(path, file, { contentType: 'image/jpeg' })
       if (up.error) throw up.error
       const url = supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl
       const { error } = group

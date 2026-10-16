@@ -1545,7 +1545,7 @@ function Settings({ me, setMe, onClose, inline = false }) {
     if (!raw) return
     const file = await shrinkImage(raw, 512, 0.88)
     const path = `${me.id}/avatar-${Date.now()}.jpg`
-    const up = await supabase.storage.from('roar-avatars').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true })
+    const up = await supabase.storage.from('roar-avatars').upload(path, file, { contentType: file.type || 'image/jpeg' })
     if (up.error) { setErr(errText(up.error)); return }
     const { data } = supabase.storage.from('roar-avatars').getPublicUrl(path)
     save({ avatar_url: data.publicUrl })

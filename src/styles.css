@@ -1673,3 +1673,26 @@ html[data-theme='aura'][data-mode='light'] .compose-box { background: rgba(255, 
 .contact-acts button:active { transform: scale(.9); }
 .room.contact.on .contact-acts button, .room.contact:hover .contact-acts button { color: var(--text); }
 
+/* ---------- even and symmetric messages (Alex, 16 Oct) ----------
+   The same space between every two messages, whoever wrote them and however long after (it used to be
+   2px inside a run and 10px between runs); the date as far from the message above as from the one below;
+   every bubble the same shape (no tail corner on the first of a run) and the same padding top and bottom.
+   Everything that is not text has one width: a photo, a video, a GIF, a voice message, a song, a file,
+   something still loading or uploading, so a run of them lines up edge to edge. */
+:root { --gap-msg: 6px; --media-w: min(300px, 66vw); }
+html[data-density='tight'] { --gap-msg: 3px; }
+html[data-density='relaxed'] { --gap-msg: 10px; }
+.room-view.compact { --gap-msg: 4px; }
+.msg, .msg.first, html[data-density] .msg, html[data-density] .msg.first, .room-view.compact .msg, .room-view.compact .msg.first { margin-top: var(--gap-msg); }
+.day, html[data-theme] .day { margin: 14px 0 0; padding: 0 0 14px; }
+.day + .msg { margin-top: 0; }
+.msg.first:not(.mine) .bubble, .msg.first.mine .bubble { border-radius: 18px; }
+.bubble { padding: 7px 12px; }
+.bubble.pic { padding: 4px; }
+.bubble.pic :is(.pic-img, .load-tap, .pic-wait) { width: var(--media-w); max-width: 100%; height: auto; max-height: 360px; object-fit: cover; }
+.bubble.pic :is(.load-tap, .pic-wait) { height: calc(var(--media-w) * .62); }
+.bubble :is(.voice, .music, .file) { box-sizing: border-box; width: calc(var(--media-w) - 16px); min-width: 0; max-width: 100%; }
+.bubble .file-text { flex: 1; }
+.bubble .file-text b { max-width: none; }
+.bubble.outbox, .bubble.outbox.has-pic { width: calc(var(--media-w) + 8px); min-width: 0; max-width: 100%; }
+.bubble.outbox img { width: 100%; max-width: none; object-fit: cover; }

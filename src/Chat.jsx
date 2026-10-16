@@ -1449,9 +1449,9 @@ function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
 function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
   const [go, setGo] = useState(auto && !still)
   const [url, setUrl] = useState('')
+  const [ready, setReady] = useState(false)
   useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>
-  const [ready, setReady] = useState(false)
   return url ? <img className={`pic-img${ready ? ' ready' : ''}`} src={url} alt={file?.name || ''} onLoad={() => setReady(true)} onClick={(e) => { e.stopPropagation(); onOpen(url) }} /> : <span className="pic-wait" />
 }
 

@@ -152,3 +152,17 @@ export function revealFrom(e, change) {
   const t = document.startViewTransition(change)
   t.finished.finally(() => r.classList.remove('vt-reveal'))
 }
+
+/* ROAR's mark (Alex, 16 Oct): a lion cub's paw, in the theme's accent colour */
+export function Paw({ size = 22 }) {
+  return (
+    <svg className="paw" width={size} height={size} viewBox="14 16 36 37" aria-hidden="true" fill="currentColor">
+      <path d="M32 33.5c-7.4 0-13.5 6.4-13.5 12.2 0 4 3 6.3 6.6 6.3 2.7 0 4.3-1.4 6.9-1.4s4.2 1.4 6.9 1.4c3.6 0 6.6-2.3 6.6-6.3 0-5.8-6.1-12.2-13.5-12.2z" />
+      <ellipse cx="18.6" cy="30.6" rx="3.9" ry="5" transform="rotate(-22 18.6 30.6)" />
+      <ellipse cx="26.3" cy="21.4" rx="4.1" ry="5.4" transform="rotate(-8 26.3 21.4)" />
+      <ellipse cx="37.7" cy="21.4" rx="4.1" ry="5.4" transform="rotate(8 37.7 21.4)" />
+      <ellipse cx="45.4" cy="30.6" rx="3.9" ry="5" transform="rotate(22 45.4 30.6)" />
+    </svg>
+  )
+}
+export const Wordmark = ({ size = 20 }) => <span className="wordmark"><Paw size={size} /><b>ROAR</b></span>

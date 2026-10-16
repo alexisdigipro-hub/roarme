@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
-import { Avatar, I, Modal, OnTop, burst, colorOf, svg, useLens } from './ui.jsx'
+import { Avatar, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
@@ -202,7 +202,7 @@ export default function Chat({ me, setMe }) {
   // a chat deleted from one's list stays away until something new is written in it
   const visible = rooms.filter((r) => !hidden[r.room_id] || r.last_message_at > hidden[r.room_id])
   const unreadAll = visible.filter((r) => !r.archived && !r.muted).reduce((a, r) => a + (r.unread || 0), 0)
-  useEffect(() => { document.title = unreadAll ? `(${unreadAll}) RoarMe` : 'RoarMe' }, [unreadAll])
+  useEffect(() => { document.title = unreadAll ? `(${unreadAll}) ROAR` : 'ROAR' }, [unreadAll])
 
   const BUILTIN = [['all', 'All'], ['unread', 'Unread'], ['groups', 'Groups'], ['archived', 'Archived']]
   const allFolders = [...BUILTIN.map(([id, name]) => ({ id, name })), ...myFolders.map((f) => ({ ...f, custom: true }))]
@@ -360,7 +360,7 @@ export default function Chat({ me, setMe }) {
         <div className="side-col">
         <div className="side-head">
           <button type="button" className="pill-btn" onClick={() => { setPlus(false); if (picking) endPick(); else { setTab('chats'); setPicking(true) } }}>{picking ? 'Done' : 'Edit'}</button>
-          <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <>Roar<b>Me</b></>}</span>
+          <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <Wordmark />}</span>
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
           ) : (
@@ -495,8 +495,8 @@ export default function Chat({ me, setMe }) {
             onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }} />
         ) : (
           <div className="pick">
-            <img src="./icon.svg" alt="" />
-            <h2>Roar<b>Me</b></h2>
+            <span className="pick-paw"><Paw size={64} /></span>
+            <h2>ROAR</h2>
             <p>Pick a chat, or start a new one.</p>
             <div className="pick-acts">
               <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>{I.person} New chat</button>
@@ -509,7 +509,7 @@ export default function Chat({ me, setMe }) {
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'newcall' && (
         <Modal title="New call" onClose={() => setModal('')}>
-          <p className="muted">Calls are coming soon. Pick who to call and RoarMe will ring them once calls are on.</p>
+          <p className="muted">Calls are coming soon. Pick who to call and ROAR will ring them once calls are on.</p>
           <div className="people">
             {calls.map((p) => (
               <div key={p.id} className="person call-row">
@@ -1068,10 +1068,10 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const when = (s) => { const d = new Date(s); return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}` }
     const what = (m) => (m.kind === 'image' ? `[Photo${m.file?.name ? `: ${m.file.name}` : ''}]${m.body ? ` ${m.body}` : ''}` : m.kind === 'voice' ? '[Voice message]' : m.kind === 'file' ? `[File: ${m.file?.name || 'file'}]${m.body ? ` ${m.body}` : ''}` : m.body)
     const lines = all.map((m) => `[${when(m.created_at)}] ${m.user_id === me.id ? nameOf(me) : nameOf(people[m.user_id]) || 'Someone'}: ${what(m)}`)
-    const text = `RoarMe · ${title}\nExported ${when(new Date().toISOString())} · ${all.length} messages\n\n${lines.join('\n')}\n`
+    const text = `ROAR · ${title}\nExported ${when(new Date().toISOString())} · ${all.length} messages\n\n${lines.join('\n')}\n`
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }))
-    a.download = `RoarMe - ${title.replace(/[\\/:*?"<>|]/g, '')}.txt`
+    a.download = `ROAR - ${title.replace(/[\\/:*?"<>|]/g, '')}.txt`
     document.body.appendChild(a); a.click(); a.remove()
     setTimeout(() => URL.revokeObjectURL(a.href), 4000)
   }

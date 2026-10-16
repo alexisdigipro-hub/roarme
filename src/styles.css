@@ -1527,3 +1527,13 @@ html[data-theme='ember'] .set-preview .pv.mine, html[data-theme='ember'] .wall-b
 html[data-theme='ember'] :is(.wall-tile, .theme-sw, .tv-pic) { border-radius: var(--r, 12px); }
 html[data-theme='ember'] .new-call-ico { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent); }
 html[data-theme='ember'][data-mode='light'] .av-group { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 80%, #fff), var(--accent)); color: var(--accent-ink); }
+
+/* ROAR's name: the paw in the accent colour, the word in heavy capitals */
+.wordmark { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.wordmark .paw { color: var(--accent); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 45%, transparent)); flex: none; }
+.wordmark b { font-weight: 800; letter-spacing: .12em; color: var(--text); }
+.side-brand .wordmark b { font-size: 18px; }
+html[data-theme] .side-brand b { background: none; -webkit-background-clip: initial; background-clip: initial; color: var(--text); text-shadow: none; }
+.brand .wordmark b { font-size: 26px; }
+.pick-paw { display: grid; place-items: center; width: 96px; height: 96px; margin-bottom: 10px; border-radius: 28px; background: var(--glass); border: 1px solid var(--edge); color: var(--accent); box-shadow: 0 0 40px color-mix(in srgb, var(--accent) 25%, transparent); }
+.pick h2 { font-weight: 800; letter-spacing: .14em; }

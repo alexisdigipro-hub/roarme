@@ -1,0 +1,47 @@
+{
+  "name": "roar",
+  "productName": "ROAR",
+  "version": "1.0.0",
+  "description": "ROAR for Mac and Windows: the chat in an app of its own",
+  "author": "THEMADLIONS",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:win": "electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.themadlions.roar",
+    "productName": "ROAR",
+    "directories": { "output": "out", "buildResources": "build" },
+    "files": ["main.js", "package.json"],
+    "afterPack": "./adhoc-sign.js",
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "category": "public.app-category.social-networking",
+      "identity": null,
+      "artifactName": "ROAR-Mac-${arch}.${ext}",
+      "extendInfo": {
+        "NSCameraUsageDescription": "ROAR uses the camera for photos and video calls.",
+        "NSMicrophoneUsageDescription": "ROAR uses the microphone for voice messages and calls."
+      }
+    },
+    "dmg": { "artifactName": "ROAR-Mac-${arch}.${ext}", "title": "ROAR" },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "ROAR-Windows-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ROAR"
+    }
+  }
+}

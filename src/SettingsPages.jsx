@@ -67,7 +67,7 @@ export function SettingsMenu({ me, page, onPage }) {
       <div className="set-box">
         <button type="button" className="set-row set-pick set-nav danger" onClick={() => supabase.auth.signOut()}><span className="nav-ico" style={{ '--c': '#ff453a' }}>{svg(<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />, 16)}</span><span className="set-text">Sign out</span></button>
       </div>
-      <p className="set-version">RoarMe 0.1 · web</p>
+      <p className="set-version">ROAR 0.1 · {navigator.userAgent.includes('Electron') ? 'Mac app' : 'web'}</p>
     </div>
   )
 }
@@ -153,7 +153,7 @@ function Notify({ p }) {
     <>
       <Box title="Message notifications">
         <div className="set-row">
-          <span className="set-text">Desktop notifications<small>{perm === 'granted' ? 'On for this browser' : perm === 'denied' ? 'Blocked. Allow them in the browser settings for this site.' : perm === 'none' ? 'This browser has no notifications' : 'Allow RoarMe to show new messages'}</small></span>
+          <span className="set-text">Desktop notifications<small>{perm === 'granted' ? 'On for this browser' : perm === 'denied' ? 'Blocked. Allow them in the browser settings for this site.' : perm === 'none' ? 'This browser has no notifications' : 'Allow ROAR to show new messages'}</small></span>
           {perm === 'default' && <button type="button" className="btn btn-main btn-sm" onClick={ask}>Allow</button>}
           {perm === 'granted' && <i className="set-tick">{I.check}</i>}
         </div>
@@ -250,7 +250,7 @@ function Sessions({ toast }) {
       <Box title="This device" note="Signs you out on all devices except this one.">
         <div className="set-row set-dev">
           <span className="nav-ico" style={{ '--c': '#0a84ff' }}>{svg(<><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M8 20h8" /></>, 16)}</span>
-          <span className="set-text"><b>{d.os}</b><small>RoarMe web · {d.br}</small></span>
+          <span className="set-text"><b>{d.os}</b><small>ROAR {navigator.userAgent.includes('Electron') ? 'app' : 'web'} · {d.br}</small></span>
           <small className="set-online">online</small>
         </div>
         <button type="button" className="set-row set-pick danger" onClick={endOthers}><span className="set-text">Terminate All Other Sessions</span></button>
@@ -350,7 +350,7 @@ function Language({ p }) {
         )}
         <Soon>Translate Entire Chats</Soon>
       </Box>
-      <Box title="Interface language" note="RoarMe speaks English for now. More languages are coming soon.">
+      <Box title="Interface language" note="ROAR speaks English for now. More languages are coming soon.">
         <div className="set-row"><label className="search set-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" /></label></div>
         {list.map(([k, a, b]) => (
           <div key={k} className={`set-row${k === 'en' ? '' : ' is-off'}`}><span className="set-text">{a}<small>{b}</small></span>{k === 'en' && <i className="set-tick">{I.check}</i>}</div>

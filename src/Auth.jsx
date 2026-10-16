@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
+import { Wordmark } from './ui.jsx'
 
 function Brand() {
   return (
     <div className="brand">
-      <img src="./icon.svg" alt="" />
-      <span>Roar<b>Me</b></span>
+      <Wordmark size={30} />
     </div>
   )
 }

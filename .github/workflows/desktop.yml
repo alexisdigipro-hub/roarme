@@ -1,0 +1,60 @@
+name: ROAR desktop apps
+
+# Builds ROAR for Mac (.dmg, Apple Silicon and Intel) and Windows (.exe) from desktop/ and puts them on a
+# GitHub release, whose files are the download links. Run it from the Actions tab (Run workflow) or by
+# pushing a tag desktop-v*. The website itself is not touched.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['desktop-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - if: runner.os == 'macOS'
+        run: npm run dist:mac
+      - if: runner.os == 'Windows'
+        run: npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: roar-${{ runner.os }}
+          path: |
+            desktop/out/*.dmg
+            desktop/out/*.exe
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: files
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('desktop-build-{0}', github.run_number) }}
+          name: ROAR ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
+          make_latest: true
+          body: |
+            ROAR for Mac and Windows.
+            Mac with Apple Silicon (M1, M2, M3, M4): ROAR-Mac-arm64.dmg · Mac with Intel: ROAR-Mac-x64.dmg · Windows: ROAR-Windows-Setup.exe
+          files: files/*

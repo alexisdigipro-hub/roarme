@@ -34,7 +34,7 @@ export const DEFAULTS = {
   peerIds: false,
   notifyPreview: true,
   translateTo: 'auto', // auto = Greek to English and back
-  folderTabs: 'top', // top | left
+  folderTabs: 'top', // top | bottom (left until 16 Oct, now bottom)
   sound: true,
   soundKind: 'chime', // one of SOUNDS
   badge: true, // the unread count on the Mac/Windows app's icon
@@ -58,7 +58,12 @@ try {
 } catch { /* private window */ }
 
 export function getPrefs() {
-  try { return { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY)) || {}) } } catch { return { ...DEFAULTS } }
+  try {
+    const p = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY)) || {}) }
+    // the folder tabs on the left became tabs at the bottom (Alex, 16 Oct)
+    if (p.folderTabs === 'left') p.folderTabs = 'bottom'
+    return p
+  } catch { return { ...DEFAULTS } }
 }
 export function setPrefs(patch) {
   const next = patch === null ? { ...DEFAULTS } : { ...getPrefs(), ...patch }

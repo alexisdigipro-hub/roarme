@@ -415,7 +415,7 @@ export default function Chat({ me, setMe }) {
         {tab === 'chats' && (
           <>
             <label className="search">{I.search}<input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search (⌘K)" onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur() } }} /></label>
-            <div className={`rooms-area${prefs.folderTabs === 'left' && !q.trim() ? ' left' : ''}`}>
+            <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`}>
             {!q.trim() && (
               <nav ref={tabsLens} className="tabs lens">
                 {allFolders.map((f) => {

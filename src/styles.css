@@ -802,24 +802,18 @@ button.set-row { width: 100%; border: 0; background: none; text-align: left; col
 .tv-tabs b { flex: 1; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .18); }
 .tv-tabs b:first-child { background: var(--accent); }
 .tv-row { height: 18px; }
-.tv-pic.left { grid-template-columns: 22px 1fr; grid-template-rows: 12px 18px 18px; }
-.tv-pic.left .tv-tabs { grid-row: 1 / 4; flex-direction: column; }
-.tv-pic.left .tv-tabs b { flex: none; width: 14px; height: 14px; border-radius: 50%; }
+.tv-pic.bottom { grid-template-rows: 12px 18px 18px 1fr; }
+.tv-pic.bottom .tv-tabs { order: 1; align-self: end; }
 .tv-tile small { font-size: 13px; font-weight: 600; }
 .pf-id { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; word-break: break-all; }
 .badge.peekable { cursor: zoom-in; }
 
-/* folder tabs: icons only at the top, an icon over the name on the left */
+/* folder tabs: names only, at the top or at the bottom right above the foot (Alex, 16 Oct, like TML Chat) */
 .tabs .tab-ico { display: none; }
 .rooms-area { display: contents; }
-.rooms-area.left { flex: 1; min-height: 0; display: flex; gap: 8px; }
-.rooms-area.left .rooms { flex: 1; min-width: 0; }
-.rooms-area.left .tabs { flex: none; flex-direction: column; justify-content: flex-start; width: 72px; padding: 6px 4px; border-radius: 20px; overflow-y: auto; }
-.rooms-area.left .tabs button { position: relative; flex: none; flex-direction: column; gap: 3px; height: auto; padding: 8px 2px; border-radius: 14px; font-size: 9.5px; letter-spacing: .02em; }
-.rooms-area.left .tabs .tab-ico { display: inline-flex; }
-.rooms-area.left .tabs .tab-ico svg { width: 20px; height: 20px; }
-.rooms-area.left .tabs .tab-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rooms-area.left .tabs small { position: absolute; top: 3px; right: 6px; }
+.rooms-area.bottom { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.rooms-area.bottom .rooms { flex: 1; min-height: 0; }
+.rooms-area.bottom .tabs { order: 1; flex: none; }
 
 /* Calls and Contacts */
 .new-call { display: flex; align-items: center; gap: 14px; width: 100%; padding: 10px 12px; border: 0; border-radius: 16px; background: none; color: var(--accent); font-size: 15px; font-weight: 600; text-align: left; }
@@ -964,7 +958,6 @@ html[data-mode='light'] body::before {
 }
 .lens.lens-on::before { opacity: 1; }
 .lens.lens-on > .on { background: none !important; box-shadow: none !important; }
-.rooms-area.left .tabs.lens::before { border-radius: 14px; }
 html[data-mode='light'] .lens::before { box-shadow: 0 2px 10px rgba(30, 50, 90, .12); }
 
 /* buttons answer the touch */
@@ -1052,9 +1045,8 @@ html[data-theme='studio'] .tabs button { height: 34px; border-radius: 0; font: 5
 html[data-theme='studio'] .tabs.lens::before { height: 2px; border-radius: 0; transform: translate(var(--lx, 0), calc(var(--ly, 0) + var(--lh, 0) - 2px)); }
 html[data-theme='studio'] .tabs.lens.lens-on > .on { color: var(--text); }
 html[data-theme='studio'] .tabs small { border-radius: 3px; font-family: var(--mono); }
-html[data-theme='studio'] .rooms-area.left .tabs { border-bottom: 0; border-right: 1px solid var(--edge); border-radius: 0; background: none; }
-html[data-theme='studio'] .rooms-area.left .tabs button { border-radius: 0; }
-html[data-theme='studio'] .rooms-area.left .tabs.lens::before { width: 3px; height: var(--lh, 0); transform: translate(var(--lx, 0), var(--ly, 0)); }
+html[data-theme='studio'] .rooms-area.bottom .tabs { border-bottom: 0; border-top: 1px solid var(--edge); }
+html[data-theme='studio'] .rooms-area.bottom .tabs.lens::before { transform: translate(var(--lx, 0), var(--ly, 0)); }
 
 /* buttons: square, ruled, mono; hover inverts; the main one lifts off a hard shadow */
 html[data-theme='studio'] .round { width: 40px; height: 40px; border-radius: 8px; background: transparent; border-color: var(--edge); -webkit-backdrop-filter: none; backdrop-filter: none; }
@@ -1284,7 +1276,6 @@ html[data-theme='aura'] .tabs::-webkit-scrollbar { display: none; }
 html[data-theme='aura'] .tabs button { flex: none; height: 34px; padding: 0 14px; border-radius: 12px; background: var(--glass); border: 1px solid var(--edge); text-transform: none; letter-spacing: 0; font-size: 13.5px; font-weight: 600; }
 html[data-theme='aura'] .tabs small { background: var(--accent); color: #fff; }
 html[data-theme='aura'] .tabs .on small { background: #fff; color: var(--accent); }
-html[data-theme='aura'] .rooms-area.left .tabs button { height: auto; border-radius: 14px; }
 
 /* the dock: a floating glass bar, the chosen icon tinted */
 html[data-theme='aura'] .foot { padding: 6px; border-radius: 24px; background: var(--glass); border: 1px solid var(--edge); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 10px 30px rgba(0, 0, 0, .18); }
@@ -1467,7 +1458,7 @@ html[data-theme='ember'] .tabs small { background: var(--accent); color: var(--a
 html[data-theme='ember'] .foot { border-radius: calc(var(--r, 12px) * 1.6); background: rgba(0, 0, 0, .22); border: 1px solid var(--edge); }
 html[data-theme='ember'][data-mode='light'] .foot { background: rgba(255, 255, 255, .6); }
 html[data-theme='ember'] .foot button { border-radius: var(--r, 12px); }
-html[data-theme='ember'] .foot.lens::before, html[data-theme='ember'] .rooms-area.left .tabs.lens::before { border-radius: var(--r, 12px); background: color-mix(in srgb, var(--accent) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent), 0 0 22px color-mix(in srgb, var(--accent) 30%, transparent); }
+html[data-theme='ember'] .foot.lens::before { border-radius: var(--r, 12px); background: color-mix(in srgb, var(--accent) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent), 0 0 22px color-mix(in srgb, var(--accent) 30%, transparent); }
 html[data-theme='ember'] .foot.lens.lens-on > .on { color: var(--text); }
 html[data-theme='ember'] .foot-ico i { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent); }
 
@@ -1682,10 +1673,3 @@ html[data-theme='aura'][data-mode='light'] .compose-box { background: rgba(255, 
 .contact-acts button:active { transform: scale(.9); }
 .room.contact.on .contact-acts button, .room.contact:hover .contact-acts button { color: var(--text); }
 
-/* folder tabs on the left: icons only, bigger; the name shows when the pointer rests on one (Alex, 16 Oct) */
-.rooms-area.left .tabs { width: 64px; gap: 6px; padding: 6px; align-items: center; }
-.rooms-area.left .tabs button { width: 52px; height: 52px; padding: 0; justify-content: center; border-radius: 16px; }
-.rooms-area.left .tabs .tab-name { display: none; }
-.rooms-area.left .tabs .tab-ico svg { width: 26px; height: 26px; }
-.rooms-area.left .tabs small { top: 2px; right: 2px; }
-html[data-theme='ember'] .rooms-area.left .tabs, html[data-theme='aura'] .rooms-area.left .tabs { border-radius: 22px; }

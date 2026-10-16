@@ -632,9 +632,9 @@ function Folders({ p, folders, onFolders }) {
         <button type="button" className="set-row set-pick set-add" onClick={() => onFolders('newfolder')}><span className="set-text">Add a Custom Folder</span><i className="set-chev">{I.right}</i></button>
       </Box>
       <Box note="Display folder names for each chat in the chat list."><Switch on={p.folderTags} set={(v) => setPrefs({ folderTags: v })}>Show Folder Tags</Switch></Box>
-      <Box title="Tabs view" note="If you have many folders, try moving tabs to the left.">
+      <Box title="Tabs view" note="At the bottom, the folders sit right above Contacts, Chats and Settings.">
         <div className="set-row tabs-view">
-          {[['top', 'Tabs at the top'], ['left', 'Tabs on the left']].map(([k, l]) => (
+          {[['top', 'Tabs at the top'], ['bottom', 'Tabs at the bottom']].map(([k, l]) => (
             <button key={k} type="button" className={`tv-tile${p.folderTabs === k ? ' on' : ''}`} onClick={() => setPrefs({ folderTabs: k })}>
               <span className={`tv-pic ${k}`}><i className="tv-bar" /><i className="tv-tabs"><b /><b /><b /></i><i className="tv-row" /><i className="tv-row" /></span>
               <small>{l}</small>

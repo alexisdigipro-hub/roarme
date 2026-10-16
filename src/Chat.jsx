@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, CropModal, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
@@ -918,10 +918,13 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const ext = ((file.name || '').match(/\.(\w+)$/) || [])[1]?.toLowerCase()
     const type = file.type || (ext && isAudioFile({ name: file.name }) ? `audio/${{ mp3: 'mpeg', m4a: 'mp4', aif: 'aiff', oga: 'ogg' }[ext] || ext}` : '')
     const holder = {}
-    if (outId) setOut(outId, { holder, stage: 'up' })
-    await uploadWithProgress('roar-files', path, file, type, (p) => { if (outId) setOut(outId, { p }) }, holder)
+    const big = file.size > SMALL_MAX
+    if (outId) setOut(outId, { holder, stage: 'up', size: file.size, big })
+    await (big ? tusUpload : uploadWithProgress)(big ? TRANSFER_BUCKET : 'roar-files', path, file, type, (p) => { if (outId) setOut(outId, { p }) }, holder)
     if (outId) setOut(outId, { stage: 'send', p: 1 })
-    return { path, name: file.name, size: file.size, type, ...extra }
+    // RoarTransfer: past 50 MB the file goes to its own place and is kept 3 days (Alex, 16 Oct)
+    const tr = big ? { bucket: TRANSFER_BUCKET, expires: new Date(Date.now() + TRANSFER_DAYS * 864e5).toISOString() } : {}
+    return { path, name: file.name, size: file.size, type, ...tr, ...extra }
   }
 
   const sendFiles = async (files, caption = '', compress = true) => {
@@ -929,9 +932,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const reply = replyTo
     setReplyTo(null)
     stick.current = true
-    // Standard quality shrinks videos to 720p first, so a long clip over 50 MB can still go (the size is checked after)
+    // Standard quality shrinks videos to 720p first; anything still over 50 MB goes by RoarTransfer, up to 3 GB
     const shrinkVid = (f) => compress && isVideoFile(f) && canCompressVideo()
-    const ok = files.filter((f) => { if (f.size > 50e6 && !shrinkVid(f)) { setErr(`${f.name} is over 50 MB.`); return false } return true })
+    const ok = files.filter((f) => { if (f.size > TRANSFER_MAX) { setErr(`${f.name} is over 3 GB, the most RoarTransfer takes.`); return false } return true })
     // Safari lets a video play only from inside the tap: each clip is readied now, before anything waits
     const handles = new Map(ok.filter(shrinkVid).map((f) => [f, prepareVideo(f)]))
     const tiles = ok.map((f) => ({ id: crypto.randomUUID(), name: f.name, size: f.size, preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : '', p: 0, stage: 'prep' }))
@@ -948,12 +951,11 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           if (small?.file) file = small.file
           setOut(tile.id, { stage: 'prep', p: 0 })
         }
-        if (file.size > 50e6) throw new Error(`${raw.name} is over 50 MB even made smaller. Send a shorter clip.`)
         const meta = await upload(file, null, {}, tile.id)
         stick.current = true
         const last = n === ok.length
         const { data, error } = await supabase.from('roar_messages').insert({
-          room_id: room.room_id, user_id: me.id, kind: /^image\//.test(file.type) && !/gif|svg/.test(file.type) ? 'image' : 'file', body: last ? caption : '',
+          room_id: room.room_id, user_id: me.id, kind: /^image\//.test(file.type) && !/gif|svg/.test(file.type) && !meta.bucket ? 'image' : 'file', body: last ? caption : '',
           file: meta, reply_to: reply?.id || null,
         }).select().single()
         if (error) throw error
@@ -1132,7 +1134,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   }, [reacts, me.id])
   const photos = useMemo(() => msgs.filter((m) => m.kind === 'image' && !m.deleted_at), [msgs])
   const openPhoto = async (m) => {
-    const items = await Promise.all(photos.map(async (x) => ({ url: await fileLink(x.file?.path), type: x.file?.type, name: x.file?.name })))
+    const items = await Promise.all(photos.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name })))
     setViewer({ items, index: Math.max(0, photos.findIndex((x) => x.id === m.id)) })
   }
   // @username in a message, lit up
@@ -1289,8 +1291,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           const seen = mine && seenBy(m).length > 0
           const isPicked = picked?.includes(m.id)
           const big = prefs.bigEmoji && m.kind === 'text' && !m.deleted_at && !quoted && isEmojiOnly(m.body)
-          const isVideo = m.kind === 'file' && /^video\//.test(m.file?.type || '')
-          const isGifFile = m.kind === 'file' && /gif/.test(m.file?.type || '')
+          const isTransfer = m.kind === 'file' && m.file?.bucket === TRANSFER_BUCKET
+          const isVideo = m.kind === 'file' && !isTransfer && /^video\//.test(m.file?.type || '')
+          const isGifFile = m.kind === 'file' && !isTransfer && /gif/.test(m.file?.type || '')
           const vlink = !m.deleted_at && m.kind === 'text' ? videoLinkOf(m.body) : null
           const wide = wideIds.has(m.id)
           const hit = find && found.includes(m.id)
@@ -1310,6 +1313,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                     {m.deleted_at ? <i>Message deleted</i>
                       : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : openPhoto(m))} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
+                      : isTransfer ? <TransferTile file={m.file} onCinema={setCinema} />
                       : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
@@ -1346,7 +1350,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                     </span>
                     <span className="out-text">
                       <b>{o.name}</b>
-                      <small>{o.stage === 'shrink' ? `Making it smaller · ${Math.round(o.p * 100)}%` : o.stage === 'prep' ? 'Preparing…' : o.stage === 'send' ? 'Sending…' : `${Math.round(o.p * 100)}% · ${fmtBytes(o.size * o.p)} of ${fmtBytes(o.size)}`}</small>
+                      <small>{o.stage === 'shrink' ? `Making it smaller · ${Math.round(o.p * 100)}%` : o.stage === 'prep' ? 'Preparing…' : o.stage === 'send' ? 'Sending…' : `${o.big ? 'RoarTransfer · ' : ''}${Math.round(o.p * 100)}% · ${fmtBytes(o.size * o.p)} of ${fmtBytes(o.size)}`}</small>
                     </span>
                   </span>
                 </div>
@@ -1413,7 +1417,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               {menu.m.body && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
               {menu.m.body && <button type="button" onClick={() => { copy(prefs.copyFormat === false ? plainText(menu.m.body) : menu.m.body, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
               <button type="button" onClick={() => { copy(linkOf(menu.m), 'Link copied'); setMenu(null) }}>{I.link}<span>Copy Message Link</span></button>
-              {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file?.path); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
+              {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
               <hr />
               {menu.m.user_id === me.id && menu.m.kind === 'text' && <button type="button" onClick={() => { setEditing(menu.m); setText(menu.m.body); setMenu(null) }}>{I.edit}<span>Edit</span></button>}
@@ -1451,7 +1455,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         </Modal>
       )}
       {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} />}
-      {media && <SharedMedia roomId={room.room_id} onClose={() => setMedia(false)} onOpen={async (list, index) => { setMedia(false); const items = await Promise.all(list.map(async (x) => ({ url: await fileLink(x.file?.path), type: x.file?.type, name: x.file?.name }))); setViewer({ items, index }) }} />}
+      {media && <SharedMedia roomId={room.room_id} onClose={() => setMedia(false)} onOpen={async (list, index) => { setMedia(false); const items = await Promise.all(list.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name }))); setViewer({ items, index }) }} />}
       {wallPick && (
         <Modal title="Chat wallpaper" onClose={() => setWallPick(false)} foot={<><button type="button" className="btn" onClick={() => { setPrefs({ background: wall }); setWalls({}); setWallPick(false); toast('Wallpaper set for all chats') }}>Use for all chats</button><button type="button" className="btn btn-main" onClick={() => setWallPick(false)}>Done</button></>}>
           <p className="muted">For this chat only, on this computer.</p>
@@ -1478,9 +1482,9 @@ function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
       let file = m.file || null
       if (file?.path) {
         const to = `${r.room_id}/${crypto.randomUUID()}-${file.path.split('/').pop().replace(/^[0-9a-f-]{36}-/, '')}`
-        const { error } = await supabase.storage.from('roar-files').copy(file.path, to)
+        const { error } = await supabase.storage.from(file.bucket || 'roar-files').copy(file.path, to)
         if (error) { setErr(errText(error)); continue }
-        file = { ...file, path: to }
+        file = { ...file, path: to, ...(file.bucket ? { expires: new Date(Date.now() + TRANSFER_DAYS * 864e5).toISOString() } : {}) }
       }
       const { error } = await supabase.from('roar_messages').insert({ room_id: r.room_id, user_id: me.id, kind: m.kind === 'system' ? 'text' : m.kind, body: m.body, file })
       if (error) setErr(errText(error)); else n += 1
@@ -1509,18 +1513,50 @@ function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
   const [go, setGo] = useState(auto && !still)
   const [url, setUrl] = useState('')
   const [ready, setReady] = useState(false)
-  useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
+  useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>
   return url ? <img className={`pic-img${ready ? ' ready' : ''}`} src={url} alt={file?.name || ''} onLoad={() => setReady(true)} onClick={(e) => { e.stopPropagation(); onOpen(url) }} /> : <span className="pic-wait" />
 }
 
 function FileTile({ file }) {
-  const open = async () => { const u = await fileLink(file?.path); if (u) window.open(u, '_blank', 'noopener') }
+  const open = async () => { const u = await fileLink(file); if (u) window.open(u, '_blank', 'noopener') }
   return (
     <button type="button" className="file" onClick={open} title="Open">
       <span className="file-ico">{I.file}</span>
       <span className="file-text"><b>{file?.name}</b><small>{fmtBytes(file?.size)}</small></span>
     </button>
+  )
+}
+
+/* RoarTransfer: a big file kept 3 days, then gone; Download saves it under its own name, a video can play
+   with the lights off */
+const SMALL_MAX = 50e6
+const TRANSFER_MAX = 3 * 1024 ** 3
+const TRANSFER_DAYS = 3
+function TransferTile({ file, onCinema }) {
+  const left = new Date(file?.expires || 0).getTime() - Date.now()
+  const gone = left <= 0
+  const when = gone ? 'Expired' : left > 864e5 ? `Expires in ${Math.ceil(left / 864e5)} days` : left > 36e5 ? `Expires in ${Math.ceil(left / 36e5)} h` : 'Expires within the hour'
+  const isVid = /^video\//.test(file?.type || '')
+  const [busy, setBusy] = useState(false)
+  const get = async (e) => {
+    e.stopPropagation(); setBusy(true)
+    const u = await fileLink(file, file?.name || 'file')
+    setBusy(false)
+    if (u) { const a = document.createElement('a'); a.href = u; a.download = file?.name || ''; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove() }
+  }
+  const play = async (e) => { e.stopPropagation(); const u = await fileLink(file); if (u) onCinema({ kind: 'file', src: u, at: 0 }) }
+  return (
+    <span className={`file transfer${gone ? ' gone' : ''}`}>
+      <span className="file-ico">{isVid ? I.play : I.file}</span>
+      <span className="file-text"><em>RoarTransfer</em><b>{file?.name}</b><small>{fmtBytes(file?.size)} · {when}</small></span>
+      {!gone && (
+        <span className="transfer-acts" onClick={(e) => e.stopPropagation()}>
+          {isVid && onCinema && <button type="button" className="btn" onClick={play}>{I.play}<span>Play</span></button>}
+          <button type="button" className="btn btn-main" disabled={busy} onClick={get}>{I.download}<span>{busy ? 'Opening…' : 'Download'}</span></button>
+        </span>
+      )}
+    </span>
   )
 }
 

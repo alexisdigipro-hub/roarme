@@ -70,13 +70,19 @@ export async function shrinkImage(file, max = 1920, quality = 0.85) {
   }
 }
 
-// signed links to files in a room, kept for the hour they are good for
+// signed links to files in a room, kept for the hour they are good for. Takes the message's file
+// ({ path, bucket }) or a bare path; RoarTransfer files live in their own bucket
 const signed = new Map()
-export async function fileLink(path) {
-  const hit = signed.get(path)
+export const TRANSFER_BUCKET = 'roar-transfers'
+export async function fileLink(file, download = '') {
+  const path = typeof file === 'string' ? file : file?.path
+  if (!path) return ''
+  const bucket = (typeof file === 'object' && file?.bucket) || 'roar-files'
+  const key = `${bucket}|${path}|${download}`
+  const hit = signed.get(key)
   if (hit && hit.until > Date.now()) return hit.url
-  const { data } = await supabase.storage.from('roar-files').createSignedUrl(path, 3600)
-  if (data?.signedUrl) signed.set(path, { url: data.signedUrl, until: Date.now() + 3500 * 1000 })
+  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600, download ? { download } : undefined)
+  if (data?.signedUrl) signed.set(key, { url: data.signedUrl, until: Date.now() + 3500 * 1000 })
   return data?.signedUrl || ''
 }
 
@@ -111,4 +117,63 @@ export async function uploadWithProgress(bucket, path, file, type, onProgress, h
     holder.abort = () => xhr.abort()
     xhr.send(file)
   })
+}
+
+/* RoarTransfer (Alex, 16 Oct): a big file (up to 3 GB) goes up in 6 MB pieces through Supabase's resumable
+   upload (TUS), so a dropped connection picks up where it stopped instead of starting over. Same holder and
+   onProgress as uploadWithProgress. */
+const TUS_URL = SUPABASE_URL.replace('.supabase.co', '.storage.supabase.co') + '/storage/v1/upload/resumable'
+const PIECE = 6 * 1024 * 1024
+const b64 = (t) => { let s = ''; new TextEncoder().encode(t).forEach((c) => { s += String.fromCharCode(c) }); return btoa(s) }
+const tokenNow = async () => {
+  const { data } = await supabase.auth.getSession()
+  const t = data?.session?.access_token
+  if (!t) throw new Error('Not signed in')
+  return t
+}
+export async function tusUpload(bucket, path, file, type, onProgress, holder = {}) {
+  let stopped = false
+  let xhr = null
+  holder.abort = () => { stopped = true; xhr?.abort() }
+  const cancelled = () => { const e = new Error('Cancelled'); e.cancelled = true; return e }
+  const call = (method, url, headers, body, onUp) => new Promise((resolve, reject) => {
+    if (stopped) { reject(cancelled()); return }
+    xhr = new XMLHttpRequest()
+    xhr.open(method, url)
+    Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, v))
+    if (onUp) xhr.upload.onprogress = (e) => onUp(e.loaded)
+    xhr.onload = () => resolve(xhr)
+    xhr.onerror = () => reject(new Error('The upload stopped. Check the connection and try again.'))
+    xhr.onabort = () => reject(cancelled())
+    xhr.send(body ?? null)
+  })
+  const base = async () => ({ Authorization: `Bearer ${await tokenNow()}`, apikey: SUPABASE_KEY, 'Tus-Resumable': '1.0.0' })
+  const failed = (r) => { let m = `Upload failed (${r.status})`; try { m = JSON.parse(r.responseText).message || m } catch { /* plain text */ } return new Error(m) }
+
+  const made = await call('POST', TUS_URL, {
+    ...(await base()), 'Upload-Length': String(file.size), 'x-upsert': 'false',
+    'Upload-Metadata': [['bucketName', bucket], ['objectName', path], ['contentType', type || 'application/octet-stream'], ['cacheControl', '3600']].map(([k, v]) => `${k} ${b64(v)}`).join(','),
+  })
+  if (made.status !== 201) throw failed(made)
+  const loc = made.getResponseHeader('Location') || ''
+  const at = /^https?:/.test(loc) ? loc : new URL(loc, TUS_URL).href
+  let offset = 0
+  let tries = 0
+  while (offset < file.size) {
+    const piece = file.slice(offset, Math.min(offset + PIECE, file.size))
+    try {
+      const r = await call('PATCH', at, { ...(await base()), 'Upload-Offset': String(offset), 'Content-Type': 'application/offset+octet-stream' }, piece, (n) => onProgress?.((offset + n) / file.size))
+      if (r.status === 204) { offset = Number(r.getResponseHeader('Upload-Offset')) || offset + piece.size; tries = 0; onProgress?.(offset / file.size); continue }
+      if (r.status !== 409 && r.status < 500) throw failed(r)
+      throw new Error(`Upload failed (${r.status})`)
+    } catch (e) {
+      if (e?.cancelled || stopped) throw cancelled()
+      tries += 1
+      if (tries > 6) throw e
+      // wait a little, then ask the server how far it really got and go on from there
+      await new Promise((ok) => setTimeout(ok, Math.min(30000, 1000 * 2 ** tries)))
+      try { const h = await call('HEAD', at, await base()); if (h.status === 200) offset = Number(h.getResponseHeader('Upload-Offset')) || offset } catch (x) { if (x?.cancelled) throw x }
+    }
+  }
+  onProgress?.(1)
 }

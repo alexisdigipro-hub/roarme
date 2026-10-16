@@ -20,3 +20,12 @@ sends, spelling, faces, large photos, quick reaction, double click, sound, folde
 Shown but not working yet ("coming soon"): voice and video calls, notifications with the app closed,
 more chat colours, removing people from a group and deleting a group.
 
+## RoarTransfer (16 Oct)
+A file over 50 MB (HD photos and videos, documents, or a video still over 50 MB after Standard shrinks it)
+goes by RoarTransfer: up to 3 GB, uploaded in 6 MB pieces that resume after a dropped connection, kept 3 days.
+In the chat it is a tile with the name, size, "Expires in N days", Download and, for videos, Play (lights off).
+Server side: bucket `roar-transfers` with the room's file rules, `roar_expired_transfers()` and an hourly
+pg_cron job calling the Edge Function `roar-transfer-sweep` (`supabase/functions/`), which removes what is
+older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload limit (Storage > Settings)
+must be at least 3 GB.
+

@@ -2066,3 +2066,19 @@ html[data-theme] .bubble.pic, html[data-theme] .msg.mine .bubble.pic { padding: 
 /* the name is RoarMe (Alex, 16 Oct): Roar in the text colour, Me in the accent, in every theme */
 html[data-theme] .wordmark b, .wordmark b { letter-spacing: -.01em; text-transform: none; }
 .wordmark b span { color: var(--accent); }
+
+/* RoarTransfer (Alex, 16 Oct): a big file kept 3 days, its own tile with Play / Download pills */
+.bubble .file.transfer { flex-wrap: wrap; row-gap: 8px; padding: 6px 4px 4px 0; }
+.file.transfer .file-text em { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+.msg.mine .file.transfer .file-text em { color: inherit; opacity: .8; }
+.file.transfer.gone { opacity: .55; }
+.transfer-acts { display: flex; gap: 8px; width: 100%; }
+.transfer-acts .btn { flex: 1; justify-content: center; gap: 6px; height: 34px; min-height: 34px; padding: 0 12px; border-radius: 999px; font-size: 13px;
+  color: inherit; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .18); box-shadow: none; }
+.transfer-acts .btn:hover { background: rgba(255, 255, 255, .22); }
+.transfer-acts .btn:active { transform: scale(.97); }
+.transfer-acts .btn svg { width: 16px; height: 16px; }
+html[data-mode='light'] .msg:not(.mine) .transfer-acts .btn { color: var(--accent); background: rgba(43, 125, 224, .1); border-color: rgba(43, 125, 224, .2); }
+.attach-transfer { display: block; margin-top: 6px; color: var(--accent); font-weight: 600; }
+html .msg.mine .transfer-acts .btn { color: #fff; background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .3); }
+html .msg.mine .transfer-acts .btn.btn-main { color: var(--accent); background: #fff; border-color: #fff; }

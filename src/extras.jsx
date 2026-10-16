@@ -92,20 +92,22 @@ export function AttachSheet({ initial = [], onClose, onSend }) {
           ))}
         </div>
       )}
-      {/* the quality, as on WhatsApp (Alex, 16 Oct): Standard shrinks photos and videos (videos to 720p) so long clips
-          go too; HD sends them as they are, up to 50 MB each */}
+      {/* the quality, as on WhatsApp (Alex, 16 Oct): Standard shrinks photos and videos (videos to 720p); HD sends
+          them as they are. Anything over 50 MB goes by RoarTransfer: up to 3 GB, kept 3 days */}
       {files.some((f) => /^(image|video)\//.test(f.type)) && (() => {
-        const big = !compress && files.filter((f) => f.size > 50e6)
+        const big = files.filter((f) => f.size > 50e6 && !(compress && /^video\//.test(f.type)))
         return (
           <div className="attach-quality">
             <div className="seg">
               <button type="button" className={compress ? 'on' : ''} onClick={() => setCompress(true)}>Standard</button>
               <button type="button" className={!compress ? 'on' : ''} onClick={() => setCompress(false)}>HD</button>
             </div>
-            <small className={big && big.length ? 'attach-warn' : 'muted'}>{big && big.length ? `${big.length === 1 ? big[0].name : `${big.length} files`} over 50 MB: HD cannot send ${big.length === 1 ? 'it' : 'them'}, Standard can.` : compress ? 'Smaller and faster: photos resized, videos to 720p.' : 'Full quality, as they are. Up to 50 MB each.'}</small>
+            <small className="muted">{compress ? 'Smaller and faster: photos resized, videos to 720p.' : 'Full quality, as they are.'}</small>
+            {big.length > 0 && <small className="attach-transfer">{big.length === 1 ? 'Over 50 MB: it goes by RoarTransfer, kept 3 days.' : `${big.length} files over 50 MB go by RoarTransfer, kept 3 days.`}</small>}
           </div>
         )
       })()}
+      {!files.some((f) => /^(image|video)\//.test(f.type)) && files.some((f) => f.size > 50e6) && <small className="attach-transfer">Over 50 MB goes by RoarTransfer: up to 3 GB, kept 3 days.</small>}
       <input className="input" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" />
     </Modal>
   )
@@ -121,7 +123,7 @@ export function MusicTile({ file }) {
   const [dur, setDur] = useState(0)
   const [bad, setBad] = useState(false)
   const a = useRef(null)
-  useEffect(() => { let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
+  useEffect(() => { let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
   // one sound at a time across the app
   useEffect(() => {
     const stop = (e) => { if (e.detail !== a.current && a.current && !a.current.paused) a.current.pause() }
@@ -164,7 +166,7 @@ export function AudioNote({ file }) {
   const [playing, setPlaying] = useState(false)
   const [at, setAt] = useState(0)
   const a = useRef(null)
-  useEffect(() => { let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
+  useEffect(() => { let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
   const dur = file?.dur || a.current?.duration || 0
   const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   return (
@@ -198,7 +200,7 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
   const [go, setGo] = useState(auto)
   const [url, setUrl] = useState('')
   const ref = useRef(null)
-  useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
+  useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{I.play}<span>Video · {fmtBytes(file?.size)}</span><small>Tap to load</small></button>
   // videos can play by themselves, silent and on a loop (Settings > Data and Storage)
   if (!url) return <span className="pic-wait" />
@@ -291,7 +293,7 @@ export function SharedMedia({ roomId, onOpen, onClose }) {
       {docs.length > 0 && (
         <div className="people">
           {docs.map((m) => (
-            <button key={m.id} type="button" className="person" onClick={async () => { const u = await fileLink(m.file?.path); if (u) window.open(u, '_blank', 'noopener') }}>
+            <button key={m.id} type="button" className="person" onClick={async () => { const u = await fileLink(m.file); if (u) window.open(u, '_blank', 'noopener') }}>
               <span className="file-ico">{I.file}</span>
               <span className="person-text"><b>{m.kind === 'voice' ? 'Voice message' : m.file?.name}</b><small>{fmtBytes(m.file?.size)} · {new Date(m.created_at).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })} {timeOf(m.created_at)}</small></span>
             </button>
@@ -303,7 +305,7 @@ export function SharedMedia({ roomId, onOpen, onClose }) {
 }
 function MediaThumb({ m, onClick }) {
   const [url, setUrl] = useState('')
-  useEffect(() => { let alive = true; fileLink(m.file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path])
+  useEffect(() => { let alive = true; fileLink(m.file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path])
   return (
     <button type="button" className="media-thumb" onClick={onClick}>
       {url && (/^video\//.test(m.file?.type || '') ? <video src={url} muted preload="metadata" /> : <img src={url} alt="" />)}

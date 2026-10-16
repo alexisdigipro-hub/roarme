@@ -145,10 +145,10 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   }
   const openMedia = async (n) => {
     const list = sets.media
-    const shown = await Promise.all(list.map(async (m) => ({ url: await fileLink(m.file?.path), type: m.file?.type, name: m.file?.name })))
+    const shown = await Promise.all(list.map(async (m) => ({ url: await fileLink(m.file), type: m.file?.type, name: m.file?.name })))
     setViewer({ items: shown, index: n })
   }
-  const openFile = async (m) => { const u = await fileLink(m.file?.path); if (u) window.open(u, '_blank', 'noopener') }
+  const openFile = async (m) => { const u = await fileLink(m.file); if (u) window.open(u, '_blank', 'noopener') }
   const copy = async (s, what) => { try { await navigator.clipboard.writeText(s); toast(what) } catch { toast('Copy did not work here') } }
 
   const members = (room.members || []).map((id) => people[id] || { id, username: '…' })
@@ -310,7 +310,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
 function Thumb({ m, onClick }) {
   const [url, setUrl] = useState('')
   const [dur, setDur] = useState(0)
-  useEffect(() => { let alive = true; fileLink(m.file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path])
+  useEffect(() => { let alive = true; fileLink(m.file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path])
   const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   return (
     <button type="button" className="pf-thumb" onClick={onClick}>

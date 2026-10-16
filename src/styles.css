@@ -1692,13 +1692,13 @@ html[data-density='relaxed'] { --gap-msg: 10px; }
 .day + .msg { margin-top: 0; }
 .msg.first:not(.mine) .bubble, .msg.first.mine .bubble { border-radius: 18px; }
 .bubble { padding: 7px 12px; }
-.bubble.pic { padding: 4px; }
+.bubble.pic, html[data-theme] .bubble.pic { padding: 1px; } /* a hairline frame round photos and videos (Alex, 16 Oct: 1-2 px) */
 .bubble.pic :is(.pic-img, .load-tap, .pic-wait) { width: var(--media-w); max-width: 100%; height: auto; max-height: 360px; object-fit: cover; }
 .bubble.pic :is(.load-tap, .pic-wait) { height: calc(var(--media-w) * .62); }
-.bubble :is(.voice, .music, .file) { box-sizing: border-box; width: calc(var(--media-w) - 16px); min-width: 0; max-width: 100%; }
+.bubble :is(.voice, .music, .file) { box-sizing: border-box; width: calc(var(--media-w) - 22px); min-width: 0; max-width: 100%; }
 .bubble .file-text { flex: 1; }
 .bubble .file-text b { max-width: none; }
-.bubble.outbox, .bubble.outbox.has-pic { width: calc(var(--media-w) + 8px); min-width: 0; max-width: 100%; }
+.bubble.outbox, .bubble.outbox.has-pic { width: calc(var(--media-w) + 4px); min-width: 0; max-width: 100%; }
 .bubble.outbox img { width: 100%; max-width: none; object-fit: cover; }
 
 /* the conversation's head: the name card and the round buttons beside it the same height (Alex, 16 Oct) */
@@ -2039,3 +2039,9 @@ html[data-theme='aurum'] .boot-paw { border-radius: 50%; }
 .cinema-x { position: absolute; top: calc(14px + var(--bar, 0px)); right: 16px; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 1px solid rgba(255, 255, 255, .25); border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; opacity: .7; cursor: pointer; transition: opacity .2s; }
 .cinema-x:hover { opacity: 1; }
 @keyframes cinema-in { from { opacity: 0; } to { opacity: 1; } }
+/* the picture's corners follow the bubble's, one pixel in */
+.bubble.pic :is(.pic-img, .load-tap, .pic-wait), .bubble.pic .vid-box > video { border-radius: 17px; }
+html[data-theme='ember'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait), html[data-theme='ember'] .bubble.pic .vid-box > video { border-radius: calc(var(--r, 12px) * 1.4 + 1px); }
+html[data-theme='prism'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait), html[data-theme='prism'] .bubble.pic .vid-box > video { border-radius: 21px; }
+html[data-theme='aurum'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait), html[data-theme='aurum'] .bubble.pic .vid-box > video { border-radius: 15px; }
+html[data-theme='studio'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait), html[data-theme='studio'] .bubble.pic .vid-box > video { border-radius: 5px; }

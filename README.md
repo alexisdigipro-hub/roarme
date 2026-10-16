@@ -23,6 +23,7 @@ more chat colours, removing people from a group and deleting a group.
 ## RoarTransfer (16 Oct)
 A file over 50 MB (HD photos and videos, documents, or a video still over 50 MB after Standard shrinks it)
 goes by RoarTransfer: up to 3 GB, uploaded in 6 MB pieces that resume after a dropped connection, kept 3 days.
+The cloud button beside the clip sends files straight by RoarTransfer, as they are, whatever their size.
 In the chat it is a tile with the name, size, "Expires in N days", Download and, for videos, Play (lights off).
 Server side: bucket `roar-transfers` with the room's file rules, `roar_expired_transfers()` and an hourly
 pg_cron job calling the Edge Function `roar-transfer-sweep` (`supabase/functions/`), which removes what is

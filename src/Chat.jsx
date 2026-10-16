@@ -777,6 +777,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const recRef = useRef(null)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
+  const transferPick = useRef(null)
   const stick = useRef(true)
   const PAGE = 60
 
@@ -911,14 +912,14 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   // what is on its way up: one tile each, with a ring that fills (Alex, 16 Oct)
   const setOut = (id, patch) => setOutbox((l) => l.map((x) => (x.id === id ? { ...x, ...patch } : x)))
   const dropOut = (id) => setOutbox((l) => { const x = l.find((y) => y.id === id); if (x?.preview) URL.revokeObjectURL(x.preview); return l.filter((y) => y.id !== id) })
-  const upload = async (file, kind, extra = {}, outId = null) => {
+  const upload = async (file, kind, extra = {}, outId = null, viaTransfer = false) => {
     const safe = (file.name || 'file').normalize('NFKD').replace(/[^\w.-]+/g, '_').slice(-80) || 'file'
     const path = `${room.room_id}/${crypto.randomUUID()}-${safe}`
     // a sound file the computer did not name (some .wav, .aiff, .flac) gets its type from its ending, so it plays
     const ext = ((file.name || '').match(/\.(\w+)$/) || [])[1]?.toLowerCase()
     const type = file.type || (ext && isAudioFile({ name: file.name }) ? `audio/${{ mp3: 'mpeg', m4a: 'mp4', aif: 'aiff', oga: 'ogg' }[ext] || ext}` : '')
     const holder = {}
-    const big = file.size > SMALL_MAX
+    const big = viaTransfer || file.size > SMALL_MAX
     if (outId) setOut(outId, { holder, stage: 'up', size: file.size, big })
     await (big ? tusUpload : uploadWithProgress)(big ? TRANSFER_BUCKET : 'roar-files', path, file, type, (p) => { if (outId) setOut(outId, { p }) }, holder)
     if (outId) setOut(outId, { stage: 'send', p: 1 })
@@ -927,7 +928,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     return { path, name: file.name, size: file.size, type, ...tr, ...extra }
   }
 
-  const sendFiles = async (files, caption = '', compress = true) => {
+  // viaTransfer: the RoarTransfer button beside the clip (Alex, 16 Oct) sends the files as they are, any size up to 3 GB
+  const sendFiles = async (files, caption = '', compress = true, viaTransfer = false) => {
+    if (viaTransfer) compress = false
     setAttach(null); setErr('')
     const reply = replyTo
     setReplyTo(null)
@@ -951,7 +954,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           if (small?.file) file = small.file
           setOut(tile.id, { stage: 'prep', p: 0 })
         }
-        const meta = await upload(file, null, {}, tile.id)
+        const meta = await upload(file, null, {}, tile.id, viaTransfer)
         stick.current = true
         const last = n === ok.length
         const { data, error } = await supabase.from('roar_messages').insert({
@@ -1381,6 +1384,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         ) : (
           <div className="compose">
             {!editing && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.clip}</button>}
+            {!editing && <button type="button" className="round" onClick={() => transferPick.current?.click()} aria-label="RoarTransfer" title="RoarTransfer: big files as they are, up to 3 GB, kept 3 days">{I.transfer}</button>}
+            <input ref={transferPick} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files || [])]; e.target.value = ''; if (f.length) sendFiles(f, '', false, true) }} />
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
               {(replyTo || editing) && (
                 <span className="compose-ref" style={{ '--ref': editing ? 'var(--accent)' : replyTo.user_id === me.id ? 'var(--accent)' : colorOf(replyTo.user_id) }}>

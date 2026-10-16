@@ -29,6 +29,13 @@ export default function Chat({ me, setMe }) {
   const prefs = usePrefs()
   const [rooms, setRooms] = useState([])
   const [people, setPeople] = useState({}) // id -> profile
+  const [blocks, setBlocks] = useState(() => new Set()) // the people I blocked
+  const loadBlocks = useCallback(async () => {
+    const { data } = await supabase.from('roar_blocks').select('blocked')
+    setBlocks(new Set((data || []).map((b) => b.blocked)))
+  }, [])
+  useEffect(() => { loadBlocks() }, [loadBlocks])
+  const unblock = async (id) => { await supabase.from('roar_blocks').delete().eq('blocked', id); loadBlocks(); toast('Unblocked') }
   const [activeId, setActiveId] = useState('')
   const [folder, setFolder] = useState(() => { try { return localStorage.getItem('roarme-folder') || 'all' } catch { return 'all' } })
   const [q, setQ] = useState('')
@@ -137,9 +144,9 @@ export default function Chat({ me, setMe }) {
     const list = data || []
     // the pinned message of each chat
     if (list.length) {
-      const { data: pins } = await supabase.from('roar_rooms').select('id, pinned_message_id').in('id', list.map((r) => r.room_id))
-      const pin = Object.fromEntries((pins || []).map((x) => [x.id, x.pinned_message_id]))
-      list.forEach((r) => { r.pinned_message_id = pin[r.room_id] || null })
+      const { data: pins } = await supabase.from('roar_rooms').select('id, pinned_message_id, auto_delete_hours').in('id', list.map((r) => r.room_id))
+      const pin = Object.fromEntries((pins || []).map((x) => [x.id, x]))
+      list.forEach((r) => { r.pinned_message_id = pin[r.room_id]?.pinned_message_id || null; r.auto_delete_hours = pin[r.room_id]?.auto_delete_hours || null })
     }
     setRooms(list)
     loadPeople(list.flatMap((r) => r.members || []))
@@ -499,12 +506,13 @@ export default function Chat({ me, setMe }) {
 
       <main className="main">
         {tab === 'settings' ? (
-          <SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast}
+          <SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast} me={me} setMe={setMe}
             profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => setModal(m)} />
         ) : active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]}
-            onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }} />
+            onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }}
+            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={() => unblock(otherOf(active)?.id)} />
         ) : (
           <div className="pick">
             <span className="pick-paw"><Paw size={64} /></span>
@@ -537,7 +545,8 @@ export default function Chat({ me, setMe }) {
       {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null) }} onOpen={(id) => { setGroupWith(null); openRoom(id) }} />}
       {modal === 'info' && active && <Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
-        onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople} />}
+        onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople}
+        blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={active.kind === 'direct' ? () => toast('Calls arrive with the next update') : null} />}
       {(modal === 'folders' || modal === 'newfolder') && <FoldersModal folders={myFolders} rooms={visible} titleOf={titleOf} startNew={modal === 'newfolder'} onClose={() => setModal('')} onSave={(list) => { setMyFolders(list); setModal(''); if (!list.some((f) => f.id === folder) && !BUILTIN.some(([id]) => id === folder)) setFolder('all') }} />}
       {modal === 'pickfolder' && (
         <Modal title="Add to a folder" onClose={() => setModal('')}>
@@ -666,7 +675,7 @@ function Peek({ room, me, people, title, clearedAt, onClose, onOpen }) {
 }
 
 /* ---------- one conversation ---------- */
-function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup }) {
+function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock }) {
   const [msgs, setMsgs] = useState([])
   const [more, setMore] = useState(true)
   // an unsent message waits for you, per chat (shown in the list as Draft:)
@@ -1064,6 +1073,14 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const pickedMsgs = picked ? msgs.filter((m) => picked.includes(m.id)) : []
   const soon = (what) => toast(`${what} are coming soon`)
   const act = (what, arg) => { setHeadMenu(false); onAct(what, arg) }
+  // messages here go by themselves after a day, a week or a month
+  const setAutoDelete = async (hours) => {
+    setHeadMenu(false)
+    const { error } = await supabase.rpc('roar_set_auto_delete', { r: room.room_id, hours })
+    if (error) { toast(errText(error)); return }
+    onRead()
+    toast(hours ? `Messages go after ${hours === 24 ? '1 day' : hours === 168 ? '1 week' : '1 month'}` : 'Auto-delete off')
+  }
   // the whole chat as a text file: date, time, who, what (deleted and cleared messages left out)
   const exportChat = async () => {
     setHeadMenu(false)
@@ -1143,8 +1160,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                       <button type="button" onClick={() => setHeadSub((s) => (s === 'auto' ? '' : 'auto'))}>{I.timer}<span>Auto-Delete Messages</span><i className="sub-arrow">{I.right}</i></button>
                       {headSub === 'auto' && (
                         <div className="sub-menu menu-list">
-                          {['Off', 'After 1 day', 'After 1 week', 'After 1 month'].map((l) => <button key={l} type="button" disabled><span>{l}</span>{l === 'Off' && <i className="sub-check">{I.check}</i>}</button>)}
-                          <p className="sub-note">Coming soon</p>
+                          {[[null, 'Off'], [24, 'After 1 day'], [168, 'After 1 week'], [720, 'After 1 month']].map(([h, l]) => <button key={l} type="button" onClick={() => setAutoDelete(h)}><span>{l}</span>{(room.auto_delete_hours || null) === h && <i className="sub-check">{I.check}</i>}</button>)}
+                          <p className="sub-note">{room.kind === 'group' ? 'Admins choose, for everyone in the group' : 'For both of you'}</p>
                         </div>
                       )}
                     </div>
@@ -1253,6 +1270,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         })}
       </div>
 
+      {blocked ? (
+        <footer className="compose-wrap"><div className="bar blocked-bar"><span>You blocked {title}. They cannot message or call you.</span><button type="button" className="link" onClick={onUnblock}>Unblock</button></div></footer>
+      ) : (
       <footer className="compose-wrap">
         {(busy || err) && <div className={`bar${err ? ' bar-err' : ''}`}><span>{err || busy}</span>{err && <button type="button" onClick={() => setErr('')} aria-label="Close">{I.x}</button>}</div>}
         {mentionHits.length > 0 && (
@@ -1295,6 +1315,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           </div>
         )}
       </footer>
+      )}
 
       {menu && (
         <OnTop>

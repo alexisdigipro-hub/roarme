@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { errText, fileLink, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { errText, fileLink, fmtBytes, lastSeenText, nameOf, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, I, Modal, OnTop } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { usePrefs } from './prefs.js'
@@ -12,7 +12,7 @@ const isAudio = (m) => m.kind === 'file' && isAudioFile(m.file)
 
 /* A chat's card, as in Telegram (Alex, 16 Oct): the big picture, the name, last seen, Message · Call ·
    Video · More, what we know about the person, and everything shared in the chat by kind. */
-export default function Profile({ room, me, people, title, other, rooms, titleOf, toast, onClose, onChanged, onLeft, onMessage, onOpenRoom, loadPeople }) {
+export default function Profile({ room, me, people, title, other, rooms, titleOf, toast, onClose, onChanged, onLeft, onMessage, onOpenRoom, loadPeople, blocked, onBlocks, onCall }) {
   const group = room.kind === 'group'
   const showIds = usePrefs().peerIds
   const admin = room.role === 'admin'
@@ -26,6 +26,56 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const [q, setQ] = useState('')
   const [hits, setHits] = useState([])
   const [err, setErr] = useState('')
+  const [busyPic, setBusyPic] = useState(false)
+  const picRef = useRef(null)
+
+  // a new picture: the group's (anyone in it), or my own one for a friend who has none (only I see it)
+  const pickPic = async (raw) => {
+    if (!raw) return
+    setBusyPic(true); setErr('')
+    try {
+      const file = await shrinkImage(raw, 640, 0.86)
+      const path = `${me.id}/${group ? `group-${room.room_id}` : `contact-${other.id}`}-${Date.now()}.jpg`
+      const up = await supabase.storage.from('roar-avatars').upload(path, file, { contentType: 'image/jpeg', upsert: true })
+      if (up.error) throw up.error
+      const url = supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl
+      const { error } = group
+        ? await supabase.rpc('roar_set_group_photo', { r: room.room_id, url })
+        : await supabase.from('roar_contacts').upsert({ owner: me.id, person: other.id, photo_url: url, updated_at: new Date().toISOString() })
+      if (error) throw error
+      if (group) onChanged(); else loadPeople([other.id])
+      toast(group ? 'Group photo changed' : 'Photo set, only you see it')
+    } catch (e) { setErr(errText(e)) }
+    setBusyPic(false)
+  }
+  const dropMyPhoto = async () => {
+    setMore(false)
+    const { error } = await supabase.from('roar_contacts').update({ photo_url: '' }).eq('owner', me.id).eq('person', other.id)
+    if (error) setErr(errText(error)); else { loadPeople([other.id]); toast('Your photo for them is gone') }
+  }
+  const canPic = group || (other && !other.own_photo)
+  const block = async () => {
+    setMore(false)
+    if (blocked) {
+      const { error } = await supabase.from('roar_blocks').delete().eq('blocker', me.id).eq('blocked', other.id)
+      if (error) setErr(errText(error)); else { onBlocks(); toast(`${nameOf(other)} unblocked`) }
+      return
+    }
+    if (!window.confirm(`Block ${nameOf(other)}? They will not be able to message or call you, or add you to groups.`)) return
+    const { error } = await supabase.from('roar_blocks').insert({ blocker: me.id, blocked: other.id })
+    if (error) setErr(errText(error)); else { onBlocks(); toast(`${nameOf(other)} blocked`) }
+  }
+  const deleteGroup = async () => {
+    setMore(false)
+    if (!window.confirm(`Delete ${title} for everyone, with all its messages?`)) return
+    const { error } = await supabase.rpc('roar_delete_group', { r: room.room_id })
+    if (error) setErr(errText(error)); else { toast('Group deleted'); onLeft() }
+  }
+  const removeMember = async (p) => {
+    if (!window.confirm(`Remove ${nameOf(p)} from ${title}?`)) return
+    const { error } = await supabase.rpc('roar_remove_member', { r: room.room_id, person: p.id })
+    if (error) setErr(errText(error)); else { onChanged(); toast(`${nameOf(p)} removed`) }
+  }
 
   useEffect(() => {
     let alive = true
@@ -128,7 +178,15 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     <Modal title="" onClose={onClose} wide>
       <div className="pf">
         <div className="pf-top">
-          <Avatar src={group ? room.avatar_url : other?.avatar_url} name={title} size={112} group={group} />
+          {canPic
+            ? (
+              <button type="button" className={`pf-pic${busyPic ? ' busy' : ''}`} onClick={() => picRef.current?.click()} title={group ? 'Change the group photo' : 'Set a photo for them, only you see it'}>
+                <Avatar src={group ? room.avatar_url : other?.avatar_url} name={title} size={112} group={group} />
+                <span className="pf-pic-cam">{I.camera}</span>
+              </button>
+            )
+            : <Avatar src={group ? room.avatar_url : other?.avatar_url} name={title} size={112} group={group} />}
+          <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { pickPic(e.target.files?.[0]); e.target.value = '' }} />
           {group && admin
             ? <input className="pf-name-edit" value={name} onChange={(e) => setName(e.target.value)} onBlur={rename} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} title="Rename the group" />
             : <h2 className="pf-name">{title}</h2>}
@@ -137,8 +195,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
 
         <div className="pf-acts">
           <button type="button" onClick={onMessage}>{I.chats}<span>Message</span></button>
-          <button type="button" onClick={() => toast('Voice calls are coming soon')}>{I.phone}<span>Call</span></button>
-          <button type="button" onClick={() => toast('Video calls are coming soon')}>{I.video}<span>Video</span></button>
+          <button type="button" onClick={() => (onCall ? onCall(false) : toast('Calls are for chats between two people'))}>{I.phone}<span>Call</span></button>
+          <button type="button" onClick={() => (onCall ? onCall(true) : toast('Calls are for chats between two people'))}>{I.video}<span>Video</span></button>
           <span className="pf-more">
             <button type="button" className={more ? 'on' : ''} onClick={() => setMore((v) => !v)}>{I.more}<span>More</span></button>
             {more && (
@@ -150,8 +208,10 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   {!group && other && <button type="button" onClick={() => { setMore(false); copy(`@${other.username}`, 'Username copied') }}>{I.copy}<span>Copy username</span></button>}
                   {group && admin && <button type="button" onClick={() => { setMore(false); setTab('members'); setAdding(true) }}>{I.people}<span>Add people</span></button>}
                   {group && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave group</span></button>}
-                  {group && admin && <button type="button" className="danger" onClick={() => { setMore(false); toast('Deleting a group is coming soon') }}>{I.trash}<span>Delete group</span></button>}
-                  {!group && <button type="button" className="danger" onClick={() => { setMore(false); toast('Blocking is coming soon') }}>{I.x}<span>Block</span></button>}
+                  {canPic && <button type="button" onClick={() => { setMore(false); picRef.current?.click() }}>{I.camera}<span>{group ? 'Change group photo' : 'Set a photo for them'}</span></button>}
+                  {!group && other?.my_photo && <button type="button" onClick={dropMyPhoto}>{I.x}<span>Remove my photo for them</span></button>}
+                  {group && admin && <button type="button" className="danger" onClick={deleteGroup}>{I.trash}<span>Delete group</span></button>}
+                  {!group && other && <button type="button" className="danger" onClick={block}>{I.x}<span>{blocked ? 'Unblock' : 'Block'}</span></button>}
                 </div>
               </>
             )}
@@ -192,7 +252,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                 <div key={p.id} className="pf-row">
                   <Avatar src={p.avatar_url} name={nameOf(p)} size={40} />
                   <span className="pf-row-text"><b>{p.id === me.id ? 'You' : nameOf(p)}</b><small>{p.username !== '…' ? `@${p.username} · ${lastSeenText(p)}` : ''}</small></span>
-                  {admin && p.id !== me.id && <button type="button" className="link soon" onClick={() => toast('Removing people is coming soon')}>Remove</button>}
+                  {admin && p.id !== me.id && <button type="button" className="link danger-link" onClick={() => removeMember(p)}>Remove</button>}
                 </div>
               ))}
             </div>

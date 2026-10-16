@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
-import { Avatar, I, Lens, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, DEFAULTS, FONTS, REACTIONS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
+import { Avatar, I, Lens, NAME_COLORS, colorOf, revealFrom, svg } from './ui.jsx'
+import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
@@ -73,7 +73,7 @@ export function SettingsMenu({ me, page, onPage }) {
 }
 
 /* the page on the right */
-export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, onFolders, toast }) {
+export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, onFolders, toast, me, setMe }) {
   const p = usePrefs()
   const title = pageTitle(page)
   return (
@@ -89,10 +89,10 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
         {page === 'general' && <General p={p} onKeys={() => onPage('keys')} />}
         {page === 'keys' && <Keys p={p} />}
         {page === 'notify' && <Notify p={p} />}
-        {page === 'privacy' && <Privacy toast={toast} />}
+        {page === 'privacy' && <Privacy me={me} setMe={setMe} toast={toast} />}
         {page === 'data' && <Data p={p} />}
-        {page === 'sessions' && <Sessions toast={toast} />}
-        {page === 'appearance' && <Appearance p={p} toast={toast} />}
+        {page === 'sessions' && <Sessions me={me} setMe={setMe} toast={toast} />}
+        {page === 'appearance' && <Appearance p={p} toast={toast} me={me} setMe={setMe} />}
         {page === 'language' && <Language p={p} />}
         {page === 'folders' && <Folders p={p} folders={folders} onFolders={onFolders} />}
         {page !== 'profile' && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
@@ -163,18 +163,55 @@ function Notify({ p }) {
       <Box title="Sounds">
         <div className="set-row">
           <span className="set-text">Sound When a Message Arrives</span>
-          <button type="button" className="link" onClick={chime}>Play</button>
+          <button type="button" className="link" onClick={() => chime()}>Play</button>
           <span className="switch"><input type="checkbox" checked={p.sound} onChange={(e) => setPrefs({ sound: e.target.checked })} /><span /></span>
         </div>
-        <Soon arrow>Choose a Sound</Soon>
+        <div className="set-row set-col">
+          <span className="set-text">Sound<small>Tap one to hear it</small></span>
+          <Lens className="seg seg-wrap" dep={p.soundKind}>{SOUNDS.map(([k, l]) => <button key={k} type="button" className={p.soundKind === k ? 'on' : ''} onClick={() => { setPrefs({ soundKind: k }); chime(k) }}>{l}</button>)}</Lens>
+        </div>
       </Box>
       <Box title="Badge"><Soon hint="Comes with the desktop app">Unread Count on the App Icon</Soon></Box>
     </>
   )
 }
 
-function Privacy({ toast }) {
+/* my profile changed in the database, read back through roar_people */
+export async function saveMe(me, setMe, patch) {
+  const { error } = await supabase.from('roar_profiles').update(patch).eq('id', me.id)
+  if (error) return errText(error)
+  const { data } = await supabase.from('roar_people').select('*').eq('id', me.id).single()
+  if (data) setMe(data)
+  return ''
+}
+
+function Privacy({ me, setMe, toast }) {
   const [pw, setPw] = useState({ a: '', b: '', open: false, busy: false, err: '' })
+  const priv = me.privacy || {}
+  const setPriv = async (k, v) => {
+    const e = await saveMe(me, setMe, { privacy: { ...priv, [k]: v } })
+    toast(e || 'Saved')
+  }
+  const [blocks, setBlocks] = useState([])
+  const loadBlocks = async () => {
+    const { data } = await supabase.from('roar_blocks').select('blocked')
+    const ids = (data || []).map((b) => b.blocked)
+    if (!ids.length) { setBlocks([]); return }
+    const { data: ppl } = await supabase.from('roar_people').select('id, username, display_name, avatar_url').in('id', ids)
+    setBlocks(ppl || [])
+  }
+  useEffect(() => { loadBlocks() }, [])
+  const unblock = async (b) => {
+    const { error } = await supabase.from('roar_blocks').delete().eq('blocker', me.id).eq('blocked', b.id)
+    if (error) toast(errText(error)); else { toast(`${nameOf(b)} unblocked`); loadBlocks() }
+  }
+  const [gone, setGone] = useState({ open: false, typed: '', busy: false })
+  const deleteMe = async () => {
+    setGone((g) => ({ ...g, busy: true }))
+    const { error } = await supabase.rpc('roar_delete_me')
+    if (error) { toast(errText(error)); setGone((g) => ({ ...g, busy: false })); return }
+    await supabase.auth.signOut()
+  }
   const save = async () => {
     if (pw.a.length < 8) { setPw((s) => ({ ...s, err: 'At least 8 characters.' })); return }
     if (pw.a !== pw.b) { setPw((s) => ({ ...s, err: 'The two do not match.' })); return }
@@ -200,15 +237,36 @@ function Privacy({ toast }) {
           )}
         <Soon arrow>Two-Step Verification</Soon>
         <Soon arrow>Passcode Lock</Soon>
-        <Soon arrow>Blocked Users</Soon>
       </Box>
-      <Box title="Privacy">
-        <Soon arrow hint="Everybody · coming soon">Last Seen and Online</Soon>
-        <Soon arrow hint="Everybody · coming soon">Profile Photo</Soon>
-        <Soon arrow hint="Everybody · coming soon">Who Can Add Me to Groups</Soon>
-        <Soon arrow hint="Everybody · coming soon">Who Can Call Me</Soon>
+      <Box title="Privacy" note="My contacts: people you have a chat with.">
+        {[['last_seen', 'Last Seen and Online'], ['photo', 'Profile Photo'], ['groups', 'Who Can Add Me to Groups'], ['calls', 'Who Can Call Me']].map(([k, l]) => (
+          <div key={k} className="set-row set-col">
+            <span className="set-text">{l}</span>
+            <Lens className="seg" dep={priv[k] || 'everybody'}>{[['everybody', 'Everybody'], ['contacts', 'My contacts'], ['nobody', 'Nobody']].map(([v, t]) => <button key={v} type="button" className={(priv[k] || 'everybody') === v ? 'on' : ''} onClick={() => setPriv(k, v)}>{t}</button>)}</Lens>
+          </div>
+        ))}
       </Box>
-      <Box title="Account"><Soon arrow>Delete My Account</Soon></Box>
+      <Box title="Blocked users" note={blocks.length ? 'They cannot message or call you, or add you to groups.' : 'Nobody is blocked. Block someone from their chat card.'}>
+        {blocks.map((b) => (
+          <div key={b.id} className="set-row">
+            <Avatar src={b.avatar_url} name={nameOf(b)} size={36} />
+            <span className="set-text">{nameOf(b)}<small>@{b.username}</small></span>
+            <button type="button" className="btn btn-sm" onClick={() => unblock(b)}>Unblock</button>
+          </div>
+        ))}
+        {!blocks.length && <div className="set-row"><span className="set-text muted">No one</span></div>}
+      </Box>
+      <Box title="Account" note="Your profile, chats and pictures go for good. Messages you sent in groups stay, without your name.">
+        {!gone.open
+          ? <button type="button" className="set-row set-pick danger" onClick={() => setGone({ open: true, typed: '', busy: false })}><span className="set-text">Delete My Account</span></button>
+          : (
+            <div className="set-row set-col">
+              <span className="set-text">Type your username to confirm<small>@{me.username}</small></span>
+              <input className="input" autoFocus value={gone.typed} onChange={(e) => setGone((g) => ({ ...g, typed: e.target.value }))} placeholder={me.username} />
+              <span className="set-acts"><button type="button" className="btn" onClick={() => setGone({ open: false, typed: '', busy: false })}>Cancel</button><button type="button" className="btn btn-danger" disabled={gone.typed.replace(/^@/, '') !== me.username || gone.busy} onClick={deleteMe}>{gone.busy ? '…' : 'Delete for good'}</button></span>
+            </div>
+          )}
+      </Box>
     </>
   )
 }
@@ -232,36 +290,71 @@ function Data({ p }) {
   )
 }
 
-const deviceOf = () => {
-  const u = navigator.userAgent
-  const os = /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac OS X/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : /Linux/.test(u) ? 'Linux' : 'Computer'
-  const br = /Edg\//.test(u) ? 'Edge' : /OPR\//.test(u) ? 'Opera' : /Firefox\//.test(u) ? 'Firefox' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : 'Browser'
+const deviceOf = (u = navigator.userAgent) => {
+  u = u || ''
+  const os = /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac OS X|Macintosh/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : /Linux/.test(u) ? 'Linux' : 'Device'
+  const br = /Electron\//.test(u) ? 'ROAR app' : /Edg\//.test(u) ? 'Edge' : /OPR\//.test(u) ? 'Opera' : /Firefox\//.test(u) ? 'Firefox' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : 'Browser'
   return { os, br }
 }
-function Sessions({ toast }) {
-  const d = deviceOf()
+const ago = (iso) => {
+  const m = (Date.now() - new Date(iso).getTime()) / 60000
+  return m < 2 ? 'now' : m < 60 ? `${Math.round(m)} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+function Sessions({ me, setMe, toast }) {
+  const [list, setList] = useState(null)
+  const load = async () => {
+    const { data, error } = await supabase.rpc('roar_my_sessions')
+    setList(error ? [] : data || [])
+  }
+  useEffect(() => { load() }, [])
+  const here = (list || []).find((x) => x.current)
+  const others = (list || []).filter((x) => !x.current)
+  const endOne = async (x) => {
+    const d = deviceOf(x.user_agent)
+    if (!window.confirm(`Sign out ${d.os} · ${d.br}?`)) return
+    const { error } = await supabase.rpc('roar_end_session', { sid: x.id })
+    if (error) toast(errText(error)); else { toast('Signed out there'); load() }
+  }
   const endOthers = async () => {
     if (!window.confirm('Sign out on every other device? This one stays signed in.')) return
     const { error } = await supabase.auth.signOut({ scope: 'others' })
     toast(error ? errText(error) : 'All other devices are signed out')
+    load()
+  }
+  const days = Number(me.privacy?.session_days) || 180
+  const setDays = async (v) => { const e = await saveMe(me, setMe, { privacy: { ...(me.privacy || {}), session_days: v } }); toast(e || 'Saved') }
+  const row = (x, mine) => {
+    const d = deviceOf(x?.user_agent)
+    return (
+      <div key={x?.id || 'here'} className="set-row set-dev">
+        <span className="nav-ico" style={{ '--c': mine ? '#0a84ff' : '#636366' }}>{svg(<><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M8 20h8" /></>, 16)}</span>
+        <span className="set-text"><b>{d.os} · {d.br}</b><small>{[x?.ip, x && !mine ? `active ${ago(x.last_active)}` : ''].filter(Boolean).join(' · ') || ' '}</small></span>
+        {mine ? <small className="set-online">online</small> : <button type="button" className="btn btn-sm btn-danger" onClick={() => endOne(x)}>Sign out</button>}
+      </div>
+    )
   }
   return (
     <>
       <Box title="This device" note="Signs you out on all devices except this one.">
-        <div className="set-row set-dev">
-          <span className="nav-ico" style={{ '--c': '#0a84ff' }}>{svg(<><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M8 20h8" /></>, 16)}</span>
-          <span className="set-text"><b>{d.os}</b><small>ROAR {navigator.userAgent.includes('Electron') ? 'app' : 'web'} · {d.br}</small></span>
-          <small className="set-online">online</small>
-        </div>
-        <button type="button" className="set-row set-pick danger" onClick={endOthers}><span className="set-text">Terminate All Other Sessions</span></button>
+        {row(here || null, true)}
+        <button type="button" className="set-row set-pick danger" onClick={endOthers} disabled={!others.length}><span className="set-text">Terminate All Other Sessions</span></button>
       </Box>
-      <Box title="Active sessions"><Soon hint="The list of your other devices is coming soon">Other Devices</Soon></Box>
-      <Box title="Automatically terminate old sessions"><Soon arrow hint="6 months · coming soon">If Inactive For</Soon></Box>
+      <Box title="Active sessions">
+        {list === null && <div className="set-row"><span className="set-text muted">Loading…</span></div>}
+        {list && !others.length && <div className="set-row"><span className="set-text muted">No other devices</span></div>}
+        {others.map((x) => row(x, false))}
+      </Box>
+      <Box title="Automatically terminate old sessions" note="A device that has not opened ROAR for this long is signed out by itself.">
+        <div className="set-row set-col">
+          <span className="set-text">If Inactive For</span>
+          <Lens className="seg" dep={days}>{[[30, '1 month'], [90, '3 months'], [180, '6 months'], [365, '1 year']].map(([v, t]) => <button key={v} type="button" className={days === v ? 'on' : ''} onClick={() => setDays(v)}>{t}</button>)}</Lens>
+        </div>
+      </Box>
     </>
   )
 }
 
-function Appearance({ p, toast }) {
+function Appearance({ p, toast, me, setMe }) {
   return (
     <>
       <Box title="Colour theme">
@@ -317,7 +410,13 @@ function Appearance({ p, toast }) {
         <Switch on={p.motion !== false} set={(v) => setPrefs({ motion: v })} hint="Fluid transitions for messages, menus and windows">Smooth Animations</Switch>
         <Switch on={p.focusRings} set={(v) => setPrefs({ focusRings: v })} hint="A clear ring around whatever the keyboard is on">Bold Focus Rings</Switch>
         <Switch on={p.compact} set={(v) => setPrefs({ compact: v })}>Compact Spacing</Switch>
-        <Soon arrow>Your Name Colour</Soon>
+        <div className="set-row set-col">
+          <span className="set-text">Your Name Colour<small>How your name shows to others in groups</small></span>
+          <div className="accents">
+            <button type="button" className={`acc acc-auto${!me.name_color ? ' on' : ''}`} title="Automatic" onClick={() => saveMe(me, setMe, { name_color: '' }).then((e) => toast(e || 'Saved'))}><small>Auto</small></button>
+            {NAME_COLORS.map((c) => <button key={c} type="button" className={`acc${me.name_color === c ? ' on' : ''}`} style={{ '--c': c }} onClick={() => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))}><small>{c}</small></button>)}
+          </div>
+        </div>
       </Box>
       <Box title="Chat wallpaper" note="One chat can have its own from its ⋯ menu.">
         <div className="set-row set-col"><WallTiles value={p.background} onPick={(k) => setPrefs({ background: k })} /></div>

@@ -30,6 +30,7 @@ export const DEFAULTS = {
   translateTo: 'auto', // auto = Greek to English and back
   folderTabs: 'top', // top | left
   sound: true,
+  soundKind: 'chime', // one of SOUNDS
   folderTags: false,
   background: 'soft', // one of WALLS
 }
@@ -79,23 +80,32 @@ export function useLocal(key, initial) {
   return [v, (next) => write(key, typeof next === 'function' ? next(read(key, initial)) : next)]
 }
 
-/* The two-note chime when a message arrives (WebAudio, no file) */
+/* The sound when a message arrives (WebAudio, no files): a few to choose from in Settings */
+export const SOUNDS = [
+  ['chime', 'Chime', 'sine', [[880, 0], [1320, 0.12]]],
+  ['pop', 'Pop', 'sine', [[620, 0], [930, 0.05]]],
+  ['ping', 'Ping', 'triangle', [[1568, 0]]],
+  ['drop', 'Drop', 'sine', [[1200, 0], [700, 0.09]]],
+  ['bells', 'Bells', 'triangle', [[1047, 0], [1319, 0.1], [1568, 0.2]]],
+  ['roar', 'Roar', 'sawtooth', [[110, 0], [165, 0.06], [220, 0.12]]],
+]
 let ctx = null
-export function chime() {
+export function chime(kind) {
   try {
     ctx = ctx || new (window.AudioContext || window.webkitAudioContext)()
     const t = ctx.currentTime
-    ;[[880, 0], [1320, 0.12]].forEach(([f, d]) => {
+    const [, , wave, notes] = SOUNDS.find(([k]) => k === (kind || getPrefs().soundKind)) || SOUNDS[0]
+    notes.forEach(([f, d]) => {
       const o = ctx.createOscillator()
       const g = ctx.createGain()
-      o.type = 'sine'
+      o.type = wave
       o.frequency.value = f
       g.gain.setValueAtTime(0.0001, t + d)
-      g.gain.exponentialRampToValueAtTime(0.12, t + d + 0.02)
-      g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.28)
+      g.gain.exponentialRampToValueAtTime(wave === 'sawtooth' ? 0.05 : 0.12, t + d + 0.02)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d + (wave === 'sawtooth' ? 0.45 : 0.28))
       o.connect(g).connect(ctx.destination)
       o.start(t + d)
-      o.stop(t + d + 0.3)
+      o.stop(t + d + 0.5)
     })
   } catch { /* no sound here */ }
 }

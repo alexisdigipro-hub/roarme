@@ -1537,3 +1537,15 @@ html[data-theme] .side-brand b { background: none; -webkit-background-clip: init
 .brand .wordmark b { font-size: 26px; }
 .pick-paw { display: grid; place-items: center; width: 96px; height: 96px; margin-bottom: 10px; border-radius: 28px; background: var(--glass); border: 1px solid var(--edge); color: var(--accent); box-shadow: 0 0 40px color-mix(in srgb, var(--accent) 25%, transparent); }
 .pick h2 { font-weight: 800; letter-spacing: .14em; }
+
+/* round 1 (16 Oct): a picture you can change on the chat card, the bar when you blocked someone */
+.pf-pic { position: relative; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; }
+.pf-pic-cam { position: absolute; right: 2px; bottom: 2px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
+.pf-pic-cam svg { width: 18px; height: 18px; }
+.pf-pic.busy { opacity: .6; pointer-events: none; }
+.pf-pic:hover .av { filter: brightness(.85); }
+.blocked-bar { justify-content: space-between; }
+.blocked-bar .link { flex: none; }
+.link.danger-link { color: var(--danger); }
+.seg.seg-wrap { flex-wrap: wrap; border-radius: 18px; }
+.seg.seg-wrap button { flex: 1 0 30%; }

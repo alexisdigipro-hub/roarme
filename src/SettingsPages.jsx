@@ -46,6 +46,14 @@ const Box = ({ title, note, children }) => (
   </section>
 )
 
+/* the Mac/Windows app's own settings, when ROAR runs inside it (desktop/preload.js) */
+function useDesktop() {
+  const api = typeof window !== 'undefined' ? window.roarDesktop : null
+  const [s, setS] = useState({})
+  useEffect(() => { if (api) api.getSettings().then(setS) }, [api])
+  return { on: !!api, s, set: async (k, v) => { if (api) setS(await api.setSetting(k, v)) } }
+}
+
 /* the list in the side panel */
 export function SettingsMenu({ me, page, onPage }) {
   return (
@@ -103,13 +111,27 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
 }
 
 function General({ p, onKeys }) {
+  const desk = useDesktop()
   return (
     <>
+      <Box title="ROAR app" note={desk.on ? 'For this computer.' : 'The ROAR app for Mac (and Windows) adds these. It always shows the latest ROAR.'}>
+        {desk.on ? (
+          <>
+            <Switch on={desk.s.tray} set={(v) => desk.set('tray', v)} hint="The paw, with your unread count, at the top of the screen">Show Icon in Menu Bar</Switch>
+            <Switch on={desk.s.openAtLogin} set={(v) => desk.set('openAtLogin', v)} hint="Starts quietly in the background">Open When the Computer Starts</Switch>
+            <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps ROAR on for messages and calls">Keep Running When Closed</Switch>
+          </>
+        ) : (
+          <>
+            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/ROAR-Mac-arm64.dmg"><span className="set-text">Download for Mac (Apple Silicon)<small>M1, M2, M3, M4</small></span><i className="set-chev">{I.download}</i></a>
+            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/ROAR-Mac-x64.dmg"><span className="set-text">Download for Mac (Intel)</span><i className="set-chev">{I.download}</i></a>
+            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/ROAR-Windows-Setup.exe"><span className="set-text">Download for Windows</span><i className="set-chev">{I.download}</i></a>
+          </>
+        )}
+      </Box>
       <Box title="Power saving"><Switch on={p.lite} set={(v) => setPrefs({ lite: v })} hint="No animations and no glass blur, easier on the battery">Power Saving Mode</Switch></Box>
       <Box title="Spelling and grammar">
         <Switch on={p.spell} set={(v) => setPrefs({ spell: v })}>Check Spelling While Typing</Switch>
-        <Soon hint="Comes with the desktop app">Check Grammar With Spelling</Soon>
-        <Soon hint="Comes with the desktop app">Correct Spelling Automatically</Soon>
       </Box>
       <Box title="Emoji">
         <Switch on={p.autoEmoji} set={(v) => setPrefs({ autoEmoji: v })} hint=":) becomes 🙂 and <3 becomes ❤️ when you send">Replace Emoji Automatically</Switch>
@@ -117,7 +139,6 @@ function General({ p, onKeys }) {
       </Box>
       <Box title="Interface" note="Click on the unread badge to preview chats without marking them as read.">
         <Switch on={p.callsTab} set={(v) => setPrefs({ callsTab: v })}>Show Calls Tab</Switch>
-        <Soon hint="Comes with the desktop app">Show Icon in Menu Bar</Soon>
         <Switch on={p.peekBadge} set={(v) => setPrefs({ peekBadge: v })}>Preview Chats</Switch>
       </Box>
       <Box title="Shortcuts"><Nav onClick={onKeys} value="⌘ + /">Keyboard Shortcuts</Nav></Box>
@@ -148,6 +169,7 @@ function Keys({ p }) {
 }
 
 function Notify({ p }) {
+  const desk = useDesktop()
   const [perm, setPerm] = useState(typeof Notification === 'undefined' ? 'none' : Notification.permission)
   const ask = async () => { try { setPerm(await Notification.requestPermission()) } catch { /* not here */ } }
   return (
@@ -159,7 +181,9 @@ function Notify({ p }) {
           {perm === 'granted' && <i className="set-tick">{I.check}</i>}
         </div>
         <Switch on={p.notifyPreview} set={(v) => setPrefs({ notifyPreview: v })} hint="Off: only the name, never the text">Message Preview</Switch>
-        <Soon>Notifications With the App Closed</Soon>
+        {desk.on
+          ? <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps ROAR on, so messages and calls still reach you">Notifications With the App Closed</Switch>
+          : <Soon hint="In the ROAR app for Mac and Windows">Notifications With the App Closed</Soon>}
       </Box>
       <Box title="Sounds">
         <div className="set-row">
@@ -172,7 +196,11 @@ function Notify({ p }) {
           <Lens className="seg seg-wrap" dep={p.soundKind}>{SOUNDS.map(([k, l]) => <button key={k} type="button" className={p.soundKind === k ? 'on' : ''} onClick={() => { setPrefs({ soundKind: k }); chime(k) }}>{l}</button>)}</Lens>
         </div>
       </Box>
-      <Box title="Badge"><Soon hint="Comes with the desktop app">Unread Count on the App Icon</Soon></Box>
+      <Box title="Badge">
+        {desk.on
+          ? <Switch on={p.badge !== false} set={(v) => setPrefs({ badge: v })}>Unread Count on the App Icon</Switch>
+          : <Soon hint="In the ROAR app for Mac and Windows">Unread Count on the App Icon</Soon>}
+      </Box>
     </>
   )
 }

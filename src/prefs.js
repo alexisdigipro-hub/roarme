@@ -36,6 +36,7 @@ export const DEFAULTS = {
   folderTabs: 'top', // top | left
   sound: true,
   soundKind: 'chime', // one of SOUNDS
+  badge: true, // the unread count on the Mac/Windows app's icon
   folderTags: false,
   background: 'soft', // one of WALLS
 }

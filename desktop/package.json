@@ -1,7 +1,7 @@
 {
   "name": "roar",
   "productName": "ROAR",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "ROAR for Mac and Windows: the chat in an app of its own",
   "author": "THEMADLIONS",
   "private": true,
@@ -24,7 +24,10 @@
     },
     "files": [
       "main.js",
-      "package.json"
+      "preload.js",
+      "package.json",
+      "trayTemplate.png",
+      "trayTemplate@2x.png"
     ],
     "afterPack": "./adhoc-sign.js",
     "mac": {

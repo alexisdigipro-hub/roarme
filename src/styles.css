@@ -1629,3 +1629,4 @@ html[data-mode='light'] :is(.fmt-code, .fmt-pre) { background: rgba(16, 32, 58, 
 .call-dir { display: inline-flex; margin-right: 6px; vertical-align: -3px; opacity: .7; }
 .call-dir svg { width: 15px; height: 15px; }
 @media (max-width: 760px) { .call-local { width: 120px; bottom: 140px; right: 14px; } .call-acts { gap: 14px; } }
+a.set-row { color: inherit; text-decoration: none; }

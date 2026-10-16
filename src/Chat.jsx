@@ -223,7 +223,10 @@ export default function Chat({ me, setMe }) {
   // a chat deleted from one's list stays away until something new is written in it
   const visible = rooms.filter((r) => !hidden[r.room_id] || r.last_message_at > hidden[r.room_id])
   const unreadAll = visible.filter((r) => !r.archived && !r.muted).reduce((a, r) => a + (r.unread || 0), 0)
-  useEffect(() => { document.title = unreadAll ? `(${unreadAll}) ROAR` : 'ROAR' }, [unreadAll])
+  useEffect(() => {
+    document.title = unreadAll ? `(${unreadAll}) ROAR` : 'ROAR'
+    window.roarDesktop?.setBadge(prefs.badge === false ? 0 : unreadAll) // the count on the app's icon (Mac/Windows app)
+  }, [unreadAll, prefs.badge])
 
   const BUILTIN = [['all', 'All'], ['unread', 'Unread'], ['groups', 'Groups'], ['archived', 'Archived']]
   const allFolders = [...BUILTIN.map(([id, name]) => ({ id, name })), ...myFolders.map((f) => ({ ...f, custom: true }))]

@@ -133,7 +133,8 @@ export function TransferWindow({ title, outbox, onStart, onClose }) {
               <span className="rt-tile t-time"><i>{I.timer}</i><b>3 days</b><small>until {untilDate()}</small></span>
               <span className="rt-tile"><i>{I.link}</i><b>Link</b><small>for anyone</small></span>
             </div>
-            <button type="button" className="rt-send" disabled={!files.length || tooBig} onClick={start}>{tooBig ? 'Over 3 GB' : files.length ? 'Transfer' : 'Add files to transfer'}{files.length > 0 && !tooBig && I.send}</button>
+            {/* the send pill comes in only once there are files (Alex, 17 Oct: a dead button before that says nothing) */}
+            {files.length > 0 && <button type="button" className="rt-send" disabled={tooBig} onClick={start}>{tooBig ? 'Over 3 GB' : 'Transfer'}{!tooBig && I.send}</button>}
           </>
         )}
         {phase === 'up' && (

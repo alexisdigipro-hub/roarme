@@ -1016,10 +1016,14 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const y = Math.max(70, Math.min(e.clientY, window.innerHeight - h - 12))
     setMenu({ m, x, y })
   }
-  // a click on a message opens its menu, as in the THEMADLIONS chat (a double click is the quick reaction);
-  // a click on a photo, a link or a button inside it does its own thing
+  // The menu opens only on a message itself (Alex, 16 Oct): a right click on it with a mouse, a tap on it on a
+  // touch screen; a click on the empty space beside it does nothing. A double click is the quick reaction;
+  // a photo, a link or a button inside it does its own thing.
   const tapTimer = useRef(0)
+  const mouse = typeof window !== 'undefined' && window.matchMedia?.('(hover: hover) and (pointer: fine)').matches
+  const onBubble = (e) => !!e.target.closest?.('.bubble')
   const onTap = (e, m) => {
+    if (mouse || !onBubble(e)) return
     if (e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx') || window.getSelection()?.toString()) return
     const at = { preventDefault() {}, clientX: e.clientX, clientY: e.clientY }
     clearTimeout(tapTimer.current)
@@ -1245,8 +1249,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
               <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}`}
                 onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => onTap(e, m)}
-                onDoubleClick={(e) => { clearTimeout(tapTimer.current); onDouble(m, e) }}
-                onContextMenu={(e) => openMenu(e, m)}>
+                onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (onBubble(e)) onDouble(m, e) }}
+                onContextMenu={(e) => { if (onBubble(e)) openMenu(e, m) }}>
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">

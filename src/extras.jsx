@@ -6,10 +6,17 @@ import { locale } from './i18n.js'
 
 /* ---------- emoji grid ---------- */
 export function EmojiPicker({ onPick, onClose }) {
+  // a press anywhere outside it closes it (Alex, 16 Oct), also on the messages, which sit above the scrim
+  const ref = useRef(null)
+  useEffect(() => {
+    const down = (e) => { if (ref.current && !ref.current.contains(e.target) && !e.target.closest?.('.emoji-btn')) onClose() }
+    document.addEventListener('pointerdown', down, true)
+    return () => document.removeEventListener('pointerdown', down, true)
+  }, [onClose])
   return (
     <>
       <button type="button" className="scrim" aria-label="Close" onClick={onClose} />
-      <div className="emoji-pick">{EMOJIS.map((e) => <button key={e} type="button" onClick={() => onPick(e)}>{e}</button>)}</div>
+      <div ref={ref} className="emoji-pick">{EMOJIS.map((e) => <button key={e} type="button" onClick={() => onPick(e)}>{e}</button>)}</div>
     </>
   )
 }

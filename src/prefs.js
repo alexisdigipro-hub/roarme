@@ -20,7 +20,7 @@ export const DEFAULTS = {
   faces: true,
   largePhotos: false,
   compress: true,
-  quick: '🎥',
+  quick: '❤️',
   doubleTap: 'react', // react | reply | edit | forward
   autoEmoji: true,
   copyFormat: true, // Copy Text keeps **bold** and the other marks
@@ -65,6 +65,8 @@ export function getPrefs() {
     const p = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY)) || {}) }
     // the folder tabs on the left became tabs at the bottom (Alex, 16 Oct)
     if (p.folderTabs === 'left') p.folderTabs = 'bottom'
+    // the double click reacts with the red heart, no longer the camera (Alex, 16 Oct); a later pick of the camera stays
+    if (!p.quickHeart) { if (p.quick === '🎥') p.quick = '❤️'; p.quickHeart = true }
     return p
   } catch { return { ...DEFAULTS } }
 }
@@ -142,7 +144,7 @@ const SMILEY_RE = new RegExp(`(^|\\s)(${Object.keys(SMILEYS).map((k) => k.replac
 export const swapEmoji = (s) => String(s || '').replace(SMILEY_RE, (_, pre, k) => pre + SMILEYS[k])
 
 export const EMOJIS = ['😀', '😂', '🥹', '😍', '😘', '😎', '🤩', '🥳', '😉', '😊', '🙂', '🤔', '😮', '😢', '😭', '😡', '🙏', '👍', '👎', '👏', '🙌', '💪', '🤝', '✌️', '👌', '👀', '🔥', '❤️', '💙', '💯', '✨', '🎉', '🎬', '🎥', '📸', '🎧', '🎤', '🎶', '🏆', '⭐', '☕', '🍕', '🍻', '🚀', '✅', '❌', '⏰', '📍']
-export const REACTIONS = ['🎥', '❤️', '👍', '🔥', '🏆', '👏', '😂']
+export const REACTIONS = ['❤️', '🎥', '👍', '🔥', '🏆', '👏', '😂']
 
 /* dark or light on the page: 'auto' follows the computer's own setting */
 export function applyMode(mode) {

@@ -61,6 +61,7 @@ export function AttachSheet({ initial = [], onClose, onSend }) {
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
+  const touchOnly = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches
   const add = (list) => setFiles((f) => [...f, ...list])
   const urls = useRef(new Map())
   const thumb = (f) => {
@@ -74,7 +75,8 @@ export function AttachSheet({ initial = [], onClose, onSend }) {
       foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" disabled={!files.length} onClick={() => { setPrefs({ compress }); onSend(files, caption.trim(), compress) }}>Send</button></>}>
       <div className="attach-tabs">
         <button type="button" className="btn" onClick={() => gal.current?.click()}>{I.image} Gallery</button>
-        <button type="button" className="btn" onClick={() => cam.current?.click()}>{I.camera} Camera</button>
+        {/* on a computer the camera button only opened the same file picker as Gallery (Alex, 16 Oct): phones only */}
+        {touchOnly && <button type="button" className="btn" onClick={() => cam.current?.click()}>{I.camera} Camera</button>}
         <button type="button" className="btn" onClick={() => doc.current?.click()}>{I.file} File</button>
       </div>
       <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />

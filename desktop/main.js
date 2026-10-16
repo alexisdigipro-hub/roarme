@@ -27,7 +27,12 @@ const saveSettings = () => { try { fs.writeFileSync(file(), JSON.stringify(setti
 if (!app.requestSingleInstanceLock()) app.quit()
 app.on('second-instance', () => show())
 
-const look = { backgroundColor: '#1b1e23', autoHideMenuBar: true, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, preload: path.join(__dirname, 'preload.js') } }
+// no white title bar (Alex, 16 Oct): on a Mac the three buttons sit on ROAR's own dark band, on Windows the
+// window buttons sit on a dark strip; the site leaves room for them (html[data-desktop] in styles.css)
+const frame = process.platform === 'darwin'
+  ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 12 } }
+  : { titleBarStyle: 'hidden', titleBarOverlay: { color: '#1b1e23', symbolColor: '#eef0f3', height: 32 } }
+const look = { backgroundColor: '#1b1e23', autoHideMenuBar: true, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, preload: path.join(__dirname, 'preload.js') } }
 
 function guard(w) {
   // a chat opened "In Window" gets a window of its own; anything else opens in the browser

@@ -30,11 +30,24 @@ app.on('second-instance', () => show())
 // no white title bar (Alex, 16 Oct): on a Mac the three buttons sit on ROAR's own dark band, on Windows the
 // window buttons sit on a dark strip; the site leaves room for them (html[data-desktop] in styles.css)
 const frame = process.platform === 'darwin'
-  ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 12 } }
+  ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 10 } }
   : { titleBarStyle: 'hidden', titleBarOverlay: { color: '#1b1e23', symbolColor: '#eef0f3', height: 32 } }
 const look = { backgroundColor: '#1b1e23', autoHideMenuBar: true, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, preload: path.join(__dirname, 'preload.js') } }
 
+// the band for the window buttons, put in by the app itself so it never depends on what the browser kept
+const BAR = process.platform === 'darwin' ? 30 : 32
+const BAND_CSS = `#root { height: calc(100% - ${BAR}px) !important; margin-top: ${BAR}px !important; }
+body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: ${BAR}px; z-index: 999; -webkit-app-region: drag; }
+.modal-back, .call, .lock, .viewer { -webkit-app-region: no-drag; }`
+function band(w) {
+  w.webContents.on('dom-ready', () => {
+    w.webContents.insertCSS(BAND_CSS).catch(() => {})
+    w.webContents.executeJavaScript(`document.documentElement.dataset.desktop = ${JSON.stringify(process.platform)}`).catch(() => {})
+  })
+}
+
 function guard(w) {
+  band(w)
   // a chat opened "In Window" gets a window of its own; anything else opens in the browser
   w.webContents.setWindowOpenHandler(({ url }) => {
     if (inApp(url)) return { action: 'allow', overrideBrowserWindowOptions: { width: 900, height: 780, ...look } }
@@ -98,8 +111,10 @@ ipcMain.handle('roar:set', (_e, key, value) => {
   return { ...settings, openAtLogin: app.getLoginItemSettings().openAtLogin, platform: process.platform }
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   loadSettings()
+  // always the latest ROAR: nothing old from the last time is reused
+  await session.defaultSession.clearCache().catch(() => {})
   // voice messages, calls, notifications and copy/paste, for ROAR only
   session.defaultSession.setPermissionRequestHandler((contents, permission, done) => {
     done(ALLOWED.includes(permission) && inApp(contents.getURL()))

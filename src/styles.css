@@ -1635,7 +1635,11 @@ a.set-row { color: inherit; text-decoration: none; }
    and the window can be dragged by it */
 html[data-desktop] { --bar: 30px; }
 html[data-desktop='win32'] { --bar: 32px; }
-html[data-desktop] #root { height: calc(100% - var(--bar)); margin-top: var(--bar); }
+/* the band is room at the top of #root, not a margin: a margin there slid through body and pushed the whole
+   page 30px below the window, so it scrolled and wobbled with a scroll bar at the side (Alex, 16 Oct). The
+   !important rules win over the older band the app itself puts in (desktop build 6 and before). */
+html[data-desktop], html[data-desktop] body { overflow: hidden; overscroll-behavior: none; }
+html[data-desktop] #root { height: 100% !important; margin-top: 0 !important; padding-top: var(--bar) !important; }
 html[data-desktop] body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: var(--bar); z-index: 999; -webkit-app-region: drag; }
 html[data-desktop] :is(.modal-back, .call, .lock, .viewer) { -webkit-app-region: no-drag; }
 

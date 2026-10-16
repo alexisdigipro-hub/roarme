@@ -64,6 +64,9 @@ export default function Chat({ me, setMe }) {
   const [peek, setPeek] = useState(null) // a chat looked at without opening it
   const [folderMenu, setFolderMenu] = useState(null) // right click on a folder tab: {f, x, y}
   const [folderChats, setFolderChats] = useState('') // the folder whose chats are being picked
+  // the way ROAR opens (Alex, 16 Oct): the chats slide in from the left, the conversation rises after them
+  const [intro, setIntro] = useState(true)
+  useEffect(() => { const t = setTimeout(() => setIntro(false), 1400); return () => clearTimeout(t) }, [])
   const [setPage, setSetPage] = useState('')
   const [folderSeed, setFolderSeed] = useState([]) // chats a new folder starts with
   // a folder is edited on a page of its own in Settings, like Telegram's (Alex, 16 Oct)
@@ -405,7 +408,7 @@ export default function Chat({ me, setMe }) {
   }, [rooms, people, me.id])
 
   return (
-    <div className="app" style={{ '--side-w': `${sideW}px` }}>
+    <div className={`app${intro ? ' intro' : ''}`} style={{ '--side-w': `${sideW}px` }}>
       <span className="side-grip" onPointerDown={drag} onDoubleClick={() => { setSideW(370); try { localStorage.setItem('roarme-side', '370') } catch { /* private window */ } }} title="Drag to widen, double-click to reset" />
       <aside className="side">
         <div className="side-col">

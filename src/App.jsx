@@ -4,6 +4,7 @@ import { applyLook, applyMode, usePrefs } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
+import { Paw } from './ui.jsx'
 
 // The order of things: sign in (or sign up) with email, then pick a @username once, then the chat.
 export default function App() {
@@ -43,9 +44,9 @@ export default function App() {
     return () => { alive = false }
   }, [uid])
 
-  if (session === undefined || (uid && profile === undefined)) return <div className="boot"><span className="boot-mark" /></div>
+  if (session === undefined || (uid && profile === undefined)) return <div className="boot"><span className="boot-paw"><Paw size={46} /></span></div>
   if (!session) return <Auth />
-  if (!aal) return <div className="boot"><span className="boot-mark" /></div>
+  if (!aal) return <div className="boot"><span className="boot-paw"><Paw size={46} /></span></div>
   if (aal === 'need') return <MfaGate onDone={() => setAal('ok')} />
   if (locked) return <LockScreen onUnlock={unlock} onSignOut={() => { clearLock(); supabase.auth.signOut() }} />
   if (recovering) return <NewPassword onDone={() => setRecovering(false)} />

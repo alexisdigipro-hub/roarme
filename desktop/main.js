@@ -32,7 +32,12 @@ app.on('second-instance', () => show())
 const frame = process.platform === 'darwin'
   ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 10 } }
   : { titleBarStyle: 'hidden', titleBarOverlay: { color: '#1b1e23', symbolColor: '#eef0f3', height: 32 } }
-const look = { backgroundColor: '#1b1e23', autoHideMenuBar: true, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, preload: path.join(__dirname, 'preload.js') } }
+// On a Mac the window is frosted glass under the page (vibrancy): while it is dragged bigger, the strip the
+// page has not reached yet shows that blur instead of a black band (Alex, 16 Oct). Windows keeps a graphite colour.
+const glassy = process.platform === 'darwin'
+  ? { vibrancy: 'under-window', visualEffectState: 'active', backgroundColor: '#00000000' }
+  : { backgroundColor: '#2b3038' }
+const look = { ...glassy, autoHideMenuBar: true, show: false, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, preload: path.join(__dirname, 'preload.js') } }
 
 // the band for the window buttons, put in by the app itself so it never depends on what the browser kept
 const BAR = process.platform === 'darwin' ? 30 : 32
@@ -51,7 +56,7 @@ function guard(w) {
   band(w)
   // a chat opened "In Window" gets a window of its own; anything else opens in the browser
   w.webContents.setWindowOpenHandler(({ url }) => {
-    if (inApp(url)) return { action: 'allow', overrideBrowserWindowOptions: { width: 900, height: 780, ...look } }
+    if (inApp(url)) return { action: 'allow', overrideBrowserWindowOptions: { width: 900, height: 780, ...look, show: true } }
     shell.openExternal(url)
     return { action: 'deny' }
   })
@@ -63,6 +68,9 @@ function guard(w) {
 
 function open() {
   win = new BrowserWindow({ width: 1240, height: 840, minWidth: 760, minHeight: 540, title: 'ROAR', ...look })
+  // shown once the page has painted, so it opens on ROAR and not on an empty frame
+  win.once('ready-to-show', () => win?.show())
+  setTimeout(() => { if (win && !win.isVisible()) win.show() }, 3000) // a slow or missing network still gets a window
   win.loadURL(HOME)
   guard(win)
   // closing the window keeps ROAR on in the background, so messages and calls still arrive

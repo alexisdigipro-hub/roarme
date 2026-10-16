@@ -7,7 +7,7 @@ import { formatText, plainText, wrapSelection } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
-import { AttachSheet, AudioNote, MusicTile, isAudioFile, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
+import { AttachSheet, AudioNote, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
 
 // the moving bars while a voice message records (Alex, 16 Oct): not the real sound, a lively stand-in
 const REC_WAVE = Array.from({ length: 140 }, (_, i) => (0.35 + 0.65 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.45))).toFixed(2))
@@ -65,6 +65,10 @@ export default function Chat({ me, setMe }) {
   const [folderMenu, setFolderMenu] = useState(null) // right click on a folder tab: {f, x, y}
   const [folderChats, setFolderChats] = useState('') // the folder whose chats are being picked
   const [setPage, setSetPage] = useState('')
+  const [folderSeed, setFolderSeed] = useState([]) // chats a new folder starts with
+  // a folder is edited on a page of its own in Settings, like Telegram's (Alex, 16 Oct)
+  const openFolders = () => { setModal(''); setTab('settings'); setSetPage('folders') }
+  const editFolder = (id, seed = []) => { setModal(''); setFolderSeed(seed); setTab('settings'); setSetPage(`folder:${id}`) }
   const tabsLens = useLens(`${tab}|${folder}|${prefs.folderTabs}|${myFolders.length}|${!q.trim()}`)
   const footLens = useLens(`${tab}|${prefs.callsTab}|${picking}`) // the Settings page open on the right
   const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
@@ -244,7 +248,12 @@ export default function Chat({ me, setMe }) {
     if (f === 'unread') return r.unread > 0
     if (f === 'groups') return r.kind === 'group'
     const mine = myFolders.find((x) => x.id === f)
-    if (mine) return mine.rooms.includes(r.room_id)
+    if (mine) {
+      if ((mine.exclude || []).includes(r.room_id)) return false
+      if (mine.rooms.includes(r.room_id)) return true
+      const t = mine.types || {}
+      return (!!t.private && r.kind !== 'group') || (!!t.groups && r.kind === 'group')
+    }
     return true
   }
   const shown = useMemo(() => {
@@ -319,7 +328,7 @@ export default function Chat({ me, setMe }) {
     if (what === 'preview') setPeek(r)
     if (what === 'archive') { await mine({ archived: !r.archived }); toast(r.archived ? 'Unarchived' : 'Archived'); loadRooms() }
     if (what === 'folder') { setMyFolders((list) => list.map((f) => (f.id === arg ? { ...f, rooms: f.rooms.includes(r.room_id) ? f.rooms.filter((x) => x !== r.room_id) : [...f.rooms, r.room_id] } : f))) }
-    if (what === 'newfolder') { setPicked([r.room_id]); setModal('newfolder') }
+    if (what === 'newfolder') editFolder('new', [r.room_id])
     if (what === 'clear') {
       if (!window.confirm(`Clear the history of ${titleOf(r)}? It goes for you only, on this computer.`)) return
       setCleared((c) => ({ ...c, [r.room_id]: new Date().toISOString() })); toast('History cleared')
@@ -411,8 +420,8 @@ export default function Chat({ me, setMe }) {
                   <div className="menu">
                     <button type="button" onClick={() => { setPlus(false); setModal('newchat') }}>{I.person}<span>New chat</span></button>
                     <button type="button" onClick={() => { setPlus(false); setModal('newgroup') }}>{I.people}<span>New group</span></button>
-                    <button type="button" onClick={() => { setPlus(false); setModal('newfolder') }}>{I.folder}<span>New folder</span></button>
-                    {myFolders.length > 0 && <button type="button" onClick={() => { setPlus(false); setModal('folders') }}>{I.edit}<span>Edit folders</span></button>}
+                    <button type="button" onClick={() => { setPlus(false); editFolder('new') }}>{I.folder}<span>New folder</span></button>
+                    {myFolders.length > 0 && <button type="button" onClick={() => { setPlus(false); openFolders() }}>{I.edit}<span>Edit folders</span></button>}
                   </div>
                 </>
               )}
@@ -530,7 +539,8 @@ export default function Chat({ me, setMe }) {
       <main className="main">
         {tab === 'settings' ? (
           <SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast} me={me} setMe={setMe}
-            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => setModal(m)}
+            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : openFolders())}
+            folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} />
         ) : active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
@@ -571,13 +581,12 @@ export default function Chat({ me, setMe }) {
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
         onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople}
         blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={active.kind === 'direct' ? (v) => { setModal(''); callRoom(active, v) } : null} />}
-      {(modal === 'folders' || modal === 'newfolder') && <FoldersModal folders={myFolders} rooms={visible} titleOf={titleOf} startNew={modal === 'newfolder'} onClose={() => setModal('')} onSave={(list) => { setMyFolders(list); setModal(''); if (!list.some((f) => f.id === folder) && !BUILTIN.some(([id]) => id === folder)) setFolder('all') }} />}
       {modal === 'pickfolder' && (
         <Modal title="Add to a folder" onClose={() => setModal('')}>
           {myFolders.length ? (
             <div className="people">{myFolders.map((f) => <button key={f.id} type="button" className="person" onClick={() => addToFolder(f.id)}><span className="file-ico">{I.folder}</span><span className="person-text"><b>{f.name}</b><small>{f.rooms.length} chats</small></span></button>)}</div>
           ) : (
-            <><p className="muted">You have no folders yet.</p><button type="button" className="btn btn-main" onClick={() => setModal('newfolder')}>Make a folder</button></>
+            <><p className="muted">You have no folders yet.</p><button type="button" className="btn btn-main" onClick={() => editFolder('new')}>Make a folder</button></>
           )}
         </Modal>
       )}
@@ -629,7 +638,7 @@ export default function Chat({ me, setMe }) {
           <div className="room-menu folder-menu menu-list" style={{ left: folderMenu.x, top: folderMenu.y }}>
             {folderMenu.f.custom ? (
               <>
-                <button type="button" onClick={() => { setFolderMenu(null); setModal('folders') }}>{I.edit}<span>Edit Folder</span></button>
+                <button type="button" onClick={() => { const f = folderMenu.f; setFolderMenu(null); editFolder(f.id) }}>{I.edit}<span>Edit Folder</span></button>
                 <button type="button" onClick={() => { setFolderChats(folderMenu.f.id); setFolderMenu(null) }}>{I.plus}<span>Add Chats</span></button>
                 <hr />
                 <button type="button" className="danger" onClick={() => {
@@ -643,8 +652,8 @@ export default function Chat({ me, setMe }) {
               </>
             ) : (
               <>
-                <button type="button" onClick={() => { setFolderMenu(null); setModal('folders') }}>{I.edit}<span>Edit Folders</span></button>
-                <button type="button" onClick={() => { setFolderMenu(null); setModal('newfolder') }}>{I.plus}<span>New Folder</span></button>
+                <button type="button" onClick={() => { setFolderMenu(null); openFolders() }}>{I.edit}<span>Edit Folders</span></button>
+                <button type="button" onClick={() => { setFolderMenu(null); editFolder('new') }}>{I.plus}<span>New Folder</span></button>
               </>
             )}
           </div>

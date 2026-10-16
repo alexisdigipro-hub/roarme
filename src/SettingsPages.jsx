@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
-import { Avatar, I, Lens, NAME_COLORS, colorOf, revealFrom, svg } from './ui.jsx'
+import { Avatar, I, Lens, Modal, NAME_COLORS, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
@@ -19,7 +19,7 @@ export const PAGES = [
   ['language', 'Language', '#bf5af2', svg(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" /></>, 16)],
   ['folders', 'Chat Folders', '#a78bfa', I.folder],
 ]
-export const pageTitle = (id) => (id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
+export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 const THEMES = [['ember', 'Ember', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']]]
 
@@ -116,14 +116,14 @@ export function SettingsMenu({ me, page, onPage }) {
 }
 
 /* the page on the right */
-export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, onFolders, onFolderMenu, toast, me, setMe }) {
+export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, onFolders, onFolderMenu, folderKit, toast, me, setMe }) {
   const p = usePrefs()
   const title = pageTitle(page)
   return (
     <div className={`set-page${chosen ? ' chosen' : ''}`}>
       <header className="room-head set-head">
-        {page === 'keys'
-          ? <button type="button" className="round" onClick={() => onPage('general')} aria-label="Back">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
+        {page === 'keys' || page.startsWith('folder:')
+          ? <button type="button" className="round" onClick={() => onPage(page === 'keys' ? 'general' : 'folders')} aria-label="Back">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
           : <button type="button" className="round back" onClick={onBack} aria-label="Back">{svg(<path d="M15 5l-7 7 7 7" />)}</button>}
         <strong>{title}</strong>
       </header>
@@ -138,7 +138,8 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
         {page === 'appearance' && <Appearance p={p} toast={toast} me={me} setMe={setMe} />}
         {page === 'language' && <Language p={p} />}
         {page === 'folders' && <Folders p={p} folders={folders} onFolders={onFolders} onFolderMenu={onFolderMenu} />}
-        {page !== 'profile' && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
+        {page.startsWith('folder:') && folderKit && <FolderEdit key={page} id={page.slice(7)} kit={folderKit} onDone={() => onPage('folders')} toast={toast} />}
+        {page !== 'profile' && !page.startsWith('folder:') && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
       </div>
     </div>
   )
@@ -616,6 +617,112 @@ function Language({ p }) {
   )
 }
 
+/* One folder, like Telegram's folder settings (Alex, 16 Oct): its name, the chats and kinds of chats it
+   includes, the chats it leaves out, and Delete. Every change is kept at once; a new folder is kept as soon
+   as it has a name. */
+function FolderEdit({ id, kit, onDone, toast }) {
+  const [fid] = useState(() => (id === 'new' ? crypto.randomUUID() : id))
+  const saved = kit.folders.find((f) => f.id === fid)
+  const [draft, setDraft] = useState(() => (saved ? { exclude: [], types: {}, ...saved } : { id: fid, name: '', rooms: kit.seed || [], exclude: [], types: {} }))
+  const [pick, setPick] = useState('') // 'in' | 'out': the chats picker
+  const [q, setQ] = useState('')
+  const first = useRef(true)
+  useEffect(() => {
+    if (first.current) { first.current = false; if (saved) return }
+    if (!draft.name.trim()) return
+    const clean = { ...draft, name: draft.name.trim() }
+    kit.setFolders((list) => (list.some((f) => f.id === fid) ? list.map((f) => (f.id === fid ? clean : f)) : [...list, clean]))
+  }, [draft])
+  if (id !== 'new' && !saved) return <p className="muted">This folder is gone.</p>
+  const set = (patch) => setDraft((d) => ({ ...d, ...patch }))
+  const roomOf = (rid) => kit.rooms.find((r) => r.room_id === rid)
+  const types = draft.types || {}
+  const flipChat = (rid, side) => {
+    const inn = draft.rooms.includes(rid), out = draft.exclude.includes(rid)
+    if (side === 'in') set({ rooms: inn ? draft.rooms.filter((x) => x !== rid) : [...draft.rooms, rid], exclude: draft.exclude.filter((x) => x !== rid) })
+    else set({ exclude: out ? draft.exclude.filter((x) => x !== rid) : [...draft.exclude, rid], rooms: draft.rooms.filter((x) => x !== rid) })
+  }
+  const remove = () => {
+    if (!saved && !draft.name.trim()) { onDone(); return }
+    if (!window.confirm(`Delete the folder ${draft.name.trim() || ''}? The chats in it stay.`)) return
+    kit.setFolders((list) => list.filter((f) => f.id !== fid))
+    kit.onDeleted?.(fid)
+    toast?.('Folder deleted')
+    onDone()
+  }
+  const chatRow = (rid, side) => {
+    const r = roomOf(rid)
+    if (!r) return null
+    return (
+      <div key={rid} className="set-row fold-chat">
+        {kit.face(r, 32)}
+        <span className="set-text" data-raw="">{kit.titleOf(r)}</span>
+        <button type="button" className="fold-x" onClick={() => flipChat(rid, side)} aria-label="Remove" title="Remove">{I.x}</button>
+      </div>
+    )
+  }
+  const typeRow = (k, label, ico) => (
+    <div key={k} className="set-row fold-chat">
+      <span className="fold-type">{ico}</span>
+      <span className="set-text">{label}</span>
+      <button type="button" className="fold-x" onClick={() => set({ types: { ...types, [k]: false } })} aria-label="Remove" title="Remove">{I.x}</button>
+    </div>
+  )
+  const t = q.trim().toLowerCase()
+  const list = kit.rooms.filter((r) => !t || kit.titleOf(r).toLowerCase().includes(t))
+  return (
+    <>
+      <Box title="Folder name">
+        <div className="set-row"><input className="fold-name" value={draft.name} onChange={(e) => set({ name: e.target.value })} placeholder="Folder name" autoFocus={!saved} maxLength={40} /></div>
+      </Box>
+      <Box title="Included chats" note="Choose chats or types of chats that will appear in this folder.">
+        <button type="button" className="set-row set-pick set-add" onClick={() => { setQ(''); setPick('in') }}><i className="fold-plus">{I.plus}</i><span className="set-text">Add Chats</span></button>
+        {types.private && typeRow('private', 'Private chats', I.person)}
+        {types.groups && typeRow('groups', 'Groups', I.people)}
+        {draft.rooms.map((rid) => chatRow(rid, 'in'))}
+      </Box>
+      <Box title="Excluded chats" note="Chats that never appear in this folder, even when their type is included.">
+        <button type="button" className="set-row set-pick set-add" onClick={() => { setQ(''); setPick('out') }}><i className="fold-plus">{I.plus}</i><span className="set-text">Add Chats</span></button>
+        {draft.exclude.map((rid) => chatRow(rid, 'out'))}
+      </Box>
+      <Box>
+        <button type="button" className="set-row set-pick danger" onClick={remove}><span className="set-text">{saved ? 'Delete Folder' : 'Cancel'}</span></button>
+      </Box>
+      {pick && (
+        <Modal title={pick === 'in' ? 'Included chats' : 'Excluded chats'} onClose={() => setPick('')} foot={<button type="button" className="btn btn-main" onClick={() => setPick('')}>Done</button>}>
+          <input className="input fold-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" autoFocus />
+          {pick === 'in' && !t && (
+            <>
+              <p className="fold-pick-h">Chat types</p>
+              <div className="people">
+                {[['private', 'Private chats', I.person], ['groups', 'Groups', I.people]].map(([k, l, ico]) => (
+                  <button key={k} type="button" className="person" onClick={() => set({ types: { ...types, [k]: !types[k] } })}>
+                    <span className="fold-type">{ico}</span><span className="person-text"><b>{l}</b></span><span className={`tick${types[k] ? ' on' : ''}`} />
+                  </button>
+                ))}
+              </div>
+              <p className="fold-pick-h">Chats</p>
+            </>
+          )}
+          <div className="people">
+            {list.map((r) => {
+              const on = (pick === 'in' ? draft.rooms : draft.exclude).includes(r.room_id)
+              return (
+                <button key={r.room_id} type="button" className="person" onClick={() => flipChat(r.room_id, pick)}>
+                  {kit.face(r, 40)}
+                  <span className="person-text"><b data-raw="">{kit.titleOf(r)}</b><small>{r.kind === 'group' ? 'Group' : 'Private chat'}</small></span>
+                  <span className={`tick${on ? ' on' : ''}`} />
+                </button>
+              )
+            })}
+            {!list.length && <p className="muted">Nothing found.</p>}
+          </div>
+        </Modal>
+      )}
+    </>
+  )
+}
+
 /* Drag a folder up or down to change the order of the tabs; a right click on one opens Edit / Delete
    (Alex, 16 Oct). The order is kept in prefs.folderOrder and the chat list's tabs follow it. */
 function Folders({ p, folders, onFolders, onFolderMenu }) {
@@ -672,7 +779,7 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
           <button key={f.id} type="button" data-fid={f.id} className={`set-row set-pick fold-row${f.custom ? '' : ' set-fixed'}${dragId === f.id ? ' dragging' : ''}`} style={dragId === f.id ? { transform: `translateY(${dy}px)` } : undefined}
             onPointerDown={(e) => down(e, f)}
             onContextMenu={(e) => { e.preventDefault(); onFolderMenu?.(f, e) }}
-            onClick={() => { if (drag.current?.moved) return; if (f.custom) onFolders('folders') }}>
+            onClick={() => { if (drag.current?.moved) return; if (f.custom) onFolders(`folder:${f.id}`) }}>
             <span className="fold-grip" aria-hidden="true">{svg(<><circle cx="9" cy="6" r="1.2" /><circle cx="15" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" /><circle cx="15" cy="18" r="1.2" /></>)}</span>
             <span className="fold-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span>
             <span className="set-text">{f.name}{f.custom && <small>{`${f.rooms.length} chat${f.rooms.length === 1 ? '' : 's'}`}</small>}</span>

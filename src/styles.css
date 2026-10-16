@@ -1714,3 +1714,23 @@ html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { wid
 .fold-row:hover .fold-grip { opacity: .9; }
 .fold-row.dragging { z-index: 5; cursor: grabbing; background: var(--glass-2); border-radius: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, .35); transition: none; }
 .fold-row.set-fixed { cursor: grab; }
+
+/* a folder's own settings page (Alex, 16 Oct, like Telegram's) */
+.fold-name { flex: 1; min-width: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 15px; font-weight: 600; outline: none; padding: 4px 0; }
+.fold-plus { display: inline-grid; place-items: center; width: 32px; color: var(--accent); }
+.fold-plus svg { width: 20px; height: 20px; }
+.fold-chat { gap: 12px; }
+.fold-chat .set-text { font-weight: 600; }
+.fold-type { display: inline-grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+.person .fold-type { width: 40px; height: 40px; }
+.fold-x { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: var(--muted); opacity: 0; transition: opacity .15s, background .15s; }
+.fold-chat:hover .fold-x, .fold-x:focus-visible { opacity: 1; }
+.fold-x:hover { background: var(--glass-2); color: var(--danger); }
+@media (hover: none) { .fold-x { opacity: .8; } }
+.fold-search { width: 100%; margin-bottom: 10px; }
+.fold-pick-h { margin: 10px 4px 6px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* while the window is being resized nothing blurs or moves, so the newly opened part is painted at once
+   instead of showing black (Alex, 16 Oct) */
+html.win-resizing *, html.win-resizing *::before, html.win-resizing *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; transition: none !important; animation-play-state: paused !important; }
+html.win-resizing body { background-attachment: scroll !important; }

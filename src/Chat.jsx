@@ -9,6 +9,9 @@ import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { AttachSheet, AudioNote, MusicTile, isAudioFile, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
 
+// the moving bars while a voice message records (Alex, 16 Oct): not the real sound, a lively stand-in
+const REC_WAVE = Array.from({ length: 140 }, (_, i) => (0.35 + 0.65 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.45))).toFixed(2))
+
 /* people by @username or name */
 function usePeopleSearch(meId) {
   const [q, setQ] = useState('')
@@ -1312,7 +1315,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           <div className="compose rec">
             <span className="rec-dot" />
             <b>{Math.floor(recSecs / 60)}:{String(recSecs % 60).padStart(2, '0')}</b>
-            <span className="muted rec-text">Recording…</span>
+            <span className="rec-wave" role="img" aria-label="Recording…">{REC_WAVE.map((h, i) => <i key={i} style={{ '--h': h, '--d': `${(i * 137) % 900}ms` }} />)}</span>
             <button type="button" className="round danger" onClick={() => stopVoice(false)} aria-label="Throw away" title="Throw away">{I.trash}</button>
             <button type="button" className="round send ready" onClick={() => stopVoice(true)} aria-label="Send" title="Send">{I.send}</button>
           </div>

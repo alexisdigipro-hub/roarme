@@ -407,6 +407,10 @@ body.resizing { cursor: col-resize; user-select: none; }
 .rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); animation: blink 1s ease-in-out infinite; }
 @keyframes blink { 50% { opacity: .3; } }
 .rec-text { flex: 1; }
+.rec-wave { flex: 1; min-width: 0; display: flex; align-items: center; gap: 3px; height: 28px; margin: 0 8px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.rec-wave i { flex: 0 0 3px; height: calc(var(--h) * 100%); border-radius: 3px; background: var(--accent); opacity: .9; animation: rec-wave .9s ease-in-out var(--d) infinite alternate; }
+@keyframes rec-wave { from { transform: scaleY(.22); } to { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .rec-wave i { animation: none; } }
 .compose.rec .round { width: 40px; height: 40px; }
 .voice { display: flex; align-items: center; gap: 10px; min-width: 220px; padding: 2px 0; }
 .voice-btn { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .18); color: #fff; }

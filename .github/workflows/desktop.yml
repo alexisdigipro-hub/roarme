@@ -29,8 +29,17 @@ jobs:
         with:
           node-version: 20
       - run: npm install --no-audit --no-fund
+      # GitHub's Macs sometimes fail to make a .dmg ("hdiutil: resource busy"): try up to three times,
+      # and on a real failure put the end of the log where it can be read (the job's annotations)
       - if: runner.os == 'macOS'
-        run: npm run dist:mac
+        shell: bash
+        run: |
+          for i in 1 2 3; do
+            if npm run dist:mac > build.log 2>&1; then cat build.log; exit 0; fi
+            echo "attempt $i failed"; tail -40 build.log; rm -rf out; sleep 10
+          done
+          echo "::error title=Mac build::$(tail -25 build.log | tr '\n' ' ' | cut -c1-3500)"
+          exit 1
       - if: runner.os == 'Windows'
         run: npm run dist:win
       - uses: actions/upload-artifact@v4

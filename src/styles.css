@@ -1677,3 +1677,11 @@ html[data-theme='aura'][data-mode='light'] .compose-box { background: rgba(255, 
 .contact-acts button:hover { background: var(--glass-2); color: var(--accent); }
 .contact-acts button:active { transform: scale(.9); }
 .room.contact.on .contact-acts button, .room.contact:hover .contact-acts button { color: var(--text); }
+
+/* folder tabs on the left: icons only, bigger; the name shows when the pointer rests on one (Alex, 16 Oct) */
+.rooms-area.left .tabs { width: 64px; gap: 6px; padding: 6px; align-items: center; }
+.rooms-area.left .tabs button { width: 52px; height: 52px; padding: 0; justify-content: center; border-radius: 16px; }
+.rooms-area.left .tabs .tab-name { display: none; }
+.rooms-area.left .tabs .tab-ico svg { width: 26px; height: 26px; }
+.rooms-area.left .tabs small { top: 2px; right: 2px; }
+html[data-theme='ember'] .rooms-area.left .tabs, html[data-theme='aura'] .rooms-area.left .tabs { border-radius: 22px; }

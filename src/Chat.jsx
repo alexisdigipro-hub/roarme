@@ -420,7 +420,7 @@ export default function Chat({ me, setMe }) {
               <nav ref={tabsLens} className="tabs lens">
                 {allFolders.map((f) => {
                   const n = folderUnread(f)
-                  return <button key={f.id} type="button" className={folder === f.id ? 'on' : ''} onClick={() => setFolder(f.id)} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                  return <button key={f.id} type="button" title={f.name} className={folder === f.id ? 'on' : ''} onClick={() => setFolder(f.id)} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
                 })}
               </nav>
             )}

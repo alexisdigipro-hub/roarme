@@ -92,7 +92,20 @@ export function AttachSheet({ initial = [], onClose, onSend }) {
           ))}
         </div>
       )}
-      <label className="switch"><input type="checkbox" checked={compress} onChange={(e) => setCompress(e.target.checked)} /><span /> Compress photos</label>
+      {/* the quality, as on WhatsApp (Alex, 16 Oct): Standard shrinks photos and videos (videos to 720p) so long clips
+          go too; HD sends them as they are, up to 50 MB each */}
+      {files.some((f) => /^(image|video)\//.test(f.type)) && (() => {
+        const big = !compress && files.filter((f) => f.size > 50e6)
+        return (
+          <div className="attach-quality">
+            <div className="seg">
+              <button type="button" className={compress ? 'on' : ''} onClick={() => setCompress(true)}>Standard</button>
+              <button type="button" className={!compress ? 'on' : ''} onClick={() => setCompress(false)}>HD</button>
+            </div>
+            <small className={big && big.length ? 'attach-warn' : 'muted'}>{big && big.length ? `${big.length === 1 ? big[0].name : `${big.length} files`} over 50 MB: HD cannot send ${big.length === 1 ? 'it' : 'them'}, Standard can.` : compress ? 'Smaller and faster: photos resized, videos to 720p.' : 'Full quality, as they are. Up to 50 MB each.'}</small>
+          </div>
+        )
+      })()}
       <input className="input" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" />
     </Modal>
   )

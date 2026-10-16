@@ -2056,3 +2056,9 @@ html[data-theme] .bubble.pic, html[data-theme] .msg.mine .bubble.pic { padding: 
 .tabs.tabs-scroll { position: relative; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scroll-padding: 0 6px; }
 .tabs.tabs-scroll::-webkit-scrollbar { display: none; }
 .tabs.tabs-scroll > button { flex: 1 0 auto; padding: 0 12px; white-space: nowrap; }
+
+/* the send sheet: Standard | HD, as on WhatsApp (Alex, 16 Oct) */
+.attach-quality { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.attach-quality .seg { flex: none; }
+.attach-quality small { flex: 1; min-width: 180px; font-size: 12.5px; }
+.attach-warn { color: var(--danger); }

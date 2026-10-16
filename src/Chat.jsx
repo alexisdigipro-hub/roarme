@@ -7,6 +7,7 @@ import { formatText, plainText, wrapSelection } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
+import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
 
 // the moving bars while a voice message records (Alex, 16 Oct): not the real sound, a lively stand-in
@@ -928,7 +929,11 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const reply = replyTo
     setReplyTo(null)
     stick.current = true
-    const ok = files.filter((f) => { if (f.size > 50e6) { setErr(`${f.name} is over 50 MB.`); return false } return true })
+    // Standard quality shrinks videos to 720p first, so a long clip over 50 MB can still go (the size is checked after)
+    const shrinkVid = (f) => compress && isVideoFile(f) && canCompressVideo()
+    const ok = files.filter((f) => { if (f.size > 50e6 && !shrinkVid(f)) { setErr(`${f.name} is over 50 MB.`); return false } return true })
+    // Safari lets a video play only from inside the tap: each clip is readied now, before anything waits
+    const handles = new Map(ok.filter(shrinkVid).map((f) => [f, prepareVideo(f)]))
     const tiles = ok.map((f) => ({ id: crypto.randomUUID(), name: f.name, size: f.size, preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : '', p: 0, stage: 'prep' }))
     setOutbox((l) => [...l, ...tiles])
     let n = 0
@@ -937,7 +942,13 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       n += 1
       const isImg = /^image\/(jpeg|png|webp)$/.test(raw.type)
       try {
-        const file = isImg && compress ? await shrinkImage(raw, prefs.largePhotos ? 2560 : 1600, prefs.largePhotos ? 0.88 : 0.82) : raw
+        let file = isImg && compress ? await shrinkImage(raw, prefs.largePhotos ? 2560 : 1600, prefs.largePhotos ? 0.88 : 0.82) : raw
+        if (handles.get(raw)) {
+          const small = await compressVideo(handles.get(raw), (p) => setOut(tile.id, { stage: 'shrink', p }))
+          if (small?.file) file = small.file
+          setOut(tile.id, { stage: 'prep', p: 0 })
+        }
+        if (file.size > 50e6) throw new Error(`${raw.name} is over 50 MB even made smaller. Send a shorter clip.`)
         const meta = await upload(file, null, {}, tile.id)
         stick.current = true
         const last = n === ok.length
@@ -951,6 +962,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       } catch (e) {
         if (!e?.cancelled) setErr(`${raw.name}: ${errText(e)}`)
       }
+      releaseVideo(handles.get(raw))
       dropOut(tile.id)
     }
   }
@@ -1334,7 +1346,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                     </span>
                     <span className="out-text">
                       <b>{o.name}</b>
-                      <small>{o.stage === 'prep' ? 'Preparing…' : o.stage === 'send' ? 'Sending…' : `${Math.round(o.p * 100)}% · ${fmtBytes(o.size * o.p)} of ${fmtBytes(o.size)}`}</small>
+                      <small>{o.stage === 'shrink' ? `Making it smaller · ${Math.round(o.p * 100)}%` : o.stage === 'prep' ? 'Preparing…' : o.stage === 'send' ? 'Sending…' : `${Math.round(o.p * 100)}% · ${fmtBytes(o.size * o.p)} of ${fmtBytes(o.size)}`}</small>
                     </span>
                   </span>
                 </div>

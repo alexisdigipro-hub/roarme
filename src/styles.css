@@ -1658,3 +1658,13 @@ html[data-desktop] :is(.modal-back, .call, .lock, .viewer) { -webkit-app-region:
 html[data-theme='ember'] .bubble.pic { border-radius: calc(var(--r, 12px) * 1.4 + 2px); }
 html[data-theme='ember'] .msg.mine .bubble.pic { box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 18%, transparent); }
 .pic-remove { font-size: 13px; }
+
+/* the message box: one frame only (16 Oct); the box carries the frame and the focus glow, the text inside none */
+html[data-theme] .compose-box textarea, html[data-theme] .compose-box textarea:focus { background: none !important; border: 0 !important; box-shadow: none !important; outline: none; }
+html[data-theme='ember'] .compose-box { border-radius: calc(var(--r, 12px) * 1.4); background: rgba(0, 0, 0, .2); border-color: var(--edge); }
+html[data-theme='ember'][data-mode='light'] .compose-box { background: rgba(255, 255, 255, .8); }
+html[data-theme='ember'] .compose-box:focus-within { border-color: color-mix(in srgb, var(--accent) 60%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
+html[data-theme='studio'] .compose-box { border-radius: 6px; background: var(--glass); }
+html[data-theme='studio'] .compose-box:focus-within { border-color: var(--edge-2); }
+html[data-theme='aura'] .compose-box { border-radius: 20px; background: rgba(255, 255, 255, .06); border-color: transparent; }
+html[data-theme='aura'][data-mode='light'] .compose-box { background: rgba(255, 255, 255, .6); }

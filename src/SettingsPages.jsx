@@ -138,7 +138,9 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
         {page === 'appearance' && <Appearance p={p} toast={toast} me={me} setMe={setMe} />}
         {page === 'language' && <Language p={p} />}
         {page === 'folders' && <Folders p={p} folders={folders} onFolders={onFolders} onFolderMenu={onFolderMenu} />}
-        {page.startsWith('folder:') && folderKit && <FolderEdit key={page} id={page.slice(7)} kit={folderKit} onDone={() => onPage('folders')} toast={toast} />}
+        {page.startsWith('folder:') && folderKit && (READY_FOLDERS[page.slice(7)]
+          ? <ReadyFolderEdit key={page} id={page.slice(7)} p={p} onDone={() => onPage('folders')} toast={toast} />
+          : <FolderEdit key={page} id={page.slice(7)} kit={folderKit} onDone={() => onPage('folders')} toast={toast} />)}
         {page !== 'profile' && !page.startsWith('folder:') && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
       </div>
     </div>
@@ -617,6 +619,41 @@ function Language({ p }) {
   )
 }
 
+/* the ready-made folders: name, icon, what they hold. They can be renamed, and all but All deleted (Alex, 16 Oct) */
+const READY_FOLDERS = {
+  all: ['All', I.chats, 'Every chat'],
+  unread: ['Unread', I.unread, 'Chats with unread messages'],
+  groups: ['Groups', I.people, 'Every group'],
+  archived: ['Archived', I.archive, 'Chats you archived'],
+}
+function ReadyFolderEdit({ id, p, onDone, toast }) {
+  const [name, setName] = useState(p.folderNames?.[id] || READY_FOLDERS[id][0])
+  const keep = (v) => {
+    setName(v)
+    const names = { ...(p.folderNames || {}) }
+    if (v.trim() && v.trim() !== READY_FOLDERS[id][0]) names[id] = v.trim(); else delete names[id]
+    setPrefs({ folderNames: names })
+  }
+  const remove = () => {
+    if (!window.confirm(`Delete the folder ${name.trim() || READY_FOLDERS[id][0]}? The chats in it stay.`)) return
+    setPrefs({ hiddenFolders: [...new Set([...(p.hiddenFolders || []), id])] })
+    toast?.('Folder deleted')
+    onDone()
+  }
+  return (
+    <>
+      <Box title="Folder name" note={`A ready-made folder: ${READY_FOLDERS[id][2].toLowerCase()}.`}>
+        <div className="set-row"><input className="fold-name" value={name} onChange={(e) => keep(e.target.value)} placeholder={READY_FOLDERS[id][0]} maxLength={40} /></div>
+      </Box>
+      {id !== 'all' && (
+        <Box note="It can be brought back from Recommended folders.">
+          <button type="button" className="set-row set-pick danger" onClick={remove}><span className="set-text">Delete Folder</span></button>
+        </Box>
+      )}
+    </>
+  )
+}
+
 /* One folder, like Telegram's folder settings (Alex, 16 Oct): its name, the chats and kinds of chats it
    includes, the chats it leaves out, and Delete. Every change is kept at once; a new folder is kept as soon
    as it has a name. */
@@ -779,7 +816,7 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
           <button key={f.id} type="button" data-fid={f.id} className={`set-row set-pick fold-row${f.custom ? '' : ' set-fixed'}${dragId === f.id ? ' dragging' : ''}`} style={dragId === f.id ? { transform: `translateY(${dy}px)` } : undefined}
             onPointerDown={(e) => down(e, f)}
             onContextMenu={(e) => { e.preventDefault(); onFolderMenu?.(f, e) }}
-            onClick={() => { if (drag.current?.moved) return; if (f.custom) onFolders(`folder:${f.id}`) }}>
+            onClick={() => { if (drag.current?.moved) return; onFolders(`folder:${f.id}`) }}>
             <span className="fold-grip" aria-hidden="true">{svg(<><circle cx="9" cy="6" r="1.2" /><circle cx="15" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" /><circle cx="15" cy="18" r="1.2" /></>)}</span>
             <span className="fold-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span>
             <span className="set-text">{f.name}{f.custom && <small>{`${f.rooms.length} chat${f.rooms.length === 1 ? '' : 's'}`}</small>}</span>
@@ -789,6 +826,17 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
         </div>
         <button type="button" className="set-row set-pick set-add" onClick={() => onFolders('newfolder')}><span className="set-text">Add a Custom Folder</span><i className="set-chev">{I.right}</i></button>
       </Box>
+      {(p.hiddenFolders || []).length > 0 && (
+        <Box title="Recommended folders" note="Ready-made folders you deleted. Add one to bring it back.">
+          {(p.hiddenFolders || []).filter((id) => READY_FOLDERS[id]).map((id) => (
+            <div key={id} className="set-row">
+              <span className="fold-ico">{READY_FOLDERS[id][1]}</span>
+              <span className="set-text">{p.folderNames?.[id] || READY_FOLDERS[id][0]}<small>{READY_FOLDERS[id][2]}</small></span>
+              <button type="button" className="btn btn-sm" onClick={() => setPrefs({ hiddenFolders: (p.hiddenFolders || []).filter((x) => x !== id) })}>Add</button>
+            </div>
+          ))}
+        </Box>
+      )}
       <Box note="Display folder names for each chat in the chat list."><Switch on={p.folderTags} set={(v) => setPrefs({ folderTags: v })}>Show Folder Tags</Switch></Box>
       <Box title="Tabs view" note="At the bottom, the folders sit right above Contacts, Chats and Settings.">
         <div className="set-row tabs-view">

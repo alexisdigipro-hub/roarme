@@ -240,8 +240,11 @@ export default function Chat({ me, setMe }) {
   // in the order dragged in Settings > Folders (Alex, 16 Oct); a folder not placed yet goes at the end
   const fOrder = prefs.folderOrder || []
   const fRank = (id) => { const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
-  const allFolders = [...BUILTIN.map(([id, name]) => ({ id, name })), ...myFolders.map((f) => ({ ...f, custom: true }))]
+  // the ready-made folders can be renamed and, except All, deleted (Alex, 16 Oct)
+  const hiddenF = prefs.hiddenFolders || []
+  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true }))]
     .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
+  useEffect(() => { if (folder !== 'all' && hiddenF.includes(folder)) setFolder('all') }, [hiddenF.join(), folder])
   const inFolder = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
@@ -652,8 +655,21 @@ export default function Chat({ me, setMe }) {
               </>
             ) : (
               <>
-                <button type="button" onClick={() => { setFolderMenu(null); openFolders() }}>{I.edit}<span>Edit Folders</span></button>
+                <button type="button" onClick={() => { const f = folderMenu.f; setFolderMenu(null); editFolder(f.id) }}>{I.edit}<span>Edit Folder</span></button>
                 <button type="button" onClick={() => { setFolderMenu(null); editFolder('new') }}>{I.plus}<span>New Folder</span></button>
+                {folderMenu.f.id !== 'all' && (
+                  <>
+                    <hr />
+                    <button type="button" className="danger" onClick={() => {
+                      const f = folderMenu.f
+                      setFolderMenu(null)
+                      if (!window.confirm(`Delete the folder ${f.name}? The chats in it stay.`)) return
+                      setPrefs({ hiddenFolders: [...new Set([...(prefs.hiddenFolders || []), f.id])] })
+                      if (folder === f.id) setFolder('all')
+                      toast('Folder deleted')
+                    }}>{I.trash}<span>Delete</span></button>
+                  </>
+                )}
               </>
             )}
           </div>

@@ -36,6 +36,8 @@ export const DEFAULTS = {
   translateTo: 'auto', // auto = Greek to English and back
   folderTabs: 'top', // top | bottom (left until 16 Oct, now bottom)
   folderOrder: [], // folder ids in the order dragged in Settings > Folders
+  folderNames: {}, // the ready-made folders renamed: { unread: 'New' }
+  hiddenFolders: [], // ready-made folders deleted (Unread, Groups, Archived; All stays)
   sound: true,
   soundKind: 'chime', // one of SOUNDS
   badge: true, // the unread count on the Mac/Windows app's icon

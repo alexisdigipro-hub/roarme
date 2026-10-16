@@ -19,6 +19,16 @@ window.addEventListener('resize', () => {
   resizeT = setTimeout(() => document.documentElement.classList.remove('win-resizing'), 180)
 })
 
+// scroll bars show only while something scrolls, then fade (Alex, 17 Oct): the scrolling box gets .is-scrolling
+const scrollTimers = new WeakMap()
+document.addEventListener('scroll', (e) => {
+  const el = e.target === document ? document.documentElement : e.target
+  if (!el?.classList) return
+  el.classList.add('is-scrolling')
+  clearTimeout(scrollTimers.get(el))
+  scrollTimers.set(el, setTimeout(() => el.classList.remove('is-scrolling'), 900))
+}, true)
+
 // a RoarTransfer download link (?t=…) opens its own page, no account needed
 const transferToken = new window.URLSearchParams(window.location.search).get('t')
 

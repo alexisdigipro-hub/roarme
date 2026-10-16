@@ -2405,3 +2405,18 @@ html[data-mode='light'] .rt-tile.t-time i { color: #c27800; }
   .lib-go { opacity: 1; width: 26px; height: 26px; }
 }
 .lib-row .lib-ico, .lib-row .lib-ico b { color: #fff; }
+
+/* the chat list, quieter (Alex, 17 Oct): smaller faces and a hairline between chats */
+.rooms .room { position: relative; }
+.rooms.no-prev .room { min-height: 52px; padding-top: 7px; padding-bottom: 7px; }
+.rooms .room + .room::before { content: ''; position: absolute; top: -2.5px; left: 62px; right: 12px; height: 1px; background: color-mix(in srgb, var(--text) 8%, transparent); pointer-events: none; transition: opacity .15s; }
+.rooms.no-prev .room + .room::before { left: 56px; }
+.rooms .room:is(.on, :hover, .picked, .menu-on)::before, .rooms .room:is(.on, :hover, .picked, .menu-on) + .room::before { opacity: 0; }
+
+/* scroll bars: thin and see-through, only while scrolling, then they fade (Alex, 17 Oct) */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; margin-block: 6px; }
+::-webkit-scrollbar-thumb { background: transparent; border: 0; border-radius: 999px; background-clip: border-box; transition: background .3s; }
+.is-scrolling::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text) 22%, transparent); }
+html[data-mode='light'] ::-webkit-scrollbar-thumb { background: transparent; }
+html[data-mode='light'] .is-scrolling::-webkit-scrollbar-thumb { background: rgba(16, 32, 58, .22); }

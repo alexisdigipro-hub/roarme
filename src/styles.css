@@ -2048,3 +2048,9 @@ html[data-theme='studio'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait), html[
 /* the frame round photos and videos is the same hairline as the chat's head card, in the theme's own edge colour,
    for everyone's messages, yours too (Alex, 16 Oct) */
 html[data-theme] .bubble.pic, html[data-theme] .msg.mine .bubble.pic { padding: 0; background: transparent; border: 1px solid var(--edge); box-shadow: none; }
+
+/* the folder tabs keep their size when the window narrows (Alex, 16 Oct): the ones that do not fit wait to the
+   right, and the row slides with the mouse wheel or a finger, with no scroll bar */
+.tabs.tabs-scroll { position: relative; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scroll-padding: 0 6px; }
+.tabs.tabs-scroll::-webkit-scrollbar { display: none; }
+.tabs.tabs-scroll > button { flex: 1 0 auto; padding: 0 12px; white-space: nowrap; }

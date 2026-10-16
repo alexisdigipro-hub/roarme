@@ -439,10 +439,10 @@ export default function Chat({ me, setMe }) {
             <label className="search">{I.search}<input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search (⌘K)" onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur() } }} /></label>
             <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`}>
             {!q.trim() && (
-              <nav ref={tabsLens} className="tabs lens">
+              <nav ref={tabsLens} className="tabs lens tabs-scroll" onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
                 {allFolders.map((f) => {
                   const n = folderUnread(f)
-                  return <button key={f.id} type="button" title={f.name} className={folder === f.id ? 'on' : ''} onClick={() => setFolder(f.id)} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                  return <button key={f.id} type="button" title={f.name} className={folder === f.id ? 'on' : ''} onClick={(e) => { setFolder(f.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
                 })}
               </nav>
             )}

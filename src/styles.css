@@ -1765,3 +1765,129 @@ html.win-resizing body { background-attachment: scroll !important; }
 @keyframes roar-row-in { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
 html[data-still] :is(.boot-paw, .app.intro > .side, .app.intro > .main, .app.intro .side .rooms > *) { animation: none; }
 @media (prefers-reduced-motion: reduce) { :is(.boot-paw, .app.intro > .side, .app.intro > .main, .app.intro .side .rooms > *) { animation: none; } }
+
+/* =====================================================================
+   Prism (Alex, 16 Oct, from his "Alerts" reference): slate graphite panels with a neon rim down the left edge
+   (pink, orange, cyan), outlined pills where the chosen one carries a glowing purple-to-orange underline, coral
+   buttons that glow, app-icon squircle faces in bright colours, thin rules between rows. Dark and light.
+   No blur under the panels (see Speed): the look comes from gradients and light, not from blurring.
+   ===================================================================== */
+html[data-theme='prism'] {
+  --bg: #121317; --panel: linear-gradient(180deg, rgba(82, 86, 96, .82), rgba(56, 59, 67, .86));
+  --glass: rgba(255, 255, 255, .06); --glass-2: rgba(255, 255, 255, .12);
+  --edge: rgba(255, 255, 255, .14);
+  --text: #f3f4f7; --muted: rgba(220, 224, 232, .6);
+  --accent: #ff5d4a; --accent-2: #ff8a6b; --accent-ink: #ffffff;
+  --theirs: rgba(255, 255, 255, .09);
+  --danger: #ff5a5a; --ok: #3ee07a;
+  --blur: blur(22px) saturate(150%);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 30px 80px rgba(0, 0, 0, .55);
+  --float: rgba(64, 67, 76, .96);
+  --rim: linear-gradient(180deg, #ff3fa4 0%, #ff8a2a 30%, #2ee6ff 50%, #ff8a2a 70%, #ff3fa4 100%);
+  --uline: linear-gradient(90deg, #b44dff, #ff8a3d);
+  color-scheme: dark;
+}
+html[data-theme='prism'][data-mode='light'] {
+  --bg: #e9eaee; --panel: linear-gradient(180deg, rgba(255, 255, 255, .86), rgba(236, 238, 243, .9));
+  --glass: rgba(20, 24, 34, .04); --glass-2: rgba(20, 24, 34, .08);
+  --edge: rgba(20, 24, 34, .12);
+  --text: #16181d; --muted: rgba(22, 24, 29, .55);
+  --theirs: rgba(255, 255, 255, .95);
+  --shadow: inset 0 1px 0 #fff, 0 26px 60px rgba(40, 30, 60, .18);
+  --float: rgba(255, 255, 255, .97);
+  color-scheme: light;
+}
+html[data-theme='prism'] body { background: radial-gradient(900px 500px at 8% 90%, rgba(255, 40, 140, .28), transparent 60%), radial-gradient(700px 420px at 95% 55%, rgba(255, 60, 60, .18), transparent 60%), radial-gradient(800px 500px at 60% -10%, rgba(120, 90, 255, .16), transparent 60%), linear-gradient(180deg, #17181d, #0d0e11); }
+html[data-theme='prism'][data-mode='light'] body { background: radial-gradient(900px 500px at 8% 90%, rgba(255, 80, 170, .2), transparent 60%), radial-gradient(700px 420px at 95% 55%, rgba(255, 140, 80, .16), transparent 60%), radial-gradient(800px 500px at 60% -10%, rgba(80, 200, 255, .18), transparent 60%), linear-gradient(180deg, #f2f3f6, #e2e4ea); }
+html[data-theme='prism'] body::before { background: radial-gradient(500px 300px at 20% 70%, rgba(255, 60, 160, .16), transparent 70%), radial-gradient(400px 300px at 85% 20%, rgba(46, 230, 255, .08), transparent 70%); }
+
+/* the panels: slate graphite, a soft top light, and the neon rim on the left edge */
+html[data-theme='prism'] .app { padding: 18px; gap: 16px; }
+html[data-theme='prism'] .side-grip { left: calc(18px + var(--side-w, 370px)); top: 18px; bottom: 18px; width: 16px; }
+html[data-theme='prism'] :is(.side, .main) { position: relative; border-radius: 28px; background: var(--panel); border: 1px solid var(--edge); box-shadow: var(--shadow); }
+html[data-theme='prism'] :is(.side, .main)::after { content: ''; position: absolute; z-index: 3; left: -1px; top: 14%; bottom: 14%; width: 4px; border-radius: 4px; background: var(--rim); box-shadow: 0 0 10px rgba(255, 70, 160, .9), 0 0 26px rgba(255, 70, 160, .5), 0 0 40px rgba(46, 230, 255, .35); pointer-events: none; }
+html[data-theme='prism'] .main::after { opacity: .55; }
+html[data-theme='prism'] .side-brand .wordmark b { font-weight: 800; letter-spacing: .14em; }
+
+/* controls: outlined pills, coral glowing main buttons */
+html[data-theme='prism'] .round { border-radius: 16px; background: var(--glass); border: 1px solid var(--edge); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+html[data-theme='prism'] .round:hover, html[data-theme='prism'] .round.on { background: var(--glass-2); }
+html[data-theme='prism'] :is(.btn, .pill-btn) { border-radius: 999px; text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; background: transparent; border: 1px solid color-mix(in srgb, var(--text) 28%, transparent); }
+html[data-theme='prism'] :is(.btn, .pill-btn):hover { background: var(--glass); }
+html[data-theme='prism'] .btn-main, html[data-theme='prism'] .send.ready, html[data-theme='prism'] .new-call-ico { background: linear-gradient(180deg, #ff7a5c, #ff4b3e); color: #fff; border-color: transparent; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 8px 26px rgba(255, 75, 62, .45); }
+html[data-theme='prism'] .btn-main:hover { filter: brightness(1.06); }
+html[data-theme='prism'] :is(.input, .search, .compose textarea) { border-radius: 16px; background: rgba(0, 0, 0, .18); border-color: var(--edge); }
+html[data-theme='prism'][data-mode='light'] :is(.input, .search, .compose textarea) { background: rgba(255, 255, 255, .9); }
+html[data-theme='prism'] :is(.input, .compose textarea):focus { border-color: rgba(180, 77, 255, .6); box-shadow: 0 0 0 4px rgba(180, 77, 255, .15); }
+html[data-theme='prism'] .compose-box { border-radius: 18px; background: rgba(0, 0, 0, .18); border-color: var(--edge); }
+html[data-theme='prism'][data-mode='light'] .compose-box { background: rgba(255, 255, 255, .9); }
+html[data-theme='prism'] .compose-box:focus-within { border-color: rgba(180, 77, 255, .55); box-shadow: 0 0 0 3px rgba(180, 77, 255, .14); }
+html[data-theme='prism'] .switch input:checked + span { background: linear-gradient(90deg, #ff4b3e, #ff8a3d); box-shadow: 0 0 16px rgba(255, 90, 60, .5); }
+html[data-theme='prism'] .link { color: var(--accent-2); }
+
+/* the chosen option: glass with a glowing purple-to-orange underline */
+html[data-theme='prism'] :is(.seg, .tabs) { gap: 6px; padding: 4px; border-radius: 999px; background: transparent; border: 0; }
+html[data-theme='prism'] :is(.seg, .tabs) button { border-radius: 999px; border: 1px solid color-mix(in srgb, var(--text) 24%, transparent); text-transform: none; letter-spacing: 0; font-size: 13px; }
+html[data-theme='prism'] :is(.seg, .tabs).lens::before { border-radius: 999px; background: var(--uline) 50% calc(100% - 5px) / 46% 3px no-repeat, rgba(255, 255, 255, .12); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 6px 18px rgba(0, 0, 0, .25), 0 10px 18px -10px rgba(180, 77, 255, .8); }
+html[data-theme='prism'][data-mode='light'] :is(.seg, .tabs).lens::before { background: var(--uline) 50% calc(100% - 5px) / 46% 3px no-repeat, #fff; box-shadow: 0 4px 14px rgba(40, 30, 60, .14), 0 10px 18px -10px rgba(180, 77, 255, .7); }
+html[data-theme='prism'] :is(.seg, .tabs).lens.lens-on > .on { color: var(--text); border-color: transparent; }
+html[data-theme='prism'] .tabs small { background: var(--accent); color: #fff; }
+html[data-theme='prism'] .foot { border-radius: 24px; background: rgba(0, 0, 0, .2); border: 1px solid var(--edge); }
+html[data-theme='prism'][data-mode='light'] .foot { background: rgba(255, 255, 255, .7); }
+html[data-theme='prism'] .foot button { border-radius: 18px; }
+html[data-theme='prism'] .foot.lens::before { border-radius: 18px; background: var(--uline) 50% calc(100% - 4px) / 40% 3px no-repeat, rgba(255, 255, 255, .1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 10px 18px -10px rgba(180, 77, 255, .8); }
+html[data-theme='prism'][data-mode='light'] .foot.lens::before { background: var(--uline) 50% calc(100% - 4px) / 40% 3px no-repeat, #fff; }
+html[data-theme='prism'] .foot.lens.lens-on > .on { color: var(--text); }
+html[data-theme='prism'] .foot-ico i { background: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(255, 75, 62, .6); }
+
+/* chats: thin rules between rows, faces as bright app-icon squircles */
+html[data-theme='prism'] .rooms { gap: 0; }
+html[data-theme='prism'] .room { border-radius: 16px; }
+html[data-theme='prism'] .room + .room { box-shadow: 0 -1px 0 var(--edge); }
+html[data-theme='prism'] .room:hover { background: var(--glass); }
+html[data-theme='prism'] .room.on, html[data-theme='prism'] .room.menu-on, html[data-theme='prism'] .set-nav.on { background: rgba(255, 255, 255, .1); box-shadow: inset 3px 0 0 #ff3fa4, 0 0 0 1px var(--edge); }
+html[data-theme='prism'][data-mode='light'] :is(.room.on, .room.menu-on, .set-nav.on) { background: #fff; }
+html[data-theme='prism'] .av { border-radius: 30%; color: #fff; background: linear-gradient(145deg, #4aa3ff, #2d6bff); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 6px 14px rgba(0, 0, 0, .25); }
+html[data-theme='prism'] .av img { border-radius: 30%; }
+html[data-theme='prism'] .room:nth-child(5n + 2) .av:not(:has(img)) { background: linear-gradient(145deg, #ffb24a, #ff7a1a); }
+html[data-theme='prism'] .room:nth-child(5n + 3) .av:not(:has(img)) { background: linear-gradient(145deg, #ff6bd8, #e03ad0); }
+html[data-theme='prism'] .room:nth-child(5n + 4) .av:not(:has(img)) { background: linear-gradient(145deg, #9a7bff, #6a4dff); }
+html[data-theme='prism'] .room:nth-child(5n) .av:not(:has(img)) { background: linear-gradient(145deg, #5ee68a, #20c05a); }
+html[data-theme='prism'] .badge { background: #2ee07a; color: #052812; box-shadow: 0 0 12px rgba(46, 224, 122, .6); }
+html[data-theme='prism'] .badge.quiet { background: var(--glass-2); color: var(--muted); box-shadow: none; }
+
+/* a conversation */
+html[data-theme='prism'] .head-card { border-radius: 20px; background: var(--glass); border-color: var(--edge); }
+html[data-theme='prism'] .head-text strong { font-weight: 700; }
+html[data-theme='prism'] .bubble { border-radius: 20px; background: var(--theirs); border: 1px solid var(--edge); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06); }
+html[data-theme='prism'] .msg.mine .bubble { background: linear-gradient(180deg, #ff7a5c, #ff4b3e); color: #fff; border-color: transparent; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 8px 24px rgba(255, 75, 62, .32); }
+html[data-theme='prism'] .msg.mine .bubble .meta, html[data-theme='prism'] .msg.mine .ticks { color: rgba(255, 255, 255, .8); }
+html[data-theme='prism'] .msg.mine .quote { background: rgba(0, 0, 0, .14); border-left-color: #fff; }
+html[data-theme='prism'] .msg.mine .quote :is(b, span) { color: #fff; }
+html[data-theme='prism'] .bubble.big-emoji, html[data-theme='prism'] .msg.mine .bubble.big-emoji { background: none; border: 0; box-shadow: none; }
+html[data-theme='prism'] .bubble.pic { border-radius: 22px; }
+html[data-theme='prism'] .rx button.on { background: rgba(180, 77, 255, .2); box-shadow: inset 0 0 0 1px rgba(180, 77, 255, .6); }
+html[data-theme='prism'] .day span { border-radius: 999px; text-transform: none; letter-spacing: 0; font-size: 12px; border: 1px solid var(--edge); background: var(--glass); }
+
+/* floating things */
+html[data-theme='prism'] :is(.menu, .menu-list, .emoji-pick, .rx-pick, .mention-pick) { border-radius: 22px; background: var(--float); border: 1px solid var(--edge); box-shadow: var(--shadow); }
+html[data-theme='prism'] :is(.menu, .menu-list) button { border-radius: 14px; }
+html[data-theme='prism'] :is(.menu, .menu-list) button:hover { background: var(--glass-2); }
+html[data-theme='prism'] .modal { border-radius: 28px; background: var(--float); box-shadow: var(--shadow); }
+html[data-theme='prism'] .modal-head h2 { font-weight: 800; letter-spacing: -.02em; }
+html[data-theme='prism'] .toast { border-radius: 18px; background: var(--float); border: 1px solid var(--edge); box-shadow: var(--shadow); }
+
+/* settings: a big bold title like "Alerts", rows on slate glass */
+html[data-theme='prism'] .set-head strong { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+html[data-theme='prism'] .set-box { border-radius: 22px; background: var(--glass); border-color: var(--edge); }
+html[data-theme='prism'] .set-box > button.set-row:first-child { border-radius: 22px 22px 0 0; }
+html[data-theme='prism'] .set-box > button.set-row:last-child { border-radius: 0 0 22px 22px; }
+html[data-theme='prism'] .set-box > button.set-row:only-child { border-radius: 22px; }
+html[data-theme='prism'] .set-menu .set-box { background: none; border-color: transparent; }
+html[data-theme='prism'] .set-menu .set-nav { border-radius: 16px !important; margin: 2px 0; }
+html[data-theme='prism'] .nav-ico { background: none !important; color: var(--text); }
+html[data-theme='prism'] .set-tick { background: linear-gradient(180deg, #ff7a5c, #ff4b3e); box-shadow: 0 0 12px rgba(255, 75, 62, .5); }
+html[data-theme='prism'] .set-preview .pv.mine, html[data-theme='prism'] .wall-b.mine { background: linear-gradient(180deg, #ff7a5c, #ff4b3e); color: #fff; }
+html[data-theme='prism'] .boot-paw { border-radius: 30%; }
+.theme-sw { position: relative; }
+.theme-rim { position: absolute; left: 0; top: 18%; bottom: 18%; width: 3px; border-radius: 3px; background: linear-gradient(180deg, #ff3fa4, #ff8a2a 40%, #2ee6ff); box-shadow: 0 0 8px rgba(255, 70, 160, .8); }

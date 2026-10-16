@@ -95,17 +95,20 @@ export function TransferWindow({ title, outbox, onStart, onClose }) {
   const C = 2 * Math.PI * R
   return (
     <Modal title="RoarTransfer" onClose={onClose}>
-      <div className="rt">
-        <TransferMark big />
+      {/* fresher (Alex, 17 Oct): the mark at the top left like the card in the chat, a glowing drop area, three small
+          fact tiles (size, days, link) and one pill to send */}
+      <div className={`rt is-${phase}`}>
+        <div className="rt-top"><TransferMark /></div>
         {phase === 'pick' && (
           <>
-            <p className="rt-sub">Big files up to 3 GB, kept 3 days, then gone.</p>
             <button type="button" className={`rt-drop${over ? ' over' : ''}${files.length ? ' has' : ''}`} onClick={() => pick.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setOver(true) }} onDragLeave={() => setOver(false)}
               onDrop={(e) => { e.preventDefault(); setOver(false); add([...(e.dataTransfer?.files || [])]) }}>
-              <i>{I.plus}</i>
-              <b>{files.length ? 'Add more files' : 'Add files'}</b>
-              <small>{files.length ? 'or drop them here' : 'Click to choose, or drop them here'}</small>
+              <i>{files.length ? I.plus : I.transfer}</i>
+              <span className="rt-drop-text">
+                <b>{files.length ? 'Add more' : 'Drop your files here'}</b>
+                <small>{files.length ? 'or drop them here' : 'or click to choose them'}</small>
+              </span>
             </button>
             <input ref={pick} type="file" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
             {files.length > 0 && (
@@ -122,14 +125,15 @@ export function TransferWindow({ title, outbox, onStart, onClose }) {
             {files.length > 0 && (
               <div className={`rt-meter${tooBig ? ' over' : ''}`}>
                 <span className="rt-bar"><i style={{ width: `${Math.min(100, (total / TRANSFER_MAX) * 100)}%` }} /></span>
-                <small>{files.length === 1 ? '1 file' : `${files.length} files`} · {fmtBytes(total)} of 3 GB</small>
+                <small><b>{fmtBytes(total)}</b> of 3 GB · {files.length === 1 ? '1 file' : `${files.length} files`}</small>
               </div>
             )}
-            <div className="rt-facts">
-              <span className="tr-exp">{I.timer}<span>Expires {untilDate()}</span></span>
-              <span className="rt-fact">{I.link}<span>Download link for anyone you share it with</span></span>
+            <div className="rt-tiles">
+              <span className="rt-tile"><i>{I.transfer}</i><b>3 GB</b><small>per transfer</small></span>
+              <span className="rt-tile t-time"><i>{I.timer}</i><b>3 days</b><small>until {untilDate()}</small></span>
+              <span className="rt-tile"><i>{I.link}</i><b>Link</b><small>for anyone</small></span>
             </div>
-            <button type="button" className="btn btn-main rt-go" disabled={!files.length || tooBig} onClick={start}>{I.transfer}<span>{tooBig ? 'Over 3 GB' : 'Transfer'}</span></button>
+            <button type="button" className="rt-send" disabled={!files.length || tooBig} onClick={start}>{tooBig ? 'Over 3 GB' : files.length ? 'Transfer' : 'Add files to transfer'}{files.length > 0 && !tooBig && I.send}</button>
           </>
         )}
         {phase === 'up' && (

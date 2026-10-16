@@ -2285,3 +2285,45 @@ html[data-mode='light'] .trx:not(.soon):not(.gone) .trx-left { color: #a35f00; b
 .trx.gone .rt-mark { opacity: .6; }
 html[data-theme] .msg.mine .bubble.transfer-b .trx-get { color: var(--accent-ink, #fff); background: var(--accent); border: 0; }
 .bubble .file.trx + .text { display: block; margin-top: 10px; }
+
+/* RoarTransfer window, fresher (Alex, 17 Oct): mark top left, a glowing drop area, three fact tiles, one pill */
+.modal:has(.rt) .modal-body { padding-top: 18px; }
+.rt-top { display: flex; align-items: center; min-height: 44px; padding-right: 52px; }
+.rt-top .rt-mark { align-self: auto; }
+.rt-drop { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 34px 16px 30px; border-radius: 26px; border-style: solid; border-width: 1px;
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--edge));
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 62%), color-mix(in srgb, var(--accent) 4%, var(--glass)); }
+.rt-drop:hover, .rt-drop.over { border-color: var(--accent); background: radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--accent) 36%, transparent), transparent 66%), color-mix(in srgb, var(--accent) 8%, var(--glass)); }
+.rt-drop.over { transform: scale(1.015); }
+.rt-drop > i { position: relative; display: grid; place-items: center; width: 64px; height: 64px; margin: 0; border-radius: 50%; color: var(--accent-ink, #fff);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 100%, #fff 22%), var(--accent)); box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 45%, transparent), inset 0 1px 0 rgba(255, 255, 255, .35); transition: transform .2s cubic-bezier(.3, 1.4, .5, 1); }
+.rt-drop > i svg { width: 30px; height: 30px; stroke-width: 2; }
+.rt-drop > i::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--accent) 50%, transparent); animation: rt-pulse 2.2s ease-out infinite; }
+@keyframes rt-pulse { from { transform: scale(.85); opacity: .9; } to { transform: scale(1.35); opacity: 0; } }
+.rt-drop:hover > i, .rt-drop.over > i { transform: translateY(-3px) scale(1.05); }
+.rt-drop-text { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.rt-drop-text b { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+.rt-drop-text small { color: var(--muted); font-size: 13px; }
+.rt-drop.has { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 10px 14px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 8%, var(--glass)); }
+.rt-drop.has > i { width: 34px; height: 34px; box-shadow: none; }
+.rt-drop.has > i svg { width: 18px; height: 18px; }
+.rt-drop.has > i::after { display: none; }
+.rt-drop.has .rt-drop-text { flex-direction: row; align-items: baseline; gap: 8px; }
+.rt-drop.has .rt-drop-text b { font-size: 14.5px; }
+.rt-drop.has .rt-drop-text small { font-size: 12.5px; }
+.rt-meter small b { color: var(--text); font-weight: 800; }
+.rt-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.rt-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px; border-radius: 18px; background: var(--glass); border: 1px solid var(--edge); min-width: 0; }
+.rt-tile i { display: grid; place-items: center; width: 30px; height: 30px; margin-bottom: 6px; border-radius: 50%; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.rt-tile i svg { width: 16px; height: 16px; stroke-width: 2.1; }
+.rt-tile b { font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+.rt-tile small { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.rt-tile.t-time i { color: #ffb020; background: rgba(255, 176, 32, .16); }
+html[data-mode='light'] .rt-tile.t-time i { color: #c27800; }
+.rt-send { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 50px; border: 0; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 15.5px; font-weight: 700; color: var(--accent-ink, #fff); background: var(--accent); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 35%, transparent); transition: transform .12s, filter .15s, background .2s; }
+.rt-send svg { width: 18px; height: 18px; }
+.rt-send:hover:not(:disabled) { filter: brightness(1.08); }
+.rt-send:active:not(:disabled) { transform: scale(.98); }
+.rt-send:disabled { cursor: default; color: var(--muted); background: var(--glass); box-shadow: none; outline: 1px solid var(--edge); outline-offset: -1px; }
+.rt.is-up .rt-ring, .rt.is-done .rt-done { margin-top: 6px; }

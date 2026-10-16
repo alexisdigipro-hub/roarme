@@ -1,13 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-// For now RoarMe lives in the THEMADLIONS Supabase project, in its own roar_ tables; before it goes
-// public it moves to a project of its own and only these two lines change. The publishable key is
-// public by design: what each person can read or write is enforced by the database (supabase/schema.sql).
-export const SUPABASE_URL = 'https://naibamqexcqnqhbbqafa.supabase.co'
-export const SUPABASE_KEY = 'sb_publishable_o1OB_ohozPq1Xr2jg2ZSHA_3GsusXFL'
+// RoarMe's own Supabase project (moved out of the THEMADLIONS hub's project on 16 Oct 2026).
+// The publishable key is public by design: what each person can read or write is enforced by the
+// database (supabase/schema.sql).
+export const SUPABASE_URL = 'https://bzmjhbnwhdwmncxkqkdl.supabase.co'
+export const SUPABASE_KEY = 'sb_publishable_7mQ3e0NH5lCmdoIKx2-FUA_EgCoXx9X'
 
+// a new key for the saved sign-in, so a login from the old project is never sent to the new one
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { storageKey: 'roarme-auth', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  auth: { storageKey: 'roarme-auth-2', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 })
 
 export const appUrl = () => window.location.origin + window.location.pathname

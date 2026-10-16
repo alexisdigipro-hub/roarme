@@ -1,7 +1,6 @@
--- Roar (working name): a chat for everyone, separate from the THEMADLIONS hub.
--- For now it lives in the hub's Supabase project under its own roar_ tables and its own storage
--- buckets, touching nothing of the hub; before it goes public it moves to a project of its own.
--- Safe to run again.
+-- RoarMe: a chat for everyone, separate from the THEMADLIONS hub.
+-- Its own Supabase project since 16 Oct 2026 (bzmjhbnwhdwmncxkqkdl, London); until then it lived in
+-- the hub's project under the same roar_ names. Safe to run again on an empty project.
 
 -- ---------- profiles: one per person, found by @username ----------
 create table if not exists public.roar_profiles (

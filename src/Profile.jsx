@@ -160,7 +160,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const tabs = [
     group && ['members', 'Members', members.length],
     ['media', 'Media', sets.media.length],
-    ['files', 'Transfers', sets.transfers.length + sets.files.length],
+    ['transfers', 'Transfers', sets.transfers.length],
+    ['files', 'Files', sets.files.length],
     ['links', 'Links', links.length],
     ['music', 'Music', sets.music.length],
     ['voice', 'Voice', sets.voice.length],
@@ -280,7 +281,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
             </div>
           )) : <p className="muted pf-empty">No photos or videos yet.</p>)}
 
-          {tab === 'files' && items && (sets.transfers.length + sets.files.length ? (
+          {tab === 'transfers' && items && (sets.transfers.length ? (
             <>
               {sets.transfers.map((m) => {
                 const left = new Date(m.file?.expires || 0).getTime() - Date.now()
@@ -298,10 +299,9 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   </div>
                 )
               })}
-              {sets.files.length > 0 && sets.transfers.length > 0 && <h5 className="pf-sub">Other files</h5>}
-              {sets.files.map((m) => row(m, I.file, m.file?.name, `${fmtBytes(m.file?.size)} · ${when(m.created_at)}`, () => openFile(m)))}
             </>
           ) : <p className="muted pf-empty">No transfers yet.</p>)}
+          {tab === 'files' && items && (sets.files.length ? sets.files.map((m) => row(m, I.file, m.file?.name, `${fmtBytes(m.file?.size)} · ${when(m.created_at)}`, () => openFile(m))) : <p className="muted pf-empty">No files yet.</p>)}
 
           {tab === 'links' && items && (links.length ? links.map((l) => (
             <a key={l.id} className="pf-row" href={l.url} target="_blank" rel="noreferrer">

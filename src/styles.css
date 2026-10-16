@@ -2459,3 +2459,13 @@ html[data-mode='light'] .lib-tr:not(.soon) .pf-tr-left { color: #a35f00; backgro
   .lib-seg button { flex: 1; padding: 0 12px; }
   .lib-search { grid-column: 1 / -1; max-width: none; }
 }
+
+/* the Media page tabs take the search box's corners in every theme (Alex, 17 Oct) */
+:root { --search-r: 999px; }
+html[data-theme='studio'] { --search-r: 6px; }
+html[data-theme='aura'], html[data-theme='prism'] { --search-r: 16px; }
+html[data-theme='ember'] { --search-r: var(--r, 12px); }
+html[data-theme='aurum'] { --search-r: 10px; }
+html[data-theme] .lib-seg { border-radius: var(--search-r); padding: 4px; height: 44px; box-sizing: border-box; align-items: center; }
+html[data-theme] .lib-seg button, html[data-theme] .lib-seg.lens::before { border-radius: max(4px, calc(var(--search-r) - 4px)); }
+html[data-theme] .lib-seg button.on i { color: inherit; background: rgba(0, 0, 0, .16); }

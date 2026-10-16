@@ -116,7 +116,6 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
     && (!words || [m.file?.name, m.url, who(m), where(m)].some((s) => (s || '').toLowerCase().includes(words))))
   const lists = data ? { media: pick(data.media), transfers: pick(data.transfers), links: pick(data.links), music: pick(data.music), docs: pick(data.docs) } : null
   const list = lists?.[kind] || []
-  const trCount = lists ? lists.transfers.length + lists.docs.length : 0
   const photos = lists ? lists.media.filter((m) => !/^video\//.test(m.file?.type || '')).length : 0
   const videos = lists ? lists.media.length - photos : 0
 
@@ -129,7 +128,7 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
   }
   const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return u } }
   const when = (m) => dayLabel(m.created_at)
-  const tabs = [['media', 'Media'], ['transfers', 'Transfers'], ['links', 'Links'], ['music', 'Music']]
+  const tabs = [['media', 'Media'], ['transfers', 'Transfers'], ['docs', 'Files'], ['links', 'Links'], ['music', 'Music']]
 
   return (
     <div className="lib">
@@ -137,14 +136,14 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
         <button type="button" className="round lib-back" onClick={onBack} aria-label="Back">{I.left}</button>
         <span className="lib-title"><b>Media</b><small>{room ? titleById[room] : 'From all chats'}</small></span>
         <Lens className="seg lib-seg" dep={kind}>
-          {tabs.map(([k, label]) => { const n = k === 'transfers' ? trCount : lists?.[k].length || 0; return <button key={k} type="button" className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{label}{n > 0 && <i>{n}</i>}</button> })}
+          {tabs.map(([k, label]) => { const n = lists?.[k].length || 0; return <button key={k} type="button" className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{label}{n > 0 && <i>{n}</i>}</button> })}
         </Lens>
         <label className="search lib-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" /></label>
       </div>
 
       <div className="lib-body">
         {!data && <div className="lib-grid">{Array.from({ length: 12 }, (_, n) => <span key={n} className="pic-wait lib-tile" />)}</div>}
-        {data && !(kind === 'transfers' ? trCount : list.length) && <p className="empty lib-empty">{words ? 'Nothing found.' : kind === 'media' ? 'No photos or videos yet.' : kind === 'links' ? 'No links yet.' : kind === 'music' ? 'No songs or sound files yet.' : 'No transfers yet.'}</p>}
+        {data && !list.length && <p className="empty lib-empty">{words ? 'Nothing found.' : kind === 'media' ? 'No photos or videos yet.' : kind === 'links' ? 'No links yet.' : kind === 'music' ? 'No songs or sound files yet.' : kind === 'docs' ? 'No files yet.' : 'No transfers yet.'}</p>}
         {data && kind === 'media' && list.length > 0 && (
           <div className="lib-grid">
             {list.map((m, n) => <Tile key={m.id} m={m} who={who(m)} where={where(m)} onOpen={() => openAt(n)} onChat={() => onChat(m.room_id, m.id)} />)}
@@ -167,7 +166,7 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
             ))}
           </div>
         )}
-        {data && kind === 'transfers' && trCount > 0 && (
+        {data && kind === 'transfers' && list.length > 0 && (
           <div className="lib-rows">
             {lists.transfers.map((m) => {
               const left = new Date(m.file?.expires || 0).getTime() - Date.now()
@@ -184,8 +183,11 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
                 </div>
               )
             })}
-            {lists.transfers.length > 0 && lists.docs.length > 0 && <h5 className="pf-sub">Other files</h5>}
-            {lists.docs.map((m) => {
+          </div>
+        )}
+        {data && kind === 'docs' && list.length > 0 && (
+          <div className="lib-rows">
+            {list.map((m) => {
               const ext = ((m.file?.name || '').match(/\.(\w{1,5})$/) || [])[1]?.toUpperCase() || 'FILE'
               return (
                 <Row key={m.id} icon={<span className="lib-ico doc"><b>{ext}</b></span>} title={m.file?.name} meta={`${fmtBytes(m.file?.size)} · ${who(m)} · ${where(m)} · ${when(m)}`}

@@ -4,7 +4,7 @@ import { locale } from './i18n.js'
 import { I, Modal, Paw } from './ui.jsx'
 
 /* RoarTransfer (Alex, 16 Oct): its own window, as on WeTransfer. Pick or drop files, see how big they are against
-   the 3 GB, add a message, send. The window shows the upload; "Keep chatting" closes it and the upload goes on in the
+   the 3 GB, send. The window shows the upload; "Keep chatting" closes it and the upload goes on in the
    chat. When it is done, each file has a small link anyone can download it from, for 3 days. */
 
 export const TRANSFER_MAX = 3 * 1024 ** 3
@@ -62,7 +62,6 @@ export function CopyLink({ file, className = '', round = false }) {
 
 export function TransferWindow({ title, outbox, onStart, onClose }) {
   const [files, setFiles] = useState([])
-  const [note, setNote] = useState('')
   const [phase, setPhase] = useState('pick')
   const [batch] = useState(() => crypto.randomUUID())
   const [sent, setSent] = useState([])
@@ -82,7 +81,7 @@ export function TransferWindow({ title, outbox, onStart, onClose }) {
 
   const start = () => {
     setPhase('up')
-    onStart(files, note.trim(), {
+    onStart(files, '', {
       batch,
       stopped: () => stop.current,
       onFile: (meta) => setSent((l) => [...l, meta]),
@@ -126,7 +125,6 @@ export function TransferWindow({ title, outbox, onStart, onClose }) {
                 <small>{files.length === 1 ? '1 file' : `${files.length} files`} · {fmtBytes(total)} of 3 GB</small>
               </div>
             )}
-            {files.length > 0 && <input className="input rt-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a message (optional)" />}
             <div className="rt-facts">
               <span className="tr-exp">{I.timer}<span>Expires {untilDate()}</span></span>
               <span className="rt-fact">{I.link}<span>Download link for anyone you share it with</span></span>

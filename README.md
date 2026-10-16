@@ -36,7 +36,7 @@ the text), where a click goes to the message, × unpins it and "Unpin all" clear
 A file over 50 MB (HD photos and videos, documents, or a video still over 50 MB after Standard shrinks it)
 goes by RoarTransfer: up to 3 GB, uploaded in 6 MB pieces that resume after a dropped connection, kept 3 days.
 The cloud button beside the clip (and the RoarTransfer tile in the send window) opens RoarTransfer's own window
-(`src/transfer.jsx`), as on WeTransfer: drop or pick files, a meter against 3 GB, an optional message, the expiry date,
+(`src/transfer.jsx`), as on WeTransfer: drop or pick files, a meter against 3 GB, the expiry date,
 then Transfer. The window shows the upload with a big ring; "Keep chatting" closes it and the upload goes on in the
 chat. When done, each file has "Copy download link": a short link (`?t=token`, table `roar_transfer_links`, Edge
 Function `roar-transfer-get`) that opens a download page for anyone, no account, until the file expires. Every

@@ -1637,15 +1637,16 @@ function TransferTile({ file, onCinema }) {
   const play = async (e) => { e.stopPropagation(); const u = await fileLink(file); if (u) onCinema({ kind: 'file', src: u, at: 0 }) }
   return (
     <span className={`file transfer trx${gone ? ' gone' : left < 864e5 ? ' soon' : ''}`} onClick={(e) => e.stopPropagation()}>
-      <span className="trx-head">
-        <TransferMark />
-        <span className="trx-left">{I.timer}<span>{short}</span></span>
-      </span>
+      {/* the mark centred on top (Alex, 17 Oct); the days left sit beside the line that empties */}
+      <span className="trx-head"><TransferMark /></span>
       <span className="trx-hero">
         <i className="trx-type">{isVid ? I.play : kind === 'Image' ? I.image : I.file}</i>
         <span className="trx-size"><b>{fmtBytes(file?.size)}</b><small>{ext ? `${ext} · ${kind}` : kind}</small></span>
       </span>
-      <span className="trx-time" title={short}><i style={{ width: `${share * 100}%` }} /></span>
+      <span className="trx-timeline">
+        <span className="trx-time" title={short}><i style={{ width: `${share * 100}%` }} /></span>
+        <span className="trx-left">{I.timer}<span>{short}</span></span>
+      </span>
       {!gone && (
         <span className="trx-acts">
           <button type="button" className="trx-get" disabled={busy} onClick={get}>{I.download}<span>{busy ? 'Opening…' : 'Download'}</span></button>

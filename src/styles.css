@@ -2328,3 +2328,6 @@ html[data-mode='light'] .rt-tile.t-time i { color: #c27800; }
 .rt-send:disabled { cursor: default; color: var(--muted); background: var(--glass); box-shadow: none; outline: 1px solid var(--edge); outline-offset: -1px; }
 .rt.is-up .rt-ring, .rt.is-done .rt-done { margin-top: 6px; }
 .rt-send { animation: pop .3s cubic-bezier(.25, .8, .3, 1) both; }
+.trx-head { justify-content: center; }
+.trx-timeline { display: flex; align-items: center; gap: 10px; }
+.trx-timeline .trx-time { flex: 1; margin: 0 0 0 2px; }

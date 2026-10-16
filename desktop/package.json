@@ -8,7 +8,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist:mac": "electron-builder --mac --publish never",
+    "dist:mac": "electron-builder --mac dmg --arm64 --publish never && electron-builder --mac dmg --x64 --publish never",
     "dist:win": "electron-builder --win --publish never"
   },
   "devDependencies": {
@@ -18,11 +18,19 @@
   "build": {
     "appId": "com.themadlions.roar",
     "productName": "ROAR",
-    "directories": { "output": "out", "buildResources": "build" },
-    "files": ["main.js", "package.json"],
+    "directories": {
+      "output": "out",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "package.json"
+    ],
     "afterPack": "./adhoc-sign.js",
     "mac": {
-      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "target": [
+        "dmg"
+      ],
       "category": "public.app-category.social-networking",
       "identity": null,
       "artifactName": "ROAR-Mac-${arch}.${ext}",
@@ -31,9 +39,19 @@
         "NSMicrophoneUsageDescription": "ROAR uses the microphone for voice messages and calls."
       }
     },
-    "dmg": { "artifactName": "ROAR-Mac-${arch}.${ext}", "title": "ROAR" },
+    "dmg": {
+      "artifactName": "ROAR-Mac-${arch}.${ext}",
+      "title": "ROAR"
+    },
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "artifactName": "ROAR-Windows-Setup.${ext}"
     },
     "nsis": {

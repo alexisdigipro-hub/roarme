@@ -36,7 +36,7 @@ jobs:
         run: |
           for i in 1 2 3; do
             if npm run dist:mac > build.log 2>&1; then cat build.log; exit 0; fi
-            echo "attempt $i failed"; tail -40 build.log; rm -rf out; sleep 10
+            echo "attempt $i failed"; tail -40 build.log; hdiutil detach /Volumes/ROAR -force || true; rm -rf out; sleep 10
           done
           echo "::error title=Mac build::$(tail -25 build.log | tr '\n' ' ' | cut -c1-3500)"
           exit 1

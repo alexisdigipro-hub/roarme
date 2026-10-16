@@ -360,6 +360,7 @@ export default function Chat({ me, setMe }) {
 
   const preview = (r) => {
     if (drafts[r.room_id] && r.room_id !== activeId) return <><span className="draft">Draft:</span> {drafts[r.room_id]}</>
+    if (!prefs.listPreview) return ''
     if (cleared[r.room_id] && r.last_message_at <= cleared[r.room_id]) return ''
     if (!r.last_kind) return r.kind === 'group' ? 'Group created' : 'Say hi'
     if (r.last_deleted) return ''
@@ -449,7 +450,7 @@ export default function Chat({ me, setMe }) {
                 })}
               </nav>
             )}
-            <div className="rooms stagger" key={folder}>
+            <div className={`rooms stagger${prefs.listPreview ? '' : ' no-prev'}`} key={folder}>
               {!rooms.length && (
                 <div className="rooms-empty">
                   <p>No chats yet.</p>

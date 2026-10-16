@@ -452,6 +452,8 @@ export const EL = {
   'Over 50 MB: it goes by RoarTransfer, kept 3 days.': 'Πάνω από 50 MB: πάει με RoarTransfer και μένει 3 μέρες.',
   'Over 50 MB goes by RoarTransfer: up to 3 GB, kept 3 days.': 'Πάνω από 50 MB πάει με RoarTransfer: έως 3 GB, μένει 3 μέρες.',
   'Expired': 'Έληξε',
+  'Show Last Message': 'Εμφάνιση τελευταίου μηνύματος',
+  "The last message under each chat's name in the list": 'Το τελευταίο μήνυμα κάτω από το όνομα κάθε συζήτησης στη λίστα',
   'Drop your files here': 'Ρίξε τα αρχεία σου εδώ',
   'or click to choose them': 'ή πάτα για να τα διαλέξεις',
   'Add more': 'Πρόσθεσε κι άλλα',

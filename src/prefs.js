@@ -14,6 +14,7 @@ export const DEFAULTS = {
   focusRings: false, // a bold ring around whatever has the keyboard
   textSize: 2, // 0..4
   bigEmoji: true,
+  listPreview: false, // the last message under each chat's name in the list (Alex, 17 Oct: off unless one wants it)
   compact: false,
   enterSends: true,
   spell: true,

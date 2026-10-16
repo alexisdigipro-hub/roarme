@@ -175,6 +175,7 @@ function General({ p, onKeys }) {
         <Switch on={p.bigEmoji} set={(v) => setPrefs({ bigEmoji: v })}>Large Emoji</Switch>
       </Box>
       <Box title="Interface" note="Click on the unread badge to preview chats without marking them as read.">
+        <Switch on={p.listPreview} set={(v) => setPrefs({ listPreview: v })} hint="The last message under each chat's name in the list">Show Last Message</Switch>
         <Switch on={p.callsTab} set={(v) => setPrefs({ callsTab: v })}>Show Calls Tab</Switch>
         <Switch on={p.peekBadge} set={(v) => setPrefs({ peekBadge: v })}>Preview Chats</Switch>
       </Box>

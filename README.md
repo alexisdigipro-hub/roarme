@@ -26,6 +26,10 @@ Strikethrough, Code, Spoiler (press again to take the mark off; keys ⌘B, ⌘I,
 `__text__`. The send window opens on tinted tiles (Gallery, Camera on phones, File, RoarTransfer); once files are
 picked they shrink to small pills and the caption and Send come in.
 
+## The chat list (17 Oct)
+The list shows each chat's name, time and unread badge on one line, without the last message (a draft still shows).
+Settings > Interface > Show Last Message brings the last message back under each name.
+
 ## Pinned messages (17 Oct)
 Pin as many messages as you like (message menu > Pin). A pinned message has a small pin beside its time. The bar
 over the chat shows the latest one and how many there are; a click opens a window with all of them (who, when,

@@ -2331,3 +2331,11 @@ html[data-mode='light'] .rt-tile.t-time i { color: #c27800; }
 .trx-head { justify-content: center; }
 .trx-timeline { display: flex; align-items: center; gap: 10px; }
 .trx-timeline .trx-time { flex: 1; margin: 0 0 0 2px; }
+
+/* the list without the last message (Alex, 17 Oct; Settings > Interface > Show Last Message): the name and time on
+   one line, with the unread badge beside them; a draft still shows */
+.rooms.no-prev .room:not(:has(.draft)) .room-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; }
+.rooms.no-prev .room:not(:has(.draft)) .room-prev { display: none; }
+.rooms.no-prev .room:not(:has(.draft)) .room-tags { grid-column: 1 / -1; }
+.rooms.no-prev .room { min-height: 60px; }
+.rooms.no-prev .room:not(:has(.draft)) .room-bottom:not(:has(.badge, .room-muted, .room-pin)) { display: none; }

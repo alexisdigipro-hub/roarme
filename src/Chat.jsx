@@ -4,6 +4,7 @@ import { Avatar, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, setNameColor, s
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
 import { formatText, plainText, wrapSelection } from './format.jsx'
+import { RecentCalls, useCalls } from './calls.jsx'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { AttachSheet, AudioNote, MusicTile, isAudioFile, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
 
@@ -368,6 +369,13 @@ export default function Chat({ me, setMe }) {
     const { data, error } = await supabase.rpc('roar_open_direct', { other: p.id })
     if (error) toast(errText(error)); else openRoom(data)
   }
+  // voice and video calls (round 3): one call at a time, two people
+  const { startCall, screen: callScreen } = useCalls({ me, people: peopleRef, loadPeople, toast })
+  const directWith = (p) => rooms.find((r) => r.kind === 'direct' && (r.members || []).includes(p.id))?.room_id || null
+  const callRoom = (r, video) => {
+    if (!r || r.kind !== 'direct') { toast('Group calls come later; for now calls are between two people'); return }
+    startCall(otherOf(r), r.room_id, video)
+  }
   const calls = useMemo(() => {
     const ids = [...new Set(rooms.filter((r) => r.kind === 'direct').flatMap((r) => r.members || []))].filter((id) => id !== me.id)
     return ids.map((id) => people[id]).filter(Boolean).sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
@@ -479,11 +487,8 @@ export default function Chat({ me, setMe }) {
           <div className="side-scroll calls">
             <button type="button" className="new-call" onClick={() => setModal('newcall')}><span className="new-call-ico">{svg(<><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /><path d="M18 3v6M15 6h6" /></>, 20)}</span><span>Create New Call</span></button>
             <div className="hits-head">Recent Calls</div>
-            <div className="calls-empty">
-              <span className="side-panel-ico">{I.calls}</span>
-              <b>No calls yet</b>
-              <p>Voice and video calls are coming soon. Your calls will be listed here: who, incoming or outgoing, how long, and the ones you missed in red.</p>
-            </div>
+            <RecentCalls me={me} people={people} loadPeople={loadPeople} onCall={(p, roomId, video) => startCall(p, roomId || directWith(p), video)}
+              empty={<div className="calls-empty"><span className="side-panel-ico">{I.calls}</span><b>No calls yet</b><p>Call someone from Create New Call, or from the phone and camera buttons in a chat.</p></div>} />
           </div>
         )}
         {tab === 'settings' && <SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} />}
@@ -513,7 +518,7 @@ export default function Chat({ me, setMe }) {
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]}
             onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }}
-            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={() => unblock(otherOf(active)?.id)} />
+            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={() => unblock(otherOf(active)?.id)} onCall={(v) => callRoom(active, v)} />
         ) : (
           <div className="pick">
             <span className="pick-paw"><Paw size={64} /></span>
@@ -530,14 +535,14 @@ export default function Chat({ me, setMe }) {
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'newcall' && (
         <Modal title="New call" onClose={() => setModal('')}>
-          <p className="muted">Calls are coming soon. Pick who to call and ROAR will ring them once calls are on.</p>
+          <p className="muted">Pick who to call. Calls go straight from your computer to theirs.</p>
           <div className="people">
             {calls.map((p) => (
               <div key={p.id} className="person call-row">
                 <Avatar src={p.avatar_url} name={nameOf(p)} size={40} online={onlineNow(p)} />
                 <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
-                <button type="button" className="round" onClick={() => toast('Voice calls are coming soon')} aria-label="Voice call">{I.phone}</button>
-                <button type="button" className="round" onClick={() => toast('Video calls are coming soon')} aria-label="Video call">{I.video}</button>
+                <button type="button" className="round" onClick={() => { setModal(''); startCall(p, directWith(p), false) }} aria-label="Voice call">{I.phone}</button>
+                <button type="button" className="round" onClick={() => { setModal(''); startCall(p, directWith(p), true) }} aria-label="Video call">{I.video}</button>
               </div>
             ))}
           </div>
@@ -547,7 +552,7 @@ export default function Chat({ me, setMe }) {
       {modal === 'info' && active && <Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
         onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople}
-        blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={active.kind === 'direct' ? () => toast('Calls arrive with the next update') : null} />}
+        blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={active.kind === 'direct' ? (v) => { setModal(''); callRoom(active, v) } : null} />}
       {(modal === 'folders' || modal === 'newfolder') && <FoldersModal folders={myFolders} rooms={visible} titleOf={titleOf} startNew={modal === 'newfolder'} onClose={() => setModal('')} onSave={(list) => { setMyFolders(list); setModal(''); if (!list.some((f) => f.id === folder) && !BUILTIN.some(([id]) => id === folder)) setFolder('all') }} />}
       {modal === 'pickfolder' && (
         <Modal title="Add to a folder" onClose={() => setModal('')}>
@@ -646,6 +651,7 @@ export default function Chat({ me, setMe }) {
         )
       })()}
       {peek && <Peek room={peek} me={me} people={people} title={titleOf(peek)} clearedAt={cleared[peek.room_id]} onClose={() => setPeek(null)} onOpen={() => { setActiveId(peek.room_id); setPeek(null) }} />}
+      {callScreen}
       {note && <div className="toast" role="status">{note}</div>}
     </div>
   )
@@ -676,7 +682,7 @@ function Peek({ room, me, people, title, clearedAt, onClose, onOpen }) {
 }
 
 /* ---------- one conversation ---------- */
-function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock }) {
+function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall }) {
   const [msgs, setMsgs] = useState([])
   const [more, setMore] = useState(true)
   // an unsent message waits for you, per chat (shown in the list as Draft:)
@@ -1083,7 +1089,6 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
   const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && (!clearedAt || m.created_at > clearedAt)), [msgs, clearedAt])
   const pickedMsgs = picked ? msgs.filter((m) => picked.includes(m.id)) : []
-  const soon = (what) => toast(`${what} are coming soon`)
   const act = (what, arg) => { setHeadMenu(false); onAct(what, arg) }
   // messages here go by themselves after a day, a week or a month
   const setAutoDelete = async (hours) => {
@@ -1138,8 +1143,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={onlineNow(other)} />
               <span className="head-text"><strong>{title}</strong><small>{sub}</small></span>
             </button>
-            <button type="button" className="round" onClick={() => soon('Voice calls')} aria-label="Voice call" title="Voice call">{I.phone}</button>
-            <button type="button" className="round" onClick={() => soon('Video calls')} aria-label="Video call" title="Video call">{I.video}</button>
+            <button type="button" className="round" onClick={() => onCall(false)} aria-label="Voice call" title="Voice call">{I.phone}</button>
+            <button type="button" className="round" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>
             <button type="button" className="round" onClick={() => { setFind(''); setFindAt(0) }} aria-label="Search in this chat" title="Search in this chat">{I.search}</button>
             <span className="plus-wrap">
               <button type="button" className={`round${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More">{I.more}</button>
@@ -1161,7 +1166,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                           )}
                         </div>
                       )}
-                    <button type="button" onClick={() => { setHeadMenu(false); soon('Video calls') }} onMouseEnter={() => setHeadSub('')}>{I.video}<span>Video</span></button>
+                    <button type="button" onClick={() => { setHeadMenu(false); onCall(true) }} onMouseEnter={() => setHeadSub('')}>{I.video}<span>Video</span></button>
                     {room.kind !== 'group' && other && <button type="button" onClick={() => { setHeadMenu(false); onNewGroup(other) }}>{I.people}<span>Create Group</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setMedia(true) }}>{I.image}<span>Photos, videos & files</span></button>
                     {pinned && <button type="button" onClick={() => { setHeadMenu(false); goTo(pinned.id) }}>{I.pin}<span>Pinned message</span></button>}

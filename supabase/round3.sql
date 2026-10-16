@@ -1,0 +1,7 @@
+-- ROAR, round 3 (16 Oct 2026), already applied: calls.
+-- roar_may_call(person): not myself, no block either way, and their privacy "calls" allows it.
+-- roar_calls: the call log (caller, callee, video, status, started/answered/ended), readable by the two,
+--   started by the caller only when roar_may_call allows, status/answered_at/ended_at changeable by either.
+-- roar_may_signal(topic): may send to the Realtime inbox "call:<id>" (may call, or a call between the two
+--   in the last 4 hours, so answers and hang-ups always get through).
+-- realtime.messages policies roar_call_inbox_read (own inbox only) and roar_call_inbox_send.

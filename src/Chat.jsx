@@ -7,7 +7,7 @@ import { formatText, plainText, wrapSelection } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
-import { AttachSheet, AudioNote, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
+import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
 
 // the moving bars while a voice message records (Alex, 16 Oct): not the real sound, a lively stand-in
 const REC_WAVE = Array.from({ length: 140 }, (_, i) => (0.35 + 0.65 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.45))).toFixed(2))
@@ -751,6 +751,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const [err, setErr] = useState('')
   const [viewer, setViewer] = useState(null) // { items, index }
   const [menu, setMenu] = useState(null) // { m, x, y }
+  const [wideIds, setWideIds] = useState(() => new Set()) // videos widened across the chat
+  const [cinema, setCinema] = useState(null) // lights off: { kind: 'file' | 'embed', src, at }
+  const flipWide = (id) => setWideIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const [headMenu, setHeadMenu] = useState(false)
   const [picked, setPicked] = useState(null) // null, or the ids picked with Select
   const [forward, setForward] = useState(null) // the messages being forwarded
@@ -1276,11 +1279,13 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           const big = prefs.bigEmoji && m.kind === 'text' && !m.deleted_at && !quoted && isEmojiOnly(m.body)
           const isVideo = m.kind === 'file' && /^video\//.test(m.file?.type || '')
           const isGifFile = m.kind === 'file' && /gif/.test(m.file?.type || '')
+          const vlink = !m.deleted_at && m.kind === 'text' ? videoLinkOf(m.body) : null
+          const wide = wideIds.has(m.id)
           const hit = find && found.includes(m.id)
           return (
             <div key={m.id} id={`m-${m.id}`}>
               {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
-              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}`}
+              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${wide ? ' wide-media' : ''}`}
                 onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => onTap(e, m)}
                 onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (onBubble(e)) onDouble(m, e) }}
                 onContextMenu={(e) => { if (onBubble(e)) openMenu(e, m) }}>
@@ -1293,11 +1298,12 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                     {m.deleted_at ? <i>Message deleted</i>
                       : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : openPhoto(m))} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
-                      : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} />
+                      : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
                     {!m.deleted_at && m.body && <span className="text">{formatText(m.body, withMentions)}</span>}
+                    {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />}
                     <span className="meta">{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
                   {(rx || replyCount[m.id]) && (
@@ -1442,6 +1448,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       )}
       {forward && <Forward msgs={forward} me={me} rooms={rooms} titleOf={titleOf} fromRoom={room.room_id} onClose={() => setForward(null)} onDone={(n) => { setForward(null); setPicked(null); toast(n > 1 ? `${n} messages forwarded` : 'Forwarded') }} />}
       {viewer && <OnTop><MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)} /></OnTop>}
+      {cinema && <OnTop><Cinema item={cinema} onClose={() => setCinema(null)} /></OnTop>}
     </div>
   )
 }

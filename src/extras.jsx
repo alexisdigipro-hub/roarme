@@ -167,13 +167,72 @@ export function AudioNote({ file }) {
 }
 
 /* ---------- a video in a bubble ---------- */
-export function VideoTile({ file, auto = true, play = false }) {
+/* Every video, sent or linked, has two buttons on it (Alex, 16 Oct): ⇔ widens it across the whole chat, and
+   lights off puts it alone on black over the whole screen. */
+const wideIco = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" /></svg>
+const narrowIco = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12h7M21 12h-7M7 8l4 4-4 4M17 8l-4 4 4 4" /></svg>
+const lightsIco = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" /></svg>
+export function VideoTools({ wide, onWide, onCinema }) {
+  return (
+    <span className="vid-tools" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+      {onWide && <button type="button" onClick={onWide} title={wide ? 'Back to size' : 'Across the chat'} aria-label={wide ? 'Back to size' : 'Across the chat'}>{wide ? narrowIco : wideIco}</button>}
+      {onCinema && <button type="button" onClick={onCinema} title="Lights off" aria-label="Lights off">{lightsIco}</button>}
+    </span>
+  )
+}
+
+export function VideoTile({ file, auto = true, play = false, wide, onWide, onCinema }) {
   const [go, setGo] = useState(auto)
   const [url, setUrl] = useState('')
+  const ref = useRef(null)
   useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{I.play}<span>Video · {fmtBytes(file?.size)}</span><small>Tap to load</small></button>
   // videos can play by themselves, silent and on a loop (Settings > Data and Storage)
-  return url ? <video className="pic-img ready" src={url} controls preload="metadata" autoPlay={play} muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} /> : <span className="pic-wait" />
+  if (!url) return <span className="pic-wait" />
+  return (
+    <span className="vid-box">
+      <video ref={ref} className="pic-img ready" src={url} controls preload="metadata" autoPlay={play} muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} />
+      <VideoTools wide={wide} onWide={onWide} onCinema={onCinema && (() => { const v = ref.current; const at = v?.currentTime || 0; v?.pause(); onCinema({ kind: 'file', src: url, at }) })} />
+    </span>
+  )
+}
+
+/* a YouTube or Vimeo link in a message plays right there, from its picture */
+export function videoLinkOf(text) {
+  const m = (text || '').match(/https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?\S*?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})|https?:\/\/(?:www\.)?vimeo\.com\/(?:video\/)?(\d+)/)
+  if (!m) return null
+  return m[1]
+    ? { kind: 'YouTube', thumb: `https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg`, src: `https://www.youtube-nocookie.com/embed/${m[1]}?autoplay=1&rel=0&playsinline=1` }
+    : { kind: 'Vimeo', thumb: '', src: `https://player.vimeo.com/video/${m[2]}?autoplay=1` }
+}
+export function LinkVideo({ link, wide, onWide, onCinema }) {
+  const [on, setOn] = useState(false)
+  return (
+    <span className="vid-box link-vid" onClick={(e) => e.stopPropagation()}>
+      {on
+        ? <iframe src={link.src} title={link.kind} allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen />
+        : <button type="button" className="vid-poster" style={link.thumb ? { backgroundImage: `url(${link.thumb})` } : undefined} onClick={() => setOn(true)} aria-label={`Play on ${link.kind}`}><i>{I.play}</i><small>{link.kind}</small></button>}
+      <VideoTools wide={wide} onWide={onWide} onCinema={onCinema && (() => { setOn(false); onCinema({ kind: 'embed', src: link.src }) })} />
+    </span>
+  )
+}
+
+/* lights off: the video alone on black over the whole screen; Esc, the × or a click on the black closes it */
+export function Cinema({ item, onClose }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const k = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', k)
+    return () => document.removeEventListener('keydown', k)
+  }, [onClose])
+  return (
+    <div className="cinema" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      {item.kind === 'file'
+        ? <video ref={ref} src={item.src} controls autoPlay playsInline onLoadedMetadata={() => { if (ref.current && item.at) ref.current.currentTime = item.at }} />
+        : <iframe src={item.src} title="Video" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen />}
+      <button type="button" className="cinema-x" onClick={onClose} aria-label="Lights on" title="Lights on (Esc)">{I.x}</button>
+    </div>
+  )
 }
 
 /* ---------- your own folders (kept on this device) ---------- */

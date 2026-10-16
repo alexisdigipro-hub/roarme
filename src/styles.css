@@ -2009,3 +2009,33 @@ html[data-theme='aurum'] .nav-ico { background: none !important; color: var(--ac
 html[data-theme='aurum'] .set-tick { background: var(--gold); color: #1a1408; box-shadow: 0 0 12px rgba(240, 166, 74, .5); }
 html[data-theme='aurum'] .set-preview .pv.mine, html[data-theme='aurum'] .wall-b.mine { background: var(--gold); color: #1a1408; }
 html[data-theme='aurum'] .boot-paw { border-radius: 50%; }
+
+/* videos in messages (Alex, 16 Oct): ⇔ across the chat, lights off over the whole screen */
+.vid-box { position: relative; display: block; }
+.vid-box > video { display: block; }
+.vid-tools { position: absolute; z-index: 2; top: 8px; right: 8px; display: flex; gap: 6px; opacity: 0; transition: opacity .18s; }
+.vid-box:hover .vid-tools, .vid-tools:focus-within { opacity: 1; }
+@media (hover: none) { .vid-tools { opacity: 1; } }
+.vid-tools button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid rgba(255, 255, 255, .25); border-radius: 50%; background: rgba(10, 12, 16, .55); color: #fff; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); cursor: pointer; transition: background .15s, transform .12s; }
+.vid-tools button:hover { background: rgba(10, 12, 16, .8); }
+.vid-tools button:active { transform: scale(.92); }
+.link-vid { width: var(--media-w); max-width: 100%; margin: 6px 0 2px; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #000; }
+.link-vid iframe { display: block; width: 100%; height: 100%; border: 0; }
+.vid-poster { position: relative; display: grid; place-items: center; width: 100%; height: 100%; padding: 0; border: 0; background: #111 center / cover no-repeat; color: #fff; cursor: pointer; }
+.vid-poster i { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: rgba(0, 0, 0, .55); box-shadow: 0 6px 20px rgba(0, 0, 0, .4); transition: transform .15s; }
+.vid-poster i svg { width: 24px; height: 24px; margin-left: 3px; }
+.vid-poster:hover i { transform: scale(1.08); }
+.vid-poster small { position: absolute; left: 10px; bottom: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .55); font-size: 11.5px; font-weight: 600; }
+/* across the chat: the whole row, edge to edge, the picture never cut */
+.msg.wide-media .bubble-col { flex: 1; min-width: 0; max-width: 100%; }
+.msg.wide-media .bubble { width: 100%; max-width: 100%; }
+.msg.wide-media :is(.bubble.pic .pic-img, .link-vid) { width: 100% !important; max-height: 78vh !important; }
+.msg.wide-media video.pic-img { object-fit: contain !important; background: #000; }
+/* lights off */
+.cinema { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: #000; animation: cinema-in .35s ease both; -webkit-app-region: no-drag; }
+.cinema > :is(video, iframe) { width: min(100vw, calc(100vh * 16 / 9)); max-height: 100vh; border: 0; background: #000; }
+.cinema > iframe { aspect-ratio: 16 / 9; height: auto; }
+.cinema > video { height: auto; }
+.cinema-x { position: absolute; top: calc(14px + var(--bar, 0px)); right: 16px; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 1px solid rgba(255, 255, 255, .25); border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; opacity: .7; cursor: pointer; transition: opacity .2s; }
+.cinema-x:hover { opacity: 1; }
+@keyframes cinema-in { from { opacity: 0; } to { opacity: 1; } }

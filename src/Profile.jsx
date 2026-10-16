@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { errText, fileLink, fmtBytes, lastSeenText, nameOf, shrinkImage, supabase, timeOf } from './lib.js'
-import { Avatar, I, Modal, OnTop } from './ui.jsx'
+import { errText, fileLink, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
+import { Avatar, CropModal, I, Modal, OnTop } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { usePrefs } from './prefs.js'
 
@@ -30,11 +30,12 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const picRef = useRef(null)
 
   // a new picture: the group's (anyone in it), or my own one for a friend who has none (only I see it)
-  const pickPic = async (raw) => {
-    if (!raw) return
+  const [cropFile, setCropFile] = useState(null) // the picture being adjusted before it is saved
+  const pickPic = async (file) => {
+    setCropFile(null)
+    if (!file) return
     setBusyPic(true); setErr('')
     try {
-      const file = await shrinkImage(raw, 640, 0.86)
       const path = `${me.id}/${group ? `group-${room.room_id}` : `contact-${other.id}`}-${Date.now()}.jpg`
       const up = await supabase.storage.from('roar-avatars').upload(path, file, { contentType: 'image/jpeg' })
       if (up.error) throw up.error
@@ -186,7 +187,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
               </button>
             )
             : <Avatar src={group ? room.avatar_url : other?.avatar_url} name={title} size={112} group={group} />}
-          <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { pickPic(e.target.files?.[0]); e.target.value = '' }} />
+          <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { setCropFile(e.target.files?.[0] || null); e.target.value = '' }} />
+          {cropFile && <CropModal file={cropFile} title={group ? 'Group photo' : `Your photo for ${title}`} onDone={pickPic} onClose={() => setCropFile(null)} />}
           {group && admin
             ? <input className="pf-name-edit" value={name} onChange={(e) => setName(e.target.value)} onBlur={rename} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} title="Rename the group" />
             : <h2 className="pf-name">{title}</h2>}

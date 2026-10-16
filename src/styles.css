@@ -1638,3 +1638,16 @@ html[data-desktop='win32'] { --bar: 32px; }
 html[data-desktop] #root { height: calc(100% - var(--bar)); margin-top: var(--bar); }
 html[data-desktop] body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: var(--bar); z-index: 999; -webkit-app-region: drag; }
 html[data-desktop] :is(.modal-back, .call, .lock, .viewer) { -webkit-app-region: no-drag; }
+
+/* pictures always round, never stretched (16 Oct) */
+.av img { position: absolute; inset: 0; }
+.av > span:first-child { position: relative; }
+
+/* adjusting a new picture in its round frame */
+.crop { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 6px 0 2px; }
+.crop-frame { position: relative; overflow: hidden; border-radius: 22px; background: #0c0d10; cursor: grab; touch-action: none; user-select: none; }
+.crop-frame:active { cursor: grabbing; }
+.crop-frame img { position: absolute; left: 50%; top: 50%; max-width: none; pointer-events: none; }
+.crop-ring { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 999px rgba(0, 0, 0, .55); border: 2px solid rgba(255, 255, 255, .85); pointer-events: none; }
+.crop-zoom { display: flex; align-items: center; gap: 10px; width: 280px; color: var(--muted); }
+.crop-zoom input { flex: 1; accent-color: var(--accent); }

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { initialsOf } from './lib.js'
 
@@ -168,3 +168,63 @@ export function Paw({ size = 22 }) {
   )
 }
 export const Wordmark = ({ size = 20 }) => <span className="wordmark"><Paw size={size} /><b>ROAR</b></span>
+
+/* Adjust a new picture before it is saved (Alex, 16 Oct): drag to place it, slide or scroll to zoom,
+   inside the round frame it will be shown in. Gives back a square JPEG, 640 px. */
+const FRAME = 280
+export function CropModal({ file, title = 'Adjust photo', onDone, onClose }) {
+  const [img, setImg] = useState(null)
+  const [z, setZ] = useState(1)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const drag = useRef(null)
+  useEffect(() => {
+    const url = URL.createObjectURL(file)
+    const i = new Image()
+    i.onload = () => setImg(i)
+    i.src = url
+    return () => URL.revokeObjectURL(url)
+  }, [file])
+  const base = img ? Math.max(FRAME / img.naturalWidth, FRAME / img.naturalHeight) : 1
+  const dw = img ? img.naturalWidth * base * z : FRAME
+  const dh = img ? img.naturalHeight * base * z : FRAME
+  const clamp = (p, w = dw, h = dh) => ({ x: Math.max(-(w - FRAME) / 2, Math.min((w - FRAME) / 2, p.x)), y: Math.max(-(h - FRAME) / 2, Math.min((h - FRAME) / 2, p.y)) })
+  const zoomTo = (nz) => {
+    const v = Math.max(1, Math.min(4, nz))
+    setZ(v)
+    if (img) setPos((p) => clamp(p, img.naturalWidth * base * v, img.naturalHeight * base * v))
+  }
+  const down = (e) => { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { sx: e.clientX, sy: e.clientY, ...pos } }
+  const move = (e) => { if (drag.current) setPos(clamp({ x: drag.current.x + e.clientX - drag.current.sx, y: drag.current.y + e.clientY - drag.current.sy })) }
+  const up = () => { drag.current = null }
+  const save = () => {
+    if (!img) return
+    const O = 640
+    const r = O / FRAME
+    const c = document.createElement('canvas')
+    c.width = O
+    c.height = O
+    const g = c.getContext('2d')
+    g.fillStyle = '#111'
+    g.fillRect(0, 0, O, O)
+    g.imageSmoothingQuality = 'high'
+    g.drawImage(img, O / 2 + pos.x * r - (dw * r) / 2, O / 2 + pos.y * r - (dh * r) / 2, dw * r, dh * r)
+    c.toBlob((b) => b && onDone(new File([b], 'photo.jpg', { type: 'image/jpeg' })), 'image/jpeg', 0.9)
+  }
+  return (
+    <Modal title={title} onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={save} disabled={!img}>Save</button></>}>
+      <div className="crop">
+        <div className="crop-frame" style={{ width: FRAME, height: FRAME }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+          onWheel={(e) => zoomTo(z * (e.deltaY < 0 ? 1.08 : 1 / 1.08))}>
+          {img && <img src={img.src} alt="" draggable={false} style={{ width: dw, height: dh, transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))` }} />}
+          <span className="crop-ring" />
+        </div>
+        <label className="crop-zoom">
+          {svg(<><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5M8.5 11h5" /></>, 18)}
+          <input type="range" min="1" max="4" step="0.01" value={z} onChange={(e) => zoomTo(Number(e.target.value))} aria-label="Zoom" />
+          {svg(<><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5M8.5 11h5M11 8.5v5" /></>, 18)}
+        </label>
+        <small className="muted">Drag to place it, slide or scroll to zoom</small>
+      </div>
+    </Modal>
+  )
+}

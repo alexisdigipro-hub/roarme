@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
-import { Avatar, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
+import { Avatar, CropModal, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
 import { formatText, plainText, wrapSelection } from './format.jsx'
@@ -1541,9 +1541,10 @@ function Settings({ me, setMe, onClose, inline = false }) {
     await save({ display_name: name.trim(), username, bio: bio.trim() })
     setBusy(false)
   }
-  const pickPic = async (raw) => {
-    if (!raw) return
-    const file = await shrinkImage(raw, 512, 0.88)
+  const [cropFile, setCropFile] = useState(null) // a picture being adjusted before it is saved
+  const pickPic = async (file) => {
+    setCropFile(null)
+    if (!file) return
     const path = `${me.id}/avatar-${Date.now()}.jpg`
     const up = await supabase.storage.from('roar-avatars').upload(path, file, { contentType: file.type || 'image/jpeg' })
     if (up.error) { setErr(errText(up.error)); return }
@@ -1554,7 +1555,8 @@ function Settings({ me, setMe, onClose, inline = false }) {
     <>
       <div className="info-top">
         <button type="button" className="pic-pick" onClick={() => picRef.current?.click()} title="Change your picture"><Avatar src={me.avatar_url} name={nameOf(me)} size={96} /><span>Change</span></button>
-        <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { pickPic(e.target.files?.[0]); e.target.value = '' }} />
+        <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { setCropFile(e.target.files?.[0] || null); e.target.value = '' }} />
+        {cropFile && <CropModal file={cropFile} title="Your photo" onDone={pickPic} onClose={() => setCropFile(null)} />}
       </div>
       <label className="field"><span>Name</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Shown on your messages" /></label>
       <label className="field"><span>Username</span><div className="input-at"><i>@</i><input className="input" value={username} onChange={(e) => setUsername(cleanUsername(e.target.value))} /></div></label>

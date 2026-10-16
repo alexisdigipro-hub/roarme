@@ -2132,3 +2132,80 @@ html[data-mode='light'] .msg:not(.mine) .tr-exp.soon { color: #c8321f; }
 .attach-send { gap: 8px; padding: 0 22px; }
 .attach-send svg { width: 17px; height: 17px; }
 .modal-foot:has(> .attach-send:only-child) { justify-content: flex-end; }
+
+/* ---------- RoarTransfer's own window and download page (Alex, 16 Oct): like WeTransfer, in RoarMe's glass ---------- */
+.modal:has(.rt) .modal-head h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.modal:has(.rt) { position: relative; }
+.modal:has(.rt) .modal-head { position: absolute; top: 0; right: 0; z-index: 2; padding: 14px; }
+.modal:has(.rt) .modal-body { padding-top: 22px; }
+.rt { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+.rt-mark { display: inline-flex; align-items: center; gap: 9px; align-self: center; }
+.rt-mark i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--accent-ink, #fff);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 100%, #fff 22%), var(--accent)); box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 45%, transparent), inset 0 1px 0 rgba(255, 255, 255, .35); }
+.rt-mark i svg { width: 19px; height: 19px; stroke-width: 2.1; }
+.rt-mark b { font-size: 19px; font-weight: 800; letter-spacing: -.02em; text-transform: none; }
+.rt-mark b span { color: var(--accent); }
+.rt-mark.big { flex-direction: column; gap: 10px; margin: 4px 0 2px; }
+.rt-mark.big i { width: 64px; height: 64px; }
+.rt-mark.big i svg { width: 32px; height: 32px; }
+.rt-mark.big b { font-size: 25px; }
+.rt-sub { margin: 0; text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.rt-hint { margin: -4px 0 0; text-align: center; font-size: 13px; font-weight: 600; }
+.rt-title { margin: 0; text-align: center; font-size: 20px; font-weight: 800; }
+.rt-drop { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 26px 14px; border-radius: 22px; cursor: pointer; color: var(--text);
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 45%, var(--edge)); background: color-mix(in srgb, var(--accent) 6%, var(--glass)); transition: background .2s, border-color .2s, transform .15s; }
+.rt-drop:hover, .rt-drop.over { background: color-mix(in srgb, var(--accent) 14%, var(--glass)); border-color: var(--accent); }
+.rt-drop.over { transform: scale(1.02); }
+.rt-drop i { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 4px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
+.rt-drop b { font-size: 15px; }
+.rt-drop small { color: var(--muted); font-size: 12.5px; }
+.rt-drop.has { flex-direction: row; justify-content: center; gap: 10px; padding: 12px 14px; }
+.rt-drop.has i { width: 30px; height: 30px; margin: 0; }
+.rt-drop.has small { display: none; }
+.rt-files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+.rt-files li { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-radius: 16px; background: var(--glass); border: 1px solid var(--edge); }
+.rt-file-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.rt-file-ico svg { width: 17px; height: 17px; }
+.rt-file-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rt-file-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; font-weight: 600; }
+.rt-file-text small { color: var(--muted); font-size: 12px; }
+.rt-x { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.rt-x:hover { background: var(--glass-2); color: var(--text); }
+.rt-x svg { width: 14px; height: 14px; }
+.rt-meter { display: flex; flex-direction: column; gap: 5px; }
+.rt-bar { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--text) 12%, transparent); overflow: hidden; }
+.rt-bar i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .3s; }
+.rt-meter small { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rt-meter.over .rt-bar i { background: var(--danger); }
+.rt-meter.over small { color: var(--danger); font-weight: 600; }
+.rt-note { border-radius: 999px; }
+.rt-facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.rt-facts .tr-exp { margin: 0; }
+.rt-fact { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--muted); background: var(--glass); border: 1px solid var(--edge); }
+.rt-fact svg { width: 15px; height: 15px; }
+.rt-go { align-self: stretch; justify-content: center; gap: 8px; height: 46px; border-radius: 999px; font-size: 15px; text-decoration: none; }
+.rt-go svg { width: 19px; height: 19px; }
+.rt-ring { position: relative; display: grid; place-items: center; align-self: center; margin: 4px 0; }
+.rt-ring svg { transform: rotate(-90deg); }
+.rt-ring .ring-track { fill: none; stroke: color-mix(in srgb, var(--text) 12%, transparent); stroke-width: 9; }
+.rt-ring-fill { fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset .4s ease; filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 50%, transparent)); }
+.rt-ring b { position: absolute; font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rt-acts { display: flex; gap: 10px; }
+.rt-acts .btn { flex: 1; justify-content: center; gap: 7px; height: 44px; border-radius: 999px; }
+.rt-done { align-self: center; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; color: #fff; background: #34c759; box-shadow: 0 10px 30px rgba(52, 199, 89, .4); animation: pop .4s cubic-bezier(.3, 1.4, .5, 1) both; }
+.rt-done svg { width: 38px; height: 38px; stroke-width: 2.4; }
+.rt-done.fail { background: var(--glass-2); color: var(--muted); box-shadow: none; }
+.rt-link { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 2px; padding: 4px 2px; border: 0; background: none; color: var(--accent); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.rt-link:hover span { text-decoration: underline; }
+.rt-link svg { width: 15px; height: 15px; }
+.msg.mine .rt-link { color: #fff; }
+.rt-link.small { flex: none; align-self: center; padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.rt-link.small:hover span { text-decoration: none; }
+.file.transfer .rt-link { width: 100%; justify-content: center; }
+.rt-page { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; box-sizing: border-box; }
+.rt-card { width: min(440px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 28px 24px 18px; border-radius: 30px; box-sizing: border-box;
+  background: var(--glass); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 30px 80px rgba(0, 0, 0, .35); animation: pop .4s cubic-bezier(.25, .8, .3, 1) both; }
+.rt-wait { align-self: center; width: 100%; height: 120px; border-radius: 18px; }
+.rt-preview { width: 100%; max-height: 300px; border-radius: 18px; background: #000; object-fit: contain; }
+.rt-foot { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; color: var(--muted); font-size: 12px; text-decoration: none; }
+html[data-mode='light'] :is(.rt, .rt-card) .tr-exp:not(.soon) { color: #a35f00; background: rgba(255, 170, 0, .14); border-color: rgba(214, 140, 0, .35); }

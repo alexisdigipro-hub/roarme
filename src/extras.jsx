@@ -53,7 +53,7 @@ export function MediaViewer({ items, index, onClose }) {
 }
 
 /* ---------- photos, videos and files before they are sent: gallery, camera, file, caption ---------- */
-export function AttachSheet({ initial = [], onClose, onSend }) {
+export function AttachSheet({ initial = [], onClose, onSend, onTransfer }) {
   const prefs = usePrefs()
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
@@ -61,7 +61,6 @@ export function AttachSheet({ initial = [], onClose, onSend }) {
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
-  const tr = useRef(null)
   const touchOnly = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches
   const add = (list) => setFiles((f) => [...f, ...list])
   const urls = useRef(new Map())
@@ -81,9 +80,8 @@ export function AttachSheet({ initial = [], onClose, onSend }) {
         {/* on a computer the camera button only opened the same file picker as Gallery (Alex, 16 Oct): phones only */}
         {touchOnly && <button type="button" className="attach-tile" style={{ '--tint': '#34c759' }} onClick={() => cam.current?.click()}><i>{I.camera}</i><b>Camera</b><small>Take one now</small></button>}
         <button type="button" className="attach-tile" style={{ '--tint': '#ff9f0a' }} onClick={() => doc.current?.click()}><i>{I.file}</i><b>File</b><small>Any document</small></button>
-        <button type="button" className="attach-tile" style={{ '--tint': 'var(--accent)' }} onClick={() => tr.current?.click()}><i>{I.transfer}</i><b>RoarTransfer</b><small>Up to 3 GB, kept 3 days</small></button>
+        <button type="button" className="attach-tile" style={{ '--tint': 'var(--accent)' }} onClick={onTransfer}><i>{I.transfer}</i><b>RoarTransfer</b><small>Up to 3 GB, kept 3 days</small></button>
       </div>
-      <input ref={tr} type="file" multiple hidden onChange={(e) => { const l = [...(e.target.files || [])]; e.target.value = ''; if (l.length) onSend(l, caption.trim(), false, true) }} />
       <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
       <input ref={cam} type="file" accept="image/*,video/*" capture="environment" hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
       <input ref={doc} type="file" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />

@@ -7,6 +7,7 @@ import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
+import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
 
@@ -777,7 +778,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const recRef = useRef(null)
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
-  const transferPick = useRef(null)
+  const [transferOpen, setTransferOpen] = useState(false)
   const stick = useRef(true)
   const PAGE = 60
 
@@ -929,7 +930,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   }
 
   // viaTransfer: the RoarTransfer button beside the clip (Alex, 16 Oct) sends the files as they are, any size up to 3 GB
-  const sendFiles = async (files, caption = '', compress = true, viaTransfer = false) => {
+  // hooks: the RoarTransfer window follows its own files (batch), can stop them, and hears each one sent
+  const sendFiles = async (files, caption = '', compress = true, viaTransfer = false, hooks = {}) => {
     if (viaTransfer) compress = false
     setAttach(null); setErr('')
     const reply = replyTo
@@ -940,12 +942,13 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const ok = files.filter((f) => { if (f.size > TRANSFER_MAX) { setErr(`${f.name} is over 3 GB, the most RoarTransfer takes.`); return false } return true })
     // Safari lets a video play only from inside the tap: each clip is readied now, before anything waits
     const handles = new Map(ok.filter(shrinkVid).map((f) => [f, prepareVideo(f)]))
-    const tiles = ok.map((f) => ({ id: crypto.randomUUID(), name: f.name, size: f.size, big: viaTransfer || (f.size > SMALL_MAX && !shrinkVid(f)), preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : '', p: 0, stage: 'prep' }))
+    const tiles = ok.map((f) => ({ id: crypto.randomUUID(), name: f.name, size: f.size, big: viaTransfer || (f.size > SMALL_MAX && !shrinkVid(f)), batch: hooks.batch, preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : '', p: 0, stage: 'prep' }))
     setOutbox((l) => [...l, ...tiles])
     let n = 0
     for (const raw of ok) {
       const tile = tiles[n]
       n += 1
+      if (hooks.stopped?.()) { dropOut(tile.id); continue }
       const isImg = /^image\/(jpeg|png|webp)$/.test(raw.type)
       try {
         let file = isImg && compress ? await shrinkImage(raw, prefs.largePhotos ? 2560 : 1600, prefs.largePhotos ? 0.88 : 0.82) : raw
@@ -964,12 +967,14 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         if (error) throw error
         stick.current = true
         setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+        hooks.onFile?.(meta)
       } catch (e) {
-        if (!e?.cancelled) setErr(`${raw.name}: ${errText(e)}`)
+        if (!e?.cancelled) { setErr(`${raw.name}: ${errText(e)}`); hooks.onError?.(raw.name, errText(e)) }
       }
       releaseVideo(handles.get(raw))
       dropOut(tile.id)
     }
+    hooks.onEnd?.()
   }
 
   // voice messages: record, then send or throw away
@@ -1393,8 +1398,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         ) : (
           <div className="compose">
             {!editing && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.clip}</button>}
-            {!editing && <button type="button" className="round" onClick={() => transferPick.current?.click()} aria-label="RoarTransfer" title="RoarTransfer: big files as they are, up to 3 GB, kept 3 days">{I.transfer}</button>}
-            <input ref={transferPick} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files || [])]; e.target.value = ''; if (f.length) sendFiles(f, '', false, true) }} />
+            {!editing && <button type="button" className="round" onClick={() => setTransferOpen(true)} aria-label="RoarTransfer" title="RoarTransfer: big files as they are, up to 3 GB, kept 3 days">{I.transfer}</button>}
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
               {sel && (
                 <span className="fmt-bar" role="toolbar" aria-label="Format" onMouseDown={(e) => e.preventDefault()}>
@@ -1476,7 +1480,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} />}
+      {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} />}
+      {transferOpen && <TransferWindow title={title} outbox={outbox} onStart={(files, note, hooks) => sendFiles(files, note, false, true, hooks)} onClose={() => setTransferOpen(false)} />}
       {media && <SharedMedia roomId={room.room_id} onClose={() => setMedia(false)} onOpen={async (list, index) => { setMedia(false); const items = await Promise.all(list.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name }))); setViewer({ items, index }) }} />}
       {wallPick && (
         <Modal title="Chat wallpaper" onClose={() => setWallPick(false)} foot={<><button type="button" className="btn" onClick={() => { setPrefs({ background: wall }); setWalls({}); setWallPick(false); toast('Wallpaper set for all chats') }}>Use for all chats</button><button type="button" className="btn btn-main" onClick={() => setWallPick(false)}>Done</button></>}>
@@ -1564,8 +1569,6 @@ const FMT_MARKS = [
 /* RoarTransfer: a big file kept 3 days, then gone; Download saves it under its own name, a video can play
    with the lights off */
 const SMALL_MAX = 50e6
-const TRANSFER_MAX = 3 * 1024 ** 3
-const TRANSFER_DAYS = 3
 function TransferTile({ file, onCinema }) {
   const left = new Date(file?.expires || 0).getTime() - Date.now()
   const gone = left <= 0
@@ -1594,6 +1597,7 @@ function TransferTile({ file, onCinema }) {
           <button type="button" className="btn btn-main" disabled={busy} onClick={get}>{I.download}<span>{busy ? 'Opening…' : 'Download'}</span></button>
         </span>
       )}
+      {!gone && <CopyLink file={file} />}
     </span>
   )
 }

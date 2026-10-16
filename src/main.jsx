@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import { TransferPage } from './transfer.jsx'
 import './styles.css'
 import { startI18n } from './i18n.js'
 
@@ -18,8 +19,11 @@ window.addEventListener('resize', () => {
   resizeT = setTimeout(() => document.documentElement.classList.remove('win-resizing'), 180)
 })
 
+// a RoarTransfer download link (?t=…) opens its own page, no account needed
+const transferToken = new window.URLSearchParams(window.location.search).get('t')
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    {transferToken ? <TransferPage token={transferToken} /> : <App />}
   </StrictMode>,
 )

@@ -30,3 +30,25 @@ select cron.schedule('roar-transfer-sweep', '7 * * * *', $$
     body := '{}'::jsonb
   )
 $$);
+
+-- RoarTransfer download links (16 Oct 2026): a short token per file; the Edge Function roar-transfer-get turns it into
+-- a download for anyone with the link until the file expires. Only members of the chat can make one.
+create table if not exists public.roar_transfer_links (
+  token text primary key check (token ~ '^[A-Za-z0-9]{10,32}$'),
+  path text not null,
+  name text not null default '',
+  size bigint not null default 0,
+  type text not null default '',
+  expires_at timestamptz not null,
+  created_by uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.roar_transfer_links enable row level security;
+drop policy if exists roar_transfer_links_insert on public.roar_transfer_links;
+create policy roar_transfer_links_insert on public.roar_transfer_links for insert to authenticated
+  with check (created_by = auth.uid() and public.roar_file_ok(path) and expires_at <= now() + interval '3 days 1 hour');
+drop policy if exists roar_transfer_links_read on public.roar_transfer_links;
+create policy roar_transfer_links_read on public.roar_transfer_links for select to authenticated
+  using (public.roar_file_ok(path));
+grant select, insert on public.roar_transfer_links to authenticated;
+revoke all on public.roar_transfer_links from anon;

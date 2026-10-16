@@ -2439,3 +2439,9 @@ html[data-mode='light'] .pf-tr:not(.soon):not(.gone) .pf-tr-left { color: #a35f0
 .lib-tr .trx-round { width: 36px; height: 36px; }
 .lib-seg button.on i { color: var(--accent-ink, #fff); background: color-mix(in srgb, var(--accent-ink, #fff) 22%, transparent); }
 html[data-mode='light'] .lib-tr:not(.soon) .pf-tr-left { color: #a35f00; background: rgba(255, 170, 0, .12); border-color: rgba(214, 140, 0, .32); }
+
+/* the search box hides until the list is pulled down at its top (Alex, 17 Oct) */
+.search-wrap { display: grid; grid-template-rows: 0fr; opacity: 0; margin-bottom: -12px; transition: grid-template-rows .32s cubic-bezier(.25, .8, .3, 1), opacity .22s, margin-bottom .32s cubic-bezier(.25, .8, .3, 1); }
+.search-wrap > div { min-height: 0; overflow: hidden; padding: 0 1px; }
+.search-wrap.open { grid-template-rows: 1fr; opacity: 1; margin-bottom: 0; }
+.search-wrap .search { margin: 1px 0; }

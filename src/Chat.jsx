@@ -79,6 +79,24 @@ export default function Chat({ me, setMe }) {
   const footLens = useLens(`${tab}|${prefs.callsTab}|${picking}`) // the Settings page open on the right
   const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
   const searchRef = useRef(null)
+  // the search box hides and comes out when the list is pulled down at its top (Alex, 17 Oct), as on the iPhone
+  const [searchOpen, setSearchOpen] = useState(false)
+  const pullY = useRef(null)
+  const listAtTop = (e) => (e.target.closest?.('.rooms')?.scrollTop || 0) <= 0
+  const searchBusy = () => !!q.trim() || document.activeElement === searchRef.current
+  const onListWheel = (e) => {
+    if (e.deltaY < -4 && listAtTop(e)) setSearchOpen(true)
+    else if (e.deltaY > 4 && !searchBusy()) setSearchOpen(false)
+  }
+  const onListTouch = {
+    onTouchStart: (e) => { pullY.current = listAtTop(e) ? e.touches[0].clientY : null },
+    onTouchMove: (e) => {
+      if (pullY.current == null) return
+      const d = e.touches[0].clientY - pullY.current
+      if (d > 36) setSearchOpen(true)
+      else if (d < -24 && !searchBusy()) setSearchOpen(false)
+    },
+  }
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
   const toast = useCallback((s) => { setNote(s); clearTimeout(noteTimer.current); noteTimer.current = setTimeout(() => setNote(''), 2200) }, [])
@@ -107,7 +125,7 @@ export default function Chat({ me, setMe }) {
   // ⌘K / Ctrl+K: the search
   useEffect(() => {
     const k = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setTab('chats'); requestAnimationFrame(() => searchRef.current?.focus()) }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setTab('chats'); setSearchOpen(true); requestAnimationFrame(() => searchRef.current?.focus()) }
       if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); setTab('settings'); setSetPage('keys') }
     }
     document.addEventListener('keydown', k)
@@ -446,8 +464,12 @@ export default function Chat({ me, setMe }) {
         </div>
         {tab === 'chats' && (
           <>
-            <label className="search">{I.search}<input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search (⌘K)" onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur() } }} /></label>
-            <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`}>
+            <div className={`search-wrap${searchOpen || q.trim() ? ' open' : ''}`}><div>
+              <label className="search">{I.search}<input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search (⌘K)" tabIndex={searchOpen ? 0 : -1}
+                onBlur={() => { if (!q.trim()) setTimeout(() => setSearchOpen(false), 1200) }}
+                onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur(); setSearchOpen(false) } }} /></label>
+            </div></div>
+            <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel} {...onListTouch}>
             {!q.trim() && (
               <nav ref={tabsLens} className="tabs lens tabs-scroll" onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
                 {allFolders.map((f) => {

@@ -255,3 +255,7 @@ begin
 end $$;
 revoke all on function public.roar_pin(uuid, uuid) from public, anon;
 grant execute on function public.roar_pin(uuid, uuid) to authenticated;
+
+-- the helpers are for the database's own rules, not for calling from outside (16 Oct, Supabase advisor)
+revoke all on function public.roar_is_member(uuid), public.roar_is_admin(uuid), public.roar_file_ok(text), public.roar_touch_room() from public, anon;
+revoke all on function public.roar_touch_room() from authenticated;

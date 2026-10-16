@@ -3,7 +3,10 @@
 // next start without a new install. Links that leave ROAR open in the computer's own browser.
 // The app adds what a browser cannot: the unread count on its icon, a paw in the menu bar, opening at
 // login, and staying on (with notifications and calls) when its window is closed.
-const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, shell, session } = require('electron')
+const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, shell, session } = require('electron')
+// ROAR is dark: the glass under the window is dark too, even when the Mac is in light mode (Alex, 16 Oct:
+// the strip while resizing came out white)
+nativeTheme.themeSource = 'dark'
 const fs = require('fs')
 const path = require('path')
 
@@ -35,7 +38,7 @@ const frame = process.platform === 'darwin'
 // On a Mac the window is frosted glass under the page (vibrancy): while it is dragged bigger, the strip the
 // page has not reached yet shows that blur instead of a black band (Alex, 16 Oct). Windows keeps a graphite colour.
 const glassy = process.platform === 'darwin'
-  ? { vibrancy: 'under-window', visualEffectState: 'active', backgroundColor: '#00000000' }
+  ? { vibrancy: 'hud', visualEffectState: 'active', backgroundColor: '#00000000' }
   : { backgroundColor: '#2b3038' }
 const look = { ...glassy, autoHideMenuBar: true, show: false, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, preload: path.join(__dirname, 'preload.js') } }
 

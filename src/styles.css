@@ -2093,3 +2093,42 @@ html .msg.mine .transfer-acts .btn.btn-main { color: var(--accent); background: 
 .msg.mine .tr-exp { color: #fff; background: rgba(0, 0, 0, .22); border-color: rgba(255, 255, 255, .35); }
 html[data-mode='light'] .msg:not(.mine) .tr-exp:not(.soon):not(.gone) { color: #a35f00; background: rgba(255, 170, 0, .14); border-color: rgba(214, 140, 0, .35); }
 html[data-mode='light'] .msg:not(.mine) .tr-exp.soon { color: #c8321f; }
+
+/* the format bar over the message box while text is selected: small round glass buttons (Alex, 16 Oct) */
+.fmt-bar { position: absolute; left: 10px; bottom: calc(100% + 8px); z-index: 30; display: flex; gap: 2px; padding: 3px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--edge); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28); animation: fmt-in .16s cubic-bezier(.25, .8, .3, 1.2) both; }
+@keyframes fmt-in { from { opacity: 0; transform: translateY(4px) scale(.96); } }
+.fmt-bar button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text); font-size: 13.5px; line-height: 1; cursor: pointer; transition: background .15s, transform .1s; }
+.fmt-bar button:hover { background: var(--glass-2); }
+.fmt-bar button:active { transform: scale(.9); }
+.fmt-bar button.on { background: var(--accent); color: #fff; }
+.fmt-bar b { font-weight: 800; }
+.fmt-bar i { font-family: Georgia, 'Times New Roman', serif; font-size: 15px; }
+.fmt-bar u { text-underline-offset: 2px; }
+.fmt-mono { font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; font-weight: 700; letter-spacing: -.04em; }
+.fmt-blur { font-weight: 700; font-size: 12px; filter: blur(1.4px); }
+.fmt-bar button:hover .fmt-blur { filter: none; }
+
+/* the send window, fresher (Alex, 16 Oct): soft tiles with a tinted round icon, a row of small pills once files are picked */
+.attach-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; }
+.attach-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 18px 10px 14px; border-radius: 22px; text-align: center; cursor: pointer; color: var(--text);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint) 16%, transparent), color-mix(in srgb, var(--tint) 3%, transparent)), var(--glass);
+  border: 1px solid color-mix(in srgb, var(--tint) 26%, var(--edge)); transition: transform .18s cubic-bezier(.3, 1.3, .5, 1), border-color .2s, box-shadow .2s; }
+.attach-tile:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--tint) 55%, transparent); box-shadow: 0 10px 26px color-mix(in srgb, var(--tint) 22%, transparent); }
+.attach-tile:active { transform: scale(.97); }
+.attach-tile i { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 7px; border-radius: 50%; color: #fff;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--tint) 100%, #fff 18%), var(--tint)); box-shadow: 0 6px 16px color-mix(in srgb, var(--tint) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, .35); }
+.attach-tile i svg { width: 22px; height: 22px; }
+.attach-tile b { font-size: 14px; font-weight: 700; }
+.attach-tile small { font-size: 11.5px; line-height: 1.3; color: var(--muted); }
+.attach-pick.small { display: flex; flex-wrap: wrap; gap: 6px; }
+.attach-pick.small .attach-tile { flex-direction: row; gap: 7px; padding: 4px 12px 4px 4px; border-radius: 999px; }
+.attach-pick.small .attach-tile i { width: 28px; height: 28px; margin: 0; box-shadow: none; }
+.attach-pick.small .attach-tile i svg { width: 15px; height: 15px; }
+.attach-pick.small .attach-tile b { font-size: 13px; font-weight: 600; }
+.attach-pick.small .attach-tile small { display: none; }
+.attach-caption { border-radius: 999px; }
+.attach-send { gap: 8px; padding: 0 22px; }
+.attach-send svg { width: 17px; height: 17px; }
+.modal-foot:has(> .attach-send:only-child) { justify-content: flex-end; }

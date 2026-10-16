@@ -1,5 +1,5 @@
 /* Text formatting in messages, as in Telegram (Alex, 16 Oct):
-   **bold**  _italic_ or *italic*  ~~strike~~  `code`  ```a block of code```  ||spoiler||
+   **bold**  _italic_ or *italic*  __underline__  ~~strike~~  `code`  ```a block of code```  ||spoiler||
    The marks are written in the message itself, so every device shows the same thing. */
 
 const RULES = [
@@ -7,6 +7,7 @@ const RULES = [
   [/`([^`\n]+)`/, (m, k) => <code key={k} className="fmt-code">{m[1]}</code>, false],
   [/\*\*([^*\n][^*]*?)\*\*/, (m, k, f) => <b key={k}>{f(m[1])}</b>, true],
   [/~~([^~\n]+?)~~/, (m, k, f) => <s key={k}>{f(m[1])}</s>, true],
+  [/__([^_\n]+?)__/, (m, k, f) => <u key={k}>{f(m[1])}</u>, true],
   [/\|\|([^|\n]+?)\|\|/, (m, k, f) => <span key={k} className="fmt-spoiler" role="button" tabIndex={0} title="Show" onClick={(e) => { e.stopPropagation(); e.currentTarget.classList.add('shown') }}>{f(m[1])}</span>, true],
   [/(?<![\w*])\*([^*\n]+?)\*(?![\w*])/, (m, k, f) => <i key={k}>{f(m[1])}</i>, true],
   [/(?<![\p{L}\p{N}_])_([^_\n]+?)_(?![\p{L}\p{N}_])/u, (m, k, f) => <i key={k}>{f(m[1])}</i>, true],
@@ -39,12 +40,31 @@ export function plainText(text) {
     .replace(/`([^`\n]+)`/g, '$1')
     .replace(/\*\*([^*\n][^*]*?)\*\*/g, '$1')
     .replace(/~~([^~\n]+?)~~/g, '$1')
+    .replace(/__([^_\n]+?)__/g, '$1')
     .replace(/\|\|([^|\n]+?)\|\|/g, '$1')
     .replace(/(?<![\w*])\*([^*\n]+?)\*(?![\w*])/g, '$1')
     .replace(/(?<![\p{L}\p{N}_])_([^_\n]+?)_(?![\p{L}\p{N}_])/gu, '$1')
 }
 
-/* wrap what is selected in a textarea with a mark (Cmd/Ctrl + B, I, Shift+X, E, Shift+P) */
+/* is what is selected already inside this mark? (then the button takes it off) */
+export function hasMark(text, a, b, mark) {
+  if (text.slice(a - mark.length, a) !== mark || text.slice(b, b + mark.length) !== mark) return false
+  // a single _ is italic only when it is not half of an underline
+  return mark !== '_' || (text[a - 2] !== '_' && text[b + 1] !== '_')
+}
+
+/* wrap what is selected in a textarea with a mark, or take the mark off (Cmd/Ctrl + B, I, U, Shift+X, E, Shift+P) */
+export function toggleMark(el, text, mark) {
+  const a = el.selectionStart
+  const b = el.selectionEnd
+  if (a !== b && hasMark(text, a, b, mark)) {
+    const n = mark.length
+    return { next: text.slice(0, a - n) + text.slice(a, b) + text.slice(b + n), caretA: a - n, caretB: b - n }
+  }
+  return wrapSelection(el, text, mark)
+}
+
+/* wrap what is selected in a textarea with a mark */
 export function wrapSelection(el, text, mark) {
   const a = el.selectionStart
   const b = el.selectionEnd

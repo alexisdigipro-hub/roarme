@@ -43,6 +43,7 @@ const PATTERNS = [
   [/^(.+) is over 3 GB, the most RoarTransfer takes\.$/, (_, f) => `${f}: πάνω από 3 GB, το όριο του RoarTransfer.`],
   [/^RoarTransfer · (\d+)% · (.+) of (.+)$/, (_, n, a, b) => `RoarTransfer · ${n}% · ${a} από ${b}`],
   [/^(\d+) files over 50 MB go by RoarTransfer, kept 3 days\.$/, (_, n) => `${n} αρχεία πάνω από 50 MB πάνε με RoarTransfer και μένουν 3 μέρες.`],
+  [/^(Bold|Italic|Underline|Strikethrough|Code|Spoiler) \((.+)\)$/, (_, w, k) => `${{ Bold: 'Έντονα', Italic: 'Πλάγια', Underline: 'Υπογράμμιση', Strikethrough: 'Διαγραφή', Code: 'Κώδικας', Spoiler: 'Spoiler' }[w]} (${k})`],
   [/^Expires in (\d+) days$/, (_, n) => `Λήγει σε ${n} μέρες`],
   [/^Expires in (\d+) h$/, (_, n) => `Λήγει σε ${n} ώρες`],
   [/^(.+) added$/, (_, w) => `Προστέθηκε: ${w}`],

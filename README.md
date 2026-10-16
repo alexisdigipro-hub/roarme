@@ -20,6 +20,12 @@ sends, spelling, faces, large photos, quick reaction, double click, sound, folde
 Shown but not working yet ("coming soon"): voice and video calls, notifications with the app closed,
 more chat colours, removing people from a group and deleting a group.
 
+## Writing and sending (16 Oct)
+Select text in the message box and a small bar of round buttons comes up over it: Bold, Italic, Underline,
+Strikethrough, Code, Spoiler (press again to take the mark off; keys ⌘B, ⌘I, ⌘U, ⌘E, ⌘⇧X, ⌘⇧P). Underline is
+`__text__`. The send window opens on tinted tiles (Gallery, Camera on phones, File, RoarTransfer); once files are
+picked they shrink to small pills and the caption and Send come in.
+
 ## RoarTransfer (16 Oct)
 A file over 50 MB (HD photos and videos, documents, or a video still over 50 MB after Standard shrinks it)
 goes by RoarTransfer: up to 3 GB, uploaded in 6 MB pieces that resume after a dropped connection, kept 3 days.

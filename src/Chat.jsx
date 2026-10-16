@@ -3,7 +3,7 @@ import { TRANSFER_BUCKET, USERNAME_RE, cleanUsername, tusUpload, uploadWithProgr
 import { Avatar, CropModal, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
-import { formatText, plainText, wrapSelection } from './format.jsx'
+import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
@@ -1093,15 +1093,23 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     else { react(m, prefs.quick); if (!reactsOf[m.id]?.[prefs.quick]?.mine) burst(prefs.quick, e?.clientX, e?.clientY) }
   }
 
+  // the small format bar: it shows over the box while some text is selected (Alex, 16 Oct)
+  const [sel, setSel] = useState(null)
+  const readSel = (el) => setSel(el && el.selectionEnd > el.selectionStart ? { a: el.selectionStart, b: el.selectionEnd } : null)
+  const applyMark = (mark) => {
+    const el = inputRef.current
+    if (!el) return
+    const { next, caretA, caretB } = toggleMark(el, text, mark)
+    setText(next)
+    requestAnimationFrame(() => { el.focus(); el.selectionStart = caretA; el.selectionEnd = caretB; readSel(el) })
+  }
+
   const onKey = (e) => {
-    // Cmd/Ctrl + B bold, I italic, E code, Shift+X strike, Shift+P spoiler, around what is selected
-    const fmtKey = (e.metaKey || e.ctrlKey) && ({ b: '**', i: '_', e: '`', ...(e.shiftKey ? { x: '~~', p: '||' } : {}) })[e.key.toLowerCase()]
+    // Cmd/Ctrl + B bold, I italic, U underline, E code, Shift+X strike, Shift+P spoiler, around what is selected
+    const fmtKey = (e.metaKey || e.ctrlKey) && ({ b: '**', i: '_', u: '__', e: '`', ...(e.shiftKey ? { x: '~~', p: '||' } : {}) })[e.key.toLowerCase()]
     if (fmtKey && e.currentTarget) {
       e.preventDefault()
-      const el = e.currentTarget
-      const { next, caretA, caretB } = wrapSelection(el, text, fmtKey)
-      setText(next)
-      requestAnimationFrame(() => { el.selectionStart = caretA; el.selectionEnd = caretB })
+      applyMark(fmtKey)
       return
     }
     if (mentionHits.length && (e.key === 'Enter' || e.key === 'Tab')) { e.preventDefault(); pickMention(mentionHits[0]); return }
@@ -1388,6 +1396,13 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
             {!editing && <button type="button" className="round" onClick={() => transferPick.current?.click()} aria-label="RoarTransfer" title="RoarTransfer: big files as they are, up to 3 GB, kept 3 days">{I.transfer}</button>}
             <input ref={transferPick} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files || [])]; e.target.value = ''; if (f.length) sendFiles(f, '', false, true) }} />
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
+              {sel && (
+                <span className="fmt-bar" role="toolbar" aria-label="Format" onMouseDown={(e) => e.preventDefault()}>
+                  {FMT_MARKS.map(([mark, label, face, keys]) => (
+                    <button key={mark} type="button" className={hasMark(text, sel.a, sel.b, mark) ? 'on' : ''} onClick={() => applyMark(mark)} aria-label={label} title={`${label} (${keys})`}>{face}</button>
+                  ))}
+                </span>
+              )}
               {(replyTo || editing) && (
                 <span className="compose-ref" style={{ '--ref': editing ? 'var(--accent)' : replyTo.user_id === me.id ? 'var(--accent)' : colorOf(replyTo.user_id) }}>
                   <span className="compose-ref-ico">{editing ? I.edit : I.reply}</span>
@@ -1400,6 +1415,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               )}
               <textarea ref={inputRef} rows={1} value={text} spellCheck={prefs.spell} autoCorrect={prefs.spell ? 'on' : 'off'}
                 onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart) }} onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)} onClick={(e) => setCaret(e.currentTarget.selectionStart)} onKeyDown={onKey}
+                onSelect={(e) => readSel(e.currentTarget)} onBlur={() => setSel(null)}
                 onPaste={(e) => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); setAttach(f) } }}
                 placeholder="Write a message…" style={{ height: Math.min(160, 22 * Math.max(1, text.split('\n').length) + 22) }} />
               <button type="button" className="emoji-btn" onClick={() => setEmoji((v) => !v)} aria-label="Emoji" title="Emoji">{I.smile}</button>
@@ -1533,6 +1549,17 @@ function FileTile({ file }) {
     </button>
   )
 }
+
+/* the format bar's buttons: the mark, its name, what the button shows, its keys */
+const MOD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || '') ? '⌘' : 'Ctrl+'
+const FMT_MARKS = [
+  ['**', 'Bold', <b key="b">B</b>, `${MOD}B`],
+  ['_', 'Italic', <i key="i">I</i>, `${MOD}I`],
+  ['__', 'Underline', <u key="u">U</u>, `${MOD}U`],
+  ['~~', 'Strikethrough', <s key="s">S</s>, `${MOD}Shift+X`],
+  ['`', 'Code', <span key="c" className="fmt-mono">{'</>'}</span>, `${MOD}E`],
+  ['||', 'Spoiler', <span key="p" className="fmt-blur">Aa</span>, `${MOD}Shift+P`],
+]
 
 /* RoarTransfer: a big file kept 3 days, then gone; Download saves it under its own name, a video can play
    with the lights off */

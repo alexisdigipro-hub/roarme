@@ -35,6 +35,7 @@ export const DEFAULTS = {
   notifyPreview: true,
   translateTo: 'auto', // auto = Greek to English and back
   folderTabs: 'top', // top | bottom (left until 16 Oct, now bottom)
+  folderOrder: [], // folder ids in the order dragged in Settings > Folders
   sound: true,
   soundKind: 'chime', // one of SOUNDS
   badge: true, // the unread count on the Mac/Windows app's icon

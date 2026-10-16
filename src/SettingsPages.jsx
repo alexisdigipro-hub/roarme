@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, NAME_COLORS, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
@@ -116,7 +116,7 @@ export function SettingsMenu({ me, page, onPage }) {
 }
 
 /* the page on the right */
-export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, onFolders, toast, me, setMe }) {
+export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, onFolders, onFolderMenu, toast, me, setMe }) {
   const p = usePrefs()
   const title = pageTitle(page)
   return (
@@ -137,7 +137,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
         {page === 'sessions' && <Sessions me={me} setMe={setMe} toast={toast} />}
         {page === 'appearance' && <Appearance p={p} toast={toast} me={me} setMe={setMe} />}
         {page === 'language' && <Language p={p} />}
-        {page === 'folders' && <Folders p={p} folders={folders} onFolders={onFolders} />}
+        {page === 'folders' && <Folders p={p} folders={folders} onFolders={onFolders} onFolderMenu={onFolderMenu} />}
         {page !== 'profile' && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
       </div>
     </div>
@@ -616,18 +616,70 @@ function Language({ p }) {
   )
 }
 
-function Folders({ p, folders, onFolders }) {
+/* Drag a folder up or down to change the order of the tabs; a right click on one opens Edit / Delete
+   (Alex, 16 Oct). The order is kept in prefs.folderOrder and the chat list's tabs follow it. */
+function Folders({ p, folders, onFolders, onFolderMenu }) {
+  const [list, setList] = useState(folders)
+  const listRef = useRef(list)
+  listRef.current = list
+  const key = folders.map((f) => `${f.id}:${f.name}:${f.rooms?.length || 0}`).join('|')
+  useEffect(() => { if (!drag.current?.moved) setList(folders) }, [key])
+  const drag = useRef(null)
+  const rowsRef = useRef(null)
+  const [dragId, setDragId] = useState('')
+  const [dy, setDy] = useState(0)
+  useEffect(() => { if (drag.current) drag.current.lock = false }, [list]) // a swap waits for the rows to move
+  const down = (e, f) => {
+    if (e.button !== 0) return
+    drag.current = { id: f.id, y0: e.clientY, moved: false }
+    const move = (ev) => {
+      const d = drag.current
+      if (!d) return
+      let off = ev.clientY - d.y0
+      if (!d.moved) { if (Math.abs(off) < 6) return; d.moved = true; setDragId(d.id) }
+      ev.preventDefault()
+      if (d.lock) { setDy(off); return }
+      // pass a neighbour's middle and the two swap places
+      const rows = [...(rowsRef.current?.querySelectorAll('[data-fid]') || [])]
+      const at = rows.findIndex((r) => r.dataset.fid === d.id)
+      const next = rows[at + 1], prev = rows[at - 1]
+      if ((next && off > next.offsetHeight / 2) || (prev && off < -prev.offsetHeight / 2)) d.lock = true
+      if (next && off > next.offsetHeight / 2) { d.y0 += next.offsetHeight; off -= next.offsetHeight; setList((l) => { const n = [...l]; const i = n.findIndex((x) => x.id === d.id); [n[i], n[i + 1]] = [n[i + 1], n[i]]; return n }) }
+      else if (prev && off < -prev.offsetHeight / 2) { d.y0 -= prev.offsetHeight; off += prev.offsetHeight; setList((l) => { const n = [...l]; const i = n.findIndex((x) => x.id === d.id); [n[i - 1], n[i]] = [n[i], n[i - 1]]; return n }) }
+      setDy(off)
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      const d = drag.current
+      setDragId(''); setDy(0)
+      if (d?.moved) {
+        setPrefs({ folderOrder: listRef.current.map((x) => x.id) })
+        setTimeout(() => { drag.current = null }, 0) // the click that ends a drag opens nothing
+      } else drag.current = null
+    }
+    window.addEventListener('pointermove', move, { passive: false })
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
   return (
     <>
       <div className="set-hero"><span className="set-hero-ico">{I.folder}</span><p>Create folders for different groups of chats and quickly switch between them.</p></div>
-      <Box title="Folders" note="Edit folders to rename them, choose their chats or remove them.">
-        {folders.map((f) => (
-          <button key={f.id} type="button" className={`set-row set-pick${f.custom ? '' : ' set-fixed'}`} onClick={() => f.custom && onFolders('folders')}>
+      <Box title="Folders" note="Drag a folder to change the order of the tabs. Right click one to edit or delete it.">
+        <div ref={rowsRef} className="fold-rows">
+        {list.map((f) => (
+          <button key={f.id} type="button" data-fid={f.id} className={`set-row set-pick fold-row${f.custom ? '' : ' set-fixed'}${dragId === f.id ? ' dragging' : ''}`} style={dragId === f.id ? { transform: `translateY(${dy}px)` } : undefined}
+            onPointerDown={(e) => down(e, f)}
+            onContextMenu={(e) => { e.preventDefault(); onFolderMenu?.(f, e) }}
+            onClick={() => { if (drag.current?.moved) return; if (f.custom) onFolders('folders') }}>
+            <span className="fold-grip" aria-hidden="true">{svg(<><circle cx="9" cy="6" r="1.2" /><circle cx="15" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" /><circle cx="15" cy="18" r="1.2" /></>)}</span>
             <span className="fold-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span>
             <span className="set-text">{f.name}{f.custom && <small>{`${f.rooms.length} chat${f.rooms.length === 1 ? '' : 's'}`}</small>}</span>
             {f.custom && <><i className="fold-dot" style={{ background: colorOf(f.id) }} /><i className="set-chev">{I.right}</i></>}
           </button>
         ))}
+        </div>
         <button type="button" className="set-row set-pick set-add" onClick={() => onFolders('newfolder')}><span className="set-text">Add a Custom Folder</span><i className="set-chev">{I.right}</i></button>
       </Box>
       <Box note="Display folder names for each chat in the chat list."><Switch on={p.folderTags} set={(v) => setPrefs({ folderTags: v })}>Show Folder Tags</Switch></Box>

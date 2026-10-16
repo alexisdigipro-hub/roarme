@@ -233,7 +233,11 @@ export default function Chat({ me, setMe }) {
   }, [unreadAll, prefs.badge])
 
   const BUILTIN = [['all', 'All'], ['unread', 'Unread'], ['groups', 'Groups'], ['archived', 'Archived']]
+  // in the order dragged in Settings > Folders (Alex, 16 Oct); a folder not placed yet goes at the end
+  const fOrder = prefs.folderOrder || []
+  const fRank = (id) => { const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
   const allFolders = [...BUILTIN.map(([id, name]) => ({ id, name })), ...myFolders.map((f) => ({ ...f, custom: true }))]
+    .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
   const inFolder = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
@@ -526,7 +530,8 @@ export default function Chat({ me, setMe }) {
       <main className="main">
         {tab === 'settings' ? (
           <SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast} me={me} setMe={setMe}
-            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => setModal(m)} />
+            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => setModal(m)}
+            onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} />
         ) : active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]}

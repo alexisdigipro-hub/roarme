@@ -444,6 +444,7 @@ export const EL = {
   'Stop': 'Διακοπή',
   'Tabs at the top': 'Καρτέλες επάνω',
   'Tabs at the bottom': 'Καρτέλες κάτω',
+  'Drag a folder to change the order of the tabs. Right click one to edit or delete it.': 'Σύρε έναν φάκελο για να αλλάξεις τη σειρά των καρτελών. Δεξί κλικ σε έναν για επεξεργασία ή διαγραφή.',
   'Tabs view': 'Προβολή καρτελών',
   'Tap one to hear it': 'Πάτησε ένα για να το ακούσεις',
   'Tap to load': 'Πάτησε για φόρτωση',

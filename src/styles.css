@@ -1704,3 +1704,13 @@ html[data-density='relaxed'] { --gap-msg: 10px; }
 /* the conversation's head: the name card and the round buttons beside it the same height (Alex, 16 Oct) */
 html:not([data-theme='aura']):not([data-theme='studio']) .room-head .head-card { height: 48px; }
 html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { width: 48px; height: 48px; }
+
+/* Settings > Folders: drag a row to reorder the tabs (Alex, 16 Oct) */
+.fold-rows { display: contents; }
+.fold-rows + .set-row { border-top: 1px solid var(--edge); }
+.fold-row { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.fold-grip { display: inline-grid; place-items: center; width: 18px; margin: 0 -4px 0 -6px; color: var(--muted); opacity: .45; cursor: grab; }
+.fold-grip svg { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.fold-row:hover .fold-grip { opacity: .9; }
+.fold-row.dragging { z-index: 5; cursor: grabbing; background: var(--glass-2); border-radius: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, .35); transition: none; }
+.fold-row.set-fixed { cursor: grab; }

@@ -3,6 +3,7 @@ import { errText, fileLink, fmtBytes, lastSeenText, nameOf, supabase, timeOf } f
 import { Avatar, CropModal, I, Modal, OnTop } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { usePrefs } from './prefs.js'
+import { CopyLink } from './transfer.jsx'
 import { locale } from './i18n.js'
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
@@ -100,8 +101,12 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   }, [room.room_id])
 
   const sets = useMemo(() => {
-    const list = items || []
+    // RoarTransfer files have their own tab (Alex, 17 Oct: "Files" became "Transfers"); other files sit under them
+    const all = items || []
+    const isTr = (m) => m.file?.bucket === 'roar-transfers'
+    const list = all.filter((m) => !isTr(m))
     return {
+      transfers: all.filter(isTr),
       media: list.filter((m) => (m.kind === 'image' && !isGif(m)) || isVideo(m)),
       files: list.filter((m) => m.kind === 'file' && !isVideo(m) && !isAudio(m) && !isGif(m)),
       music: list.filter(isAudio),
@@ -155,7 +160,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const tabs = [
     group && ['members', 'Members', members.length],
     ['media', 'Media', sets.media.length],
-    ['files', 'Files', sets.files.length],
+    ['files', 'Transfers', sets.transfers.length + sets.files.length],
     ['links', 'Links', links.length],
     ['music', 'Music', sets.music.length],
     ['voice', 'Voice', sets.voice.length],
@@ -275,7 +280,28 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
             </div>
           )) : <p className="muted pf-empty">No photos or videos yet.</p>)}
 
-          {tab === 'files' && items && (sets.files.length ? sets.files.map((m) => row(m, I.file, m.file?.name, `${fmtBytes(m.file?.size)} · ${when(m.created_at)}`, () => openFile(m))) : <p className="muted pf-empty">No files yet.</p>)}
+          {tab === 'files' && items && (sets.transfers.length + sets.files.length ? (
+            <>
+              {sets.transfers.map((m) => {
+                const left = new Date(m.file?.expires || 0).getTime() - Date.now()
+                const gone = left <= 0
+                const short = gone ? 'Expired' : left > 864e5 ? `${Math.ceil(left / 864e5)} days left` : left > 36e5 ? `${Math.ceil(left / 36e5)} h left` : 'Last hour'
+                const ext = ((m.file?.name || '').match(/\.(\w{1,5})$/) || [])[1]?.toUpperCase()
+                return (
+                  <div key={m.id} className={`pf-tr${gone ? ' gone' : left < 864e5 ? ' soon' : ''}`}>
+                    <button type="button" className="pf-row" disabled={gone} onClick={async () => { const u = await fileLink(m.file, m.file?.name || 'file'); if (u) window.open(u, '_blank', 'noopener') }}>
+                      <span className="pf-row-ico pf-tr-ico">{I.transfer}</span>
+                      <span className="pf-row-text"><b>{fmtBytes(m.file?.size)}{ext ? ` · ${ext}` : ''}</b><small>{when(m.created_at)}</small></span>
+                      <span className="pf-tr-left">{I.timer}<span>{short}</span></span>
+                    </button>
+                    {!gone && <CopyLink file={m.file} round />}
+                  </div>
+                )
+              })}
+              {sets.files.length > 0 && sets.transfers.length > 0 && <h5 className="pf-sub">Other files</h5>}
+              {sets.files.map((m) => row(m, I.file, m.file?.name, `${fmtBytes(m.file?.size)} · ${when(m.created_at)}`, () => openFile(m)))}
+            </>
+          ) : <p className="muted pf-empty">No transfers yet.</p>)}
 
           {tab === 'links' && items && (links.length ? links.map((l) => (
             <a key={l.id} className="pf-row" href={l.url} target="_blank" rel="noreferrer">

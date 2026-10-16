@@ -55,6 +55,12 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     if (error) setErr(errText(error)); else { loadPeople([other.id]); toast('Your photo for them is gone') }
   }
   const canPic = group || (other && !other.own_photo)
+  const dropGroupPhoto = async () => {
+    setMore(false)
+    if (!window.confirm('Remove the group photo?')) return
+    const { error } = await supabase.rpc('roar_set_group_photo', { r: room.room_id, url: '' })
+    if (error) setErr(errText(error)); else { onChanged(); toast('Group photo removed') }
+  }
   const block = async () => {
     setMore(false)
     if (blocked) {
@@ -212,6 +218,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   {group && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave group</span></button>}
                   {canPic && <button type="button" onClick={() => { setMore(false); picRef.current?.click() }}>{I.camera}<span>{group ? 'Change group photo' : 'Set a photo for them'}</span></button>}
                   {!group && other?.my_photo && <button type="button" onClick={dropMyPhoto}>{I.x}<span>Remove my photo for them</span></button>}
+                  {group && room.avatar_url && <button type="button" onClick={dropGroupPhoto}>{I.x}<span>Remove group photo</span></button>}
                   {group && admin && <button type="button" className="danger" onClick={deleteGroup}>{I.trash}<span>Delete group</span></button>}
                   {!group && other && <button type="button" className="danger" onClick={block}>{I.x}<span>{blocked ? 'Unblock' : 'Block'}</span></button>}
                 </div>

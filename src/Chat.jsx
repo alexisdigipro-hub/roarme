@@ -1557,6 +1557,7 @@ function Settings({ me, setMe, onClose, inline = false }) {
         <button type="button" className="pic-pick" onClick={() => picRef.current?.click()} title="Change your picture"><Avatar src={me.avatar_url} name={nameOf(me)} size={96} /><span>Change</span></button>
         <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { setCropFile(e.target.files?.[0] || null); e.target.value = '' }} />
         {cropFile && <CropModal file={cropFile} title="Your photo" onDone={pickPic} onClose={() => setCropFile(null)} />}
+        {me.avatar_url && <button type="button" className="link danger-link pic-remove" onClick={() => { if (window.confirm('Remove your profile photo?')) save({ avatar_url: '' }) }}>Remove photo</button>}
       </div>
       <label className="field"><span>Name</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Shown on your messages" /></label>
       <label className="field"><span>Username</span><div className="input-at"><i>@</i><input className="input" value={username} onChange={(e) => setUsername(cleanUsername(e.target.value))} /></div></label>

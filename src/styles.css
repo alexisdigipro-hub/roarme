@@ -1651,3 +1651,9 @@ html[data-desktop] :is(.modal-back, .call, .lock, .viewer) { -webkit-app-region:
 .crop-ring { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 999px rgba(0, 0, 0, .55); border: 2px solid rgba(255, 255, 255, .85); pointer-events: none; }
 .crop-zoom { display: flex; align-items: center; gap: 10px; width: 280px; color: var(--muted); }
 .crop-zoom input { flex: 1; accent-color: var(--accent); }
+
+/* a photo or video in a message: only a thin edge of the bubble's colour around it (Alex, 16 Oct) */
+.bubble.pic { padding: 2px; }
+.bubble.pic :is(.pic-img, .load-tap, .pic-wait) { border-radius: 16px; }
+html[data-theme='ember'] .bubble.pic { border-radius: calc(var(--r, 12px) * 1.4 + 2px); }
+html[data-theme='ember'] .msg.mine .bubble.pic { box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 18%, transparent); }

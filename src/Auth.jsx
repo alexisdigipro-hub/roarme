@@ -112,7 +112,8 @@ export function Onboarding({ user, onDone }) {
     setErr('')
     if (!USERNAME_RE.test(username)) { setErr('3 to 24 characters: small letters, numbers and _.'); return }
     setBusy(true)
-    const { data, error } = await supabase.from('roar_profiles').insert({ id: user.id, username, display_name: name.trim() }).select().single()
+    const { error } = await supabase.from('roar_profiles').insert({ id: user.id, username, display_name: name.trim() })
+    const { data } = error ? {} : await supabase.from('roar_people').select('*').eq('id', user.id).single()
     setBusy(false)
     if (error) setErr(errText(error))
     else onDone(data)

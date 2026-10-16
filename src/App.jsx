@@ -29,7 +29,7 @@ export default function App() {
   useEffect(() => {
     if (!uid) { setProfile(undefined); return }
     let alive = true
-    supabase.from('roar_profiles').select('*').eq('id', uid).maybeSingle().then(({ data }) => { if (alive) setProfile(data || null) })
+    supabase.from('roar_people').select('*').eq('id', uid).maybeSingle().then(({ data }) => { if (alive) setProfile(data || null) })
     return () => { alive = false }
   }, [uid])
 

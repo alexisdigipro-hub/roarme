@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
-import { Avatar, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, svg, useLens } from './ui.jsx'
+import { Avatar, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
@@ -15,7 +15,7 @@ function usePeopleSearch(meId) {
     if (t.length < 2) { setHits([]); return }
     let alive = true
     const id = setTimeout(async () => {
-      const { data } = await supabase.from('roar_profiles').select('id, username, display_name, avatar_url, bio, last_seen')
+      const { data } = await supabase.from('roar_people').select('id, username, display_name, avatar_url, bio, last_seen, name_color')
         .or(`username.ilike.${t.toLowerCase()}%,display_name.ilike.%${t}%`).neq('id', meId).limit(20)
       if (alive) setHits(data || [])
     }, 220)
@@ -115,8 +115,20 @@ export default function Chat({ me, setMe }) {
   const loadPeople = useCallback(async (ids) => {
     const want = [...new Set(ids)].filter(Boolean)
     if (!want.length) return
-    const { data } = await supabase.from('roar_profiles').select('id, username, display_name, avatar_url, bio, last_seen').in('id', want)
-    if (data) setPeople((p) => ({ ...p, ...Object.fromEntries(data.map((x) => [x.id, x])) }))
+    const [{ data }, { data: mine }] = await Promise.all([
+      supabase.from('roar_people').select('id, username, display_name, avatar_url, bio, last_seen, name_color').in('id', want),
+      supabase.from('roar_contacts').select('person, photo_url').in('person', want),
+    ])
+    const myPhoto = Object.fromEntries((mine || []).map((c) => [c.person, c.photo_url]))
+    if (data) {
+      data.forEach((x) => {
+        setNameColor(x.id, x.name_color)
+        x.own_photo = !!x.avatar_url
+        x.my_photo = myPhoto[x.id] || ''
+        if (!x.avatar_url && x.my_photo) x.avatar_url = x.my_photo
+      })
+      setPeople((p) => ({ ...p, ...Object.fromEntries(data.map((x) => [x.id, x])) }))
+    }
   }, [])
 
   const loadRooms = useCallback(async () => {
@@ -1472,8 +1484,9 @@ function Settings({ me, setMe, onClose, inline = false }) {
 
   const save = async (patch) => {
     setErr(''); setSaved(false)
-    const { data, error } = await supabase.from('roar_profiles').update(patch).eq('id', me.id).select().single()
+    const { error } = await supabase.from('roar_profiles').update(patch).eq('id', me.id)
     if (error) { setErr(errText(error)); return false }
+    const { data } = await supabase.from('roar_people').select('*').eq('id', me.id).single()
     setMe(data); setSaved(true)
     return true
   }

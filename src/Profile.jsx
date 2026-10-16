@@ -59,7 +59,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     if (!adding || t.length < 2) { setHits([]); return }
     let alive = true
     const id = setTimeout(async () => {
-      const { data } = await supabase.from('roar_profiles').select('id, username, display_name, avatar_url, last_seen').or(`username.ilike.${t.toLowerCase()}%,display_name.ilike.%${t}%`).neq('id', me.id).limit(20)
+      const { data } = await supabase.from('roar_people').select('id, username, display_name, avatar_url, last_seen').or(`username.ilike.${t.toLowerCase()}%,display_name.ilike.%${t}%`).neq('id', me.id).limit(20)
       if (alive) setHits((data || []).filter((p) => !(room.members || []).includes(p.id)))
     }, 220)
     return () => { alive = false; clearTimeout(id) }

@@ -59,7 +59,9 @@ export const I = {
 
 // each person's name in a group in a colour of their own, as in the hub's chat
 export const NAME_COLORS = ['#ff8a65', '#7cc4ff', '#81c784', '#ffb74d', '#ba68c8', '#4dd0e1', '#f06292', '#aed581']
-export const colorOf = (id) => NAME_COLORS[[...String(id || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % NAME_COLORS.length]
+const ownColors = {}
+export const setNameColor = (id, c) => { if (c) ownColors[id] = c; else delete ownColors[id] }
+export const colorOf = (id) => ownColors[id] || NAME_COLORS[[...String(id || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % NAME_COLORS.length]
 
 export function Avatar({ src, name, size = 44, online = false, group = false }) {
   return (

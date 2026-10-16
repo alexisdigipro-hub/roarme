@@ -2045,3 +2045,6 @@ html[data-theme='ember'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait), html[d
 html[data-theme='prism'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait), html[data-theme='prism'] .bubble.pic .vid-box > video { border-radius: 21px; }
 html[data-theme='aurum'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait), html[data-theme='aurum'] .bubble.pic .vid-box > video { border-radius: 15px; }
 html[data-theme='studio'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait), html[data-theme='studio'] .bubble.pic .vid-box > video { border-radius: 5px; }
+/* the frame round photos and videos is the same hairline as the chat's head card, in the theme's own edge colour,
+   for everyone's messages, yours too (Alex, 16 Oct) */
+html[data-theme] .bubble.pic, html[data-theme] .msg.mine .bubble.pic { padding: 0; background: transparent; border: 1px solid var(--edge); box-shadow: none; }

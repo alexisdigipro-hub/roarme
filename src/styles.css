@@ -1303,7 +1303,7 @@ html[data-theme='aura'] .room-tags span { border-radius: 8px; text-transform: no
 /* a conversation: the top bar and the message box float over the messages */
 html[data-theme='aura'] .room-view { position: relative; }
 html[data-theme='aura'] .room-head { position: absolute; z-index: 6; top: 12px; left: 12px; right: 12px; padding: 8px; border-radius: 26px; background: var(--float); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
-html[data-theme='aura'] .head-card { height: 44px; padding: 0 12px 0 2px; background: none; border: 0; }
+html[data-theme='aura'] .head-card { height: 42px; padding: 0 12px 0 2px; background: none; border: 0; }
 html[data-theme='aura'] .head-text strong { font-size: 16px; font-weight: 700; }
 html[data-theme='aura'] .scroll { padding: 92px 22px 104px; }
 html[data-theme='aura'] :is(.pinbar, .findbar) { position: absolute; z-index: 5; top: 84px; left: 22px; right: 22px; margin: 0; border-radius: 18px; background: var(--float); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 10px 26px rgba(0, 0, 0, .2); }
@@ -1700,3 +1700,7 @@ html[data-density='relaxed'] { --gap-msg: 10px; }
 .bubble .file-text b { max-width: none; }
 .bubble.outbox, .bubble.outbox.has-pic { width: calc(var(--media-w) + 8px); min-width: 0; max-width: 100%; }
 .bubble.outbox img { width: 100%; max-width: none; object-fit: cover; }
+
+/* the conversation's head: the name card and the round buttons beside it the same height (Alex, 16 Oct) */
+html:not([data-theme='aura']):not([data-theme='studio']) .room-head .head-card { height: 48px; }
+html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { width: 48px; height: 48px; }

@@ -36,7 +36,7 @@ export async function transferLink(file) {
   return url
 }
 
-export function CopyLink({ file, className = '' }) {
+export function CopyLink({ file, className = '', round = false }) {
   const [state, setState] = useState('')
   const copy = async (e) => {
     e.stopPropagation()
@@ -51,6 +51,8 @@ export function CopyLink({ file, className = '' }) {
       setTimeout(() => setState(''), 2200)
     }
   }
+  const word = state === 'done' ? 'Link copied' : state === 'fail' ? 'Could not copy' : 'Copy download link'
+  if (round) return <button type="button" className={`trx-round${state === 'done' ? ' ok' : ''}`} onClick={copy} disabled={state === 'busy'} title={word} aria-label={word}>{state === 'done' ? I.check : I.link}</button>
   return (
     <button type="button" className={`rt-link ${className}`} onClick={copy} disabled={state === 'busy'}>
       {state === 'done' ? I.check : I.link}<span>{state === 'done' ? 'Link copied' : state === 'fail' ? 'Could not copy' : 'Copy download link'}</span>

@@ -2245,3 +2245,43 @@ html[data-theme] .msg.mine .bubble.transfer-b .tr-exp.soon { color: #ff7a6b; bac
 html[data-mode='light'][data-theme] .msg.mine .bubble.transfer-b .tr-exp:not(.soon):not(.gone) { color: #a35f00; background: rgba(255, 170, 0, .14); border-color: rgba(214, 140, 0, .35); }
 html[data-theme] .msg.mine .bubble.transfer-b .transfer-acts .btn { color: var(--text); background: var(--glass); border-color: var(--edge); }
 html[data-theme] .msg.mine .bubble.transfer-b .transfer-acts .btn.btn-main { box-shadow: none; color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+
+/* the RoarTransfer card, 2026 (Alex, 17 Oct): mark on top, size as the headline, a line that empties, pill + round buttons */
+.bubble .file.trx { flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 12px; padding: 6px 2px 2px; cursor: default; text-align: left; color: inherit; }
+.trx-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.trx .rt-mark i { width: 36px; height: 36px; }
+.trx .rt-mark i svg { width: 20px; height: 20px; }
+.trx .rt-mark b { font-size: 19px; }
+.trx-left { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px 5px 8px; border-radius: 999px; font-size: 12.5px; font-weight: 700; white-space: nowrap;
+  color: #ffc24a; background: rgba(255, 176, 32, .14); border: 1px solid rgba(255, 176, 32, .34); }
+.trx-left svg { width: 14px; height: 14px; stroke-width: 2.2; }
+.trx.soon .trx-left { color: #ff7a6b; background: rgba(255, 90, 70, .14); border-color: rgba(255, 90, 70, .38); }
+.trx.gone .trx-left { color: var(--muted); background: rgba(127, 127, 127, .12); border-color: rgba(127, 127, 127, .3); }
+html[data-mode='light'] .trx:not(.soon):not(.gone) .trx-left { color: #a35f00; background: rgba(255, 170, 0, .12); border-color: rgba(214, 140, 0, .32); }
+.trx-hero { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent), color-mix(in srgb, var(--accent) 4%, transparent)); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); }
+.trx-type { flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; font-style: normal; color: var(--accent-ink, #fff);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 100%, #fff 20%), var(--accent)); box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 35%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3); }
+.trx-type svg { width: 26px; height: 26px; }
+.trx-size { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.trx-size b { font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.trx-size small { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.trx-time { display: block; height: 4px; margin: -2px 2px 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
+.trx-time i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ffb020, #ffc24a); }
+.trx.soon .trx-time i { background: linear-gradient(90deg, #ff5a46, #ff7a6b); }
+.trx-acts { display: flex; align-items: center; gap: 8px; }
+.trx-get { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 14.5px; font-weight: 700; color: var(--accent-ink, #fff); background: var(--accent); border: 0; box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent); transition: transform .12s, filter .15s; }
+.trx-get:hover { filter: brightness(1.08); }
+.trx-get:active { transform: scale(.97); }
+.trx-get svg { width: 18px; height: 18px; }
+.trx-round { flex: none; display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border-radius: 50%; cursor: pointer; color: var(--text);
+  background: var(--glass); border: 1px solid var(--edge); transition: background .15s, transform .12s, color .15s; }
+.trx-round:hover { background: color-mix(in srgb, var(--accent) 16%, var(--glass)); color: var(--accent); }
+.trx-round:active { transform: scale(.94); }
+.trx-round.ok { color: #34c759; }
+.trx-round svg { width: 18px; height: 18px; }
+.trx.gone .trx-hero { opacity: .45; filter: grayscale(.6); }
+.trx.gone .rt-mark { opacity: .6; }
+html[data-theme] .msg.mine .bubble.transfer-b .trx-get { color: var(--accent-ink, #fff); background: var(--accent); border: 0; }
+.bubble .file.trx + .text { display: block; margin-top: 10px; }

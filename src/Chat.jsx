@@ -7,7 +7,7 @@ import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
-import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferWindow } from './transfer.jsx'
+import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
 
@@ -1617,10 +1617,16 @@ const FMT_MARKS = [
    with the lights off */
 const SMALL_MAX = 50e6
 function TransferTile({ file, onCinema }) {
+  // a fresher card (Alex, 17 Oct): no file name; the RoarTransfer mark big on top with the time left, the size as the
+  // headline with the file's kind, a thin line that empties as the 3 days run out, then Download, link and Play
   const left = new Date(file?.expires || 0).getTime() - Date.now()
   const gone = left <= 0
-  const when = gone ? 'Expired' : left > 864e5 ? `Expires in ${Math.ceil(left / 864e5)} days` : left > 36e5 ? `Expires in ${Math.ceil(left / 36e5)} h` : 'Expires within the hour'
-  const isVid = /^video\//.test(file?.type || '')
+  const short = gone ? 'Expired' : left > 864e5 ? `${Math.ceil(left / 864e5)} days left` : left > 36e5 ? `${Math.ceil(left / 36e5)} h left` : 'Last hour'
+  const share = gone ? 0 : Math.min(1, left / (TRANSFER_DAYS * 864e5))
+  const type = file?.type || ''
+  const isVid = /^video\//.test(type)
+  const kind = isVid ? 'Video' : /^image\//.test(type) ? 'Image' : /^audio\//.test(type) ? 'Audio' : /pdf|word|document|text|sheet|presentation/.test(type) ? 'Document' : 'File'
+  const ext = ((file?.name || '').match(/\.(\w{1,5})$/) || [])[1]?.toUpperCase()
   const [busy, setBusy] = useState(false)
   const get = async (e) => {
     e.stopPropagation(); setBusy(true)
@@ -1630,21 +1636,23 @@ function TransferTile({ file, onCinema }) {
   }
   const play = async (e) => { e.stopPropagation(); const u = await fileLink(file); if (u) onCinema({ kind: 'file', src: u, at: 0 }) }
   return (
-    <span className={`file transfer${gone ? ' gone' : ''}`}>
-      <span className="file-ico">{isVid ? I.play : I.file}</span>
-      <span className="file-text">
-        <em className="tr-tag">{I.transfer}<span>RoarTransfer</span></em>
-        <b>{file?.name}</b>
-        <small>{fmtBytes(file?.size)}</small>
-        <span className={`tr-exp${gone ? ' gone' : left < 864e5 ? ' soon' : ''}`}>{I.timer}<span>{when}</span></span>
+    <span className={`file transfer trx${gone ? ' gone' : left < 864e5 ? ' soon' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <span className="trx-head">
+        <TransferMark />
+        <span className="trx-left">{I.timer}<span>{short}</span></span>
       </span>
+      <span className="trx-hero">
+        <i className="trx-type">{isVid ? I.play : kind === 'Image' ? I.image : I.file}</i>
+        <span className="trx-size"><b>{fmtBytes(file?.size)}</b><small>{ext ? `${ext} · ${kind}` : kind}</small></span>
+      </span>
+      <span className="trx-time" title={short}><i style={{ width: `${share * 100}%` }} /></span>
       {!gone && (
-        <span className="transfer-acts" onClick={(e) => e.stopPropagation()}>
-          {isVid && onCinema && <button type="button" className="btn" onClick={play}>{I.play}<span>Play</span></button>}
-          <button type="button" className="btn btn-main" disabled={busy} onClick={get}>{I.download}<span>{busy ? 'Opening…' : 'Download'}</span></button>
+        <span className="trx-acts">
+          <button type="button" className="trx-get" disabled={busy} onClick={get}>{I.download}<span>{busy ? 'Opening…' : 'Download'}</span></button>
+          <CopyLink file={file} round />
+          {isVid && onCinema && <button type="button" className="trx-round" onClick={play} title="Play" aria-label="Play">{I.play}</button>}
         </span>
       )}
-      {!gone && <CopyLink file={file} />}
     </span>
   )
 }

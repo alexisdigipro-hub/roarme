@@ -7,6 +7,9 @@ const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, shell
 // ROAR is dark: the glass under the window is dark too, even when the Mac is in light mode (Alex, 16 Oct:
 // the strip while resizing came out white)
 nativeTheme.themeSource = 'dark'
+// draw with the graphics card wherever it can, so the page keeps up while the window is resized
+app.commandLine.appendSwitch('enable-gpu-rasterization')
+app.commandLine.appendSwitch('ignore-gpu-blocklist')
 const fs = require('fs')
 const path = require('path')
 
@@ -35,11 +38,9 @@ app.on('second-instance', () => show())
 const frame = process.platform === 'darwin'
   ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 10 } }
   : { titleBarStyle: 'hidden', titleBarOverlay: { color: '#1b1e23', symbolColor: '#eef0f3', height: 32 } }
-// On a Mac the window is frosted glass under the page (vibrancy): while it is dragged bigger, the strip the
-// page has not reached yet shows that blur instead of a black band (Alex, 16 Oct). Windows keeps a graphite colour.
-const glassy = process.platform === 'darwin'
-  ? { vibrancy: 'hud', visualEffectState: 'active', backgroundColor: '#00000000' }
-  : { backgroundColor: '#2b3038' }
+// An opaque window the colour of ROAR's graphite: a see-through (vibrancy) window made resizing slower and showed
+// white on a light Mac (Alex, 16 Oct), so the window is solid and the page itself is kept light to repaint.
+const glassy = { backgroundColor: '#24282f' }
 const look = { ...glassy, autoHideMenuBar: true, show: false, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, preload: path.join(__dirname, 'preload.js') } }
 
 // the band for the window buttons, put in by the app itself so it never depends on what the browser kept

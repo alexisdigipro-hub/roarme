@@ -1730,6 +1730,14 @@ html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { wid
 .fold-search { width: 100%; margin-bottom: 10px; }
 .fold-pick-h { margin: 10px 4px 6px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 
+/* Speed (Alex, 16 Oct: the window lagged behind when dragged bigger, other apps do not). Every blurred layer is
+   blurred again on each frame of a resize or a scroll, and ROAR had one under every bubble, round button and row.
+   The glass stays where it shows: the two big panels and what floats over the messages (the head, the box to type
+   in, the bars, menus, pickers, toasts). Inside the panels the rest sits on that glass already. The page's own
+   background no longer stays put while the page moves (background-attachment: fixed repaints the whole window). */
+:is(.side, .main) :not(.room-head, .compose-wrap, .pinbar, .findbar, .menu, .menu-list, .emoji-pick, .rx-pick, .mention-pick, .toast, .msg-acts, .scrim, .call, .viewer, .modal, .modal-back) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html body { background-attachment: scroll !important; }
+
 /* while the window is being resized nothing blurs or moves, so the newly opened part is painted at once
    instead of showing black (Alex, 16 Oct) */
 html.win-resizing *, html.win-resizing *::before, html.win-resizing *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; transition: none !important; animation-play-state: paused !important; }

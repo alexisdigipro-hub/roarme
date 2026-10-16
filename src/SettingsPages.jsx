@@ -3,6 +3,7 @@ import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, NAME_COLORS, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
+import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
    Anything that needs the database is shown switched off with "Coming soon". */
@@ -121,7 +122,7 @@ function General({ p, onKeys }) {
       </Box>
       <Box title="Shortcuts"><Nav onClick={onKeys} value="⌘ + /">Keyboard Shortcuts</Nav></Box>
       <Box title="Advanced">
-        <Soon>Copy Text Formatting</Soon>
+        <Switch on={p.copyFormat !== false} set={(v) => setPrefs({ copyFormat: v })} hint="**bold**, _italic_, ~~strike~~, `code`, ||spoiler|| · ⌘B ⌘I ⌘E">Copy Text Formatting</Switch>
         <Switch on={p.largePhotos} set={(v) => setPrefs({ largePhotos: v })} hint="2560 px instead of 1600 px">Send Large Photos</Switch>
         <Switch on={p.faces} set={(v) => setPrefs({ faces: v })}>Faces Next to Messages in Groups</Switch>
       </Box>
@@ -173,6 +174,112 @@ function Notify({ p }) {
       </Box>
       <Box title="Badge"><Soon hint="Comes with the desktop app">Unread Count on the App Icon</Soon></Box>
     </>
+  )
+}
+
+/* Two-Step Verification: an authenticator app (Google Authenticator, 1Password, Authy…) gives a code after the password */
+function TwoStep({ toast }) {
+  const [state, setState] = useState(null) // null loading · { on, factorId } · { setup: { id, qr, secret } }
+  const [code, setCode] = useState('')
+  const [err, setErr] = useState('')
+  const load = async () => {
+    const { data } = await supabase.auth.mfa.listFactors()
+    const f = (data?.totp || []).find((x) => x.status === 'verified')
+    setState(f ? { on: true, factorId: f.id } : { on: false })
+  }
+  useEffect(() => { load() }, [])
+  const start = async () => {
+    setErr('')
+    // leftovers from a setup that was not finished
+    const { data: all } = await supabase.auth.mfa.listFactors()
+    for (const f of (all?.all || []).filter((x) => x.status !== 'verified')) await supabase.auth.mfa.unenroll({ factorId: f.id })
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: `ROAR ${new Date().toISOString().slice(0, 16)}` })
+    if (error) { setErr(errText(error)); return }
+    setState({ setup: { id: data.id, qr: data.totp.qr_code, secret: data.totp.secret } })
+  }
+  const confirm = async () => {
+    setErr('')
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: state.setup.id, code: code.trim() })
+    if (error) { setErr(errText(error)); return }
+    setCode(''); toast('Two-step verification is on'); load()
+  }
+  const turnOff = async () => {
+    if (!window.confirm('Turn off two-step verification? Signing in will need only your password.')) return
+    const { error } = await supabase.auth.mfa.unenroll({ factorId: state.factorId })
+    if (error) { toast(errText(error)); return }
+    await supabase.auth.refreshSession()
+    toast('Two-step verification is off'); load()
+  }
+  return (
+    <Box title="Two-step verification" note="After your password, ROAR also asks for a 6-digit code from an authenticator app on your phone.">
+      {state === null && <div className="set-row"><span className="set-text muted">Loading…</span></div>}
+      {state?.on === true && (
+        <div className="set-row">
+          <span className="set-text">Two-Step Verification<small>On · an authenticator app is linked</small></span>
+          <button type="button" className="btn btn-sm btn-danger" onClick={turnOff}>Turn off</button>
+        </div>
+      )}
+      {state?.on === false && <Nav onClick={start} value="Off">Two-Step Verification</Nav>}
+      {state?.setup && (
+        <div className="set-row set-col mfa-setup">
+          <span className="set-text">1. Scan this with your authenticator app<small>Or type the key by hand</small></span>
+          <img className="mfa-qr" src={state.setup.qr} alt="QR code for your authenticator app" />
+          <code className="mfa-secret">{state.setup.secret}</code>
+          <span className="set-text">2. Type the 6-digit code it shows</span>
+          <input className="input mfa-code" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" />
+          <span className="set-acts"><button type="button" className="btn" onClick={() => { setState({ on: false }); setCode('') }}>Cancel</button><button type="button" className="btn btn-main" disabled={code.length !== 6} onClick={confirm}>Turn on</button></span>
+        </div>
+      )}
+      {err && <div className="set-row"><p className="auth-err">{err}</p></div>}
+    </Box>
+  )
+}
+
+/* Passcode Lock: a code on this device; ROAR locks itself after a while away */
+function Passcode({ toast }) {
+  const [lock, setL] = useState(getLock)
+  const [form, setForm] = useState(null) // null · { a, b, old }
+  useEffect(() => {
+    const on = () => setL(getLock())
+    window.addEventListener('roarme-lock', on)
+    return () => window.removeEventListener('roarme-lock', on)
+  }, [])
+  const save = async () => {
+    if (!/^\d{4,8}$/.test(form.a)) { toast('4 to 8 digits'); return }
+    if (form.a !== form.b) { toast('The two codes do not match'); return }
+    if (lock && !(await checkCode(form.old))) { toast('The current passcode is not right'); return }
+    await setLockCode(form.a, lock?.after || 5)
+    setForm(null); toast(lock ? 'Passcode changed' : 'Passcode on')
+  }
+  const off = async () => {
+    const old = window.prompt('Your current passcode')
+    if (old === null) return
+    if (!(await checkCode(old))) { toast('The passcode is not right'); return }
+    clearLock(); toast('Passcode off')
+  }
+  return (
+    <Box title="Passcode lock" note="Kept on this device only. If you forget it, sign out and in again.">
+      {!form && !lock && <Nav onClick={() => setForm({ a: '', b: '', old: '' })} value="Off">Passcode Lock</Nav>}
+      {!form && lock && (
+        <>
+          <div className="set-row set-col">
+            <span className="set-text">Lock After<small>Away from ROAR, or not touching it, this long</small></span>
+            <Lens className="seg" dep={lock.after}>{[[1, '1 min'], [5, '5 min'], [60, '1 hour'], [300, '5 hours']].map(([v, t]) => <button key={v} type="button" className={lock.after === v ? 'on' : ''} onClick={() => setLockAfter(v)}>{t}</button>)}</Lens>
+          </div>
+          <button type="button" className="set-row set-pick" onClick={lockNow}><span className="set-text">Lock Now</span></button>
+          <button type="button" className="set-row set-pick" onClick={() => setForm({ a: '', b: '', old: '' })}><span className="set-text">Change Passcode</span></button>
+          <button type="button" className="set-row set-pick danger" onClick={off}><span className="set-text">Turn Passcode Off</span></button>
+        </>
+      )}
+      {form && (
+        <div className="set-row set-col">
+          {lock && <input className="input" type="password" inputMode="numeric" value={form.old} onChange={(e) => setForm((f) => ({ ...f, old: e.target.value.replace(/\D/g, '') }))} placeholder="Current passcode" />}
+          <input className="input" type="password" inputMode="numeric" autoFocus value={form.a} onChange={(e) => setForm((f) => ({ ...f, a: e.target.value.replace(/\D/g, '').slice(0, 8) }))} placeholder="New passcode, 4 to 8 digits" />
+          <input className="input" type="password" inputMode="numeric" value={form.b} onChange={(e) => setForm((f) => ({ ...f, b: e.target.value.replace(/\D/g, '').slice(0, 8) }))} placeholder="Once more" onKeyDown={(e) => e.key === 'Enter' && save()} />
+          <span className="set-acts"><button type="button" className="btn" onClick={() => setForm(null)}>Cancel</button><button type="button" className="btn btn-main" onClick={save}>Save</button></span>
+        </div>
+      )}
+    </Box>
   )
 }
 
@@ -235,9 +342,9 @@ function Privacy({ me, setMe, toast }) {
               <span className="set-acts"><button type="button" className="btn" onClick={() => setPw({ a: '', b: '', open: false, busy: false, err: '' })}>Cancel</button><button type="button" className="btn btn-main" onClick={save} disabled={pw.busy}>{pw.busy ? '…' : 'Save'}</button></span>
             </div>
           )}
-        <Soon arrow>Two-Step Verification</Soon>
-        <Soon arrow>Passcode Lock</Soon>
       </Box>
+      <TwoStep toast={toast} />
+      <Passcode toast={toast} />
       <Box title="Privacy" note="My contacts: people you have a chat with.">
         {[['last_seen', 'Last Seen and Online'], ['photo', 'Profile Photo'], ['groups', 'Who Can Add Me to Groups'], ['calls', 'Who Can Call Me']].map(([k, l]) => (
           <div key={k} className="set-row set-col">
@@ -279,12 +386,12 @@ function Data({ p }) {
         <Switch on={p.largePhotos} set={(v) => setPrefs({ largePhotos: v })} hint="2560 px instead of 1600 px">Send Large Photos</Switch>
       </Box>
       <Box title="Automatic media download">
-        <Soon arrow hint="Photos, videos and files · coming soon">In Private Chats</Soon>
-        <Soon arrow hint="Photos, videos and files · coming soon">In Groups</Soon>
+        <Switch on={p.dlPrivate !== false} set={(v) => setPrefs({ dlPrivate: v })} hint="Off: a photo or video loads when you tap it">In Private Chats</Switch>
+        <Switch on={p.dlGroups !== false} set={(v) => setPrefs({ dlGroups: v })} hint="Off: a photo or video loads when you tap it">In Groups</Switch>
       </Box>
       <Box title="Auto-play media">
-        <Soon>Videos</Soon>
-        <Soon>GIFs</Soon>
+        <Switch on={p.autoplayVideos} set={(v) => setPrefs({ autoplayVideos: v })} hint="Silent, on a loop, as they come into view">Videos</Switch>
+        <Switch on={p.autoplayGifs !== false} set={(v) => setPrefs({ autoplayGifs: v })} hint="Off: a GIF moves when you tap it">GIFs</Switch>
       </Box>
     </>
   )

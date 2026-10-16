@@ -1549,3 +1549,44 @@ html[data-theme] .side-brand b { background: none; -webkit-background-clip: init
 .link.danger-link { color: var(--danger); }
 .seg.seg-wrap { flex-wrap: wrap; border-radius: 18px; }
 .seg.seg-wrap button { flex: 1 0 30%; }
+
+/* round 2 (16 Oct): formatting in messages */
+.fmt-code { padding: 1px 6px; border-radius: 6px; background: rgba(0, 0, 0, .22); font: .92em/1.4 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+.fmt-pre { margin: 4px 0; padding: 8px 10px; border-radius: 10px; background: rgba(0, 0, 0, .25); font: .88em/1.45 'JetBrains Mono', ui-monospace, Menlo, monospace; white-space: pre-wrap; overflow-x: auto; }
+.fmt-spoiler { border-radius: 5px; background: currentColor; color: inherit; cursor: pointer; transition: background .3s; }
+.fmt-spoiler > * { visibility: hidden; }
+.fmt-spoiler:not(.shown) { color: transparent; }
+.fmt-spoiler.shown { background: rgba(255, 255, 255, .12); }
+.fmt-spoiler.shown > * { visibility: visible; }
+html[data-mode='light'] :is(.fmt-code, .fmt-pre) { background: rgba(16, 32, 58, .08); }
+.msg.mine :is(.fmt-code, .fmt-pre) { background: rgba(0, 0, 0, .18); }
+
+/* a photo or video waiting for a tap (automatic download off) */
+.load-tap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 240px; height: 150px; border: 0; border-radius: 14px; background: rgba(0, 0, 0, .25); color: inherit; cursor: pointer; }
+.load-tap span { font-weight: 600; font-size: 14px; }
+.load-tap small { opacity: .7; font-size: 12px; }
+.load-tap svg { width: 28px; height: 28px; }
+
+/* Passcode Lock */
+.lock { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; }
+.lock-card { display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(340px, 100%); padding: 30px 24px 22px; border-radius: 30px; background: var(--panel); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); animation: rise .6s var(--ease) both; }
+.lock-card p { margin: 0; color: var(--muted); }
+.lock-card form { position: absolute; opacity: 0; pointer-events: none; }
+.lock-input { width: 1px; height: 1px; }
+.lock-dots { display: flex; gap: 12px; height: 16px; }
+.lock-dots i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--muted); transition: background .15s, border-color .15s; }
+.lock-dots i.on { background: var(--accent); border-color: var(--accent); }
+.lock-pad { display: grid; grid-template-columns: repeat(3, 68px); gap: 12px; margin: 6px 0 4px; }
+.lock-pad button { height: 68px; border-radius: 50%; border: 1px solid var(--edge); background: var(--glass); color: var(--text); font-size: 24px; font-weight: 500; }
+.lock-pad button:hover { background: var(--glass-2); }
+.lock-pad .lock-ghost { background: none; border-color: transparent; font-size: 20px; }
+.lock-pad .lock-go { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-size: 16px; font-weight: 700; }
+.lock-pad .lock-go:disabled { opacity: .4; }
+.lock-card.shake { animation: shake .45s ease; }
+@keyframes shake { 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
+
+/* Two-step verification */
+.mfa-setup { align-items: flex-start; }
+.mfa-qr { width: 190px; height: 190px; padding: 10px; border-radius: 16px; background: #fff; align-self: center; }
+.mfa-secret { align-self: center; padding: 6px 10px; border-radius: 8px; background: rgba(0, 0, 0, .22); font: 13px/1.3 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .08em; word-break: break-all; user-select: all; }
+.mfa-code { text-align: center; font-size: 22px; letter-spacing: .4em; }

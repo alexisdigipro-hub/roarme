@@ -139,3 +139,32 @@ export function Onboarding({ user, onDone }) {
     </div>
   )
 }
+
+/* the second step: the 6-digit code from the authenticator app (Settings > Privacy and Security) */
+export function MfaGate({ onDone }) {
+  const [code, setCode] = useState('')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const submit = async (e) => {
+    e.preventDefault()
+    setErr(''); setBusy(true)
+    const { data } = await supabase.auth.mfa.listFactors()
+    const f = (data?.totp || []).find((x) => x.status === 'verified')
+    const { error } = f ? await supabase.auth.mfa.challengeAndVerify({ factorId: f.id, code: code.trim() }) : { error: { message: 'No authenticator found for this account.' } }
+    setBusy(false)
+    if (error) { setErr(errText(error)); setCode('') } else onDone()
+  }
+  return (
+    <div className="auth">
+      <form className="auth-card" onSubmit={submit}>
+        <Brand />
+        <h1>Two-step verification</h1>
+        <p className="auth-sub">Type the 6-digit code from your authenticator app.</p>
+        <label className="field"><span>Code</span><input className="input mfa-code" inputMode="numeric" autoComplete="one-time-code" autoFocus value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" /></label>
+        {err && <p className="auth-err">{err}</p>}
+        <button type="submit" className="btn btn-main" disabled={busy || code.length !== 6}>{busy ? '…' : 'Continue'}</button>
+        <div className="auth-links"><button type="button" onClick={() => supabase.auth.signOut()}>Sign out</button></div>
+      </form>
+    </div>
+  )
+}

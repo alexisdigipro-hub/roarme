@@ -3,6 +3,7 @@ import { USERNAME_RE, cleanUsername, uploadWithProgress, dayLabel, errText, file
 import { Avatar, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
+import { formatText, plainText, wrapSelection } from './format.jsx'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { AttachSheet, AudioNote, MusicTile, isAudioFile, EmojiPicker, FoldersModal, MediaViewer, SharedMedia, VideoTile, WallTiles } from './extras.jsx'
 
@@ -179,7 +180,7 @@ export default function Chat({ me, setMe }) {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     const who = peopleRef.current[m.user_id]
     const title = room?.kind === 'group' ? `${room.title}` : nameOf(who)
-    const body = !prefsRef.current.notifyPreview ? 'New message' : (room?.kind === 'group' ? `${nameOf(who)}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : m.body)
+    const body = !prefsRef.current.notifyPreview ? 'New message' : (room?.kind === 'group' ? `${nameOf(who)}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : plainText(m.body))
     try {
       const n = new Notification(title, { body, icon: who?.avatar_url || './icon.svg', tag: m.room_id })
       n.onclick = () => { window.focus(); setTab('chats'); setActiveId(m.room_id); n.close() }
@@ -333,7 +334,7 @@ export default function Chat({ me, setMe }) {
     if (!r.last_kind) return r.kind === 'group' ? 'Group created' : 'Say hi'
     if (r.last_deleted) return ''
     const who = r.last_user === me.id ? 'You: ' : r.kind === 'group' && people[r.last_user] ? `${nameOf(people[r.last_user]).split(' ')[0]}: ` : ''
-    const what = r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : r.last_body
+    const what = r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(r.last_body)
     return who + what
   }
   const folderUnread = (f) => visible.filter((r) => inFolder(r, f.id) && !r.muted).reduce((a, r) => a + (r.unread || 0), 0)
@@ -1005,6 +1006,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     clearTimeout(tapTimer.current)
     tapTimer.current = setTimeout(() => openMenu(at, m), 230)
   }
+  const autoDl = room.kind === 'group' ? prefs.dlGroups !== false : prefs.dlPrivate !== false
   const bornAt = useRef(Date.now()) // messages newer than the opening of the chat fly in
   const onDouble = (m, e) => {
     if (m.deleted_at || picked) return
@@ -1016,6 +1018,16 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   }
 
   const onKey = (e) => {
+    // Cmd/Ctrl + B bold, I italic, E code, Shift+X strike, Shift+P spoiler, around what is selected
+    const fmtKey = (e.metaKey || e.ctrlKey) && ({ b: '**', i: '_', e: '`', ...(e.shiftKey ? { x: '~~', p: '||' } : {}) })[e.key.toLowerCase()]
+    if (fmtKey && e.currentTarget) {
+      e.preventDefault()
+      const el = e.currentTarget
+      const { next, caretA, caretB } = wrapSelection(el, text, fmtKey)
+      setText(next)
+      requestAnimationFrame(() => { el.selectionStart = caretA; el.selectionEnd = caretB })
+      return
+    }
     if (mentionHits.length && (e.key === 'Enter' || e.key === 'Tab')) { e.preventDefault(); pickMention(mentionHits[0]); return }
     const sendKey = prefs.enterSends ? e.key === 'Enter' && !e.shiftKey : e.key === 'Enter' && (e.metaKey || e.ctrlKey)
     if (sendKey) { e.preventDefault(); send(); return }
@@ -1208,6 +1220,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           const isPicked = picked?.includes(m.id)
           const big = prefs.bigEmoji && m.kind === 'text' && !m.deleted_at && !quoted && isEmojiOnly(m.body)
           const isVideo = m.kind === 'file' && /^video\//.test(m.file?.type || '')
+          const isGifFile = m.kind === 'file' && /gif/.test(m.file?.type || '')
           const hit = find && found.includes(m.id)
           return (
             <div key={m.id} id={`m-${m.id}`}>
@@ -1219,17 +1232,17 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo) && !m.deleted_at ? ' pic' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
                     {m.deleted_at ? <i>Message deleted</i>
-                      : m.kind === 'image' ? <Pic file={m.file} onOpen={() => openPhoto(m)} />
+                      : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : openPhoto(m))} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
-                      : isVideo ? <VideoTile file={m.file} />
+                      : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} />
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
-                    {!m.deleted_at && m.body && <span className="text">{withMentions(m.body)}</span>}
+                    {!m.deleted_at && m.body && <span className="text">{formatText(m.body, withMentions)}</span>}
                     <span className="meta">{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
                   {(rx || replyCount[m.id]) && (
@@ -1325,7 +1338,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>
               {menu.m.body && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
-              {menu.m.body && <button type="button" onClick={() => { copy(menu.m.body, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
+              {menu.m.body && <button type="button" onClick={() => { copy(prefs.copyFormat === false ? plainText(menu.m.body) : menu.m.body, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
               <button type="button" onClick={() => { copy(linkOf(menu.m), 'Link copied'); setMenu(null) }}>{I.link}<span>Copy Message Link</span></button>
               {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file?.path); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
@@ -1417,9 +1430,12 @@ function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
   )
 }
 
-function Pic({ file, onOpen }) {
+/* a photo or GIF in a message; with automatic download off (or a GIF set not to move) it waits for a tap */
+function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
+  const [go, setGo] = useState(auto && !still)
   const [url, setUrl] = useState('')
-  useEffect(() => { let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
+  useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
+  if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>
   const [ready, setReady] = useState(false)
   return url ? <img className={`pic-img${ready ? ' ready' : ''}`} src={url} alt={file?.name || ''} onLoad={() => setReady(true)} onClick={(e) => { e.stopPropagation(); onOpen(url) }} /> : <span className="pic-wait" />
 }

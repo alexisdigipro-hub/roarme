@@ -22,6 +22,11 @@ export const DEFAULTS = {
   quick: '🎥',
   doubleTap: 'react', // react | reply | edit | forward
   autoEmoji: true,
+  copyFormat: true, // Copy Text keeps **bold** and the other marks
+  dlPrivate: true, // photos and videos load by themselves in private chats
+  dlGroups: true, // and in groups
+  autoplayVideos: false,
+  autoplayGifs: true,
   callsTab: true,
   lite: false, // power saving: no animations, no glass blur
   peekBadge: false, // a click on the unread badge previews the chat

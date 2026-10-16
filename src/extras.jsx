@@ -159,10 +159,13 @@ export function AudioNote({ file }) {
 }
 
 /* ---------- a video in a bubble ---------- */
-export function VideoTile({ file }) {
+export function VideoTile({ file, auto = true, play = false }) {
+  const [go, setGo] = useState(auto)
   const [url, setUrl] = useState('')
-  useEffect(() => { let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
-  return url ? <video className="pic-img" src={url} controls preload="metadata" onClick={(e) => e.stopPropagation()} /> : <span className="pic-wait" />
+  useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file?.path).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
+  if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{I.play}<span>Video · {fmtBytes(file?.size)}</span><small>Tap to load</small></button>
+  // videos can play by themselves, silent and on a loop (Settings > Data and Storage)
+  return url ? <video className="pic-img ready" src={url} controls preload="metadata" autoPlay={play} muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} /> : <span className="pic-wait" />
 }
 
 /* ---------- your own folders (kept on this device) ---------- */

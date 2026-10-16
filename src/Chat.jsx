@@ -213,6 +213,7 @@ export default function Chat({ me, setMe }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_members', filter: `user_id=eq.${me.id}` }, reloadSoon)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roar_rooms' }, reloadSoon)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_reactions' }, (ev) => listeners.current.forEach((fn) => fn(ev)))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_pins' }, (ev) => listeners.current.forEach((fn) => fn(ev)))
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [me.id, reloadSoon])
@@ -796,14 +797,20 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   // reactions and how far each person has read
   const loadReacts = useCallback(() => supabase.from('roar_reactions').select('message_id, user_id, emoji').eq('room_id', room.room_id).then(({ data }) => setReacts(data || [])), [room.room_id])
   const loadReads = useCallback(() => supabase.from('roar_members').select('user_id, last_read_at').eq('room_id', room.room_id).then(({ data }) => setReads(Object.fromEntries((data || []).map((x) => [x.user_id, x.last_read_at])))), [room.room_id])
+  // pinned messages: as many as one likes, each with a pin on it; the bar opens them all in a window (Alex, 16 Oct)
+  const [pinRows, setPinRows] = useState([])
+  const [pinView, setPinView] = useState(false)
+  const [pinExtra, setPinExtra] = useState({})
+  const loadPins = useCallback(() => supabase.from('roar_pins').select('message_id, pinned_by, pinned_at').eq('room_id', room.room_id).order('pinned_at').then(({ data }) => setPinRows(data || [])), [room.room_id])
   useEffect(() => {
-    loadReacts(); loadReads()
+    loadReacts(); loadReads(); loadPins()
     const id = setInterval(loadReads, 15000)
     return () => clearInterval(id)
-  }, [loadReacts, loadReads])
+  }, [loadReacts, loadReads, loadPins])
 
   // live messages and reactions for this room
   useEffect(() => listen((ev) => {
+    if (ev.table === 'roar_pins') { loadPins(); return }
     if (ev.table === 'roar_reactions') {
       const r = ev.new?.room_id ? ev.new : ev.old
       if (r?.room_id === room.room_id) loadReacts()
@@ -813,7 +820,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     if (!m || m.room_id !== room.room_id) return
     if (ev.eventType === 'INSERT') { setMsgs((list) => (list.some((x) => x.id === m.id) ? list : [...list, m])); setTimeout(loadReads, 1500) }
     if (ev.eventType === 'UPDATE') setMsgs((list) => list.map((x) => (x.id === m.id ? m : x)))
-  }), [listen, room.room_id, loadReacts, loadReads])
+  }), [listen, room.room_id, loadReacts, loadReads, loadPins])
 
   // read: when the newest message is on screen and the window is in front
   const lastId = msgs[msgs.length - 1]?.id
@@ -1053,9 +1060,21 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
 
   const pin = async (m) => {
     setMenu(null)
-    const { error } = await supabase.rpc('roar_pin', { r: room.room_id, msg: m ? m.id : null })
+    const on = pinRows.some((p) => p.message_id === m.id)
+    setPinRows((l) => (on ? l.filter((p) => p.message_id !== m.id) : [...l, { message_id: m.id, pinned_by: me.id, pinned_at: new Date().toISOString() }]))
+    const { error } = on
+      ? await supabase.from('roar_pins').delete().eq('message_id', m.id)
+      : await supabase.from('roar_pins').insert({ message_id: m.id, room_id: room.room_id })
     if (error) setErr(errText(error))
-    else { onRead(); toast(m ? 'Pinned' : 'Unpinned') }
+    else toast(on ? 'Unpinned' : 'Pinned')
+    loadPins()
+  }
+  const unpinAll = async () => {
+    setPinView(false)
+    setPinRows([])
+    const { error } = await supabase.from('roar_pins').delete().eq('room_id', room.room_id)
+    if (error) setErr(errText(error)); else toast('All unpinned')
+    loadPins()
   }
 
   const textOf = (m) => (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.body)
@@ -1167,8 +1186,15 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   }
 
   const sub = room.kind === 'group' ? `${(room.members || []).length} members` : [other ? `@${other.username}` : '', lastSeenText(other)].filter(Boolean).join(' · ')
-  const pinnedRaw = room.pinned_message_id ? byId[room.pinned_message_id] || { id: room.pinned_message_id, body: 'Pinned message', kind: 'text' } : null
-  const pinned = pinnedRaw?.deleted_at ? null : pinnedRaw
+  // pinned messages older than what is loaded are fetched on their own
+  useEffect(() => {
+    const missing = pinRows.map((p) => p.message_id).filter((id) => !byId[id] && !pinExtra[id])
+    if (!missing.length) return
+    supabase.from('roar_messages').select('*').in('id', missing).then(({ data }) => { if (data?.length) setPinExtra((x) => ({ ...x, ...Object.fromEntries(data.map((m) => [m.id, m])) })) })
+  }, [pinRows]) // eslint-disable-line react-hooks/exhaustive-deps
+  const pinnedSet = new Set(pinRows.map((p) => p.message_id))
+  const pinnedList = pinRows.map((p) => byId[p.message_id] || pinExtra[p.message_id]).filter((m) => m && !m.deleted_at)
+  const pinned = pinnedList[pinnedList.length - 1] || null
   // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
   const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && (!clearedAt || m.created_at > clearedAt)), [msgs, clearedAt])
   const pickedMsgs = picked ? msgs.filter((m) => picked.includes(m.id)) : []
@@ -1252,7 +1278,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                     <button type="button" onClick={() => { setHeadMenu(false); onCall(true) }} onMouseEnter={() => setHeadSub('')}>{I.video}<span>Video</span></button>
                     {room.kind !== 'group' && other && <button type="button" onClick={() => { setHeadMenu(false); onNewGroup(other) }}>{I.people}<span>Create Group</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setMedia(true) }}>{I.image}<span>Photos, videos & files</span></button>
-                    {pinned && <button type="button" onClick={() => { setHeadMenu(false); goTo(pinned.id) }}>{I.pin}<span>Pinned message</span></button>}
+                    {pinned && <button type="button" onClick={() => { setHeadMenu(false); setPinView(true) }}>{I.pin}<span>Pinned messages</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setWallPick(true) }}>{I.brush}<span>Change Wallpaper</span></button>
                     <button type="button" onClick={exportChat} onMouseEnter={() => setHeadSub('')}>{I.file}<span>Export Chat History…</span></button>
                     <hr />
@@ -1288,9 +1314,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       )}
 
       {pinned && !picked && (
-        <div className="pinbar" role="button" tabIndex={0} onClick={() => goTo(pinned.id)}>
-          <span className="pinbar-main"><b>Pinned message</b><span>{pinned.deleted_at ? 'Message deleted' : textOf(pinned)}</span></span>
-          <button type="button" onClick={(e) => { e.stopPropagation(); pin(null) }} aria-label="Unpin" title="Unpin">{I.pin}</button>
+        <div className="pinbar" role="button" tabIndex={0} onClick={() => setPinView(true)} title="All pinned messages">
+          <span className="pinbar-main"><b>{pinnedList.length > 1 ? `Pinned messages · ${pinnedList.length}` : 'Pinned message'}</b><span>{textOf(pinned)}</span></span>
+          <span className="pinbar-ico">{I.pin}{pinnedList.length > 1 && <i>{pinnedList.length}</i>}</span>
         </div>
       )}
 
@@ -1323,7 +1349,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
                     {m.deleted_at ? <i>Message deleted</i>
@@ -1336,7 +1362,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                       : null}
                     {!m.deleted_at && m.body && <span className="text">{formatText(m.body, withMentions)}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />}
-                    <span className="meta">{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
+                    <span className="meta">{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
                   {(rx || replyCount[m.id]) && (
                     <span className="rx">
@@ -1447,7 +1473,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
               <hr />
               {menu.m.user_id === me.id && menu.m.kind === 'text' && <button type="button" onClick={() => { setEditing(menu.m); setText(menu.m.body); setMenu(null) }}>{I.edit}<span>Edit</span></button>}
-              <button type="button" onClick={() => pin(room.pinned_message_id === menu.m.id ? null : menu.m)}>{I.pin}<span>{room.pinned_message_id === menu.m.id ? 'Unpin' : 'Pin'}</span></button>
+              <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
               <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>
               <button type="button" onClick={() => { setPicked([menu.m.id]); setMenu(null) }}>{I.select}<span>Select</span></button>
               {menu.m.user_id === me.id && (
@@ -1487,6 +1513,27 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         <Modal title="Chat wallpaper" onClose={() => setWallPick(false)} foot={<><button type="button" className="btn" onClick={() => { setPrefs({ background: wall }); setWalls({}); setWallPick(false); toast('Wallpaper set for all chats') }}>Use for all chats</button><button type="button" className="btn btn-main" onClick={() => setWallPick(false)}>Done</button></>}>
           <p className="muted">For this chat only, on this computer.</p>
           <WallTiles value={wall} onPick={(k) => setWalls((w) => ({ ...w, [room.room_id]: k }))} />
+        </Modal>
+      )}
+      {pinView && (
+        <Modal title={pinnedList.length === 1 ? '1 pinned message' : `${pinnedList.length} pinned messages`} onClose={() => setPinView(false)}
+          foot={pinnedList.length > 1 ? <button type="button" className="btn btn-danger pins-all" onClick={unpinAll}>{I.pin}<span>Unpin all</span></button> : null}>
+          {!pinnedList.length && <p className="empty">Nothing pinned yet. Pin a message from its menu.</p>}
+          <div className="pins">
+            {[...pinnedList].reverse().map((m) => {
+              const who = people[m.user_id]
+              return (
+                <div key={m.id} className="pin-row" role="button" tabIndex={0} onClick={() => { setPinView(false); goTo(m.id) }}>
+                  <Avatar src={who?.avatar_url} name={nameOf(who)} size={34} />
+                  <span className="pin-text">
+                    <span className="pin-top"><b>{m.user_id === me.id ? 'You' : nameOf(who)}</b><small>{dayLabel(m.created_at)} · {timeOf(m.created_at)}</small></span>
+                    <span className="pin-body">{m.kind === 'text' ? formatText(m.body) : textOf(m)}</span>
+                  </span>
+                  <button type="button" className="pin-un" onClick={(e) => { e.stopPropagation(); pin(m) }} aria-label="Unpin" title="Unpin">{I.x}</button>
+                </div>
+              )
+            })}
+          </div>
         </Modal>
       )}
       {forward && <Forward msgs={forward} me={me} rooms={rooms} titleOf={titleOf} fromRoom={room.room_id} onClose={() => setForward(null)} onDone={(n) => { setForward(null); setPicked(null); toast(n > 1 ? `${n} messages forwarded` : 'Forwarded') }} />}

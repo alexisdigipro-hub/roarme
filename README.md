@@ -26,6 +26,12 @@ Strikethrough, Code, Spoiler (press again to take the mark off; keys ⌘B, ⌘I,
 `__text__`. The send window opens on tinted tiles (Gallery, Camera on phones, File, RoarTransfer); once files are
 picked they shrink to small pills and the caption and Send come in.
 
+## Pinned messages (17 Oct)
+Pin as many messages as you like (message menu > Pin). A pinned message has a small pin beside its time. The bar
+over the chat shows the latest one and how many there are; a click opens a window with all of them (who, when,
+the text), where a click goes to the message, × unpins it and "Unpin all" clears them. Table `roar_pins`
+(`supabase/pins.sql`); the old single `roar_rooms.pinned_message_id` was moved in and is no longer read.
+
 ## RoarTransfer (16 Oct)
 A file over 50 MB (HD photos and videos, documents, or a video still over 50 MB after Standard shrinks it)
 goes by RoarTransfer: up to 3 GB, uploaded in 6 MB pieces that resume after a dropped connection, kept 3 days.

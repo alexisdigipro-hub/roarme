@@ -2209,3 +2209,39 @@ html[data-mode='light'] .msg:not(.mine) .tr-exp.soon { color: #c8321f; }
 .rt-preview { width: 100%; max-height: 300px; border-radius: 18px; background: #000; object-fit: contain; }
 .rt-foot { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; color: var(--muted); font-size: 12px; text-decoration: none; }
 html[data-mode='light'] :is(.rt, .rt-card) .tr-exp:not(.soon) { color: #a35f00; background: rgba(255, 170, 0, .14); border-color: rgba(214, 140, 0, .35); }
+
+/* pinned messages (Alex, 16 Oct): a small pin beside the time, a bar with how many, and a window with them all */
+.pin-mark { display: inline-flex; margin-right: 4px; vertical-align: -2px; font-style: normal; color: var(--accent); }
+.msg.mine .pin-mark { color: inherit; }
+.pin-mark svg { width: 12px; height: 12px; stroke-width: 2.2; transform: rotate(35deg); }
+.pinbar-ico { position: relative; flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.pinbar-ico svg { transform: rotate(35deg); }
+.pinbar-ico i { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; border-radius: 999px; font-style: normal; font-size: 10.5px; font-weight: 800; line-height: 17px; text-align: center; color: var(--accent-ink, #fff); background: var(--accent); }
+.pinbar:hover .pinbar-ico { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+.pins { display: flex; flex-direction: column; gap: 8px; }
+.pin-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 8px 10px 10px; border-radius: 18px; background: var(--glass); border: 1px solid var(--edge); cursor: pointer; transition: background .15s, transform .12s; animation: pop .3s cubic-bezier(.25, .8, .3, 1) both; }
+.pin-row:hover { background: var(--glass-2); }
+.pin-row:active { transform: scale(.99); }
+.pin-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pin-top { display: flex; align-items: baseline; gap: 8px; }
+.pin-top b { font-size: 13.5px; }
+.pin-top small { color: var(--muted); font-size: 11.5px; }
+.pin-body { font-size: 14px; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; }
+.pin-un { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.pin-un:hover { background: var(--glass-2); color: var(--danger); }
+.pin-un svg { width: 14px; height: 14px; }
+.pins-all { gap: 7px; margin-left: auto; border-radius: 999px; }
+.pins-all svg { width: 15px; height: 15px; }
+
+/* a RoarTransfer you sent is quieter (Alex, 17 Oct): see-through with a touch of the accent and a thin accent edge,
+   like the chosen chat in the list, instead of a full accent bubble */
+html[data-theme] .msg.mine .bubble.transfer-b { color: var(--text); background: color-mix(in srgb, var(--accent) 15%, var(--glass)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent) !important; box-shadow: none !important; }
+html[data-theme] .msg.mine .bubble.transfer-b :is(.meta, .ticks, .file-text small) { color: var(--muted); }
+html[data-theme] .msg.mine .bubble.transfer-b .tr-tag, html[data-theme] .msg.mine .bubble.transfer-b .rt-link { color: var(--accent); }
+html[data-theme] .msg.mine .bubble.transfer-b .file-ico { color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); }
+html[data-theme] .msg.mine .bubble.transfer-b .tr-exp { color: #ffc24a; background: rgba(255, 176, 32, .16); border-color: rgba(255, 176, 32, .38); }
+html[data-theme] .msg.mine .bubble.transfer-b .tr-exp.soon { color: #ff7a6b; background: rgba(255, 90, 70, .16); border-color: rgba(255, 90, 70, .4); }
+html[data-mode='light'][data-theme] .msg.mine .bubble.transfer-b .tr-exp:not(.soon):not(.gone) { color: #a35f00; background: rgba(255, 170, 0, .14); border-color: rgba(214, 140, 0, .35); }
+html[data-theme] .msg.mine .bubble.transfer-b .transfer-acts .btn { color: var(--text); background: var(--glass); border-color: var(--edge); }
+html[data-theme] .msg.mine .bubble.transfer-b .transfer-acts .btn.btn-main { box-shadow: none; color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }

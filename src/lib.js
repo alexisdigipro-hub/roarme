@@ -154,6 +154,7 @@ export async function tusUpload(bucket, path, file, type, onProgress, holder = {
     ...(await base()), 'Upload-Length': String(file.size), 'x-upsert': 'false',
     'Upload-Metadata': [['bucketName', bucket], ['objectName', path], ['contentType', type || 'application/octet-stream'], ['cacheControl', '3600']].map(([k, v]) => `${k} ${b64(v)}`).join(','),
   })
+  if (made.status === 413) throw new Error('Too big for the server right now: its upload limit (Supabase > Storage > Settings) is below this file.')
   if (made.status !== 201) throw failed(made)
   const loc = made.getResponseHeader('Location') || ''
   const at = /^https?:/.test(loc) ? loc : new URL(loc, TUS_URL).href

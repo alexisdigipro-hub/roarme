@@ -451,6 +451,7 @@ export const EL = {
   'Over 50 MB: it goes by RoarTransfer, kept 3 days.': 'Πάνω από 50 MB: πάει με RoarTransfer και μένει 3 μέρες.',
   'Over 50 MB goes by RoarTransfer: up to 3 GB, kept 3 days.': 'Πάνω από 50 MB πάει με RoarTransfer: έως 3 GB, μένει 3 μέρες.',
   'Expired': 'Έληξε',
+  'Too big for the server right now: its upload limit (Supabase > Storage > Settings) is below this file.': 'Πολύ μεγάλο για τον server αυτή τη στιγμή: το όριο ανεβάσματος (Supabase > Storage > Settings) είναι μικρότερο από το αρχείο.',
   'RoarTransfer: big files as they are, up to 3 GB, kept 3 days': 'RoarTransfer: μεγάλα αρχεία όπως είναι, έως 3 GB, μένουν 3 μέρες',
   'Expires within the hour': 'Λήγει μέσα στην ώρα',
   'Opening…': 'Άνοιγμα…',

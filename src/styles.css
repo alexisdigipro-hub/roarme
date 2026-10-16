@@ -2069,8 +2069,6 @@ html[data-theme] .wordmark b, .wordmark b { letter-spacing: -.01em; text-transfo
 
 /* RoarTransfer (Alex, 16 Oct): a big file kept 3 days, its own tile with Play / Download pills */
 .bubble .file.transfer { flex-wrap: wrap; row-gap: 8px; padding: 6px 4px 4px 0; }
-.file.transfer .file-text em { font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
-.msg.mine .file.transfer .file-text em { color: inherit; opacity: .8; }
 .file.transfer.gone { opacity: .55; }
 .transfer-acts { display: flex; gap: 8px; width: 100%; }
 .transfer-acts .btn { flex: 1; justify-content: center; gap: 6px; height: 34px; min-height: 34px; padding: 0 12px; border-radius: 999px; font-size: 13px;
@@ -2082,3 +2080,16 @@ html[data-mode='light'] .msg:not(.mine) .transfer-acts .btn { color: var(--accen
 .attach-transfer { display: block; margin-top: 6px; color: var(--accent); font-weight: 600; }
 html .msg.mine .transfer-acts .btn { color: #fff; background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .3); }
 html .msg.mine .transfer-acts .btn.btn-main { color: var(--accent); background: #fff; border-color: #fff; }
+
+/* RoarTransfer's mark: the cloud and the name in capitals, while it goes up and on the tile; the 3 days stand out (Alex, 16 Oct) */
+.tr-tag { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-style: normal; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); line-height: 1.2; margin-bottom: 2px; }
+.tr-tag svg { width: 16px; height: 16px; stroke-width: 2.2; }
+.msg.mine .tr-tag { color: #fff; }
+.tr-exp { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; font-size: 12.5px; font-weight: 700; line-height: 1.2;
+  color: #ffc24a; background: rgba(255, 176, 32, .16); border: 1px solid rgba(255, 176, 32, .38); }
+.tr-exp svg { width: 15px; height: 15px; stroke-width: 2.2; }
+.tr-exp.soon { color: #ff7a6b; background: rgba(255, 90, 70, .16); border-color: rgba(255, 90, 70, .4); }
+.tr-exp.gone { color: inherit; opacity: .7; background: rgba(127, 127, 127, .14); border-color: rgba(127, 127, 127, .3); }
+.msg.mine .tr-exp { color: #fff; background: rgba(0, 0, 0, .22); border-color: rgba(255, 255, 255, .35); }
+html[data-mode='light'] .msg:not(.mine) .tr-exp:not(.soon):not(.gone) { color: #a35f00; background: rgba(255, 170, 0, .14); border-color: rgba(214, 140, 0, .35); }
+html[data-mode='light'] .msg:not(.mine) .tr-exp.soon { color: #c8321f; }

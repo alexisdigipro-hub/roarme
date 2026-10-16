@@ -940,7 +940,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const ok = files.filter((f) => { if (f.size > TRANSFER_MAX) { setErr(`${f.name} is over 3 GB, the most RoarTransfer takes.`); return false } return true })
     // Safari lets a video play only from inside the tap: each clip is readied now, before anything waits
     const handles = new Map(ok.filter(shrinkVid).map((f) => [f, prepareVideo(f)]))
-    const tiles = ok.map((f) => ({ id: crypto.randomUUID(), name: f.name, size: f.size, preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : '', p: 0, stage: 'prep' }))
+    const tiles = ok.map((f) => ({ id: crypto.randomUUID(), name: f.name, size: f.size, big: viaTransfer || (f.size > SMALL_MAX && !shrinkVid(f)), preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : '', p: 0, stage: 'prep' }))
     setOutbox((l) => [...l, ...tiles])
     let n = 0
     for (const raw of ok) {
@@ -1352,8 +1352,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                       <button type="button" className="ring-x" onClick={() => { o.holder?.abort?.(); if (!o.holder?.abort) dropOut(o.id) }} aria-label="Stop" title="Stop">{I.x}</button>
                     </span>
                     <span className="out-text">
+                      {o.big && <em className="tr-tag">{I.transfer}<span>RoarTransfer</span></em>}
                       <b>{o.name}</b>
-                      <small>{o.stage === 'shrink' ? `Making it smaller · ${Math.round(o.p * 100)}%` : o.stage === 'prep' ? 'Preparing…' : o.stage === 'send' ? 'Sending…' : `${o.big ? 'RoarTransfer · ' : ''}${Math.round(o.p * 100)}% · ${fmtBytes(o.size * o.p)} of ${fmtBytes(o.size)}`}</small>
+                      <small>{o.stage === 'shrink' ? `Making it smaller · ${Math.round(o.p * 100)}%` : o.stage === 'prep' ? 'Preparing…' : o.stage === 'send' ? 'Sending…' : `${Math.round(o.p * 100)}% · ${fmtBytes(o.size * o.p)} of ${fmtBytes(o.size)}`}</small>
                     </span>
                   </span>
                 </div>
@@ -1554,7 +1555,12 @@ function TransferTile({ file, onCinema }) {
   return (
     <span className={`file transfer${gone ? ' gone' : ''}`}>
       <span className="file-ico">{isVid ? I.play : I.file}</span>
-      <span className="file-text"><em>RoarTransfer</em><b>{file?.name}</b><small>{fmtBytes(file?.size)} · {when}</small></span>
+      <span className="file-text">
+        <em className="tr-tag">{I.transfer}<span>RoarTransfer</span></em>
+        <b>{file?.name}</b>
+        <small>{fmtBytes(file?.size)}</small>
+        <span className={`tr-exp${gone ? ' gone' : left < 864e5 ? ' soon' : ''}`}>{I.timer}<span>{when}</span></span>
+      </span>
       {!gone && (
         <span className="transfer-acts" onClick={(e) => e.stopPropagation()}>
           {isVid && onCinema && <button type="button" className="btn" onClick={play}>{I.play}<span>Play</span></button>}

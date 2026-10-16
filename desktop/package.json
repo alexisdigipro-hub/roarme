@@ -1,8 +1,8 @@
 {
   "name": "roar",
-  "productName": "ROAR",
-  "version": "1.3.2",
-  "description": "ROAR for Mac and Windows: the chat in an app of its own",
+  "productName": "RoarMe",
+  "version": "1.4.0",
+  "description": "RoarMe for Mac and Windows: the chat in an app of its own",
   "author": "THEMADLIONS",
   "private": true,
   "main": "main.js",
@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "com.themadlions.roar",
-    "productName": "ROAR",
+    "productName": "RoarMe",
     "directories": {
       "output": "out",
       "buildResources": "build"
@@ -36,15 +36,15 @@
       ],
       "category": "public.app-category.social-networking",
       "identity": null,
-      "artifactName": "ROAR-Mac-${arch}.${ext}",
+      "artifactName": "RoarMe-Mac-${arch}.${ext}",
       "extendInfo": {
-        "NSCameraUsageDescription": "ROAR uses the camera for photos and video calls.",
-        "NSMicrophoneUsageDescription": "ROAR uses the microphone for voice messages and calls."
+        "NSCameraUsageDescription": "RoarMe uses the camera for photos and video calls.",
+        "NSMicrophoneUsageDescription": "RoarMe uses the microphone for voice messages and calls."
       }
     },
     "dmg": {
-      "artifactName": "ROAR-Mac-${arch}.${ext}",
-      "title": "ROAR"
+      "artifactName": "RoarMe-Mac-${arch}.${ext}",
+      "title": "RoarMe"
     },
     "win": {
       "target": [
@@ -55,14 +55,14 @@
           ]
         }
       ],
-      "artifactName": "ROAR-Windows-Setup.${ext}"
+      "artifactName": "RoarMe-Windows-Setup.${ext}"
     },
     "nsis": {
       "oneClick": true,
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "ROAR"
+      "shortcutName": "RoarMe"
     }
   }
 }

@@ -1,10 +1,10 @@
 import { EL } from './i18n-el.js'
 import { getPrefs } from './prefs.js'
 
-/* ROAR in English or Greek (Alex, 16 Oct: "only English and Greek, the whole app in Greek").
+/* RoarMe in English or Greek (Alex, 16 Oct: "only English and Greek, the whole app in Greek").
    The app is written in English; in Greek every interface text on the page is swapped for its
    translation as it appears (exact texts from i18n-el.js, the changing ones from PATTERNS below).
-   Messages, names and bios are never touched. Changing the language reloads ROAR. */
+   Messages, names and bios are never touched. Changing the language reloads RoarMe. */
 
 export const LANGS = [['en', 'English', 'English'], ['el', 'Greek', 'Ελληνικά']]
 export const lang = () => (getPrefs().lang === 'el' ? 'el' : 'en')
@@ -66,7 +66,7 @@ const PATTERNS = [
   [/^Photo · (.+)$/, (_, s) => `Φωτογραφία · ${s}`],
   [/^Video · (.+)$/, (_, s) => `Βίντεο · ${s}`],
   [/^GIF · (.+)$/, (_, s) => `GIF · ${s}`],
-  [/^Open ROAR \((\d+) unread\)$/, (_, n) => `Άνοιγμα ROAR (${n} αδιάβαστα)`],
+  [/^Open RoarMe \((\d+) unread\)$/, (_, n) => `Άνοιγμα RoarMe (${n} αδιάβαστα)`],
   [/^(\d+) px$/, (_, n) => `${n} px`],
 ]
 

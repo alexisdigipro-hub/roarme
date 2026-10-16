@@ -65,7 +65,7 @@ export default function Chat({ me, setMe }) {
   const [peek, setPeek] = useState(null) // a chat looked at without opening it
   const [folderMenu, setFolderMenu] = useState(null) // right click on a folder tab: {f, x, y}
   const [folderChats, setFolderChats] = useState('') // the folder whose chats are being picked
-  // the way ROAR opens (Alex, 16 Oct): the chats slide in from the left, the conversation rises after them
+  // the way RoarMe opens (Alex, 16 Oct): the chats slide in from the left, the conversation rises after them
   const [intro, setIntro] = useState(true)
   useEffect(() => { const t = setTimeout(() => setIntro(false), 1400); return () => clearTimeout(t) }, [])
   const [setPage, setSetPage] = useState('')
@@ -236,7 +236,7 @@ export default function Chat({ me, setMe }) {
   const visible = rooms.filter((r) => !hidden[r.room_id] || r.last_message_at > hidden[r.room_id])
   const unreadAll = visible.filter((r) => !r.archived && !r.muted).reduce((a, r) => a + (r.unread || 0), 0)
   useEffect(() => {
-    document.title = unreadAll ? `(${unreadAll}) ROAR` : 'ROAR'
+    document.title = unreadAll ? `(${unreadAll}) RoarMe` : 'RoarMe'
     window.roarDesktop?.setBadge(prefs.badge === false ? 0 : unreadAll) // the count on the app's icon (Mac/Windows app)
   }, [unreadAll, prefs.badge])
 
@@ -557,7 +557,7 @@ export default function Chat({ me, setMe }) {
         ) : (
           <div className="pick">
             <span className="pick-paw"><Paw size={64} /></span>
-            <h2>ROAR</h2>
+            <h2>RoarMe</h2>
             <p>Pick a chat, or start a new one.</p>
             <div className="pick-acts">
               <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>{I.person} New chat</button>
@@ -1179,10 +1179,10 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const when = (s) => { const d = new Date(s); return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}` }
     const what = (m) => (m.kind === 'image' ? `[Photo${m.file?.name ? `: ${m.file.name}` : ''}]${m.body ? ` ${m.body}` : ''}` : m.kind === 'voice' ? '[Voice message]' : m.kind === 'file' ? `[File: ${m.file?.name || 'file'}]${m.body ? ` ${m.body}` : ''}` : m.body)
     const lines = all.map((m) => `[${when(m.created_at)}] ${m.user_id === me.id ? nameOf(me) : nameOf(people[m.user_id]) || 'Someone'}: ${what(m)}`)
-    const text = `ROAR · ${title}\nExported ${when(new Date().toISOString())} · ${all.length} messages\n\n${lines.join('\n')}\n`
+    const text = `RoarMe · ${title}\nExported ${when(new Date().toISOString())} · ${all.length} messages\n\n${lines.join('\n')}\n`
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }))
-    a.download = `ROAR - ${title.replace(/[\\/:*?"<>|]/g, '')}.txt`
+    a.download = `RoarMe - ${title.replace(/[\\/:*?"<>|]/g, '')}.txt`
     document.body.appendChild(a); a.click(); a.remove()
     setTimeout(() => URL.revokeObjectURL(a.href), 4000)
   }

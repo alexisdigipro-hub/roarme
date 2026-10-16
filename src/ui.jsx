@@ -155,7 +155,7 @@ export function revealFrom(e, change) {
   t.finished.finally(() => r.classList.remove('vt-reveal'))
 }
 
-/* ROAR's mark (Alex, 16 Oct): a lion cub's paw, in the theme's accent colour */
+/* RoarMe's mark (Alex, 16 Oct): a lion cub's paw, in the theme's accent colour */
 export function Paw({ size = 22 }) {
   return (
     <svg className="paw" width={size} height={size} viewBox="14 16 36 37" aria-hidden="true" fill="currentColor">
@@ -167,7 +167,7 @@ export function Paw({ size = 22 }) {
     </svg>
   )
 }
-export const Wordmark = ({ size = 20 }) => <span className="wordmark"><Paw size={size} /><b>ROAR</b></span>
+export const Wordmark = ({ size = 20 }) => <span className="wordmark"><Paw size={size} /><b>Roar<span>Me</span></b></span>
 
 /* Adjust a new picture before it is saved (Alex, 16 Oct): drag to place it, slide or scroll to zoom,
    inside the round frame it will be shown in. Gives back a square JPEG, 640 px. */

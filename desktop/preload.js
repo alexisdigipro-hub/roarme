@@ -1,4 +1,4 @@
-// What the ROAR site may ask of the Mac/Windows app (Settings > General and Notifications):
+// What the RoarMe site may ask of the Mac/Windows app (Settings > General and Notifications):
 // the unread count on the icon, the paw in the menu bar, opening at login, running with the window closed.
 const { contextBridge, ipcRenderer } = require('electron')
 

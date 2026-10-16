@@ -146,7 +146,7 @@ export function useCalls({ me, people, loadPeople, toast }) {
       }, RING_FOR)
     } catch (e) {
       if (c) log(c.id, { status: 'cancelled', ended_at: new Date().toISOString() })
-      finish(e?.name === 'NotAllowedError' ? 'ROAR needs your microphone (and camera) to call' : errText(e))
+      finish(e?.name === 'NotAllowedError' ? 'RoarMe needs your microphone (and camera) to call' : errText(e))
     }
   }, [me.id, toast, finish]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -168,7 +168,7 @@ export function useCalls({ me, people, loadPeople, toast }) {
       log(c.id, { status: 'answered', answered_at: new Date().toISOString() })
     } catch (e) {
       signal(c.peer.id, 'hangup', { callId: c.id, from: me.id }).catch(() => {})
-      finish(e?.name === 'NotAllowedError' ? 'ROAR needs your microphone (and camera) to answer' : errText(e))
+      finish(e?.name === 'NotAllowedError' ? 'RoarMe needs your microphone (and camera) to answer' : errText(e))
     }
   }, [me.id, finish]) // eslint-disable-line react-hooks/exhaustive-deps
 

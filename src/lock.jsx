@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Wordmark } from './ui.jsx'
 
-/* Passcode Lock (Alex, 16 Oct): a code kept on this device that closes ROAR after a while away.
+/* Passcode Lock (Alex, 16 Oct): a code kept on this device that closes RoarMe after a while away.
    Only a salted SHA-256 of the code is stored, in this browser or app, never the code itself. */
 const KEY = 'roarme-lock'
 export const getLock = () => { try { return JSON.parse(localStorage.getItem(KEY)) || null } catch { return null } }

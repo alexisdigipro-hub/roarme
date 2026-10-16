@@ -1,6 +1,6 @@
-name: ROAR desktop apps
+name: RoarMe desktop apps
 
-# Builds ROAR for Mac (.dmg, Apple Silicon and Intel) and Windows (.exe) from desktop/ and puts them on a
+# Builds RoarMe for Mac (.dmg, Apple Silicon and Intel) and Windows (.exe) from desktop/ and puts them on a
 # GitHub release, whose files are the download links. Run it from the Actions tab (Run workflow) or by
 # pushing a tag desktop-v*. The website itself is not touched.
 on:
@@ -36,7 +36,7 @@ jobs:
         run: |
           for i in 1 2 3; do
             if npm run dist:mac > build.log 2>&1; then cat build.log; exit 0; fi
-            echo "attempt $i failed"; tail -40 build.log; hdiutil detach /Volumes/ROAR -force || true; rm -rf out; sleep 10
+            echo "attempt $i failed"; tail -40 build.log; hdiutil detach /Volumes/RoarMe -force || true; rm -rf out; sleep 10
           done
           echo "::error title=Mac build::$(tail -25 build.log | tr '\n' ' ' | cut -c1-3500)"
           exit 1
@@ -61,9 +61,9 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('desktop-build-{0}', github.run_number) }}
-          name: ROAR ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
+          name: RoarMe ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
           make_latest: true
           body: |
-            ROAR for Mac and Windows.
-            Mac with Apple Silicon (M1, M2, M3, M4): ROAR-Mac-arm64.dmg · Mac with Intel: ROAR-Mac-x64.dmg · Windows: ROAR-Windows-Setup.exe
+            RoarMe for Mac and Windows.
+            Mac with Apple Silicon (M1, M2, M3, M4): RoarMe-Mac-arm64.dmg · Mac with Intel: RoarMe-Mac-x64.dmg · Windows: RoarMe-Windows-Setup.exe
           files: files/*

@@ -1,10 +1,10 @@
-// ROAR for Mac and Windows (Alex, 16 Oct): the chat from alexisdigipro-hub.github.io/roarme, live, in an
+// RoarMe for Mac and Windows (Alex, 16 Oct): the chat from alexisdigipro-hub.github.io/roarme, live, in an
 // app of its own. Nothing of the chat is kept in the app, so every change to the site reaches it on the
-// next start without a new install. Links that leave ROAR open in the computer's own browser.
+// next start without a new install. Links that leave RoarMe open in the computer's own browser.
 // The app adds what a browser cannot: the unread count on its icon, a paw in the menu bar, opening at
 // login, and staying on (with notifications and calls) when its window is closed.
 const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, shell, session } = require('electron')
-// ROAR is dark: the glass under the window is dark too, even when the Mac is in light mode (Alex, 16 Oct:
+// RoarMe is dark: the glass under the window is dark too, even when the Mac is in light mode (Alex, 16 Oct:
 // the strip while resizing came out white)
 nativeTheme.themeSource = 'dark'
 // draw with the graphics card wherever it can, so the page keeps up while the window is resized
@@ -33,12 +33,12 @@ const saveSettings = () => { try { fs.writeFileSync(file(), JSON.stringify(setti
 if (!app.requestSingleInstanceLock()) app.quit()
 app.on('second-instance', () => show())
 
-// no white title bar (Alex, 16 Oct): on a Mac the three buttons sit on ROAR's own dark band, on Windows the
+// no white title bar (Alex, 16 Oct): on a Mac the three buttons sit on RoarMe's own dark band, on Windows the
 // window buttons sit on a dark strip; the site leaves room for them (html[data-desktop] in styles.css)
 const frame = process.platform === 'darwin'
   ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 10 } }
   : { titleBarStyle: 'hidden', titleBarOverlay: { color: '#1b1e23', symbolColor: '#eef0f3', height: 32 } }
-// An opaque window the colour of ROAR's graphite: a see-through (vibrancy) window made resizing slower and showed
+// An opaque window the colour of RoarMe's graphite: a see-through (vibrancy) window made resizing slower and showed
 // white on a light Mac (Alex, 16 Oct), so the window is solid and the page itself is kept light to repaint.
 const glassy = { backgroundColor: '#24282f' }
 const look = { ...glassy, autoHideMenuBar: true, show: false, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, preload: path.join(__dirname, 'preload.js') } }
@@ -71,13 +71,13 @@ function guard(w) {
 }
 
 function open() {
-  win = new BrowserWindow({ width: 1240, height: 840, minWidth: 760, minHeight: 540, title: 'ROAR', ...look })
-  // shown once the page has painted, so it opens on ROAR and not on an empty frame
+  win = new BrowserWindow({ width: 1240, height: 840, minWidth: 760, minHeight: 540, title: 'RoarMe', ...look })
+  // shown once the page has painted, so it opens on RoarMe and not on an empty frame
   win.once('ready-to-show', () => win?.show())
   setTimeout(() => { if (win && !win.isVisible()) win.show() }, 3000) // a slow or missing network still gets a window
   win.loadURL(HOME)
   guard(win)
-  // closing the window keeps ROAR on in the background, so messages and calls still arrive
+  // closing the window keeps RoarMe on in the background, so messages and calls still arrive
   win.on('close', (e) => {
     if (!quitting && settings.keepRunning) { e.preventDefault(); win.hide() }
   })
@@ -98,15 +98,15 @@ function trayIcon() {
 function updateTray() {
   if (settings.tray && !tray) {
     tray = new Tray(trayIcon())
-    tray.setToolTip('ROAR')
+    tray.setToolTip('RoarMe')
     tray.on('click', show)
   }
   if (!settings.tray && tray) { tray.destroy(); tray = null }
   if (tray) {
     tray.setContextMenu(Menu.buildFromTemplate([
-      { label: unread ? `Open ROAR (${unread} unread)` : 'Open ROAR', click: show },
+      { label: unread ? `Open RoarMe (${unread} unread)` : 'Open RoarMe', click: show },
       { type: 'separator' },
-      { label: 'Quit ROAR', click: () => { quitting = true; app.quit() } },
+      { label: 'Quit RoarMe', click: () => { quitting = true; app.quit() } },
     ]))
     if (process.platform === 'darwin') tray.setTitle(unread ? String(unread) : '')
   }
@@ -126,9 +126,9 @@ ipcMain.handle('roar:set', (_e, key, value) => {
 
 app.whenReady().then(async () => {
   loadSettings()
-  // always the latest ROAR: nothing old from the last time is reused
+  // always the latest RoarMe: nothing old from the last time is reused
   await session.defaultSession.clearCache().catch(() => {})
-  // voice messages, calls, notifications and copy/paste, for ROAR only
+  // voice messages, calls, notifications and copy/paste, for RoarMe only
   session.defaultSession.setPermissionRequestHandler((contents, permission, done) => {
     done(ALLOWED.includes(permission) && inApp(contents.getURL()))
   })

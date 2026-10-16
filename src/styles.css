@@ -1523,7 +1523,7 @@ html[data-theme='ember'] :is(.wall-tile, .theme-sw, .tv-pic) { border-radius: va
 html[data-theme='ember'] .new-call-ico { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent); }
 html[data-theme='ember'][data-mode='light'] .av-group { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 80%, #fff), var(--accent)); color: var(--accent-ink); }
 
-/* ROAR's name: the paw in the accent colour, the word in heavy capitals */
+/* RoarMe's name: the paw in the accent colour, the word in heavy capitals */
 .wordmark { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .wordmark .paw { color: var(--accent); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 45%, transparent)); flex: none; }
 .wordmark b { font-weight: 800; letter-spacing: .12em; color: var(--text); }
@@ -1626,7 +1626,7 @@ html[data-mode='light'] :is(.fmt-code, .fmt-pre) { background: rgba(16, 32, 58, 
 @media (max-width: 760px) { .call-local { width: 120px; bottom: 140px; right: 14px; } .call-acts { gap: 14px; } }
 a.set-row { color: inherit; text-decoration: none; }
 
-/* inside the ROAR app with no title bar (16 Oct): a band in the app's own colours for the window buttons,
+/* inside the RoarMe app with no title bar (16 Oct): a band in the app's own colours for the window buttons,
    and the window can be dragged by it */
 html[data-desktop] { --bar: 30px; }
 html[data-desktop='win32'] { --bar: 32px; }
@@ -1733,7 +1733,7 @@ html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { wid
 .fold-pick-h { margin: 10px 4px 6px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 
 /* Speed (Alex, 16 Oct: the window lagged behind when dragged bigger, other apps do not). Every blurred layer is
-   blurred again on each frame of a resize or a scroll, and ROAR had one under every bubble, round button and row.
+   blurred again on each frame of a resize or a scroll, and RoarMe had one under every bubble, round button and row.
    The glass stays where it shows: the two big panels and what floats over the messages (the head, the box to type
    in, the bars, menus, pickers, toasts). Inside the panels the rest sits on that glass already. The page's own
    background no longer stays put while the page moves (background-attachment: fixed repaints the whole window). */
@@ -1748,7 +1748,7 @@ html body { background-attachment: scroll !important; }
 html.win-resizing *, html.win-resizing *::before, html.win-resizing *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; transition: none !important; animation-play-state: paused !important; }
 html.win-resizing body { background-attachment: scroll !important; }
 
-/* ROAR opening (Alex, 16 Oct): the paw pops in and breathes while it loads, then the chats slide in from the
+/* RoarMe opening (Alex, 16 Oct): the paw pops in and breathes while it loads, then the chats slide in from the
    left and the conversation rises after them; off with Motion off or reduced motion */
 .boot-paw { display: grid; place-items: center; width: 92px; height: 92px; border-radius: 30px; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent), 0 18px 60px color-mix(in srgb, var(--accent) 30%, transparent); animation: paw-pop .6s cubic-bezier(.3, 1.5, .5, 1) both, paw-breathe 1.6s ease-in-out .6s infinite; }
 @keyframes paw-pop { from { opacity: 0; transform: scale(.5) rotate(-12deg); } to { opacity: 1; transform: none; } }
@@ -2062,3 +2062,7 @@ html[data-theme] .bubble.pic, html[data-theme] .msg.mine .bubble.pic { padding: 
 .attach-quality .seg { flex: none; }
 .attach-quality small { flex: 1; min-width: 180px; font-size: 12.5px; }
 .attach-warn { color: var(--danger); }
+
+/* the name is RoarMe (Alex, 16 Oct): Roar in the text colour, Me in the accent, in every theme */
+html[data-theme] .wordmark b, .wordmark b { letter-spacing: -.01em; text-transform: none; }
+.wordmark b span { color: var(--accent); }

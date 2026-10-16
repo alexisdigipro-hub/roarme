@@ -6,7 +6,7 @@ import { startI18n } from './i18n.js'
 
 startI18n()
 
-// inside the ROAR app (Mac/Windows) with no title bar: the page keeps a band for the window buttons
+// inside the RoarMe app (Mac/Windows) with no title bar: the page keeps a band for the window buttons
 if (window.roarDesktop?.platform) document.documentElement.dataset.desktop = window.roarDesktop.platform
 
 // while the window is dragged bigger or smaller, the heavy glass effects pause so the new part paints at once

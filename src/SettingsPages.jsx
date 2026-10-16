@@ -72,7 +72,7 @@ function CallDevices({ p }) {
   )
   return (
     <Box title="Call settings" note="Calls go straight from your computer to the other person's.">
-      {!named && <button type="button" className="set-row set-pick" onClick={ask}><span className="set-text">Show My Devices<small>{asked ? 'Allow the microphone and camera to see their names' : 'ROAR asks once for the microphone and camera'}</small></span><i className="set-chev">{I.right}</i></button>}
+      {!named && <button type="button" className="set-row set-pick" onClick={ask}><span className="set-text">Show My Devices<small>{asked ? 'Allow the microphone and camera to see their names' : 'RoarMe asks once for the microphone and camera'}</small></span><i className="set-chev">{I.right}</i></button>}
       {pick('audioinput', 'micId', 'Microphone')}
       {pick('videoinput', 'camId', 'Camera')}
       {'setSinkId' in HTMLMediaElement.prototype && pick('audiooutput', 'speakerId', 'Speakers')}
@@ -80,7 +80,7 @@ function CallDevices({ p }) {
   )
 }
 
-/* the Mac/Windows app's own settings, when ROAR runs inside it (desktop/preload.js) */
+/* the Mac/Windows app's own settings, when RoarMe runs inside it (desktop/preload.js) */
 function useDesktop() {
   const api = typeof window !== 'undefined' ? window.roarDesktop : null
   const [s, setS] = useState({})
@@ -110,7 +110,7 @@ export function SettingsMenu({ me, page, onPage }) {
       <div className="set-box">
         <button type="button" className="set-row set-pick set-nav danger" onClick={() => supabase.auth.signOut()}><span className="nav-ico" style={{ '--c': '#ff453a' }}>{svg(<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />, 16)}</span><span className="set-text">Sign out</span></button>
       </div>
-      <p className="set-version">ROAR 0.1 · {navigator.userAgent.includes('Electron') ? 'Mac app' : 'web'}</p>
+      <p className="set-version">RoarMe 0.1 · {navigator.userAgent.includes('Electron') ? 'Mac app' : 'web'}</p>
     </div>
   )
 }
@@ -151,18 +151,18 @@ function General({ p, onKeys }) {
   const desk = useDesktop()
   return (
     <>
-      <Box title="ROAR app" note={desk.on ? 'For this computer.' : 'The ROAR app for Mac (and Windows) adds these. It always shows the latest ROAR.'}>
+      <Box title="RoarMe app" note={desk.on ? 'For this computer.' : 'The RoarMe app for Mac (and Windows) adds these. It always shows the latest RoarMe.'}>
         {desk.on ? (
           <>
             <Switch on={desk.s.tray} set={(v) => desk.set('tray', v)} hint="The paw, with your unread count, at the top of the screen">Show Icon in Menu Bar</Switch>
             <Switch on={desk.s.openAtLogin} set={(v) => desk.set('openAtLogin', v)} hint="Starts quietly in the background">Open When the Computer Starts</Switch>
-            <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps ROAR on for messages and calls">Keep Running When Closed</Switch>
+            <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps RoarMe on for messages and calls">Keep Running When Closed</Switch>
           </>
         ) : (
           <>
-            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/ROAR-Mac-arm64.dmg"><span className="set-text">Download for Mac (Apple Silicon)<small>M1, M2, M3, M4</small></span><i className="set-chev">{I.download}</i></a>
-            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/ROAR-Mac-x64.dmg"><span className="set-text">Download for Mac (Intel)</span><i className="set-chev">{I.download}</i></a>
-            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/ROAR-Windows-Setup.exe"><span className="set-text">Download for Windows</span><i className="set-chev">{I.download}</i></a>
+            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Mac-arm64.dmg"><span className="set-text">Download for Mac (Apple Silicon)<small>M1, M2, M3, M4</small></span><i className="set-chev">{I.download}</i></a>
+            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Mac-x64.dmg"><span className="set-text">Download for Mac (Intel)</span><i className="set-chev">{I.download}</i></a>
+            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Windows-Setup.exe"><span className="set-text">Download for Windows</span><i className="set-chev">{I.download}</i></a>
           </>
         )}
       </Box>
@@ -213,14 +213,14 @@ function Notify({ p }) {
     <>
       <Box title="Message notifications">
         <div className="set-row">
-          <span className="set-text">Desktop notifications<small>{perm === 'granted' ? 'On for this browser' : perm === 'denied' ? 'Blocked. Allow them in the browser settings for this site.' : perm === 'none' ? 'This browser has no notifications' : 'Allow ROAR to show new messages'}</small></span>
+          <span className="set-text">Desktop notifications<small>{perm === 'granted' ? 'On for this browser' : perm === 'denied' ? 'Blocked. Allow them in the browser settings for this site.' : perm === 'none' ? 'This browser has no notifications' : 'Allow RoarMe to show new messages'}</small></span>
           {perm === 'default' && <button type="button" className="btn btn-main btn-sm" onClick={ask}>Allow</button>}
           {perm === 'granted' && <i className="set-tick">{I.check}</i>}
         </div>
         <Switch on={p.notifyPreview} set={(v) => setPrefs({ notifyPreview: v })} hint="Off: only the name, never the text">Message Preview</Switch>
         {desk.on
-          ? <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps ROAR on, so messages and calls still reach you">Notifications With the App Closed</Switch>
-          : <Soon hint="In the ROAR app for Mac and Windows">Notifications With the App Closed</Soon>}
+          ? <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps RoarMe on, so messages and calls still reach you">Notifications With the App Closed</Switch>
+          : <Soon hint="In the RoarMe app for Mac and Windows">Notifications With the App Closed</Soon>}
       </Box>
       <Box title="Sounds">
         <div className="set-row">
@@ -236,7 +236,7 @@ function Notify({ p }) {
       <Box title="Badge">
         {desk.on
           ? <Switch on={p.badge !== false} set={(v) => setPrefs({ badge: v })}>Unread Count on the App Icon</Switch>
-          : <Soon hint="In the ROAR app for Mac and Windows">Unread Count on the App Icon</Soon>}
+          : <Soon hint="In the RoarMe app for Mac and Windows">Unread Count on the App Icon</Soon>}
       </Box>
     </>
   )
@@ -258,7 +258,7 @@ function TwoStep({ toast }) {
     // leftovers from a setup that was not finished
     const { data: all } = await supabase.auth.mfa.listFactors()
     for (const f of (all?.all || []).filter((x) => x.status !== 'verified')) await supabase.auth.mfa.unenroll({ factorId: f.id })
-    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: `ROAR ${new Date().toISOString().slice(0, 16)}` })
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: `RoarMe ${new Date().toISOString().slice(0, 16)}` })
     if (error) { setErr(errText(error)); return }
     setState({ setup: { id: data.id, qr: data.totp.qr_code, secret: data.totp.secret } })
   }
@@ -276,7 +276,7 @@ function TwoStep({ toast }) {
     toast('Two-step verification is off'); load()
   }
   return (
-    <Box title="Two-step verification" note="After your password, ROAR also asks for a 6-digit code from an authenticator app on your phone.">
+    <Box title="Two-step verification" note="After your password, RoarMe also asks for a 6-digit code from an authenticator app on your phone.">
       {state === null && <div className="set-row"><span className="set-text muted">Loading…</span></div>}
       {state?.on === true && (
         <div className="set-row">
@@ -300,7 +300,7 @@ function TwoStep({ toast }) {
   )
 }
 
-/* Passcode Lock: a code on this device; ROAR locks itself after a while away */
+/* Passcode Lock: a code on this device; RoarMe locks itself after a while away */
 function Passcode({ toast }) {
   const [lock, setL] = useState(getLock)
   const [form, setForm] = useState(null) // null · { a, b, old }
@@ -328,7 +328,7 @@ function Passcode({ toast }) {
       {!form && lock && (
         <>
           <div className="set-row set-col">
-            <span className="set-text">Lock After<small>Away from ROAR, or not touching it, this long</small></span>
+            <span className="set-text">Lock After<small>Away from RoarMe, or not touching it, this long</small></span>
             <Lens className="seg" dep={lock.after}>{[[1, '1 min'], [5, '5 min'], [60, '1 hour'], [300, '5 hours']].map(([v, t]) => <button key={v} type="button" className={lock.after === v ? 'on' : ''} onClick={() => setLockAfter(v)}>{t}</button>)}</Lens>
           </div>
           <button type="button" className="set-row set-pick" onClick={lockNow}><span className="set-text">Lock Now</span></button>
@@ -465,7 +465,7 @@ function Data({ p }) {
 const deviceOf = (u = navigator.userAgent) => {
   u = u || ''
   const os = /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac OS X|Macintosh/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : /Linux/.test(u) ? 'Linux' : 'Device'
-  const br = /Electron\//.test(u) ? 'ROAR app' : /Edg\//.test(u) ? 'Edge' : /OPR\//.test(u) ? 'Opera' : /Firefox\//.test(u) ? 'Firefox' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : 'Browser'
+  const br = /Electron\//.test(u) ? 'RoarMe app' : /Edg\//.test(u) ? 'Edge' : /OPR\//.test(u) ? 'Opera' : /Firefox\//.test(u) ? 'Firefox' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : 'Browser'
   return { os, br }
 }
 const ago = (iso) => {
@@ -516,7 +516,7 @@ function Sessions({ me, setMe, toast }) {
         {list && !others.length && <div className="set-row"><span className="set-text muted">No other devices</span></div>}
         {others.map((x) => row(x, false))}
       </Box>
-      <Box title="Automatically terminate old sessions" note="A device that has not opened ROAR for this long is signed out by itself.">
+      <Box title="Automatically terminate old sessions" note="A device that has not opened RoarMe for this long is signed out by itself.">
         <div className="set-row set-col">
           <span className="set-text">If Inactive For</span>
           <Lens className="seg" dep={days}>{[[30, '1 month'], [90, '3 months'], [180, '6 months'], [365, '1 year']].map(([v, t]) => <button key={v} type="button" className={days === v ? 'on' : ''} onClick={() => setDays(v)}>{t}</button>)}</Lens>
@@ -609,7 +609,7 @@ function Language({ p }) {
   const to = p.translateTo === 'el' || p.translateTo === 'en' ? p.translateTo : 'auto'
   return (
     <>
-      <Box title="Interface language" note="ROAR restarts in the language you pick.">
+      <Box title="Interface language" note="RoarMe restarts in the language you pick.">
         {UI_LANGS.map(([k, a, b]) => <Check key={k} on={ui === k} onClick={() => setUi(k)}><span data-raw="">{b}</span><small data-raw="">{a}</small></Check>)}
       </Box>
       <Box title="Translate messages" note="Translate opens the message in Google Translate.">

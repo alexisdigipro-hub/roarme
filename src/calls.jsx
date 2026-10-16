@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SUPABASE_KEY, SUPABASE_URL, errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, OnTop, svg } from './ui.jsx'
+import { getPrefs } from './prefs.js'
 
 /* Voice and video calls between two people (Alex, 16 Oct), straight from one computer to the other
    (WebRTC). The ringing, the answer and the network details travel through each person's private
@@ -102,7 +103,11 @@ export function useCalls({ me, people, loadPeople, toast }) {
     return p
   }
   const getMedia = async (video) => {
-    const s = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: video ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false })
+    const { micId, camId } = getPrefs() // Settings > General > Call settings
+    const s = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, ...(micId ? { deviceId: { ideal: micId } } : {}) },
+      video: video ? { width: { ideal: 1280 }, height: { ideal: 720 }, ...(camId ? { deviceId: { ideal: camId } } : {}) } : false,
+    })
     local.current = s
     return s
   }
@@ -264,7 +269,11 @@ export function useCalls({ me, people, loadPeople, toast }) {
 
 function Video({ stream, muted, className }) {
   const ref = useRef(null)
-  useEffect(() => { if (ref.current && ref.current.srcObject !== stream) ref.current.srcObject = stream || null }, [stream])
+  useEffect(() => {
+    if (ref.current && ref.current.srcObject !== stream) ref.current.srcObject = stream || null
+    const sp = getPrefs().speakerId
+    if (!muted && sp && ref.current?.setSinkId) ref.current.setSinkId(sp).catch(() => {})
+  }, [stream, muted])
   return <video ref={ref} className={className} autoPlay playsInline muted={muted} />
 }
 

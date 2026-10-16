@@ -46,6 +46,40 @@ const Box = ({ title, note, children }) => (
   </section>
 )
 
+/* Call Settings: which microphone, camera and speakers a call uses */
+function CallDevices({ p }) {
+  const [list, setList] = useState(null)
+  const [asked, setAsked] = useState(false)
+  const load = async () => {
+    try { setList(await navigator.mediaDevices.enumerateDevices()) } catch { setList([]) }
+  }
+  useEffect(() => { load() }, [])
+  const ask = async () => {
+    try { const s = await navigator.mediaDevices.getUserMedia({ audio: true, video: true }); s.getTracks().forEach((t) => t.stop()) } catch { /* said no */ }
+    setAsked(true)
+    load()
+  }
+  const of = (kind) => (list || []).filter((d) => d.kind === kind)
+  const named = (list || []).some((d) => d.label)
+  const pick = (kind, key, label) => (
+    <div className="set-row set-col">
+      <span className="set-text">{label}</span>
+      <select className="input set-select" value={p[key] || ''} onChange={(e) => setPrefs({ [key]: e.target.value })}>
+        <option value="">The computer's choice</option>
+        {of(kind).map((d, n) => <option key={d.deviceId || n} value={d.deviceId}>{d.label || `${label} ${n + 1}`}</option>)}
+      </select>
+    </div>
+  )
+  return (
+    <Box title="Call settings" note="Calls go straight from your computer to the other person's.">
+      {!named && <button type="button" className="set-row set-pick" onClick={ask}><span className="set-text">Show My Devices<small>{asked ? 'Allow the microphone and camera to see their names' : 'ROAR asks once for the microphone and camera'}</small></span><i className="set-chev">{I.right}</i></button>}
+      {pick('audioinput', 'micId', 'Microphone')}
+      {pick('videoinput', 'camId', 'Camera')}
+      {'setSinkId' in HTMLMediaElement.prototype && pick('audiooutput', 'speakerId', 'Speakers')}
+    </Box>
+  )
+}
+
 /* the Mac/Windows app's own settings, when ROAR runs inside it (desktop/preload.js) */
 function useDesktop() {
   const api = typeof window !== 'undefined' ? window.roarDesktop : null
@@ -157,7 +191,7 @@ function General({ p, onKeys }) {
         <Check on={p.enterSends} onClick={() => setPrefs({ enterSends: true })}>Send with Enter</Check>
         <Check on={!p.enterSends} onClick={() => setPrefs({ enterSends: false })}>Send with ⌘ / Ctrl + Enter</Check>
       </Box>
-      <Box title="Call settings"><Soon arrow>Call Settings</Soon></Box>
+      <CallDevices p={p} />
       <Box><Switch on={p.peerIds} set={(v) => setPrefs({ peerIds: v })}>Show User IDs in Profile</Switch></Box>
     </>
   )

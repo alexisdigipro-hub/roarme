@@ -37,6 +37,9 @@ export const DEFAULTS = {
   sound: true,
   soundKind: 'chime', // one of SOUNDS
   badge: true, // the unread count on the Mac/Windows app's icon
+  micId: '', // the microphone, camera and speakers for calls ('' = the computer's own choice)
+  camId: '',
+  speakerId: '',
   folderTags: false,
   background: 'soft', // one of WALLS
 }

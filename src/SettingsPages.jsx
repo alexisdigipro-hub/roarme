@@ -21,7 +21,7 @@ export const PAGES = [
 ]
 export const pageTitle = (id) => (id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
-const THEMES = [['ember', 'Ember', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['sepia', 'Sepia', ['#2f6f7a', '#e8dfcc']], ['mine', 'Mineshaft', ['#b39567', '#2b2b2b']], ['gray', 'Grayscale', ['#4a4a4a', '#222']], ['amoled', 'Amoled', ['#3a5fa0', '#000']], ['night', 'Midnight', ['#4b4f8a', '#1c1c35']]]
+const THEMES = [['ember', 'Ember', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -534,18 +534,17 @@ function Appearance({ p, toast, me, setMe }) {
         </div>
         <div className="set-row set-col">
           <div className="themes">
-            {THEMES.map(([k, l, [a, b]], i) => {
-              const ready = i < 4
+            {THEMES.map(([k, l, [a, b]]) => {
               return (
-                <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} disabled={!ready} title={ready ? l : 'Coming soon'}
+                <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} title={l}
                   onClick={(e) => { if (p.theme === k) return; revealFrom(e, () => { document.documentElement.dataset.theme = k; setPrefs({ theme: k }) }); toast(`Theme updated: ${l}`) }}>
-                  <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : i < 4 ? 'rgba(255,255,255,.3)' : `${a}55` }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : 'none' }} /></span>
+                  <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : 'none' }} /></span>
                   <small>{l}</small>
                 </button>
               )
             })}
           </div>
-          <small className="muted">Ember (the main one): graphite glass with a glowing accent. Glass: soft frosted panels. Aura: bright liquid glass with floating bars. Studio: sharp and graphic, with a side rail. Each has dark and light. More themes are coming soon.</small>
+          <small className="muted">Ember (the main one): graphite glass with a glowing accent. Glass: soft frosted panels. Aura: bright liquid glass with floating bars. Studio: sharp and graphic, with a side rail. Each has dark and light.</small>
         </div>
       </Box>
       <Box>

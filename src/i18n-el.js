@@ -160,7 +160,7 @@ export const EL = {
   'Edit message': 'Επεξεργασία μηνύματος',
   'Edit your last message': 'Επεξεργασία του τελευταίου σου μηνύματος',
   'Email': 'Email',
-  'Ember (the main one): graphite glass with a glowing accent. Glass: soft frosted panels. Aura: bright liquid glass with floating bars. Studio: sharp and graphic, with a side rail. Each has dark and light. More themes are coming soon.': 'Ember (το βασικό): γραφιτένιο γυαλί με φωτεινή έμφαση. Glass: απαλά θαμπά πάνελ. Aura: φωτεινό υγρό γυαλί με αιωρούμενες μπάρες. Studio: αιχμηρό και γραφικό, με πλαϊνή μπάρα. Το καθένα έχει σκοτεινή και φωτεινή εκδοχή. Σύντομα έρχονται κι άλλα θέματα.',
+  'Ember (the main one): graphite glass with a glowing accent. Glass: soft frosted panels. Aura: bright liquid glass with floating bars. Studio: sharp and graphic, with a side rail. Each has dark and light.': 'Ember (το βασικό): γραφιτένιο γυαλί με φωτεινή έμφαση. Glass: απαλά θαμπά πάνελ. Aura: φωτεινό υγρό γυαλί με αιωρούμενες μπάρες. Studio: αιχμηρό και γραφικό, με πλαϊνή μπάρα. Το καθένα έχει σκοτεινή και φωτεινή εκδοχή.',
   'Emoji': 'Emoji',
   'End': 'Τερματισμός',
   'End call': 'Τερματισμός κλήσης',

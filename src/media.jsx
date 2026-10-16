@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { dayLabel, fileLink, fmtBytes, nameOf, supabase } from './lib.js'
 import { I, Lens } from './ui.jsx'
 import { MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
+import { CopyLink } from './transfer.jsx'
 
 /* Media from all chats (Alex, 17 Oct, after WhatsApp's): one page with every photo and video, link, song and
    document anyone sent in the chats one is in, each with who sent it and where. The list on the left picks one
@@ -22,9 +23,13 @@ export function useLibrary(on) {
       supabase.from('roar_messages').select('id, room_id, user_id, body, created_at').eq('kind', 'text').ilike('body', '%http%').is('deleted_at', null).order('created_at', { ascending: false }).limit(500),
     ]).then(([f, t]) => {
       if (!alive) return
-      const files = (f.data || []).filter((m) => m.file?.path && !expired(m))
+      const all = (f.data || []).filter((m) => m.file?.path && !expired(m))
+      // RoarTransfer files have their own tab, like in the profile (Alex, 17 Oct)
+      const isTr = (m) => m.file?.bucket === 'roar-transfers'
+      const files = all.filter((m) => !isTr(m))
       const links = (t.data || []).flatMap((m) => [...new Set(m.body.match(URL_RE) || [])].map((url, n) => ({ ...m, id: `${m.id}-${n}`, msgId: m.id, url })))
       setData({
+        transfers: all.filter(isTr),
         media: files.filter(isMediaFile),
         music: files.filter((m) => !isMediaFile(m) && isAudioFile(m.file)),
         docs: files.filter((m) => !isMediaFile(m) && !isAudioFile(m.file)),
@@ -38,7 +43,7 @@ export function useLibrary(on) {
 
 /* the left side: all chats, or one, with how many things each has */
 export function LibrarySide({ data, rooms, titleOf, face, room, onRoom }) {
-  const count = (id) => (data ? ['media', 'links', 'music', 'docs'].reduce((n, k) => n + data[k].filter((m) => !id || m.room_id === id).length, 0) : 0)
+  const count = (id) => (data ? ['media', 'transfers', 'links', 'music', 'docs'].reduce((n, k) => n + data[k].filter((m) => !id || m.room_id === id).length, 0) : 0)
   const list = rooms.filter((r) => count(r.room_id) > 0).sort((a, b) => count(b.room_id) - count(a.room_id))
   return (
     <div className="lib-side">
@@ -109,8 +114,9 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
   const words = q.trim().toLowerCase()
   const pick = (list) => list.filter((m) => (!room || m.room_id === room)
     && (!words || [m.file?.name, m.url, who(m), where(m)].some((s) => (s || '').toLowerCase().includes(words))))
-  const lists = data ? { media: pick(data.media), links: pick(data.links), music: pick(data.music), docs: pick(data.docs) } : null
+  const lists = data ? { media: pick(data.media), transfers: pick(data.transfers), links: pick(data.links), music: pick(data.music), docs: pick(data.docs) } : null
   const list = lists?.[kind] || []
+  const trCount = lists ? lists.transfers.length + lists.docs.length : 0
   const photos = lists ? lists.media.filter((m) => !/^video\//.test(m.file?.type || '')).length : 0
   const videos = lists ? lists.media.length - photos : 0
 
@@ -123,7 +129,7 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
   }
   const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return u } }
   const when = (m) => dayLabel(m.created_at)
-  const tabs = [['media', 'Media'], ['links', 'Links'], ['music', 'Music'], ['docs', 'Docs']]
+  const tabs = [['media', 'Media'], ['transfers', 'Transfers'], ['links', 'Links'], ['music', 'Music']]
 
   return (
     <div className="lib">
@@ -131,14 +137,14 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
         <button type="button" className="round lib-back" onClick={onBack} aria-label="Back">{I.left}</button>
         <span className="lib-title"><b>Media</b><small>{room ? titleById[room] : 'From all chats'}</small></span>
         <Lens className="seg lib-seg" dep={kind}>
-          {tabs.map(([k, label]) => <button key={k} type="button" className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{label}{lists && lists[k].length > 0 && <i>{lists[k].length}</i>}</button>)}
+          {tabs.map(([k, label]) => { const n = k === 'transfers' ? trCount : lists?.[k].length || 0; return <button key={k} type="button" className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{label}{n > 0 && <i>{n}</i>}</button> })}
         </Lens>
         <label className="search lib-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" /></label>
       </div>
 
       <div className="lib-body">
         {!data && <div className="lib-grid">{Array.from({ length: 12 }, (_, n) => <span key={n} className="pic-wait lib-tile" />)}</div>}
-        {data && !list.length && <p className="empty lib-empty">{words ? 'Nothing found.' : kind === 'media' ? 'No photos or videos yet.' : kind === 'links' ? 'No links yet.' : kind === 'music' ? 'No songs or sound files yet.' : 'No documents yet.'}</p>}
+        {data && !(kind === 'transfers' ? trCount : list.length) && <p className="empty lib-empty">{words ? 'Nothing found.' : kind === 'media' ? 'No photos or videos yet.' : kind === 'links' ? 'No links yet.' : kind === 'music' ? 'No songs or sound files yet.' : 'No transfers yet.'}</p>}
         {data && kind === 'media' && list.length > 0 && (
           <div className="lib-grid">
             {list.map((m, n) => <Tile key={m.id} m={m} who={who(m)} where={where(m)} onOpen={() => openAt(n)} onChat={() => onChat(m.room_id, m.id)} />)}
@@ -161,9 +167,25 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
             ))}
           </div>
         )}
-        {data && kind === 'docs' && list.length > 0 && (
+        {data && kind === 'transfers' && trCount > 0 && (
           <div className="lib-rows">
-            {list.map((m) => {
+            {lists.transfers.map((m) => {
+              const left = new Date(m.file?.expires || 0).getTime() - Date.now()
+              const short = left > 864e5 ? `${Math.ceil(left / 864e5)} days left` : left > 36e5 ? `${Math.ceil(left / 36e5)} h left` : 'Last hour'
+              const ext = ((m.file?.name || '').match(/\.(\w{1,5})$/) || [])[1]?.toUpperCase()
+              return (
+                <div key={m.id} className={`lib-row lib-tr${left < 864e5 ? ' soon' : ''}`} role="button" tabIndex={0}
+                  onClick={async () => { const u = await fileLink(m.file, m.file?.name || 'file'); if (u) window.open(u, '_blank', 'noopener') }}>
+                  <span className="lib-ico tr">{I.transfer}</span>
+                  <span className="lib-row-text"><b>{fmtBytes(m.file?.size)}{ext ? ` · ${ext}` : ''}</b><small>{`${who(m)} · ${where(m)} · ${when(m)}`}</small></span>
+                  <span className="pf-tr-left">{I.timer}<span>{short}</span></span>
+                  <span onClick={(e) => e.stopPropagation()}><CopyLink file={m.file} round /></span>
+                  <button type="button" className="lib-go row" onClick={(e) => { e.stopPropagation(); onChat(m.room_id, m.id) }} title="Show in chat" aria-label="Show in chat">{I.chats}</button>
+                </div>
+              )
+            })}
+            {lists.transfers.length > 0 && lists.docs.length > 0 && <h5 className="pf-sub">Other files</h5>}
+            {lists.docs.map((m) => {
               const ext = ((m.file?.name || '').match(/\.(\w{1,5})$/) || [])[1]?.toUpperCase() || 'FILE'
               return (
                 <Row key={m.id} icon={<span className="lib-ico doc"><b>{ext}</b></span>} title={m.file?.name} meta={`${fmtBytes(m.file?.size)} · ${who(m)} · ${where(m)} · ${when(m)}`}

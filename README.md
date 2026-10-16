@@ -28,7 +28,7 @@ picked they shrink to small pills and the caption and Send come in.
 
 ## Media from all chats (17 Oct)
 A Media tab in the bar at the foot (`src/media.jsx`): every photo and video, link, song and document from all the
-chats one is in, in four tabs (Media, Links, Music, Docs) with counts and a search, each with who sent it and in
+chats one is in, in four tabs (Media, Transfers with the other files under them, Links, Music) with counts and a search, each with who sent it and in
 which chat. The list on the left narrows it to one chat. A click opens a photo or video in the viewer (step left and
 right), a link in the browser, a document as a download; the chat bubble button goes to the message in its chat.
 Expired RoarTransfer files are left out.

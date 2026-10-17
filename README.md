@@ -65,6 +65,15 @@ Settings. While it is on, a bar sits above the chat: play/pause, the title and t
 there), a line to move through it, the time, and × to stop it. On a phone it shows on the chat list too. A voice
 message starting pauses the song, and the other way round.
 
+## Admin, only for Alex (17 Oct)
+Settings > Admin (shown only to Alex): three numbers (accounts, files sent, space in chats now), then People | Files
+with a search. **People:** every account, also those without a username yet, with email, when they joined and were
+last seen, messages, files and space sent, chats. **Files:** every file sent, newest first, 100 at a time (More):
+name, size, type, who, in a group (its name) or a one-to-one chat, when, RoarTransfer until when, deleted.
+Never the text of messages and never the files themselves. The database is the guard: `supabase/admin.sql`
+(roar_admins with Alex's id, and the functions roar_is_admin, roar_admin_users, roar_admin_files, which refuse
+anyone else; run by Claude, tested as Alex and as mits). The Privacy Policy says so (EN and EL).
+
 ## Two themes for everyone, the rest in Alex's lab (17 Oct)
 Everyone sees two themes: **Simba** (the ember theme, the main one) and **Pumba** (the prism theme); the keys in the
 code stay `ember` and `prism`. Glass, Aura, Studio, Aurum and Lions show only for Alex (`THEME_LAB` in src/prefs.js,

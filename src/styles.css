@@ -2971,3 +2971,31 @@ html[data-bubbles='glass']:not([data-theme='studio']) .trx-round, html[data-bubb
 .theme-lab { position: absolute; top: 4px; right: 4px; padding: 1px 6px; border-radius: 999px; font-size: 9px; font-style: normal; font-weight: 700; letter-spacing: .04em; color: var(--muted); background: var(--glass-2); border: 1px solid var(--edge); pointer-events: none; }
 .acc.acc-white { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .28), 0 0 0 1px rgba(255, 255, 255, .25); }
 .acc.acc-white.on { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff, 0 0 22px rgba(255, 255, 255, .55); }
+
+/* Admin (Alex only, 17 Oct): three numbers, People | Files with a search, soft tiles with tinted chips */
+.adm { display: flex; flex-direction: column; gap: 12px; }
+.adm-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.adm-stats span { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 18px; background: var(--glass); border: 1px solid var(--edge); }
+.adm-stats b { font-size: 24px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.adm-stats small { font-size: 11.5px; color: var(--muted); }
+.adm-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.adm-search { flex: 1; min-width: 180px; margin: 0; }
+.adm-err { margin: 0; padding: 10px 14px; border-radius: 14px; color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.adm-list { display: flex; flex-direction: column; gap: 6px; }
+.adm-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: var(--glass); border: 1px solid var(--edge); flex-wrap: wrap; }
+.adm-row.gone { opacity: .55; }
+.adm-main { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.adm-main b { font-size: 14.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-main b small { font-weight: 400; color: var(--muted); }
+.adm-main > small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.adm-chips i { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 11.5px; font-style: normal; font-weight: 600; color: var(--muted); background: var(--glass-2); }
+.adm-chips i::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .8; }
+.adm-chips i.tr { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.adm-chips i.gone { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.adm-chips i.gone::before { background: var(--danger); }
+.adm-ico { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.adm-ico svg { width: 18px; height: 18px; }
+.adm-more { align-self: center; border-radius: 999px; }
+.adm-note { margin: 4px 2px 0; font-size: 12px; }
+@media (max-width: 760px) { .adm-stats b { font-size: 19px; } }

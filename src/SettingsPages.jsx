@@ -6,6 +6,7 @@ import { WallTiles } from './extras.jsx'
 import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
+import { Admin } from './admin.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
    Anything that needs the database is shown switched off with "Coming soon". */
@@ -20,7 +21,7 @@ export const PAGES = [
   ['language', 'Language', '#bf5af2', svg(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" /></>, 16)],
   ['folders', 'Chat Folders', '#a78bfa', I.folder],
 ]
-export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
+export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 const THEMES = [['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['prism', 'Pumba', ['#ff5d4a', 'linear-gradient(180deg, #555963, #2c2e34)']], ['aurum', 'Aurum', ['linear-gradient(180deg, #f8d29a, #e79a3d)', 'linear-gradient(180deg, #2a2927, #141414)']], ['lions', 'Lions', ['#d40000', 'radial-gradient(circle at 85% 0%, rgba(212, 0, 0, .35), transparent 60%), #0b0b0c']]]
 
@@ -108,6 +109,11 @@ export function SettingsMenu({ me, page, onPage }) {
           </button>
         ))}
       </div>
+      {inThemeLab(me) && (
+        <div className="set-box">
+          <button type="button" className={`set-row set-pick set-nav${page === 'admin' ? ' on' : ''}`} onClick={() => onPage('admin')}><span className="nav-ico" style={{ '--c': '#d40000' }}>{I.people}</span><span className="set-text">Admin<small>Only you see this</small></span><i className="set-chev">{I.right}</i></button>
+        </div>
+      )}
       <div className="set-box">
         <button type="button" className="set-row set-pick set-nav danger" onClick={() => supabase.auth.signOut()}><span className="nav-ico" style={{ '--c': '#ff453a' }}>{svg(<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />, 16)}</span><span className="set-text">Sign out</span></button>
       </div>
@@ -138,11 +144,12 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
         {page === 'sessions' && <Sessions me={me} setMe={setMe} toast={toast} />}
         {page === 'appearance' && <Appearance p={p} toast={toast} me={me} setMe={setMe} />}
         {page === 'language' && <Language p={p} />}
+        {page === 'admin' && inThemeLab(me) && <Admin />}
         {page === 'folders' && <Folders p={p} folders={folders} onFolders={onFolders} onFolderMenu={onFolderMenu} />}
         {page.startsWith('folder:') && folderKit && (READY_FOLDERS[page.slice(7)]
           ? <ReadyFolderEdit key={page} id={page.slice(7)} p={p} onDone={() => onPage('folders')} toast={toast} />
           : <FolderEdit key={page} id={page.slice(7)} kit={folderKit} onDone={() => onPage('folders')} toast={toast} />)}
-        {page !== 'profile' && !page.startsWith('folder:') && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
+        {page !== 'profile' && page !== 'admin' && !page.startsWith('folder:') && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
       </div>
     </div>
   )

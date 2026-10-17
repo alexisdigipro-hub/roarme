@@ -34,6 +34,7 @@ const DOCS = {
           'Voice and video calls go directly between the devices in the call (WebRTC). We do not record or store them. To connect the call, the devices contact connection servers run by Google and Cloudflare, which see the devices\' IP addresses.',
         ]],
         ['Where your data is', [
+          'To run RoarMe and keep it safe, its administrator at The Mad Lions can see the list of accounts (name, @username, email, when they joined and were last seen) and the details of files sent (name, size, type, when, by whom). Never what the messages or the files say.',
           'Accounts, messages and files are stored with Supabase, our database and storage provider, in London, United Kingdom. The app itself is served from GitHub Pages. These providers act on our behalf and keep short technical logs (such as IP address and device type) for security and to keep the service running.',
           'Data is encrypted in transit (HTTPS) and at rest by our provider. Messages are not end-to-end encrypted, so do not use RoarMe for information that needs that level of protection.',
           'The Translate button opens Google Translate with the text you chose, only when you tap it.',
@@ -81,6 +82,7 @@ const DOCS = {
           'Οι φωνητικές κλήσεις και οι βιντεοκλήσεις γίνονται απευθείας ανάμεσα στις συσκευές (WebRTC). Δεν τις ηχογραφούμε ούτε τις αποθηκεύουμε. Για να συνδεθεί η κλήση, οι συσκευές επικοινωνούν με διακομιστές σύνδεσης της Google και της Cloudflare, που βλέπουν τις διευθύνσεις IP τους.',
         ]],
         ['Πού βρίσκονται τα δεδομένα σου', [
+          'Για να λειτουργεί το RoarMe και να μένει ασφαλές, ο διαχειριστής του στη The Mad Lions βλέπει τη λίστα των λογαριασμών (όνομα, @username, email, πότε γράφτηκαν και πότε εμφανίστηκαν τελευταία) και τα στοιχεία των αρχείων που στέλνονται (όνομα, μέγεθος, τύπος, πότε, από ποιον). Ποτέ τι λένε τα μηνύματα ή τα αρχεία.',
           'Οι λογαριασμοί, τα μηνύματα και τα αρχεία φυλάσσονται στη Supabase, τον πάροχο βάσης δεδομένων και αποθήκευσης, στο Λονδίνο, Ηνωμένο Βασίλειο. Η ίδια η εφαρμογή σερβίρεται από το GitHub Pages. Οι πάροχοι αυτοί λειτουργούν για λογαριασμό μας και κρατούν σύντομα τεχνικά αρχεία (όπως διεύθυνση IP και τύπο συσκευής) για ασφάλεια και για τη λειτουργία της υπηρεσίας.',
           'Τα δεδομένα κρυπτογραφούνται κατά τη μεταφορά (HTTPS) και κατά την αποθήκευση από τον πάροχο. Τα μηνύματα δεν έχουν κρυπτογράφηση από άκρο σε άκρο, οπότε μη χρησιμοποιείς το RoarMe για πληροφορίες που χρειάζονται τέτοιο επίπεδο προστασίας.',
           'Το κουμπί Μετάφραση ανοίγει το Google Translate με το κείμενο που διάλεξες, μόνο όταν το πατήσεις.',

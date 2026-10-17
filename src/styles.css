@@ -2761,3 +2761,19 @@ canvas.rec-wave { display: block; flex: 1; min-width: 0; height: 22px; margin: 0
 html[data-theme] .compose.rec .round.danger { width: 36px; height: 36px; background: none; border-color: transparent; box-shadow: none; color: var(--muted); }
 html[data-theme] .compose.rec .round.danger:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .compose.rec .round.send { width: 36px; height: 36px; }
+
+/* see-through bubbles (Alex, 17 Oct: "the message bubbles transparent like RoarTransfer"): your own messages are a touch
+   of your colour on glass with a thin edge in it, the text in the normal colour. Settings > General > Interface > See-Through Bubbles */
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble:not(.pic):not(.big-emoji) { color: var(--text) !important; background: color-mix(in srgb, var(--accent) 15%, var(--glass)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent) !important; box-shadow: none !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.meta, .ticks, .file-text small, .voice small) { color: var(--muted) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble .ticks.seen { color: var(--accent) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.msg-link, .mention, .text a, .tr-tag, .rt-link) { color: var(--accent) !important; text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble .quote { background: color-mix(in srgb, var(--accent) 10%, transparent) !important; border-left-color: var(--accent) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble .quote b { color: var(--accent) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble .quote span { color: var(--text) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble .file-ico { color: var(--accent) !important; background: color-mix(in srgb, var(--accent) 18%, transparent) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.voice-btn, .music-btn) { color: var(--accent-ink, #fff) !important; background: var(--accent) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.voice-bar, .music-bar) { background: color-mix(in srgb, var(--text) 18%, transparent) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.voice-bar, .music-bar) i { background: var(--accent) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.fmt-code, .fmt-pre) { background: color-mix(in srgb, var(--text) 9%, transparent) !important; }

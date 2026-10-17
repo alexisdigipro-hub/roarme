@@ -59,6 +59,11 @@ older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload 
 must be at least 3 GB.
 
 
+## See-through bubbles (17 Oct)
+Your own messages are a touch of your colour on glass with a thin edge in it, like a RoarTransfer card, the text in the
+normal colour (links, ticks, quotes, voice and music buttons follow). On by default, in every theme;
+Settings > General > Interface > See-Through Bubbles turns the filled bubbles back (`html[data-bubbles]`).
+
 ## The desktop window (17 Oct)
 A first start opens the window as Alex keeps his: the screen's width less 20 px each side (at most 1440), in 1.72 : 1,
 centred (about 1430 x 830 on a 13" Mac). After that it opens where and as big as it was left (kept in

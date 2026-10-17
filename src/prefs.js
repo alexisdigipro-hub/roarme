@@ -14,6 +14,7 @@ export const DEFAULTS = {
   focusRings: false, // a bold ring around whatever has the keyboard
   textSize: 2, // 0..4
   bigEmoji: true,
+  glassBubbles: true, // your own messages see-through with an accent edge, like a RoarTransfer (Alex, 17 Oct)
   listPreview: false, // the last message under each chat's name in the list (Alex, 17 Oct: off unless one wants it)
   compact: false,
   enterSends: true,
@@ -183,4 +184,5 @@ export function applyLook(p) {
   r.style.setProperty('--r', `${Number(p.radius) || 12}px`)
   if (p.motion === false) r.dataset.still = '1'; else delete r.dataset.still
   if (p.focusRings) r.dataset.focus = 'bold'; else delete r.dataset.focus
+  r.dataset.bubbles = p.glassBubbles === false ? 'solid' : 'glass'
 }

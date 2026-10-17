@@ -702,4 +702,6 @@ export const EL = {
   '1 new message': '1 νέο μήνυμα',
   'in 1 chat': 'σε 1 συνομιλία',
   'While you were away': 'Όσο έλειπες',
+  'See-Through Bubbles': 'Διάφανα συννεφάκια',
+  'Your messages see-through with a thin edge in your colour; off: filled with your colour': 'Τα μηνύματά σου διάφανα με λεπτό περίγραμμα στο χρώμα σου· κλειστό: γεμάτα με το χρώμα σου',
 }

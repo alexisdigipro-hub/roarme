@@ -161,7 +161,7 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
           <div className="lib-rows">
             {list.map((m) => (
               <Row key={m.id} icon={<span className="lib-ico music">{I.play}</span>} title={m.file?.name} meta={`${who(m)} · ${where(m)} · ${when(m)}`} onChat={() => onChat(m.room_id, m.id)}>
-                <span className="lib-player"><MusicTile file={m.file} /></span>
+                <span className="lib-player"><MusicTile file={m.file} from={where(m)} roomId={m.room_id} /></span>
               </Row>
             ))}
           </div>

@@ -8,8 +8,8 @@ import { I, Modal } from './ui.jsx'
    Location: a map you move under a pin, a search box, your own position if the computer or phone shares it. It goes
    into the chat as a text message whose `file.location` holds { lat, lng, z, name, addr } (the body is the place's
    name, so list previews and search read it), shown as a small map; a tap opens it big, with Google and Apple Maps.
-   The map is plain tiles (OpenStreetMap data drawn by CARTO), the names come from OpenStreetMap's Nominatim; both only
-   see the spot on the map, never who is looking.
+   The map is OpenStreetMap's own tiles, the names come from OpenStreetMap's Nominatim; both only see the spot on the
+   map, never who is looking.
 
    Article: a long post with a title, headings, lists, checklists, quotes and dividers, written in the same marks as a
    message (**bold**, _italic_ …) plus a few line marks (# heading, - list, 1. list, - [ ] check, > quote, ---). The
@@ -28,7 +28,8 @@ const latLngOf = (x, y, z) => {
   const lng = ((((x / n) * 360 - 180) % 360) + 540) % 360 - 180
   return { lat: Math.max(-85, Math.min(85, lat)), lng }
 }
-const tileUrl = (x, y, z) => `https://${'abcd'[(x + y) % 4]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}@2x.png`
+// OpenStreetMap's own tiles: no key needed (CARTO's now ask a key from other sites and draw "API KEY REQUIRED")
+const tileUrl = (x, y, z) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`
 const MIN_Z = 2
 const MAX_Z = 19
 const clampZ = (z) => Math.max(MIN_Z, Math.min(MAX_Z, z))
@@ -128,7 +129,7 @@ export function MapView({ at, zoom, onMove, interactive = true, marks = [], onDr
         const p = worldOf(m.lat, m.lng, zoom)
         return <span key={m.key} className="map-mark" style={{ left: p.x - c.x + w / 2, top: p.y - c.y + h / 2 }}>{m.node}</span>
       })}
-      <small className="map-credit">© OpenStreetMap · CARTO</small>
+      <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()}>© OpenStreetMap</a>
     </span>
   )
 }

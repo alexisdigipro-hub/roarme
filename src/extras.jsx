@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { errText, fileLink, fmtBytes, supabase, timeOf } from './lib.js'
 import { EMOJIS, WALLS, setPrefs, usePrefs } from './prefs.js'
 import { I, Modal } from './ui.jsx'
+import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 
 /* ---------- emoji grid ---------- */
@@ -123,46 +124,35 @@ export function AttachSheet({ initial = [], onClose, onSend, onLocation, onArtic
 /* ---------- a song or any sound file (mp3, wav, m4a…): a small player in the message (Alex, 16 Oct) ---------- */
 export const AUDIO_EXT = /\.(mp3|wav|m4a|aac|ogg|oga|opus|flac|aif|aiff|weba)$/i
 export const isAudioFile = (f) => !!f && (/^audio\//.test(f.type || '') || AUDIO_EXT.test(f.name || ''))
-export function MusicTile({ file }) {
+/* a song in a chat plays in the app's one player (player.jsx), so it goes on when you change chat */
+export function MusicTile({ file, from = '', roomId = '' }) {
   const [url, setUrl] = useState('')
-  const [playing, setPlaying] = useState(false)
-  const [at, setAt] = useState(0)
-  const [dur, setDur] = useState(0)
-  const [bad, setBad] = useState(false)
-  const a = useRef(null)
+  const p = usePlayer()
   useEffect(() => { let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
-  // one sound at a time across the app
-  useEffect(() => {
-    const stop = (e) => { if (e.detail !== a.current && a.current && !a.current.paused) a.current.pause() }
-    window.addEventListener('roarme-play', stop)
-    return () => window.removeEventListener('roarme-play', stop)
-  }, [])
-  const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+  const key = file?.path || file?.name || ''
+  const mine = p.key === key
+  const playing = mine && p.playing
+  const at = mine ? p.at : 0
+  const dur = mine ? p.dur : 0
+  const bad = mine && p.bad
   const title = (file?.name || 'Audio').replace(AUDIO_EXT, '')
   const ext = ((file?.name || '').match(AUDIO_EXT) || [])[1]?.toUpperCase() || 'AUDIO'
-  const toggle = (e) => {
-    e.stopPropagation()
-    const el = a.current
-    if (!el) return
-    if (el.paused) { window.dispatchEvent(new CustomEvent('roarme-play', { detail: el })); el.play().catch(() => setBad(true)) } else el.pause()
-  }
+  const toggle = (e) => { e.stopPropagation(); if (url) player.toggle({ key, url, title, from, roomId }) }
   const seek = (e) => {
     e.stopPropagation()
-    const el = a.current
-    if (!el || !dur) return
+    if (!mine || !dur) return
     const r = e.currentTarget.getBoundingClientRect()
-    el.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * dur
+    player.seek((e.clientX - r.left) / r.width)
   }
   return (
     <span className="music" onClick={(e) => e.stopPropagation()}>
-      <button type="button" className={`music-btn${playing ? ' on' : ''}`} disabled={!url || bad} onClick={toggle} aria-label={playing ? 'Pause' : 'Play'}>{playing ? I.pause : I.play}</button>
+      <button type="button" className={`music-btn${playing ? ' on' : ''}`} disabled={!url} onClick={toggle} aria-label={playing ? 'Pause' : 'Play'}>{playing ? I.pause : I.play}</button>
       <span className="music-main">
         <span className="music-top"><b title={file?.name}>{title}</b><small>{bad ? 'Cannot play here' : `${ext} · ${fmtBytes(file?.size)}`}</small></span>
         <span className="music-bar" onClick={seek}><i style={{ width: `${dur ? Math.min(100, (at / dur) * 100) : 0}%` }} /></span>
         <span className="music-time"><small>{mmss(at)}</small><small>{dur ? mmss(dur) : '–:––'}</small></span>
       </span>
       {url && <a className="music-dl" href={url} download={file?.name} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} title="Download">{I.download}</a>}
-      {url && <audio ref={a} src={url} preload="metadata" onLoadedMetadata={(e) => setDur(e.currentTarget.duration || 0)} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setAt(0) }} onTimeUpdate={(e) => setAt(e.currentTarget.currentTime)} onError={() => setBad(true)} />}
     </span>
   )
 }
@@ -174,11 +164,16 @@ export function AudioNote({ file }) {
   const [at, setAt] = useState(0)
   const a = useRef(null)
   useEffect(() => { let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
+  // one sound at a time: a song or another voice message starting pauses this one
+  useEffect(() => {
+    const stop = (e) => { if (e.detail !== a.current && a.current && !a.current.paused) a.current.pause() }
+    window.addEventListener('roarme-play', stop)
+    return () => window.removeEventListener('roarme-play', stop)
+  }, [])
   const dur = file?.dur || a.current?.duration || 0
-  const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   return (
     <span className="voice">
-      <button type="button" className="voice-btn" disabled={!url} onClick={(e) => { e.stopPropagation(); const el = a.current; if (!el) return; if (el.paused) el.play(); else el.pause() }}>{playing ? I.pause : I.play}</button>
+      <button type="button" className="voice-btn" disabled={!url} onClick={(e) => { e.stopPropagation(); const el = a.current; if (!el) return; if (el.paused) { window.dispatchEvent(new CustomEvent('roarme-play', { detail: el })); el.play() } else el.pause() }}>{playing ? I.pause : I.play}</button>
       <span className="voice-bar" onClick={(e) => { e.stopPropagation(); const el = a.current; if (!el || !dur) return; const r = e.currentTarget.getBoundingClientRect(); el.currentTime = ((e.clientX - r.left) / r.width) * dur }}>
         <i style={{ width: `${dur ? Math.min(100, (at / dur) * 100) : 0}%` }} />
       </span>

@@ -59,6 +59,12 @@ older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload 
 must be at least 3 GB.
 
 
+## Music keeps playing (17 Oct)
+A song from a chat plays in the app's one player (`src/player.jsx`), so it goes on when you change chat, open Media or
+Settings. While it is on, a bar sits above the chat: play/pause, the title and the chat it came from (a click goes
+there), a line to move through it, the time, and × to stop it. On a phone it shows on the chat list too. A voice
+message starting pauses the song, and the other way round.
+
 ## See-through bubbles (17 Oct)
 Your own messages are a touch of your colour on glass with a thin edge in it, like a RoarTransfer card, the text in the
 normal colour (links, ticks, quotes, voice and music buttons follow). On by default, in every theme;
@@ -81,7 +87,7 @@ every 15 seconds and on closing, when it was last open (`roarme-here-<user id>`)
 - The + window is one row of small tiles: Gallery, (Camera on a phone), File, Location, Article. RoarTransfer left it: it has its own button beside the clip.
 - Recording a voice message shows the microphone's real loudness as thin bars sliding in from the right (silence is a row of dots), a quiet timer and a plain bin.
 - **+ > Location**: a map you move under a pin (drag, pinch, wheel, + and −), a search box for places, and the round target button for where you are (if the computer or phone shares it; the Mac app asks once). The pin's spot is named as the map stops. Send puts a small map with the name in the chat; a tap opens it big, with Google Maps and Apple Maps.
-- The map is OpenStreetMap drawn by CARTO; names and search are OpenStreetMap's Nominatim. No key, nothing to pay. They see only the map area and the search, with the IP address (said in the Privacy Policy).
+- The map is OpenStreetMap's own tiles (CARTO's ask for a key from other sites and showed "API KEY REQUIRED"); names and search are OpenStreetMap's Nominatim. No key, nothing to pay. They see only the map area and the search, with the IP address (said in the Privacy Policy).
 - The message is a text message: body = the place's name, `file.location` = { lat, lng, z, name, addr }.
 - **+ > Article**: a big window with a title and the text, and one bar of tools: heading, bold, italic, underline, strike, list, numbered list, checklist, quote, divider, and the eye for a preview. Enter carries a list on; Enter on an empty item ends it. An unsent article stays as a draft on that device.
 - In the chat it is a card like the RoarTransfer one (mark, title, first lines, Read, minutes); Read opens it laid out. Edit (from the message menu) opens it again in the same window.

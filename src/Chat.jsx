@@ -10,6 +10,7 @@ import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
+import { NowPlaying } from './player.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
@@ -533,6 +534,8 @@ export default function Chat({ me, setMe }) {
             </span>
           )}
         </div>
+        {/* on a phone the list and a chat are separate screens: the bar shows on the list too */}
+        <NowPlaying className="in-side" onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
         {tab === 'chats' && (
           <>
             <div className={`search-wrap${searchOpen || q.trim() ? ' open' : ''}`}><div>
@@ -649,6 +652,7 @@ export default function Chat({ me, setMe }) {
       </aside>
 
       <main className="main">
+        <NowPlaying onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
         {tab === 'settings' ? (
           <SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast} me={me} setMe={setMe}
             profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : openFolders())}
@@ -1511,7 +1515,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
                       : isTransfer ? <TransferTile file={m.file} onCinema={setCinema} />
                       : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />
-                      : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} />
+                      : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
                     {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && <span className="text">{formatText(m.body, withMentions)}</span>}

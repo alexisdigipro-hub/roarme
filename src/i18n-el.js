@@ -704,4 +704,6 @@ export const EL = {
   'While you were away': 'Όσο έλειπες',
   'See-Through Bubbles': 'Διάφανα συννεφάκια',
   'Your messages see-through with a thin edge in your colour; off: filled with your colour': 'Τα μηνύματά σου διάφανα με λεπτό περίγραμμα στο χρώμα σου· κλειστό: γεμάτα με το χρώμα σου',
+  'Now playing': 'Παίζει τώρα',
+  'Position': 'Θέση',
 }

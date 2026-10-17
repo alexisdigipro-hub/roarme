@@ -311,7 +311,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
           )) : <p className="muted pf-empty">No links yet.</p>)}
 
           {tab === 'music' && items && (sets.music.length ? sets.music.map((m) => (
-            <div key={m.id} className="pf-row pf-music"><MusicTile file={m.file} /></div>
+            <div key={m.id} className="pf-row pf-music"><MusicTile file={m.file} roomId={m.room_id} /></div>
           )) : <p className="muted pf-empty">No music yet.</p>)}
 
           {tab === 'voice' && items && (sets.voice.length ? sets.voice.map((m) => (

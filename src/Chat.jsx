@@ -10,6 +10,7 @@ import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
+import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
@@ -851,6 +852,10 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const [pinRows, setPinRows] = useState([])
   const [pinView, setPinView] = useState(false)
   const [schedOpen, setSchedOpen] = useState(false)
+  const [locOpen, setLocOpen] = useState(false)
+  const [locView, setLocView] = useState(null)
+  const [artOpen, setArtOpen] = useState(null) // true for a new one, or the message being edited
+  const [artView, setArtView] = useState(null)
   // the message box grows with what is written, wrapped lines too; past a few lines a corner button makes it big
   // (Alex, 17 Oct, as on Telegram) and it shrinks back once the message is sent
   const [bigBox, setBigBox] = useState(false)
@@ -1142,6 +1147,16 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     loadPins()
   }
 
+  // a message that shows as a card (a scheduled call, a place, an article): its text in body, the card's details in file
+  const sendCard = async (body, file, done, close) => {
+    const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'text', body, file }).select().single()
+    if (error) { setErr(errText(error)); return false }
+    close?.()
+    stick.current = true
+    setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+    if (done) toast(done)
+    return true
+  }
   const textOf = (m) => (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.body)
   const copy = async (s, what = 'Copied') => { try { await navigator.clipboard.writeText(s); toast(what) } catch { toast('Copy did not work here') } }
   const linkOf = (m) => `${window.location.origin}${window.location.pathname}#m=${room.room_id}/${m.id}`
@@ -1430,10 +1445,12 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
                     {m.deleted_at ? <i>Message deleted</i>
+                      : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => setLocView(m.file.location)} />
+                      : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => setArtView(m)} />
                       : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} canJoin={room.kind !== 'group'} onJoin={(v) => onCall(v)} />
                       : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : openPhoto(m))} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
@@ -1442,7 +1459,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
-                    {!m.deleted_at && m.body && !m.file?.event && <span className="text">{formatText(m.body, withMentions)}</span>}
+                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && <span className="text">{formatText(m.body, withMentions)}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />}
                     <span className="meta">{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
@@ -1555,7 +1572,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
               <hr />
-              {menu.m.user_id === me.id && menu.m.kind === 'text' && <button type="button" onClick={() => { setEditing(menu.m); setText(menu.m.body); setMenu(null) }}>{I.edit}<span>Edit</span></button>}
+              {menu.m.user_id === me.id && menu.m.kind === 'text' && !menu.m.file?.event && !menu.m.file?.location && <button type="button" onClick={() => { if (menu.m.file?.article) setArtOpen(menu.m); else { setEditing(menu.m); setText(menu.m.body) } setMenu(null) }}>{I.edit}<span>Edit</span></button>}
               <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
               <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>
               <button type="button" onClick={() => { setPicked([menu.m.id]); setMenu(null) }}>{I.select}<span>Select</span></button>
@@ -1589,7 +1606,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} />}
+      {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={() => { setAttach(null); setLocOpen(true) }} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
       {transferOpen && <TransferWindow title={title} outbox={outbox} onStart={(files, note, hooks) => sendFiles(files, note, false, true, hooks)} onClose={() => setTransferOpen(false)} />}
       {media && <SharedMedia roomId={room.room_id} onClose={() => setMedia(false)} onOpen={async (list, index) => { setMedia(false); const items = await Promise.all(list.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name }))); setViewer({ items, index }) }} />}
       {wallPick && (
@@ -1598,16 +1615,24 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           <WallTiles value={wall} onPick={(k) => setWalls((w) => ({ ...w, [room.room_id]: k }))} />
         </Modal>
       )}
-      {schedOpen && (
-        <ScheduleCall who={title} onClose={() => setSchedOpen(false)} onSend={async (event) => {
-          const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'text', body: event.title, file: { event } }).select().single()
-          if (error) { setErr(errText(error)); return }
-          setSchedOpen(false)
-          stick.current = true
-          setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
-          toast('Call scheduled')
-        }} />
+      {schedOpen && <ScheduleCall who={title} onClose={() => setSchedOpen(false)} onSend={(event) => sendCard(event.title, { event }, 'Call scheduled', () => setSchedOpen(false))} />}
+      {locOpen && <LocationPicker onClose={() => setLocOpen(false)} onSend={(location) => sendCard(location.name, { location }, '', () => setLocOpen(false))} />}
+      {locView && <LocationView loc={locView} onClose={() => setLocView(null)} />}
+      {artOpen && (
+        <ArticleEditor initial={artOpen === true ? null : articleOf(artOpen.body)}
+          onClose={() => setArtOpen(null)}
+          onSend={async ({ title: t, text: x }) => {
+            const body = `${t}\n\n${x}`
+            if (artOpen === true) return sendCard(body, { article: { v: 1 } }, '', () => setArtOpen(null))
+            const edited = new Date().toISOString()
+            const { error } = await supabase.from('roar_messages').update({ body, edited_at: edited }).eq('id', artOpen.id)
+            if (error) { setErr(errText(error)); return false }
+            setMsgs((list) => list.map((y) => (y.id === artOpen.id ? { ...y, body, edited_at: edited } : y)))
+            setArtOpen(null)
+            return true
+          }} />
       )}
+      {artView && <ArticleReader {...articleOf(artView.body)} who={artView.user_id === me.id ? 'You' : nameOf(people[artView.user_id])} at={artView.created_at} plain={withMentions} onClose={() => setArtView(null)} />}
       {pinView && (
         <Modal title={pinnedList.length === 1 ? '1 pinned message' : `${pinnedList.length} pinned messages`} onClose={() => setPinView(false)}
           foot={pinnedList.length > 1 ? <button type="button" className="btn btn-danger pins-all" onClick={unpinAll}>{I.pin}<span>Unpin all</span></button> : null}>

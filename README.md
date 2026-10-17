@@ -59,7 +59,16 @@ older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload 
 must be at least 3 GB.
 
 
+## Location and Article (17 Oct)
+- **+ > Location**: a map you move under a pin (drag, pinch, wheel, + and −), a search box for places, and the round target button for where you are (if the computer or phone shares it; the Mac app asks once). The pin's spot is named as the map stops. Send puts a small map with the name in the chat; a tap opens it big, with Google Maps and Apple Maps.
+- The map is OpenStreetMap drawn by CARTO; names and search are OpenStreetMap's Nominatim. No key, nothing to pay. They see only the map area and the search, with the IP address (said in the Privacy Policy).
+- The message is a text message: body = the place's name, `file.location` = { lat, lng, z, name, addr }.
+- **+ > Article**: a big window with a title and the text, and one bar of tools: heading, bold, italic, underline, strike, list, numbered list, checklist, quote, divider, and the eye for a preview. Enter carries a list on; Enter on an empty item ends it. An unsent article stays as a draft on that device.
+- In the chat it is a card like the RoarTransfer one (mark, title, first lines, Read, minutes); Read opens it laid out. Edit (from the message menu) opens it again in the same window.
+- The message is a text message: body = the title, an empty line, then the text in the usual marks plus line marks (`# `, `## `, `- `, `1. `, `- [ ] `, `> `, `---`); `file.article` only marks it.
+
 ## Scheduled calls (17 Oct)
+- The card in the chat looks like the RoarTransfer card: the VideoCall / VoiceCall mark, a date tile with the title as the headline, a line that fills up to the start (green while the call runs) with the time left beside it, a Join pill (open from 10 minutes before) and a round button for the calendar.
 In a one-to-one chat, ⋯ > Schedule Call (as on WhatsApp): title, note, starts, ends (optional), voice or video. It goes
 into the chat as a card (`src/events.jsx`; a text message whose `file.event` holds the details): a calendar leaf,
 title, day and time, a countdown, Join (from 10 minutes before until the end; starts the call) and Add to calendar

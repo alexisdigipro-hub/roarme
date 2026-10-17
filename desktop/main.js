@@ -14,7 +14,7 @@ const fs = require('fs')
 const path = require('path')
 
 const HOME = 'https://alexisdigipro-hub.github.io/roarme/'
-const ALLOWED = ['media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen']
+const ALLOWED = ['media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'geolocation']
 
 let win = null
 let tray = null
@@ -131,7 +131,7 @@ app.whenReady().then(async () => {
   loadSettings()
   // always the latest RoarMe: nothing old from the last time is reused
   await session.defaultSession.clearCache().catch(() => {})
-  // voice messages, calls, notifications and copy/paste, for RoarMe only
+  // voice messages, calls, notifications, copy/paste and your location (Send My Location), for RoarMe only
   session.defaultSession.setPermissionRequestHandler((contents, permission, done) => {
     done(ALLOWED.includes(permission) && inApp(contents.getURL()))
   })

@@ -23,7 +23,7 @@ const DOCS = {
         ]],
         ['What we do not collect', [
           'No advertising IDs, no ads, no tracking cookies, no analytics or crash-reporting tools.',
-          'We do not upload your phone contacts and do not use your location.',
+          'We do not upload your phone contacts. Your location is read only when you open Location and ask for it, and it is sent only if you send it to a chat, as a message like any other.',
           'We do not sell, rent or share your data with anyone for marketing, and we do not use your messages to build a profile of you.',
         ]],
         ['RoarTransfer', [
@@ -37,6 +37,7 @@ const DOCS = {
           'Accounts, messages and files are stored with Supabase, our database and storage provider, in London, United Kingdom. The app itself is served from GitHub Pages. These providers act on our behalf and keep short technical logs (such as IP address and device type) for security and to keep the service running.',
           'Data is encrypted in transit (HTTPS) and at rest by our provider. Messages are not end-to-end encrypted, so do not use RoarMe for information that needs that level of protection.',
           'The Translate button opens Google Translate with the text you chose, only when you tap it.',
+          'The map in Location is drawn from OpenStreetMap data with tiles from CARTO, and place names and search come from OpenStreetMap\'s Nominatim service. They receive the area of the map being shown (and what you search for) with your IP address, never your name or account.',
         ]],
         ['How long we keep it, and how to delete it', [
           'Messages stay until they are deleted. In any chat you can turn on Auto-Delete, and messages older than the time you pick are removed.',
@@ -69,7 +70,7 @@ const DOCS = {
         ]],
         ['Τι δεν συλλέγουμε', [
           'Κανένα αναγνωριστικό διαφήμισης, καμία διαφήμιση, κανένα cookie παρακολούθησης, κανένα εργαλείο analytics ή αναφοράς σφαλμάτων.',
-          'Δεν ανεβάζουμε τις επαφές του κινητού σου και δεν χρησιμοποιούμε την τοποθεσία σου.',
+          'Δεν ανεβάζουμε τις επαφές του κινητού σου. Η τοποθεσία σου διαβάζεται μόνο όταν ανοίξεις την Τοποθεσία και τη ζητήσεις, και στέλνεται μόνο αν τη στείλεις εσύ σε μια συζήτηση, ως μήνυμα όπως κάθε άλλο.',
           'Δεν πουλάμε, δεν νοικιάζουμε και δεν δίνουμε τα δεδομένα σου σε κανέναν για μάρκετινγκ, και δεν χρησιμοποιούμε τα μηνύματά σου για να φτιάξουμε προφίλ σου.',
         ]],
         ['RoarTransfer', [
@@ -83,6 +84,7 @@ const DOCS = {
           'Οι λογαριασμοί, τα μηνύματα και τα αρχεία φυλάσσονται στη Supabase, τον πάροχο βάσης δεδομένων και αποθήκευσης, στο Λονδίνο, Ηνωμένο Βασίλειο. Η ίδια η εφαρμογή σερβίρεται από το GitHub Pages. Οι πάροχοι αυτοί λειτουργούν για λογαριασμό μας και κρατούν σύντομα τεχνικά αρχεία (όπως διεύθυνση IP και τύπο συσκευής) για ασφάλεια και για τη λειτουργία της υπηρεσίας.',
           'Τα δεδομένα κρυπτογραφούνται κατά τη μεταφορά (HTTPS) και κατά την αποθήκευση από τον πάροχο. Τα μηνύματα δεν έχουν κρυπτογράφηση από άκρο σε άκρο, οπότε μη χρησιμοποιείς το RoarMe για πληροφορίες που χρειάζονται τέτοιο επίπεδο προστασίας.',
           'Το κουμπί Μετάφραση ανοίγει το Google Translate με το κείμενο που διάλεξες, μόνο όταν το πατήσεις.',
+          'Ο χάρτης στην Τοποθεσία σχεδιάζεται με δεδομένα του OpenStreetMap και πλακίδια της CARTO, και τα ονόματα και η αναζήτηση τόπων έρχονται από την υπηρεσία Nominatim του OpenStreetMap. Λαμβάνουν την περιοχή του χάρτη που βλέπεις (και ό,τι ψάχνεις) μαζί με τη διεύθυνση IP σου, ποτέ το όνομα ή τον λογαριασμό σου.',
         ]],
         ['Πόσο τα κρατάμε και πώς τα σβήνεις', [
           'Τα μηνύματα μένουν μέχρι να σβηστούν. Σε κάθε συζήτηση μπορείς να ενεργοποιήσεις την Αυτόματη διαγραφή μηνυμάτων, και τα μηνύματα που είναι παλιότερα από τον χρόνο που διάλεξες σβήνονται.',

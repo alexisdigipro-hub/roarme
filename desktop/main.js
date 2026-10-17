@@ -22,6 +22,9 @@ let quitting = false
 let unread = 0
 
 const inApp = (url) => typeof url === 'string' && url.startsWith(HOME)
+// only web and mail links leave the app for the browser; any other kind (file:, smb:, custom app links) is ignored,
+// so a link in a message can never start a program on the computer (security check, 17 Oct)
+const openOutside = (url) => { if (/^(https?:|mailto:)/i.test(String(url))) shell.openExternal(url) }
 
 // the app's own settings, in its folder on the computer
 const file = () => path.join(app.getPath('userData'), 'roar-settings.json')
@@ -61,11 +64,11 @@ function guard(w) {
   // a chat opened "In Window" gets a window of its own; anything else opens in the browser
   w.webContents.setWindowOpenHandler(({ url }) => {
     if (inApp(url)) return { action: 'allow', overrideBrowserWindowOptions: { width: 900, height: 780, ...look, show: true } }
-    shell.openExternal(url)
+    openOutside(url)
     return { action: 'deny' }
   })
   w.webContents.on('will-navigate', (e, url) => {
-    if (!inApp(url)) { e.preventDefault(); shell.openExternal(url) }
+    if (!inApp(url)) { e.preventDefault(); openOutside(url) }
   })
   w.webContents.on('did-create-window', (child) => guard(child))
 }

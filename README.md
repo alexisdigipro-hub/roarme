@@ -59,6 +59,17 @@ older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload 
 must be at least 3 GB.
 
 
+## Security check (17 Oct)
+Applied (`supabase/security-2026-10-17.sql`): roar_are_contacts / roar_blocked_between answer only about yourself
+(before, anyone could ask whether any two people chat or blocked each other); messages always get the server's time;
+size limits on messages, names, bios and group titles; profile and group pictures must come from RoarMe's own storage
+(an outside address would have revealed viewers' IP addresses); roar-files limited to 50 MB, roar-avatars to 5 MB
+images. Desktop 1.4.1: only http(s) and mailto links leave the app for the browser.
+Still to do in the Supabase dashboard: leaked password protection on, minimum password length 8.
+Known and accepted: the roar_people view is SECURITY DEFINER on purpose (it hides last seen and photo per privacy
+setting); the roar_* RPCs are meant to be called by signed-in users and check permissions inside; messages are not
+end-to-end encrypted (see below).
+
 ## Later: end-to-end encryption (talked through with Alex, 17 Oct; not started, "when we are more ready")
 Plan agreed in principle: a key pair per user made on the device, a key per chat wrapped for each member, messages,
 photos, voice and files up to 50 MB encrypted on the device before upload, a recovery code to open the history on a

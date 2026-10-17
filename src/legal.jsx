@@ -198,7 +198,7 @@ export function LegalDoc({ doc }) {
 
 /* the public page (?legal=privacy or ?legal=terms), no account needed */
 export function LegalPage({ doc }) {
-  const d = DOCS[doc] ? doc : 'privacy'
+  const d = Object.prototype.hasOwnProperty.call(DOCS, doc) ? doc : 'privacy'
   useEffect(() => {
     document.documentElement.dataset.theme = document.documentElement.dataset.theme || 'glass'
     document.title = `${legalTitle(d)} · RoarMe`

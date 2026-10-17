@@ -3,6 +3,7 @@ import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
+import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 
@@ -379,6 +380,7 @@ function Privacy({ me, setMe, toast }) {
     if (error) toast(errText(error)); else { toast(`${nameOf(b)} unblocked`); loadBlocks() }
   }
   const [gone, setGone] = useState({ open: false, typed: '', busy: false })
+  const [legal, setLegal] = useState('')
   const deleteMe = async () => {
     setGone((g) => ({ ...g, busy: true }))
     const { error } = await supabase.rpc('roar_delete_me')
@@ -429,6 +431,11 @@ function Privacy({ me, setMe, toast }) {
         ))}
         {!blocks.length && <div className="set-row"><span className="set-text muted">No one</span></div>}
       </Box>
+      <Box title="Legal" note="No ads, no trackers, no selling of your data.">
+        <Nav onClick={() => setLegal('privacy')}>{legalTitle('privacy')}</Nav>
+        <Nav onClick={() => setLegal('terms')}>{legalTitle('terms')}</Nav>
+      </Box>
+      {legal && <Modal title={legalTitle(legal)} onClose={() => setLegal('')} wide><LegalDoc doc={legal} /></Modal>}
       <Box title="Account" note="Your profile, chats and pictures go for good. Messages you sent in groups stay, without your name.">
         {!gone.open
           ? <button type="button" className="set-row set-pick danger" onClick={() => setGone({ open: true, typed: '', busy: false })}><span className="set-text">Delete My Account</span></button>

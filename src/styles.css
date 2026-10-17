@@ -2475,3 +2475,19 @@ html[data-theme] .lib-seg button.on i { color: inherit; background: rgba(0, 0, 0
 .pf-tabs::-webkit-scrollbar { display: none; }
 .pf-tabs button { flex: 1 0 auto; justify-content: center; gap: 4px; height: 32px; padding: 0 8px; border-radius: 14px; font-size: 12px; white-space: nowrap; }
 .pf-tabs small { font-size: 10px; }
+
+/* Privacy Policy and Terms (17 Oct): in a window from Settings, and as public pages (?legal=…) */
+.legal { display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.6; }
+.legal p { margin: 0 0 8px; }
+.legal h3 { margin: 14px 0 6px; font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
+.legal-date { color: var(--muted); font-size: 12.5px; }
+.legal-lead { padding: 12px 14px; border-radius: 16px; background: color-mix(in srgb, var(--accent) 12%, var(--glass)); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); font-weight: 600; }
+.legal-page { min-height: 100vh; display: flex; justify-content: center; padding: 32px 16px; box-sizing: border-box; }
+.legal-card { width: min(720px, 100%); display: flex; flex-direction: column; gap: 10px; padding: 28px 28px 22px; border-radius: 28px; box-sizing: border-box; background: var(--glass); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.legal-card h1 { margin: 6px 0 4px; font-size: 28px; letter-spacing: -.02em; }
+.legal-brand { display: inline-flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none; font-size: 18px; }
+.legal-brand b span { color: var(--accent); }
+.legal-brand .paw { color: var(--accent); }
+.legal-other { align-self: flex-start; margin-top: 6px; color: var(--accent); font-weight: 700; text-decoration: none; }
+.auth-legal { margin: 2px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); text-align: center; }
+.auth-legal a { color: var(--accent); text-decoration: none; font-weight: 600; }

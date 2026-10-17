@@ -62,6 +62,7 @@ export function Auth() {
         {err && <p className="auth-err">{err}</p>}
         {note && <p className="auth-note">{note}</p>}
         <button className="btn btn-main" disabled={busy}>{busy ? '…' : mode === 'in' ? 'Sign in' : mode === 'up' ? 'Sign up' : 'Send the link'}</button>
+        {mode === 'up' && <p className="auth-legal">By signing up you accept the <a href="?legal=terms" target="_blank" rel="noreferrer">Terms of Service</a> and the <a href="?legal=privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</p>}
         <div className="auth-links">
           {mode === 'in' && <><button type="button" onClick={() => setMode('up')}>Create an account</button><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button></>}
           {mode !== 'in' && <button type="button" onClick={() => setMode('in')}>I have an account, sign in</button>}

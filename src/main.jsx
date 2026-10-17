@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import { TransferPage } from './transfer.jsx'
+import { LegalPage } from './legal.jsx'
 import './styles.css'
 import { startI18n } from './i18n.js'
 
@@ -30,10 +31,13 @@ document.addEventListener('scroll', (e) => {
 }, true)
 
 // a RoarTransfer download link (?t=…) opens its own page, no account needed
-const transferToken = new window.URLSearchParams(window.location.search).get('t')
+const params = new window.URLSearchParams(window.location.search)
+const transferToken = params.get('t')
+// the Privacy Policy and the Terms (?legal=privacy | terms) are public pages too
+const legalDoc = params.get('legal')
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {transferToken ? <TransferPage token={transferToken} /> : <App />}
+    {transferToken ? <TransferPage token={transferToken} /> : legalDoc ? <LegalPage doc={legalDoc} /> : <App />}
   </StrictMode>,
 )

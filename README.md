@@ -91,7 +91,7 @@ anyone else; run by Claude, tested as Alex and as mits). The Privacy Policy says
 Everyone sees two themes: **Simba** (the ember theme, the main one) and **Pumba** (the prism theme); the keys in the
 code stay `ember` and `prism`. Glass, Aura, Studio, Aurum and Lions show only for Alex (`THEME_LAB` in src/prefs.js,
 his account id), tagged "Only you", so we can keep working on them. Anyone else left on one of them moves to Simba
-once signed in (App.jsx, `themeFor`). A first start opens Simba with the **red** accent (DEFAULTS.accent 'red').
+once signed in (App.jsx, `themeFor`). A first start opens Simba with the **red** accent (DEFAULTS.accent 'red'), which is Rosso Corsa #D40000, the Ferrari red of the site and the icon.
 White joined the accents.
 
 ## The RoarMe mark (17 Oct)

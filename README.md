@@ -59,6 +59,13 @@ older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload 
 must be at least 3 GB.
 
 
+## Back after being away (17 Oct)
+When RoarMe opens after being closed (Cmd+Q, the computer off), what came in meanwhile arrives as notifications,
+gathered: one per chat ("3 new messages · the last one", the photo of the person or group; a click opens that chat),
+or, with news in more than 4 chats, a single "While you were away: 12 new messages in 6 chats: …". Muted and archived
+chats stay quiet; with notifications off in the system it is a short note in the app. The app notes on this device,
+every 15 seconds and on closing, when it was last open (`roarme-here-<user id>`); the first time, only the last day counts.
+
 ## Location and Article (17 Oct)
 - **+ > Location**: a map you move under a pin (drag, pinch, wheel, + and −), a search box for places, and the round target button for where you are (if the computer or phone shares it; the Mac app asks once). The pin's spot is named as the map stops. Send puts a small map with the name in the chat; a tap opens it big, with Google Maps and Apple Maps.
 - The map is OpenStreetMap drawn by CARTO; names and search are OpenStreetMap's Nominatim. No key, nothing to pay. They see only the map area and the search, with the IP address (said in the Privacy Policy).

@@ -699,4 +699,7 @@ export const EL = {
   'Italic': 'Πλάγια',
   'Underline': 'Υπογράμμιση',
   'Strikethrough': 'Διακριτή διαγραφή',
+  '1 new message': '1 νέο μήνυμα',
+  'in 1 chat': 'σε 1 συνομιλία',
+  'While you were away': 'Όσο έλειπες',
 }

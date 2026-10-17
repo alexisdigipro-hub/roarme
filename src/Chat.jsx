@@ -240,6 +240,62 @@ export default function Chat({ me, setMe }) {
     } catch { /* not allowed here */ }
   }
 
+  // back after being away (Alex, 17 Oct): what came while RoarMe was closed comes in as notifications on opening,
+  // gathered: one per chat ("3 new messages · the last one"), or a single one when many chats have news
+  const awayKey = `roarme-here-${me.id}`
+  const awaySince = useRef(null)
+  if (awaySince.current === null) { try { awaySince.current = localStorage.getItem(awayKey) || '' } catch { awaySince.current = '' } }
+  useEffect(() => {
+    const mark = () => { try { localStorage.setItem(awayKey, new Date().toISOString()) } catch { /* private window */ } }
+    mark()
+    const id = setInterval(mark, 15e3)
+    window.addEventListener('pagehide', mark)
+    return () => { clearInterval(id); window.removeEventListener('pagehide', mark); mark() }
+  }, [awayKey])
+  const caughtUp = useRef(false)
+  const [namesLate, setNamesLate] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setNamesLate(true), 5000); return () => clearTimeout(t) }, [])
+  useEffect(() => {
+    if (caughtUp.current || !rooms.length) return
+    // the first time (no mark yet) only what came in the last day
+    const since = awaySince.current || new Date(Date.now() - 864e5).toISOString()
+    const missed = rooms.filter((r) => r.unread > 0 && !r.muted && !r.archived && r.last_user !== me.id && r.last_message_at > since)
+    const other = (r) => (r.members || []).find((id) => id !== me.id)
+    // wait for the names (a few seconds at most)
+    if (!namesLate && missed.some((r) => (r.kind === 'direct' && !people[other(r)]) || (r.kind === 'group' && !people[r.last_user]))) return
+    caughtUp.current = true
+    if (!missed.length) return
+    const total = missed.reduce((a, r) => a + r.unread, 0)
+    const nameOfRoom = (r) => (r.kind === 'group' ? r.title : nameOf(people[other(r)]))
+    const lastOf = (r) => {
+      const what = r.last_deleted ? 'Message deleted' : r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(r.last_body || '')
+      return (r.kind === 'group' ? `${nameOf(people[r.last_user])}: ` : '') + tr(what)
+    }
+    const preview = prefsRef.current.notifyPreview
+    if (prefsRef.current.sound) chime()
+    const show = (title, body, icon, roomId) => {
+      try {
+        const n = new Notification(title, { body, icon: icon || './icon.svg', tag: roomId || 'roarme-away' })
+        n.onclick = () => { window.focus(); setTab('chats'); if (roomId) setActiveId(roomId); n.close() }
+        return true
+      } catch { return false }
+    }
+    const can = typeof Notification !== 'undefined' && Notification.permission === 'granted'
+    const gathered = `${tr(total === 1 ? '1 new message' : `${total} new messages`)} · ${tr(missed.length === 1 ? 'in 1 chat' : `in ${missed.length} chats`)}`
+    if (!can) { toast(gathered); return }
+    if (missed.length > 4) {
+      const names = missed.slice(0, 3).map(nameOfRoom).join(', ')
+      show(tr('While you were away'), `${gathered}: ${names}${missed.length > 3 ? ` ${tr(`and ${missed.length - 3} more`)}` : ''}`, '', '')
+      return
+    }
+    missed.forEach((r) => {
+      const count = r.unread === 1 ? '' : tr(`${r.unread} new messages`)
+      const body = !preview ? tr(r.unread === 1 ? 'New message' : `${r.unread} new messages`) : count ? `${count} · ${lastOf(r)}` : lastOf(r)
+      const icon = r.kind === 'group' ? r.avatar_url : people[other(r)]?.avatar_url
+      show(nameOfRoom(r), body, icon, r.room_id)
+    })
+  }, [rooms, people, namesLate]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // live: new and changed messages, reactions, rooms one is added to
   useEffect(() => {
     const ch = supabase.channel(`roar-${me.id}`)

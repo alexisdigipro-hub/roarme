@@ -3002,3 +3002,6 @@ html[data-mode='light'] .wordmark.with-by .rm-mark { filter: none; }
 .adm-more { align-self: center; border-radius: 999px; }
 .adm-note { margin: 4px 2px 0; font-size: 12px; }
 @media (max-width: 760px) { .adm-stats b { font-size: 19px; } }
+
+/* the bar shows the letters alone again (Alex, 17 Oct), 3% smaller than the 18px they were */
+html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }

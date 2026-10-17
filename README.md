@@ -82,11 +82,11 @@ once signed in (App.jsx, `themeFor`). A first start opens Simba with the **red**
 White joined the accents.
 
 ## The RoarMe mark (17 Oct)
-Alex's logo, five red bars leaning (#b83032 on #202020), redrawn as a vector (`Mark` in src/ui.jsx, checked by laying
+Alex's logo, five bars leaning; the app icon in Rosso Corsa #D40000 (the site's Ferrari red) on #202020, redrawn as a vector (`Mark` in src/ui.jsx, checked by laying
 it over his picture). It is the icon everywhere: the tab (public/icon.svg), the phone's home screen
 (public/apple-touch-icon.png, icon-512.png), the Mac and Windows app (desktop/build/icon.png, a charcoal rounded
-tile) and the Mac menu bar (desktop/trayTemplate*.png, a black silhouette macOS tints). In the app it is white (#f2f2f2, his white version; the text colour in light mode) and sits to the
-left of ROARME in the bar (24px) and above it, with a soft red glow, on the opening, sign-in, lock, empty chat,
+tile) and the Mac menu bar (desktop/trayTemplate*.png, a black silhouette macOS tints). In the app it is white (#f2f2f2, his white version; the text colour in light mode) and sits above
+ROARME (the bar shows the letters alone, 17.46px, Alex), with a soft white glow, on the opening, sign-in, lock, empty chat,
 settings, legal and download screens (72px).
 
 ## Lions theme (17 Oct)

@@ -193,7 +193,7 @@ export const Mark = ({ size = 28, className = '' }) => (
 export const ByTML = () => <span className="by-tml" data-raw="1">by <b>THE<strong>MAD</strong>LIONS</b></span>
 export const Wordmark = ({ by = false }) => (
   <span className={`wordmark${by ? ' with-by' : ''}`}>
-    <Mark size={by ? 72 : 24} />
+    {by && <Mark size={72} />}
     <b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b>
     {by && <ByTML />}
   </span>

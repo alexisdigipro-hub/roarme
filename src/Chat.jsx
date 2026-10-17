@@ -852,6 +852,20 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const [pinRows, setPinRows] = useState([])
   const [pinView, setPinView] = useState(false)
   const [schedOpen, setSchedOpen] = useState(false)
+  // the message box grows with what is written, wrapped lines too; past a few lines a corner button makes it big
+  // (Alex, 17 Oct, as on Telegram) and it shrinks back once the message is sent
+  const [bigBox, setBigBox] = useState(false)
+  const [tall, setTall] = useState(false)
+  useLayoutEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    const max = bigBox ? Math.round(window.innerHeight * 0.55) : 200
+    const full = el.scrollHeight
+    el.style.height = `${bigBox ? max : Math.min(max, full)}px`
+    setTall(full > 90)
+  }, [text, bigBox])
+  useEffect(() => { if (!text) setBigBox(false) }, [text])
   const [pinExtra, setPinExtra] = useState({})
   const loadPins = useCallback(() => supabase.from('roar_pins').select('message_id, pinned_by, pinned_at').eq('room_id', room.room_id).order('pinned_at').then(({ data }) => setPinRows(data || [])), [room.room_id])
   useEffect(() => {
@@ -1516,7 +1530,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                 onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart) }} onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)} onClick={(e) => setCaret(e.currentTarget.selectionStart)} onKeyDown={onKey}
                 onSelect={(e) => readSel(e.currentTarget)} onBlur={() => setSel(null)}
                 onPaste={(e) => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); setAttach(f) } }}
-                placeholder="Write a message…" style={{ height: Math.min(160, 22 * Math.max(1, text.split('\n').length) + 22) }} />
+                placeholder="Write a message…" />
+              {(bigBox || tall) && <button type="button" className="compose-grow" onMouseDown={(e) => e.preventDefault()} onClick={() => { setBigBox((v) => !v); inputRef.current?.focus() }} aria-label={bigBox ? 'Smaller' : 'Bigger'} title={bigBox ? 'Smaller' : 'Bigger'}>{bigBox ? GROW_OFF : GROW_ON}</button>}
               <button type="button" className="emoji-btn" onClick={() => setEmoji((v) => !v)} aria-label="Emoji" title="Emoji">{I.smile}</button>
               {emoji && <EmojiPicker onPick={addEmoji} onClose={() => setEmoji(false)} />}
             </span>
@@ -1736,6 +1751,9 @@ function TransferTile({ file, onCinema }) {
     </span>
   )
 }
+
+const GROW_ON = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" /></svg>
+const GROW_OFF = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 4v4a1 1 0 0 1-1 1H4M20 9h-4a1 1 0 0 1-1-1V4M15 20v-4a1 1 0 0 1 1-1h4M4 15h4a1 1 0 0 1 1 1v4" /></svg>
 
 /* ---------- new chat, new group ---------- */
 function PersonRow({ p, right, onClick }) {

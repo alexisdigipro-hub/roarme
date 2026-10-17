@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { locale } from './i18n.js'
-import { Paw } from './ui.jsx'
 
 /* Privacy Policy and Terms of Service (17 Oct 2026). Written to match what RoarMe really does: it keeps only what the
    chat needs, has no ads, no trackers and no analytics, and sells nothing. Greek when the app is in Greek.
@@ -207,7 +206,7 @@ export function LegalPage({ doc }) {
   return (
     <div className="legal-page">
       <div className="legal-card">
-        <a className="legal-brand" href={`${window.location.origin}${window.location.pathname}`}><Paw size={22} /><b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b></a>
+        <a className="legal-brand" href={`${window.location.origin}${window.location.pathname}`}><b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b></a>
         <h1>{legalTitle(d)}</h1>
         <LegalDoc doc={d} />
         <a className="legal-other" href={legalUrl(other)}>{legalTitle(other)} →</a>

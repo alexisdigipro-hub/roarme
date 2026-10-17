@@ -2585,3 +2585,11 @@ html[data-theme] .wordmark b.wm span, .legal-brand b.wm span { color: #fff; }
 /* on the light look white would vanish: the same letters in the text colour */
 html[data-mode='light'] :is(.wordmark, .legal-brand) b.wm, html[data-mode='light'] :is(.wordmark, .legal-brand) b.wm span { color: var(--text); }
 .compose-box textarea { flex: none; }
+
+/* no paw any more (Alex, 17 Oct): the opening and the empty chat screen show the name itself */
+.boot-mark { display: block; animation: paw-pop .6s cubic-bezier(.3, 1.5, .5, 1) both, paw-breathe 1.6s ease-in-out .6s infinite; }
+.boot-mark .wordmark b.wm { font-size: 34px; }
+.pick-mark { display: block; margin-bottom: 4px; }
+.pick-mark .wordmark b.wm { font-size: 44px; letter-spacing: .03em; }
+html[data-still] .boot-mark { animation: none; }
+@media (prefers-reduced-motion: reduce) { .boot-mark { animation: none; } }

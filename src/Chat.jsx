@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
-import { Avatar, CropModal, I, Modal, OnTop, Paw, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
+import { Avatar, CropModal, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
 import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
@@ -607,8 +607,7 @@ export default function Chat({ me, setMe }) {
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={() => unblock(otherOf(active)?.id)} onCall={(v) => callRoom(active, v)} />
         ) : (
           <div className="pick">
-            <span className="pick-paw"><Paw size={64} /></span>
-            <h2>RoarMe</h2>
+            <span className="pick-mark"><Wordmark /></span>
             <p>Pick a chat, or start a new one.</p>
             <div className="pick-acts">
               <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>{I.person} New chat</button>

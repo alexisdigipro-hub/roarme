@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { qrPath } from './qr.js'
-import { Avatar, I, Modal, Paw } from './ui.jsx'
+import { Avatar, I, Modal } from './ui.jsx'
 import { nameOf } from './lib.js'
 
 /* Invite people (Alex, 17 Oct): everyone has a personal link (…/roarme/?u=username) and its QR code. Whoever opens it
@@ -44,7 +44,6 @@ export function InviteModal({ me, onClose, toast }) {
               <rect width={qr.size} height={qr.size} fill="#fff" />
               <path d={qr.d} fill="#111" />
             </svg>
-            <i className="inv-paw"><Paw size={16} /></i>
           </span>
           <small className="inv-hint">Scan with the phone's camera</small>
         </div>

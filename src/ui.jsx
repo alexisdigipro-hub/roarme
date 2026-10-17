@@ -170,7 +170,7 @@ export function Paw({ size = 22 }) {
   )
 }
 // the name as THE MAD LIONS writes its own (Alex, 17 Oct): capitals in Jost, ROAR hairline-thin, ME heavy, in white
-export const Wordmark = ({ size = 20 }) => <span className="wordmark"><Paw size={size} /><b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b></span>
+export const Wordmark = () => <span className="wordmark"><b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b></span>
 
 /* Adjust a new picture before it is saved (Alex, 16 Oct): drag to place it, slide or scroll to zoom,
    inside the round frame it will be shown in. Gives back a square JPEG, 640 px. */

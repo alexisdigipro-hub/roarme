@@ -54,7 +54,7 @@ export function MediaViewer({ items, index, onClose }) {
 }
 
 /* ---------- photos, videos and files before they are sent: gallery, camera, file, caption ---------- */
-export function AttachSheet({ initial = [], onClose, onSend, onLocation, onArticle }) {
+export function AttachSheet({ initial = [], onClose, onSend, onTransfer, onLocation, onArticle }) {
   const prefs = usePrefs()
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
@@ -82,6 +82,8 @@ export function AttachSheet({ initial = [], onClose, onSend, onLocation, onArtic
         {touchOnly && <button type="button" className="attach-tile" style={{ '--tint': '#34c759' }} onClick={() => cam.current?.click()} title="Take one now"><i>{I.camera}</i><b>Camera</b></button>}
         <button type="button" className="attach-tile" style={{ '--tint': '#ff9f0a' }} onClick={() => doc.current?.click()} title="Any document"><i>{I.file}</i><b>File</b></button>
         {/* RoarTransfer has its own button beside the clip (Alex, 17 Oct: out of here, the rest small, all on one row) */}
+        {/* on a phone the RoarTransfer button beside the clip makes way for the text, so it is here instead */}
+        {!files.length && onTransfer && <button type="button" className="attach-tile only-phone" style={{ '--tint': 'var(--accent)' }} onClick={onTransfer} title="Up to 3 GB, kept 3 days"><i>{I.transfer}</i><b>Transfer</b></button>}
         {!files.length && onLocation && <button type="button" className="attach-tile" style={{ '--tint': '#30b0c7' }} onClick={onLocation} title="A place on the map"><i>{I.place}</i><b>Location</b></button>}
         {!files.length && onArticle && <button type="button" className="attach-tile" style={{ '--tint': '#af52de' }} onClick={onArticle} title="A long post with a title"><i>{I.article}</i><b>Article</b></button>}
       </div>

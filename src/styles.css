@@ -3039,3 +3039,82 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
 .inst-acts .btn { gap: 7px; border-radius: 999px; text-decoration: none; }
 .inst-acts a.btn { color: var(--text); }
 .inst-acts .btn svg { width: 15px; height: 15px; }
+
+/* =====================================================================
+   The phone, tidied (Alex, 17 Oct: "the pages are loose, they run off left and right, things don't show").
+   Checked screen by screen at 390 px: windows never wider than the screen, the name always in the chat's head,
+   the writing box gets the room, rows of tabs fit or scroll with a soft edge, notes above the bottom bar.
+   ===================================================================== */
+.only-phone { display: none !important; }
+@media (max-width: 760px) {
+  .only-phone { display: flex !important; }
+
+  /* windows: as wide as the screen allows, never wider */
+  .modal-back { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .modal { max-width: 100%; min-width: 0; }
+  .modal-body, .modal-foot, .modal-head { min-width: 0; }
+  .modal-body { padding-left: 16px; padding-right: 16px; }
+
+  /* the conversation's head: back, the name card, call, video, ⋯ (search moves into ⋯) */
+  .room-head { gap: 6px; padding: 10px 10px 6px; }
+  html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { width: 40px; height: 40px; }
+  html:not([data-theme='aura']):not([data-theme='studio']) .room-head .head-card { height: 44px; }
+  .room-head .head-card { padding: 0 10px 0 4px; gap: 8px; }
+  .room-head .head-card .av { width: 34px !important; height: 34px !important; font-size: 12px !important; }
+  .room-head :is(.head-find, .head-video) { display: none; } /* both are in ⋯ on a phone */
+  .head-text strong { font-size: 14.5px; }
+  .head-text small { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* a profile or group window: long names wrap (an editable group name shortens) */
+  .pf-name { font-size: 19px; text-align: center; text-wrap: balance; overflow-wrap: anywhere; }
+  .pf-name-edit { font-size: 18px; text-overflow: ellipsis; }
+
+  /* writing: smaller round buttons, the box gets the room */
+  .compose-wrap { padding: 6px 10px 10px; }
+  .compose { gap: 6px; }
+  .compose > .round { flex: none; width: 40px; height: 40px; }
+  .compose .compose-transfer { display: none; }
+  .compose-box textarea, .compose-box textarea:focus { padding-left: 14px; padding-right: 40px; }
+  .compose-box:has(.compose-grow) textarea { padding-right: 40px; }
+
+  /* rows of tabs: they fit, and if not they scroll with a soft edge instead of being cut */
+  .tabs button { flex: 1 1 auto; padding: 0 5px; gap: 4px; font-size: 11px; letter-spacing: .02em; }
+  :is(.tabs-scroll, .lib-seg, .pf-tabs, .tabs-view) { overflow-x: auto; scrollbar-width: none; }
+  :is(.tabs-scroll, .lib-seg, .pf-tabs, .tabs-view)::-webkit-scrollbar { display: none; }
+  .lib-seg button { flex: 1 0 auto; padding: 0 10px; font-size: 12px; }
+  .tabs-view { justify-content: flex-start; gap: 12px; }
+  .tv-pic { width: 128px; height: 96px; }
+
+  :is(.tabs-scroll, .lib-seg, .pf-tabs) { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); }
+
+  /* contacts: the search shrinks, the add button stays whole, the three actions closer together */
+  .contacts-top .search { min-width: 0; }
+  .contacts-top .round { flex: none; }
+  .contact-acts { gap: 0; }
+  .contact-acts button { width: 30px; height: 30px; }
+
+  /* the app uses the whole width of the phone */
+  .app { padding: 6px; }
+
+  /* admin numbers fit their tiles */
+  .adm-stats b { font-size: 17px; }
+
+  /* notes and the update card above the bottom bar */
+  .toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); max-width: calc(100vw - 32px); white-space: normal; text-align: center; }
+
+  /* settings: the title fits beside the back button */
+  .set-head { padding-left: 62px; padding-right: 62px; }
+  html[data-theme] .set-head strong { min-width: 0; font-size: 19px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .themes { flex-wrap: wrap; justify-content: center; overflow: visible; row-gap: 12px; }
+  .theme-tile { width: 76px; }
+
+  /* the send window: five tiles, whole words */
+  .attach-pick:not(.small) { gap: 6px; }
+  .attach-pick:not(.small) .attach-tile { padding: 12px 2px 10px; border-radius: 18px; }
+  .attach-pick:not(.small) .attach-tile i { width: 38px; height: 38px; margin-bottom: 6px; }
+  .attach-pick:not(.small) .attach-tile b { font-size: 11px; letter-spacing: -.01em; text-overflow: clip; }
+}
+
+/* a button's word never breaks in two (Alex, 17 Oct: "Rea / d" on a narrow phone) */
+.trx-get { white-space: nowrap; }
+.trx-acts { min-width: 0; }

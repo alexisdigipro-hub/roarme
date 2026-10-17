@@ -1409,14 +1409,16 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               <span className="head-text"><strong>{title}</strong><small>{sub}</small></span>
             </button>
             <button type="button" className="round" onClick={() => onCall(false)} aria-label="Voice call" title="Voice call">{I.phone}</button>
-            <button type="button" className="round" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>
-            <button type="button" className="round" onClick={() => { setFind(''); setFindAt(0) }} aria-label="Search in this chat" title="Search in this chat">{I.search}</button>
+            <button type="button" className="round head-video" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>
+            <button type="button" className="round head-find" onClick={() => { setFind(''); setFindAt(0) }} aria-label="Search in this chat" title="Search in this chat">{I.search}</button>
             <span className="plus-wrap">
               <button type="button" className={`round${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More">{I.more}</button>
               {headMenu && (
                 <>
                   <button type="button" className="scrim" aria-label="Close" onClick={() => setHeadMenu(false)} />
                   <div className="menu head-menu" onMouseLeave={() => setHeadSub('')}>
+                    {/* on a phone the search sits here, so the name has room in the head (Alex, 17 Oct) */}
+                    <button type="button" className="only-phone" onClick={() => { setHeadMenu(false); setFind(''); setFindAt(0) }} onMouseEnter={() => setHeadSub('')}>{I.search}<span>Search</span></button>
                     {room.kind === 'group' && room.role === 'admin' && <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onMouseEnter={() => setHeadSub('')}>{I.edit}<span>Edit</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onMouseEnter={() => setHeadSub('')}>{I.info}<span>Info</span></button>
                     {room.muted
@@ -1584,7 +1586,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         ) : (
           <div className="compose">
             {!editing && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.clip}</button>}
-            {!editing && <button type="button" className="round" onClick={() => setTransferOpen(true)} aria-label="RoarTransfer" title="RoarTransfer: big files as they are, up to 3 GB, kept 3 days">{I.transfer}</button>}
+            {!editing && <button type="button" className="round compose-transfer" onClick={() => setTransferOpen(true)} aria-label="RoarTransfer" title="RoarTransfer: big files as they are, up to 3 GB, kept 3 days">{I.transfer}</button>}
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
               {sel && (
                 <span className="fmt-bar" role="toolbar" aria-label="Format" onMouseDown={(e) => e.preventDefault()}>
@@ -1667,7 +1669,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} onLocation={() => { setAttach(null); setLocOpen(true) }} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
+      {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={() => { setAttach(null); setLocOpen(true) }} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
       {transferOpen && <TransferWindow title={title} outbox={outbox} onStart={(files, note, hooks) => sendFiles(files, note, false, true, hooks)} onClose={() => setTransferOpen(false)} />}
       {media && <SharedMedia roomId={room.room_id} onClose={() => setMedia(false)} onOpen={async (list, index) => { setMedia(false); const items = await Promise.all(list.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name }))); setViewer({ items, index }) }} />}
       {wallPick && (

@@ -65,6 +65,16 @@ Settings. While it is on, a bar sits above the chat: play/pause, the title and t
 there), a line to move through it, the time, and × to stop it. On a phone it shows on the chat list too. A voice
 message starting pauses the song, and the other way round.
 
+## The phone, tidied (17 Oct)
+Alex: "on the phone the pages are loose, things run off left and right, things don't show". Checked screen by screen
+at 390 and 360 px (the app run locally with a small React stand-in and sample chats, since the build tools can't be
+installed here), and fixed in one block at the end of styles.css ("The phone, tidied"), phone only:
+windows never wider than the screen (profile, group, invite, schedule call were); the chat head keeps the name
+(search and video call move into ⋯, `.only-phone` items); the writing box gets the room (smaller round buttons,
+RoarTransfer moves from beside the clip into the + window on a phone); rows of tabs fit or scroll with a soft edge;
+notes sit above the bottom bar; long settings titles fit beside Back; themes wrap; the + window shows whole words;
+contacts keep the add button; a button's word never breaks. The computer is unchanged.
+
 ## New app versions and how to install them (17 Oct)
 - **A newer Mac / Windows app:** the app tells the page its version in the user agent (`RoarMe/1.4.6`, also the
   versions already installed). The page compares it with the newest release on GitHub (its name now carries the

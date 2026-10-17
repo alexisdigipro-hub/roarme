@@ -207,7 +207,7 @@ export function LegalPage({ doc }) {
   return (
     <div className="legal-page">
       <div className="legal-card">
-        <a className="legal-brand" href={`${window.location.origin}${window.location.pathname}`}><Paw size={22} /><b>Roar<span>Me</span></b></a>
+        <a className="legal-brand" href={`${window.location.origin}${window.location.pathname}`}><Paw size={22} /><b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b></a>
         <h1>{legalTitle(d)}</h1>
         <LegalDoc doc={d} />
         <a className="legal-other" href={legalUrl(other)}>{legalTitle(other)} →</a>

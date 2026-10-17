@@ -2576,3 +2576,11 @@ html[data-mode='light'] .msg:not(.mine) .evc:not(.live):not(.over) .evc-when { c
   background: none; color: var(--muted); cursor: pointer; animation: pop .2s ease both; }
 .compose-grow:hover { color: var(--text); background: var(--glass-2); }
 .compose-box:has(.compose-grow) textarea { padding-right: 48px; }
+
+/* the wordmark (Alex, 17 Oct): like THE MAD LIONS', capitals in Jost, ROAR thin and ME heavy, white letters */
+html[data-theme] .wordmark b.wm, .wordmark b.wm, .legal-brand b.wm { font-family: 'Jost RoarMe', Jost, Futura, 'Century Gothic', 'Avenir Next', system-ui, sans-serif; text-transform: uppercase; letter-spacing: .02em; color: #fff; font-weight: 400; }
+.wm .wm-a { font-weight: 250; color: #fff; }
+.wm .wm-b { font-weight: 800; color: #fff; }
+html[data-theme] .wordmark b.wm span, .legal-brand b.wm span { color: #fff; }
+/* on the light look white would vanish: the same letters in the text colour */
+html[data-mode='light'] :is(.wordmark, .legal-brand) b.wm, html[data-mode='light'] :is(.wordmark, .legal-brand) b.wm span { color: var(--text); }

@@ -9,6 +9,12 @@ import { startI18n } from './i18n.js'
 
 startI18n()
 
+// Jost for the wordmark, from the site itself (fetched at build time into public/fonts); Futura is the fallback
+try {
+  const jost = new window.FontFace('Jost RoarMe', `url(${import.meta.env.BASE_URL}fonts/jost.woff2) format('woff2')`, { weight: '100 900' })
+  jost.load().then((f) => document.fonts.add(f)).catch(() => {})
+} catch { /* an old browser keeps the fallback */ }
+
 // inside the RoarMe app (Mac/Windows) with no title bar: the page keeps a band for the window buttons
 if (window.roarDesktop?.platform) document.documentElement.dataset.desktop = window.roarDesktop.platform
 

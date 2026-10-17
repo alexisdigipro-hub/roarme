@@ -27,6 +27,13 @@ jobs:
         with:
           node-version: 20
       - run: npm install --no-audit --no-fund
+      # the wordmark's typeface, Jost (as on themadlions.com), served from our own site so no font service sees the users
+      - run: |
+          mkdir -p public/fonts
+          curl -fsSL "https://cdn.jsdelivr.net/npm/@fontsource-variable/jost@5/files/jost-latin-wght-normal.woff2" -o public/fonts/jost.woff2 \
+            || curl -fsSL "https://cdn.jsdelivr.net/fontsource/fonts/jost:vf@latest/latin-wght-normal.woff2" -o public/fonts/jost.woff2 \
+            || echo "Jost not fetched: the wordmark falls back to Futura"
+          ls -la public/fonts
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'

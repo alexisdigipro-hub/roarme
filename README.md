@@ -65,6 +65,12 @@ Settings. While it is on, a bar sits above the chat: play/pause, the title and t
 there), a line to move through it, the time, and × to stop it. On a phone it shows on the chat list too. A voice
 message starting pauses the song, and the other way round.
 
+## Lions theme (17 Oct)
+Settings > Appearance > Lions (Alex: "a theme like our website"): themadlions.com in the app. Near-black #0b0b0c,
+Jost, Rosso Corsa #D40000, the two panels as soft solid tiles with a hairline, every control a pill, the chosen
+option as white glass with a lit top edge (like the site's EN | GR), tabs, foot labels, dates and settings titles in
+spaced capitals, light headings. Light mode is the site's paper (#f3f0e8). Works with the Glass Look on or off.
+
 ## Glass look (17 Oct)
 Your own messages are a touch of your colour on glass with a thin edge in it, like a RoarTransfer card, the text in the
 normal colour (links, ticks, quotes follow). The solid buttons and icon tiles are glass too, in three strengths: the

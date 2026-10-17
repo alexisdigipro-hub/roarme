@@ -22,7 +22,7 @@ export const PAGES = [
 ]
 export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
-const THEMES = [['ember', 'Ember', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['prism', 'Prism', ['#ff5d4a', 'linear-gradient(180deg, #555963, #2c2e34)']], ['aurum', 'Aurum', ['linear-gradient(180deg, #f8d29a, #e79a3d)', 'linear-gradient(180deg, #2a2927, #141414)']]]
+const THEMES = [['ember', 'Ember', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['prism', 'Prism', ['#ff5d4a', 'linear-gradient(180deg, #555963, #2c2e34)']], ['aurum', 'Aurum', ['linear-gradient(180deg, #f8d29a, #e79a3d)', 'linear-gradient(180deg, #2a2927, #141414)']], ['lions', 'Lions', ['#d40000', 'radial-gradient(circle at 85% 0%, rgba(212, 0, 0, .35), transparent 60%), #0b0b0c']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -550,7 +550,7 @@ function Appearance({ p, toast, me, setMe }) {
               return (
                 <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} title={l}
                   onClick={(e) => { if (p.theme === k) return; revealFrom(e, () => { document.documentElement.dataset.theme = k; setPrefs({ theme: k }) }); toast(`Theme updated: ${l}`) }}>
-                  <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : k === 'prism' ? '0 0 10px #ff4b3e' : k === 'aurum' ? '0 0 10px rgba(240, 166, 74, .8)' : 'none' }} />{k === 'prism' && <b className="theme-rim" />}</span>
+                  <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : k === 'prism' ? '0 0 10px #ff4b3e' : k === 'aurum' ? '0 0 10px rgba(240, 166, 74, .8)' : k === 'lions' ? '0 0 10px rgba(212, 0, 0, .8)' : 'none' }} />{k === 'prism' && <b className="theme-rim" />}</span>
                   <small>{l}</small>
                 </button>
               )

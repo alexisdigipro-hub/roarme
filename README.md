@@ -58,3 +58,10 @@ pg_cron job calling the Edge Function `roar-transfer-sweep` (`supabase/functions
 older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload limit (Storage > Settings)
 must be at least 3 GB.
 
+
+## Later: end-to-end encryption (talked through with Alex, 17 Oct; not started, "when we are more ready")
+Plan agreed in principle: a key pair per user made on the device, a key per chat wrapped for each member, messages,
+photos, voice and files up to 50 MB encrypted on the device before upload, a recovery code to open the history on a
+new device (lost code and devices = lost history), a new chat key when someone leaves a group. Search and the Media
+page would then decrypt on the device. Old messages stay as they are. Step two, optional: RoarTransfer with the key in
+the download link (as Firefox Send did). Not the full Signal protocol; the privacy policy must say exactly what it is.

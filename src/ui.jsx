@@ -182,11 +182,12 @@ export function Paw({ size = 22 }) {
 }
 // the name as THE MAD LIONS writes its own (Alex, 17 Oct): capitals in Jost, ROAR hairline-thin, ME heavy, in white
 // "by THEMADLIONS", the studio's name as its own logo writes it: THE and LIONS thin, MAD heavy (Alex, 17 Oct)
-/* the RoarMe mark (Alex, 17 Oct): five red bars, leaning, drawn from his logo */
+/* the RoarMe mark (Alex, 17 Oct): five bars, leaning, drawn from his logo; white in the app like the wordmark (the
+   app icon outside keeps it red) */
 const MARK_BARS = [[-489, -279], [-289, -488], [-92, -349], [104, -272], [304, -481]]
 export const Mark = ({ size = 28, className = '' }) => (
   <svg className={`rm-mark ${className}`} viewBox="320 320 1290 1290" width={size} height={size} aria-hidden="true">
-    <g fill="#b83032" transform="translate(964 966) rotate(-23.6)">{MARK_BARS.map(([x, y]) => <rect key={x} x={x} y={y} width="192" height="754" rx="18" />)}</g>
+    <g fill="currentColor" transform="translate(964 966) rotate(-23.6)">{MARK_BARS.map(([x, y]) => <rect key={x} x={x} y={y} width="192" height="754" rx="18" />)}</g>
   </svg>
 )
 export const ByTML = () => <span className="by-tml" data-raw="1">by <b>THE<strong>MAD</strong>LIONS</b></span>

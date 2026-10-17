@@ -2963,7 +2963,10 @@ html[data-bubbles='glass']:not([data-theme='studio']) .trx-round, html[data-bubb
 /* the mark beside the wordmark (Alex, 17 Oct): small to its left in the bar, big above it on the opening screens */
 .wordmark { display: inline-flex; align-items: center; gap: 8px; }
 .wordmark .rm-mark { flex: none; display: block; }
-.wordmark.with-by .rm-mark { margin-bottom: 6px; filter: drop-shadow(0 8px 22px rgba(184, 48, 50, .35)); }
+.wordmark .rm-mark { color: #f2f2f2; }
+html[data-mode='light'] .wordmark .rm-mark { color: var(--text); }
+.wordmark.with-by .rm-mark { margin-bottom: 6px; filter: drop-shadow(0 8px 24px rgba(255, 255, 255, .12)); }
+html[data-mode='light'] .wordmark.with-by .rm-mark { filter: none; }
 .set-version .wordmark.with-by .rm-mark, .rt-foot .wordmark .rm-mark, .legal-brand .wordmark .rm-mark { width: 34px; height: 34px; margin-bottom: 2px; }
 
 /* themes still in Alex's lab carry a small tag, only he sees them (Alex, 17 Oct); the white accent gets an edge */

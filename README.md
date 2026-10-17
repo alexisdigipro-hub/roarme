@@ -65,6 +65,14 @@ Settings. While it is on, a bar sits above the chat: play/pause, the title and t
 there), a line to move through it, the time, and × to stop it. On a phone it shows on the chat list too. A voice
 message starting pauses the song, and the other way round.
 
+## The RoarMe mark (17 Oct)
+Alex's logo, five red bars leaning (#b83032 on #202020), redrawn as a vector (`Mark` in src/ui.jsx, checked by laying
+it over his picture). It is the icon everywhere: the tab (public/icon.svg), the phone's home screen
+(public/apple-touch-icon.png, icon-512.png), the Mac and Windows app (desktop/build/icon.png, a charcoal rounded
+tile) and the Mac menu bar (desktop/trayTemplate*.png, a black silhouette macOS tints). In the app it sits to the
+left of ROARME in the bar (24px) and above it, with a soft red glow, on the opening, sign-in, lock, empty chat,
+settings, legal and download screens (72px).
+
 ## Lions theme (17 Oct)
 Settings > Appearance > Lions (Alex: "a theme like our website"): themadlions.com in the app. Near-black #0b0b0c,
 Jost, Rosso Corsa #D40000, the two panels as soft solid tiles with a hairline, every control a pill, the chosen

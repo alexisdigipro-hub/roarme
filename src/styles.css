@@ -2959,3 +2959,9 @@ html[data-bubbles='glass']:not([data-theme='studio']) .trx-left { background: rg
 html[data-bubbles='glass']:not([data-theme='studio']) .trx-time { background: color-mix(in srgb, var(--text) 7%, transparent); }
 html[data-bubbles='glass']:not([data-theme='studio']) .trx-time i { opacity: .85; }
 html[data-bubbles='glass']:not([data-theme='studio']) .trx-round, html[data-bubbles='glass']:not([data-theme='studio']) .artc-min { background: color-mix(in srgb, var(--text) 5%, transparent); border-color: color-mix(in srgb, var(--text) 14%, transparent); }
+
+/* the mark beside the wordmark (Alex, 17 Oct): small to its left in the bar, big above it on the opening screens */
+.wordmark { display: inline-flex; align-items: center; gap: 8px; }
+.wordmark .rm-mark { flex: none; display: block; }
+.wordmark.with-by .rm-mark { margin-bottom: 6px; filter: drop-shadow(0 8px 22px rgba(184, 48, 50, .35)); }
+.set-version .wordmark.with-by .rm-mark, .rt-foot .wordmark .rm-mark, .legal-brand .wordmark .rm-mark { width: 34px; height: 34px; margin-bottom: 2px; }

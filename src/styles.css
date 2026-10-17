@@ -2469,3 +2469,9 @@ html[data-theme='aurum'] { --search-r: 10px; }
 html[data-theme] .lib-seg { border-radius: var(--search-r); padding: 4px; height: 44px; box-sizing: border-box; align-items: center; }
 html[data-theme] .lib-seg button, html[data-theme] .lib-seg.lens::before { border-radius: max(4px, calc(var(--search-r) - 4px)); }
 html[data-theme] .lib-seg button.on i { color: inherit; background: rgba(0, 0, 0, .16); }
+
+/* profile tabs (Alex, 17 Oct): the corners of the buttons above, smaller words so all of them fit on one line */
+.pf-tabs { align-self: stretch; flex-wrap: nowrap; justify-content: space-between; gap: 2px; border-radius: 18px; overflow-x: auto; scrollbar-width: none; }
+.pf-tabs::-webkit-scrollbar { display: none; }
+.pf-tabs button { flex: 1 0 auto; justify-content: center; gap: 4px; height: 32px; padding: 0 8px; border-radius: 14px; font-size: 12px; white-space: nowrap; }
+.pf-tabs small { font-size: 10px; }

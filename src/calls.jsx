@@ -318,15 +318,21 @@ function CallScreen({ call, local, remote, onAccept, onDecline, onHangup, onMute
   )
 }
 
-/* Recent Calls: one row per call, missed ones (to me) in red; a click calls back the same way */
-export function RecentCalls({ me, people, loadPeople, onCall, empty = null }) {
+/* Recent Calls: one row per call, missed ones (to me) in red; a click calls back the same way. A call can be deleted
+   from the list, one by one or all (Alex, 17 Oct): for you only, the other person keeps theirs (roar_call_hides) */
+export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toast }) {
   const [list, setList] = useState(null)
+  const [busy, setBusy] = useState(false)
   useEffect(() => {
     let alive = true
     const load = async () => {
-      const { data } = await supabase.from('roar_calls').select('id, caller, callee, video, status, started_at, answered_at, ended_at, room_id').order('started_at', { ascending: false }).limit(100)
+      const [{ data }, { data: hid }] = await Promise.all([
+        supabase.from('roar_calls').select('id, caller, callee, video, status, started_at, answered_at, ended_at, room_id').order('started_at', { ascending: false }).limit(100),
+        supabase.from('roar_call_hides').select('call_id'),
+      ])
       if (!alive) return
-      const rows = data || []
+      const gone = new Set((hid || []).map((h) => h.call_id))
+      const rows = (data || []).filter((r) => !gone.has(r.id))
       loadPeople(rows.map((r) => (r.caller === me.id ? r.callee : r.caller)))
       setList(rows)
     }
@@ -334,10 +340,21 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null }) {
     const ch = supabase.channel(`calls-log-${me.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'roar_calls' }, load).subscribe()
     return () => { alive = false; supabase.removeChannel(ch) }
   }, [me.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const hide = async (ids) => {
+    if (!ids.length) return
+    setBusy(true)
+    const { error } = await supabase.from('roar_call_hides').insert(ids.map((id) => ({ user_id: me.id, call_id: id })))
+    setBusy(false)
+    if (error) { toast?.('Could not delete'); return }
+    setList((l) => l.filter((r) => !ids.includes(r.id)))
+    toast?.(ids.length === 1 ? 'Call deleted' : 'Calls deleted')
+  }
+  const clearAll = () => { if (window.confirm(`Delete all ${list.length} calls from your list? The other person keeps theirs.`)) hide(list.map((r) => r.id)) }
   if (list === null) return <p className="muted rooms-none">Loading…</p>
   if (!list.length) return empty
   return (
     <div className="recent-calls">
+      <div className="hits-head calls-head"><span>Recent Calls</span><button type="button" className="calls-clear" disabled={busy} onClick={clearAll}>Clear all</button></div>
       {list.map((r) => {
         const out = r.caller === me.id
         const other = people[out ? r.callee : r.caller] || { id: out ? r.callee : r.caller, display_name: '…' }
@@ -345,13 +362,16 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null }) {
         const dur = r.answered_at && r.ended_at ? mmss(new Date(r.ended_at) - new Date(r.answered_at)) : ''
         const label = missed ? 'Missed' : out ? (r.status === 'answered' ? 'Outgoing' : r.status === 'declined' ? 'Declined' : r.status === 'busy' ? 'Busy' : 'No answer') : r.status === 'declined' ? 'Declined' : 'Incoming'
         return (
-          <button key={r.id} type="button" className="room call-log" onClick={() => onCall(other, r.room_id, r.video)} title={r.video ? 'Video call back' : 'Call back'}>
+          <div key={r.id} className="call-row">
+          <button type="button" className="room call-log" onClick={() => onCall(other, r.room_id, r.video)} title={r.video ? 'Video call back' : 'Call back'}>
             <Avatar src={other.avatar_url} name={nameOf(other)} />
             <span className="room-main">
               <span className="room-top"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong><small>{new Date(r.started_at).toLocaleDateString(locale(), { day: 'numeric', month: 'numeric', year: '2-digit' })}</small></span>
               <span className="room-bottom"><span className="room-prev"><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}{dur && ` (${dur})`}</span></span>
             </span>
           </button>
+          <button type="button" className="call-del" disabled={busy} onClick={() => hide([r.id])} aria-label="Delete this call" title="Delete this call">{I.trash}</button>
+          </div>
         )
       })}
     </div>

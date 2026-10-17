@@ -3118,3 +3118,15 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
 /* a button's word never breaks in two (Alex, 17 Oct: "Rea / d" on a narrow phone) */
 .trx-get { white-space: nowrap; }
 .trx-acts { min-width: 0; }
+
+/* deleting calls (Alex, 17 Oct): Clear all beside the title, a bin on each call (on hover on a computer, always on a phone) */
+.calls-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-right: 6px; }
+.calls-clear { padding: 4px 10px; border: 0; border-radius: 999px; background: none; font: inherit; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: none; color: var(--danger); cursor: pointer; }
+.calls-clear:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.call-row { position: relative; }
+.call-row .call-log { padding-right: 46px; }
+.call-del { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; opacity: 0; transition: opacity .15s, background .15s, color .15s; }
+.call-row:hover .call-del, .call-del:focus-visible { opacity: 1; }
+.call-del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.call-del svg { width: 16px; height: 16px; }
+@media (hover: none), (max-width: 760px) { .call-del { opacity: .75; } }

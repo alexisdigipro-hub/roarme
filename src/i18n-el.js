@@ -754,4 +754,9 @@ export const EL = {
   'Later': 'Αργότερα',
   'Up to date': 'Ενημερωμένο',
   'The newest version is checked when RoarMe opens': 'Η νεότερη έκδοση ελέγχεται όταν ανοίγει το RoarMe',
+  'Clear all': 'Διαγραφή όλων',
+  'Delete this call': 'Διαγραφή αυτής της κλήσης',
+  'Call deleted': 'Η κλήση διαγράφηκε',
+  'Calls deleted': 'Οι κλήσεις διαγράφηκαν',
+  'Could not delete': 'Δεν έγινε η διαγραφή',
 }

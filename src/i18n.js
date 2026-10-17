@@ -62,6 +62,7 @@ const PATTERNS = [
   [/^You have (.+)\. Download it and install it over the old one\.$/, (_, v) => `Έχεις την ${v}. Κατέβασέ τη και βάλ’ τη πάνω από την παλιά.`],
   [/^RoarMe (\d+\.\d+\.\d+) is out$/, (_, v) => `Βγήκε το RoarMe ${v}`],
   [/^Version (.+)$/, (_, v) => `Έκδοση ${v}`],
+  [/^Delete all (\d+) calls from your list\? The other person keeps theirs\.$/, (_, n) => `Διαγραφή και των ${n} κλήσεων από τη λίστα σου; Ο άλλος κρατά τις δικές του.`],
   [/^Joined (.+)$/, (_, d) => `Γράφτηκε ${d}`],
   [/^Seen (.+)$/, (_, d) => `Εμφανίστηκε ${d}`],
   [/^(\d+) messages$/, (_, n) => `${n} μηνύματα`],

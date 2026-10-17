@@ -625,8 +625,7 @@ export default function Chat({ me, setMe }) {
         {tab === 'calls' && prefs.callsTab && (
           <div className="side-scroll calls">
             <button type="button" className="new-call" onClick={() => setModal('newcall')}><span className="new-call-ico">{svg(<><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /><path d="M18 3v6M15 6h6" /></>, 20)}</span><span>Create New Call</span></button>
-            <div className="hits-head">Recent Calls</div>
-            <RecentCalls me={me} people={people} loadPeople={loadPeople} onCall={(p, roomId, video) => startCall(p, roomId || directWith(p), video)}
+            <RecentCalls me={me} people={people} loadPeople={loadPeople} toast={toast} onCall={(p, roomId, video) => startCall(p, roomId || directWith(p), video)}
               empty={<div className="calls-empty"><span className="side-panel-ico">{I.calls}</span><b>No calls yet</b><p>Call someone from Create New Call, or from the phone and camera buttons in a chat.</p></div>} />
           </div>
         )}

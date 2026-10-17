@@ -65,6 +65,11 @@ Settings. While it is on, a bar sits above the chat: play/pause, the title and t
 there), a line to move through it, the time, and × to stop it. On a phone it shows on the chat list too. A voice
 message starting pauses the song, and the other way round.
 
+## Deleting calls (17 Oct)
+Calls tab > Recent Calls: a bin on each call (on hover on a computer, always on a phone) and **Clear all** beside the
+title. For you only: the other person keeps theirs (as on WhatsApp). `supabase/call-hides.sql` (roar_call_hides:
+who hid which call; each sees and adds only their own, and only for calls they were in; run by Claude, tested).
+
 ## The phone, tidied (17 Oct)
 Alex: "on the phone the pages are loose, things run off left and right, things don't show". Checked screen by screen
 at 390 and 360 px (the app run locally with a small React stand-in and sample chats, since the build tools can't be

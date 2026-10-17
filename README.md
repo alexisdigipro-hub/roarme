@@ -59,6 +59,12 @@ older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload 
 must be at least 3 GB.
 
 
+## Scheduled calls (17 Oct)
+In a one-to-one chat, ⋯ > Schedule Call (as on WhatsApp): title, note, starts, ends (optional), voice or video. It goes
+into the chat as a card (`src/events.jsx`; a text message whose `file.event` holds the details): a calendar leaf,
+title, day and time, a countdown, Join (from 10 minutes before until the end; starts the call) and Add to calendar
+(an .ics with a 10-minute alert). With the app open, a notice comes when the call starts.
+
 ## Invite people (17 Oct)
 Everyone has a personal link, `…/roarme/?u=username`, and its QR code (+ > Invite people, or the empty screen). The QR
 is drawn in the app (`src/qr.js`, no outside service; checked to read back correctly). Opening the link keeps the

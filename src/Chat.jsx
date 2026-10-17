@@ -9,6 +9,7 @@ import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
+import { EventCard, ScheduleCall } from './events.jsx'
 import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
@@ -850,6 +851,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   // pinned messages: as many as one likes, each with a pin on it; the bar opens them all in a window (Alex, 16 Oct)
   const [pinRows, setPinRows] = useState([])
   const [pinView, setPinView] = useState(false)
+  const [schedOpen, setSchedOpen] = useState(false)
   const [pinExtra, setPinExtra] = useState({})
   const loadPins = useCallback(() => supabase.from('roar_pins').select('message_id, pinned_by, pinned_at').eq('room_id', room.room_id).order('pinned_at').then(({ data }) => setPinRows(data || [])), [room.room_id])
   useEffect(() => {
@@ -1236,6 +1238,19 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   }
 
   const sub = room.kind === 'group' ? `${(room.members || []).length} members` : [other ? `@${other.username}` : '', lastSeenText(other)].filter(Boolean).join(' · ')
+  // a scheduled call in this chat: a notice when it starts (while the app is open)
+  useEffect(() => {
+    const timers = msgs.filter((m) => m.file?.event && !m.deleted_at).map((m) => {
+      const wait = new Date(m.file.event.start).getTime() - Date.now()
+      if (wait <= 0 || wait > 864e5) return null
+      return setTimeout(() => {
+        toast(`Starting now: ${m.file.event.title}`)
+        try { if (typeof Notification !== 'undefined' && Notification.permission === 'granted') new Notification('RoarMe', { body: `Starting now: ${m.file.event.title}` }) } catch { /* not allowed here */ }
+      }, wait)
+    }).filter(Boolean)
+    return () => timers.forEach(clearTimeout)
+  }, [msgs]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // pinned messages older than what is loaded are fetched on their own
   useEffect(() => {
     const missing = pinRows.map((p) => p.message_id).filter((id) => !byId[id] && !pinExtra[id])
@@ -1328,6 +1343,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                         </div>
                       )}
                     <button type="button" onClick={() => { setHeadMenu(false); onCall(true) }} onMouseEnter={() => setHeadSub('')}>{I.video}<span>Video</span></button>
+                    {room.kind !== 'group' && <button type="button" onClick={() => { setHeadMenu(false); setSchedOpen(true) }} onMouseEnter={() => setHeadSub('')}>{I.timer}<span>Schedule Call</span></button>}
                     {room.kind !== 'group' && other && <button type="button" onClick={() => { setHeadMenu(false); onNewGroup(other) }}>{I.people}<span>Create Group</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setMedia(true) }}>{I.image}<span>Photos, videos & files</span></button>
                     {pinned && <button type="button" onClick={() => { setHeadMenu(false); setPinView(true) }}>{I.pin}<span>Pinned messages</span></button>}
@@ -1401,10 +1417,11 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
                     {m.deleted_at ? <i>Message deleted</i>
+                      : m.file?.event ? <EventCard ev={m.file.event} who={title} canJoin={room.kind !== 'group'} onJoin={(v) => onCall(v)} />
                       : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : openPhoto(m))} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
                       : isTransfer ? <TransferTile file={m.file} onCinema={setCinema} />
@@ -1412,7 +1429,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
-                    {!m.deleted_at && m.body && <span className="text">{formatText(m.body, withMentions)}</span>}
+                    {!m.deleted_at && m.body && !m.file?.event && <span className="text">{formatText(m.body, withMentions)}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />}
                     <span className="meta">{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
@@ -1566,6 +1583,16 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           <p className="muted">For this chat only, on this computer.</p>
           <WallTiles value={wall} onPick={(k) => setWalls((w) => ({ ...w, [room.room_id]: k }))} />
         </Modal>
+      )}
+      {schedOpen && (
+        <ScheduleCall who={title} onClose={() => setSchedOpen(false)} onSend={async (event) => {
+          const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'text', body: event.title, file: { event } }).select().single()
+          if (error) { setErr(errText(error)); return }
+          setSchedOpen(false)
+          stick.current = true
+          setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+          toast('Call scheduled')
+        }} />
       )}
       {pinView && (
         <Modal title={pinnedList.length === 1 ? '1 pinned message' : `${pinnedList.length} pinned messages`} onClose={() => setPinView(false)}

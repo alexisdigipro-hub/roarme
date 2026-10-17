@@ -2584,3 +2584,4 @@ html[data-theme] .wordmark b.wm, .wordmark b.wm, .legal-brand b.wm { font-family
 html[data-theme] .wordmark b.wm span, .legal-brand b.wm span { color: #fff; }
 /* on the light look white would vanish: the same letters in the text colour */
 html[data-mode='light'] :is(.wordmark, .legal-brand) b.wm, html[data-mode='light'] :is(.wordmark, .legal-brand) b.wm span { color: var(--text); }
+.compose-box textarea { flex: none; }

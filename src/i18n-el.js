@@ -469,6 +469,7 @@ export const EL = {
   'Scheduled video call': 'Προγραμματισμένη βιντεοκλήση',
   'Scheduled voice call': 'Προγραμματισμένη φωνητική κλήση',
   'Happening now': 'Τώρα',
+  'Live now': 'Σε εξέλιξη',
   'Ended': 'Έληξε',
   'Join': 'Μπες',
   'Add to calendar': 'Στο ημερολόγιο',

@@ -52,6 +52,7 @@ export const I = {
   popout: svg(<><path d="M14 4h6v6M20 4l-8 8" /><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" /></>, 16),
   addPerson: svg(<><circle cx="10" cy="8" r="3.5" /><path d="M3.5 20c0-3.6 2.9-6.5 6.5-6.5 1.4 0 2.7.4 3.7 1.2M18 14v6M15 17h6" /></>, 18),
   brush: svg(<><path d="M14.5 4.5l5 5L11 18l-5-5z" /><path d="M6 13c-2 0-3 1.5-3 3.5S2 20 2 20s3.5.5 5-1 1.5-3 0-4" /></>, 16),
+  calendar: svg(<><rect x="3.5" y="5" width="17" height="15.5" rx="3.5" /><path d="M3.5 10h17M8 3v4M16 3v4M12 13.5v4M10 15.5h4" /></>, 16),
   timer: svg(<><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2.5M9.5 2.5h5" /></>, 16),
   bellOff: svg(<><path d="M6 16V11a6 6 0 0 1 9.5-4.9M18 11v5l1.5 2H8" /><path d="M10 20a2 2 0 0 0 4 0M4 4l16 16" /></>, 16),
   unread: svg(<><path d="M20 12a8 8 0 1 1-4.5-7.2" /><circle cx="19" cy="5" r="2.5" fill="currentColor" stroke="none" /></>, 16),

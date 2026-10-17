@@ -92,18 +92,26 @@ const ics = (ev, who) => {
     'END:VEVENT', 'END:VCALENDAR'].join('\r\n')
 }
 
-export function EventCard({ ev, who, onJoin, canJoin = true }) {
+/* the card, like the RoarTransfer one (Alex, 17 Oct): a mark on top, the title as the headline beside a date tile,
+   a line that fills up to the start (and through the call while it runs) with the time left beside it, a Join pill
+   and a round button that saves it to the calendar */
+export function EventCard({ ev, who, sent, onJoin, canJoin = true }) {
   const [, tick] = useState(0)
   useEffect(() => { const id = setInterval(() => tick((n) => n + 1), 30e3); return () => clearInterval(id) }, [])
   const s = new Date(ev.start)
   const e = ev.end ? new Date(ev.end) : new Date(s.getTime() + 2 * 3600e3)
   const now = Date.now()
-  const open = now >= s.getTime() - 10 * 60e3 && now <= e.getTime()
+  const opens = s.getTime() - 10 * 60e3
+  const open = now >= opens && now <= e.getTime()
+  const live = now >= s.getTime() && now <= e.getTime()
   const over = now > e.getTime()
   const left = s.getTime() - now
-  const when = over ? 'Ended' : now >= s.getTime() ? 'Happening now'
+  const when = over ? 'Ended' : live ? 'Live now'
     : left < 3600e3 ? `In ${Math.max(1, Math.round(left / 60e3))} min`
     : left < 864e5 ? `In ${Math.floor(left / 3600e3)} h ${Math.round((left % 3600e3) / 60e3)} min` : `In ${Math.ceil(left / 864e5)} days`
+  const from = sent ? new Date(sent).getTime() : s.getTime() - 864e5
+  const share = over ? 1 : live ? (now - s.getTime()) / Math.max(1, e.getTime() - s.getTime())
+    : Math.min(1, Math.max(0.03, (now - from) / Math.max(1, s.getTime() - from)))
   const save = (x) => {
     x.stopPropagation()
     const url = URL.createObjectURL(new Blob([ics(ev, who)], { type: 'text/calendar' }))
@@ -111,22 +119,25 @@ export function EventCard({ ev, who, onJoin, canJoin = true }) {
     document.body.appendChild(a); a.click(); a.remove()
     setTimeout(() => URL.revokeObjectURL(url), 2000)
   }
+  const icon = ev.video ? I.video : I.phone
   return (
-    <span className={`evc${over ? ' over' : open ? ' live' : ''}`} onClick={(x) => x.stopPropagation()}>
-      <span className="evc-top">
-        <span className="evc-cal"><small>{s.toLocaleDateString(locale(), { month: 'short' })}</small><b>{s.getDate()}</b></span>
-        <span className="evc-text">
-          <em>{ev.video ? I.video : I.phone}<span>{ev.video ? 'Scheduled video call' : 'Scheduled voice call'}</span></em>
-          <b>{ev.title}</b>
-          <small>{fmtDay(s)} · {fmtTime(s)}{ev.end ? ` – ${fmtTime(e)}` : ''}</small>
-        </span>
+    <span className={`trx evc${over ? ' gone' : live ? ' live' : open || left < 3600e3 ? ' soon' : ''}`} onClick={(x) => x.stopPropagation()}>
+      <span className="trx-head"><span className="rt-mark"><i>{icon}</i><b>{ev.video ? 'Video' : 'Voice'}<span>Call</span></b></span></span>
+      <span className="trx-hero">
+        <i className="trx-type evc-cal"><small>{s.toLocaleDateString(locale(), { month: 'short' })}</small><b>{s.getDate()}</b></i>
+        <span className="trx-size evc-text"><b>{ev.title}</b><small>{fmtDay(s)} · {fmtTime(s)}{ev.end ? ` – ${fmtTime(e)}` : ''}</small></span>
       </span>
       {ev.note && <span className="evc-note">{ev.note}</span>}
-      <span className="evc-when">{I.timer}<span>{when}</span></span>
+      <span className="trx-timeline">
+        <span className="trx-time"><i style={{ width: `${share * 100}%` }} /></span>
+        <span className="trx-left">{I.timer}<span>{when}</span></span>
+      </span>
       {!over && (
-        <span className="evc-acts">
-          {canJoin && <button type="button" className="evc-join" disabled={!open} onClick={() => onJoin(ev.video)} title={open ? 'Join' : 'You can join from 10 minutes before'}>{ev.video ? I.video : I.phone}<span>Join</span></button>}
-          <button type="button" className="evc-ics" onClick={save}>{I.timer}<span>Add to calendar</span></button>
+        <span className="trx-acts">
+          {canJoin
+            ? <button type="button" className="trx-get evc-join" disabled={!open} onClick={() => onJoin(ev.video)} title={open ? 'Join' : 'You can join from 10 minutes before'}>{icon}<span>{open ? 'Join' : `Join from ${fmtTime(new Date(opens))}`}</span></button>
+            : <button type="button" className="trx-get" onClick={save}>{I.calendar}<span>Add to calendar</span></button>}
+          {canJoin && <button type="button" className="trx-round" onClick={save} title="Add to calendar" aria-label="Add to calendar">{I.calendar}</button>}
         </span>
       )}
     </span>

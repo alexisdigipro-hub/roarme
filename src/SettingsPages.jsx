@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
+import { ACCENTS, DEFAULTS, FONTS, PUBLIC_THEMES, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
@@ -22,7 +22,7 @@ export const PAGES = [
 ]
 export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
-const THEMES = [['ember', 'Ember', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['prism', 'Prism', ['#ff5d4a', 'linear-gradient(180deg, #555963, #2c2e34)']], ['aurum', 'Aurum', ['linear-gradient(180deg, #f8d29a, #e79a3d)', 'linear-gradient(180deg, #2a2927, #141414)']], ['lions', 'Lions', ['#d40000', 'radial-gradient(circle at 85% 0%, rgba(212, 0, 0, .35), transparent 60%), #0b0b0c']]]
+const THEMES = [['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['prism', 'Pumba', ['#ff5d4a', 'linear-gradient(180deg, #555963, #2c2e34)']], ['aurum', 'Aurum', ['linear-gradient(180deg, #f8d29a, #e79a3d)', 'linear-gradient(180deg, #2a2927, #141414)']], ['lions', 'Lions', ['#d40000', 'radial-gradient(circle at 85% 0%, rgba(212, 0, 0, .35), transparent 60%), #0b0b0c']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -546,17 +546,19 @@ function Appearance({ p, toast, me, setMe }) {
         </div>
         <div className="set-row set-col">
           <div className="themes">
-            {THEMES.map(([k, l, [a, b]]) => {
+            {THEMES.filter(([k]) => PUBLIC_THEMES.includes(k) || inThemeLab(me)).map(([k, l, [a, b]]) => {
+              const lab = !PUBLIC_THEMES.includes(k)
               return (
-                <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} title={l}
+                <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}${lab ? ' lab' : ''}`} title={lab ? `${l} · only you see it` : l}
                   onClick={(e) => { if (p.theme === k) return; revealFrom(e, () => { document.documentElement.dataset.theme = k; setPrefs({ theme: k }) }); toast(`Theme updated: ${l}`) }}>
                   <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : k === 'prism' ? '0 0 10px #ff4b3e' : k === 'aurum' ? '0 0 10px rgba(240, 166, 74, .8)' : k === 'lions' ? '0 0 10px rgba(212, 0, 0, .8)' : 'none' }} />{k === 'prism' && <b className="theme-rim" />}</span>
                   <small>{l}</small>
+                  {lab && <em className="theme-lab">Only you</em>}
                 </button>
               )
             })}
           </div>
-          <small className="muted">Ember (the main one): graphite glass with a glowing accent. Glass: soft frosted panels. Aura: bright liquid glass with floating bars. Studio: sharp and graphic, with a side rail. Prism: slate panels with a neon edge and coral glow. Aurum: charcoal and warm gold. Each has dark and light.</small>
+          <small className="muted">{inThemeLab(me) ? 'Simba (the main one): graphite glass with a glowing accent. Pumba: slate panels with a neon edge and coral glow. Only you see the rest, to work on them: Glass, Aura, Studio, Aurum, Lions. Each has dark and light.' : 'Simba (the main one): graphite glass with a glowing accent. Pumba: slate panels with a neon edge and coral glow. Each has dark and light.'}</small>
         </div>
       </Box>
       <Box>
@@ -568,7 +570,7 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="set-text">Accent Color<small>{p.accent ? ACCENTS.find(([k]) => k === p.accent)?.[1] : "The theme's own colour"}</small></span>
           <div className="accents">
             <button type="button" className={`acc acc-auto${!p.accent ? ' on' : ''}`} title="Theme colour" onClick={() => setPrefs({ accent: '' })}><small>Theme</small></button>
-            {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k })}><small>{l}</small></button>)}
+            {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}${k === 'white' ? ' acc-white' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k })}><small>{l}</small></button>)}
           </div>
         </div>
         <div className="set-row set-col">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib.js'
-import { applyLook, applyMode, usePrefs } from './prefs.js'
+import { applyLook, applyMode, setPrefs, themeFor, usePrefs } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
@@ -14,7 +14,6 @@ export default function App() {
   const prefs = usePrefs()
   const { mode, lite, theme } = prefs
   useEffect(() => applyLook(prefs), [prefs.accent, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { document.documentElement.dataset.theme = theme || 'ember' }, [theme])
   useEffect(() => applyMode(mode), [mode])
   useEffect(() => { if (lite) document.documentElement.dataset.lite = '1'; else delete document.documentElement.dataset.lite }, [lite])
 
@@ -43,6 +42,13 @@ export default function App() {
     supabase.from('roar_people').select('*').eq('id', uid).maybeSingle().then(({ data }) => { if (alive) setProfile(data || null) })
     return () => { alive = false }
   }, [uid])
+  // a theme still in Alex's lab shows only for him; anyone else sees Simba
+  useEffect(() => {
+    const t = themeFor(theme, profile)
+    document.documentElement.dataset.theme = t
+    // once signed in, someone left on a lab theme moves to Simba for good
+    if (profile && t !== (theme || 'ember')) setPrefs({ theme: t })
+  }, [theme, profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (session === undefined || (uid && profile === undefined)) return <div className="boot"><span className="boot-mark"><Wordmark by /></span></div>
   if (!session) return <Auth />

@@ -2965,3 +2965,9 @@ html[data-bubbles='glass']:not([data-theme='studio']) .trx-round, html[data-bubb
 .wordmark .rm-mark { flex: none; display: block; }
 .wordmark.with-by .rm-mark { margin-bottom: 6px; filter: drop-shadow(0 8px 22px rgba(184, 48, 50, .35)); }
 .set-version .wordmark.with-by .rm-mark, .rt-foot .wordmark .rm-mark, .legal-brand .wordmark .rm-mark { width: 34px; height: 34px; margin-bottom: 2px; }
+
+/* themes still in Alex's lab carry a small tag, only he sees them (Alex, 17 Oct); the white accent gets an edge */
+.theme-tile { position: relative; }
+.theme-lab { position: absolute; top: 4px; right: 4px; padding: 1px 6px; border-radius: 999px; font-size: 9px; font-style: normal; font-weight: 700; letter-spacing: .04em; color: var(--muted); background: var(--glass-2); border: 1px solid var(--edge); pointer-events: none; }
+.acc.acc-white { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .28), 0 0 0 1px rgba(255, 255, 255, .25); }
+.acc.acc-white.on { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px #fff, 0 0 22px rgba(255, 255, 255, .55); }

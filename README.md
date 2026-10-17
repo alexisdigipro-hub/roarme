@@ -65,6 +65,13 @@ Settings. While it is on, a bar sits above the chat: play/pause, the title and t
 there), a line to move through it, the time, and × to stop it. On a phone it shows on the chat list too. A voice
 message starting pauses the song, and the other way round.
 
+## Two themes for everyone, the rest in Alex's lab (17 Oct)
+Everyone sees two themes: **Simba** (the ember theme, the main one) and **Pumba** (the prism theme); the keys in the
+code stay `ember` and `prism`. Glass, Aura, Studio, Aurum and Lions show only for Alex (`THEME_LAB` in src/prefs.js,
+his account id), tagged "Only you", so we can keep working on them. Anyone else left on one of them moves to Simba
+once signed in (App.jsx, `themeFor`). A first start opens Simba with the **red** accent (DEFAULTS.accent 'red').
+White joined the accents.
+
 ## The RoarMe mark (17 Oct)
 Alex's logo, five red bars leaning (#b83032 on #202020), redrawn as a vector (`Mark` in src/ui.jsx, checked by laying
 it over his picture). It is the icon everywhere: the tab (public/icon.svg), the phone's home screen

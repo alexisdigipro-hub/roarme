@@ -2599,3 +2599,15 @@ html[data-theme] .side-head { display: grid; grid-template-columns: minmax(0, 1f
 html[data-theme] .side-head > :first-child { justify-self: start; }
 html[data-theme] .side-head > :last-child { justify-self: end; }
 html[data-theme] .side-brand { flex: none; text-align: center; justify-self: center; }
+
+/* "by THEMADLIONS" under the name (Alex, 17 Oct): small capitals in Jost, MAD heavy, like the studio's own logo */
+.wordmark.with-by { flex-direction: column; gap: 6px; }
+.by-tml { display: inline-flex; align-items: baseline; gap: 5px; font-family: 'Jost RoarMe', Jost, Futura, 'Century Gothic', 'Avenir Next', system-ui, sans-serif;
+  font-size: 10.5px; font-weight: 400; letter-spacing: .14em; text-transform: lowercase; color: color-mix(in srgb, var(--text) 62%, transparent); white-space: nowrap; }
+.by-tml b { font-weight: 250; text-transform: uppercase; letter-spacing: .1em; color: color-mix(in srgb, var(--text) 85%, transparent); }
+.by-tml b strong { font-weight: 800; }
+.boot-mark .by-tml, .pick-mark .by-tml { font-size: 12px; }
+.set-version { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.set-version .wordmark b.wm { font-size: 20px; }
+.rt-foot .wordmark b.wm, .legal-brand .wordmark b.wm { font-size: 18px; }
+.legal-brand .wordmark.with-by { align-items: flex-start; }

@@ -607,7 +607,7 @@ export default function Chat({ me, setMe }) {
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={() => unblock(otherOf(active)?.id)} onCall={(v) => callRoom(active, v)} />
         ) : (
           <div className="pick">
-            <span className="pick-mark"><Wordmark /></span>
+            <span className="pick-mark"><Wordmark by /></span>
             <p>Pick a chat, or start a new one.</p>
             <div className="pick-acts">
               <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>{I.person} New chat</button>

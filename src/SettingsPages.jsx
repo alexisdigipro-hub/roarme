@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
-import { Avatar, I, Lens, Modal, NAME_COLORS, colorOf, revealFrom, svg } from './ui.jsx'
+import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { LegalDoc, legalTitle } from './legal.jsx'
@@ -111,7 +111,7 @@ export function SettingsMenu({ me, page, onPage }) {
       <div className="set-box">
         <button type="button" className="set-row set-pick set-nav danger" onClick={() => supabase.auth.signOut()}><span className="nav-ico" style={{ '--c': '#ff453a' }}>{svg(<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />, 16)}</span><span className="set-text">Sign out</span></button>
       </div>
-      <p className="set-version">RoarMe 0.1 · {navigator.userAgent.includes('Electron') ? 'Mac app' : 'web'}</p>
+      <p className="set-version"><Wordmark by /><span>RoarMe 0.1 · {navigator.userAgent.includes('Electron') ? 'Mac app' : 'web'}</span></p>
     </div>
   )
 }

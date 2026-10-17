@@ -44,9 +44,9 @@ export default function App() {
     return () => { alive = false }
   }, [uid])
 
-  if (session === undefined || (uid && profile === undefined)) return <div className="boot"><span className="boot-mark"><Wordmark /></span></div>
+  if (session === undefined || (uid && profile === undefined)) return <div className="boot"><span className="boot-mark"><Wordmark by /></span></div>
   if (!session) return <Auth />
-  if (!aal) return <div className="boot"><span className="boot-mark"><Wordmark /></span></div>
+  if (!aal) return <div className="boot"><span className="boot-mark"><Wordmark by /></span></div>
   if (aal === 'need') return <MfaGate onDone={() => setAal('ok')} />
   if (locked) return <LockScreen onUnlock={unlock} onSignOut={() => { clearLock(); supabase.auth.signOut() }} />
   if (recovering) return <NewPassword onDone={() => setRecovering(false)} />

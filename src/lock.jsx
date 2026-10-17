@@ -76,7 +76,7 @@ export function LockScreen({ onUnlock, onSignOut }) {
   return (
     <div className="lock">
       <div className={`lock-card${bad ? ' shake' : ''}`}>
-        <Wordmark size={34} />
+        <Wordmark by />
         <p>Enter your passcode</p>
         <form onSubmit={(e) => { e.preventDefault(); try1(code) }}>
           <input className="lock-input" type="password" inputMode="numeric" autoFocus value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))} aria-label="Passcode" />

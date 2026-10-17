@@ -170,7 +170,14 @@ export function Paw({ size = 22 }) {
   )
 }
 // the name as THE MAD LIONS writes its own (Alex, 17 Oct): capitals in Jost, ROAR hairline-thin, ME heavy, in white
-export const Wordmark = () => <span className="wordmark"><b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b></span>
+// "by THEMADLIONS", the studio's name as its own logo writes it: THE and LIONS thin, MAD heavy (Alex, 17 Oct)
+export const ByTML = () => <span className="by-tml" data-raw="1">by <b>THE<strong>MAD</strong>LIONS</b></span>
+export const Wordmark = ({ by = false }) => (
+  <span className={`wordmark${by ? ' with-by' : ''}`}>
+    <b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b>
+    {by && <ByTML />}
+  </span>
+)
 
 /* Adjust a new picture before it is saved (Alex, 16 Oct): drag to place it, slide or scroll to zoom,
    inside the round frame it will be shown in. Gives back a square JPEG, 640 px. */

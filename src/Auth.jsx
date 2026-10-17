@@ -6,7 +6,7 @@ import { pendingInvite } from './invite.jsx'
 function Brand() {
   return (
     <div className="brand">
-      <Wordmark size={30} />
+      <Wordmark by />
     </div>
   )
 }

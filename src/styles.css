@@ -2491,3 +2491,25 @@ html[data-theme] .lib-seg button.on i { color: inherit; background: rgba(0, 0, 0
 .legal-other { align-self: flex-start; margin-top: 6px; color: var(--accent); font-weight: 700; text-decoration: none; }
 .auth-legal { margin: 2px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); text-align: center; }
 .auth-legal a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+/* Invite people (17 Oct): a card with your face, your QR code and your link */
+.inv { display: flex; flex-direction: column; gap: 12px; }
+.inv-card { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px; border-radius: 24px;
+  background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%), var(--glass); border: 1px solid var(--edge); }
+.inv-who { display: flex; align-items: center; gap: 10px; align-self: stretch; }
+.inv-who > span { display: flex; flex-direction: column; min-width: 0; }
+.inv-who b { font-size: 16px; }
+.inv-who small { color: var(--muted); }
+.inv-qr { position: relative; display: block; width: min(240px, 70vw); aspect-ratio: 1; padding: 0; border-radius: 22px; overflow: hidden; background: #fff; box-shadow: 0 14px 34px rgba(0, 0, 0, .3); }
+.inv-qr svg { display: block; width: 100%; height: 100%; }
+.inv-paw { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 8px; background: #fff; color: var(--accent); }
+.inv-hint { color: var(--muted); font-size: 12.5px; }
+.inv-link { display: flex; align-items: center; gap: 10px; width: 100%; height: 44px; padding: 0 8px 0 16px; border: 1px solid var(--edge); border-radius: 14px; background: var(--glass); color: var(--text); cursor: pointer; text-align: left; }
+.inv-link span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono, ui-monospace, Menlo, monospace); font-size: 12.5px; }
+.inv-link i { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--accent); }
+.inv-acts { display: flex; gap: 10px; }
+.inv-acts .btn { flex: 1; justify-content: center; gap: 8px; height: 44px; border-radius: 999px; }
+.inv-note { margin: 0; text-align: center; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.auth-invite { margin: 4px 0 2px; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; text-align: center;
+  background: color-mix(in srgb, var(--accent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.auth-invite b { color: var(--accent); }

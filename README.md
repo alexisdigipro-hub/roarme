@@ -59,6 +59,12 @@ older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload 
 must be at least 3 GB.
 
 
+## Invite people (17 Oct)
+Everyone has a personal link, `…/roarme/?u=username`, and its QR code (+ > Invite people, or the empty screen). The QR
+is drawn in the app (`src/qr.js`, no outside service; checked to read back correctly). Opening the link keeps the
+username until the person is signed in (the sign-up form says who invited them), then a chat with them opens by
+itself (`src/invite.jsx`). People still find each other only by @username or a link: a new account starts empty.
+
 ## Security check (17 Oct)
 Applied (`supabase/security-2026-10-17.sql`): roar_are_contacts / roar_blocked_between answer only about yourself
 (before, anyone could ask whether any two people chat or blocked each other); messages always get the server's time;

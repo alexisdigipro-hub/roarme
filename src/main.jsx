@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import { TransferPage } from './transfer.jsx'
 import { LegalPage } from './legal.jsx'
+import { takeInvite } from './invite.jsx'
 import './styles.css'
 import { startI18n } from './i18n.js'
 
@@ -35,6 +36,8 @@ const params = new window.URLSearchParams(window.location.search)
 const transferToken = params.get('t')
 // the Privacy Policy and the Terms (?legal=privacy | terms) are public pages too
 const legalDoc = params.get('legal')
+// a personal invite link (?u=username): kept until the person is signed in, then their chat opens
+if (!transferToken && !legalDoc) takeInvite()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

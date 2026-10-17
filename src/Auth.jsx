@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
 import { Wordmark } from './ui.jsx'
+import { pendingInvite } from './invite.jsx'
 
 function Brand() {
   return (
@@ -12,7 +13,8 @@ function Brand() {
 
 /* Sign in, sign up, forgotten password: one card, one form at a time. */
 export function Auth() {
-  const [mode, setMode] = useState('in') // in | up | forgot
+  const invitedBy = pendingInvite()
+  const [mode, setMode] = useState(invitedBy ? 'up' : 'in') // in | up | forgot
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -47,6 +49,7 @@ export function Auth() {
     <div className="auth">
       <form className="auth-card" onSubmit={submit}>
         <Brand />
+        {invitedBy && mode !== 'forgot' && <p className="auth-invite"><b>@{invitedBy}</b> invited you to RoarMe. {mode === 'up' ? 'Create your account and your chat opens.' : 'Sign in and your chat opens.'}</p>}
         <h1>{mode === 'in' ? 'Welcome back' : mode === 'up' ? 'Create your account' : 'Forgot your password?'}</h1>
         <p className="auth-sub">{mode === 'forgot' ? 'Type your email and we will send you a link.' : 'Chats, groups, photos and files, between the people you choose.'}</p>
         <label className="field">

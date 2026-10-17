@@ -8,6 +8,7 @@ import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { Library, LibrarySide, useLibrary } from './media.jsx'
+import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
@@ -196,6 +197,18 @@ export default function Chat({ me, setMe }) {
   const reloadSoon = useCallback(() => { clearTimeout(reloadTimer.current); reloadTimer.current = setTimeout(loadRooms, 250) }, [loadRooms])
 
   useEffect(() => { loadRooms() }, [loadRooms])
+  // opened from someone's invite link: their chat opens by itself, once
+  useEffect(() => {
+    const u = pendingInvite()
+    if (!u) return
+    clearInvite()
+    if (u === me.username) return
+    supabase.from('roar_people').select('id, username, display_name').eq('username', u).maybeSingle().then(async ({ data: p }) => {
+      if (!p) return
+      const { data: r, error } = await supabase.rpc('roar_open_direct', { other: p.id })
+      if (!error && r) { setTab('chats'); setActiveId(r); loadRooms() }
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // online: a heartbeat on one's own profile
   const peopleRef = useRef(people)
@@ -454,6 +467,7 @@ export default function Chat({ me, setMe }) {
                   <div className="menu">
                     <button type="button" onClick={() => { setPlus(false); setModal('newchat') }}>{I.person}<span>New chat</span></button>
                     <button type="button" onClick={() => { setPlus(false); setModal('newgroup') }}>{I.people}<span>New group</span></button>
+                    <button type="button" onClick={() => { setPlus(false); setModal('invite') }}>{I.link}<span>Invite people</span></button>
                     <button type="button" onClick={() => { setPlus(false); editFolder('new') }}>{I.folder}<span>New folder</span></button>
                     {myFolders.length > 0 && <button type="button" onClick={() => { setPlus(false); openFolders() }}>{I.edit}<span>Edit folders</span></button>}
                   </div>
@@ -598,11 +612,13 @@ export default function Chat({ me, setMe }) {
             <div className="pick-acts">
               <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>{I.person} New chat</button>
               <button type="button" className="btn" onClick={() => setModal('newgroup')}>{I.people} New group</button>
+              <button type="button" className="btn" onClick={() => setModal('invite')}>{I.link} Invite people</button>
             </div>
           </div>
         )}
       </main>
 
+      {modal === 'invite' && <InviteModal me={me} toast={toast} onClose={() => setModal('')} />}
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'newcall' && (
         <Modal title="New call" onClose={() => setModal('')}>

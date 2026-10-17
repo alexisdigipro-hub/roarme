@@ -54,6 +54,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      # the version goes into the release's name, so the app can tell an older install that a newer one is out
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: desktop/package.json
+          sparse-checkout-cone-mode: false
+      - id: v
+        run: echo "version=$(node -p "require('./desktop/package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           path: files
@@ -61,7 +68,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('desktop-build-{0}', github.run_number) }}
-          name: RoarMe ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
+          name: RoarMe ${{ steps.v.outputs.version }} · ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build {0}', github.run_number) }}
           make_latest: true
           body: |
             RoarMe for Mac and Windows.

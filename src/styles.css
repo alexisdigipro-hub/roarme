@@ -3005,3 +3005,37 @@ html[data-mode='light'] .wordmark.with-by .rm-mark { filter: none; }
 
 /* the bar shows the letters alone again (Alex, 17 Oct), 3% smaller than the 18px they were */
 html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
+
+/* a newer Mac / Windows app (Alex, 17 Oct): a glass card at the bottom right, Download and later */
+.upd { position: fixed; z-index: 45; right: 20px; bottom: 20px; width: min(420px, calc(100vw - 40px)); display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 22px;
+  background: var(--float, rgba(24, 26, 30, .96)); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--edge)); box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); animation: pop .35s cubic-bezier(.25, .8, .3, 1) both; }
+.upd-ico { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.upd-ico svg { width: 18px; height: 18px; }
+.upd-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.upd-text b { font-size: 14px; }
+.upd-text small { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.upd-go { flex: none; gap: 7px; border-radius: 999px; padding: 0 14px; }
+.upd-go svg { width: 16px; height: 16px; }
+.upd-x { flex: none; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.upd-x:hover { background: var(--glass-2); color: var(--text); }
+.upd-x svg { width: 14px; height: 14px; }
+@media (max-width: 760px) { .upd { right: 12px; left: 12px; width: auto; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+.set-upd { gap: 6px; border-radius: 999px; margin-left: auto; }
+.set-upd svg { width: 15px; height: 15px; }
+
+/* how to install: numbered glass tiles */
+.inst { display: flex; flex-direction: column; gap: 14px; }
+.inst-lead { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.inst-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.inst-steps li { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 18px; background: var(--glass); border: 1px solid var(--edge); }
+.inst-steps li > i { position: relative; flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.inst-steps li > i svg { width: 18px; height: 18px; }
+.inst-steps li > i b { position: absolute; right: -4px; top: -4px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 10.5px; font-weight: 800; color: var(--accent-ink, #fff); background: var(--accent); }
+.inst-steps li > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.inst-steps li > span b { font-size: 14.5px; }
+.inst-steps li > span small { font-size: 13px; line-height: 1.45; color: var(--muted); }
+.inst-acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.inst-acts .btn { gap: 7px; border-radius: 999px; text-decoration: none; }
+.inst-acts a.btn { color: var(--text); }
+.inst-acts .btn svg { width: 15px; height: 15px; }

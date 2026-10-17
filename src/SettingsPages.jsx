@@ -7,6 +7,7 @@ import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
+import { InstallGuide, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
    Anything that needs the database is shown switched off with "Coming soon". */
@@ -157,20 +158,25 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
 
 function General({ p, onKeys }) {
   const desk = useDesktop()
+  const upd = useAppUpdate()
+  const [guide, setGuide] = useState('')
+  const get = (kind) => { startDownload(kind); setGuide(kind) }
   return (
     <>
+      {guide && <InstallGuide kind={guide} update={desk.on} onClose={() => setGuide('')} />}
       <Box title="RoarMe app" note={desk.on ? 'For this computer.' : 'The RoarMe app for Mac (and Windows) adds these. It always shows the latest RoarMe.'}>
         {desk.on ? (
           <>
+            <div className="set-row"><span className="set-text">Version {upd.installed || '–'}<small>{upd.ready ? `RoarMe ${upd.latest} is out` : upd.latest ? 'Up to date' : 'The newest version is checked when RoarMe opens'}</small></span>{upd.ready && <button type="button" className="btn btn-main set-upd" onClick={() => get(thisComputer() || 'mac-arm')}>{I.download}<span>Download</span></button>}</div>
             <Switch on={desk.s.tray} set={(v) => desk.set('tray', v)} hint="The paw, with your unread count, at the top of the screen">Show Icon in Menu Bar</Switch>
             <Switch on={desk.s.openAtLogin} set={(v) => desk.set('openAtLogin', v)} hint="Starts quietly in the background">Open When the Computer Starts</Switch>
             <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps RoarMe on for messages and calls">Keep Running When Closed</Switch>
           </>
         ) : (
           <>
-            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Mac-arm64.dmg"><span className="set-text">Download for Mac (Apple Silicon)<small>M1, M2, M3, M4</small></span><i className="set-chev">{I.download}</i></a>
-            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Mac-x64.dmg"><span className="set-text">Download for Mac (Intel)</span><i className="set-chev">{I.download}</i></a>
-            <a className="set-row set-pick" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Windows-Setup.exe"><span className="set-text">Download for Windows</span><i className="set-chev">{I.download}</i></a>
+            <button type="button" className="set-row set-pick" onClick={() => get('mac-arm')}><span className="set-text">Download for Mac (Apple Silicon)<small>M1, M2, M3, M4</small></span><i className="set-chev">{I.download}</i></button>
+            <button type="button" className="set-row set-pick" onClick={() => get('mac-intel')}><span className="set-text">Download for Mac (Intel)</span><i className="set-chev">{I.download}</i></button>
+            <button type="button" className="set-row set-pick" onClick={() => get('win')}><span className="set-text">Download for Windows</span><i className="set-chev">{I.download}</i></button>
           </>
         )}
       </Box>

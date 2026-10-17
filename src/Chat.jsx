@@ -11,6 +11,7 @@ import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { NowPlaying } from './player.jsx'
+import { UpdateCard } from './update.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
@@ -812,6 +813,7 @@ export default function Chat({ me, setMe }) {
       {peek && <Peek room={peek} me={me} people={people} title={titleOf(peek)} clearedAt={cleared[peek.room_id]} onClose={() => setPeek(null)} onOpen={() => { setActiveId(peek.room_id); setPeek(null) }} />}
       {callScreen}
       {note && <div className="toast" role="status">{note}</div>}
+      <UpdateCard />
     </div>
   )
 }

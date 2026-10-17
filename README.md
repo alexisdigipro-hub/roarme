@@ -65,6 +65,19 @@ Settings. While it is on, a bar sits above the chat: play/pause, the title and t
 there), a line to move through it, the time, and × to stop it. On a phone it shows on the chat list too. A voice
 message starting pauses the song, and the other way round.
 
+## New app versions and how to install them (17 Oct)
+- **A newer Mac / Windows app:** the app tells the page its version in the user agent (`RoarMe/1.4.6`, also the
+  versions already installed). The page compares it with the newest release on GitHub (its name now carries the
+  version: `RoarMe 1.4.6 · build 16`, from desktop/package.json, desktop.yml) at most every 3 hours. When a newer
+  one is out, a glass card at the bottom right: "New RoarMe app: x" with **Download** and × (later, until the next
+  version). Settings > General > RoarMe app shows the version and the same Download.
+- **So each new desktop build must raise `version` in desktop/package.json**, or nobody is told.
+- **Installing:** macOS stops a non-App-Store app the first time before it can show anything, so the steps open the
+  moment Download is pressed (in the card, in Settings > General, and the downloads there in the browser): open the
+  .dmg and drag to Applications (Cmd+Q and Replace on an update), open it and press Done, System Settings >
+  Privacy & Security > Open Anyway, password, Open Anyway again. Windows: More info > Run anyway. The right Mac
+  file is picked by the chip (WebGL renderer; the app now also tells `arch`).
+
 ## Admin, only for Alex (17 Oct)
 Settings > Admin (shown only to Alex): three numbers (accounts, files sent, space in chats now), then People | Files
 with a search. **People:** every account, also those without a username yet, with email, when they joined and were

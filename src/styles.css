@@ -3130,3 +3130,35 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
 .call-del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .call-del svg { width: 16px; height: 16px; }
 @media (hover: none), (max-width: 760px) { .call-del { opacity: .75; } }
+
+/* Encrypted Chat (Alex, 17 Oct): a glass bar over the writing box while it is on, a line in the middle when it is
+   turned on or off, a small lock on each locked message and by the name in the head */
+.e2e-bar { display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 10px; border-radius: 18px; background: color-mix(in srgb, var(--accent) 10%, var(--glass)); border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--edge)); animation: pop .2s ease both; }
+.e2e-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); font-style: normal; }
+.e2e-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.e2e-text b { font-size: 13.5px; color: var(--text); }
+.e2e-text small { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.e2e-bar.no-key .e2e-text small { color: var(--danger); }
+.e2e-off { flex: none; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 7px 14px; white-space: nowrap; }
+.sys-note { display: flex; justify-content: center; margin: 10px 0; }
+.sys-note > span { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 6px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); font-size: 12.5px; color: var(--muted); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.sys-note svg { flex: none; width: 14px; height: 14px; color: var(--accent); }
+.sys-note b { color: var(--text); font-weight: 600; }
+.sys-note small { margin-left: 4px; font-size: 11px; opacity: .75; }
+.seal-mark { display: inline-flex; margin-right: 4px; vertical-align: -2px; font-style: normal; color: var(--accent); }
+.msg.mine .seal-mark { color: inherit; }
+.seal-mark svg { width: 12px; height: 12px; stroke-width: 2.2; }
+.sealed-none { font-style: italic; color: var(--muted); }
+.head-lock { display: inline-flex; margin-right: 5px; vertical-align: -2px; font-style: normal; color: var(--accent); }
+.head-lock svg { width: 14px; height: 14px; stroke-width: 2.2; }
+.e2e-warn { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 12px 14px; border-radius: 18px; background: color-mix(in srgb, var(--danger) 10%, var(--glass)); border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--edge)); }
+.e2e-warn > svg { flex: none; margin-top: 1px; color: var(--danger); }
+.e2e-warn > span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.e2e-warn b { font-size: 14px; }
+.e2e-warn small { font-size: 13px; line-height: 1.45; color: var(--muted); }
+@media (max-width: 760px) {
+  .e2e-bar { gap: 10px; padding: 7px 7px 7px 8px; }
+  .e2e-text small { font-size: 12px; }
+  .e2e-off { padding: 0; width: 40px; height: 40px; justify-content: center; }
+  .e2e-off span { display: none; }
+}

@@ -6,6 +6,7 @@ import Profile from './Profile.jsx'
 import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
+import { E2E_OFF, E2E_ON, endEncrypted, hasStretchKey, isSealed, myDevice, openText, previewText, sealText, startEncrypted, systemText, useEncrypted, useOpened, withoutDevice } from './e2e.js'
 import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
@@ -219,6 +220,7 @@ export default function Chat({ me, setMe }) {
   useEffect(() => {
     const beat = () => supabase.from('roar_profiles').update({ last_seen: new Date().toISOString() }).eq('id', me.id).then(() => {})
     beat()
+    myDevice(me.id) // this device's keys for Encrypted Chat, made the first time
     const id = setInterval(beat, 60 * 1000)
     const ppl = setInterval(() => loadPeople(Object.keys(peopleRef.current)), 90 * 1000)
     return () => { clearInterval(id); clearInterval(ppl) }
@@ -234,7 +236,7 @@ export default function Chat({ me, setMe }) {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     const who = peopleRef.current[m.user_id]
     const title = room?.kind === 'group' ? `${room.title}` : nameOf(who)
-    const body = !prefsRef.current.notifyPreview ? 'New message' : (room?.kind === 'group' ? `${nameOf(who)}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : plainText(m.body))
+    const body = !prefsRef.current.notifyPreview ? 'New message' : (room?.kind === 'group' ? `${nameOf(who)}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : plainText(previewText(m.body, m.kind)))
     try {
       const n = new Notification(title, { body: tr(body), icon: who?.avatar_url || './icon.svg', tag: m.room_id })
       n.onclick = () => { window.focus(); setTab('chats'); setActiveId(m.room_id); n.close() }
@@ -269,7 +271,7 @@ export default function Chat({ me, setMe }) {
     const total = missed.reduce((a, r) => a + r.unread, 0)
     const nameOfRoom = (r) => (r.kind === 'group' ? r.title : nameOf(people[other(r)]))
     const lastOf = (r) => {
-      const what = r.last_deleted ? 'Message deleted' : r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(r.last_body || '')
+      const what = r.last_deleted ? 'Message deleted' : r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(previewText(r.last_body || '', r.last_kind))
       return (r.kind === 'group' ? `${nameOf(people[r.last_user])}: ` : '') + tr(what)
     }
     const preview = prefsRef.current.notifyPreview
@@ -375,7 +377,7 @@ export default function Chat({ me, setMe }) {
     let alive = true
     const id = setTimeout(async () => {
       const { data } = await supabase.from('roar_messages').select('id, room_id, user_id, body, created_at').ilike('body', `%${t.replace(/[%_]/g, '')}%`).is('deleted_at', null).order('created_at', { ascending: false }).limit(60)
-      if (alive) setHits(data || [])
+      if (alive) setHits((data || []).filter((h) => !isSealed(h.body) && h.body !== E2E_ON && h.body !== E2E_OFF))
     }, 260)
     return () => { alive = false; clearTimeout(id) }
   }, [q])
@@ -461,7 +463,7 @@ export default function Chat({ me, setMe }) {
     if (!r.last_kind) return r.kind === 'group' ? 'Group created' : 'Say hi'
     if (r.last_deleted) return ''
     const who = r.last_user === me.id ? 'You: ' : r.kind === 'group' && people[r.last_user] ? `${nameOf(people[r.last_user]).split(' ')[0]}: ` : ''
-    const what = r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(r.last_body)
+    const what = r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(previewText(r.last_body, r.last_kind))
     return who + what
   }
   const folderUnread = (f) => visible.filter((r) => inFolder(r, f.id) && !r.muted).reduce((a, r) => a + (r.unread || 0), 0)
@@ -832,7 +834,7 @@ function Peek({ room, me, people, title, clearedAt, onClose, onOpen }) {
         {(list || []).map((m) => (
           <div key={m.id} className={`peek-msg${m.user_id === me.id ? ' mine' : ''}`}>
             {room.kind === 'group' && m.user_id !== me.id && <b style={{ color: colorOf(m.user_id) }}>{nameOf(people[m.user_id])}</b>}
-            <span>{m.kind === 'image' ? '📷 Photo' : m.kind === 'voice' ? '🎤 Voice message' : m.kind === 'file' ? `📎 ${m.file?.name || 'File'}` : m.body}</span>
+            <span>{m.kind === 'image' ? '📷 Photo' : m.kind === 'voice' ? '🎤 Voice message' : m.kind === 'file' ? `📎 ${m.file?.name || 'File'}` : previewText(m.body, m.kind)}</span>
             <small>{timeOf(m.created_at)}</small>
           </div>
         ))}
@@ -843,7 +845,17 @@ function Peek({ room, me, people, title, clearedAt, onClose, onOpen }) {
 
 /* ---------- one conversation ---------- */
 function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall }) {
-  const [msgs, setMsgs] = useState([])
+  const [rawMsgs, setMsgs] = useState([])
+  // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
+  const [sealOn, reloadSeal] = useEncrypted(room.room_id)
+  const msgs = useOpened(rawMsgs, room.room_id, me.id, sealOn?.id)
+  const [keyOk, setKeyOk] = useState(true)
+  useEffect(() => {
+    let alive = true
+    if (sealOn) hasStretchKey(sealOn.id, me.id).then((ok) => { if (alive) setKeyOk(ok) }); else setKeyOk(true)
+    return () => { alive = false }
+  }, [sealOn, me.id])
+  const [sealAsk, setSealAsk] = useState(null) // the Turn on window: { missing, busy }
   const [more, setMore] = useState(true)
   // an unsent message waits for you, per chat (shown in the list as Draft:)
   const [, setDrafts] = useLocal('roarme-drafts', {})
@@ -948,9 +960,10 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     }
     const m = ev.new
     if (!m || m.room_id !== room.room_id) return
+    if (ev.eventType === 'INSERT' && m.kind === 'system' && (m.body === E2E_ON || m.body === E2E_OFF)) reloadSeal()
     if (ev.eventType === 'INSERT') { setMsgs((list) => (list.some((x) => x.id === m.id) ? list : [...list, m])); setTimeout(loadReads, 1500) }
     if (ev.eventType === 'UPDATE') setMsgs((list) => list.map((x) => (x.id === m.id ? m : x)))
-  }), [listen, room.room_id, loadReacts, loadReads, loadPins])
+  }), [listen, room.room_id, loadReacts, loadReads, loadPins, reloadSeal])
 
   // read: when the newest message is on screen and the window is in front
   const lastId = msgs[msgs.length - 1]?.id
@@ -1032,16 +1045,23 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     const body = prefs.autoEmoji ? swapEmoji(text.trim()) : text.trim()
     if (!body) return
     setErr('')
+    // while Encrypted Chat is on the text is locked here, before it leaves the device
+    let out = body
+    const stretch = editing ? editing.sealed : sealOn?.id
+    if (stretch) {
+      try { out = await sealText(body, stretch, room.room_id, me.id) } catch (e) { setErr(errText(e)); return }
+      if (out.length > 20000) { setErr('Too long for one encrypted message. Send it in two parts.'); return }
+    }
     if (editing) {
-      const { error } = await supabase.from('roar_messages').update({ body, edited_at: new Date().toISOString() }).eq('id', editing.id)
+      const { error } = await supabase.from('roar_messages').update({ body: out, edited_at: new Date().toISOString() }).eq('id', editing.id)
       if (error) { setErr(errText(error)); return }
-      setMsgs((list) => list.map((x) => (x.id === editing.id ? { ...x, body, edited_at: new Date().toISOString() } : x)))
+      setMsgs((list) => list.map((x) => (x.id === editing.id ? { ...x, body: out, edited_at: new Date().toISOString() } : x)))
       setEditing(null); setText('')
       return
     }
     setText('')
     stick.current = true
-    const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, body, reply_to: replyTo?.id || null }).select().single()
+    const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, body: out, reply_to: replyTo?.id || null }).select().single()
     setReplyTo(null)
     if (error) { setErr(errText(error)); setText(body); return }
     setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
@@ -1069,6 +1089,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   // viaTransfer: the RoarTransfer button beside the clip (Alex, 16 Oct) sends the files as they are, any size up to 3 GB
   // hooks: the RoarTransfer window follows its own files (batch), can stop them, and hears each one sent
   const sendFiles = async (files, caption = '', compress = true, viaTransfer = false, hooks = {}) => {
+    if (sealOn) { setAttach(null); setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
     if (viaTransfer) compress = false
     setAttach(null); setErr('')
     const reply = replyTo
@@ -1122,6 +1143,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     return () => clearInterval(id)
   }, [rec])
   const startVoice = async () => {
+    if (sealOn) { setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
       const type = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported?.(t)) || ''
@@ -1209,6 +1231,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
 
   // a message that shows as a card (a scheduled call, a place, an article): its text in body, the card's details in file
   const sendCard = async (body, file, done, close) => {
+    if (sealOn) { close?.(); setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return false }
     const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'text', body, file }).select().single()
     if (error) { setErr(errText(error)); return false }
     close?.()
@@ -1217,7 +1240,23 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     if (done) toast(done)
     return true
   }
-  const textOf = (m) => (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.body)
+  // one's own text messages can be changed; a locked one only while its stretch of Encrypted Chat is still on
+  const canEdit = (m) => m.user_id === me.id && m.kind === 'text' && (!m.sealed || (m.sealed === sealOn?.id && keyOk && !m.locked))
+  const askSeal = async () => {
+    setSealAsk({ missing: null })
+    const missing = await withoutDevice(room.members || []).catch(() => [])
+    setSealAsk((a) => (a ? { ...a, missing: missing.filter((id) => id !== me.id) } : a))
+  }
+  const turnOn = async () => {
+    setSealAsk((a) => ({ ...a, busy: true }))
+    try { await startEncrypted(room.room_id, room.members || [], me.id); setSealAsk(null); toast('Encrypted Chat is on') } catch (e) { setSealAsk(null); setErr(errText(e)) }
+    reloadSeal()
+  }
+  const turnOff = async () => {
+    try { await endEncrypted(room.room_id); toast('Encrypted Chat is off') } catch (e) { setErr(errText(e)) }
+    reloadSeal()
+  }
+  const textOf = (m) => (m.kind === 'system' ? previewText(m.body, 'system') : m.sealed && !m.body ? 'Encrypted message' : m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.body)
   const copy = async (s, what = 'Copied') => { try { await navigator.clipboard.writeText(s); toast(what) } catch { toast('Copy did not work here') } }
   const linkOf = (m) => `${window.location.origin}${window.location.pathname}#m=${room.room_id}/${m.id}`
   const translate = (s) => window.open(`https://translate.google.com/?sl=auto&tl=${prefs.translateTo && prefs.translateTo !== 'auto' ? prefs.translateTo : /[Ͱ-Ͽ]/.test(s) ? 'en' : 'el'}&op=translate&text=${encodeURIComponent(s)}`, '_blank', 'noopener')
@@ -1251,8 +1290,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const onDouble = (m, e) => {
     if (m.deleted_at || picked) return
     const how = prefs.doubleTap
-    if (how === 'edit' && m.user_id === me.id && m.kind === 'text') { setReplyTo(null); setEditing(m); setText(m.body) }
-    else if (how === 'forward') setForward([m])
+    if (how === 'edit' && canEdit(m)) { setReplyTo(null); setEditing(m); setText(m.body) }
+    else if (how === 'forward') { if (!m.sealed) setForward([m]) }
     else if (how === 'reply' || how === 'edit') setReplyTo(m)
     else { react(m, prefs.quick); if (!reactsOf[m.id]?.[prefs.quick]?.mine) burst(prefs.quick, e?.clientX, e?.clientY) }
   }
@@ -1281,7 +1320,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     if (sendKey) { e.preventDefault(); send(); return }
     if (e.key === 'Escape') { setReplyTo(null); setEmoji(false); if (editing) { setEditing(null); setText('') } }
     if (e.key === 'ArrowUp' && !text) {
-      const mine = [...msgs].reverse().find((m) => m.user_id === me.id && m.kind === 'text' && !m.deleted_at)
+      const mine = [...msgs].reverse().find((m) => canEdit(m) && !m.deleted_at)
       if (mine) { e.preventDefault(); setEditing(mine); setText(mine.body) }
     }
   }
@@ -1345,8 +1384,11 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     if (!missing.length) return
     supabase.from('roar_messages').select('*').in('id', missing).then(({ data }) => { if (data?.length) setPinExtra((x) => ({ ...x, ...Object.fromEntries(data.map((m) => [m.id, m])) })) })
   }, [pinRows]) // eslint-disable-line react-hooks/exhaustive-deps
+  const pinExtraList = useMemo(() => Object.values(pinExtra), [pinExtra])
+  const pinOpened = useOpened(pinExtraList, room.room_id, me.id, sealOn?.id)
+  const pinOpenedById = useMemo(() => Object.fromEntries(pinOpened.map((m) => [m.id, m])), [pinOpened])
   const pinnedSet = new Set(pinRows.map((p) => p.message_id))
-  const pinnedList = pinRows.map((p) => byId[p.message_id] || pinExtra[p.message_id]).filter((m) => m && !m.deleted_at)
+  const pinnedList = pinRows.map((p) => byId[p.message_id] || pinOpenedById[p.message_id]).filter((m) => m && !m.deleted_at)
   const pinned = pinnedList[pinnedList.length - 1] || null
   // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
   const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && (!clearedAt || m.created_at > clearedAt)), [msgs, clearedAt])
@@ -1372,6 +1414,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       if (!data || data.length < 1000) break
     }
     if (clearedAt) all = all.filter((m) => m.created_at > clearedAt)
+    // Encrypted Chat: the locked messages this device can open go in as text, the lines on and off as words
+    all = await Promise.all(all.map(async (m) => (m.kind === 'system' ? { ...m, body: previewText(m.body, 'system') }
+      : isSealed(m.body) ? { ...m, body: (await openText(m.body, room.room_id, me.id)) ?? '[Encrypted message]' } : m)))
     const two = (n) => String(n).padStart(2, '0')
     const when = (s) => { const d = new Date(s); return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}` }
     const what = (m) => (m.kind === 'image' ? `[Photo${m.file?.name ? `: ${m.file.name}` : ''}]${m.body ? ` ${m.body}` : ''}` : m.kind === 'voice' ? '[Voice message]' : m.kind === 'file' ? `[File: ${m.file?.name || 'file'}]${m.body ? ` ${m.body}` : ''}` : m.body)
@@ -1386,7 +1431,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
 
   return (
     <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={wall} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 15.5}px` }}
-      onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) setAttach([...e.dataTransfer.files]) }}>
+      onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
       <header className="room-head">
         <button type="button" className="round back" onClick={onBack} aria-label="Back">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
         {picked ? (
@@ -1395,7 +1440,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
             <strong>{picked.length} selected</strong>
             <span className="head-pick-acts">
               <button type="button" className="round" disabled={!picked.length} onClick={() => copy(pickedMsgs.map(textOf).join('\n'), 'Copied')} title="Copy">{I.copy}</button>
-              <button type="button" className="round" disabled={!picked.length} onClick={() => setForward(pickedMsgs)} title="Forward">{I.forward}</button>
+              <button type="button" className="round" disabled={!picked.length || pickedMsgs.some((m) => m.sealed)} onClick={() => setForward(pickedMsgs)} title="Forward">{I.forward}</button>
               <button type="button" className="round danger" disabled={!pickedMsgs.some((m) => m.user_id === me.id)} onClick={() => { remove(pickedMsgs); setPicked(null) }} title="Delete yours">{I.trash}</button>
             </span>
           </div>
@@ -1405,7 +1450,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
               {(room.kind === 'group' ? room.avatar_url : other?.avatar_url) && <i className="head-bg" aria-hidden="true" style={{ backgroundImage: `url("${room.kind === 'group' ? room.avatar_url : other?.avatar_url}")` }} />}
               <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={onlineNow(other)} />
-              <span className="head-text"><strong>{title}</strong><small>{sub}</small></span>
+              <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{title}</strong><small>{sub}</small></span>
             </button>
             <button type="button" className="round" onClick={() => onCall(false)} aria-label="Voice call" title="Voice call">{I.phone}</button>
             <button type="button" className="round head-video" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>
@@ -1420,6 +1465,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                     <button type="button" className="only-phone" onClick={() => { setHeadMenu(false); setFind(''); setFindAt(0) }} onMouseEnter={() => setHeadSub('')}>{I.search}<span>Search</span></button>
                     {room.kind === 'group' && room.role === 'admin' && <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onMouseEnter={() => setHeadSub('')}>{I.edit}<span>Edit</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onMouseEnter={() => setHeadSub('')}>{I.info}<span>Info</span></button>
+                    <button type="button" onClick={() => { setHeadMenu(false); if (sealOn) turnOff(); else askSeal() }} onMouseEnter={() => setHeadSub('')}>{sealOn ? I.unlock : I.lock}<span>{sealOn ? 'Turn Off Encrypted Chat' : 'Encrypted Chat'}</span></button>
                     {room.muted
                       ? <button type="button" onClick={() => act('mute')} onMouseEnter={() => setHeadSub('')}>{I.bell}<span>Unmute</span></button>
                       : (
@@ -1497,6 +1543,15 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           const vlink = !m.deleted_at && m.kind === 'text' ? videoLinkOf(m.body) : null
           const wide = wideIds.has(m.id)
           const hit = find && found.includes(m.id)
+          // a line in the middle when someone turns Encrypted Chat on or off
+          if (m.kind === 'system') {
+            return (
+              <div key={m.id} id={`m-${m.id}`}>
+                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+                <div className="sys-note"><span>{m.body === E2E_OFF ? I.unlock : I.lock}<b>{mine ? 'You' : nameOf(who)}</b><span>{systemText(m.body)}</span><small>{timeOf(m.created_at)}</small></span></div>
+              </div>
+            )
+          }
           return (
             <div key={m.id} id={`m-${m.id}`}>
               {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
@@ -1522,8 +1577,9 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
                     {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && <span className="text">{formatText(m.body, withMentions)}</span>}
+                    {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />}
-                    <span className="meta">{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
+                    <span className="meta">{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
                   {(rx || replyCount[m.id]) && (
                     <span className="rx">
@@ -1569,6 +1625,13 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       ) : (
       <footer className="compose-wrap">
         {(busy || err) && <div className={`bar${err ? ' bar-err' : ''}`}><span>{err || busy}</span>{err && <button type="button" onClick={() => setErr('')} aria-label="Close">{I.x}</button>}</div>}
+        {sealOn && (
+          <div className={`e2e-bar${keyOk ? '' : ' no-key'}`}>
+            <i className="e2e-ico">{I.lock}</i>
+            <span className="e2e-text"><b>Encrypted Chat</b><small>{keyOk ? 'Only the devices in this chat can read what is written now.' : 'This device has no key for it, so it cannot read or write here while it is on.'}</small></span>
+            <button type="button" className="btn e2e-off" onClick={turnOff} title="Turn off Encrypted Chat">{I.unlock}<span>Turn off</span></button>
+          </div>
+        )}
         {mentionHits.length > 0 && (
           <div className="mention-pick">
             {mentionHits.map((p) => <button key={p.id} type="button" onMouseDown={(e) => { e.preventDefault(); pickMention(p) }}><Avatar src={p.avatar_url} name={nameOf(p)} size={28} /><b>{nameOf(p)}</b><small>@{p.username}</small></button>)}
@@ -1584,8 +1647,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           </div>
         ) : (
           <div className="compose">
-            {!editing && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.clip}</button>}
-            {!editing && <button type="button" className="round compose-transfer" onClick={() => setTransferOpen(true)} aria-label="RoarTransfer" title="RoarTransfer: big files as they are, up to 3 GB, kept 3 days">{I.transfer}</button>}
+            {!editing && !sealOn && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.clip}</button>}
+            {!editing && !sealOn && <button type="button" className="round compose-transfer" onClick={() => setTransferOpen(true)} aria-label="RoarTransfer" title="RoarTransfer: big files as they are, up to 3 GB, kept 3 days">{I.transfer}</button>}
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
               {sel && (
                 <span className="fmt-bar" role="toolbar" aria-label="Format" onMouseDown={(e) => e.preventDefault()}>
@@ -1607,14 +1670,14 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               <textarea ref={inputRef} rows={1} value={text} spellCheck={prefs.spell} autoCorrect={prefs.spell ? 'on' : 'off'}
                 onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart) }} onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)} onClick={(e) => setCaret(e.currentTarget.selectionStart)} onKeyDown={onKey}
                 onSelect={(e) => readSel(e.currentTarget)} onBlur={() => setSel(null)}
-                onPaste={(e) => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); setAttach(f) } }}
-                placeholder="Write a message…" />
+                onPaste={(e) => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach(f) } }}
+                disabled={!!sealOn && !keyOk} placeholder={sealOn ? 'Encrypted message…' : 'Write a message…'} />
               {(bigBox || tall) && <button type="button" className="compose-grow" onMouseDown={(e) => e.preventDefault()} onClick={() => { setBigBox((v) => !v); inputRef.current?.focus() }} aria-label={bigBox ? 'Smaller' : 'Bigger'} title={bigBox ? 'Smaller' : 'Bigger'}>{bigBox ? GROW_OFF : GROW_ON}</button>}
               <button type="button" className="emoji-btn" onClick={() => setEmoji((v) => !v)} aria-label="Emoji" title="Emoji">{I.smile}</button>
               {emoji && <EmojiPicker onPick={addEmoji} onClose={() => setEmoji(false)} />}
             </span>
-            {text.trim() || editing
-              ? <button type="button" className="round send ready" onClick={send} aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter)'}>{editing ? I.check : I.send}</button>
+            {text.trim() || editing || sealOn
+              ? <button type="button" className={`round send${text.trim() || editing ? ' ready' : ''}`} onClick={send} aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter)'}>{editing ? I.check : I.send}</button>
               : <button type="button" className="round" onClick={() => (canVoice ? startVoice() : setErr('This browser cannot record voice messages.'))} aria-label="Voice message" title="Voice message">{I.mic}</button>}
           </div>
         )}
@@ -1628,15 +1691,15 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>
-              {menu.m.body && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
+              {menu.m.body && !menu.m.sealed && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
               {menu.m.body && <button type="button" onClick={() => { copy(prefs.copyFormat === false ? plainText(menu.m.body) : menu.m.body, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
               <button type="button" onClick={() => { copy(linkOf(menu.m), 'Link copied'); setMenu(null) }}>{I.link}<span>Copy Message Link</span></button>
               {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
               <hr />
-              {menu.m.user_id === me.id && menu.m.kind === 'text' && !menu.m.file?.event && !menu.m.file?.location && <button type="button" onClick={() => { if (menu.m.file?.article) setArtOpen(menu.m); else { setEditing(menu.m); setText(menu.m.body) } setMenu(null) }}>{I.edit}<span>Edit</span></button>}
+              {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && <button type="button" onClick={() => { if (menu.m.file?.article) setArtOpen(menu.m); else { setEditing(menu.m); setText(menu.m.body) } setMenu(null) }}>{I.edit}<span>Edit</span></button>}
               <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
-              <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>
+              {!menu.m.sealed && <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>}
               <button type="button" onClick={() => { setPicked([menu.m.id]); setMenu(null) }}>{I.select}<span>Select</span></button>
               {menu.m.user_id === me.id && (
                 <>
@@ -1665,6 +1728,22 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                 <small className="muted">{timeOf(x.created_at)}</small>
               </button>
             ))}
+          </div>
+        </Modal>
+      )}
+      {sealAsk && (
+        <Modal title="Encrypted Chat" onClose={() => setSealAsk(null)}
+          foot={<><button type="button" className="btn" onClick={() => setSealAsk(null)}>Cancel</button><button type="button" className="btn btn-main" disabled={!!sealAsk.busy || sealAsk.missing === null} onClick={turnOn}>{I.lock}<span>{sealAsk.busy ? 'Turning on…' : 'Turn on'}</span></button></>}>
+          <div className="inst">
+            <p className="inst-lead">End-to-end encryption for this chat. While it is on, what is written is locked on the device before it is sent, and only the devices of the people in this chat can open it. Not even RoarMe's server can read it.</p>
+            <ul className="inst-steps">
+              <li><i>{I.unlock}</i><span><b>On for a while</b><small>Turn it off whenever you like and the chat goes back to normal. What was sent while it was on stays locked.</small></span></li>
+              <li><i>{I.devices}</i><span><b>These devices only</b><small>The computers, phones and browsers each of you uses now. A device added later cannot read these messages.</small></span></li>
+              <li><i>{I.chats}</i><span><b>Text only, for now</b><small>Photos, files, places and voice messages wait until it is off. Calls work as always.</small></span></li>
+            </ul>
+            {sealAsk.missing?.length > 0 && (
+              <p className="e2e-warn">{I.info}<span><b>{sealAsk.missing.map((id) => nameOf(people[id])).join(', ')}</b><small>Not on the new RoarMe yet, so they cannot read these messages. Ask them to open RoarMe first, then turn it on.</small></span></p>
+            )}
           </div>
         </Modal>
       )}

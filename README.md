@@ -175,9 +175,29 @@ images. Desktop 1.4.1: only http(s) and mailto links leave the app for the brows
 Still to do in the Supabase dashboard: leaked password protection on, minimum password length 8.
 Known and accepted: the roar_people view is SECURITY DEFINER on purpose (it hides last seen and photo per privacy
 setting); the roar_* RPCs are meant to be called by signed-in users and check permissions inside; messages are not
-end-to-end encrypted (see below).
+end-to-end encrypted unless Encrypted Chat is on (see below).
 
-## Later: end-to-end encryption (talked through with Alex, 17 Oct; not started, "when we are more ready")
+## Encrypted Chat (17 Oct)
+End-to-end encryption for one chat, on for a while and off again (Alex: "να υπάρχει αλλά όχι συνέχεια"). In a chat:
+⋯ > **Encrypted Chat** opens a window that says what it does, and who in the chat has not opened the new RoarMe yet
+(they could not read it); **Turn on**. While it is on: a lock by the name in the head, a glass bar over the writing
+box with **Turn off**, a lock on each locked message, a line in the middle ("You turned on Encrypted Chat") for
+everyone, text only (photos, files, places, voice and RoarTransfer wait until it is off; calls work as always),
+no Forward and no Translate on locked messages, Edit only while the same stretch is still on.
+How (`src/e2e.js`, `supabase/encrypted-chat.sql`, run by Claude and tested): every device (the Mac or Windows app, a
+browser) makes its own ECDH P-256 key pair the first time RoarMe opens; the private half stays in that device's
+IndexedDB and cannot be read out, the public half goes to roar_devices (seen only by people one shares a chat with).
+Turning it on makes one AES-256-GCM key for that stretch and seals a copy for every device of everyone in the chat
+(seen in the last 90 days), sent with roar_e2e_start together with the stretch and the line in the chat; a device can
+read only its own copy (roar_e2e_keys). Text is locked on the device before it is sent (body
+`e2e1.<stretch>.<iv>.<locked>`, the chat and stretch bound in); the server keeps the locked text only, the list,
+notifications, search and Peek say "Encrypted message". Turning it off (roar_e2e_end) goes back to normal; what was
+locked stays locked and opens on the devices that were in it. A device added later (a new computer, a cleared
+browser, a private window) has no key: the bar says so and it cannot read or write there while it is on.
+Honest limits: protects against anyone reading the database or the server (admins included); there is no safety
+number to check yet, so it trusts the server to hand over the right public keys.
+
+## Later: more end-to-end encryption (talked through with Alex, 17 Oct)
 Plan agreed in principle: a key pair per user made on the device, a key per chat wrapped for each member, messages,
 photos, voice and files up to 50 MB encrypted on the device before upload, a recovery code to open the history on a
 new device (lost code and devices = lost history), a new chat key when someone leaves a group. Search and the Media

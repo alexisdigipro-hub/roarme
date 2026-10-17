@@ -68,6 +68,9 @@ export const I = {
   unread: svg(<><path d="M20 12a8 8 0 1 1-4.5-7.2" /><circle cx="19" cy="5" r="2.5" fill="currentColor" stroke="none" /></>, 16),
   eye: svg(<><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>, 16),
   clear: svg(<><circle cx="12" cy="12" r="9" /><path d="m9 9 6 6M15 9l-6 6" /></>, 16),
+  lock: svg(<><rect x="5" y="10.5" width="14" height="10" rx="2.6" /><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" /></>, 16),
+  unlock: svg(<><rect x="5" y="10.5" width="14" height="10" rx="2.6" /><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 6.8-1.2" /></>, 16),
+  devices: svg(<><rect x="2.5" y="4.5" width="14" height="10" rx="2" /><path d="M6 18.5h7" /><rect x="17" y="8.5" width="4.5" height="11" rx="1.4" /></>, 16),
 }
 
 // each person's name in a group in a colour of their own, as in the hub's chat

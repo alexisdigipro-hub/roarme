@@ -73,6 +73,8 @@ chats stay quiet; with notifications off in the system it is a short note in the
 every 15 seconds and on closing, when it was last open (`roarme-here-<user id>`); the first time, only the last day counts.
 
 ## Location and Article (17 Oct)
+- The + window is one row of small tiles: Gallery, (Camera on a phone), File, Location, Article. RoarTransfer left it: it has its own button beside the clip.
+- Recording a voice message shows the microphone's real loudness as thin bars sliding in from the right (silence is a row of dots), a quiet timer and a plain bin.
 - **+ > Location**: a map you move under a pin (drag, pinch, wheel, + and −), a search box for places, and the round target button for where you are (if the computer or phone shares it; the Mac app asks once). The pin's spot is named as the map stops. Send puts a small map with the name in the chat; a tap opens it big, with Google Maps and Apple Maps.
 - The map is OpenStreetMap drawn by CARTO; names and search are OpenStreetMap's Nominatim. No key, nothing to pay. They see only the map area and the search, with the IP address (said in the Privacy Policy).
 - The message is a text message: body = the place's name, `file.location` = { lat, lng, z, name, addr }.

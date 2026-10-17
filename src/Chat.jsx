@@ -16,7 +16,6 @@ import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVide
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
 
 // the moving bars while a voice message records (Alex, 16 Oct): not the real sound, a lively stand-in
-const REC_WAVE = Array.from({ length: 140 }, (_, i) => (0.35 + 0.65 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.45))).toFixed(2))
 
 /* people by @username or name */
 function usePeopleSearch(meId) {
@@ -1127,7 +1126,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
       recRef.current = { mr, stream, chunks, type: mr.mimeType || type || 'audio/webm' }
       mr.start(250)
       setRecSecs(0)
-      setRec({ started: Date.now() })
+      setRec({ started: Date.now(), stream })
     } catch {
       setErr('The microphone is not allowed. Allow it in the browser to send voice messages.')
     }
@@ -1572,7 +1571,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           <div className="compose rec">
             <span className="rec-dot" />
             <b>{Math.floor(recSecs / 60)}:{String(recSecs % 60).padStart(2, '0')}</b>
-            <span className="rec-wave" role="img" aria-label="Recording…">{REC_WAVE.map((h, i) => <i key={i} style={{ '--h': h, '--d': `${(i * 137) % 900}ms` }} />)}</span>
+            <LiveWave stream={rec.stream} />
             <button type="button" className="round danger" onClick={() => stopVoice(false)} aria-label="Throw away" title="Throw away">{I.trash}</button>
             <button type="button" className="round send ready" onClick={() => stopVoice(true)} aria-label="Send" title="Send">{I.send}</button>
           </div>
@@ -1662,7 +1661,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={() => { setAttach(null); setLocOpen(true) }} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
+      {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} onLocation={() => { setAttach(null); setLocOpen(true) }} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
       {transferOpen && <TransferWindow title={title} outbox={outbox} onStart={(files, note, hooks) => sendFiles(files, note, false, true, hooks)} onClose={() => setTransferOpen(false)} />}
       {media && <SharedMedia roomId={room.room_id} onClose={() => setMedia(false)} onOpen={async (list, index) => { setMedia(false); const items = await Promise.all(list.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name }))); setViewer({ items, index }) }} />}
       {wallPick && (
@@ -1778,6 +1777,57 @@ function FileTile({ file }) {
 
 /* the format bar's buttons: the mark, its name, what the button shows, its keys */
 const MOD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || '') ? '⌘' : 'Ctrl+'
+/* the line while recording (Alex, 17 Oct: "can it really read the sound? and more minimal"): the microphone's real
+   loudness, one thin bar every 80 ms sliding in from the right; silence is a row of dots */
+function LiveWave({ stream }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const cv = ref.current
+    const AC = window.AudioContext || window.webkitAudioContext
+    if (!cv || !stream || !AC) return undefined
+    const ac = new AC()
+    const an = ac.createAnalyser()
+    an.fftSize = 1024
+    ac.createMediaStreamSource(stream).connect(an)
+    const buf = new Uint8Array(an.fftSize)
+    const levels = []
+    let raf = 0
+    let last = 0
+    let peak = 0
+    const draw = (t) => {
+      raf = requestAnimationFrame(draw)
+      an.getByteTimeDomainData(buf)
+      let sum = 0
+      for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; sum += x * x }
+      peak = Math.max(peak, Math.sqrt(sum / buf.length))
+      if (t - last < 80) return
+      last = t
+      levels.push(Math.min(1, Math.sqrt(peak) * 1.7))
+      peak = 0
+      const dpr = window.devicePixelRatio || 1
+      const w = cv.clientWidth
+      const h = cv.clientHeight
+      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr) }
+      const g = cv.getContext('2d')
+      g.setTransform(dpr, 0, 0, dpr, 0, 0)
+      g.clearRect(0, 0, w, h)
+      g.fillStyle = getComputedStyle(cv).color
+      const step = 5
+      while (levels.length > Math.floor(w / step)) levels.shift()
+      levels.forEach((l, i) => {
+        const bh = Math.max(2, Math.round(l * h))
+        const x = w - (levels.length - i) * step
+        g.beginPath()
+        g.roundRect ? g.roundRect(x, (h - bh) / 2, 2, bh, 1) : g.rect(x, (h - bh) / 2, 2, bh)
+        g.fill()
+      })
+    }
+    raf = requestAnimationFrame(draw)
+    return () => { cancelAnimationFrame(raf); ac.close().catch(() => {}) }
+  }, [stream])
+  return <canvas ref={ref} className="rec-wave" role="img" aria-label="Recording…" />
+}
+
 const FMT_MARKS = [
   ['**', 'Bold', <b key="b">B</b>, `${MOD}B`],
   ['_', 'Italic', <i key="i">I</i>, `${MOD}I`],

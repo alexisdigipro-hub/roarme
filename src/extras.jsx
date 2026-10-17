@@ -53,7 +53,7 @@ export function MediaViewer({ items, index, onClose }) {
 }
 
 /* ---------- photos, videos and files before they are sent: gallery, camera, file, caption ---------- */
-export function AttachSheet({ initial = [], onClose, onSend, onTransfer, onLocation, onArticle }) {
+export function AttachSheet({ initial = [], onClose, onSend, onLocation, onArticle }) {
   const prefs = usePrefs()
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
@@ -73,16 +73,16 @@ export function AttachSheet({ initial = [], onClose, onSend, onTransfer, onLocat
   return (
     <Modal title={files.length ? `${files.length} selected` : 'Send'} onClose={onClose}
       foot={files.length > 0 && <button type="button" className="btn btn-main attach-send" onClick={() => { setPrefs({ compress }); onSend(files, caption.trim(), compress) }}>{I.send}<span>Send</span></button>}>
-      {/* a fresher send window (Alex, 16 Oct): soft tiles with a tinted icon each, RoarTransfer among them; once files
+      {/* a fresher send window (Alex, 16 Oct): soft tiles with a tinted icon each, all on one row; once files
           are picked the tiles shrink to a row of small pills and the caption and Send come in */}
       <div className={`attach-pick${files.length ? ' small' : ''}`}>
-        <button type="button" className="attach-tile" style={{ '--tint': '#4da3ff' }} onClick={() => gal.current?.click()}><i>{I.image}</i><b>Gallery</b><small>Photos and videos</small></button>
+        <button type="button" className="attach-tile" style={{ '--tint': '#4da3ff' }} onClick={() => gal.current?.click()} title="Photos and videos"><i>{I.image}</i><b>Gallery</b></button>
         {/* on a computer the camera button only opened the same file picker as Gallery (Alex, 16 Oct): phones only */}
-        {touchOnly && <button type="button" className="attach-tile" style={{ '--tint': '#34c759' }} onClick={() => cam.current?.click()}><i>{I.camera}</i><b>Camera</b><small>Take one now</small></button>}
-        <button type="button" className="attach-tile" style={{ '--tint': '#ff9f0a' }} onClick={() => doc.current?.click()}><i>{I.file}</i><b>File</b><small>Any document</small></button>
-        <button type="button" className="attach-tile" style={{ '--tint': 'var(--accent)' }} onClick={onTransfer}><i>{I.transfer}</i><b>RoarTransfer</b><small>Up to 3 GB, kept 3 days</small></button>
-        {onLocation && <button type="button" className="attach-tile" style={{ '--tint': '#34c759' }} onClick={onLocation}><i>{I.place}</i><b>Location</b><small>A place on the map</small></button>}
-        {onArticle && <button type="button" className="attach-tile" style={{ '--tint': '#af52de' }} onClick={onArticle}><i>{I.article}</i><b>Article</b><small>A long post with a title</small></button>}
+        {touchOnly && <button type="button" className="attach-tile" style={{ '--tint': '#34c759' }} onClick={() => cam.current?.click()} title="Take one now"><i>{I.camera}</i><b>Camera</b></button>}
+        <button type="button" className="attach-tile" style={{ '--tint': '#ff9f0a' }} onClick={() => doc.current?.click()} title="Any document"><i>{I.file}</i><b>File</b></button>
+        {/* RoarTransfer has its own button beside the clip (Alex, 17 Oct: out of here, the rest small, all on one row) */}
+        {!files.length && onLocation && <button type="button" className="attach-tile" style={{ '--tint': '#30b0c7' }} onClick={onLocation} title="A place on the map"><i>{I.place}</i><b>Location</b></button>}
+        {!files.length && onArticle && <button type="button" className="attach-tile" style={{ '--tint': '#af52de' }} onClick={onArticle} title="A long post with a title"><i>{I.article}</i><b>Article</b></button>}
       </div>
       <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
       <input ref={cam} type="file" accept="image/*,video/*" capture="environment" hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />

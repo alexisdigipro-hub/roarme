@@ -2745,3 +2745,19 @@ html[data-theme] .msg.mine .bubble.art-b .trx-get { color: var(--accent-ink, #ff
 .art-body blockquote { margin: 0; padding: 4px 0 4px 14px; border-left: 3px solid var(--accent); white-space: pre-wrap; font-style: italic; opacity: .9; }
 .art-body hr { width: 100%; height: 1px; margin: 6px 0; border: 0; background: var(--edge); }
 .art-sheet.art-read { gap: 4px; }
+
+/* the send window, one row (Alex, 17 Oct): RoarTransfer out (it has its own button), smaller tiles side by side */
+.attach-pick:not(.small) { display: flex; gap: 8px; }
+.attach-pick:not(.small) .attach-tile { flex: 1 1 0; min-width: 0; gap: 0; padding: 14px 4px 11px; border-radius: 20px; }
+.attach-pick:not(.small) .attach-tile i { width: 42px; height: 42px; margin-bottom: 8px; }
+.attach-pick:not(.small) .attach-tile i svg { width: 20px; height: 20px; }
+.attach-pick:not(.small) .attach-tile b { font-size: 13px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* recording, minimal (Alex, 17 Oct): the real sound as thin bars, a quiet timer, a plain bin */
+.compose.rec { gap: 10px; height: 44px; padding: 0 4px 0 16px; }
+.rec-dot { width: 8px; height: 8px; }
+.compose.rec > b { font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); }
+canvas.rec-wave { display: block; flex: 1; min-width: 0; height: 22px; margin: 0 4px; color: color-mix(in srgb, var(--accent) 85%, var(--text)); }
+html[data-theme] .compose.rec .round.danger { width: 36px; height: 36px; background: none; border-color: transparent; box-shadow: none; color: var(--muted); }
+html[data-theme] .compose.rec .round.danger:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.compose.rec .round.send { width: 36px; height: 36px; }

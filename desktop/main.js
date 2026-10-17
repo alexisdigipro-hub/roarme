@@ -3,7 +3,7 @@
 // next start without a new install. Links that leave RoarMe open in the computer's own browser.
 // The app adds what a browser cannot: the unread count on its icon, a paw in the menu bar, opening at
 // login, and staying on (with notifications and calls) when its window is closed.
-const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, shell, session } = require('electron')
+const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, screen, shell, session } = require('electron')
 // RoarMe is dark: the glass under the window is dark too, even when the Mac is in light mode (Alex, 16 Oct:
 // the strip while resizing came out white)
 nativeTheme.themeSource = 'dark'
@@ -73,8 +73,38 @@ function guard(w) {
   w.webContents.on('did-create-window', (child) => guard(child))
 }
 
+/* the window's size (Alex, 17 Oct): a first start opens it wide, as Alex keeps his (about 1430 x 830 on a 13" Mac):
+   the screen's width less a 20 px margin each side (at most 1440), in his proportions (1.72 : 1), centred. After that
+   it opens where and as big as it was left. */
+const firstBounds = () => {
+  const wa = screen.getPrimaryDisplay().workArea
+  const width = Math.max(760, Math.min(1440, wa.width - 40))
+  const height = Math.max(540, Math.min(Math.round(width / 1.72), wa.height - 40))
+  return { width, height, x: Math.round(wa.x + (wa.width - width) / 2), y: Math.round(wa.y + (wa.height - height) / 2) }
+}
+const savedBounds = () => {
+  const b = settings.bounds
+  if (!b || !(b.width >= 760 && b.height >= 540)) return null
+  // only if it is still on a screen (a second monitor may be gone)
+  const on = screen.getAllDisplays().some(({ workArea: a }) => b.x + 80 > a.x && b.x + 80 < a.x + a.width && b.y + 20 >= a.y && b.y + 20 < a.y + a.height)
+  return on ? b : null
+}
+let boundsTimer = 0
+const keepBounds = () => {
+  clearTimeout(boundsTimer)
+  boundsTimer = setTimeout(() => {
+    if (!win || win.isMinimized() || win.isFullScreen()) return
+    settings.bounds = win.isMaximized() ? { ...(settings.bounds || win.getNormalBounds()), maximized: true } : { ...win.getBounds(), maximized: false }
+    saveSettings()
+  }, 400)
+}
+
 function open() {
-  win = new BrowserWindow({ width: 1240, height: 840, minWidth: 760, minHeight: 540, title: 'RoarMe', ...look })
+  const b = savedBounds() || firstBounds()
+  win = new BrowserWindow({ width: b.width, height: b.height, x: b.x, y: b.y, minWidth: 760, minHeight: 540, title: 'RoarMe', ...look })
+  if (b.maximized) win.maximize()
+  win.on('resize', keepBounds)
+  win.on('move', keepBounds)
   // shown once the page has painted, so it opens on RoarMe and not on an empty frame
   win.once('ready-to-show', () => win?.show())
   setTimeout(() => { if (win && !win.isVisible()) win.show() }, 3000) // a slow or missing network still gets a window

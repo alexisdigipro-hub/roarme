@@ -59,6 +59,12 @@ older than 3 days. Set up by `supabase/transfers.sql`. Supabase's global upload 
 must be at least 3 GB.
 
 
+## The desktop window (17 Oct)
+A first start opens the window as Alex keeps his: the screen's width less 20 px each side (at most 1440), in 1.72 : 1,
+centred (about 1430 x 830 on a 13" Mac). After that it opens where and as big as it was left (kept in
+roar-settings.json; a place on a monitor that is gone falls back to the first size). The Mac app also asks for the
+location once, for Send My Location.
+
 ## Back after being away (17 Oct)
 When RoarMe opens after being closed (Cmd+Q, the computer off), what came in meanwhile arrives as notifications,
 gathered: one per chat ("3 new messages · the last one", the photo of the person or group; a click opens that chat),

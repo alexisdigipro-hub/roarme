@@ -1299,6 +1299,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
         ) : (
           <>
             <button type="button" className="head-card" onClick={onInfo} title="Info">
+              {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
+              {(room.kind === 'group' ? room.avatar_url : other?.avatar_url) && <i className="head-bg" aria-hidden="true" style={{ backgroundImage: `url("${room.kind === 'group' ? room.avatar_url : other?.avatar_url}")` }} />}
               <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={onlineNow(other)} />
               <span className="head-text"><strong>{title}</strong><small>{sub}</small></span>
             </button>

@@ -2513,3 +2513,8 @@ html[data-theme] .lib-seg button.on i { color: inherit; background: rgba(0, 0, 0
 .auth-invite { margin: 4px 0 2px; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; text-align: center;
   background: color-mix(in srgb, var(--accent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
 .auth-invite b { color: var(--accent); }
+
+/* the chat's header: its profile picture large, tilted to the left and at 15% behind the name (Alex, 17 Oct) */
+.room-head .head-card { position: relative; overflow: hidden; isolation: isolate; }
+.head-bg { position: absolute; z-index: -1; left: -6%; right: -6%; top: 50%; aspect-ratio: 1; transform: translateY(-50%) rotate(-10deg) scale(1.05);
+  background: center 30% / cover no-repeat; opacity: .15; pointer-events: none; font-style: normal; }

@@ -65,10 +65,12 @@ Settings. While it is on, a bar sits above the chat: play/pause, the title and t
 there), a line to move through it, the time, and × to stop it. On a phone it shows on the chat list too. A voice
 message starting pauses the song, and the other way round.
 
-## See-through bubbles (17 Oct)
+## Glass look (17 Oct)
 Your own messages are a touch of your colour on glass with a thin edge in it, like a RoarTransfer card, the text in the
-normal colour (links, ticks, quotes, voice and music buttons follow). On by default, in every theme;
-Settings > General > Interface > See-Through Bubbles turns the filled bubbles back (`html[data-bubbles]`).
+normal colour (links, ticks, quotes follow). The solid buttons and icon tiles are glass too, in three strengths: the
+main action (Download, Send, Join, Read, Save, the primary buttons) strongest, icon tiles lighter, chips lightest.
+On by default in every theme but Studio (which keeps its hard look); Settings > General > Interface > Glass Look turns
+the filled look back (`html[data-bubbles]`).
 
 ## The desktop window (17 Oct)
 A first start opens the window as Alex keeps his: the screen's width less 20 px each side (at most 1440), in 1.72 : 1,

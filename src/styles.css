@@ -2765,7 +2765,7 @@ html[data-theme] .compose.rec .round.danger:hover { color: var(--danger); backgr
 .compose.rec .round.send { width: 36px; height: 36px; }
 
 /* see-through bubbles (Alex, 17 Oct: "the message bubbles transparent like RoarTransfer"): your own messages are a touch
-   of your colour on glass with a thin edge in it, the text in the normal colour. Settings > General > Interface > See-Through Bubbles */
+   of your colour on glass with a thin edge in it, the text in the normal colour. Settings > General > Interface > Glass Look */
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble:not(.pic):not(.big-emoji) { color: var(--text) !important; background: color-mix(in srgb, var(--accent) 15%, var(--glass)) !important;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent) !important; box-shadow: none !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.meta, .ticks, .file-text small, .voice small) { color: var(--muted) !important; }
@@ -2775,7 +2775,6 @@ html[data-bubbles='glass'][data-theme] .msg.mine .bubble .quote { background: co
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble .quote b { color: var(--accent) !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble .quote span { color: var(--text) !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble .file-ico { color: var(--accent) !important; background: color-mix(in srgb, var(--accent) 18%, transparent) !important; }
-html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.voice-btn, .music-btn) { color: var(--accent-ink, #fff) !important; background: var(--accent) !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.voice-bar, .music-bar) { background: color-mix(in srgb, var(--text) 18%, transparent) !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.voice-bar, .music-bar) i { background: var(--accent) !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.fmt-code, .fmt-pre) { background: color-mix(in srgb, var(--text) 9%, transparent) !important; }
@@ -2812,3 +2811,39 @@ html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.fmt-code, .fmt-pre
 .side .nowbar.in-side { margin: 0 0 8px; }
 @media (min-width: 761px) { .side .nowbar.in-side { display: none; } }
 @media (max-width: 760px) { .nowbar-time { display: none; } }
+
+/* glass instead of solid (Alex, 17 Oct: "what is so solid does not fit: transparency, different opacities, fresh, 2026").
+   Three strengths: the main action of a place (Download, Send, Join, Save) is the strongest glass, icon tiles are
+   lighter, chips lighter still. Comes and goes with Settings > General > Glass Look; Studio keeps its own hard look. */
+html[data-bubbles='glass']:not([data-theme='studio']) {
+  --gl-ink: color-mix(in srgb, var(--accent) 38%, #fff);
+  --gl-a1: 46%; --gl-a2: 26%; --gl-t1: 34%; --gl-t2: 12%;
+}
+html[data-bubbles='glass'][data-mode='light']:not([data-theme='studio']) { --gl-ink: color-mix(in srgb, var(--accent) 78%, #000); --gl-a1: 30%; --gl-a2: 16%; --gl-t1: 24%; --gl-t2: 8%; }
+html[data-bubbles='glass']:not([data-theme='studio']) :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send):not(:disabled) {
+  color: var(--gl-ink) !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) var(--gl-a1), transparent), color-mix(in srgb, var(--accent) var(--gl-a2), transparent)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 62%, transparent) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 8px 22px color-mix(in srgb, var(--accent) 18%, transparent) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.5); backdrop-filter: blur(12px) saturate(1.5); filter: none;
+}
+html[data-bubbles='glass']:not([data-theme='studio']) :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send):not(:disabled):hover {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) calc(var(--gl-a1) + 12%), transparent), color-mix(in srgb, var(--accent) calc(var(--gl-a2) + 10%), transparent)) !important;
+}
+html[data-bubbles='glass']:not([data-theme='studio']) :is(.trx-type, .rt-mark i, .loc-send i, .music-btn, .voice-btn) {
+  color: var(--gl-ink) !important;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent) var(--gl-t1), transparent), color-mix(in srgb, var(--accent) var(--gl-t2), transparent)) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 6px 16px color-mix(in srgb, var(--accent) 12%, transparent) !important;
+}
+html[data-bubbles='glass']:not([data-theme='studio']) .attach-tile i {
+  color: color-mix(in srgb, var(--tint) 45%, #fff);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--tint) 40%, transparent), color-mix(in srgb, var(--tint) 14%, transparent));
+  border: 1px solid color-mix(in srgb, var(--tint) 45%, transparent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 6px 16px color-mix(in srgb, var(--tint) 14%, transparent);
+}
+html[data-bubbles='glass'][data-mode='light']:not([data-theme='studio']) .attach-tile i { color: color-mix(in srgb, var(--tint) 80%, #000); }
+html[data-bubbles='glass']:not([data-theme='studio']) .trx-hero, html[data-bubbles='glass']:not([data-theme='studio']) .artc-hero { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--accent) 2%, transparent)); border-color: color-mix(in srgb, var(--accent) 16%, transparent); }
+html[data-bubbles='glass']:not([data-theme='studio']) .trx-left { background: rgba(255, 176, 32, .08); border-color: rgba(255, 176, 32, .26); }
+html[data-bubbles='glass']:not([data-theme='studio']) .trx-time { background: color-mix(in srgb, var(--text) 7%, transparent); }
+html[data-bubbles='glass']:not([data-theme='studio']) .trx-time i { opacity: .85; }
+html[data-bubbles='glass']:not([data-theme='studio']) .trx-round, html[data-bubbles='glass']:not([data-theme='studio']) .artc-min { background: color-mix(in srgb, var(--text) 5%, transparent); border-color: color-mix(in srgb, var(--text) 14%, transparent); }

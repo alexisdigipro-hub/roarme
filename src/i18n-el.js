@@ -706,4 +706,6 @@ export const EL = {
   'Your messages see-through with a thin edge in your colour; off: filled with your colour': 'Τα μηνύματά σου διάφανα με λεπτό περίγραμμα στο χρώμα σου· κλειστό: γεμάτα με το χρώμα σου',
   'Now playing': 'Παίζει τώρα',
   'Position': 'Θέση',
+  'Glass Look': 'Γυάλινη εμφάνιση',
+  'Your messages and the buttons see-through, with a thin edge in your colour; off: filled with your colour': 'Τα μηνύματα και τα κουμπιά σου διάφανα, με λεπτό περίγραμμα στο χρώμα σου· κλειστό: γεμάτα με το χρώμα σου',
 }

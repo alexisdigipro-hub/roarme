@@ -37,7 +37,7 @@ const DOCS = {
           'Accounts, messages and files are stored with Supabase, our database and storage provider, in London, United Kingdom. The app itself is served from GitHub Pages. These providers act on our behalf and keep short technical logs (such as IP address and device type) for security and to keep the service running.',
           'Data is encrypted in transit (HTTPS) and at rest by our provider. Messages are not end-to-end encrypted, so do not use RoarMe for information that needs that level of protection.',
           'The Translate button opens Google Translate with the text you chose, only when you tap it.',
-          'The map in Location is OpenStreetMap's, and place names and search come from OpenStreetMap\'s Nominatim service. It receives the area of the map being shown (and what you search for) with your IP address, never your name or account.',
+          'The map in Location is OpenStreetMap\'s, and place names and search come from OpenStreetMap\'s Nominatim service. It receives the area of the map being shown (and what you search for) with your IP address, never your name or account.',
         ]],
         ['How long we keep it, and how to delete it', [
           'Messages stay until they are deleted. In any chat you can turn on Auto-Delete, and messages older than the time you pick are removed.',

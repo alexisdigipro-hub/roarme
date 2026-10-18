@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, I, Lens, Modal } from './ui.jsx'
 import { errText, nameOf, supabase } from './lib.js'
 import { chime } from './prefs.js'
@@ -85,6 +85,42 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
   const given = tasks.filter((t) => t.created_by === me.id && t.assignee !== me.id && t.status !== 'done').sort(byDue)
   const done = tasks.filter((t) => t.status === 'done').sort((a, b) => (b.done_at || '').localeCompare(a.done_at || '')).slice(0, 60)
   const shown = view && tasks.find((t) => t.id === view)
+  // the same glass, corners, shadow and height as the chat beside it, whatever the theme (Alex, 18 Oct)
+  const box = useRef(null)
+  useLayoutEffect(() => {
+    const el = box.current
+    if (!el) return undefined
+    const fit = () => {
+      const main = document.querySelector('.app > .main')
+      const phone = window.matchMedia('(max-width: 760px)').matches
+      const keys = ['background', 'backgroundColor', 'border', 'borderRadius', 'boxShadow', 'backdropFilter', 'webkitBackdropFilter', 'top', 'bottom', 'right']
+      const app = document.querySelector('.app')
+      if (phone || !main) { keys.forEach((k) => { el.style[k] = '' }); app?.style.removeProperty('--tasks-pad'); return }
+      const cs = getComputedStyle(main), r = main.getBoundingClientRect()
+      el.style.background = cs.background
+      el.style.backgroundColor = cs.backgroundColor
+      el.style.border = cs.border
+      el.style.borderRadius = cs.borderRadius
+      el.style.boxShadow = cs.boxShadow
+      el.style.backdropFilter = cs.backdropFilter
+      el.style.webkitBackdropFilter = cs.webkitBackdropFilter || cs.backdropFilter
+      el.style.top = `${Math.round(r.top)}px`
+      el.style.bottom = `${Math.round(window.innerHeight - r.bottom)}px`
+      // the theme's own outer margin on the right too, and the same gap between the chat and the panel
+      el.style.right = `${Math.round(r.top)}px`
+      app?.style.setProperty('--tasks-pad', `${Math.round(el.offsetWidth + 2 * r.top)}px`)
+    }
+    fit()
+    const later = () => requestAnimationFrame(() => requestAnimationFrame(fit))
+    const main = document.querySelector('.app > .main')
+    const ro = new ResizeObserver(fit)
+    if (main) ro.observe(main)
+    window.addEventListener('resize', fit)
+    window.addEventListener('roarme-prefs', later)
+    const mo = new MutationObserver(later)
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-mode', 'data-bubbles', 'class', 'style'] })
+    return () => { ro.disconnect(); mo.disconnect(); window.removeEventListener('resize', fit); window.removeEventListener('roarme-prefs', later); document.querySelector('.app')?.style.removeProperty('--tasks-pad') }
+  }, [])
 
   const patch = async (t, change, ok) => {
     const before = tasks
@@ -128,7 +164,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
   }
 
   return (
-    <aside className="tasks-panel" aria-label="Tasks">
+    <aside ref={box} className="tasks-panel" aria-label="Tasks">
       <div className="tasks-head">
         <strong>{tr('Tasks')}</strong>
         <button type="button" className="round" onClick={() => setEdit(true)} aria-label="New task" title="New task">{I.plus}</button>

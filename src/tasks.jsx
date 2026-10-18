@@ -252,7 +252,6 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = 
           <TasksCalendar me={me} tasks={tasks} rooms={rooms} titleOf={titleOf} onTask={setView} onOpenChat={onOpenChat} />
         </div>
       )}
-      <button type="button" className="tasks-new" onClick={() => setEdit(true)}>{I.plus}<span>{tr('New task…')}</span></button>
 
       {edit && <TaskForm me={me} contacts={contacts} people={people} initial={edit === true ? null : edit} toast={toast}
         onClose={() => setEdit(null)} onSaved={(t) => { setTasks((list) => [t, ...list.filter((x) => x.id !== t.id)]); setEdit(null); if (tab !== 'all') pickTab(t.assignee === me.id ? 'mine' : 'given') }} />}

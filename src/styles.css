@@ -3417,3 +3417,23 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 .smsg, .smsg .sch-box, .dpick { min-width: 0; }
 .dpick button { width: 66px; }
 .dpick button small:first-child { font-size: 9.5px; letter-spacing: .03em; }
+
+/* Delete for Me on the Encrypted Chat lines, and the question when someone asks to delete your message (Alex, 18 Oct) */
+.sys-x { display: grid; place-items: center; width: 20px; height: 20px; margin: 0 -6px 0 2px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; opacity: .55; transition: opacity .15s, background .15s; }
+.sys-x:hover { opacity: 1; background: var(--glass-2); }
+.sys-note .sys-x svg { width: 11px; height: 11px; color: currentColor; stroke-width: 2.4; }
+.ask-bar { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 8px 8px 8px 14px; border-radius: 18px; background: color-mix(in srgb, var(--danger, #ff453a) 12%, var(--glass)); border: 1px solid color-mix(in srgb, var(--danger, #ff453a) 40%, transparent); animation: ref-in .22s cubic-bezier(.25, .8, .3, 1) both; }
+.ask-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ask-text b { font-size: 13px; font-weight: 700; }
+.ask-text span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--muted); }
+.ask-bar .btn { flex: none; height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13px; }
+@media (max-width: 760px) {
+  .ask-bar { flex-wrap: wrap; }
+  .ask-text { flex-basis: 100%; }
+  .ask-bar .btn { flex: 1; }
+}
+.sys-note > span > :is(b, span, small) { white-space: nowrap; }
+.sys-note > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 760px) {
+  .sys-note > span { gap: 5px; padding: 5px 12px; font-size: 12px; }
+}

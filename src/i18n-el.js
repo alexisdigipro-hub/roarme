@@ -928,4 +928,11 @@ export const EL = {
   '6 Months': '6 μήνες',
   'Hour': 'Ώρα',
   'Minute': 'Λεπτό',
+  'Delete for Me': 'Διαγραφή για μένα',
+  'Delete for Everyone': 'Διαγραφή για όλους',
+  'Ask to Delete for Everyone': 'Ζήτα διαγραφή για όλους',
+  'Deleted for everyone': 'Διαγράφηκε για όλους',
+  'Kept': 'Έμεινε',
+  'This message cannot be asked for': 'Γι’ αυτό το μήνυμα δεν γίνεται αίτημα',
+  'They are no longer in this chat': 'Δεν είναι πια σε αυτή τη συνομιλία',
 }

@@ -208,7 +208,6 @@ function General({ p, onKeys }) {
           <>
             <div className="set-row"><span className="set-text">Version {upd.installed ? `${upd.installed} beta` : '–'}<small>{upd.ready ? `RoarMe ${upd.latest} is out` : upd.latest ? 'Up to date' : 'The newest version is checked when RoarMe opens'}</small></span>{upd.ready && <button type="button" className="btn btn-main set-upd" onClick={() => get(thisComputer() || 'mac-arm')}>{I.download}<span>Download</span></button>}</div>
             <CheckUpdates onDownload={get} />
-            <Switch on={desk.s.tray} set={(v) => desk.set('tray', v)} hint="The paw, with your unread count, at the top of the screen">Show Icon in Menu Bar</Switch>
             <Switch on={desk.s.openAtLogin} set={(v) => desk.set('openAtLogin', v)} hint="Starts quietly in the background">Open When the Computer Starts</Switch>
             <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps RoarMe on for messages and calls">Keep Running When Closed</Switch>
           </>

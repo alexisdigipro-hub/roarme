@@ -342,6 +342,11 @@ export default function Chat({ me, setMe }) {
     document.title = unreadAll ? `(${unreadAll}) RoarMe` : 'RoarMe'
     window.roarDesktop?.setBadge(prefs.badge === false ? 0 : unreadAll) // the count on the app's icon (Mac/Windows app)
   }, [unreadAll, prefs.badge])
+  // no paw in the menu bar any more (Alex, 18 Oct: "I don't need it"); an app that still shows it puts it away
+  useEffect(() => {
+    const d = window.roarDesktop
+    if (d?.getSettings) d.getSettings().then((s) => { if (s?.tray) d.setSetting('tray', false) }).catch(() => {})
+  }, [])
 
   const BUILTIN = [['all', 'All'], ['unread', 'Unread'], ['groups', 'Groups'], ['archived', 'Archived']]
   // in the order dragged in Settings > Folders (Alex, 16 Oct); a folder not placed yet goes at the end

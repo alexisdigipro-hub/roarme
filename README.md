@@ -342,3 +342,11 @@ down to 22 MB, the rest the next round):
   which now also write `roar_members.cleared_at`); reactions, pins, hides and delete requests go with them;
 - photos, videos, voice messages and files that no message points to any more leave storage (an hour after upload,
   so a file on its way up is never touched), with their RoarTransfer links. Profile pictures are not touched.
+
+## Notifications when RoarMe is not in front of you (18 Oct)
+Alex: with RoarMe closed no notification came. His iPhone was signed up and Apple takes our pushes, but the server
+skipped him because a RoarMe running hidden (the Mac app with its window closed) kept his `last_seen` fresh. Now
+`roar_profiles.active_until` says who is really here: the app keeps it 75 seconds ahead only while RoarMe is shown and
+focused, and sets it to now when it is hidden, loses focus or closes (Chat.jsx heartbeat); `last_seen` (online for
+others) moves only while it is in front of you too. `roar_push_targets` and Auto-Reply's Only When I'm Away read
+`active_until`. In `supabase/push.sql` and `autoreply.sql` (applied).

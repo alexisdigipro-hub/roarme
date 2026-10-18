@@ -222,13 +222,30 @@ export default function Chat({ me, setMe }) {
   // online: a heartbeat on one's own profile
   const peopleRef = useRef(people)
   peopleRef.current = people
+  // only while RoarMe is in front of you (shown and focused) do you count as here: then your phone stays quiet for
+  // new messages; hidden, in the background or closed, notifications come (Alex, 18 Oct; roar_push_targets)
   useEffect(() => {
-    const beat = () => supabase.from('roar_profiles').update({ last_seen: new Date().toISOString() }).eq('id', me.id).then(() => {})
+    const beat = () => {
+      const here = !document.hidden && document.hasFocus()
+      const now = Date.now()
+      const patch = here ? { last_seen: new Date(now).toISOString(), active_until: new Date(now + 75e3).toISOString() } : { active_until: new Date(now).toISOString() }
+      supabase.from('roar_profiles').update(patch).eq('id', me.id).then(() => {})
+    }
     beat()
     myDevice(me.id) // this device's keys for Encrypted Chat, made the first time
-    const id = setInterval(beat, 60 * 1000)
+    const id = setInterval(() => { if (!document.hidden && document.hasFocus()) beat() }, 60 * 1000)
     const ppl = setInterval(() => loadPeople(Object.keys(peopleRef.current)), 90 * 1000)
-    return () => { clearInterval(id); clearInterval(ppl) }
+    document.addEventListener('visibilitychange', beat)
+    window.addEventListener('focus', beat)
+    window.addEventListener('blur', beat)
+    window.addEventListener('pagehide', beat)
+    return () => {
+      clearInterval(id); clearInterval(ppl)
+      document.removeEventListener('visibilitychange', beat)
+      window.removeEventListener('focus', beat)
+      window.removeEventListener('blur', beat)
+      window.removeEventListener('pagehide', beat)
+    }
   }, [me.id, loadPeople])
 
   // a sound and a desktop notification when the window is not looking at that chat

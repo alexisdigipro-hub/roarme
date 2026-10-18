@@ -79,6 +79,18 @@ export function useLatestRelease() {
   return latest
 }
 
+/* Check for Updates (Alex, 18 Oct): the newest release asked for now, not from the half-hour memory; it refreshes that
+   memory too, so the card at the top and Settings agree */
+export async function fetchLatest() {
+  const r = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' })
+  if (!r.ok) throw new Error(`GitHub ${r.status}`)
+  const d = await r.json()
+  const version = (String(d?.name || '').match(/(\d+\.\d+\.\d+)/) || [])[1] || ''
+  const files = Object.fromEntries((d.assets || []).map((a) => [a.name, a.browser_download_url]))
+  try { localStorage.setItem(LATEST, JSON.stringify({ at: Date.now(), version, tag: d.tag_name, date: d.published_at, files })) } catch { /* private window */ }
+  return { version, newer: !!(appVersion() && version && newer(version, appVersion())) }
+}
+
 export function useAppUpdate() {
   const latest = useLatestRelease()
   const installed = appVersion()

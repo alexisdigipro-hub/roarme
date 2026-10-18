@@ -7,7 +7,7 @@ import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
-import { InstallGuide, appVersion, startDownload, thisComputer, useAppUpdate } from './update.jsx'
+import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
    Anything that needs the database is shown switched off with "Coming soon". */
@@ -156,6 +156,45 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
   )
 }
 
+/* Check for Updates (Alex, 18 Oct). From 1.4.9 the app itself looks, downloads the new version in the background and
+   offers Restart to update; an older app only learns that one is out and gets the download, one last time by hand */
+function CheckUpdates({ onDownload }) {
+  const desk = typeof window !== 'undefined' ? window.roarDesktop?.update : null
+  const [st, setSt] = useState({ status: 'idle', note: '' })
+  useEffect(() => {
+    if (!desk) return undefined
+    return desk.on((s) => {
+      if (s.status === 'downloading') setSt({ status: 'busy', note: `Downloading RoarMe ${s.version}… ${s.progress || 0}%` })
+      else if (s.status === 'ready') setSt({ status: 'ready', note: `RoarMe ${s.version} is ready`, version: s.version })
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const check = async () => {
+    setSt({ status: 'busy', note: 'Checking…' })
+    try {
+      if (desk) {
+        const s = await desk.check()
+        if (s?.status === 'ready') setSt({ status: 'ready', note: `RoarMe ${s.version} is ready`, version: s.version })
+        else if (s?.status === 'downloading') setSt({ status: 'busy', note: `Downloading RoarMe ${s.version}… ${s.progress || 0}%` })
+        else if (s?.status === 'error') setSt({ status: 'idle', note: `Could not check: ${s.error}` })
+        else setSt({ status: 'idle', note: 'You have the newest RoarMe' })
+      } else {
+        const r = await fetchLatest()
+        setSt(r.newer ? { status: 'old', note: `RoarMe ${r.version} is out`, version: r.version } : { status: 'idle', note: 'You have the newest RoarMe' })
+      }
+    } catch (e) { setSt({ status: 'idle', note: `Could not check: ${e.message}` }) }
+  }
+  return (
+    <div className="set-row">
+      <span className="set-text">Check for Updates<small>{st.note || 'Looks for a new version now'}</small></span>
+      {st.status === 'ready' && desk
+        ? <button type="button" className="btn btn-main btn-sm" onClick={() => { setSt({ ...st, status: 'busy', note: 'Restarting…' }); desk.install() }}>Restart to update</button>
+        : st.status === 'old'
+          ? <button type="button" className="btn btn-main btn-sm" onClick={() => onDownload(thisComputer() || 'mac-arm')}>Download</button>
+          : <button type="button" className="btn btn-sm" disabled={st.status === 'busy'} onClick={check}>{st.status === 'busy' ? 'Checking…' : 'Check'}</button>}
+    </div>
+  )
+}
+
 function General({ p, onKeys }) {
   const desk = useDesktop()
   const upd = useAppUpdate()
@@ -168,6 +207,7 @@ function General({ p, onKeys }) {
         {desk.on ? (
           <>
             <div className="set-row"><span className="set-text">Version {upd.installed ? `${upd.installed} beta` : '–'}<small>{upd.ready ? `RoarMe ${upd.latest} is out` : upd.latest ? 'Up to date' : 'The newest version is checked when RoarMe opens'}</small></span>{upd.ready && <button type="button" className="btn btn-main set-upd" onClick={() => get(thisComputer() || 'mac-arm')}>{I.download}<span>Download</span></button>}</div>
+            <CheckUpdates onDownload={get} />
             <Switch on={desk.s.tray} set={(v) => desk.set('tray', v)} hint="The paw, with your unread count, at the top of the screen">Show Icon in Menu Bar</Switch>
             <Switch on={desk.s.openAtLogin} set={(v) => desk.set('openAtLogin', v)} hint="Starts quietly in the background">Open When the Computer Starts</Switch>
             <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps RoarMe on for messages and calls">Keep Running When Closed</Switch>

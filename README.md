@@ -230,3 +230,9 @@ unsubscribe). `supabase/email.sql` (table `roar_email_prefs`, functions `roar_em
 (deployed, verify_jwt off; design in `template.mjs`). It sends through Resend: the domain themadlions.com is verified
 there and its API key is the function secret `RESEND_API_KEY` (set by Alex in Supabase, never in the repo). Without
 the key the function does nothing.
+
+## Check for Updates (18 Oct)
+Settings > General > RoarMe app has a Check for Updates row. In the Mac / Windows app from 1.4.9 it asks the app's own
+updater to look now (desktop/updater.js `roar:update-check`): it downloads a newer version in the background, shows the
+progress and offers Restart to update. An older app (no updater) asks GitHub for the newest release right away
+(`fetchLatest()` in src/update.jsx, which also refreshes the half-hour memory) and offers the download.

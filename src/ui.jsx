@@ -57,6 +57,7 @@ export const I = {
   locate: svg(<><circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="2" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" /></>, 18),
   minus: svg(<path d="M5 12h14" />),
   article: svg(<><rect x="4.5" y="3.5" width="15" height="17" rx="3" /><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4" /></>),
+  ordino: svg(<><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4M7.5 14h3M7.5 17h6" /></>),
   heading: svg(<path d="M6 5v14M18 5v14M6 12h12" />, 18),
   bullets: svg(<><path d="M9.5 6.5h10M9.5 12h10M9.5 17.5h10" /><circle cx="5" cy="6.5" r=".9" fill="currentColor" /><circle cx="5" cy="12" r=".9" fill="currentColor" /><circle cx="5" cy="17.5" r=".9" fill="currentColor" /></>, 18),
   numbers: svg(<><path d="M10 6.5h10M10 12h10M10 17.5h10" /><path d="M4.5 5.2 5.8 4.5v4M4.3 11.2a1.3 1.3 0 0 1 2.5.4c0 .9-2.6 1.9-2.6 2.9h2.7" /></>, 18),

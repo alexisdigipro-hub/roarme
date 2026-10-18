@@ -788,4 +788,8 @@ export const EL = {
   'Text only, for now': 'Μόνο κείμενο, προς το παρόν',
   'Photos, files, places and voice messages wait until it is off. Calls work as always.': 'Φωτογραφίες, αρχεία, τοποθεσίες και φωνητικά περιμένουν μέχρι να κλείσει. Οι κλήσεις δουλεύουν κανονικά.',
   'Not on the new RoarMe yet, so they cannot read these messages. Ask them to open RoarMe first, then turn it on.': 'Δεν έχει ανοίξει ακόμα το νέο RoarMe, οπότε δεν θα διαβάζει αυτά τα μηνύματα. Ζήτα του να ανοίξει πρώτα το RoarMe και μετά ενεργοποίησέ τη.',
+  'Ordino': 'Ordino',
+  'Ordino sent': 'Το ordino στάλθηκε',
+  'Open ordino': 'Άνοιγμα ordino',
+  'A call sheet for the shoot, made in Roardino': 'Το ordino του γυρίσματος, φτιαγμένο στο Roardino',
 }

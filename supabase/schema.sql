@@ -259,3 +259,83 @@ grant execute on function public.roar_pin(uuid, uuid) to authenticated;
 -- the helpers are for the database's own rules, not for calling from outside (16 Oct, Supabase advisor)
 revoke all on function public.roar_is_member(uuid), public.roar_is_admin(uuid), public.roar_file_ok(text), public.roar_touch_room() from public, anon;
 revoke all on function public.roar_touch_room() from authenticated;
+
+-- ---------------------------------------------------------------------------------------------------------
+-- Roardino (themadlions.com/roardino, Alex 18 Oct 2026): the ordino maker. It signs in with RoarMe's accounts
+-- and opens from the clip's Ordino tile, but keeps its own tables; it never reads or writes roar_* except a
+-- person's own roar_profiles row, to fill in their name.
+create table if not exists public.roardino_profiles (
+  id         uuid primary key references auth.users(id) on delete cascade,
+  name       text not null default '',
+  company    text not null default '',
+  role       text not null default '',
+  phone      text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.roardino_profiles enable row level security;
+drop policy if exists roardino_profiles_own on public.roardino_profiles;
+create policy roardino_profiles_own on public.roardino_profiles
+  for all to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
+
+create table if not exists public.roardino_ordinos (
+  id           uuid primary key default gen_random_uuid(),
+  owner        uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  data         jsonb not null,
+  token        text unique,
+  published    jsonb,
+  published_at timestamptz,
+  opens        integer not null default 0,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  constraint roardino_ordinos_size check (octet_length(data::text) <= 2000000)
+);
+create index if not exists roardino_ordinos_owner on public.roardino_ordinos (owner, updated_at desc);
+alter table public.roardino_ordinos enable row level security;
+drop policy if exists roardino_ordinos_own on public.roardino_ordinos;
+create policy roardino_ordinos_own on public.roardino_ordinos
+  for all to authenticated using (owner = (select auth.uid())) with check (owner = (select auth.uid()));
+
+-- the app writes the working copy only; the link fields are set by roardino_publish
+revoke all on public.roardino_ordinos from anon;
+revoke all on public.roardino_profiles from anon;
+revoke insert, update on public.roardino_ordinos from authenticated;
+grant insert (data) on public.roardino_ordinos to authenticated;
+grant update (data, updated_at) on public.roardino_ordinos to authenticated;
+grant select, delete on public.roardino_ordinos to authenticated;
+revoke insert, update on public.roardino_profiles from authenticated;
+grant insert (id, name, company, role, phone) on public.roardino_profiles to authenticated;
+grant update (name, company, role, phone, updated_at) on public.roardino_profiles to authenticated;
+grant select, delete on public.roardino_profiles to authenticated;
+
+create or replace function public.roardino_publish(p_id uuid)
+returns text language plpgsql security definer set search_path = public, extensions as $$
+declare v_token text;
+begin
+  select token into v_token from public.roardino_ordinos where id = p_id and owner = auth.uid();
+  if not found then raise exception 'roardino: not allowed'; end if;
+  if v_token is null then
+    loop
+      v_token := substr(regexp_replace(lower(encode(gen_random_bytes(12), 'base64')), '[^a-z0-9]', '', 'g'), 1, 10);
+      exit when length(v_token) = 10 and not exists (select 1 from public.roardino_ordinos where token = v_token);
+    end loop;
+  end if;
+  update public.roardino_ordinos set token = v_token, published = data, published_at = now() where id = p_id;
+  return v_token;
+end $$;
+
+create or replace function public.roardino_get(p_token text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v jsonb; u timestamptz;
+begin
+  update public.roardino_ordinos set opens = opens + 1
+    where token = p_token and published is not null
+    returning published, published_at into v, u;
+  if v is null then return null; end if;
+  return jsonb_build_object('data', v, 'updatedAt', u);
+end $$;
+
+revoke all on function public.roardino_publish(uuid) from public, anon;
+revoke all on function public.roardino_get(text) from public;
+grant execute on function public.roardino_publish(uuid) to authenticated;
+grant execute on function public.roardino_get(text) to anon, authenticated;

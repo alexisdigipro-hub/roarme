@@ -3168,3 +3168,12 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
   font-weight: 600; letter-spacing: .12em; line-height: 1; text-transform: uppercase; vertical-align: .95em; color: #fff;
   background: color-mix(in srgb, var(--accent) 22%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent); }
 html[data-mode='light'] .wordmark b.wm .wm-beta { color: var(--text); }
+
+/* Roardino (Alex, 18 Oct): the window with Roardino in it, and the ordino card in the chat */
+.rdino-frame { display: block; width: 100%; height: min(76vh, 760px); border: 0; border-radius: 18px; background: #1b1e23; }
+.ordc .rt-mark i { background: var(--oc, #d40000); color: #fff; }
+.ordc-hero { position: relative; overflow: hidden; }
+.ordc-hero::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--oc, #d40000); }
+.ordc-hero small { align-self: flex-start; padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #fff; background: var(--oc, #d40000); }
+.ordc-hero em { font-style: normal; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 820px) { .rdino-frame { height: calc(100dvh - 150px); border-radius: 14px; } }

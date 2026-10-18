@@ -527,7 +527,7 @@ export default function Chat({ me, setMe }) {
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
           ) : (
-            <>
+            <span className="side-acts">
             <button type="button" className={`round tasks-btn${tasksOpen ? ' on' : ''}`} onClick={() => showTasks(!tasksOpen)} aria-label="Tasks" title="Tasks">
               {I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}
             </button>
@@ -546,7 +546,7 @@ export default function Chat({ me, setMe }) {
                 </>
               )}
             </span>
-            </>
+            </span>
           )}
         </div>
         {/* on a phone the list and a chat are separate screens: the bar shows on the list too */}

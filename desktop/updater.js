@@ -18,10 +18,12 @@ let file = ''
 let timer = null
 let busy = false
 let notified = ''
+let hook = null // main.js: the menu bar's paw shows the update too (1.4.10)
 
 const send = (patch) => {
   state = { ...state, ...patch }
   BrowserWindow.getAllWindows().forEach((w) => { try { w.webContents.send('roar:update', state) } catch { /* closing */ } })
+  if (hook) try { hook(state) } catch { /* no menu */ }
 }
 const newer = (a, b) => {
   const x = a.split('.').map(Number), y = b.split('.').map(Number)
@@ -135,19 +137,23 @@ rmdir "$MNT" 2>/dev/null
 exit 0
 `
 
-function start(ipcMain, onQuitting) {
+// restart into the new version now (the page's Restart to update and the paw's menu)
+function restart(onQuitting) {
+  if (!install(true)) return false
+  onQuitting()
+  setTimeout(() => app.quit(), 200)
+  return true
+}
+
+function start(ipcMain, onQuitting, onState) {
+  hook = onState || null
   ipcMain.handle('roar:update-state', () => state)
   ipcMain.handle('roar:update-check', () => check())
-  ipcMain.handle('roar:update-install', () => {
-    if (!install(true)) return false
-    onQuitting()
-    setTimeout(() => app.quit(), 200)
-    return true
-  })
+  ipcMain.handle('roar:update-install', () => restart(onQuitting))
   // quitting with an update waiting installs it (no reopening)
   app.on('will-quit', () => { if (state.status === 'ready') install(false) })
   setTimeout(check, 15e3)
   timer = setInterval(check, EVERY)
 }
 
-module.exports = { start, check, MAC_SWAP }
+module.exports = { start, check, restart, getState: () => state, MAC_SWAP }

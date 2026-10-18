@@ -87,6 +87,8 @@ contacts keep the add button; a button's word never breaks. The computer is unch
   one is out, a glass card at the bottom right: "New RoarMe app: x" with **Download** and × (later, until the next
   version). Settings > General > RoarMe app shows the version and the same Download.
 - **So each new desktop build must raise `version` in desktop/package.json**, or nobody is told.
+- **The paw's menu (desktop 1.4.10):** the menu bar / tray menu shows the version and Check for Updates, which turns
+  into Downloading… with its percent and then Restart to Update (x).
 - **Updates by themselves (desktop 1.4.9 on, Alex 18 Oct):** the app checks the newest release on opening and every 2
   hours (desktop/updater.js), downloads the installer for its computer in the background, then shows "RoarMe x is
   ready · Restart to update" (and a notification). Restart swaps the app: on a Mac a small script waits for RoarMe to

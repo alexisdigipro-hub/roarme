@@ -137,8 +137,17 @@ function updateTray() {
   }
   if (!settings.tray && tray) { tray.destroy(); tray = null }
   if (tray) {
+    // the update in the paw's menu too (1.4.10): checking, downloading with its percent, Restart to update
+    const u = updater.getState()
+    const upd = u.status === 'ready' ? { label: `Restart to Update (${u.version})`, click: () => updater.restart(() => { quitting = true }) }
+      : u.status === 'downloading' ? { label: `Downloading RoarMe ${u.version}… ${u.progress || 0}%`, enabled: false }
+      : u.status === 'checking' ? { label: 'Checking for Updates…', enabled: false }
+      : { label: 'Check for Updates', click: () => updater.check() }
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: unread ? `Open RoarMe (${unread} unread)` : 'Open RoarMe', click: show },
+      { type: 'separator' },
+      upd,
+      { label: `Version ${app.getVersion()} beta`, enabled: false },
       { type: 'separator' },
       { label: 'Quit RoarMe', click: () => { quitting = true; app.quit() } },
     ]))
@@ -171,7 +180,7 @@ app.whenReady().then(async () => {
   updateTray()
   app.on('activate', show)
   // new versions download by themselves; the page offers Restart to update (updater.js)
-  updater.start(ipcMain, () => { quitting = true })
+  updater.start(ipcMain, () => { quitting = true }, updateTray)
 })
 
 app.on('before-quit', () => { quitting = true })

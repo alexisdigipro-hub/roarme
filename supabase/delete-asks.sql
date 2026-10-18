@@ -20,7 +20,7 @@ create policy roar_msg_hides_mine on public.roar_msg_hides for all to authentica
 drop policy if exists roar_mfa on public.roar_msg_hides;
 create policy roar_mfa on public.roar_msg_hides as restrictive for all to authenticated using (public.roar_aal_ok()) with check (public.roar_aal_ok());
 revoke all on public.roar_msg_hides from anon;
-grant select, insert, delete on public.roar_msg_hides to authenticated;
+grant select, insert, update, delete on public.roar_msg_hides to authenticated; -- update too: the app saves with an upsert
 
 create table if not exists public.roar_delete_asks (
   id uuid primary key default gen_random_uuid(),

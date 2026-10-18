@@ -6,7 +6,8 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { emailHtml, emailText, offPage, subjectFor } from './template.mjs'
 
 const APP = 'https://alexisdigipro-hub.github.io/roarme/'
-const ICON = APP + 'icon-512.png'
+// the icon from the sender's own domain, so the email's links and images match where it comes from
+const ICON = 'https://themadlions.com/roarme/icon.png'
 const FROM = Deno.env.get('EMAIL_FROM') || 'RoarMe <noreply@themadlions.com>'
 const SELF = `${Deno.env.get('SUPABASE_URL')}/functions/v1/roar-email`
 const json = (v: unknown, status = 200) => new Response(JSON.stringify(v), { status, headers: { 'Content-Type': 'application/json' } })

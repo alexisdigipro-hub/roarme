@@ -74,7 +74,8 @@ const byDue = (a, b) => (a.due || '9999') .localeCompare(b.due || '9999') || (b.
 
 /* the panel: For me (with what waits for an answer on top), Given, Done */
 export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
-  const [tab, setTab] = useState('mine')
+  const [tab, setTab] = useState(() => { try { return localStorage.getItem('roarme-tasks-tab') || 'all' } catch { return 'all' } })
+  const pickTab = (v) => { setTab(v); try { localStorage.setItem('roarme-tasks-tab', v) } catch { /* private window */ } }
   const [edit, setEdit] = useState(null) // true for a new task, or the task being changed
   const [view, setView] = useState(null) // the id of the task open in its window
   const { tasks, setTasks } = kit
@@ -84,6 +85,8 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
   const todo = forMe.filter((t) => t.status !== 'pending')
   const given = tasks.filter((t) => t.created_by === me.id && t.assignee !== me.id && t.status !== 'done').sort(byDue)
   const done = tasks.filter((t) => t.status === 'done').sort((a, b) => (b.done_at || '').localeCompare(a.done_at || '')).slice(0, 60)
+  // All (Alex, 18 Oct): everything together, what waits for your answer first, then the open ones by date, then done
+  const open = tasks.filter((t) => t.status !== 'done' && !(t.assignee === me.id && t.status === 'pending')).sort(byDue)
   const shown = view && tasks.find((t) => t.id === view)
   // as wide as you dragged it, like the chat list (Alex, 18 Oct): drag its left edge, double-click to reset
   const TW = 360
@@ -202,11 +205,23 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
         <button type="button" className="round" onClick={onClose} aria-label="Close" title="Close">{I.x}</button>
       </div>
       <Lens as="nav" className="tabs tasks-tabs" dep={tab}>
-        <button type="button" className={tab === 'mine' ? 'on' : ''} onClick={() => setTab('mine')}>{tr('For me')}{forMe.length > 0 && <small>{forMe.length}</small>}</button>
-        <button type="button" className={tab === 'given' ? 'on' : ''} onClick={() => setTab('given')}>{tr('Given')}</button>
-        <button type="button" className={tab === 'done' ? 'on' : ''} onClick={() => setTab('done')}>{tr('Done')}</button>
+        <button type="button" className={tab === 'all' ? 'on' : ''} onClick={() => pickTab('all')}>{tr('All')}</button>
+        <button type="button" className={tab === 'mine' ? 'on' : ''} onClick={() => pickTab('mine')}>{tr('For me')}{forMe.length > 0 && <small>{forMe.length}</small>}</button>
+        <button type="button" className={tab === 'given' ? 'on' : ''} onClick={() => pickTab('given')}>{tr('Given')}</button>
+        <button type="button" className={tab === 'done' ? 'on' : ''} onClick={() => pickTab('done')}>{tr('Done')}</button>
       </Lens>
       <div className="tasks-list">
+        {tab === 'all' && (
+          <>
+            {asks.length > 0 && <p className="tasks-label">{tr('Waiting for your answer')}</p>}
+            {asks.map(row)}
+            {asks.length > 0 && open.length > 0 && <p className="tasks-label">{tr('Open')}</p>}
+            {open.map(row)}
+            {done.length > 0 && <p className="tasks-label">{tr('Done')}</p>}
+            {done.map(row)}
+            {!tasks.length && <Empty text="Nothing on your list." onNew={() => setEdit(true)} />}
+          </>
+        )}
         {tab === 'mine' && (
           <>
             {asks.length > 0 && <p className="tasks-label">{tr('Waiting for your answer')}</p>}
@@ -222,7 +237,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
       <button type="button" className="tasks-new" onClick={() => setEdit(true)}>{I.plus}<span>{tr('New task…')}</span></button>
 
       {edit && <TaskForm me={me} contacts={contacts} people={people} initial={edit === true ? null : edit} toast={toast}
-        onClose={() => setEdit(null)} onSaved={(t) => { setTasks((list) => [t, ...list.filter((x) => x.id !== t.id)]); setEdit(null); if (t.assignee === me.id) setTab('mine'); else setTab('given') }} />}
+        onClose={() => setEdit(null)} onSaved={(t) => { setTasks((list) => [t, ...list.filter((x) => x.id !== t.id)]); setEdit(null); if (tab !== 'all') pickTab(t.assignee === me.id ? 'mine' : 'given') }} />}
       {shown && <TaskView t={shown} me={me} person={person} onClose={() => setView(null)} patch={patch} toast={toast}
         onEdit={() => { setEdit(shown); setView(null) }}
         onDelete={async () => {

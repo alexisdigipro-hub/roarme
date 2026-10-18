@@ -3182,6 +3182,12 @@ html[data-mode='light'] .wordmark b.wm .wm-beta { color: var(--text); }
 .tasks-btn { position: relative; }
 /* Tasks and + share the head's right column, so the three columns (Edit, name, buttons) stay one row */
 .side-acts { display: flex; align-items: center; gap: 8px; }
+/* the Tasks panel's left edge: drag to widen, as the chat list's */
+.tasks-grip { position: absolute; z-index: 2; top: 0; bottom: 0; left: -12px; width: 14px; cursor: col-resize; touch-action: none; }
+.tasks-grip::after { content: ''; position: absolute; left: 6px; top: 50%; width: 2px; height: 46px; margin-top: -23px; border-radius: 2px; background: rgba(255, 255, 255, .14); opacity: 0; transition: opacity .2s; }
+.tasks-grip:hover::after, body.resizing .tasks-grip::after { opacity: 1; }
+html[data-mode='light'] .tasks-grip::after { background: rgba(16, 32, 58, .2); }
+@media (max-width: 760px) { .tasks-grip { display: none; } }
 .tasks-btn > i { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--accent-ink);
   font-style: normal; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; pointer-events: none; }
 .tasks-btn > i.ask { background: var(--danger); color: #fff; animation: task-ask 2s ease-in-out infinite; }

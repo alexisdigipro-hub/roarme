@@ -85,6 +85,30 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
   const given = tasks.filter((t) => t.created_by === me.id && t.assignee !== me.id && t.status !== 'done').sort(byDue)
   const done = tasks.filter((t) => t.status === 'done').sort((a, b) => (b.done_at || '').localeCompare(a.done_at || '')).slice(0, 60)
   const shown = view && tasks.find((t) => t.id === view)
+  // as wide as you dragged it, like the chat list (Alex, 18 Oct): drag its left edge, double-click to reset
+  const TW = 360
+  const [tw, setTw] = useState(() => { try { return Math.max(320, Number(localStorage.getItem('roarme-tasks-w')) || TW) } catch { return TW } })
+  const maxW = () => {
+    const side = document.querySelector('.app > .side')
+    const left = side ? side.getBoundingClientRect().right : 0
+    return Math.max(320, Math.min(720, window.innerWidth - left - 440)) // the chat keeps room to breathe
+  }
+  const keepW = (w) => { try { localStorage.setItem('roarme-tasks-w', String(w)) } catch { /* private window */ } }
+  const drag = (e) => {
+    e.preventDefault()
+    const x0 = e.clientX, w0 = box.current?.offsetWidth || tw
+    let w = w0
+    const move = (ev) => { w = Math.round(Math.min(maxW(), Math.max(320, w0 - (ev.clientX - x0)))); setTw(w) }
+    const up = () => {
+      document.removeEventListener('pointermove', move)
+      document.removeEventListener('pointerup', up)
+      document.body.classList.remove('resizing')
+      keepW(w)
+    }
+    document.body.classList.add('resizing')
+    document.addEventListener('pointermove', move)
+    document.addEventListener('pointerup', up)
+  }
   // the same glass, corners, shadow and height as the chat beside it, whatever the theme (Alex, 18 Oct)
   const box = useRef(null)
   useLayoutEffect(() => {
@@ -120,6 +144,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
     const main = document.querySelector('.app > .main')
     const ro = new ResizeObserver(fit)
     if (main) ro.observe(main)
+    ro.observe(el)
     window.addEventListener('resize', fit)
     window.addEventListener('roarme-prefs', later)
     const mo = new MutationObserver(later)
@@ -169,7 +194,8 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
   }
 
   return (
-    <aside ref={box} className="tasks-panel" aria-label="Tasks">
+    <aside ref={box} className="tasks-panel" aria-label="Tasks" style={{ '--tasks-w': `${Math.min(tw, 720)}px` }}>
+      <span className="tasks-grip" onPointerDown={drag} onDoubleClick={() => { setTw(TW); keepW(TW) }} title="Drag to widen, double-click to reset" />
       <div className="tasks-head">
         <strong>{tr('Tasks')}</strong>
         <button type="button" className="round" onClick={() => setEdit(true)} aria-label="New task" title="New task">{I.plus}</button>

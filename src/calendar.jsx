@@ -3,7 +3,7 @@ import { I } from './ui.jsx'
 import { supabase } from './lib.js'
 import { locale, tr } from './i18n.js'
 
-/* The calendar under Tasks (Alex, 18 Oct): the Tasks panel turns into a month, with a dot on each day for its tasks
+/* The calendar under Tasks (Alex, 18 Oct): at the foot of the Tasks panel, on the same page, a month with a dot on each day for its tasks
    (by due date), scheduled calls (the cards sent in chats) and your scheduled messages (repeats included). A day
    lists them below: a task opens its window, a call goes to its card in the chat, a message to its chat. */
 
@@ -118,7 +118,7 @@ export function TasksCalendar({ me, tasks, titleOf, rooms, onTask, onNewTask, on
           </button>
         ))}
       </div>
-      <button type="button" className="tasks-new" onClick={() => onNewTask(day)}>{I.plus}<span>{tr('New task on this day…')}</span></button>
+      {onNewTask && <button type="button" className="tasks-new" onClick={() => onNewTask(day)}>{I.plus}<span>{tr('New task on this day…')}</span></button>}
     </div>
   )
 }

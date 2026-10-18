@@ -77,7 +77,7 @@ const byDue = (a, b) => (a.due || '9999') .localeCompare(b.due || '9999') || (b.
 export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = [], titleOf = () => '', onOpenChat = () => {} }) {
   const [tab, setTab] = useState(() => { try { return localStorage.getItem('roarme-tasks-tab') || 'all' } catch { return 'all' } })
   const pickTab = (v) => { setTab(v); try { localStorage.setItem('roarme-tasks-tab', v) } catch { /* private window */ } }
-  // the calendar under Tasks (Alex, 18 Oct): the same panel shows the month instead of the list
+  // the calendar under the tasks (Alex, 18 Oct): the calendar button shows it at the foot of the panel and hides it
   const [cal, setCal] = useState(() => { try { return localStorage.getItem('roarme-tasks-cal') === '1' } catch { return false } })
   const flipCal = () => setCal((v) => { try { localStorage.setItem('roarme-tasks-cal', v ? '0' : '1') } catch { /* private window */ } return !v })
   const [edit, setEdit] = useState(null) // true for a new task, or the task being changed
@@ -212,15 +212,11 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = 
     <aside ref={box} className="tasks-panel" aria-label="Tasks" style={{ '--tasks-w': `${Math.min(tw, 720)}px` }}>
       <span className="tasks-grip" onPointerDown={drag} onDoubleClick={() => { setTw(TW); keepW(TW) }} title="Drag to widen, double-click to reset" />
       <div className="tasks-head">
-        <strong>{tr(cal ? 'Calendar' : 'Tasks')}</strong>
-        <button type="button" className={`round${cal ? ' on' : ''}`} onClick={flipCal} aria-label={cal ? 'List' : 'Calendar'} title={cal ? 'List' : 'Calendar'}>{cal ? I.tasks : I.calendar}</button>
+        <strong>{tr('Tasks')}</strong>
+        <button type="button" className={`round${cal ? ' on' : ''}`} onClick={flipCal} aria-label={cal ? 'Hide calendar' : 'Show calendar'} title={cal ? 'Hide calendar' : 'Show calendar'}>{I.calendar}</button>
         <button type="button" className="round" onClick={() => setEdit(true)} aria-label="New task" title="New task">{I.plus}</button>
         <button type="button" className="round" onClick={onClose} aria-label="Close" title="Close">{I.x}</button>
       </div>
-      {cal ? (
-        <TasksCalendar me={me} tasks={tasks} rooms={rooms} titleOf={titleOf} onTask={setView} onNewTask={(due) => setEdit({ due })} onOpenChat={onOpenChat} />
-      ) : (
-      <>
       <Lens as="nav" className="tabs tasks-tabs" dep={tab}>
         <button type="button" className={tab === 'all' ? 'on' : ''} onClick={() => pickTab('all')}>{tr('All')}</button>
         <button type="button" className={tab === 'mine' ? 'on' : ''} onClick={() => pickTab('mine')}>{tr('For me')}{forMe.length > 0 && <small>{forMe.length}</small>}</button>
@@ -251,9 +247,12 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = 
         {tab === 'given' && (given.length ? given.map(row) : <Empty text="Tasks you give to others show here, with their answer." onNew={() => setEdit(true)} />)}
         {tab === 'done' && (done.length ? done.map(row) : <p className="tasks-empty muted">{tr('Finished tasks show here.')}</p>)}
       </div>
-      <button type="button" className="tasks-new" onClick={() => setEdit(true)}>{I.plus}<span>{tr('New task…')}</span></button>
-      </>
+      {cal && (
+        <div className="tasks-cal">
+          <TasksCalendar me={me} tasks={tasks} rooms={rooms} titleOf={titleOf} onTask={setView} onOpenChat={onOpenChat} />
+        </div>
       )}
+      <button type="button" className="tasks-new" onClick={() => setEdit(true)}>{I.plus}<span>{tr('New task…')}</span></button>
 
       {edit && <TaskForm me={me} contacts={contacts} people={people} initial={edit === true ? null : edit} toast={toast}
         onClose={() => setEdit(null)} onSaved={(t) => { setTasks((list) => [t, ...list.filter((x) => x.id !== t.id)]); setEdit(null); if (tab !== 'all') pickTab(t.assignee === me.id ? 'mine' : 'given') }} />}

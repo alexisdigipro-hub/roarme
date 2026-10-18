@@ -9,6 +9,7 @@ const FN = `${SUPABASE_URL}/functions/v1/roar-push`
 const unb64u = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0))
 
 export const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+export const onPhone = () => isIOS() || /Android/i.test(navigator.userAgent)
 export const isStandalone = () => window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true
 export const pushSupported = () => typeof window !== 'undefined' && !window.roarDesktop && 'serviceWorker' in navigator && 'PushManager' in window && typeof Notification !== 'undefined'
 export const badgeSupported = () => typeof navigator !== 'undefined' && 'setAppBadge' in navigator && !window.roarDesktop

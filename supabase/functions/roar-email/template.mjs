@@ -66,7 +66,7 @@ export function emailHtml({ name, total, chats, more, app, off, icon }) {
 </style>
 </head>
 <body style="margin:0;padding:0;background:#0e1013">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0e1013">${esc(emailText({ name, total, chats, app, off }).split('\n')[2])}</div>
+<div style="display:none;max-height:0;overflow:hidden">${esc(emailText({ name, total, chats, app, off }).split('\n')[2])}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0e1013">
   <tr><td align="center" style="padding:40px 16px 32px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">

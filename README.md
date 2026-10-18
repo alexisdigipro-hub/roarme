@@ -262,3 +262,16 @@ Settings > Auto-Reply: on/off, the text, Only When I'm Away (RoarMe not open on 
 chat every 12 hours; groups never. It is a normal message from you marked `file.auto`, shown with "Auto-reply ·" beside
 its time. Trigger `roar_autoreply` on roar_messages (`roar_autoreply_send()`), tables `roar_autoreply` and
 `roar_autoreply_sent`. `supabase/autoreply.sql` (run by Claude 18 Oct and tested).
+
+## Calendar under Tasks (18 Oct)
+The calendar button at the top of the Tasks panel turns it into a month (`src/calendar.jsx`; remembered per device):
+soft day tiles, Monday first, today in the accent colour, and a dot per kind on each day: tasks by due date (accent),
+scheduled calls from the chats' call cards (green) and your scheduled messages with their repeats (blue). The chosen
+day lists them: a task opens its window, a call goes to its card in the chat, a message to its chat. "New task on this
+day…" opens a new task with that day as its due date. ‹ › move a month, Today comes back.
+
+## Group admins (18 Oct)
+A group's card > Members shows an Admin tag; an admin has Make Admin / Remove Admin beside each person (and Step Down
+for themselves while another admin stays) next to Remove. `roar_set_admin(r, person, admin)` in `supabase/admins.sql`
+(run by Claude 18 Oct); the role column is not writable by members themselves. Removing people, adding them and
+deleting the group were already there (`supabase/round1.sql`).

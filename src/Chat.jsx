@@ -697,7 +697,7 @@ export default function Chat({ me, setMe }) {
         )}
       </main>
 
-      {tasksOpen && <TasksPanel me={me} people={people} contacts={contacts} kit={tasksKit} toast={toast} onClose={() => showTasks(false)} />}
+      {tasksOpen && <TasksPanel me={me} people={people} contacts={contacts} kit={tasksKit} toast={toast} onClose={() => showTasks(false)} rooms={rooms} titleOf={titleOf} onOpenChat={(roomId, msgId) => { if (msgId) libChat(roomId, msgId); else { setTab('chats'); setActiveId(roomId) } }} />}
 
       {modal === 'invite' && <InviteModal me={me} toast={toast} onClose={() => setModal('')} />}
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}

@@ -7,7 +7,7 @@ import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
-import { badgeSupported, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported } from './push.js'
+import { badgeSupported, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
@@ -274,6 +274,7 @@ function Keys({ p }) {
 function PushSwitch({ p, toast }) {
   const [on, setOn] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [testing, setTesting] = useState(false)
   useEffect(() => { pushIsOn().then(setOn).catch(() => setOn(false)) }, [])
   if (!pushSupported()) {
     return <Soon hint={isIOS() && !isStandalone() ? 'On iPhone: Share > Add to Home Screen, then open RoarMe from there' : 'This browser cannot get them'}>Notifications With the App Closed</Soon>
@@ -287,7 +288,27 @@ function PushSwitch({ p, toast }) {
     } catch (e) { toast(e?.message || 'That did not work') }
     setBusy(false)
   }
-  return <Switch on={!!on} set={set} hint={busy ? 'One moment…' : 'New messages reach this device even when RoarMe is closed'}>Notifications With the App Closed</Switch>
+  // a test from the server, 5 seconds later, so there is time to close RoarMe or lock the phone
+  const test = async () => {
+    setTesting(true)
+    toast('Close RoarMe now: the test comes in 5 seconds')
+    try {
+      const res = await pushTest()
+      toast(res.map((r) => `${r.device}: ${r.status >= 200 && r.status < 300 ? 'sent ✓' : `${r.status} ${r.said}`}`).join(' · ') || 'No device answered')
+    } catch (e) { toast(e?.message || 'That did not work') }
+    setTesting(false)
+  }
+  return (
+    <>
+      <Switch on={!!on} set={set} hint={busy ? 'One moment…' : 'New messages reach this device even when RoarMe is closed'}>Notifications With the App Closed</Switch>
+      {on && (
+        <div className="set-row">
+          <span className="set-text">Test Notification<small>Comes 5 seconds after you press, so you can close RoarMe first</small></span>
+          <button type="button" className="btn btn-sm" disabled={testing} onClick={test}>{testing ? '…' : 'Send Test'}</button>
+        </div>
+      )}
+    </>
+  )
 }
 
 function Notify({ p, toast }) {

@@ -3,7 +3,7 @@
 // next start without a new install. Links that leave RoarMe open in the computer's own browser.
 // The app adds what a browser cannot: the unread count on its icon, a paw in the menu bar, opening at
 // login, and staying on (with notifications and calls) when its window is closed.
-const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, screen, shell, session } = require('electron')
+const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, powerSaveBlocker, screen, shell, session } = require('electron')
 // RoarMe is dark: the glass under the window is dark too, even when the Mac is in light mode (Alex, 16 Oct:
 // the strip while resizing came out white)
 nativeTheme.themeSource = 'dark'
@@ -45,7 +45,7 @@ const frame = process.platform === 'darwin'
 // An opaque window the colour of RoarMe's graphite: a see-through (vibrancy) window made resizing slower and showed
 // white on a light Mac (Alex, 16 Oct), so the window is solid and the page itself is kept light to repaint.
 const glassy = { backgroundColor: '#24282f' }
-const look = { ...glassy, autoHideMenuBar: true, show: false, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, preload: path.join(__dirname, 'preload.js') } }
+const look = { ...glassy, autoHideMenuBar: true, show: false, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') } }
 
 // the band for the window buttons, put in by the app itself so it never depends on what the browser kept
 const BAR = process.platform === 'darwin' ? 30 : 32
@@ -116,7 +116,16 @@ function open() {
     if (!quitting && settings.keepRunning) { e.preventDefault(); win.hide() }
   })
   win.on('closed', () => { win = null })
+  // with the window closed or minimised macOS would put RoarMe to sleep (App Nap) and its connection with it, so no
+  // message or sound came (Alex, 18 Oct): while it is out of sight it is kept awake, which costs next to nothing
+  win.on('hide', awake)
+  win.on('minimize', awake)
+  win.on('show', asleepOk)
+  win.on('restore', asleepOk)
 }
+let blocker = -1
+function awake() { if (blocker < 0 || !powerSaveBlocker.isStarted(blocker)) blocker = powerSaveBlocker.start('prevent-app-suspension') }
+function asleepOk() { if (blocker >= 0 && powerSaveBlocker.isStarted(blocker)) powerSaveBlocker.stop(blocker); blocker = -1 }
 function show() {
   if (!win) open()
   if (win.isMinimized()) win.restore()

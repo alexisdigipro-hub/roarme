@@ -3,6 +3,8 @@
 // signed with this server's key (VAPID, RFC 8292).
 //   GET  ?key            the public key a browser needs to sign up (made, with its private half, the first time)
 //   POST {id} + x-roar-hook   a new message (from the trigger roar_push): notify who should know
+//   POST {test: true} + the user's sign-in   Settings > Send Test: after 5 seconds (time to close RoarMe) a test
+//                                            notification to each of that person's devices, and what each push service said
 // The private key never leaves the database table roar_push_conf, which only the server can read.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -80,6 +82,34 @@ function preview(m: { kind: string; body: string; file: Record<string, unknown> 
   return clean(m.body || '')
 }
 
+async function push(t: { endpoint: string; p256dh: string; auth: string }, note: unknown) {
+  const r = await fetch(t.endpoint, {
+    method: 'POST',
+    headers: { Authorization: await vapid(t.endpoint), 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '86400', Urgency: 'high' },
+    body: await encrypt(enc.encode(JSON.stringify(note)), t.p256dh, t.auth),
+  })
+  return r
+}
+
+async function test(req: Request) {
+  const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer /, '')
+  const { data: { user } } = await sb.auth.getUser(jwt)
+  if (!user) return json({ error: 'Sign in first' }, 401)
+  const { data: subs } = await sb.from('roar_push_subs').select('endpoint, p256dh, auth, ua').eq('user_id', user.id)
+  if (!subs?.length) return json({ error: 'No device has notifications on yet' }, 404)
+  await new Promise((ok) => setTimeout(ok, 5000))
+  const results: { device: string; status: number; said: string }[] = []
+  for (const t of subs) {
+    const device = /iPhone|iPad/.test(t.ua) ? 'iPhone' : /Android/.test(t.ua) ? 'Android' : /Mac/.test(t.ua) ? 'Mac' : /Windows/.test(t.ua) ? 'Windows' : 'Browser'
+    try {
+      const r = await push(t, { title: 'RoarMe', body: 'Notifications work on this device ✓', room: '', tag: `test-${Date.now()}` })
+      results.push({ device, status: r.status, said: r.ok ? 'ok' : (await r.text()).slice(0, 160) })
+      if (r.status === 404 || r.status === 410) await sb.from('roar_push_subs').delete().eq('endpoint', t.endpoint)
+    } catch (e) { results.push({ device, status: 0, said: String(e).slice(0, 160) }) }
+  }
+  return json({ results })
+}
+
 async function notify(id: string) {
   const { data: m } = await sb.from('roar_messages').select('id, room_id, user_id, kind, body, file').eq('id', id).maybeSingle()
   if (!m) return { sent: 0 }
@@ -104,11 +134,7 @@ async function notify(id: string) {
       count: t.unread,
     }
     try {
-      const r = await fetch(t.endpoint, {
-        method: 'POST',
-        headers: { Authorization: await vapid(t.endpoint), 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '86400', Urgency: 'high' },
-        body: await encrypt(enc.encode(JSON.stringify(note)), t.p256dh, t.auth),
-      })
+      const r = await push(t, note)
       if (r.ok) sent++
       else if (r.status === 404 || r.status === 410) gone.push(t.endpoint)
       else console.log('push', r.status, (await r.text()).slice(0, 200))
@@ -123,9 +149,11 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method === 'GET') return json({ key: (await getConf()).public_key })
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
+  const body = await req.json().catch(() => ({}))
+  if (body?.test === true) return test(req)
   const c = await getConf()
   if (req.headers.get('x-roar-hook') !== String(c.hook_token)) return json({ error: 'not allowed' }, 403)
-  const { id } = await req.json().catch(() => ({}))
+  const { id } = body
   if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)) return json({ error: 'no message' }, 400)
   return json(await notify(id))
 })

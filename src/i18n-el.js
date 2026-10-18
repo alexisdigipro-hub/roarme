@@ -920,4 +920,12 @@ export const EL = {
   'RoarMe opens as an app of its own': 'Το RoarMe ανοίγει σαν κανονική εφαρμογή',
   'Add RoarMe to the Home Screen': 'Πρόσθεσε το RoarMe στην οθόνη Αφετηρίας',
   'An app of its own, with notifications when it is closed': 'Κανονική εφαρμογή, με ειδοποιήσεις όταν είναι κλειστό',
+  'In 1 hour': 'Σε 1 ώρα',
+  'Tonight 20:00': 'Απόψε 20:00',
+  'Tomorrow 09:00': 'Αύριο 09:00',
+  'Monday 09:00': 'Δευτέρα 09:00',
+  '3 Months': '3 μήνες',
+  '6 Months': '6 μήνες',
+  'Hour': 'Ώρα',
+  'Minute': 'Λεπτό',
 }

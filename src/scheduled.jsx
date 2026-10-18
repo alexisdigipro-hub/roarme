@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { I, Modal } from './ui.jsx'
 import { errText, supabase } from './lib.js'
 import { locale } from './i18n.js'
@@ -28,6 +28,7 @@ export function useScheduled(roomId, meId) {
   const load = useCallback(async () => {
     const { data } = await supabase.from('roar_scheduled').select('id, body, reply_to, first_at, send_at, repeat, times').eq('room_id', roomId).eq('user_id', meId).order('send_at')
     setList(data || [])
+    window.dispatchEvent(new Event('roarme-cal')) // the calendar under Tasks follows
   }, [roomId, meId])
   useEffect(() => { setList([]); load() }, [load])
   // the server sends them; look again around the time the next one is due
@@ -55,6 +56,7 @@ export function useScheduled(roomId, meId) {
     const { error } = await supabase.from('roar_scheduled').delete().eq('id', id)
     if (error) return errText(error)
     setList((l) => l.filter((x) => x.id !== id))
+    window.dispatchEvent(new Event('roarme-cal'))
     return ''
   }
   // sent now as a normal message; a repeating one keeps its next times
@@ -67,6 +69,64 @@ export function useScheduled(roomId, meId) {
   return { list, load, add, move, remove, sendNow }
 }
 
+/* RoarMe's own day and time pickers (Alex, 18 Oct: the browser's clock list was not beautiful): the days as tiles in a
+   row you slide, the time as two wheels as on an iPhone, with the chosen line under a glass lens */
+const ROW = 40
+function Wheel({ count, value, onChange, label }) {
+  const ref = useRef(null)
+  const timer = useRef(0)
+  const quiet = useRef(false)
+  // to the chosen number, at the start and when a quick choice moves it
+  useEffect(() => {
+    const el = ref.current
+    if (!el || Math.round(el.scrollTop / ROW) === value) return
+    quiet.current = true
+    el.scrollTo({ top: value * ROW, behavior: el.dataset.ready ? 'smooth' : 'auto' })
+    el.dataset.ready = '1'
+    setTimeout(() => { quiet.current = false }, 400)
+  }, [value])
+  const onScroll = () => {
+    if (quiet.current) return
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      const n = Math.max(0, Math.min(count - 1, Math.round(ref.current.scrollTop / ROW)))
+      if (n !== value) onChange(n)
+    }, 90)
+  }
+  return (
+    <div ref={ref} className="wheel" onScroll={onScroll} role="listbox" aria-label={label}>
+      <div className="wheel-pad" />
+      {Array.from({ length: count }, (_, n) => (
+        <button key={n} type="button" role="option" aria-selected={n === value} className={n === value ? 'on' : ''} onClick={() => onChange(n)}>{String(n).padStart(2, '0')}</button>
+      ))}
+      <div className="wheel-pad" />
+    </div>
+  )
+}
+
+function DayStrip({ value, onChange }) {
+  const ref = useRef(null)
+  const today = new Date(); today.setHours(12, 0, 0, 0)
+  const days = Array.from({ length: 120 }, (_, n) => { const x = new Date(today); x.setDate(today.getDate() + n); return x })
+  useEffect(() => { ref.current?.querySelector('.on')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }) }, [value])
+  return (
+    <div ref={ref} className="dpick">
+      {days.map((x, n) => {
+        const k = dateIn(x)
+        return (
+          <button key={k} type="button" className={k === value ? 'on' : ''} onClick={() => onChange(k)}>
+            <small>{n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : x.toLocaleDateString(locale(), { weekday: 'short' })}</small>
+            <b>{x.getDate()}</b>
+            <small>{x.toLocaleDateString(locale(), { month: 'short' })}</small>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+const SHORT = { '3months': '3 Months', '6months': '6 Months' }
+
 /* the window: day, time, repeat, and the button that says when it goes */
 export function ScheduleMessage({ item, body: firstBody = '', onSave, onClose }) {
   const start = item ? new Date(item.send_at) : new Date(Math.ceil((Date.now() + 2 * 60e3) / 60e3) * 60e3 + 60 * 60e3)
@@ -77,6 +137,16 @@ export function ScheduleMessage({ item, body: firstBody = '', onSave, onClose })
   const [busy, setBusy] = useState(false)
   const [fail, setFail] = useState('')
   const at = new Date(`${d}T${t}`)
+  const [hh, mm] = t.split(':').map(Number)
+  // the usual moments, one tap each
+  const quick = (() => {
+    const now = new Date()
+    const hour = new Date(Math.ceil((now.getTime() + 60 * 60e3) / (5 * 60e3)) * 5 * 60e3)
+    const tonight = new Date(now); tonight.setHours(20, 0, 0, 0)
+    const morning = new Date(now); morning.setDate(now.getDate() + 1); morning.setHours(9, 0, 0, 0)
+    const monday = new Date(now); monday.setDate(now.getDate() + (((8 - now.getDay()) % 7) || 7)); monday.setHours(9, 0, 0, 0)
+    return [['In 1 hour', hour], ...(tonight > now ? [['Tonight 20:00', tonight]] : []), ['Tomorrow 09:00', morning], ['Monday 09:00', monday]]
+  })()
   const err = Number.isNaN(at.getTime()) ? 'Pick a day and a time.'
     : at.getTime() < Date.now() + 30e3 ? 'Pick a time later than now.'
     : at.getTime() > Date.now() + 366 * 864e5 ? 'At most a year ahead.'
@@ -97,15 +167,23 @@ export function ScheduleMessage({ item, body: firstBody = '', onSave, onClose })
             <label className="sch-note"><textarea value={body} onChange={(e) => setBody(e.target.value.slice(0, 8000))} rows={3} placeholder="Message" /></label>
           </div>
         )}
+        <div className="squick">
+          {quick.map(([label, when]) => <button key={label} type="button" className={dateIn(when) === d && timeIn(when) === t ? 'on' : ''} onClick={() => { setD(dateIn(when)); setT(timeIn(when)) }}>{label}</button>)}
+        </div>
         <div className="sch-box">
-          <div className="sch-row"><span>Day</span><span className="sch-when"><input type="date" value={d} min={dateIn(new Date())} onChange={(e) => setD(e.target.value)} /></span></div>
-          <div className="sch-row"><span>Time</span><span className="sch-when"><input type="time" value={t} onChange={(e) => setT(e.target.value)} /></span></div>
-          <label className="sch-row"><span>Repeat</span>
-            <span className="smsg-pick">
-              <select value={repeat} onChange={(e) => setRepeat(e.target.value)}>{REPEATS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
-              {I.down}
-            </span>
-          </label>
+          <DayStrip value={d} onChange={setD} />
+          <div className="tpick">
+            <span className="tpick-lens" />
+            <Wheel label="Hour" count={24} value={hh} onChange={(n) => setT(`${pad(n)}:${pad(mm)}`)} />
+            <b className="tpick-colon">:</b>
+            <Wheel label="Minute" count={60} value={mm} onChange={(n) => setT(`${pad(hh)}:${pad(n)}`)} />
+          </div>
+        </div>
+        <div className="sch-box">
+          <div className="sch-row srep-head"><span>Repeat</span></div>
+          <div className="squick srep">
+            {REPEATS.map(([k, n]) => <button key={k} type="button" className={repeat === k ? 'on' : ''} onClick={() => setRepeat(k)}>{SHORT[k] || n}</button>)}
+          </div>
         </div>
         {fail && <p className="sch-err">{fail}</p>}
         <p className="sch-hint">It goes out by itself at that time, even with RoarMe closed.</p>

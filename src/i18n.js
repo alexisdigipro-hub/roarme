@@ -19,6 +19,12 @@ const ago = (s) => s.replace(/^now$/, 'τώρα').replace(/^(\d+) min ago$/, 'π
 
 // texts with names and numbers in them
 const PATTERNS = [
+  [/^(.+) gave you a task$/, (_, n) => `${n}: σου έδωσε ένα task`],
+  [/^(.+) accepted your task$/, (_, n) => `${n}: αποδέχτηκε το task σου`],
+  [/^(.+) declined your task$/, (_, n) => `${n}: απέρριψε το task σου`],
+  [/^(.+) finished your task$/, (_, n) => `${n}: ολοκλήρωσε το task σου`],
+  [/^(.+) started your task$/, (_, n) => `${n}: ξεκίνησε το task σου`],
+  [/^Sent to (.+): waiting for an answer$/, (_, n) => `Στάλθηκε σε ${n}: περιμένει απάντηση`],
   [/^(\d+) members$/, (_, n) => `${n} μέλη`],
   [/^(\d+) selected$/, (_, n) => `${n} επιλεγμένα`],
   [/^(\d+) chats?$/, (_, n) => `${n} ${plural(n, 'συνομιλία', 'συνομιλίες')}`],

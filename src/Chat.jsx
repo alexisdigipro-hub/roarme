@@ -15,6 +15,7 @@ import { NowPlaying } from './player.jsx'
 import { UpdateCard } from './update.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { OrdinoCard, RoardinoSheet, ordinoBody } from './roardino.jsx'
+import { TasksPanel, taskNotice, useTasks } from './tasks.jsx'
 import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
@@ -493,6 +494,10 @@ export default function Chat({ me, setMe }) {
     const seen = (p) => (onlineNow(p) ? Infinity : p.last_seen ? new Date(p.last_seen).getTime() : 0)
     return ids.map((id) => people[id]).filter(Boolean).sort((a, b) => seen(b) - seen(a) || nameOf(a).localeCompare(nameOf(b)))
   }, [rooms, people, me.id])
+  // Tasks (Alex, 18 Oct): the panel stays open while you move between chats, and remembers it on this device
+  const [tasksOpen, setTasksOpen] = useState(() => { try { return localStorage.getItem('roarme-tasks') === '1' } catch { return false } })
+  const showTasks = (v) => { setTasksOpen(v); try { localStorage.setItem('roarme-tasks', v ? '1' : '0') } catch { /* private window */ } }
+  const tasksKit = useTasks(me, loadPeople, (kind, t) => { const s = taskNotice(kind, t, peopleRef.current, () => showTasks(true)); if (s) toast(s) })
   const chatWith = async (p) => {
     const r = rooms.find((x) => x.kind === 'direct' && (x.members || []).includes(p.id))
     if (r) { setTab('chats'); setActiveId(r.room_id); return }
@@ -512,7 +517,7 @@ export default function Chat({ me, setMe }) {
   }, [rooms, people, me.id])
 
   return (
-    <div className={`app${intro ? ' intro' : ''}`} style={{ '--side-w': `${sideW}px` }}>
+    <div className={`app${intro ? ' intro' : ''}${tasksOpen ? ' tasks-open' : ''}`} style={{ '--side-w': `${sideW}px` }}>
       <span className="side-grip" onPointerDown={drag} onDoubleClick={() => { setSideW(370); try { localStorage.setItem('roarme-side', '370') } catch { /* private window */ } }} title="Drag to widen, double-click to reset" />
       <aside className="side">
         <div className="side-col">
@@ -522,6 +527,10 @@ export default function Chat({ me, setMe }) {
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
           ) : (
+            <>
+            <button type="button" className={`round tasks-btn${tasksOpen ? ' on' : ''}`} onClick={() => showTasks(!tasksOpen)} aria-label="Tasks" title="Tasks">
+              {I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}
+            </button>
             <span className="plus-wrap">
               <button type="button" className={`round${plus ? ' on' : ''}`} onClick={() => setPlus((v) => !v)} aria-label="New" title="New chat, group or folder">{I.plus}</button>
               {plus && (
@@ -537,6 +546,7 @@ export default function Chat({ me, setMe }) {
                 </>
               )}
             </span>
+            </>
           )}
         </div>
         {/* on a phone the list and a chat are separate screens: the bar shows on the list too */}
@@ -667,7 +677,7 @@ export default function Chat({ me, setMe }) {
         ) : active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]}
-            onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }}
+            onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }} onTasks={() => showTasks(true)} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={() => unblock(otherOf(active)?.id)} onCall={(v) => callRoom(active, v)} />
         ) : (
           <div className="pick">
@@ -681,6 +691,8 @@ export default function Chat({ me, setMe }) {
           </div>
         )}
       </main>
+
+      {tasksOpen && <TasksPanel me={me} people={people} contacts={contacts} kit={tasksKit} toast={toast} onClose={() => showTasks(false)} />}
 
       {modal === 'invite' && <InviteModal me={me} toast={toast} onClose={() => setModal('')} />}
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
@@ -846,7 +858,7 @@ function Peek({ room, me, people, title, clearedAt, onClose, onOpen }) {
 }
 
 /* ---------- one conversation ---------- */
-function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall }) {
+function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0 }) {
   const [rawMsgs, setMsgs] = useState([])
   // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
   const [sealOn, reloadSeal] = useEncrypted(room.room_id)
@@ -1458,6 +1470,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
             <button type="button" className="round" onClick={() => onCall(false)} aria-label="Voice call" title="Voice call">{I.phone}</button>
             <button type="button" className="round head-video" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>
             <button type="button" className="round head-find" onClick={() => { setFind(''); setFindAt(0) }} aria-label="Search in this chat" title="Search in this chat">{I.search}</button>
+            {/* on a phone the chat list (with its Tasks button) is another screen, so Tasks is here too */}
+            {onTasks && <button type="button" className="round tasks-btn only-phone" onClick={onTasks} aria-label="Tasks" title="Tasks">{I.tasks}{tasksCount > 0 && <i>{tasksCount > 99 ? '99+' : tasksCount}</i>}</button>}
             <span className="plus-wrap">
               <button type="button" className={`round${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More">{I.more}</button>
               {headMenu && (

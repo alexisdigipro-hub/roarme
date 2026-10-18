@@ -15,6 +15,7 @@ import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, use
 export const PAGES = [
   ['general', 'General', '#8e8e93', svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></>, 16)],
   ['notify', 'Notifications and Sounds', '#ff453a', svg(<><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></>, 16)],
+  ['autoreply', 'Auto-Reply', '#64d2ff', svg(<><path d="M20 12a8 8 0 1 1-3-6.2" /><path d="M20 4v5h-5" /><path d="M8.5 12.5h7M8.5 9.5h4" /></>, 16)],
   ['privacy', 'Privacy and Security', '#0a84ff', svg(<><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>, 16)],
   ['data', 'Data and Storage', '#30d158', svg(<><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" /></>, 16)],
   ['sessions', 'Active Sessions', '#ff9f0a', svg(<><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M8 20h8" /></>, 16)],
@@ -140,6 +141,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
         {page === 'general' && <General p={p} onKeys={() => onPage('keys')} />}
         {page === 'keys' && <Keys p={p} />}
         {page === 'notify' && <Notify p={p} />}
+        {page === 'autoreply' && <AutoReply toast={toast} />}
         {page === 'privacy' && <Privacy me={me} setMe={setMe} toast={toast} />}
         {page === 'data' && <Data p={p} />}
         {page === 'sessions' && <Sessions me={me} setMe={setMe} toast={toast} />}
@@ -295,6 +297,55 @@ function Notify({ p }) {
         {desk.on
           ? <Switch on={p.badge !== false} set={(v) => setPrefs({ badge: v })}>Unread Count on the App Icon</Switch>
           : <Soon hint="In the RoarMe app for Mac and Windows">Unread Count on the App Icon</Soon>}
+      </Box>
+    </>
+  )
+}
+
+/* Auto-reply (Alex, 18 Oct; supabase/autoreply.sql): someone who writes to you one to one gets your text back by
+   itself, once per chat every 12 hours, while it is on (until a time, if one is set) */
+const pad2 = (n) => String(n).padStart(2, '0')
+const localIn = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+function AutoReply({ toast }) {
+  const [row, setRow] = useState(null) // null loading · false not available · the saved settings
+  const [body, setBody] = useState('')
+  const load = async () => {
+    const { data, error } = await supabase.from('roar_autoreply').select('enabled, body, away_only, until').maybeSingle()
+    if (error) { setRow(false); return }
+    const r = data || { enabled: false, body: '', away_only: false, until: null }
+    setRow(r); setBody(r.body)
+  }
+  useEffect(() => { load() }, [])
+  const save = async (patch, done) => {
+    const next = { ...row, ...patch }
+    setRow(next)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('roar_autoreply').upsert({ user_id: user.id, ...next, updated_at: new Date().toISOString() })
+    if (error) { toast(errText(error)); load() } else if (done) toast(done)
+  }
+  if (row === null) return <p className="muted pf-empty">Loading…</p>
+  if (row === false) return <Box><Soon hint="Not available right now">Auto-Reply</Soon></Box>
+  const over = row.until && new Date(row.until) < new Date()
+  const on = row.enabled && !over
+  return (
+    <>
+      <Box note="Someone who writes to you in a one-to-one chat gets this back by itself, once per chat every 12 hours. Groups never get it.">
+        <Switch on={on} set={(v) => { if (v && !body.trim()) { toast('Write the reply first'); return } save({ enabled: v, body: body.trim(), ...(v && over ? { until: null } : {}) }, v ? 'Auto-reply is on' : 'Auto-reply is off') }} hint={on ? 'On' : over ? 'Ended by itself' : 'Off'}>Auto-Reply</Switch>
+        <div className="set-row set-col">
+          <span className="set-text">Message</span>
+          <textarea className="set-area" rows={3} maxLength={2000} value={body} onChange={(e) => setBody(e.target.value)} placeholder="I am on set today. I will get back to you after 20:00." />
+          {body.trim() !== (row.body || '') && <button type="button" className="btn btn-main btn-sm set-save" onClick={() => save({ body: body.trim(), ...(body.trim() ? {} : { enabled: false }) }, 'Saved')}>Save</button>}
+        </div>
+      </Box>
+      <Box>
+        <Switch on={row.away_only} set={(v) => save({ away_only: v })} hint="Only while RoarMe has not been open on any of your devices for 10 minutes">Only When I'm Away</Switch>
+        <Switch on={!!row.until} set={(v) => save({ until: v ? new Date(Date.now() + 864e5).toISOString() : null })} hint="It turns itself off at that time">Turn Off By Itself</Switch>
+        {row.until && (
+          <div className="set-row">
+            <span className="set-text">Until</span>
+            <input className="set-when" type="datetime-local" value={localIn(new Date(row.until))} onChange={(e) => { const d = new Date(e.target.value); if (!Number.isNaN(d.getTime())) save({ until: d.toISOString() }) }} />
+          </div>
+        )}
       </Box>
     </>
   )

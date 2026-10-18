@@ -19,6 +19,10 @@ const ago = (s) => s.replace(/^now$/, 'τώρα').replace(/^(\d+) min ago$/, 'π
 
 // texts with names and numbers in them
 const PATTERNS = [
+  [/^Send on (.+) at (\d{1,2}:\d{2})$/, (_, d, h) => `Αποστολή ${d}, ${h}`],
+  [/^Save for (.+) at (\d{1,2}:\d{2})$/, (_, d, h) => `Αποθήκευση για ${d}, ${h}`],
+  [/^Scheduled for (.+) at (\d{1,2}:\d{2})$/, (_, d, h) => `Προγραμματίστηκε για ${d}, ${h}`],
+  [/^(\d{1,2} \S+ \d{4}) at (\d{1,2}:\d{2})$/, (_, d, h) => `${d}, ${h}`],
   [/^RoarMe (\d+\.\d+\.\d+) is ready$/, (_, v) => `Το RoarMe ${v} είναι έτοιμο`],
   [/^Downloading RoarMe (\d+\.\d+\.\d+)$/, (_, v) => `Λήψη του RoarMe ${v}`],
   [/^(.+) gave you a task$/, (_, n) => `${n}: σου έδωσε ένα task`],

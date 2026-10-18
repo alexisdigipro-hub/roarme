@@ -244,3 +244,21 @@ progress and offers Restart to update. An older app (no updater) asks GitHub for
 ## Tasks in the foot bar (18 Oct)
 The Tasks button moved from the chat list's head to the bar at the foot, beside Settings (with its count, red when a
 request waits for your answer). It opens and closes the Tasks panel; inside a chat on a phone the Tasks button stays.
+
+## Scheduled messages (18 Oct)
+As in Telegram: write a message, then hold Send (right click on a computer) > Schedule Message: Day, Time and Repeat
+(Never, Daily, Weekly, Biweekly, Monthly, Every 3 / 6 Months, Yearly), and the button says when it goes ("Send on 19 Oct
+2026 at 09:00"). `src/scheduled.jsx`. The text waits in `roar_scheduled` and a pg_cron job (`roar-scheduled`, every
+minute, `roar_send_scheduled()`) sends it in your name, so RoarMe can be closed; a repeating one moves to its next time
+(counted from the first, so the 31st stays the 31st), one in a chat with Encrypted Chat on waits until it is off, one
+from someone who left the chat goes. A clock with a count in the writing box opens Scheduled Messages: each with Send Now,
+Edit (text, day, time, repeat) and Delete. Text only. Each person sees only their own (RLS). `supabase/scheduled.sql`
+(run by Claude 18 Oct and tested). A message that goes out by itself (scheduled or auto-reply, `file.scheduled` /
+`file.auto`) does not mark the chat read for its writer (`roar_touch_room`).
+
+## Auto-reply (18 Oct)
+Settings > Auto-Reply: on/off, the text, Only When I'm Away (RoarMe not open on any device for 10 minutes, from
+`last_seen`) and Turn Off By Itself (a date and time). Someone who writes to you one to one gets the text back, once per
+chat every 12 hours; groups never. It is a normal message from you marked `file.auto`, shown with "Auto-reply ·" beside
+its time. Trigger `roar_autoreply` on roar_messages (`roar_autoreply_send()`), tables `roar_autoreply` and
+`roar_autoreply_sent`. `supabase/autoreply.sql` (run by Claude 18 Oct and tested).

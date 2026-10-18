@@ -19,6 +19,8 @@ const ago = (s) => s.replace(/^now$/, 'τώρα').replace(/^(\d+) min ago$/, 'π
 
 // texts with names and numbers in them
 const PATTERNS = [
+  [/^RoarMe (\d+\.\d+\.\d+) is ready$/, (_, v) => `Το RoarMe ${v} είναι έτοιμο`],
+  [/^Downloading RoarMe (\d+\.\d+\.\d+)$/, (_, v) => `Λήψη του RoarMe ${v}`],
   [/^(.+) gave you a task$/, (_, n) => `${n}: σου έδωσε ένα task`],
   [/^(.+) accepted your task$/, (_, n) => `${n}: αποδέχτηκε το task σου`],
   [/^(.+) declined your task$/, (_, n) => `${n}: απέρριψε το task σου`],

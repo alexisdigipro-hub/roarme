@@ -840,4 +840,7 @@ export const EL = {
   'Your contacts are the people you share a chat with. Start a chat to give someone a task.': 'Επαφές σου είναι όσοι έχεις κοινή συνομιλία. Ξεκίνα μια συνομιλία για να δώσεις task σε κάποιον.',
   'e.g. Book the lens for Friday': 'π.χ. Κλείσε τον φακό για Παρασκευή',
   'That is a long list already': 'Η λίστα είναι ήδη μεγάλη',
+  'Restart to update': 'Επανεκκίνηση για ενημέρωση',
+  'Restarting…': 'Επανεκκίνηση…',
+  'Restart to update. It takes a few seconds and RoarMe opens again.': 'Επανεκκίνηση για ενημέρωση. Παίρνει λίγα δευτερόλεπτα και το RoarMe ξανανοίγει.',
 }

@@ -87,6 +87,13 @@ contacts keep the add button; a button's word never breaks. The computer is unch
   one is out, a glass card at the bottom right: "New RoarMe app: x" with **Download** and × (later, until the next
   version). Settings > General > RoarMe app shows the version and the same Download.
 - **So each new desktop build must raise `version` in desktop/package.json**, or nobody is told.
+- **Updates by themselves (desktop 1.4.9 on, Alex 18 Oct):** the app checks the newest release on opening and every 2
+  hours (desktop/updater.js), downloads the installer for its computer in the background, then shows "RoarMe x is
+  ready · Restart to update" (and a notification). Restart swaps the app: on a Mac a small script waits for RoarMe to
+  close, copies the new RoarMe.app from the .dmg over the old one (the old stays if anything fails) and opens it; on
+  Windows the installer runs silently (/S --force-run). Quitting with an update waiting installs it too. Electron's own
+  updater is not used because on a Mac it needs a paid Apple certificate. Versions up to 1.4.8 get the old card
+  (Download + steps) once more.
 - **Installing:** macOS stops a non-App-Store app the first time before it can show anything, so the steps open the
   moment Download is pressed (in the card, in Settings > General, and the downloads there in the browser): open the
   .dmg and drag to Applications (Cmd+Q and Replace on an update), open it and press Done, System Settings >

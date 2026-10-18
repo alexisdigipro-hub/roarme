@@ -56,11 +56,12 @@ export const thisComputer = () => {
   return 'mac-arm' // most Macs today
 }
 
-/* the newest release (looked up at most every 3 hours) */
+/* the newest release (looked up at most every half hour) */
 export function useLatestRelease() {
   const [latest, setLatest] = useState(() => { try { return JSON.parse(localStorage.getItem(LATEST) || 'null') } catch { return null } })
   useEffect(() => {
-    if (latest && latest.files && Date.now() - latest.at < 3 * 3600e3) return undefined
+    // looked up at most every half hour, so a new version is noticed the same afternoon (Alex, 18 Oct)
+    if (latest && latest.files && Date.now() - latest.at < 30 * 60e3) return undefined
     let alive = true
     fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } })
       .then((r) => (r.ok ? r.json() : null))
@@ -124,9 +125,31 @@ export const startDownload = (kind) => { window.open(dlUrl(kind), '_blank', 'noo
 
 /* the card in the app when a newer Mac or Windows app is out */
 export function UpdateCard() {
+  // 1.4.9 on: the app downloads a new version by itself and only asks for a restart (desktop/updater.js)
+  const desk = typeof window !== 'undefined' ? window.roarDesktop?.update : null
+  const [us, setUs] = useState(null)
+  useEffect(() => {
+    if (!desk) return undefined
+    desk.state().then(setUs).catch(() => {})
+    return desk.on(setUs)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const { installed, latest, ready } = useAppUpdate()
   const [skip, setSkip] = useState(() => { try { return localStorage.getItem(SKIP) || '' } catch { return '' } })
   const [guide, setGuide] = useState('')
+  if (desk) {
+    if (!us || (us.status !== 'downloading' && us.status !== 'ready' && us.status !== 'installing')) return null
+    const done = us.status !== 'downloading'
+    return (
+      <div className="upd" role="status">
+        <i className="upd-ico">{I.download}</i>
+        <span className="upd-text">
+          <b>{done ? `RoarMe ${us.version} is ready` : `Downloading RoarMe ${us.version}`}</b>
+          <small>{done ? 'Restart to update. It takes a few seconds and RoarMe opens again.' : `${us.progress || 0}%`}</small>
+        </span>
+        {done && <button type="button" className="btn btn-main upd-go" disabled={us.status === 'installing'} onClick={() => { setUs({ ...us, status: 'installing' }); desk.install() }}>{I.download}<span>{us.status === 'installing' ? 'Restarting…' : 'Restart to update'}</span></button>}
+      </div>
+    )
+  }
   if (!ready && !guide) return null
   const kind = thisComputer() || 'mac-arm'
   const later = () => { try { localStorage.setItem(SKIP, latest) } catch { /* private window */ } setSkip(latest) }

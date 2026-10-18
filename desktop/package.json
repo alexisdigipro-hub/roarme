@@ -1,7 +1,7 @@
 {
   "name": "roar",
   "productName": "RoarMe",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "RoarMe for Mac and Windows: the chat in an app of its own",
   "author": "THEMADLIONS",
   "private": true,
@@ -25,6 +25,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "updater.js",
       "package.json",
       "trayTemplate.png",
       "trayTemplate@2x.png"

@@ -12,6 +12,7 @@ app.commandLine.appendSwitch('enable-gpu-rasterization')
 app.commandLine.appendSwitch('ignore-gpu-blocklist')
 const fs = require('fs')
 const path = require('path')
+const updater = require('./updater')
 
 const HOME = 'https://alexisdigipro-hub.github.io/roarme/'
 const ALLOWED = ['media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'geolocation']
@@ -169,6 +170,8 @@ app.whenReady().then(async () => {
   open()
   updateTray()
   app.on('activate', show)
+  // new versions download by themselves; the page offers Restart to update (updater.js)
+  updater.start(ipcMain, () => { quitting = true })
 })
 
 app.on('before-quit', () => { quitting = true })

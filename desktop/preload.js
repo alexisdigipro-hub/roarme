@@ -8,4 +8,11 @@ contextBridge.exposeInMainWorld('roarDesktop', {
   setBadge: (n) => ipcRenderer.send('roar:badge', Number(n) || 0),
   getSettings: () => ipcRenderer.invoke('roar:get'),
   setSetting: (key, value) => ipcRenderer.invoke('roar:set', key, value),
+  // updates (1.4.9 on): the app downloads a new version by itself; the page shows it and offers Restart
+  update: {
+    state: () => ipcRenderer.invoke('roar:update-state'),
+    check: () => ipcRenderer.invoke('roar:update-check'),
+    install: () => ipcRenderer.invoke('roar:update-install'),
+    on: (fn) => { const h = (_e, s) => fn(s); ipcRenderer.on('roar:update', h); return () => ipcRenderer.removeListener('roar:update', h) },
+  },
 })

@@ -1,5 +1,10 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  'You have the newest RoarMe': 'Έχεις την πιο νέα έκδοση του RoarMe',
+  'Check': 'Έλεγχος',
+  'Checking…': 'Έλεγχος…',
+  'Looks for a new version now': 'Ψάχνει τώρα για νέα έκδοση',
+  'Check for Updates': 'Έλεγχος για ενημερώσεις',
   'Email Me About Unread Messages': 'Email για αδιάβαστα μηνύματα',
   'When you have been away, at most one every 3 hours. Never the text of a message': 'Όταν λείπεις, το πολύ ένα κάθε 3 ώρες. Ποτέ το κείμενο ενός μηνύματος',
   'Not available right now': 'Δεν είναι διαθέσιμο αυτή τη στιγμή',

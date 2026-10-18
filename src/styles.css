@@ -3162,3 +3162,9 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
   .e2e-off { padding: 0; width: 40px; height: 40px; justify-content: center; }
   .e2e-off span { display: none; }
 }
+
+/* "beta" beside the name while RoarMe is in beta (Alex, 18 Oct): a small red-edged tag at the top right of ME */
+.wordmark b.wm .wm-beta { display: inline-block; margin-left: .45em; padding: .18em .55em .2em; border-radius: 999px; font-style: normal; font-size: max(9px, .3em);
+  font-weight: 600; letter-spacing: .12em; line-height: 1; text-transform: uppercase; vertical-align: .95em; color: #fff;
+  background: color-mix(in srgb, var(--accent) 22%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent); }
+html[data-mode='light'] .wordmark b.wm .wm-beta { color: var(--text); }

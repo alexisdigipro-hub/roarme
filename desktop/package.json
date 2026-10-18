@@ -1,7 +1,7 @@
 {
   "name": "roar",
   "productName": "RoarMe",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "description": "RoarMe for Mac and Windows: the chat in an app of its own",
   "author": "THEMADLIONS",
   "private": true,
@@ -36,7 +36,7 @@
       ],
       "category": "public.app-category.social-networking",
       "identity": null,
-      "artifactName": "RoarMe-Mac-${arch}.${ext}",
+      "artifactName": "RoarMe-${version}-beta-Mac-${arch}.${ext}",
       "extendInfo": {
         "NSCameraUsageDescription": "RoarMe uses the camera for photos and video calls.",
         "NSMicrophoneUsageDescription": "RoarMe uses the microphone for voice messages and calls.",
@@ -45,7 +45,7 @@
       }
     },
     "dmg": {
-      "artifactName": "RoarMe-Mac-${arch}.${ext}",
+      "artifactName": "RoarMe-${version}-beta-Mac-${arch}.${ext}",
       "title": "RoarMe"
     },
     "win": {
@@ -57,7 +57,7 @@
           ]
         }
       ],
-      "artifactName": "RoarMe-Windows-Setup.${ext}"
+      "artifactName": "RoarMe-${version}-beta-Windows-Setup.${ext}"
     },
     "nsis": {
       "oneClick": true,

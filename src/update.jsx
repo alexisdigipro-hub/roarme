@@ -16,6 +16,17 @@ export const DL = {
   win: `https://github.com/${REPO}/releases/latest/download/RoarMe-Windows-Setup.exe`,
 }
 const LATEST = 'roarme-latest-release'
+/* the installers carry their version and "beta" in the name (RoarMe-1.4.7-beta-Mac-arm64.dmg, Alex 18 Oct), so the
+   links come from the newest release's own files; the plain names above stay on each release as a fallback */
+const FILE_OF = { 'mac-arm': /Mac-arm64\.dmg$/, 'mac-intel': /Mac-x64\.dmg$/, win: /Windows-Setup\.exe$/ }
+export const BETA = 'beta'
+const cachedFiles = () => { try { return JSON.parse(localStorage.getItem(LATEST) || 'null')?.files || {} } catch { return {} } }
+export const dlUrl = (kind, files = cachedFiles()) => {
+  const re = FILE_OF[kind] || FILE_OF['mac-arm']
+  const names = Object.keys(files).filter((n) => re.test(n))
+  const named = names.find((n) => /\d+\.\d+\.\d+/.test(n)) || names[0]
+  return named ? files[named] : DL[kind] || DL['mac-arm']
+}
 const SKIP = 'roarme-update-skip'
 
 /* the installed app's version, or '' in a browser */
@@ -49,14 +60,15 @@ export const thisComputer = () => {
 export function useLatestRelease() {
   const [latest, setLatest] = useState(() => { try { return JSON.parse(localStorage.getItem(LATEST) || 'null') } catch { return null } })
   useEffect(() => {
-    if (latest && Date.now() - latest.at < 3 * 3600e3) return undefined
+    if (latest && latest.files && Date.now() - latest.at < 3 * 3600e3) return undefined
     let alive = true
     fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         const version = (String(d?.name || '').match(/(\d+\.\d+\.\d+)/) || [])[1] || ''
         if (!alive || !d) return
-        const v = { at: Date.now(), version, tag: d.tag_name, date: d.published_at }
+        const files = Object.fromEntries((d.assets || []).map((a) => [a.name, a.browser_download_url]))
+        const v = { at: Date.now(), version, tag: d.tag_name, date: d.published_at, files }
         try { localStorage.setItem(LATEST, JSON.stringify(v)) } catch { /* private window */ }
         setLatest(v)
       })
@@ -77,12 +89,12 @@ export function useAppUpdate() {
 export function InstallGuide({ kind, onClose, update = false }) {
   const mac = kind !== 'win'
   const steps = mac ? [
-    [I.download, 'Open the download', 'Open RoarMe-Mac.dmg from your Downloads and drag RoarMe onto Applications.' + (update ? ' Quit RoarMe first (Cmd+Q) and press Replace.' : '')],
+    [I.download, 'Open the download', 'Open the RoarMe .dmg file from your Downloads and drag RoarMe onto Applications.' + (update ? ' Quit RoarMe first (Cmd+Q) and press Replace.' : '')],
     [I.play, 'Open RoarMe', 'Open it from Applications. The first time the Mac says it cannot check the app: press Done (not Move to Bin).'],
     [I.gear, 'Privacy & Security', 'Open System Settings > Privacy & Security and scroll down to Security, where it says RoarMe was blocked.'],
     [I.check, 'Open Anyway', 'Press Open Anyway, type your Mac password, then Open Anyway once more. From then on RoarMe opens like any app.'],
   ] : [
-    [I.download, 'Open the download', 'Open RoarMe-Windows-Setup.exe from your Downloads.' + (update ? ' Close RoarMe first.' : '')],
+    [I.download, 'Open the download', 'Open the RoarMe Setup .exe file from your Downloads.' + (update ? ' Close RoarMe first.' : '')],
     [I.info, 'Windows protected your PC', 'If this blue window comes up, press More info, then Run anyway.'],
     [I.check, 'Done', 'RoarMe installs and opens by itself. From then on it opens like any app.'],
   ]
@@ -98,8 +110,8 @@ export function InstallGuide({ kind, onClose, update = false }) {
           ))}
         </ol>
         <div className="inst-acts">
-          <a className="btn" href={DL[kind] || DL['mac-arm']} target="_blank" rel="noopener noreferrer">{I.download}<span>Download again</span></a>
-          {mac && <a className="btn" href={kind === 'mac-intel' ? DL['mac-arm'] : DL['mac-intel']} target="_blank" rel="noopener noreferrer"><span>{kind === 'mac-intel' ? 'Mac with Apple chip?' : 'Older Mac with Intel?'}</span></a>}
+          <a className="btn" href={dlUrl(kind)} target="_blank" rel="noopener noreferrer">{I.download}<span>Download again</span></a>
+          {mac && <a className="btn" href={dlUrl(kind === 'mac-intel' ? 'mac-arm' : 'mac-intel')} target="_blank" rel="noopener noreferrer"><span>{kind === 'mac-intel' ? 'Mac with Apple chip?' : 'Older Mac with Intel?'}</span></a>}
           <button type="button" className="btn btn-main" onClick={onClose}>Got it</button>
         </div>
       </div>
@@ -108,7 +120,7 @@ export function InstallGuide({ kind, onClose, update = false }) {
 }
 
 /* start the download and show the steps */
-export const startDownload = (kind) => { window.open(DL[kind] || DL['mac-arm'], '_blank', 'noopener') }
+export const startDownload = (kind) => { window.open(dlUrl(kind), '_blank', 'noopener') }
 
 /* the card in the app when a newer Mac or Windows app is out */
 export function UpdateCard() {
@@ -123,7 +135,7 @@ export function UpdateCard() {
       {ready && skip !== latest && !guide && (
         <div className="upd" role="status">
           <i className="upd-ico">{I.download}</i>
-          <span className="upd-text"><b>New RoarMe app: {latest}</b><small>You have {installed}. Download it and install it over the old one.</small></span>
+          <span className="upd-text"><b>{`New RoarMe app: ${latest} ${BETA}`}</b><small>You have {installed}. Download it and install it over the old one.</small></span>
           <button type="button" className="btn btn-main upd-go" onClick={() => { startDownload(kind); setGuide(kind) }}>{I.download}<span>Download</span></button>
           <button type="button" className="upd-x" onClick={later} aria-label="Later" title="Later">{I.x}</button>
         </div>

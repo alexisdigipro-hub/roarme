@@ -7,7 +7,7 @@ import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
-import { InstallGuide, startDownload, thisComputer, useAppUpdate } from './update.jsx'
+import { InstallGuide, appVersion, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
    Anything that needs the database is shown switched off with "Coming soon". */
@@ -118,7 +118,7 @@ export function SettingsMenu({ me, page, onPage }) {
       <div className="set-box">
         <button type="button" className="set-row set-pick set-nav danger" onClick={() => supabase.auth.signOut()}><span className="nav-ico" style={{ '--c': '#ff453a' }}>{svg(<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />, 16)}</span><span className="set-text">Sign out</span></button>
       </div>
-      <p className="set-version"><Wordmark by /><span>RoarMe 0.1 · {navigator.userAgent.includes('Electron') ? 'Mac app' : 'web'}</span></p>
+      <p className="set-version"><Wordmark by /><span>{`RoarMe ${appVersion() ? `${appVersion()} ` : ''}beta · ${!navigator.userAgent.includes('Electron') ? 'web' : /Windows/.test(navigator.userAgent) ? 'Windows app' : 'Mac app'}`}</span></p>
     </div>
   )
 }
@@ -167,7 +167,7 @@ function General({ p, onKeys }) {
       <Box title="RoarMe app" note={desk.on ? 'For this computer.' : 'The RoarMe app for Mac (and Windows) adds these. It always shows the latest RoarMe.'}>
         {desk.on ? (
           <>
-            <div className="set-row"><span className="set-text">Version {upd.installed || '–'}<small>{upd.ready ? `RoarMe ${upd.latest} is out` : upd.latest ? 'Up to date' : 'The newest version is checked when RoarMe opens'}</small></span>{upd.ready && <button type="button" className="btn btn-main set-upd" onClick={() => get(thisComputer() || 'mac-arm')}>{I.download}<span>Download</span></button>}</div>
+            <div className="set-row"><span className="set-text">Version {upd.installed ? `${upd.installed} beta` : '–'}<small>{upd.ready ? `RoarMe ${upd.latest} is out` : upd.latest ? 'Up to date' : 'The newest version is checked when RoarMe opens'}</small></span>{upd.ready && <button type="button" className="btn btn-main set-upd" onClick={() => get(thisComputer() || 'mac-arm')}>{I.download}<span>Download</span></button>}</div>
             <Switch on={desk.s.tray} set={(v) => desk.set('tray', v)} hint="The paw, with your unread count, at the top of the screen">Show Icon in Menu Bar</Switch>
             <Switch on={desk.s.openAtLogin} set={(v) => desk.set('openAtLogin', v)} hint="Starts quietly in the background">Open When the Computer Starts</Switch>
             <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps RoarMe on for messages and calls">Keep Running When Closed</Switch>

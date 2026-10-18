@@ -177,6 +177,14 @@ Known and accepted: the roar_people view is SECURITY DEFINER on purpose (it hide
 setting); the roar_* RPCs are meant to be called by signed-in users and check permissions inside; messages are not
 end-to-end encrypted unless Encrypted Chat is on (see below).
 
+## Beta (18 Oct)
+RoarMe says it is in beta: a small red-edged "beta" tag beside ROARME in the app (side panel, opening, Settings), the
+version line in Settings reads "RoarMe 1.4.7 beta · Mac app", and the update card "New RoarMe app: 1.4.7 beta". The
+desktop installers are named with their version and "beta" (`RoarMe-1.4.7-beta-Mac-arm64.dmg`, `-Mac-x64.dmg`,
+`-Windows-Setup.exe`; desktop/package.json artifactName) and the release is "RoarMe 1.4.7 beta · build N". The release
+job also puts a copy under the old plain names, so links made before keep working; the app and the RoarMe page take
+the newest release's own files from the GitHub API (`dlUrl` in src/update.jsx) and fall back to the plain names.
+
 ## Encrypted Chat (17 Oct)
 End-to-end encryption for one chat, on for a while and off again (Alex: "να υπάρχει αλλά όχι συνέχεια"). In a chat:
 ⋯ > **Encrypted Chat** opens a window that says what it does, and who in the chat has not opened the new RoarMe yet

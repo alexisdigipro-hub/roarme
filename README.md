@@ -322,3 +322,13 @@ Alex: the bar should not go away when Tasks opens. On a phone the Tasks panel no
 (measured in tasks.jsx, rounded at its foot), so Contacts, Chats, Media, Calls and Settings stay one tap away; tapping
 any of them puts the panel away, Tasks again closes it. Opened from inside a chat (where there is no bar) it still
 fills the screen.
+
+## Delete for Me, and asking to delete someone else's message (18 Oct)
+Alex: everyone can take the "turned on / off Encrypted Chat" lines and the messages they cannot open out of a chat,
+and can delete the other person's bubbles too, after asking them. `supabase/delete-asks.sql` (run by Claude, tested):
+- **Delete for Me** in every message's menu, and a small × on the Encrypted Chat lines: the message leaves your own view
+  only (`roar_msg_hides`, one row per person and message).
+- **Ask to Delete for Everyone** on someone else's message (`roar_ask_delete`): they see a bar above their writing box,
+  "<name> asks to delete your message", with the message's text, Decline and Accept (`roar_answer_delete`); Accept
+  deletes it for everyone. The one who asked gets "<name> deleted the message" or "kept the message" (realtime on
+  `roar_delete_asks`); while it waits the menu says "Waiting for <name>". Your own messages keep Delete for Everyone.

@@ -911,6 +911,47 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const [schedList, setSchedList] = useState(false)
   const holdT = useRef(null)
   const held = useRef(false)
+  // Delete for Me, and asking someone to delete what they wrote (Alex, 18 Oct; supabase/delete-asks.sql)
+  const [hidden, setHidden] = useState(() => new Set())
+  const [asks, setAsks] = useState([])
+  useEffect(() => {
+    let alive = true
+    setHidden(new Set()); setAsks([])
+    supabase.from('roar_msg_hides').select('message_id').eq('room_id', room.room_id).then(({ data }) => { if (alive) setHidden(new Set((data || []).map((x) => x.message_id))) })
+    supabase.from('roar_delete_asks').select('*').eq('room_id', room.room_id).eq('status', 'pending').then(({ data }) => { if (alive) setAsks(data || []) })
+    const ch = supabase.channel(`roar-asks-${room.room_id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_delete_asks', filter: `room_id=eq.${room.room_id}` }, (ev) => {
+        const a = ev.new
+        if (!a?.id) return
+        setAsks((l) => (a.status === 'pending' ? [...l.filter((x) => x.id !== a.id), a] : l.filter((x) => x.id !== a.id)))
+        if (ev.eventType === 'UPDATE' && a.asked_by === me.id && a.status !== 'pending') {
+          const who = nameOf(people[a.owner])
+          toast(a.status === 'accepted' ? `${who} deleted the message` : `${who} kept the message`)
+        }
+      })
+      .subscribe()
+    return () => { alive = false; supabase.removeChannel(ch) }
+  }, [room.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const hideForMe = async (m) => {
+    setMenu(null)
+    setHidden((h) => new Set([...h, m.id]))
+    const { error } = await supabase.from('roar_msg_hides').upsert({ user_id: me.id, message_id: m.id, room_id: room.room_id })
+    if (error) { setErr(errText(error)); setHidden((h) => { const n = new Set(h); n.delete(m.id); return n }) }
+  }
+  const askDelete = async (m) => {
+    setMenu(null)
+    const { data, error } = await supabase.rpc('roar_ask_delete', { msg: m.id })
+    if (error) { setErr(errText(error)); return }
+    setAsks((l) => [...l.filter((x) => x.id !== data), { id: data, message_id: m.id, room_id: room.room_id, asked_by: me.id, owner: m.user_id, status: 'pending' }])
+    toast(`Asked ${nameOf(people[m.user_id])} to delete it`)
+  }
+  const answerAsk = async (a, accept) => {
+    setAsks((l) => l.filter((x) => x.id !== a.id))
+    const { error } = await supabase.rpc('roar_answer_delete', { ask: a.id, accept })
+    if (error) { setErr(errText(error)); return }
+    if (accept) setMsgs((all) => all.map((x) => (x.id === a.message_id ? { ...x, deleted_at: new Date().toISOString(), body: '' } : x)))
+    toast(accept ? 'Deleted for everyone' : 'Kept')
+  }
   const [busy, setBusy] = useState('')
   const [err, setErr] = useState('')
   const [viewer, setViewer] = useState(null) // { items, index }
@@ -1441,7 +1482,10 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const pinnedList = pinRows.map((p) => byId[p.message_id] || pinOpenedById[p.message_id]).filter((m) => m && !m.deleted_at)
   const pinned = pinnedList[pinnedList.length - 1] || null
   // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
-  const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && (!clearedAt || m.created_at > clearedAt)), [msgs, clearedAt])
+  const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt)), [msgs, clearedAt, hidden])
+  // what others ask me to delete, one at a time, above the writing box
+  const askForMe = asks.filter((a) => a.owner === me.id && msgs.some((m) => m.id === a.message_id && !m.deleted_at))
+  const askedByMe = new Set(asks.filter((a) => a.asked_by === me.id).map((a) => a.message_id))
   const pickedMsgs = picked ? msgs.filter((m) => picked.includes(m.id)) : []
   const act = (what, arg) => { setHeadMenu(false); onAct(what, arg) }
   // messages here go by themselves after a day, a week or a month
@@ -1600,7 +1644,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
             return (
               <div key={m.id} id={`m-${m.id}`}>
                 {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
-                <div className="sys-note"><span>{m.body === E2E_OFF ? I.unlock : I.lock}<b>{mine ? 'You' : nameOf(who)}</b><span>{systemText(m.body)}</span><small>{timeOf(m.created_at)}</small></span></div>
+                <div className="sys-note"><span>{m.body === E2E_OFF ? I.unlock : I.lock}<b>{mine ? 'You' : nameOf(who)}</b><span>{systemText(m.body)}</span><small>{timeOf(m.created_at)}</small><button type="button" className="sys-x" onClick={() => hideForMe(m)} aria-label="Delete for Me" title="Delete for Me">{I.x}</button></span></div>
               </div>
             )
           }
@@ -1685,6 +1729,20 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
             <button type="button" className="btn e2e-off" onClick={turnOff} title="Turn off Encrypted Chat">{I.unlock}<span>Turn off</span></button>
           </div>
         )}
+        {askForMe.length > 0 && (() => {
+          const a = askForMe[0]
+          const m = msgs.find((x) => x.id === a.message_id)
+          return (
+            <div className="ask-bar">
+              <button type="button" className="ask-text" onClick={() => goTo(a.message_id)}>
+                <b>{nameOf(people[a.asked_by])} asks to delete your message{askForMe.length > 1 ? ` (1 of ${askForMe.length})` : ''}</b>
+                <span>{m ? textOf(m) : ''}</span>
+              </button>
+              <button type="button" className="btn" onClick={() => answerAsk(a, false)}>Decline</button>
+              <button type="button" className="btn btn-main" onClick={() => answerAsk(a, true)}>Accept</button>
+            </div>
+          )
+        })()}
         {mentionHits.length > 0 && (
           <div className="mention-pick">
             {mentionHits.map((p) => <button key={p.id} type="button" onMouseDown={(e) => { e.preventDefault(); pickMention(p) }}><Avatar src={p.avatar_url} name={nameOf(p)} size={28} /><b>{nameOf(p)}</b><small>@{p.username}</small></button>)}
@@ -1766,6 +1824,11 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
               <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
               {!menu.m.sealed && <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>}
               <button type="button" onClick={() => { setPicked([menu.m.id]); setMenu(null) }}>{I.select}<span>Select</span></button>
+              <hr />
+              <button type="button" onClick={() => hideForMe(menu.m)}>{I.trash}<span>Delete for Me</span></button>
+              {menu.m.user_id && menu.m.user_id !== me.id && (askedByMe.has(menu.m.id)
+                ? <button type="button" disabled>{I.timer}<span>Waiting for {nameOf(people[menu.m.user_id])}</span></button>
+                : <button type="button" className="danger" onClick={() => askDelete(menu.m)}>{I.trash}<span>Ask to Delete for Everyone</span></button>)}
               {menu.m.user_id === me.id && (
                 <>
                   <hr />
@@ -1775,7 +1838,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                     <span className="menu-faces">{seenBy(menu.m).slice(0, 3).map((u) => <Avatar key={u} src={people[u]?.avatar_url} name={nameOf(people[u])} size={22} />)}</span>
                   </div>
                   <hr />
-                  <button type="button" className="danger" onClick={() => { if (window.confirm('Delete this message for everyone?')) remove([menu.m]); setMenu(null) }}>{I.trash}<span>Delete</span></button>
+                  <button type="button" className="danger" onClick={() => { if (window.confirm('Delete this message for everyone?')) remove([menu.m]); setMenu(null) }}>{I.trash}<span>Delete for Everyone</span></button>
                 </>
               )}
             </div>

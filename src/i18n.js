@@ -19,6 +19,11 @@ const ago = (s) => s.replace(/^now$/, 'τώρα').replace(/^(\d+) min ago$/, 'π
 
 // texts with names and numbers in them
 const PATTERNS = [
+  [/^(.+) asks to delete your message( \(1 of (\d+)\))?$/, (_, n, x, c) => `${n}: ζητάει να σβηστεί το μήνυμά σου${c ? ` (1 από ${c})` : ''}`],
+  [/^Asked (.+) to delete it$/, (_, n) => `Ζητήθηκε από ${n} να το σβήσει`],
+  [/^(.+) deleted the message$/, (_, n) => `${n}: έσβησε το μήνυμα`],
+  [/^(.+) kept the message$/, (_, n) => `${n}: κράτησε το μήνυμα`],
+  [/^Waiting for (.+)$/, (_, n) => `Αναμονή για ${n}`],
   [/^(.+) is now an admin$/, (_, n) => `${n}: έγινε admin`],
   [/^(.+) is no longer an admin$/, (_, n) => `${n}: δεν είναι πια admin`],
   [/^Send on (.+) at (\d{1,2}:\d{2})$/, (_, d, h) => `Αποστολή ${d}, ${h}`],

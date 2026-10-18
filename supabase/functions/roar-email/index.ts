@@ -45,7 +45,11 @@ Deno.serve(async (req) => {
       }),
     })
     if (r.ok) sent++
-    else failed.push(`${r.status} ${(await r.text()).slice(0, 200)}`)
+    else {
+      failed.push(`${r.status} ${(await r.text()).slice(0, 200)}`)
+      // not sent (the domain not verified yet, a bad key…): unmark, so the next round tries again
+      await sb.from('roar_email_prefs').update({ last_sent_at: null }).eq('user_id', u.user_id)
+    }
   }
   return json({ due: (data || []).length, sent, failed })
 })

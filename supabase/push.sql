@@ -1,9 +1,12 @@
 -- Notifications with the app closed (Alex, 18 Oct 2026): Web Push. Settings > Notifications turns it on for a phone or
 -- a browser; its address goes in roar_push_subs. Every new message calls the Edge Function roar-push (through pg_net),
--- which sends a notification to everyone in the chat who has it on, is not in RoarMe right now (no heartbeat in the
--- last 75 seconds), has not muted the chat and has not blocked the writer, with their unread count for the icon.
+-- which sends a notification to everyone in the chat who has it on, does not have RoarMe in front of them right now
+-- (roar_profiles.active_until, kept 75 seconds ahead only while RoarMe is shown and focused), has not muted the chat and has not blocked the writer, with their unread count for the icon.
 -- The function's keys (VAPID) are made by the function itself the first time and kept in roar_push_conf, which only
 -- the server can read. Safe to run again.
+alter table public.roar_profiles add column if not exists active_until timestamptz;
+grant update (active_until) on public.roar_profiles to authenticated;
+
 create table if not exists public.roar_push_subs (
   endpoint text primary key check (endpoint like 'https://%' and char_length(endpoint) < 1000),
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
@@ -43,7 +46,7 @@ language sql stable security definer set search_path = public as $$
   join roar_push_subs s on s.user_id = mem.user_id
   left join roar_profiles p on p.id = mem.user_id
   where m.id = msg and m.kind <> 'system' and m.user_id is not null
-    and (p.last_seen is null or p.last_seen < now() - interval '75 seconds')
+    and (p.active_until is null or p.active_until < now())
     and not exists (select 1 from roar_blocks b where b.blocker = mem.user_id and b.blocked = m.user_id)
 $$;
 revoke all on function public.roar_push_targets(uuid) from public, anon, authenticated;

@@ -2,7 +2,7 @@
 -- chat gets your text back by itself, once per chat every 12 hours; "Only when I'm away" sends it only while you
 -- have not been in RoarMe for 10 minutes, and "Until" turns it off by itself. The reply is a normal message from
 -- you, marked file.auto (the app shows "Auto-reply" on it), and it does not mark the chat read for you.
--- Run after scheduled.sql (it uses the same roar_touch_room). Safe to run again.
+-- Run after scheduled.sql (it uses the same roar_touch_room) and push.sql (roar_profiles.active_until). Safe to run again.
 create table if not exists public.roar_autoreply (
   user_id uuid primary key default auth.uid() references auth.users(id) on delete cascade,
   enabled boolean not null default false,
@@ -41,7 +41,8 @@ begin
   if o is null then return new; end if;
   select * into a from roar_autoreply where user_id = o and enabled and body <> '' and (until is null or until > now());
   if not found then return new; end if;
-  if a.away_only and exists (select 1 from roar_profiles where id = o and last_seen > now() - interval '10 minutes') then return new; end if;
+  -- away: RoarMe has not been in front of them for 10 minutes (push.sql adds active_until)
+  if a.away_only and exists (select 1 from roar_profiles where id = o and (active_until > now() - interval '10 minutes')) then return new; end if;
   if exists (select 1 from roar_autoreply_sent where user_id = o and room_id = new.room_id and sent_at > now() - interval '12 hours') then return new; end if;
   if exists (select 1 from roar_blocks where (blocker = o and blocked = new.user_id) or (blocker = new.user_id and blocked = o)) then return new; end if;
   if exists (select 1 from roar_e2e_sessions where room_id = new.room_id and ended_at is null) then return new; end if;

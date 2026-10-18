@@ -122,8 +122,12 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
       const phone = window.matchMedia('(max-width: 760px)').matches
       const keys = ['background', 'backgroundColor', 'border', 'borderRadius', 'boxShadow', 'backdropFilter', 'webkitBackdropFilter', 'top', 'bottom', 'right']
       const app = document.querySelector('.app')
-      if (phone || !main) { keys.forEach((k) => { el.style[k] = '' }); app?.style.removeProperty('--tasks-pad'); return }
-      const cs = getComputedStyle(main), r = main.getBoundingClientRect()
+      if (phone || !main || !app) { keys.forEach((k) => { el.style[k] = '' }); app?.style.removeProperty('--tasks-pad'); return }
+      // where the columns sit in the layout, not where they are drawn: on opening they slide in (an animation
+      // that moves them), and measuring them mid-slide put the panel out of line until the window was resized
+      const ar = app.getBoundingClientRect()
+      const lay = (n) => ({ left: ar.left + n.offsetLeft, top: ar.top + n.offsetTop, right: ar.left + n.offsetLeft + n.offsetWidth, bottom: ar.top + n.offsetTop + n.offsetHeight })
+      const cs = getComputedStyle(main), r = lay(main)
       el.style.background = cs.background
       el.style.backgroundColor = cs.backgroundColor
       el.style.border = cs.border
@@ -136,7 +140,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
       // the gaps come from the columns on the left, not from the top (the Mac app keeps room up there for the
       // window's buttons): the outer margin as on the left edge, the gap as between the chat list and the chat
       const side = document.querySelector('.app > .side')
-      const sr = side ? side.getBoundingClientRect() : null
+      const sr = side ? lay(side) : null
       const edge = sr ? Math.max(0, Math.round(sr.left)) : Math.round(r.top)
       const gap = sr ? Math.max(0, Math.round(r.left - sr.right)) : edge
       el.style.right = `${edge}px`
@@ -150,9 +154,13 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
     ro.observe(el)
     window.addEventListener('resize', fit)
     window.addEventListener('roarme-prefs', later)
+    // and once more when the opening slide-in ends
+    const appEl = document.querySelector('.app')
+    appEl?.addEventListener('animationend', later)
+    const settle = setTimeout(fit, 1200)
     const mo = new MutationObserver(later)
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-mode', 'data-bubbles', 'class', 'style'] })
-    return () => { ro.disconnect(); mo.disconnect(); window.removeEventListener('resize', fit); window.removeEventListener('roarme-prefs', later); document.querySelector('.app')?.style.removeProperty('--tasks-pad') }
+    return () => { clearTimeout(settle); appEl?.removeEventListener('animationend', later); ro.disconnect(); mo.disconnect(); window.removeEventListener('resize', fit); window.removeEventListener('roarme-prefs', later); document.querySelector('.app')?.style.removeProperty('--tasks-pad') }
   }, [])
 
   const patch = async (t, change, ok) => {

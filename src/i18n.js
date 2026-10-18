@@ -19,6 +19,8 @@ const ago = (s) => s.replace(/^now$/, 'τώρα').replace(/^(\d+) min ago$/, 'π
 
 // texts with names and numbers in them
 const PATTERNS = [
+  [/^(.+) is now an admin$/, (_, n) => `${n}: έγινε admin`],
+  [/^(.+) is no longer an admin$/, (_, n) => `${n}: δεν είναι πια admin`],
   [/^Send on (.+) at (\d{1,2}:\d{2})$/, (_, d, h) => `Αποστολή ${d}, ${h}`],
   [/^Save for (.+) at (\d{1,2}:\d{2})$/, (_, d, h) => `Αποθήκευση για ${d}, ${h}`],
   [/^Scheduled for (.+) at (\d{1,2}:\d{2})$/, (_, d, h) => `Προγραμματίστηκε για ${d}, ${h}`],

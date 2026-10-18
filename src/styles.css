@@ -3336,3 +3336,13 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 .cal-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .cal-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; }
 .cal-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+
+/* group admins (Alex, 18 Oct) */
+.pf-tag.pf-admin { flex: none; padding: 2px 9px; font-size: 11px; background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.people .pf-row .link { flex: none; white-space: nowrap; font-size: 13px; }
+@media (max-width: 820px) {
+  .people .pf-row { flex-wrap: wrap; row-gap: 4px; }
+  .people .pf-row .pf-row-text { flex-basis: calc(100% - 60px); }
+  .people .pf-row .pf-tag.pf-admin, .people .pf-row .link { margin-left: auto; }
+  .people .pf-row .pf-tag.pf-admin ~ .link { margin-left: 0; }
+}

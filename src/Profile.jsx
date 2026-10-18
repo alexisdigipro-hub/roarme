@@ -80,6 +80,21 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     const { error } = await supabase.rpc('roar_delete_group', { r: room.room_id })
     if (error) setErr(errText(error)); else { toast('Group deleted'); onLeft() }
   }
+  // who is an admin (Alex, 18 Oct): an admin makes others admins or takes it back (supabase/admins.sql)
+  const [roles, setRoles] = useState({})
+  const loadRoles = async () => {
+    if (!group) return
+    const { data } = await supabase.from('roar_members').select('user_id, role').eq('room_id', room.room_id)
+    setRoles(Object.fromEntries((data || []).map((x) => [x.user_id, x.role])))
+  }
+  useEffect(() => { loadRoles() }, [room.room_id, (room.members || []).length]) // eslint-disable-line react-hooks/exhaustive-deps
+  const setAdmin = async (p, on) => {
+    const { error } = await supabase.rpc('roar_set_admin', { r: room.room_id, person: p.id, admin: on })
+    if (error) { setErr(errText(error)); return }
+    loadRoles()
+    if (p.id === me.id) onChanged()
+    toast(on ? `${nameOf(p)} is now an admin` : p.id === me.id ? 'You are no longer an admin' : `${nameOf(p)} is no longer an admin`)
+  }
   const removeMember = async (p) => {
     if (!window.confirm(`Remove ${nameOf(p)} from ${title}?`)) return
     const { error } = await supabase.rpc('roar_remove_member', { r: room.room_id, person: p.id })
@@ -268,6 +283,10 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                 <div key={p.id} className="pf-row">
                   <Avatar src={p.avatar_url} name={nameOf(p)} size={40} />
                   <span className="pf-row-text"><b>{p.id === me.id ? 'You' : nameOf(p)}</b><small>{p.username !== '…' ? `@${p.username} · ${lastSeenText(p)}` : ''}</small></span>
+                  {roles[p.id] === 'admin' && <span className="pf-tag pf-admin">Admin</span>}
+                  {admin && (roles[p.id] === 'admin'
+                    ? (p.id !== me.id || Object.values(roles).filter((x) => x === 'admin').length > 1) && <button type="button" className="link" onClick={() => setAdmin(p, false)}>{p.id === me.id ? 'Step Down' : 'Remove Admin'}</button>
+                    : <button type="button" className="link" onClick={() => setAdmin(p, true)}>Make Admin</button>)}
                   {admin && p.id !== me.id && <button type="button" className="link danger-link" onClick={() => removeMember(p)}>Remove</button>}
                 </div>
               ))}

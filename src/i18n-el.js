@@ -894,4 +894,9 @@ export const EL = {
   'New task on this day…': 'Νέο task αυτή τη μέρα…',
   'Previous month': 'Προηγούμενος μήνας',
   'Next month': 'Επόμενος μήνας',
+  'Make Admin': 'Κάνε admin',
+  'Remove Admin': 'Αφαίρεση admin',
+  'Step Down': 'Παραίτηση από admin',
+  'You are no longer an admin': 'Δεν είσαι πια admin',
+  'A group needs at least one admin': 'Ένα group χρειάζεται τουλάχιστον έναν admin',
 }

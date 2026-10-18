@@ -269,3 +269,9 @@ soft day tiles, Monday first, today in the accent colour, and a dot per kind on 
 scheduled calls from the chats' call cards (green) and your scheduled messages with their repeats (blue). The chosen
 day lists them: a task opens its window, a call goes to its card in the chat, a message to its chat. "New task on this
 day…" opens a new task with that day as its due date. ‹ › move a month, Today comes back.
+
+## Group admins (18 Oct)
+A group's card > Members shows an Admin tag; an admin has Make Admin / Remove Admin beside each person (and Step Down
+for themselves while another admin stays) next to Remove. `roar_set_admin(r, person, admin)` in `supabase/admins.sql`
+(run by Claude 18 Oct); the role column is not writable by members themselves. Removing people, adding them and
+deleting the group were already there (`supabase/round1.sql`).

@@ -34,6 +34,17 @@ export function TasksCalendar({ me, tasks, titleOf, rooms, onTask, onNewTask, on
   }, [month])
   const from = cells[0], to = new Date(cells[41].getFullYear(), cells[41].getMonth(), cells[41].getDate() + 1)
 
+  // looked up again when a call or a message is scheduled here, when RoarMe comes back to the front, and every
+  // minute (a call someone else schedules arrives that way)
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const again = () => setTick((n) => n + 1)
+    const back = () => { if (!document.hidden) again() }
+    window.addEventListener('roarme-cal', again)
+    document.addEventListener('visibilitychange', back)
+    const id = setInterval(again, 60e3)
+    return () => { window.removeEventListener('roarme-cal', again); document.removeEventListener('visibilitychange', back); clearInterval(id) }
+  }, [])
   useEffect(() => {
     let alive = true
     Promise.all([
@@ -46,7 +57,7 @@ export function TasksCalendar({ me, tasks, titleOf, rooms, onTask, onNewTask, on
       setSched(b.data || [])
     })
     return () => { alive = false }
-  }, [month, me.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [month, me.id, tick]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // everything by day
   const byDay = useMemo(() => {

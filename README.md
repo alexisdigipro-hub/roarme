@@ -308,3 +308,11 @@ On a phone the Media page used to replace the chat list together with its bar at
 the media fill the screen and the bar (Contacts, Chats, Media, Calls, Tasks, Settings) stays under them, so one tap
 goes anywhere (styles.css, "Media on a phone keeps the bar"). The Tasks panel has no "New task…" at its foot any more:
 the + in its head adds one.
+
+## Schedule Message, RoarMe's own pickers (18 Oct)
+Alex: the browser's clock list was not beautiful. The window now has quick choices (In 1 hour, Tonight 20:00, Tomorrow
+09:00, Monday 09:00), the days as tiles in a row you slide (Today, Tomorrow, then weekday · date · month, 120 days),
+the time as two wheels with a glass lens over the chosen line (scroll or tap a number), and Repeat as chips
+(`src/scheduled.jsx` Wheel / DayStrip). The calendar under Tasks looks things up again when a call or a message is
+scheduled here (event `roarme-cal`), when RoarMe comes back to the front, and every minute (Alex: a scheduled call did
+not show until it was reopened).

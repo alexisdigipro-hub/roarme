@@ -1285,6 +1285,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     close?.()
     stick.current = true
     setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+    if (file?.event) window.dispatchEvent(new Event('roarme-cal')) // the calendar under Tasks shows it at once
     if (done) toast(done)
     return true
   }

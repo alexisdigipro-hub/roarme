@@ -11,6 +11,7 @@ import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
 import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
+import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { NowPlaying } from './player.jsx'
 import { UpdateCard } from './update.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
@@ -891,6 +892,13 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
   const [caret, setCaret] = useState(0)
   const [replyTo, setReplyTo] = useState(null)
   const [editing, setEditing] = useState(null)
+  // scheduled messages (Alex, 18 Oct): hold Send or right click it; the clock in the box lists what waits
+  const sched = useScheduled(room.room_id, me.id)
+  const [schedNew, setSchedNew] = useState(false)
+  const [schedEdit, setSchedEdit] = useState(null)
+  const [schedList, setSchedList] = useState(false)
+  const holdT = useRef(null)
+  const held = useRef(false)
   const [busy, setBusy] = useState('')
   const [err, setErr] = useState('')
   const [viewer, setViewer] = useState(null) // { items, index }
@@ -1084,6 +1092,16 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
     setReplyTo(null)
     if (error) { setErr(errText(error)); setText(body); return }
     setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+  }
+
+  const canSched = !editing && !sealOn && !!text.trim()
+  const scheduleIt = async ({ body, at, repeat }) => {
+    const out = prefs.autoEmoji ? swapEmoji(body) : body
+    const e = await sched.add({ body: out, replyTo: replyTo?.id, at, repeat })
+    if (e) return e
+    setSchedNew(false); setText(''); setReplyTo(null)
+    toast(`Scheduled for ${whenText(at.toISOString())}`)
+    return ''
   }
 
   // what is on its way up: one tile each, with a ring that fills (Alex, 16 Oct)
@@ -1601,7 +1619,7 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                     {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && !m.file?.ordino && <span className="text">{formatText(m.body, withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />}
-                    <span className="meta">{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
+                    <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
                   {(rx || replyCount[m.id]) && (
                     <span className="rx">
@@ -1697,16 +1715,26 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
                 onPaste={(e) => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach(f) } }}
                 disabled={!!sealOn && !keyOk} placeholder={sealOn ? 'Encrypted message…' : 'Write a message…'} />
               {(bigBox || tall) && <button type="button" className="compose-grow" onMouseDown={(e) => e.preventDefault()} onClick={() => { setBigBox((v) => !v); inputRef.current?.focus() }} aria-label={bigBox ? 'Smaller' : 'Bigger'} title={bigBox ? 'Smaller' : 'Bigger'}>{bigBox ? GROW_OFF : GROW_ON}</button>}
+              {sched.list.length > 0 && <button type="button" className="sched-btn" onClick={() => setSchedList(true)} aria-label="Scheduled Messages" title="Scheduled Messages">{I.timer}<i>{sched.list.length}</i></button>}
               <button type="button" className="emoji-btn" onClick={() => setEmoji((v) => !v)} aria-label="Emoji" title="Emoji">{I.smile}</button>
               {emoji && <EmojiPicker onPick={addEmoji} onClose={() => setEmoji(false)} />}
             </span>
             {text.trim() || editing || sealOn
-              ? <button type="button" className={`round send${text.trim() || editing ? ' ready' : ''}`} onClick={send} aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter)'}>{editing ? I.check : I.send}</button>
+              ? <button type="button" className={`round send${text.trim() || editing ? ' ready' : ''}`}
+                  onClick={() => { if (held.current) { held.current = false; return } send() }}
+                  onContextMenu={(e) => { if (canSched) { e.preventDefault(); clearTimeout(holdT.current); setSchedNew(true) } }}
+                  onPointerDown={() => { held.current = false; clearTimeout(holdT.current); if (canSched) holdT.current = setTimeout(() => { held.current = true; setSchedNew(true) }, 450) }}
+                  onPointerUp={() => clearTimeout(holdT.current)} onPointerLeave={() => clearTimeout(holdT.current)}
+                  aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter) · hold to schedule'}>{editing ? I.check : I.send}</button>
               : <button type="button" className="round" onClick={() => (canVoice ? startVoice() : setErr('This browser cannot record voice messages.'))} aria-label="Voice message" title="Voice message">{I.mic}</button>}
           </div>
         )}
       </footer>
       )}
+
+      {schedNew && <ScheduleMessage body={text.trim()} onClose={() => setSchedNew(false)} onSave={scheduleIt} />}
+      {schedEdit && <ScheduleMessage item={schedEdit} onClose={() => setSchedEdit(null)} onSave={async (v) => { const e = await sched.move(schedEdit.id, v); if (!e) { setSchedEdit(null); toast(`Scheduled for ${whenText(v.at.toISOString())}`) } return e }} />}
+      {schedList && !schedEdit && <ScheduledList sched={sched} toast={toast} onEdit={setSchedEdit} onClose={() => setSchedList(false)} />}
 
       {menu && (
         <OnTop>

@@ -3,6 +3,7 @@ import { Avatar, I, Lens, Modal } from './ui.jsx'
 import { errText, nameOf, supabase } from './lib.js'
 import { chime } from './prefs.js'
 import { locale, tr } from './i18n.js'
+import { TasksCalendar } from './calendar.jsx'
 
 /* Tasks (Alex, 18 Oct): a small task manager beside the chats, after the hub's Tasks. Never posted into a
    conversation (it would fill the chats): the Tasks button opens a panel that stays open while you move between
@@ -73,9 +74,12 @@ const overdue = (t) => t.due && active(t) && new Date(`${t.due}T23:59:59`) < new
 const byDue = (a, b) => (a.due || '9999') .localeCompare(b.due || '9999') || (b.priority === 'high') - (a.priority === 'high') || b.created_at.localeCompare(a.created_at)
 
 /* the panel: For me (with what waits for an answer on top), Given, Done */
-export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
+export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = [], titleOf = () => '', onOpenChat = () => {} }) {
   const [tab, setTab] = useState(() => { try { return localStorage.getItem('roarme-tasks-tab') || 'all' } catch { return 'all' } })
   const pickTab = (v) => { setTab(v); try { localStorage.setItem('roarme-tasks-tab', v) } catch { /* private window */ } }
+  // the calendar under Tasks (Alex, 18 Oct): the same panel shows the month instead of the list
+  const [cal, setCal] = useState(() => { try { return localStorage.getItem('roarme-tasks-cal') === '1' } catch { return false } })
+  const flipCal = () => setCal((v) => { try { localStorage.setItem('roarme-tasks-cal', v ? '0' : '1') } catch { /* private window */ } return !v })
   const [edit, setEdit] = useState(null) // true for a new task, or the task being changed
   const [view, setView] = useState(null) // the id of the task open in its window
   const { tasks, setTasks } = kit
@@ -208,10 +212,15 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
     <aside ref={box} className="tasks-panel" aria-label="Tasks" style={{ '--tasks-w': `${Math.min(tw, 720)}px` }}>
       <span className="tasks-grip" onPointerDown={drag} onDoubleClick={() => { setTw(TW); keepW(TW) }} title="Drag to widen, double-click to reset" />
       <div className="tasks-head">
-        <strong>{tr('Tasks')}</strong>
+        <strong>{tr(cal ? 'Calendar' : 'Tasks')}</strong>
+        <button type="button" className={`round${cal ? ' on' : ''}`} onClick={flipCal} aria-label={cal ? 'List' : 'Calendar'} title={cal ? 'List' : 'Calendar'}>{cal ? I.tasks : I.calendar}</button>
         <button type="button" className="round" onClick={() => setEdit(true)} aria-label="New task" title="New task">{I.plus}</button>
         <button type="button" className="round" onClick={onClose} aria-label="Close" title="Close">{I.x}</button>
       </div>
+      {cal ? (
+        <TasksCalendar me={me} tasks={tasks} rooms={rooms} titleOf={titleOf} onTask={setView} onNewTask={(due) => setEdit({ due })} onOpenChat={onOpenChat} />
+      ) : (
+      <>
       <Lens as="nav" className="tabs tasks-tabs" dep={tab}>
         <button type="button" className={tab === 'all' ? 'on' : ''} onClick={() => pickTab('all')}>{tr('All')}</button>
         <button type="button" className={tab === 'mine' ? 'on' : ''} onClick={() => pickTab('mine')}>{tr('For me')}{forMe.length > 0 && <small>{forMe.length}</small>}</button>
@@ -243,6 +252,8 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
         {tab === 'done' && (done.length ? done.map(row) : <p className="tasks-empty muted">{tr('Finished tasks show here.')}</p>)}
       </div>
       <button type="button" className="tasks-new" onClick={() => setEdit(true)}>{I.plus}<span>{tr('New task…')}</span></button>
+      </>
+      )}
 
       {edit && <TaskForm me={me} contacts={contacts} people={people} initial={edit === true ? null : edit} toast={toast}
         onClose={() => setEdit(null)} onSaved={(t) => { setTasks((list) => [t, ...list.filter((x) => x.id !== t.id)]); setEdit(null); if (tab !== 'all') pickTab(t.assignee === me.id ? 'mine' : 'given') }} />}
@@ -287,17 +298,17 @@ function TaskForm({ me, contacts, people, initial, onClose, onSaved, toast }) {
     if (!title.trim()) { setErr(tr('Give the task a title.')); return }
     setBusy(true); setErr('')
     const row = { title: title.trim(), assignee: who, due: due || null, priority, notes: notes.trim() }
-    const { data, error } = initial
+    const { data, error } = initial?.id
       ? await supabase.from('roar_tasks').update(row).eq('id', initial.id).select(COLS).single()
       : await supabase.from('roar_tasks').insert(row).select(COLS).single()
     setBusy(false)
     if (error) { setErr(errText(error)); return }
-    toast(initial ? 'Saved' : who === me.id ? 'Added to your tasks' : `Sent to ${nameOf(picked)}: waiting for an answer`)
+    toast(initial?.id ? 'Saved' : who === me.id ? 'Added to your tasks' : `Sent to ${nameOf(picked)}: waiting for an answer`)
     onSaved(data)
   }
   return (
-    <Modal title={initial ? 'Change task' : 'New task'} onClose={onClose}
-      foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={save} disabled={busy}>{busy ? '…' : initial ? 'Save' : who === me.id ? 'Add task' : 'Send task'}</button></>}>
+    <Modal title={initial?.id ? 'Change task' : 'New task'} onClose={onClose}
+      foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={save} disabled={busy}>{busy ? '…' : initial?.id ? 'Save' : who === me.id ? 'Add task' : 'Send task'}</button></>}>
       <label className="field"><span>Task</span><input className="input" autoFocus value={title} maxLength={300} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') save() }} placeholder="e.g. Book the lens for Friday" /></label>
       <div className="field">
         <span>For</span>

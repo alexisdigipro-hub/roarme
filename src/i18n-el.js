@@ -888,4 +888,10 @@ export const EL = {
   'Turn Off By Itself': 'Να κλείνει μόνη της',
   'It turns itself off at that time': 'Κλείνει μόνη της εκείνη την ώρα',
   'Until': 'Έως',
+  'Calendar': 'Ημερολόγιο',
+  'Scheduled messages': 'Προγραμματισμένα μηνύματα',
+  'Nothing on this day.': 'Τίποτα αυτή τη μέρα.',
+  'New task on this day…': 'Νέο task αυτή τη μέρα…',
+  'Previous month': 'Προηγούμενος μήνας',
+  'Next month': 'Επόμενος μήνας',
 }

@@ -106,9 +106,14 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
       el.style.webkitBackdropFilter = cs.webkitBackdropFilter || cs.backdropFilter
       el.style.top = `${Math.round(r.top)}px`
       el.style.bottom = `${Math.round(window.innerHeight - r.bottom)}px`
-      // the theme's own outer margin on the right too, and the same gap between the chat and the panel
-      el.style.right = `${Math.round(r.top)}px`
-      app?.style.setProperty('--tasks-pad', `${Math.round(el.offsetWidth + 2 * r.top)}px`)
+      // the gaps come from the columns on the left, not from the top (the Mac app keeps room up there for the
+      // window's buttons): the outer margin as on the left edge, the gap as between the chat list and the chat
+      const side = document.querySelector('.app > .side')
+      const sr = side ? side.getBoundingClientRect() : null
+      const edge = sr ? Math.max(0, Math.round(sr.left)) : Math.round(r.top)
+      const gap = sr ? Math.max(0, Math.round(r.left - sr.right)) : edge
+      el.style.right = `${edge}px`
+      app?.style.setProperty('--tasks-pad', `${Math.round(el.offsetWidth + edge + gap)}px`)
     }
     fit()
     const later = () => requestAnimationFrame(() => requestAnimationFrame(fit))

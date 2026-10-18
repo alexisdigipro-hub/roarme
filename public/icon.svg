@@ -1,1 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1932 1932"><rect width="1932" height="1932" rx="430" fill="#202020"/><g fill="#d40000" transform="translate(964 966) rotate(-23.6)"><rect x="-489" y="-279" width="192" height="754" rx="18"/><rect x="-289" y="-488" width="192" height="754" rx="18"/><rect x="-92" y="-349" width="192" height="754" rx="18"/><rect x="104" y="-272" width="192" height="754" rx="18"/><rect x="304" y="-481" width="192" height="754" rx="18"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1932 1932">
+  <!-- RoarMe's icon in the Simba look (Alex, 18 Oct): the same five strokes, on graphite glass with a lit top
+       and a red glow, as the app itself -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a4049"/>
+      <stop offset=".55" stop-color="#1f2328"/>
+      <stop offset="1" stop-color="#15171b"/>
+    </linearGradient>
+    <radialGradient id="lit" cx="50%" cy="-8%" r="75%">
+      <stop offset="0" stop-color="#7a828e" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#7a828e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="54%" r="46%">
+      <stop offset="0" stop-color="#d40000" stop-opacity=".42"/>
+      <stop offset=".55" stop-color="#d40000" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#d40000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff4a3d"/>
+      <stop offset=".5" stop-color="#e00a00"/>
+      <stop offset="1" stop-color="#b50000"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".28"/>
+      <stop offset=".35" stop-color="#ffffff" stop-opacity=".07"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity=".04"/>
+    </linearGradient>
+    <filter id="bloom" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="38"/>
+    </filter>
+    <clipPath id="tile"><rect width="1932" height="1932" rx="430"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="1932" height="1932" fill="url(#bg)"/>
+    <rect width="1932" height="1932" fill="url(#lit)"/>
+    <rect width="1932" height="1932" fill="url(#glow)"/>
+    <!-- the strokes' soft red light under them -->
+    <g fill="#ff1a0d" opacity=".55" filter="url(#bloom)" transform="translate(964 966) rotate(-23.6)">
+      <rect x="-489" y="-279" width="192" height="754" rx="18"/><rect x="-289" y="-488" width="192" height="754" rx="18"/><rect x="-92" y="-349" width="192" height="754" rx="18"/><rect x="104" y="-272" width="192" height="754" rx="18"/><rect x="304" y="-481" width="192" height="754" rx="18"/>
+    </g>
+    <!-- the strokes -->
+    <g fill="url(#red)" transform="translate(964 966) rotate(-23.6)">
+      <rect x="-489" y="-279" width="192" height="754" rx="18"/><rect x="-289" y="-488" width="192" height="754" rx="18"/><rect x="-92" y="-349" width="192" height="754" rx="18"/><rect x="104" y="-272" width="192" height="754" rx="18"/><rect x="304" y="-481" width="192" height="754" rx="18"/>
+    </g>
+    <!-- a lit edge on each stroke -->
+    <g fill="none" stroke="#ffb3ad" stroke-opacity=".35" stroke-width="6" transform="translate(964 966) rotate(-23.6)">
+      <rect x="-486" y="-276" width="186" height="748" rx="16"/><rect x="-286" y="-485" width="186" height="748" rx="16"/><rect x="-89" y="-346" width="186" height="748" rx="16"/><rect x="107" y="-269" width="186" height="748" rx="16"/><rect x="307" y="-478" width="186" height="748" rx="16"/>
+    </g>
+  </g>
+  <!-- the glass edge of the tile, brighter at the top -->
+  <rect x="5" y="5" width="1922" height="1922" rx="425" fill="none" stroke="url(#edge)" stroke-width="10"/>
+</svg>

@@ -3374,3 +3374,15 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
   .room-head { gap: 6px; }
   .foot button { font-size: 10px; padding-left: 1px; padding-right: 1px; }
 }
+
+/* Media on a phone keeps the bar at the foot (Alex, 18 Oct: "the bar with calls, settings… should not go away"):
+   the media fill the screen and the bar stays under them, as on the other tabs; no Back needed */
+@media (max-width: 760px) {
+  .app:has(.main .lib) { grid-template-rows: minmax(0, 1fr) auto; }
+  html .app:has(.main .lib) .main { order: 1; }
+  html .app:has(.main .lib) .side, html[data-theme] .app:has(.main .lib) .side {
+    display: flex; order: 2; min-height: 0; padding: 0; gap: 0; background: none; border: 0; border-radius: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; animation: none;
+  }
+  html .app:has(.main .lib) .side > :not(.foot) { display: none; }
+  .app:has(.main .lib) .lib-back { display: none; }
+}

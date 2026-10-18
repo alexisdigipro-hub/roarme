@@ -302,3 +302,9 @@ whole words; messages and cards use more of a narrow screen; on the smallest iPh
 so the name shows, and the foot bar's words are smaller; Settings > General on a phone says how to put RoarMe on the
 Home Screen instead of offering Mac and Windows downloads; Auto-Reply has no "Back to standard"; a group admin's tag sits
 beside the name.
+
+## Media keeps the bar at the foot (18 Oct)
+On a phone the Media page used to replace the chat list together with its bar at the foot, with a Back button; now
+the media fill the screen and the bar (Contacts, Chats, Media, Calls, Tasks, Settings) stays under them, so one tap
+goes anywhere (styles.css, "Media on a phone keeps the bar"). The Tasks panel has no "New task…" at its foot any more:
+the + in its head adds one.

@@ -669,12 +669,13 @@ export default function Chat({ me, setMe }) {
             <button type="button" className="danger" disabled={!picked.length} onClick={bulkDelete}>{I.trash}<span>Delete</span></button>
           </nav>
         ) : (
-          <nav ref={footLens} className="foot lens">
+          <nav ref={footLens} className="foot lens" onClickCapture={(e) => { if (tasksOpen && !e.target.closest('.foot-tasks') && window.matchMedia('(max-width: 760px)').matches) showTasks(false) }}>
             <button type="button" className={tab === 'contacts' ? 'on' : ''} onClick={() => setTab('contacts')}>{I.person}<span>Contacts</span></button>
             <button type="button" className={tab === 'chats' ? 'on' : ''} onClick={() => setTab('chats')}><span className="foot-ico">{I.chats}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Chats</span></button>
             <button type="button" className={tab === 'media' ? 'on' : ''} onClick={() => setTab('media')}>{I.media}<span>Media</span></button>
             {prefs.callsTab && <button type="button" className={tab === 'calls' ? 'on' : ''} onClick={() => setTab('calls')}>{I.calls}<span>Calls</span></button>}
-            {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on */}
+            {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
+                On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
             <button type="button" className={`foot-tasks${tasksOpen ? ' open' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>
             <button type="button" className={tab === 'settings' ? 'on' : ''} onClick={() => setTab('settings')}>{I.gear}<span>Settings</span></button>
           </nav>

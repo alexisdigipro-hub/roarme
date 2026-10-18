@@ -124,9 +124,17 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = 
     const fit = () => {
       const main = document.querySelector('.app > .main')
       const phone = window.matchMedia('(max-width: 760px)').matches
-      const keys = ['background', 'backgroundColor', 'border', 'borderRadius', 'boxShadow', 'backdropFilter', 'webkitBackdropFilter', 'top', 'bottom', 'right']
+      const keys = ['background', 'backgroundColor', 'border', 'borderRadius', 'boxShadow', 'backdropFilter', 'webkitBackdropFilter', 'top', 'bottom', 'right', 'paddingBottom']
       const app = document.querySelector('.app')
-      if (phone || !main || !app) { keys.forEach((k) => { el.style[k] = '' }); app?.style.removeProperty('--tasks-pad'); return }
+      if (phone || !main || !app) {
+        keys.forEach((k) => { el.style[k] = '' })
+        app?.style.removeProperty('--tasks-pad')
+        // on a phone the bar at the foot stays under the panel while it shows (Alex, 18 Oct); inside a chat there is none
+        const foot = phone ? document.querySelector('.app > .side > .foot') : null
+        const fr = foot && foot.offsetParent ? foot.getBoundingClientRect() : null
+        if (fr && fr.height) { el.style.bottom = `${Math.round(window.innerHeight - fr.top + 6)}px`; el.style.paddingBottom = '10px'; el.style.borderRadius = '0 0 24px 24px' }
+        return
+      }
       // where the columns sit in the layout, not where they are drawn: on opening they slide in (an animation
       // that moves them), and measuring them mid-slide put the panel out of line until the window was resized
       const ar = app.getBoundingClientRect()
@@ -155,6 +163,8 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = 
     const main = document.querySelector('.app > .main')
     const ro = new ResizeObserver(fit)
     if (main) ro.observe(main)
+    const sideEl = document.querySelector('.app > .side')
+    if (sideEl) ro.observe(sideEl)
     ro.observe(el)
     window.addEventListener('resize', fit)
     window.addEventListener('roarme-prefs', later)

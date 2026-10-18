@@ -1653,6 +1653,8 @@ function Room({ room, me, people, title, other, listen, onRead, onInfo, onBack, 
           <div className="compose">
             {!editing && !sealOn && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.clip}</button>}
             {!editing && !sealOn && <button type="button" className="round compose-transfer" onClick={() => setTransferOpen(true)} aria-label="RoarTransfer" title="RoarTransfer: big files as they are, up to 3 GB, kept 3 days">{I.transfer}</button>}
+            {/* Roardino beside the clip on a computer (Alex, 18 Oct); on a phone it waits in the clip, like RoarTransfer */}
+            {!editing && !sealOn && <button type="button" className="round compose-ordino" onClick={() => setOrdOpen(true)} aria-label="Ordino" title="Ordino: make or pick a call sheet in Roardino and send it here">{I.ordino}</button>}
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
               {sel && (
                 <span className="fmt-bar" role="toolbar" aria-label="Format" onMouseDown={(e) => e.preventDefault()}>

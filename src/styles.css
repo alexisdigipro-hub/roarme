@@ -3073,7 +3073,7 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
   .compose-wrap { padding: 6px 10px 10px; }
   .compose { gap: 6px; }
   .compose > .round { flex: none; width: 40px; height: 40px; }
-  .compose .compose-transfer { display: none; }
+  .compose .compose-transfer, .compose .compose-ordino { display: none; }
   .compose-box textarea, .compose-box textarea:focus { padding-left: 14px; padding-right: 40px; }
   .compose-box:has(.compose-grow) textarea { padding-right: 40px; }
 

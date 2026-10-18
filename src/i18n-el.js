@@ -792,4 +792,5 @@ export const EL = {
   'Ordino sent': 'Το ordino στάλθηκε',
   'Open ordino': 'Άνοιγμα ordino',
   'A call sheet for the shoot, made in Roardino': 'Το ordino του γυρίσματος, φτιαγμένο στο Roardino',
+  'Ordino: make or pick a call sheet in Roardino and send it here': 'Ordino: φτιάξε ή διάλεξε ordino στο Roardino και στείλ\' το εδώ',
 }

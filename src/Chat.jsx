@@ -528,9 +528,6 @@ export default function Chat({ me, setMe }) {
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
           ) : (
             <span className="side-acts">
-            <button type="button" className={`round tasks-btn${tasksOpen ? ' on' : ''}`} onClick={() => showTasks(!tasksOpen)} aria-label="Tasks" title="Tasks">
-              {I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}
-            </button>
             <span className="plus-wrap">
               <button type="button" className={`round${plus ? ' on' : ''}`} onClick={() => setPlus((v) => !v)} aria-label="New" title="New chat, group or folder">{I.plus}</button>
               {plus && (
@@ -660,6 +657,8 @@ export default function Chat({ me, setMe }) {
             <button type="button" className={tab === 'chats' ? 'on' : ''} onClick={() => setTab('chats')}><span className="foot-ico">{I.chats}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Chats</span></button>
             <button type="button" className={tab === 'media' ? 'on' : ''} onClick={() => setTab('media')}>{I.media}<span>Media</span></button>
             {prefs.callsTab && <button type="button" className={tab === 'calls' ? 'on' : ''} onClick={() => setTab('calls')}>{I.calls}<span>Calls</span></button>}
+            {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on */}
+            <button type="button" className={`foot-tasks${tasksOpen ? ' open' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>
             <button type="button" className={tab === 'settings' ? 'on' : ''} onClick={() => setTab('settings')}>{I.gear}<span>Settings</span></button>
           </nav>
         )}

@@ -282,8 +282,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
               {members.map((p) => (
                 <div key={p.id} className="pf-row">
                   <Avatar src={p.avatar_url} name={nameOf(p)} size={40} />
-                  <span className="pf-row-text"><b>{p.id === me.id ? 'You' : nameOf(p)}</b><small>{p.username !== '…' ? `@${p.username} · ${lastSeenText(p)}` : ''}</small></span>
-                  {roles[p.id] === 'admin' && <span className="pf-tag pf-admin">Admin</span>}
+                  <span className="pf-row-text"><b>{p.id === me.id ? 'You' : nameOf(p)}{roles[p.id] === 'admin' && <span className="pf-tag pf-admin">Admin</span>}</b><small>{p.username !== '…' ? `@${p.username} · ${lastSeenText(p)}` : ''}</small></span>
                   {admin && (roles[p.id] === 'admin'
                     ? (p.id !== me.id || Object.values(roles).filter((x) => x === 'admin').length > 1) && <button type="button" className="link" onClick={() => setAdmin(p, false)}>{p.id === me.id ? 'Step Down' : 'Remove Admin'}</button>
                     : <button type="button" className="link" onClick={() => setAdmin(p, true)}>Make Admin</button>)}

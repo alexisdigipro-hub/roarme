@@ -7,7 +7,7 @@ import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
-import { badgeSupported, isIOS, isStandalone, pushIsOn, pushOff, pushOn, pushSupported } from './push.js'
+import { badgeSupported, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
@@ -153,7 +153,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
         {page.startsWith('folder:') && folderKit && (READY_FOLDERS[page.slice(7)]
           ? <ReadyFolderEdit key={page} id={page.slice(7)} p={p} onDone={() => onPage('folders')} toast={toast} />
           : <FolderEdit key={page} id={page.slice(7)} kit={folderKit} onDone={() => onPage('folders')} toast={toast} />)}
-        {page !== 'profile' && page !== 'admin' && !page.startsWith('folder:') && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
+        {page !== 'profile' && page !== 'admin' && page !== 'autoreply' && !page.startsWith('folder:') && <button type="button" className="btn set-reset" onClick={() => { setPrefs(null); toast('Settings back to standard') }} disabled={JSON.stringify(p) === JSON.stringify(DEFAULTS)}>Back to standard</button>}
       </div>
     </div>
   )
@@ -206,6 +206,12 @@ function General({ p, onKeys }) {
   return (
     <>
       {guide && <InstallGuide kind={guide} update={desk.on} onClose={() => setGuide('')} />}
+      {/* on a phone the downloads for Mac and Windows have no place; it says how RoarMe becomes an app here (Alex, 18 Oct) */}
+      {!desk.on && onPhone() ? (
+        <Box title="RoarMe app" note={isStandalone() ? '' : isIOS() ? 'In Safari: Share > Add to Home Screen, then open RoarMe from the Home Screen.' : 'In the browser menu: Add to Home Screen or Install app.'}>
+          <div className="set-row"><span className="set-text">{isStandalone() ? 'On your Home Screen' : 'Add RoarMe to the Home Screen'}<small>{isStandalone() ? 'RoarMe opens as an app of its own' : 'An app of its own, with notifications when it is closed'}</small></span>{isStandalone() && <i className="set-tick">{I.check}</i>}</div>
+        </Box>
+      ) : (
       <Box title="RoarMe app" note={desk.on ? 'For this computer.' : 'The RoarMe app for Mac (and Windows) adds these. It always shows the latest RoarMe.'}>
         {desk.on ? (
           <>
@@ -222,6 +228,7 @@ function General({ p, onKeys }) {
           </>
         )}
       </Box>
+      )}
       <Box title="Power saving"><Switch on={p.lite} set={(v) => setPrefs({ lite: v })} hint="No animations and no glass blur, easier on the battery">Power Saving Mode</Switch></Box>
       <Box title="Spelling and grammar">
         <Switch on={p.spell} set={(v) => setPrefs({ spell: v })}>Check Spelling While Typing</Switch>

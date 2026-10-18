@@ -912,4 +912,12 @@ export const EL = {
   'Notifications were not allowed.': 'Οι ειδοποιήσεις δεν επιτράπηκαν.',
   'The notification server did not answer. Try again in a moment.': 'Ο server των ειδοποιήσεων δεν απάντησε. Δοκίμασε ξανά σε λίγο.',
   'That did not work': 'Δεν έγινε',
+  'Show calendar': 'Εμφάνιση ημερολογίου',
+  'Hide calendar': 'Απόκρυψη ημερολογίου',
+  'In Safari: Share > Add to Home Screen, then open RoarMe from the Home Screen.': 'Στο Safari: Κοινοποίηση > Προσθήκη στην οθόνη Αφετηρίας και άνοιξε το RoarMe από εκεί.',
+  'In the browser menu: Add to Home Screen or Install app.': 'Στο μενού του browser: Προσθήκη στην αρχική οθόνη ή Εγκατάσταση εφαρμογής.',
+  'On your Home Screen': 'Στην οθόνη Αφετηρίας σου',
+  'RoarMe opens as an app of its own': 'Το RoarMe ανοίγει σαν κανονική εφαρμογή',
+  'Add RoarMe to the Home Screen': 'Πρόσθεσε το RoarMe στην οθόνη Αφετηρίας',
+  'An app of its own, with notifications when it is closed': 'Κανονική εφαρμογή, με ειδοποιήσεις όταν είναι κλειστό',
 }

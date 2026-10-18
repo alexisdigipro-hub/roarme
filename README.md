@@ -264,11 +264,12 @@ its time. Trigger `roar_autoreply` on roar_messages (`roar_autoreply_send()`), t
 `roar_autoreply_sent`. `supabase/autoreply.sql` (run by Claude 18 Oct and tested).
 
 ## Calendar under Tasks (18 Oct)
-The calendar button at the top of the Tasks panel turns it into a month (`src/calendar.jsx`; remembered per device):
+The calendar button at the top of the Tasks panel shows a month at the foot of the panel, under the list, and hides it
+again (Alex: on the same page, not another one; `src/calendar.jsx`; remembered per device):
 soft day tiles, Monday first, today in the accent colour, and a dot per kind on each day: tasks by due date (accent),
 scheduled calls from the chats' call cards (green) and your scheduled messages with their repeats (blue). The chosen
-day lists them: a task opens its window, a call goes to its card in the chat, a message to its chat. "New task on this
-day…" opens a new task with that day as its due date. ‹ › move a month, Today comes back.
+day lists them: a task opens its window, a call goes to its card in the chat, a message to its chat. ‹ › move a month,
+Today comes back.
 
 ## Group admins (18 Oct)
 A group's card > Members shows an Admin tag; an admin has Make Admin / Remove Admin beside each person (and Step Down
@@ -290,3 +291,14 @@ server's keys are made by the function itself and kept in `roar_push_conf` (serv
 on the Home Screen (Share > Add to Home Screen, iOS 16.4+), so `public/manifest.webmanifest` makes it an app of its own;
 Settings says so in Safari. The Mac/Windows app keeps its own notifications. `supabase/push.sql` (run by Claude 18 Oct;
 the function was tested end to end with a test address).
+
+## Phone check (18 Oct)
+Alex: "a general check of the app on mobile". The built app run locally at iPhone sizes (14 Pro, SE) with sample chats
+answered in place of Supabase, screen by screen. Fixed: the bar at the foot (Contacts 18 px, Tasks 20 px against 22 px
+for the rest put their words higher: every icon 22 px now, also on a computer); from the Home Screen the app runs up
+under the clock with no black band and stops above the home bar so the foot bar is not cut (`viewport-fit=cover`,
+`black-translucent`, safe-area padding on `.app` and windows); the send window's seven tiles go four to a row with
+whole words; messages and cards use more of a narrow screen; on the smallest iPhones the chat's head buttons are smaller
+so the name shows, and the foot bar's words are smaller; Settings > General on a phone says how to put RoarMe on the
+Home Screen instead of offering Mac and Windows downloads; Auto-Reply has no "Back to standard"; a group admin's tag sits
+beside the name.

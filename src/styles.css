@@ -2882,7 +2882,7 @@ html[data-bubbles='glass'][data-theme] .msg.mine .bubble:not(.pic):not(.big-emoj
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent) !important; box-shadow: none !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.meta, .ticks, .file-text small, .voice small) { color: var(--muted) !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble .ticks.seen { color: var(--accent) !important; }
-html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.msg-link, .mention, .text a, .tr-tag, .rt-link) { color: var(--accent) !important; text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent) !important; }
+html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.msg-link, .mention, .text a, .tr-tag, .rt-link) { color: color-mix(in srgb, var(--accent) 45%, #fff) !important; text-decoration-color: color-mix(in srgb, var(--accent) 50%, transparent) !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble .quote { background: color-mix(in srgb, var(--accent) 10%, transparent) !important; border-left-color: var(--accent) !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble .quote b { color: var(--accent) !important; }
 html[data-bubbles='glass'][data-theme] .msg.mine .bubble .quote span { color: var(--text) !important; }

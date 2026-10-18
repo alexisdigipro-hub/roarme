@@ -108,7 +108,7 @@ export function EventCard({ ev, who, sent, onJoin, canJoin = true }) {
   const left = s.getTime() - now
   const when = over ? 'Ended' : live ? 'Live now'
     : left < 3600e3 ? `In ${Math.max(1, Math.round(left / 60e3))} min`
-    : left < 864e5 ? `In ${Math.floor(left / 3600e3)} h ${Math.round((left % 3600e3) / 60e3)} min` : `In ${Math.ceil(left / 864e5)} days`
+    : left < 864e5 ? (() => { const m = Math.round(left / 60e3); return `In ${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` })() : `In ${Math.ceil(left / 864e5)} days`
   const from = sent ? new Date(sent).getTime() : s.getTime() - 864e5
   const share = over ? 1 : live ? (now - s.getTime()) / Math.max(1, e.getTime() - s.getTime())
     : Math.min(1, Math.max(0.03, (now - from) / Math.max(1, s.getTime() - from)))

@@ -236,3 +236,7 @@ Settings > General > RoarMe app has a Check for Updates row. In the Mac / Window
 updater to look now (desktop/updater.js `roar:update-check`): it downloads a newer version in the background, shows the
 progress and offers Restart to update. An older app (no updater) asks GitHub for the newest release right away
 (`fetchLatest()` in src/update.jsx, which also refreshes the half-hour memory) and offers the download.
+
+## Tasks in the foot bar (18 Oct)
+The Tasks button moved from the chat list's head to the bar at the foot, beside Settings (with its count, red when a
+request waits for your answer). It opens and closes the Tasks panel; inside a chat on a phone the Tasks button stays.

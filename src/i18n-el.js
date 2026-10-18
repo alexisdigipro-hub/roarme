@@ -1,5 +1,8 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  'Email Me About Unread Messages': 'Email για αδιάβαστα μηνύματα',
+  'When you have been away, at most one every 3 hours. Never the text of a message': 'Όταν λείπεις, το πολύ ένα κάθε 3 ώρες. Ποτέ το κείμενο ενός μηνύματος',
+  'Not available right now': 'Δεν είναι διαθέσιμο αυτή τη στιγμή',
   '1. Scan this with your authenticator app': '1. Σάρωσέ το με την εφαρμογή επαλήθευσης',
   '2. Type the 6-digit code it shows': '2. Πληκτρολόγησε τον 6ψήφιο κωδικό που δείχνει',
   'A clear ring around whatever the keyboard is on': 'Ένα καθαρό περίγραμμα γύρω από ό,τι έχει επιλέξει το πληκτρολόγιο',

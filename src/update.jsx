@@ -158,7 +158,7 @@ export function UpdateCard() {
       {ready && skip !== latest && !guide && (
         <div className="upd" role="status">
           <i className="upd-ico">{I.download}</i>
-          <span className="upd-text"><b>{`New RoarMe app: ${latest} ${BETA}`}</b><small>You have {installed}. Download it and install it over the old one.</small></span>
+          <span className="upd-text"><b>{`New RoarMe app: ${latest} ${BETA}`}</b><small>You have {installed}. Download it one last time: from 1.4.9 on, RoarMe updates itself.</small></span>
           <button type="button" className="btn btn-main upd-go" onClick={() => { startDownload(kind); setGuide(kind) }}>{I.download}<span>Download</span></button>
           <button type="button" className="upd-x" onClick={later} aria-label="Later" title="Later">{I.x}</button>
         </div>

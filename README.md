@@ -219,3 +219,14 @@ photos, voice and files up to 50 MB encrypted on the device before upload, a rec
 new device (lost code and devices = lost history), a new chat key when someone leaves a group. Search and the Media
 page would then decrypt on the device. Old messages stay as they are. Step two, optional: RoarTransfer with the key in
 the download link (as Firefox Send did). Not the full Signal protocol; the privacy policy must say exactly what it is.
+
+## Email reminders for unread messages (18 Oct)
+When someone has new messages and has been away from RoarMe for 10 minutes, one email from
+noreply@themadlions.com says how many and from which chats (never the text), in RoarMe's look, with Open RoarMe.
+At most one every 3 hours, only messages from the last 2 days, never muted chats. Settings > Notifications and Sounds >
+Email turns them off (on by default), and so does the link at the foot of each email (also the mail apps' one-click
+unsubscribe). `supabase/email.sql` (table `roar_email_prefs`, functions `roar_email_due` / `roar_email_sent` /
+`roar_email_off`, pg_cron job `roar-email` every 10 minutes) and the Edge Function `supabase/functions/roar-email`
+(deployed, verify_jwt off; design in `template.mjs`). It sends through Resend: the domain themadlions.com is verified
+there and its API key is the function secret `RESEND_API_KEY` (set by Alex in Supabase, never in the repo). Without
+the key the function does nothing.

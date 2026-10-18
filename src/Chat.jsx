@@ -51,7 +51,8 @@ export default function Chat({ me, setMe }) {
   useEffect(() => { loadBlocks() }, [loadBlocks])
   const unblock = async (id) => { await supabase.from('roar_blocks').delete().eq('blocked', id); loadBlocks(); toast('Unblocked') }
   const [activeId, setActiveId] = useState('')
-  const [folder, setFolder] = useState(() => { try { return localStorage.getItem('roarme-folder') || 'all' } catch { return 'all' } })
+  // RoarMe always opens on All (Alex, 18 Oct: it opened on Archived, the folder left last time)
+  const [folder, setFolder] = useState('all')
   const [q, setQ] = useState('')
   const [modal, setModal] = useState('') // '' | newchat | newgroup | info | folders | newfolder | pickfolder
   const [plus, setPlus] = useState(false)
@@ -126,7 +127,7 @@ export default function Chat({ me, setMe }) {
   const [lib, resetLib] = useLibrary(tab === 'media')
   useEffect(() => { if (tab !== 'media') resetLib() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
   const libChat = (roomId, msgId) => { setTab('chats'); setActiveId(roomId); setJump(msgId) }
-  useEffect(() => { try { localStorage.setItem('roarme-folder', folder) } catch { /* private window */ } }, [folder])
+  useEffect(() => { try { localStorage.removeItem('roarme-folder') } catch { /* private window */ } }, [])
   // ⌘K / Ctrl+K: the search
   useEffect(() => {
     const k = (e) => {

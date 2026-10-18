@@ -457,8 +457,11 @@ export default function Chat({ me, setMe }) {
     if (what === 'folder') { setMyFolders((list) => list.map((f) => (f.id === arg ? { ...f, rooms: f.rooms.includes(r.room_id) ? f.rooms.filter((x) => x !== r.room_id) : [...f.rooms, r.room_id] } : f))) }
     if (what === 'newfolder') editFolder('new', [r.room_id])
     if (what === 'clear') {
-      if (!window.confirm(`Clear the history of ${titleOf(r)}? It goes for you only, on this computer.`)) return
-      setCleared((c) => ({ ...c, [r.room_id]: new Date().toISOString() })); toast('History cleared')
+      if (!window.confirm(`Clear the history of ${titleOf(r)}? It goes for you only. Once everyone in the chat has cleared it, it leaves RoarMe's servers too.`)) return
+      const at = new Date().toISOString()
+      setCleared((c) => ({ ...c, [r.room_id]: at })); toast('History cleared')
+      // the server knows too, so what everyone has cleared is deleted for good (supabase/cleanup.sql)
+      mine({ cleared_at: at }).then(() => {})
     }
     if (what === 'delete') {
       if (r.kind === 'group') {
@@ -469,6 +472,7 @@ export default function Chat({ me, setMe }) {
         if (!window.confirm(`Delete the chat with ${titleOf(r)} from your list? A new message brings it back.`)) return
         const at = new Date().toISOString()
         setHidden((h) => ({ ...h, [r.room_id]: at })); setCleared((c) => ({ ...c, [r.room_id]: at }))
+        mine({ cleared_at: at }).then(() => {})
       }
       if (activeId === r.room_id) setActiveId('')
       setPins((l) => l.filter((x) => x !== r.room_id))

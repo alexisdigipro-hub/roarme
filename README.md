@@ -332,3 +332,13 @@ and can delete the other person's bubbles too, after asking them. `supabase/dele
   "<name> asks to delete your message", with the message's text, Decline and Accept (`roar_answer_delete`); Accept
   deletes it for everyone. The one who asked gets "<name> deleted the message" or "kept the message" (realtime on
   `roar_delete_asks`); while it waits the menu says "Waiting for <name>". Your own messages keep Delete for Everyone.
+
+## Deleted means gone from the servers too (18 Oct)
+Alex: what is deleted from a chat should leave the database and free the space. Every 15 minutes pg_cron calls the Edge
+Function `roar-cleanup` (`supabase/cleanup.sql`, run by Claude 18 Oct; the first run took 17 rows and 3 files, 63 MB
+down to 22 MB, the rest the next round):
+- the rows of messages deleted for everyone go 10 minutes after (every open RoarMe has seen them go by then), and so do
+  messages everyone still in the chat has taken out of their view (Delete for Me, or Clear Chat History / Delete Chat,
+  which now also write `roar_members.cleared_at`); reactions, pins, hides and delete requests go with them;
+- photos, videos, voice messages and files that no message points to any more leave storage (an hour after upload,
+  so a file on its way up is never touched), with their RoarTransfer links. Profile pictures are not touched.

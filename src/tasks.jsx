@@ -103,7 +103,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast }) {
     const subs = Array.isArray(t.subtasks) ? t.subtasks : []
     const canTick = (t.status === 'open' || t.status === 'doing' || t.status === 'done') && (t.assignee === me.id || t.created_by === me.id)
     return (
-      <div key={t.id} className={`task${t.status === 'done' ? ' done' : ''}${t.status === 'pending' ? ' asks' : ''}`}>
+      <div key={t.id} className={`task${t.status === 'done' ? ' done' : ''}${t.status === 'pending' && t.assignee === me.id ? ' asks' : ''}`}>
         <button type="button" className={`task-check${t.status === 'done' ? ' on' : ''}`} disabled={!canTick} onClick={() => tick(t)}
           aria-label={t.status === 'done' ? 'Not done' : 'Done'} title={canTick ? (t.status === 'done' ? 'Not done' : 'Done') : STATUS[t.status]} />
         <button type="button" className="task-main" onClick={() => setView(t.id)}>

@@ -17,7 +17,7 @@ forward, select, copy text and link, translate, seen-by ticks, @mentions, emoji 
 photos/videos/files with a send window (gallery, camera, file, caption, compression), voice messages,
 a media viewer, photos/videos & files of a chat, chat settings (text size, background, compact, Enter
 sends, spelling, faces, large photos, quick reaction, double click, sound, folder tags, shortcuts).
-Shown but not working yet ("coming soon"): voice and video calls, notifications with the app closed,
+Shown but not working yet ("coming soon"): voice and video calls,
 more chat colours, removing people from a group and deleting a group.
 
 ## Writing and sending (16 Oct)
@@ -275,3 +275,18 @@ A group's card > Members shows an Admin tag; an admin has Make Admin / Remove Ad
 for themselves while another admin stays) next to Remove. `roar_set_admin(r, person, admin)` in `supabase/admins.sql`
 (run by Claude 18 Oct); the role column is not writable by members themselves. Removing people, adding them and
 deleting the group were already there (`supabase/round1.sql`).
+
+## Notifications with the app closed (18 Oct)
+Web Push on phones and browsers: Settings > Notifications > Notifications With the App Closed (`src/push.js`). Turning
+it on asks for permission, registers `public/sw.js` (notifications only, nothing kept offline) and signs the browser up
+with the server's public key; the address goes in `roar_push_subs`. Every new message calls the Edge Function
+`roar-push` through pg_net (trigger `roar_push`, only when someone in the chat has it on), which asks
+`roar_push_targets()` who should get it (in the chat, not the writer, chat not muted, writer not blocked, not in RoarMe
+in the last 75 seconds) and sends each an encrypted notification (RFC 8291 aes128gcm, checked against the RFC's test
+vector; VAPID signed) with the title, the text (or "New message" when Message Preview is off; "Encrypted message" for
+Encrypted Chat) and their unread count, which the service worker puts on the Home Screen icon. A tap opens that chat
+(`#c=<room>`, or a message to an open RoarMe). Addresses the push service says are gone (404/410) are removed. The
+server's keys are made by the function itself and kept in `roar_push_conf` (server only). iPhone: Web Push needs RoarMe
+on the Home Screen (Share > Add to Home Screen, iOS 16.4+), so `public/manifest.webmanifest` makes it an app of its own;
+Settings says so in Safari. The Mac/Windows app keeps its own notifications. `supabase/push.sql` (run by Claude 18 Oct;
+the function was tested end to end with a test address).

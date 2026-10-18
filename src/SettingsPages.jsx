@@ -7,6 +7,7 @@ import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
+import { badgeSupported, isIOS, isStandalone, pushIsOn, pushOff, pushOn, pushSupported } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
@@ -140,7 +141,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
         {page === 'profile' && profile}
         {page === 'general' && <General p={p} onKeys={() => onPage('keys')} />}
         {page === 'keys' && <Keys p={p} />}
-        {page === 'notify' && <Notify p={p} />}
+        {page === 'notify' && <Notify p={p} toast={toast} />}
         {page === 'autoreply' && <AutoReply toast={toast} />}
         {page === 'privacy' && <Privacy me={me} setMe={setMe} toast={toast} />}
         {page === 'data' && <Data p={p} />}
@@ -262,7 +263,27 @@ function Keys({ p }) {
   return <Box>{rows.map(([k, v]) => <div key={k} className="set-row keys"><span className="set-text">{v}</span><kbd>{k}</kbd></div>)}</Box>
 }
 
-function Notify({ p }) {
+/* notifications with RoarMe closed on a phone or in a browser (Web Push, src/push.js) */
+function PushSwitch({ p, toast }) {
+  const [on, setOn] = useState(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { pushIsOn().then(setOn).catch(() => setOn(false)) }, [])
+  if (!pushSupported()) {
+    return <Soon hint={isIOS() && !isStandalone() ? 'On iPhone: Share > Add to Home Screen, then open RoarMe from there' : 'This browser cannot get them'}>Notifications With the App Closed</Soon>
+  }
+  const set = async (v) => {
+    if (busy) return
+    setBusy(true)
+    try {
+      if (v) { await pushOn(p.notifyPreview); toast('Notifications are on for this device') } else { await pushOff(); toast('Notifications are off for this device') }
+      setOn(v)
+    } catch (e) { toast(e?.message || 'That did not work') }
+    setBusy(false)
+  }
+  return <Switch on={!!on} set={set} hint={busy ? 'One moment…' : 'New messages reach this device even when RoarMe is closed'}>Notifications With the App Closed</Switch>
+}
+
+function Notify({ p, toast }) {
   const desk = useDesktop()
   const [perm, setPerm] = useState(typeof Notification === 'undefined' ? 'none' : Notification.permission)
   const ask = async () => { try { setPerm(await Notification.requestPermission()) } catch { /* not here */ } }
@@ -277,7 +298,7 @@ function Notify({ p }) {
         <Switch on={p.notifyPreview} set={(v) => setPrefs({ notifyPreview: v })} hint="Off: only the name, never the text">Message Preview</Switch>
         {desk.on
           ? <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps RoarMe on, so messages and calls still reach you">Notifications With the App Closed</Switch>
-          : <Soon hint="In the RoarMe app for Mac and Windows">Notifications With the App Closed</Soon>}
+          : <PushSwitch p={p} toast={toast} />}
       </Box>
       <Box title="Sounds">
         <div className="set-row">
@@ -294,9 +315,9 @@ function Notify({ p }) {
         <EmailReminders />
       </Box>
       <Box title="Badge">
-        {desk.on
-          ? <Switch on={p.badge !== false} set={(v) => setPrefs({ badge: v })}>Unread Count on the App Icon</Switch>
-          : <Soon hint="In the RoarMe app for Mac and Windows">Unread Count on the App Icon</Soon>}
+        {desk.on || badgeSupported()
+          ? <Switch on={p.badge !== false} set={(v) => setPrefs({ badge: v })} hint={desk.on ? '' : 'On the Home Screen icon'}>Unread Count on the App Icon</Switch>
+          : <Soon hint={isIOS() && !isStandalone() ? 'Add RoarMe to the Home Screen first' : 'Not in this browser'}>Unread Count on the App Icon</Soon>}
       </Box>
     </>
   )

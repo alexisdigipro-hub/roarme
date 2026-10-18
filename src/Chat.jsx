@@ -13,6 +13,7 @@ import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { NowPlaying } from './player.jsx'
+import { pushSync, setBadge } from './push.js'
 import { UpdateCard } from './update.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { OrdinoCard, RoardinoSheet, ordinoBody } from './roardino.jsx'
@@ -342,7 +343,17 @@ export default function Chat({ me, setMe }) {
   useEffect(() => {
     document.title = unreadAll ? `(${unreadAll}) RoarMe` : 'RoarMe'
     window.roarDesktop?.setBadge(prefs.badge === false ? 0 : unreadAll) // the count on the app's icon (Mac/Windows app)
+    setBadge(prefs.badge === false ? 0 : unreadAll) // and on the Home Screen icon of a phone
   }, [unreadAll, prefs.badge])
+  // notifications with RoarMe closed: the server keeps knowing this phone; a tapped notification opens its chat
+  useEffect(() => { pushSync(prefs.notifyPreview) }, [prefs.notifyPreview])
+  useEffect(() => {
+    const sw = typeof navigator !== 'undefined' ? navigator.serviceWorker : null
+    if (!sw) return undefined
+    const on = (e) => { if (e.data?.roarOpen) { setTab('chats'); setActiveId(e.data.roarOpen) } }
+    sw.addEventListener('message', on)
+    return () => sw.removeEventListener('message', on)
+  }, [])
   // no paw in the menu bar any more (Alex, 18 Oct: "I don't need it"); an app that still shows it puts it away
   useEffect(() => {
     const d = window.roarDesktop

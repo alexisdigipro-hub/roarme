@@ -249,6 +249,9 @@ function Notify({ p }) {
           <Lens className="seg seg-wrap" dep={p.soundKind}>{SOUNDS.map(([k, l]) => <button key={k} type="button" className={p.soundKind === k ? 'on' : ''} onClick={() => { setPrefs({ soundKind: k }); chime(k) }}>{l}</button>)}</Lens>
         </div>
       </Box>
+      <Box title="Email">
+        <EmailReminders />
+      </Box>
       <Box title="Badge">
         {desk.on
           ? <Switch on={p.badge !== false} set={(v) => setPrefs({ badge: v })}>Unread Count on the App Icon</Switch>
@@ -256,6 +259,24 @@ function Notify({ p }) {
       </Box>
     </>
   )
+}
+
+/* Email reminders (Alex, 18 Oct; supabase/email.sql): from noreply@themadlions.com when there are new messages and
+   one has been away, at most one every 3 hours, never the text. On unless turned off here or from the email's own link */
+function EmailReminders() {
+  const [on, setOn] = useState(null)
+  useEffect(() => {
+    supabase.from('roar_email_prefs').select('enabled').maybeSingle().then(({ data, error }) => setOn(error ? null : data ? data.enabled : true))
+  }, [])
+  const set = async (v) => {
+    setOn(v)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data, error } = await supabase.from('roar_email_prefs').update({ enabled: v }).eq('user_id', user.id).select('user_id')
+    const e2 = !error && !data?.length ? (await supabase.from('roar_email_prefs').insert({ user_id: user.id, enabled: v })).error : error
+    if (e2) setOn(!v)
+  }
+  if (on === null) return <Soon hint="Not available right now">Email Me About Unread Messages</Soon>
+  return <Switch on={on} set={set} hint="When you have been away, at most one every 3 hours. Never the text of a message">Email Me About Unread Messages</Switch>
 }
 
 /* Two-Step Verification: an authenticator app (Google Authenticator, 1Password, Authy…) gives a code after the password */

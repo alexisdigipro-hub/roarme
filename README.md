@@ -316,3 +316,9 @@ the time as two wheels with a glass lens over the chosen line (scroll or tap a n
 (`src/scheduled.jsx` Wheel / DayStrip). The calendar under Tasks looks things up again when a call or a message is
 scheduled here (event `roarme-cal`), when RoarMe comes back to the front, and every minute (Alex: a scheduled call did
 not show until it was reopened).
+
+## Tasks keep the bar at the foot on a phone (18 Oct)
+Alex: the bar should not go away when Tasks opens. On a phone the Tasks panel now ends just above the bar at the foot
+(measured in tasks.jsx, rounded at its foot), so Contacts, Chats, Media, Calls and Settings stay one tap away; tapping
+any of them puts the panel away, Tasks again closes it. Opened from inside a chat (where there is no bar) it still
+fills the screen.

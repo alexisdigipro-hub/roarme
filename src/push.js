@@ -72,3 +72,14 @@ export function setBadge(n) {
   if (!badgeSupported()) return
   try { if (n > 0) navigator.setAppBadge(n); else navigator.clearAppBadge() } catch { /* not here */ }
 }
+
+// Settings > Send Test: after 5 seconds a test notification to each of your devices; says what each push service answered
+export async function pushTest() {
+  const { data, error } = await supabase.functions.invoke('roar-push', { body: { test: true } })
+  if (error) {
+    let msg = error.message
+    try { msg = (await error.context.json()).error || msg } catch { /* plain error */ }
+    throw new Error(msg)
+  }
+  return data?.results || []
+}

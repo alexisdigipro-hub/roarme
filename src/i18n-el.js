@@ -935,4 +935,11 @@ export const EL = {
   'Kept': 'Έμεινε',
   'This message cannot be asked for': 'Γι’ αυτό το μήνυμα δεν γίνεται αίτημα',
   'They are no longer in this chat': 'Δεν είναι πια σε αυτή τη συνομιλία',
+  'Test Notification': 'Δοκιμαστική ειδοποίηση',
+  'Comes 5 seconds after you press, so you can close RoarMe first': 'Έρχεται 5 δευτερόλεπτα αφού το πατήσεις, για να προλάβεις να κλείσεις το RoarMe',
+  'Send Test': 'Στείλε δοκιμή',
+  'Close RoarMe now: the test comes in 5 seconds': 'Κλείσε τώρα το RoarMe: η δοκιμή έρχεται σε 5 δευτερόλεπτα',
+  'No device answered': 'Καμία συσκευή δεν απάντησε',
+  'No device has notifications on yet': 'Καμία συσκευή δεν έχει ακόμα ανοιχτές τις ειδοποιήσεις',
+  'Sign in first': 'Συνδέσου πρώτα',
 }

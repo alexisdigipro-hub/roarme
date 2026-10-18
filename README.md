@@ -350,3 +350,14 @@ skipped him because a RoarMe running hidden (the Mac app with its window closed)
 focused, and sets it to now when it is hidden, loses focus or closes (Chat.jsx heartbeat); `last_seen` (online for
 others) moves only while it is in front of you too. `roar_push_targets` and Auto-Reply's Only When I'm Away read
 `active_until`. In `supabase/push.sql` and `autoreply.sql` (applied).
+
+## Notifications that really arrive (18 Oct)
+Alex: nothing came on the iPhone or the Mac with RoarMe closed.
+- **Settings > Notifications > Send Test** (once Notifications With the App Closed is on): 5 seconds later the server
+  sends a test to each of your devices and the app says what each push service answered (`roar-push` with
+  `{test: true}` and your sign-in). A phone whose RoarMe was removed from the Home Screen and added again needs the
+  switch turned on again there: the old sign-up belonged to the removed app.
+- **Mac app 1.4.11**: with its window closed or minimised macOS put RoarMe to sleep (App Nap) and its connection with
+  it. The window no longer slows down in the background (`backgroundThrottling: false`) and the app is kept awake while
+  out of sight (`powerSaveBlocker('prevent-app-suspension')`), so messages, sounds and notifications come. It reaches
+  1.4.9+ by itself (Restart to update).

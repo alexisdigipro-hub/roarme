@@ -3580,3 +3580,12 @@ html[data-mode='light'] .ctx { background: rgba(240, 244, 250, .5); }
   color: var(--muted); background: var(--glass); border: 1px solid var(--edge); opacity: var(--p); transform: rotate(calc(var(--p) * 300deg)) scale(calc(.6 + var(--p) * .4)); }
 .ptr.ready { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
 .ptr.spin { animation: spin .7s linear infinite; }
+
+/* Edit Contact: my name, photo and note for someone, only for me (19 Oct) */
+.ce { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+.ce-pic { position: relative; align-self: center; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.ce .link { align-self: center; margin-top: -4px; }
+.ce-note { min-height: 84px; padding-top: 10px; resize: vertical; font: inherit; }
+.ce-hint { margin: 0; font-size: 12.5px; text-align: center; }
+.pf-real { font-size: 12.5px; opacity: .85; }
+.pf-note { white-space: pre-wrap; }

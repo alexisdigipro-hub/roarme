@@ -234,15 +234,23 @@ export default function Chat({ me, setMe }) {
     if (!want.length) return
     const [{ data }, { data: mine }] = await Promise.all([
       supabase.from('roar_people').select('id, username, display_name, avatar_url, bio, last_seen, name_color').in('id', want),
-      supabase.from('roar_contacts').select('person, photo_url').in('person', want),
+      supabase.from('roar_contacts').select('person, photo_url, nickname, note').in('person', want),
     ])
-    const myPhoto = Object.fromEntries((mine || []).map((c) => [c.person, c.photo_url]))
+    // what I set for someone, only for me (Alex, 19 Oct: "edit other people's profiles, shown only to them"):
+    // my name for them, my photo for them, my note; their own stay in real_name / real_avatar
+    const mineOf = Object.fromEntries((mine || []).map((c) => [c.person, c]))
     if (data) {
       data.forEach((x) => {
         setNameColor(x.id, x.name_color)
+        const c = mineOf[x.id] || {}
         x.own_photo = !!x.avatar_url
-        x.my_photo = myPhoto[x.id] || ''
-        if (!x.avatar_url && x.my_photo) x.avatar_url = x.my_photo
+        x.real_avatar = x.avatar_url
+        x.real_name = x.display_name
+        x.my_photo = c.photo_url || ''
+        x.nickname = (c.nickname || '').trim()
+        x.my_note = c.note || ''
+        if (x.my_photo) x.avatar_url = x.my_photo
+        if (x.nickname) x.display_name = x.nickname
       })
       setPeople((p) => ({ ...p, ...Object.fromEntries(data.map((x) => [x.id, x])) }))
     }

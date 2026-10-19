@@ -498,3 +498,10 @@ Out (`roar_am_blocked()`). Delete (asks first) removes the account for good with
 everything it sent in groups; the files leave storage with the next roar-cleanup run. Admins and the RoarMe account
 cannot be blocked or deleted. `supabase/suspend.sql` (`roar_suspended`, `roar_admin_blocked`, `roar_admin_block`,
 `roar_admin_delete`).
+
+## Edit Contact (19 Oct)
+Alex: "users can edit other people's profiles, shown only to them". A person's profile > More > Edit Contact: my own
+name for them, my own photo for them (now also over a photo they have) and a note. Only I see these, everywhere in the
+app (chat list, chat head, messages, calls); under the name the profile shows "Their name: …", and the note sits in the
+profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
+`supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.

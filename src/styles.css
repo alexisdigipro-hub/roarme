@@ -3437,3 +3437,11 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 @media (max-width: 760px) {
   .sys-note > span { gap: 5px; padding: 5px 12px; font-size: 12px; }
 }
+
+/* what a version brings, in the update cards (Alex, 19 Oct) */
+.upd:has(.upd-notes) { align-items: flex-start; }
+.upd-notes { margin: 6px 0 2px; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; line-height: 1.35; color: var(--text); }
+.upd-notes li::marker { color: var(--accent); }
+.upd-new .upd-ico { color: var(--ok, #30d158); }
+.upd-new + .upd { bottom: 150px; }
+@media (max-width: 760px) { .upd-new + .upd { bottom: calc(214px + env(safe-area-inset-bottom, 0px)); } }

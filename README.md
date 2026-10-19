@@ -361,3 +361,10 @@ Alex: nothing came on the iPhone or the Mac with RoarMe closed.
   it. The window no longer slows down in the background (`backgroundThrottling: false`) and the app is kept awake while
   out of sight (`powerSaveBlocker('prevent-app-suspension')`), so messages, sounds and notifications come. It reaches
   1.4.9+ by itself (Restart to update).
+
+## What's new, in every update (19 Oct)
+Alex: every update should say what changed, in short bullets. `src/changes.js` holds a few lines per Mac / Windows app
+version; the update card shows them under "RoarMe x is ready · Restart to update" (and under Download for old apps),
+and once after the update a card "Updated to RoarMe x" shows them again (remembered in `roarme-seen-version`). The
+release on GitHub gets the same lines (desktop.yml reads changes.js). **Each new desktop version: add its lines at the
+top of changes.js** (and their Greek in i18n-el.js).

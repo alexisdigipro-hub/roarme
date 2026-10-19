@@ -14,6 +14,7 @@ import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { NowPlaying } from './player.jsx'
 import { pushSync, setBadge } from './push.js'
+import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { OrdinoCard, RoardinoSheet, ordinoBody } from './roardino.jsx'
@@ -113,6 +114,10 @@ export default function Chat({ me, setMe }) {
   // the official RoarMe account (Alex, 19 Oct; supabase/official.sql): a badge beside its name, and its chat from Settings
   const [officialIds, setOfficialIds] = useState([])
   useEffect(() => { supabase.from('roar_official').select('user_id').then(({ data }) => setOfficialIds((data || []).map((x) => x.user_id))) }, [])
+  const [isAdmin, setIsAdmin] = useState(false)
+  useEffect(() => { supabase.rpc('roar_is_admin').then(({ data }) => setIsAdmin(data === true)) }, [])
+  const [inboxOpen, setInboxOpen] = useState(false)
+  const inboxCount = useInboxCount(isAdmin && officialIds.length > 0 && !inboxOpen)
   const openRoarMe = async () => {
     const { data: r, error } = await supabase.rpc('roar_open_direct', { other: officialIds[0] })
     if (error) { toast(errText(error)); return }
@@ -687,7 +692,8 @@ export default function Chat({ me, setMe }) {
               empty={<div className="calls-empty"><span className="side-panel-ico">{I.calls}</span><b>No calls yet</b><p>Call someone from Create New Call, or from the phone and camera buttons in a chat.</p></div>} />
           </div>
         )}
-        {tab === 'settings' && <SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) ? openRoarMe : null} />}
+        {tab === 'settings' && <SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
+          onInbox={isAdmin && officialIds.length ? () => setInboxOpen(true) : null} inboxCount={inboxCount} />}
         {tab === 'media' && <LibrarySide data={lib} rooms={visible} titleOf={titleOf} room={libRoom} onRoom={setLibRoom}
           face={(r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />} />}
         </div>
@@ -742,6 +748,7 @@ export default function Chat({ me, setMe }) {
       {tasksOpen && <TasksPanel me={me} people={people} contacts={contacts} kit={tasksKit} toast={toast} onClose={() => showTasks(false)} rooms={rooms} titleOf={titleOf} onOpenChat={(roomId, msgId) => { if (msgId) libChat(roomId, msgId); else { setTab('chats'); setActiveId(roomId) } }} />}
 
       {modal === 'invite' && <InviteModal me={me} toast={toast} onClose={() => setModal('')} />}
+      {inboxOpen && <RoarMeInbox onClose={() => setInboxOpen(false)} />}
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'newcall' && (
         <Modal title="New call" onClose={() => setModal('')}>

@@ -1,8 +1,8 @@
 // The official RoarMe account (Alex, 19 Oct): @roarme, "RoarMe", the app's icon as its picture, marked official in
 // roar_official. Everyone can open a chat with it (Settings > RoarMe · Feedback & Help) for feedback and questions about
 // the app. Made once from the database (it answers only to the token in roar_push_conf); running it again only refreshes
-// the picture and the profile. The account has no password: whoever answers for RoarMe signs in to it with "Forgot
-// password" sent to roarme@themadlions.com.
+// the picture and the profile. The account has no password and nobody signs in to it: the admins answer as RoarMe
+// from their own login (Settings > RoarMe, supabase/official-inbox.sql).
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const EMAIL = 'roarme@themadlions.com'

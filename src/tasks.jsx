@@ -77,6 +77,21 @@ const byDue = (a, b) => (a.due || '9999') .localeCompare(b.due || '9999') || (b.
 export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = [], titleOf = () => '', onOpenChat = () => {} }) {
   const [tab, setTab] = useState(() => { try { return localStorage.getItem('roarme-tasks-tab') || 'all' } catch { return 'all' } })
   const pickTab = (v) => { setTab(v); try { localStorage.setItem('roarme-tasks-tab', v) } catch { /* private window */ } }
+  // on a phone a swipe left or right across the list goes to the next or previous tab, as with the chat folders (Alex, 19 Oct)
+  const swipe = useRef(null)
+  const onSwipe = {
+    onTouchStart: (e) => { swipe.current = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
+    onTouchEnd: (e) => {
+      const st = swipe.current
+      swipe.current = null
+      if (!st || !window.matchMedia('(max-width: 760px)').matches) return
+      const dx = e.changedTouches[0].clientX - st.x, dy = e.changedTouches[0].clientY - st.y
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+      const order = ['all', 'mine', 'given', 'done']
+      const next = order[order.indexOf(tab) + (dx < 0 ? 1 : -1)]
+      if (next) pickTab(next)
+    },
+  }
   // the calendar under the tasks (Alex, 18 Oct): the calendar button shows it at the foot of the panel and hides it
   const [cal, setCal] = useState(() => { try { return localStorage.getItem('roarme-tasks-cal') === '1' } catch { return false } })
   const flipCal = () => setCal((v) => { try { localStorage.setItem('roarme-tasks-cal', v ? '0' : '1') } catch { /* private window */ } return !v })
@@ -233,7 +248,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = 
         <button type="button" className={tab === 'given' ? 'on' : ''} onClick={() => pickTab('given')}>{tr('Given')}</button>
         <button type="button" className={tab === 'done' ? 'on' : ''} onClick={() => pickTab('done')}>{tr('Done')}</button>
       </Lens>
-      <div className="tasks-list">
+      <div className="tasks-list" {...onSwipe}>
         {tab === 'all' && (
           <>
             {asks.length > 0 && <p className="tasks-label">{tr('Waiting for your answer')}</p>}

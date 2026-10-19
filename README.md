@@ -436,3 +436,5 @@ the bar at the foot stays put: inside the app the page itself no longer scrolls 
 Alex: "it should fill top to bottom with the grey background, no black". On a phone the panel is no longer a card with a
 frame: no gap round it, no rounded corners, and it runs under the clock and down to the home bar (its own padding keeps
 the content clear of both). Studio was already edge to edge and is untouched; the computer is untouched.
+The band under the clock: the page's theme colour is now the panel's grey (#383d46, light mode #eef2f7) instead of
+near-black, so an iPhone that paints that band itself paints it grey too.

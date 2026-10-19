@@ -41,6 +41,7 @@ export const DEFAULTS = {
   folderOrder: [], // folder ids in the order dragged in Settings > Folders
   folderNames: {}, // the ready-made folders renamed: { unread: 'New' }
   hiddenFolders: [], // ready-made folders deleted (Unread, Groups, Archived; All stays)
+  folderExtra: {}, // chats added by hand to a ready-made folder: { groups: [room ids], unread: [room ids] }
   sound: true,
   soundKind: 'chime', // one of SOUNDS
   badge: true, // the unread count on the Mac/Windows app's icon

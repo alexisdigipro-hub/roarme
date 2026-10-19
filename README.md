@@ -473,3 +473,6 @@ on a card, with its name and last seen; a tap on the card opens the chat. The ac
 menu), Clear History, Delete. Preview is gone from the menu: the card is the preview.
 Fix (19 Oct): the light-mode loading screen marked the page with the class `day`, which the chat's date pills also use,
 so in light mode every word turned into small capitals with wide spacing; it is `data-splash` now.
+Add to folder lists every folder in the tabs (Alex, 19 Oct): your own, and the ready-made Unread and Groups (a chat put
+there by hand shows in them as well as the ones there by themselves; group chats are in Groups already) and Archived
+(the same as Archive). All holds every chat, so it is not listed.

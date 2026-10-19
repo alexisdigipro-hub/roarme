@@ -946,4 +946,9 @@ export const EL = {
   'Send Test in Settings > Notifications': 'Δοκιμαστική ειδοποίηση στα Settings > Notifications',
   'Version and Check for Updates in the menu bar': 'Έκδοση και έλεγχος ενημερώσεων στη γραμμή μενού',
   'RoarMe updates itself: Restart to update': 'Το RoarMe ενημερώνεται μόνο του: Restart to update',
+  'AllMedia': 'AllMedia',
+  'Photos, videos, files and links from all chats': 'Φωτογραφίες, βίντεο, αρχεία και links από όλες τις συνομιλίες',
+  'RoarMe · Feedback & Help': 'RoarMe · Feedback & Βοήθεια',
+  'Write to the RoarMe team': 'Γράψε στην ομάδα του RoarMe',
+  'Official RoarMe account': 'Επίσημος λογαριασμός RoarMe',
 }

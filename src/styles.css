@@ -3445,3 +3445,13 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 .upd-new .upd-ico { color: var(--ok, #30d158); }
 .upd-new + .upd { bottom: 150px; }
 @media (max-width: 760px) { .upd-new + .upd { bottom: calc(214px + env(safe-area-inset-bottom, 0px)); } }
+
+/* the bar at the foot (Alex, 19 Oct): Contacts · Calls · Messages in the middle, a little bigger · Tasks · Settings */
+.foot button.foot-main { flex-grow: 1.25; }
+.foot button.foot-main svg { width: 28px; height: 28px; margin: -3px 0; } /* bigger, with its word on the same line as the others */
+.foot button.foot-main > span:last-child { font-weight: 700; }
+
+/* the official RoarMe account's mark */
+.official { display: inline-grid; place-items: center; margin-left: 5px; vertical-align: -2px; color: var(--accent); }
+.official svg { width: 15px; height: 15px; }
+.set-roarme .nav-ico { background: linear-gradient(160deg, #3a4049, #1b1e23); }

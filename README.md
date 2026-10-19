@@ -459,3 +459,9 @@ Tasks on a phone: the same swipe across the list goes to the next or previous ta
 The swipe runs on through the bar at the foot: past the first folder of Messages it goes to Calls, then Contacts; past
 the last folder to Tasks (All first), through its tabs, then Settings; and back the same way, coming into Messages or
 Tasks from the right on their last folder or tab. Contacts, Calls and the Settings list take the same swipe.
+
+## Phone details (19 Oct)
+- On a phone the folder tabs start at the bottom, by the thumb (a first start; Settings > Chat Folders > Tabs view
+  still moves them).
+- The bar at the foot never runs off the screen: buttons may shrink and a long word is cut with … (in Safari, with the
+  Lions look, SETTINGS was cut at the right edge).

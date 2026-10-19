@@ -36,7 +36,8 @@ export const DEFAULTS = {
   peerIds: false,
   notifyPreview: true,
   translateTo: 'auto', // auto = Greek to English and back
-  folderTabs: 'top', // top | bottom (left until 16 Oct, now bottom)
+  // top | bottom (left until 16 Oct, now bottom); on a phone they start at the bottom, by the thumb (Alex, 19 Oct)
+  folderTabs: typeof window !== 'undefined' && window.matchMedia?.('(max-width: 760px)').matches ? 'bottom' : 'top',
   folderOrder: [], // folder ids in the order dragged in Settings > Folders
   folderNames: {}, // the ready-made folders renamed: { unread: 'New' }
   hiddenFolders: [], // ready-made folders deleted (Unread, Groups, Archived; All stays)

@@ -15,6 +15,15 @@ export default function App() {
   const { mode, lite, theme } = prefs
   useEffect(() => applyLook(prefs), [prefs.accent, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => applyMode(mode), [mode])
+  // the colour of the band under the clock on a phone follows day and night (Alex, 19 Oct: no black at the top)
+  useEffect(() => {
+    const m = document.querySelector('meta[name="theme-color"]')
+    const set = () => m?.setAttribute('content', document.documentElement.dataset.mode === 'light' ? '#eef2f7' : '#383d46')
+    set()
+    const mq = window.matchMedia?.('(prefers-color-scheme: light)')
+    mq?.addEventListener?.('change', set)
+    return () => mq?.removeEventListener?.('change', set)
+  }, [mode])
   useEffect(() => { if (lite) document.documentElement.dataset.lite = '1'; else delete document.documentElement.dataset.lite }, [lite])
 
   useEffect(() => {

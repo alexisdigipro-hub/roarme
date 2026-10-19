@@ -35,7 +35,7 @@ Expired RoarTransfer files are left out.
 
 ## The chat list (17 Oct)
 The list shows each chat's name, time and unread badge on one line, without the last message (a draft still shows).
-Settings > Interface > Show Last Message brings the last message back under each name.
+Settings > Chats > Chat list > Show Last Message brings the last message back under each name.
 
 ## Pinned messages (17 Oct)
 Pin as many messages as you like (message menu > Pin). A pinned message has a small pin beside its time. The bar
@@ -139,7 +139,7 @@ spaced capitals, light headings. Light mode is the site's paper (#f3f0e8). Works
 Your own messages are a touch of your colour on glass with a thin edge in it, like a RoarTransfer card, the text in the
 normal colour (links, ticks, quotes follow). The solid buttons and icon tiles are glass too, in three strengths: the
 main action (Download, Send, Join, Read, Save, the primary buttons) strongest, icon tiles lighter, chips lightest.
-On by default in every theme but Studio (which keeps its hard look); Settings > General > Interface > Glass Look turns
+On by default in every theme but Studio (which keeps its hard look); Settings > Appearance > Effects > Glass Look turns
 the filled look back (`html[data-bubbles]`).
 
 ## The desktop window (17 Oct)
@@ -403,3 +403,26 @@ caller and the callee, and nobody else, a pass for that room while the call is o
 when a call starts. Setup (Alex, once): a free project on LiveKit Cloud, then its three values in Supabase > Edge
 Functions > Secrets as `LIVEKIT_URL` (wss://…livekit.cloud), `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`. Until then the
 function answers "not set up" and calls go the old way by themselves.
+
+## Settings tidied (19 Oct)
+Alex: "more beautiful, better organised, check what each one says". The list is in groups: General · Chats ·
+Appearance · Notifications and Sounds · Language, then Chat Folders · Auto-Reply · Data and Storage · AllMedia, then
+Privacy and Security · Active Sessions, then Feedback & Help (and Admin), then Sign Out (it asks first). The profile card
+at the top is My Profile (the second My Profile row is gone); Appearance shows the theme's name beside it. Every page
+opens with its icon in its colour and one line on what it holds.
+- **Chats** (new page, out of General): Typing (Send with Enter or ⌘/Ctrl + Enter, on a phone Enter or the send button;
+  spelling; emoji replaced; formatting kept on copy), the double click (double tap on a phone) on a message, the quick
+  reaction, Large Emoji and faces in groups, and the chat list (Show Last Message, Preview Chats, Show Calls Tab).
+- **General** keeps the RoarMe app, Calls (microphone, camera, speakers; the old line "calls go straight from your
+  computer" was wrong since LiveKit), Battery, Advanced (Keyboard Shortcuts, not on a phone; User IDs) and **Reset All
+  Settings**, which asks first and keeps the language. "Back to standard" at the foot of every page is gone: it reset
+  everything from any page and switched a Greek RoarMe to English.
+- **Appearance**: Theme (preview, tiles, Day and Night, Accent Colour), Text (size, font), Chat wallpaper, Layout
+  (Spacing as three buttons instead of a slider, Compact Messages, corners), Effects (Glass Look moved here, Smooth
+  Animations, Bold Focus Rings), Your name in groups.
+- **Notifications**: the message sound is one switch; the sound to pick shows only while it is on. "Desktop
+  notifications" says Notifications on a phone. Badge became App icon.
+- **Privacy and Security**: who can see and reach me and Blocked users first, then Password, Two-step verification,
+  Passcode lock, Legal, Account. **Send Large Photos** is only in Data and Storage now (it was in General too).
+- **Active Sessions**: Terminate All Other Sessions shows only when there are other devices.
+Every new text has its Greek in `src/i18n-el.js`.

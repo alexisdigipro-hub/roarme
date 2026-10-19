@@ -439,3 +439,5 @@ the content clear of both). Studio was already edge to edge and is untouched; th
 The band under the clock: the page's theme colour is now the panel's grey (#383d46, light mode #eef2f7) instead of
 near-black, so an iPhone that paints that band itself paints it grey too.
 From the Home Screen the app takes the whole screen's height (100lvh), so no black strip shows under the foot bar either.
+On an iPhone the page no longer zooms in when a field is tapped (the sign-in's email box zoomed the app and left it
+cut at the sides and under the clock), and after signing in the page goes back to the top.

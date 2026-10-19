@@ -498,7 +498,28 @@ export default function Chat({ me, setMe }) {
     return () => clearInterval(id)
   }, [muteUntil, me.id, loadRooms]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // the menu of a chat in the list (right click), as in Telegram
+  // a long press on a chat on a phone opens the same as a right click (Alex, 19 Oct, like Telegram)
+  const press = useRef(null)
+  const pressed = useRef(false)
+  const pressStart = (e, r) => {
+    const t = e.touches[0]
+    pressed.current = false
+    clearTimeout(press.current?.timer)
+    press.current = { x: t.clientX, y: t.clientY, timer: setTimeout(() => {
+      pressed.current = true
+      swipe.current = null
+      navigator.vibrate?.(12)
+      setRoomMenu({ r, x: 0, y: 0, sub: '', at: Date.now() })
+    }, 450) }
+  }
+  const pressMove = (e) => {
+    const p = press.current, t = e.touches[0]
+    if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 10) { clearTimeout(p.timer); press.current = null }
+  }
+  // the finger lifting after a long press must not also tap the menu that just opened
+  const pressEnd = (e) => { clearTimeout(press.current?.timer); press.current = null; if (pressed.current && e?.cancelable) e.preventDefault() }
+  // the menu of a chat in the list (right click, or a long press on a phone), as in Telegram: the screen blurs, the chat's
+  // last messages show on a card (a tap on it opens the chat) and the actions sit under it
   const openRoomMenu = (e, r) => {
     e.preventDefault()
     const w = 230, h = 380
@@ -690,7 +711,8 @@ export default function Chat({ me, setMe }) {
                 const other = otherOf(r)
                 const isPicked = picked.includes(r.room_id)
                 return (
-                  <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => (picking ? setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])) : setActiveId(r.room_id))} onContextMenu={(e) => !picking && openRoomMenu(e, r)}>
+                  <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
+                    onTouchStart={(e) => !picking && pressStart(e, r)} onTouchMove={pressMove} onTouchEnd={pressEnd} onTouchCancel={pressEnd}>
                     {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
                     <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 44 : 36} />
                     <span className="room-main">
@@ -843,9 +865,14 @@ export default function Chat({ me, setMe }) {
       )}
       {roomMenu && (
         <OnTop>
-          <button type="button" className="scrim" aria-label="Close" onClick={() => setRoomMenu(null)} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }} />
-          <div className={`room-menu menu-list${roomMenu.flip ? ' flip' : ''}`} style={{ left: roomMenu.x, top: roomMenu.y }}>
-            <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>
+          <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 500) setRoomMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
+          <div className="ctx-stack" onClick={(e) => e.stopPropagation()}>
+          <div className="ctx-card" role="button" tabIndex={0} onClick={() => { const r = roomMenu.r; setRoomMenu(null); setActiveId(r.room_id) }}>
+            <span className="ctx-head"><b>{titleOf(roomMenu.r)}</b><small>{roomMenu.r.kind === 'group' ? 'Group' : otherOf(roomMenu.r) ? lastSeenText(otherOf(roomMenu.r)) : ''}</small></span>
+            <PeekList room={roomMenu.r} me={me} people={people} clearedAt={cleared[roomMenu.r.room_id]} />
+          </div>
+          <div className="room-menu menu-list ctx-menu">
+            {!window.matchMedia('(max-width: 760px)').matches && <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
@@ -864,7 +891,6 @@ export default function Chat({ me, setMe }) {
                 </div>
               )}
             <button type="button" onClick={() => roomAct('unread')} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: '' }))}>{I.unread}<span>{roomMenu.r.unread > 0 || marked.includes(roomMenu.r.room_id) ? 'Mark As Read' : 'Mark As Unread'}</span></button>
-            <button type="button" onClick={() => roomAct('preview')}>{I.eye}<span>Preview</span></button>
             <hr />
             <button type="button" onClick={() => roomAct('archive')}>{I.archive}<span>{roomMenu.r.archived ? 'Unarchive' : 'Archive'}</span></button>
             <div className={`has-sub${roomMenu.sub === 'folder' ? ' open' : ''}`} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: 'folder' }))}>
@@ -880,6 +906,8 @@ export default function Chat({ me, setMe }) {
             <hr />
             <button type="button" onClick={() => roomAct('clear')} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: '' }))}>{I.clear}<span>Clear History</span></button>
             <button type="button" className="danger" onClick={() => roomAct('delete')}>{I.trash}<span>{roomMenu.r.kind === 'group' ? 'Delete and Leave' : 'Delete Chat'}</span></button>
+          </div>
+          </div>
           </div>
         </OnTop>
       )}
@@ -951,14 +979,23 @@ export default function Chat({ me, setMe }) {
 
 /* Preview: a chat's last messages, looked at without opening it (so nothing is marked read) */
 function Peek({ room, me, people, title, clearedAt, onClose, onOpen }) {
+  return (
+    <Modal title={title} onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Close</button><button type="button" className="btn btn-main" onClick={onOpen}>Open chat</button></>}>
+      <PeekList room={room} me={me} people={people} clearedAt={clearedAt} />
+    </Modal>
+  )
+}
+// the last messages of a chat, newest at the foot, read without marking anything read
+function PeekList({ room, me, people, clearedAt }) {
   const [list, setList] = useState(null)
+  const box = useRef(null)
   useEffect(() => {
     supabase.from('roar_messages').select('id, user_id, kind, body, file, created_at').eq('room_id', room.room_id).is('deleted_at', null).order('created_at', { ascending: false }).limit(30)
       .then(({ data }) => setList((data || []).filter((m) => !clearedAt || m.created_at > clearedAt).reverse()))
   }, [room.room_id, clearedAt])
+  useLayoutEffect(() => { if (box.current) box.current.scrollTop = box.current.scrollHeight }, [list])
   return (
-    <Modal title={title} onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Close</button><button type="button" className="btn btn-main" onClick={onOpen}>Open chat</button></>}>
-      <div className="peek">
+      <div className="peek" ref={box}>
         {list === null && <p className="muted">Loading…</p>}
         {list && !list.length && <p className="muted">No messages.</p>}
         {(list || []).map((m) => (
@@ -969,7 +1006,6 @@ function Peek({ room, me, people, title, clearedAt, onClose, onOpen }) {
           </div>
         ))}
       </div>
-    </Modal>
   )
 }
 

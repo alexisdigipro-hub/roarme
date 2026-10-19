@@ -465,3 +465,9 @@ Tasks from the right on their last folder or tab. Contacts, Calls and the Settin
   still moves them).
 - The bar at the foot never runs off the screen: buttons may shrink and a long word is cut with … (in Safari, with the
   Lions look, SETTINGS was cut at the right edge).
+
+## A chat's menu like Telegram (19 Oct)
+Right click on a chat in the list (computer) or a long press (phone) blurs the screen and shows the chat's last messages
+on a card, with its name and last seen; a tap on the card opens the chat. The actions sit under it: Open In Window
+(computer only), Pin, Mute (for how long opens inside the menu), Mark as Read/Unread, Archive, Add to folder (inside the
+menu), Clear History, Delete. Preview is gone from the menu: the card is the preview.

@@ -471,3 +471,5 @@ Right click on a chat in the list (computer) or a long press (phone) blurs the s
 on a card, with its name and last seen; a tap on the card opens the chat. The actions sit under it: Open In Window
 (computer only), Pin, Mute (for how long opens inside the menu), Mark as Read/Unread, Archive, Add to folder (inside the
 menu), Clear History, Delete. Preview is gone from the menu: the card is the preview.
+Fix (19 Oct): the light-mode loading screen marked the page with the class `day`, which the chat's date pills also use,
+so in light mode every word turned into small capitals with wide spacing; it is `data-splash` now.

@@ -438,3 +438,4 @@ frame: no gap round it, no rounded corners, and it runs under the clock and down
 the content clear of both). Studio was already edge to edge and is untouched; the computer is untouched.
 The band under the clock: the page's theme colour is now the panel's grey (#383d46, light mode #eef2f7) instead of
 near-black, so an iPhone that paints that band itself paints it grey too.
+From the Home Screen the app takes the whole screen's height (100lvh), so no black strip shows under the foot bar either.

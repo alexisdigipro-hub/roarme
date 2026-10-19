@@ -3527,3 +3527,9 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
   html[data-theme] .app:has(.main .lib) .side { padding: 6px 12px calc(env(safe-area-inset-bottom, 0px) + 6px); }
   html[data-theme] .app:has(.main .lib) .main { padding-bottom: 0; }
 }
+
+/* from the Home Screen an iPhone gave the page the screen's height minus the clock's band, so a black strip showed
+   under the bar at the foot (Alex, 19 Oct): the app takes the whole screen's height there */
+@media (display-mode: standalone) and (max-width: 760px) {
+  html:has(.app), html:has(.app) body, html:has(.app) #root { height: 100vh; height: 100lvh; }
+}

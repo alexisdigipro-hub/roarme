@@ -3533,3 +3533,12 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 @media (display-mode: standalone) and (max-width: 760px) {
   html, body, #root { height: 100vh; height: 100lvh; }
 }
+
+/* the bar at the foot never runs off the screen (Alex, 19 Oct, in Safari: SETTINGS was cut at the right): every button
+   may shrink, and a word too long for its button is cut with … instead of pushing the bar wider */
+.foot { min-width: 0; max-width: 100%; }
+.foot button { min-width: 0; }
+.foot button > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) {
+  html[data-theme='lions'] .foot button span:last-child { letter-spacing: .03em; font-size: 9px; }
+}

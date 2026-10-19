@@ -137,7 +137,7 @@ export default function Chat({ me, setMe }) {
       if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
       const at = allFolders.findIndex((f) => f.id === folder)
       const next = allFolders[at + (dx < 0 ? 1 : -1)]
-      if (!next) return
+      if (!next) { goStop(dx < 0 ? 1 : -1); return } // past the last folder: the next screen in the bar at the foot
       setFolder(next.id)
       setTimeout(() => document.querySelector('.tabs-scroll > button.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }), 50)
     },
@@ -589,6 +589,28 @@ export default function Chat({ me, setMe }) {
   // Tasks (Alex, 18 Oct): the panel stays open while you move between chats, and remembers it on this device
   const [tasksOpen, setTasksOpen] = useState(() => { try { return localStorage.getItem('roarme-tasks') === '1' } catch { return false } })
   const showTasks = (v) => { setTasksOpen(v); try { localStorage.setItem('roarme-tasks', v ? '1' : '0') } catch { /* private window */ } }
+  // on a phone the swipe runs on through the bar at the foot (Alex, 19 Oct): Contacts · Calls · Messages and its folders ·
+  // Tasks and its tabs · Settings. Coming into Messages or Tasks from the right lands on its last folder or tab.
+  const goStop = (dir) => {
+    const stops = ['contacts', ...(prefs.callsTab ? ['calls'] : []), 'chats', 'tasks', 'settings']
+    const next = stops[stops.indexOf(tasksOpen ? 'tasks' : tab === 'media' ? 'settings' : tab) + dir]
+    if (!next) return
+    if (next === 'tasks') { try { localStorage.setItem('roarme-tasks-tab', dir > 0 ? 'all' : 'done') } catch { /* private window */ } showTasks(true); return }
+    if (tasksOpen) showTasks(false)
+    setTab(next)
+    if (next === 'chats') { const f = allFolders[dir > 0 ? 0 : allFolders.length - 1]; if (f) setFolder(f.id) }
+  }
+  const stopSwipe = useRef(null)
+  const onStopTouch = {
+    onTouchStart: (e) => { stopSwipe.current = tab !== 'chats' && tab !== 'media' && e.touches.length === 1 && !e.target.closest('.tabs, input, .seg') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
+    onTouchEnd: (e) => {
+      const st = stopSwipe.current
+      stopSwipe.current = null
+      if (!st || !window.matchMedia('(max-width: 760px)').matches) return
+      const dx = e.changedTouches[0].clientX - st.x, dy = e.changedTouches[0].clientY - st.y
+      if (Math.abs(dx) >= 60 && Math.abs(dx) >= Math.abs(dy) * 1.5) goStop(dx < 0 ? 1 : -1)
+    },
+  }
   const tasksKit = useTasks(me, loadPeople, (kind, t) => { const s = taskNotice(kind, t, peopleRef.current, () => showTasks(true)); if (s) toast(s) })
   const chatWith = async (p) => {
     const r = rooms.find((x) => x.kind === 'direct' && (x.members || []).includes(p.id))
@@ -612,7 +634,7 @@ export default function Chat({ me, setMe }) {
     <div className={`app${intro ? ' intro' : ''}${tasksOpen ? ' tasks-open' : ''}`} style={{ '--side-w': `${sideW}px` }}>
       <span className="side-grip" onPointerDown={drag} onDoubleClick={() => { setSideW(370); try { localStorage.setItem('roarme-side', '370') } catch { /* private window */ } }} title="Drag to widen, double-click to reset" />
       <aside className="side">
-        <div className="side-col">
+        <div className="side-col" {...onStopTouch}>
         <div className="side-head">
           <button type="button" className="pill-btn" onClick={() => { setPlus(false); if (picking) endPick(); else { setTab('chats'); setPicking(true) } }}>{picking ? 'Done' : 'Edit'}</button>
           <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <Wordmark />}</span>
@@ -785,7 +807,7 @@ export default function Chat({ me, setMe }) {
         )}
       </main>
 
-      {tasksOpen && <TasksPanel me={me} people={people} contacts={contacts} kit={tasksKit} toast={toast} onClose={() => showTasks(false)} rooms={rooms} titleOf={titleOf} onOpenChat={(roomId, msgId) => { if (msgId) libChat(roomId, msgId); else { setTab('chats'); setActiveId(roomId) } }} />}
+      {tasksOpen && <TasksPanel me={me} people={people} contacts={contacts} kit={tasksKit} toast={toast} onClose={() => showTasks(false)} onEdge={goStop} rooms={rooms} titleOf={titleOf} onOpenChat={(roomId, msgId) => { if (msgId) libChat(roomId, msgId); else { setTab('chats'); setActiveId(roomId) } }} />}
 
       {modal === 'invite' && <InviteModal me={me} toast={toast} onClose={() => setModal('')} />}
       {inboxOpen && <RoarMeInbox onClose={() => setInboxOpen(false)} />}

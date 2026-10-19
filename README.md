@@ -456,3 +456,6 @@ On a phone a swipe to the right on an open page (a chat, a Settings page, Keyboa
 inbox) goes back, exactly where its Back button goes (the buttons carry `data-back`). Not when the swipe starts in a
 text box, on sliders, tabs, theme or wallpaper rows, in a window or in a call.
 Tasks on a phone: the same swipe across the list goes to the next or previous tab (All › For me › Given › Done).
+The swipe runs on through the bar at the foot: past the first folder of Messages it goes to Calls, then Contacts; past
+the last folder to Tasks (All first), through its tabs, then Settings; and back the same way, coming into Messages or
+Tasks from the right on their last folder or tab. Contacts, Calls and the Settings list take the same swipe.

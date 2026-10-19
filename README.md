@@ -387,3 +387,9 @@ top of changes.js** (and their Greek in i18n-el.js).
 Alex chose style H out of eight drawn for him: solid, abstract shapes (`FOOT_I` in src/ui.jsx): a head and shoulders,
 a quarter-round handset, a round speech bubble, a square with its tick cut out, a ring. The cut-outs are holes
 (evenodd), so they show the bar behind them in every theme. Only the bar at the foot uses them.
+
+## A chat with RoarMe waiting for everyone (19 Oct)
+Alex: every user finds the RoarMe chat ready in Messages, saying that ideas and questions go there. `supabase/welcome.sql`
+(run by Claude 19 Oct; 2 accounts got it then): `roar_welcome(u)` makes the chat with the official account and its
+welcome (Greek, then English), unread; the trigger `roar_welcome` on roar_profiles does it for every new account as
+soon as it has its profile. Not for the admins (they answer in the RoarMe Inbox) nor RoarMe itself; nobody gets it twice.

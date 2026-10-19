@@ -3018,12 +3018,10 @@ html[data-mode='light'] .wordmark.with-by .rm-mark { filter: none; }
 .adm-row.adm-person { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: 'av main acts' 'av chips chips'; column-gap: 12px; row-gap: 8px; align-items: center; padding: 12px 14px; }
 .adm-person > .av { grid-area: av; align-self: start; }
 .adm-person > .adm-main { grid-area: main; }
-.adm-person > .adm-chips { grid-area: chips; gap: 2px 0; }
-/* the numbers as one quiet line with dots between, Blocked stays a red chip */
+.adm-person > .adm-chips { grid-area: chips; align-items: center; gap: 4px 16px; }
+/* the numbers as one quiet line, wrapping cleanly on a phone; Blocked stays a red chip */
 .adm-person .adm-chips i:not(.gone) { height: auto; padding: 0; background: none; font-weight: 500; font-size: 12px; }
 .adm-person .adm-chips i:not(.gone)::before { content: none; }
-.adm-person .adm-chips i:not(.gone) + i:not(.gone)::before { content: '·'; width: auto; height: auto; margin: 0 7px; border-radius: 0; background: none; opacity: .6; }
-.adm-person .adm-chips i.gone { margin-right: 8px; }
 .adm-acts { grid-area: acts; display: flex; gap: 6px; }
 .adm-act { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 1px solid var(--edge); background: var(--glass-2); color: var(--text); cursor: pointer; transition: background .15s, color .15s, border-color .15s, transform .1s; }
 .adm-act svg { width: 17px; height: 17px; }

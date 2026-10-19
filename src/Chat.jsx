@@ -501,6 +501,7 @@ export default function Chat({ me, setMe }) {
   // a long press on a chat on a phone opens the same as a right click (Alex, 19 Oct, like Telegram)
   const press = useRef(null)
   const pressed = useRef(false)
+  const closedAt = useRef(0) // the menu closed on a touch outside: the click that follows must not open the chat under it
   const pressStart = (e, r) => {
     const t = e.touches[0]
     pressed.current = false
@@ -718,7 +719,7 @@ export default function Chat({ me, setMe }) {
                 const other = otherOf(r)
                 const isPicked = picked.includes(r.room_id)
                 return (
-                  <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
+                  <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (Date.now() - closedAt.current < 500) return; if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
                     onTouchStart={(e) => !picking && pressStart(e, r)} onTouchMove={pressMove} onTouchEnd={pressEnd} onTouchCancel={pressEnd}>
                     {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
                     <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 44 : 36} />
@@ -872,7 +873,7 @@ export default function Chat({ me, setMe }) {
       )}
       {roomMenu && (
         <OnTop>
-          <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 250) setRoomMenu(null) }} onPointerDown={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 250)) { e.preventDefault(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
+          <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 250) setRoomMenu(null) }} onPointerDown={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 250)) { e.preventDefault(); closedAt.current = Date.now(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
           <div className="ctx-stack" onClick={(e) => e.stopPropagation()}>
           <div className="ctx-card" role="button" tabIndex={0} onClick={() => { const r = roomMenu.r; setRoomMenu(null); setActiveId(r.room_id) }}>
             <span className="ctx-head"><b>{titleOf(roomMenu.r)}</b><small>{roomMenu.r.kind === 'group' ? 'Group' : otherOf(roomMenu.r) ? lastSeenText(otherOf(roomMenu.r)) : ''}</small></span>

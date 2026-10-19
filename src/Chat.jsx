@@ -130,6 +130,9 @@ export default function Chat({ me, setMe }) {
       swipe.current = e.touches.length === 1 && !e.target.closest('.tabs') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null
     },
     onTouchEnd: (e) => {
+      // pulled far enough down at the top of the list: RoarMe reloads, with any new version (Alex, 19 Oct)
+      if (pull >= 1) { setPull(2); setTimeout(() => window.location.reload(), 150); return }
+      if (pull) setPull(0)
       const s = swipe.current
       swipe.current = null
       if (!s || picking || q.trim() || !window.matchMedia('(max-width: 760px)').matches) return
@@ -146,8 +149,10 @@ export default function Chat({ me, setMe }) {
       const d = e.touches[0].clientY - pullY.current
       if (d > 36) setSearchOpen(true)
       else if (d < -24 && !searchBusy()) setSearchOpen(false)
+      if (window.matchMedia('(max-width: 760px)').matches && !picking) setPull(Math.max(0, Math.min(1.15, (d - 50) / 110)))
     },
   }
+  const [pull, setPull] = useState(0) // how far the list is pulled down for a refresh: 0 to 1 (ready), 2 = reloading
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
   const toast = useCallback((s) => { setNote(s); clearTimeout(noteTimer.current); noteTimer.current = setTimeout(() => setNote(''), 2200) }, [])
@@ -707,6 +712,7 @@ export default function Chat({ me, setMe }) {
                 })}
               </nav>
             )}
+            {pull > 0 && <div className={`ptr${pull >= 1 ? ' ready' : ''}${pull === 2 ? ' spin' : ''}`} style={{ '--p': Math.min(pull, 1) }} aria-hidden="true">{svg(<><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></>, 20)}</div>}
             <div className={`rooms stagger${prefs.listPreview ? '' : ' no-prev'}`} key={folder}>
               {!rooms.length && (
                 <div className="rooms-empty">

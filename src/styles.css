@@ -3563,3 +3563,10 @@ html[data-mode='light'] .ctx { background: rgba(240, 244, 250, .5); }
 .ctx .ctx-menu { position: static; align-self: flex-end; flex: none; width: 260px; max-width: 100%; max-height: 46vh; overflow-y: auto; animation: pop .18s ease-out both; transform-origin: top right; }
 .ctx .ctx-menu .sub-menu { position: static; min-width: 0; margin: 2px 0 6px 30px; padding: 2px; border: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; animation: none; }
 .rooms .room { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* pull the chat list down at its top on a phone to reload RoarMe (Alex, 19 Oct): a round arrow that turns as you pull,
+   lights up when letting go will reload, and spins while it does */
+.ptr { flex: none; align-self: center; display: grid; place-items: center; width: 34px; height: 34px; margin: -2px auto 4px; border-radius: 50%;
+  color: var(--muted); background: var(--glass); border: 1px solid var(--edge); opacity: var(--p); transform: rotate(calc(var(--p) * 300deg)) scale(calc(.6 + var(--p) * .4)); }
+.ptr.ready { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.ptr.spin { animation: spin .7s linear infinite; }

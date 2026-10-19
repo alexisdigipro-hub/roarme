@@ -102,6 +102,28 @@ export default function Chat({ me, setMe }) {
   // on a phone a swipe left or right across the chat list goes to the next or previous folder: All, Unread, Groups…
   // (Alex, 19 Oct); not when it starts on the folder tabs themselves, which scroll sideways
   const swipe = useRef(null)
+  // on a phone a swipe to the right on an open page (a chat, a Settings page, AllMedia, the RoarMe inbox…) goes back,
+  // like Back at its top (Alex, 19 Oct): the page's own Back button is pressed, so it always goes where Back goes
+  useEffect(() => {
+    let s = null
+    const NO = 'input, textarea, [contenteditable="true"], .tabs, .themes, .dpick, .wheel, .walls, .seg, .viewer, .modal-back, .call, .menu, input[type="range"]'
+    const start = (e) => {
+      const main = e.target.closest?.('.main')
+      s = window.matchMedia('(max-width: 760px)').matches && main && e.touches.length === 1 && !e.target.closest(NO) ? { main, x: e.touches[0].clientX, y: e.touches[0].clientY } : null
+    }
+    const end = (e) => {
+      if (!s) return
+      const { main, x, y } = s
+      s = null
+      const dx = e.changedTouches[0].clientX - x, dy = e.changedTouches[0].clientY - y
+      if (dx < 70 || dx < Math.abs(dy) * 1.5 || window.getSelection?.().toString()) return
+      const backs = [...main.querySelectorAll('[data-back]')].filter((b) => b.offsetParent)
+      backs[backs.length - 1]?.click()
+    }
+    document.addEventListener('touchstart', start, { passive: true })
+    document.addEventListener('touchend', end, { passive: true })
+    return () => { document.removeEventListener('touchstart', start); document.removeEventListener('touchend', end) }
+  }, [])
   const onListTouch = {
     onTouchStart: (e) => {
       pullY.current = listAtTop(e) ? e.touches[0].clientY : null
@@ -1585,7 +1607,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
     <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={wall} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 15.5}px` }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
       <header className="room-head">
-        <button type="button" className="round back" onClick={onBack} aria-label="Back">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
+        <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
         {picked ? (
           <div className="head-card head-pick">
             <button type="button" className="link" onClick={() => setPicked(null)}>Cancel</button>

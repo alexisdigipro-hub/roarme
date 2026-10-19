@@ -155,8 +155,8 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
     <div className={`set-page${chosen ? ' chosen' : ''}`}>
       <header className="room-head set-head">
         {page === 'keys' || page.startsWith('folder:')
-          ? <button type="button" className="round" onClick={() => onPage(page === 'keys' ? 'general' : 'folders')} aria-label="Back">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
-          : <button type="button" className="round back" onClick={onBack} aria-label="Back">{svg(<path d="M15 5l-7 7 7 7" />)}</button>}
+          ? <button type="button" className="round" onClick={() => onPage(page === 'keys' ? 'general' : 'folders')} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
+          : <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>}
         <strong>{title}</strong>
       </header>
       <div className="set-body stagger" key={page}>

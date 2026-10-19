@@ -133,7 +133,7 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
   return (
     <div className="lib">
       <div className="lib-top">
-        <button type="button" className="round lib-back" onClick={onBack} aria-label="Back">{I.left}</button>
+        <button type="button" className="round lib-back" onClick={onBack} aria-label="Back" data-back="">{I.left}</button>
         <span className="lib-title"><b>Media</b><small>{room ? titleById[room] : 'From all chats'}</small></span>
         <Lens className="seg lib-seg" dep={kind}>
           {tabs.map(([k, label]) => { const n = lists?.[k].length || 0; return <button key={k} type="button" className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>{label}{n > 0 && <i>{n}</i>}</button> })}

@@ -441,3 +441,9 @@ near-black, so an iPhone that paints that band itself paints it grey too.
 From the Home Screen the app takes the whole screen's height (100lvh), so no black strip shows under the foot bar either.
 On an iPhone the page no longer zooms in when a field is tapped (the sign-in's email box zoomed the app and left it
 cut at the sides and under the clock), and after signing in the page goes back to the top.
+
+## Opening RoarMe (19 Oct)
+Alex: "it flashes before it comes in; show the theme's grey with a small logo while it loads". From the very first
+moment (in index.html, before any code loads) the page is the Simba grey with the app's icon small in the middle (pale
+in light mode); React keeps exactly that picture up until the account is read, so nothing flashes or jumps. On an iPhone
+from the Home Screen every page, sign-in too, takes the whole screen's height (no black strip at the bottom).

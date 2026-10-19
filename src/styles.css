@@ -3529,7 +3529,7 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 }
 
 /* from the Home Screen an iPhone gave the page the screen's height minus the clock's band, so a black strip showed
-   under the bar at the foot (Alex, 19 Oct): the app takes the whole screen's height there */
+   at the bottom (Alex, 19 Oct): every page, sign-in too, takes the whole screen's height there */
 @media (display-mode: standalone) and (max-width: 760px) {
-  html:has(.app), html:has(.app) body, html:has(.app) #root { height: 100vh; height: 100lvh; }
+  html, body, #root { height: 100vh; height: 100lvh; }
 }

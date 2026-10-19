@@ -951,4 +951,10 @@ export const EL = {
   'RoarMe · Feedback & Help': 'RoarMe · Feedback & Βοήθεια',
   'Write to the RoarMe team': 'Γράψε στην ομάδα του RoarMe',
   'Official RoarMe account': 'Επίσημος λογαριασμός RoarMe',
+  'RoarMe Inbox': 'RoarMe Inbox',
+  'Who writes to RoarMe · you answer as RoarMe': 'Ποιος γράφει στο RoarMe · απαντάς ως RoarMe',
+  'Nobody has written to RoarMe yet.': 'Κανείς δεν έχει γράψει ακόμα στο RoarMe.',
+  'Pick a chat to read and answer as RoarMe.': 'Διάλεξε συζήτηση για να τη διαβάσεις και να απαντήσεις ως RoarMe.',
+  'Send as RoarMe': 'Αποστολή ως RoarMe',
+  'Write the answer': 'Γράψε την απάντηση',
 }

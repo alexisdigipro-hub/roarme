@@ -94,7 +94,7 @@ function useDesktop() {
 }
 
 /* the list in the side panel */
-export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe }) {
+export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe, onInbox, inboxCount = 0 }) {
   return (
     <div className="side-scroll set-menu stagger">
       <button type="button" className={`set-me${page === 'profile' ? ' on' : ''}`} onClick={() => onPage('profile')}>
@@ -104,6 +104,9 @@ export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe }) {
       </button>
       <div className="set-box">
         <button type="button" className={`set-row set-pick set-nav${page === 'profile' ? ' on' : ''}`} onClick={() => onPage('profile')}><span className="nav-ico" style={{ '--c': '#ff375f' }}>{I.person}</span><span className="set-text">My Profile</span><i className="set-chev">{I.right}</i></button>
+        {/* the RoarMe account, run from your own profile (Alex, 19 Oct: "here in my profile, no other profile"): the admins
+            read who writes to RoarMe and answer as RoarMe */}
+        {onInbox && <button type="button" className="set-row set-pick set-nav" onClick={onInbox}><span className="nav-ico" style={{ '--c': '#d40000' }}>{I.chats}</span><span className="set-text">RoarMe<small>Who writes to RoarMe · you answer as RoarMe</small></span>{inboxCount > 0 && <i className="set-count">{inboxCount}</i>}<i className="set-chev">{I.right}</i></button>}
       </div>
       {/* the RoarMe team's own chat: feedback, ideas, questions (Alex, 19 Oct) */}
       {onRoarMe && (

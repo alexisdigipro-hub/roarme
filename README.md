@@ -376,5 +376,9 @@ top of changes.js** (and their Greek in i18n-el.js).
 - **The official RoarMe account** @roarme (roarme@themadlions.com, the app's icon as its picture, the official mark
   beside its name in the list and the chat's head): Settings > **RoarMe · Feedback & Help** opens a chat with it, which
   then sits in Messages with the others. `supabase/official.sql`, Edge Function `roar-official` (run by Claude). The
-  account has no password: to answer as RoarMe, sign in with roarme@themadlions.com via "Forgot password" (the mailbox
-  must exist at themadlions.com).
+  account has no password and nobody signs in to it.
+- **RoarMe in your own profile** (Alex: "here in my profile, no other profile"): for the admins (roar_admins), Settings >
+  the profile box > **RoarMe** (with the unread count) opens the RoarMe Inbox (`src/inbox.jsx`): every chat of the
+  RoarMe account, newest first; pick one, read it (marks it read for RoarMe) and answer: the answer goes as RoarMe from
+  your own login. `supabase/official-inbox.sql` (`roar_official_inbox / _messages / _send`, admins only; run by Claude
+  and tested). Admins do not get the Feedback & Help row.

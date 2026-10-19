@@ -4,6 +4,17 @@ import { initialsOf } from './lib.js'
 
 /* ---------- small pieces ---------- */
 export const svg = (d, w = 20) => <svg viewBox="0 0 24 24" width={w} height={w} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+/* the bar at the foot, in solid geometric shapes (Alex, 19 Oct: style H): each one a single filled form, the cut-outs
+   (the tick, the hole of the ring) left empty so they show the bar behind them in every theme */
+const solid = (d) => <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" fillRule="evenodd" aria-hidden="true"><path d={d} /></svg>
+export const FOOT_I = {
+  contacts: solid('M12 3a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zM3 21a9 9 0 0 1 18 0z'),
+  calls: solid('M4 4h6v6a4 4 0 0 0 4 4h6v6h-4A12 12 0 0 1 4 8z'),
+  messages: solid('M12 3c5 0 9 3.6 9 8s-4 8-9 8c-1.6 0-3.1-.3-4.3-1L3 21l1.6-4.6C3.6 15 3 13.1 3 11c0-4.4 4-8 9-8z'),
+  tasks: solid('M4 4h16v16H4zM6.8 12.3l2.1-2.1 2 2 4.9-4.9 2.1 2.1-7 7z'),
+  settings: solid('M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 6a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'),
+}
+
 export const I = {
   plus: svg(<path d="M12 5v14M5 12h14" />),
   search: svg(<><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>, 18),

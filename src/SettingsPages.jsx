@@ -94,7 +94,7 @@ function useDesktop() {
 }
 
 /* the list in the side panel */
-export function SettingsMenu({ me, page, onPage }) {
+export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe }) {
   return (
     <div className="side-scroll set-menu stagger">
       <button type="button" className={`set-me${page === 'profile' ? ' on' : ''}`} onClick={() => onPage('profile')}>
@@ -105,6 +105,18 @@ export function SettingsMenu({ me, page, onPage }) {
       <div className="set-box">
         <button type="button" className={`set-row set-pick set-nav${page === 'profile' ? ' on' : ''}`} onClick={() => onPage('profile')}><span className="nav-ico" style={{ '--c': '#ff375f' }}>{I.person}</span><span className="set-text">My Profile</span><i className="set-chev">{I.right}</i></button>
       </div>
+      {/* the RoarMe team's own chat: feedback, ideas, questions (Alex, 19 Oct) */}
+      {onRoarMe && (
+        <div className="set-box">
+          <button type="button" className="set-row set-pick set-nav set-roarme" onClick={onRoarMe}><span className="nav-ico" style={{ '--c': '#d40000' }}>{I.chats}</span><span className="set-text">RoarMe · Feedback &amp; Help<small>Write to the RoarMe team</small></span><i className="set-chev">{I.right}</i></button>
+        </div>
+      )}
+      {/* everything shared in all chats, out of the bar at the foot and in here on its own (Alex, 19 Oct) */}
+      {onMedia && (
+        <div className="set-box">
+          <button type="button" className="set-row set-pick set-nav" onClick={onMedia}><span className="nav-ico" style={{ '--c': '#ff9f0a' }}>{I.media}</span><span className="set-text">AllMedia<small>Photos, videos, files and links from all chats</small></span><i className="set-chev">{I.right}</i></button>
+        </div>
+      )}
       <div className="set-box">
         {PAGES.map(([id, label, c, ico]) => (
           <button key={id} type="button" className={`set-row set-pick set-nav${page === id ? ' on' : ''}`} onClick={() => onPage(id)}>

@@ -368,3 +368,13 @@ version; the update card shows them under "RoarMe x is ready · Restart to updat
 and once after the update a card "Updated to RoarMe x" shows them again (remembered in `roarme-seen-version`). The
 release on GitHub gets the same lines (desktop.yml reads changes.js). **Each new desktop version: add its lines at the
 top of changes.js** (and their Greek in i18n-el.js).
+
+## The bar at the foot, AllMedia and the RoarMe account (19 Oct)
+- **Bar at the foot**: Contacts · Calls · **Messages** (the chats, in the middle, a little bigger) · Tasks · Settings.
+- **AllMedia** (what was the Media tab) is a box of its own in Settings; Back there returns to Settings, and Settings
+  stays lit in the bar while it is open.
+- **The official RoarMe account** @roarme (roarme@themadlions.com, the app's icon as its picture, the official mark
+  beside its name in the list and the chat's head): Settings > **RoarMe · Feedback & Help** opens a chat with it, which
+  then sits in Messages with the others. `supabase/official.sql`, Edge Function `roar-official` (run by Claude). The
+  account has no password: to answer as RoarMe, sign in with roarme@themadlions.com via "Forgot password" (the mailbox
+  must exist at themadlions.com).

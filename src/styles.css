@@ -3546,16 +3546,20 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 /* a chat's menu, like Telegram (Alex, 19 Oct): right click on a computer or a long press on a phone blurs the screen,
    the chat's last messages sit on a card (a tap opens the chat) and the actions under it; Mute and Add to folder
    open inside the menu */
+/* cursor: pointer, or an iPhone never sends the tap on the blurred space that closes it; a lighter blur, so it opens
+   without a stutter (Alex, 19 Oct: "laggy, and a tap elsewhere did not close it") */
 .ctx { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) 14px max(16px, env(safe-area-inset-bottom, 0px));
-  background: rgba(0, 0, 0, .3); -webkit-backdrop-filter: blur(20px) saturate(1.2); backdrop-filter: blur(20px) saturate(1.2); animation: fade .18s ease both; }
-html[data-mode='light'] .ctx { background: rgba(240, 244, 250, .35); }
+  cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  background: rgba(0, 0, 0, .42); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); animation: fade .14s ease both; }
+.ctx-stack { cursor: default; }
+html[data-mode='light'] .ctx { background: rgba(240, 244, 250, .5); }
 .ctx-stack { display: flex; flex-direction: column; gap: 10px; width: min(460px, 100%); max-height: 100%; min-height: 0; }
 .ctx-card { flex: 0 1 auto; min-height: 120px; max-height: 52vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 24px; border: 1px solid var(--edge);
-  background: var(--panel); box-shadow: 0 24px 60px rgba(0, 0, 0, .35); cursor: pointer; animation: pop .24s var(--spring, ease) both; }
+  background: var(--panel); box-shadow: 0 16px 40px rgba(0, 0, 0, .3); cursor: pointer; animation: pop .18s ease-out both; }
 .ctx-head { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 12px 16px 8px; border-bottom: 1px solid var(--edge); text-align: center; }
 .ctx-head b { font-size: 16px; }
 .ctx-head small { color: var(--muted); font-size: 12.5px; }
 .ctx-card .peek { flex: 1; min-height: 0; max-height: none; padding: 10px 12px 14px; }
-.ctx .ctx-menu { position: static; align-self: flex-end; flex: none; width: 260px; max-width: 100%; max-height: 46vh; overflow-y: auto; animation: pop .24s var(--spring, ease) .04s both; transform-origin: top right; }
+.ctx .ctx-menu { position: static; align-self: flex-end; flex: none; width: 260px; max-width: 100%; max-height: 46vh; overflow-y: auto; animation: pop .18s ease-out both; transform-origin: top right; }
 .ctx .ctx-menu .sub-menu { position: static; min-width: 0; margin: 2px 0 6px 30px; padding: 2px; border: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; animation: none; }
 .rooms .room { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }

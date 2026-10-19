@@ -476,3 +476,5 @@ so in light mode every word turned into small capitals with wide spacing; it is 
 Add to folder lists every folder in the tabs (Alex, 19 Oct): your own, and the ready-made Unread and Groups (a chat put
 there by hand shows in them as well as the ones there by themselves; group chats are in Groups already) and Archived
 (the same as Archive). All holds every chat, so it is not listed.
+The chat menu opens without a stutter (a lighter blur) and a tap on the blurred space around it closes it on an iPhone
+too (Safari sends no tap to a plain box unless it shows a pointer).

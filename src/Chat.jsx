@@ -872,7 +872,7 @@ export default function Chat({ me, setMe }) {
       )}
       {roomMenu && (
         <OnTop>
-          <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 500) setRoomMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
+          <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 350) setRoomMenu(null) }} onTouchEnd={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 350)) { e.preventDefault(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
           <div className="ctx-stack" onClick={(e) => e.stopPropagation()}>
           <div className="ctx-card" role="button" tabIndex={0} onClick={() => { const r = roomMenu.r; setRoomMenu(null); setActiveId(r.room_id) }}>
             <span className="ctx-head"><b>{titleOf(roomMenu.r)}</b><small>{roomMenu.r.kind === 'group' ? 'Group' : otherOf(roomMenu.r) ? lastSeenText(otherOf(roomMenu.r)) : ''}</small></span>

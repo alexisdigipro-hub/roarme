@@ -431,3 +431,8 @@ Every new text has its Greek in `src/i18n-el.js`.
 Alex sent Telegram's list: on a phone the chats are lower rows (6 px above and below, 48 px without the last message),
 a clearer hairline between chats (13% of the text colour, starting where the name starts, on the computer too), and
 the bar at the foot stays put: inside the app the page itself no longer scrolls or bounces on iPhone, only the list.
+
+## The app fills the phone's screen (19 Oct)
+Alex: "it should fill top to bottom with the grey background, no black". On a phone the panel is no longer a card with a
+frame: no gap round it, no rounded corners, and it runs under the clock and down to the home bar (its own padding keeps
+the content clear of both). Studio was already edge to edge and is untouched; the computer is untouched.

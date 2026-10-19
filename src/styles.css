@@ -3516,3 +3516,14 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
   .room-main { gap: 1px; }
   .room-tags { margin-top: 2px; }
 }
+
+/* on a phone the app fills the whole screen with its own grey, top to bottom (Alex, 19 Oct: "no black"):
+   no frame around the panel (Studio keeps its own, already edge to edge), no rounded corners; the space under the clock and above the home bar is the panel's */
+@media (max-width: 760px) {
+  html:not([data-theme='studio']) .app { padding: 0; gap: 0; }
+  html[data-theme] .app > :is(.side, .main), html .app > :is(.side, .main) { border: 0; border-radius: 0; box-shadow: none; }
+  html:not([data-theme='studio']) .app > .side { padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px calc(env(safe-area-inset-bottom, 0px) + 6px); }
+  html:not([data-theme='studio']) .app > .main { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html[data-theme] .app:has(.main .lib) .side { padding: 6px 12px calc(env(safe-area-inset-bottom, 0px) + 6px); }
+  html[data-theme] .app:has(.main .lib) .main { padding-bottom: 0; }
+}

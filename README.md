@@ -393,3 +393,13 @@ Alex: every user finds the RoarMe chat ready in Messages, saying that ideas and 
 (run by Claude 19 Oct; 2 accounts got it then): `roar_welcome(u)` makes the chat with the official account and its
 welcome (in English only, Alex 19 Oct), unread; the trigger `roar_welcome` on roar_profiles does it for every new account as
 soon as it has its profile. Not for the admins (they answer in the RoarMe Inbox) nor RoarMe itself; nobody gets it twice.
+
+## Calls through LiveKit (19 Oct)
+Alex: "add LiveKit for the calls". With LiveKit set up, the sound and picture of a call go through a LiveKit room for
+that call (`roar-call-<call id>`) instead of straight from one device to the other, so calls get through any network
+(office Wi-Fi, 4G, firewalls) where the direct way sometimes stays on "Connecting…". The ringing, Answer / Decline,
+the call log and Recent Calls stay exactly as they were. The Edge Function `roar-livekit` (deployed by Claude) gives the
+caller and the callee, and nobody else, a pass for that room while the call is on; the app loads `livekit-client` only
+when a call starts. Setup (Alex, once): a free project on LiveKit Cloud, then its three values in Supabase > Edge
+Functions > Secrets as `LIVEKIT_URL` (wss://…livekit.cloud), `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`. Until then the
+function answers "not set up" and calls go the old way by themselves.

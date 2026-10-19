@@ -4,7 +4,6 @@ import { applyLook, applyMode, setPrefs, themeFor, usePrefs } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
-import { Wordmark } from './ui.jsx'
 
 // The order of things: sign in (or sign up) with email, then pick a @username once, then the chat.
 export default function App() {
@@ -61,9 +60,9 @@ export default function App() {
     if (profile && t !== (theme || 'ember')) setPrefs({ theme: t })
   }, [theme, profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (session === undefined || (uid && profile === undefined)) return <div className="boot"><span className="boot-mark"><Wordmark by /></span></div>
+  if (session === undefined || (uid && profile === undefined)) return <div className="splash"><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" /></div>
   if (!session) return <Auth />
-  if (!aal) return <div className="boot"><span className="boot-mark"><Wordmark by /></span></div>
+  if (!aal) return <div className="splash"><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" /></div>
   if (aal === 'need') return <MfaGate onDone={() => setAal('ok')} />
   if (locked) return <LockScreen onUnlock={unlock} onSignOut={() => { clearLock(); supabase.auth.signOut() }} />
   if (recovering) return <NewPassword onDone={() => setRecovering(false)} />

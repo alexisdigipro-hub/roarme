@@ -447,3 +447,8 @@ Alex: "it flashes before it comes in; show the theme's grey with a small logo wh
 moment (in index.html, before any code loads) the page is the Simba grey with the app's icon small in the middle (pale
 in light mode); React keeps exactly that picture up until the account is read, so nothing flashes or jumps. On an iPhone
 from the Home Screen every page, sign-in too, takes the whole screen's height (no black strip at the bottom).
+
+## Swipe between folders (19 Oct)
+Alex: on a phone, in Messages, a swipe left or right across the chat list goes to the next or previous folder (All ›
+Unread › Groups › Archived › your own), and the folder tabs follow. Not while searching or selecting chats, and not when
+the swipe starts on the tabs themselves.

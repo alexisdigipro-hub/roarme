@@ -99,8 +99,26 @@ export default function Chat({ me, setMe }) {
     if (e.deltaY < -4 && listAtTop(e)) setSearchOpen(true)
     else if (e.deltaY > 4 && !searchBusy()) setSearchOpen(false)
   }
+  // on a phone a swipe left or right across the chat list goes to the next or previous folder: All, Unread, Groups…
+  // (Alex, 19 Oct); not when it starts on the folder tabs themselves, which scroll sideways
+  const swipe = useRef(null)
   const onListTouch = {
-    onTouchStart: (e) => { pullY.current = listAtTop(e) ? e.touches[0].clientY : null },
+    onTouchStart: (e) => {
+      pullY.current = listAtTop(e) ? e.touches[0].clientY : null
+      swipe.current = e.touches.length === 1 && !e.target.closest('.tabs') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null
+    },
+    onTouchEnd: (e) => {
+      const s = swipe.current
+      swipe.current = null
+      if (!s || picking || q.trim() || !window.matchMedia('(max-width: 760px)').matches) return
+      const dx = e.changedTouches[0].clientX - s.x, dy = e.changedTouches[0].clientY - s.y
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+      const at = allFolders.findIndex((f) => f.id === folder)
+      const next = allFolders[at + (dx < 0 ? 1 : -1)]
+      if (!next) return
+      setFolder(next.id)
+      setTimeout(() => document.querySelector('.tabs-scroll > button.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }), 50)
+    },
     onTouchMove: (e) => {
       if (pullY.current == null) return
       const d = e.touches[0].clientY - pullY.current

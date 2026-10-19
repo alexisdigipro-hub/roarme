@@ -480,3 +480,10 @@ The chat menu opens without a stutter (a lighter blur) and the moment a finger t
 too (Safari sends no tap to a plain box unless it shows a pointer).
 Pull to refresh (19 Oct): on a phone, pulling the chat list down at its top first shows the search, and pulled further a
 round arrow turns and lights up; letting go then reloads RoarMe (with any new version).
+
+## Folders on every device (19 Oct)
+Alex: "make the folders sync on all devices". Custom folders, their order, renamed and deleted ready-made folders and
+chats added by hand to Unread or Groups are kept with the account in `roar_folder_sync` (`supabase/folders.sql`, run by
+Claude 19 Oct: one row per person, each reads and writes only their own). `src/folderSync.js` sends them up a moment
+after a change and fetches them when RoarMe opens or comes back to the front; the newer side wins. The first time a
+device syncs, its own folders are added to the account's, so nothing made before is lost.

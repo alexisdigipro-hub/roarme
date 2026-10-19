@@ -91,7 +91,7 @@ export function usePrefs() {
   return p
 }
 
-/* Things kept per device: custom folders, chats hidden from the list */
+/* Things kept on this device: chats hidden from the list, pins, drafts… (custom folders too, and folderSync.js keeps them in step across devices) */
 const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } window.dispatchEvent(new Event('roarme-local')) }
 export function useLocal(key, initial) {

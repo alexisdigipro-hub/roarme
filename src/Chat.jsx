@@ -16,6 +16,7 @@ import { NowPlaying } from './player.jsx'
 import { pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
+import { useFolderSync } from './folderSync.js'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { OrdinoCard, RoardinoSheet, ordinoBody } from './roardino.jsx'
 import { TasksPanel, taskNotice, useTasks } from './tasks.jsx'
@@ -67,6 +68,7 @@ export default function Chat({ me, setMe }) {
   const [picked, setPicked] = useState([])
   const [hits, setHits] = useState([])
   const [myFolders, setMyFolders] = useLocal('roarme-folders', [])
+  useFolderSync(me.id) // the same folders on every device (supabase/folders.sql)
   const [hidden, setHidden] = useLocal('roarme-hidden', {})
   // per device: chats pinned to the top, history cleared, chats marked unread, a mute that ends, drafts
   const [pins, setPins] = useLocal('roarme-pins', [])

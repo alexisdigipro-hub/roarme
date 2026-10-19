@@ -488,6 +488,17 @@ Claude 19 Oct: one row per person, each reads and writes only their own). `src/f
 after a change and fetches them when RoarMe opens or comes back to the front; the newer side wins. The first time a
 device syncs, its own folders are added to the account's, so nothing made before is lost.
 
+## Block and Delete accounts (19 Oct)
+Alex: "in the admin panel let me block and delete users". Settings > Admin > People: every account but your own has
+**Block** and **Delete** (red). Block (asks first) cuts the account off at once and keeps it out: every table's
+`roar_mfa` rule (`roar_aal_ok()`) now also checks `roar_suspended`, so it reads and writes nothing; `banned_until` on
+its sign-in means it cannot sign in or renew a sign-in; its push addresses are dropped. It shows **Blocked** in the
+list and the button turns to **Unblock**, which undoes it. The blocked person sees "This account is blocked" and Sign
+Out (`roar_am_blocked()`). Delete (asks first) removes the account for good with its one-to-one chats (both sides) and
+everything it sent in groups; the files leave storage with the next roar-cleanup run. Admins and the RoarMe account
+cannot be blocked or deleted. `supabase/suspend.sql` (`roar_suspended`, `roar_admin_blocked`, `roar_admin_block`,
+`roar_admin_delete`).
+
 ## Edit Contact (19 Oct)
 Alex: "users can edit other people's profiles, shown only to them". A person's profile > More > Edit Contact: my own
 name for them, my own photo for them (now also over a photo they have) and a note. Only I see these, everywhere in the

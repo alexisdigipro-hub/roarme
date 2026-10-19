@@ -52,6 +52,12 @@ export default function App() {
     supabase.from('roar_people').select('*').eq('id', uid).maybeSingle().then(({ data }) => { if (alive) setProfile(data || null) })
     return () => { alive = false }
   }, [uid])
+  // an account an admin blocked (supabase/suspend.sql) sees why RoarMe is empty, and can only sign out
+  const [blocked, setBlocked] = useState(false)
+  useEffect(() => {
+    if (!uid) { setBlocked(false); return }
+    supabase.rpc('roar_am_blocked').then(({ data }) => setBlocked(data === true))
+  }, [uid])
   // a theme still in Alex's lab shows only for him; anyone else sees Simba
   useEffect(() => {
     const t = themeFor(theme, profile)
@@ -66,6 +72,16 @@ export default function App() {
   if (aal === 'need') return <MfaGate onDone={() => setAal('ok')} />
   if (locked) return <LockScreen onUnlock={unlock} onSignOut={() => { clearLock(); supabase.auth.signOut() }} />
   if (recovering) return <NewPassword onDone={() => setRecovering(false)} />
+  if (blocked) {
+    return (
+      <div className="splash blocked-screen">
+        <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" />
+        <b>This account is blocked</b>
+        <p>It can no longer use RoarMe. If you think this is a mistake, write to info@themadlions.com.</p>
+        <button type="button" className="btn" onClick={() => supabase.auth.signOut()}>Sign Out</button>
+      </div>
+    )
+  }
   if (!profile) return <Onboarding user={session.user} onDone={setProfile} />
   return <Chat me={profile} setMe={setProfile} />
 }

@@ -3012,6 +3012,16 @@ html[data-mode='light'] .wordmark.with-by .rm-mark { filter: none; }
 .adm-ico svg { width: 18px; height: 18px; }
 .adm-more { align-self: center; border-radius: 999px; }
 .adm-note { margin: 4px 2px 0; font-size: 12px; }
+/* Block and Delete on each account (Alex, 19 Oct) */
+.adm-acts { display: flex; gap: 6px; margin-left: auto; }
+.adm-acts .btn { border-radius: 999px; }
+.adm-row.blocked .adm-main, .adm-row.blocked > .av { opacity: .55; }
+/* what a blocked account sees */
+.blocked-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; color: var(--text); }
+.blocked-screen img { width: 64px; height: 64px; }
+.blocked-screen b { font-size: 19px; }
+.blocked-screen p { margin: 0; max-width: 320px; color: var(--muted); line-height: 1.5; }
+.blocked-screen .btn { margin-top: 6px; border-radius: 999px; }
 @media (max-width: 760px) { .adm-stats b { font-size: 19px; } }
 
 /* the bar shows the letters alone again (Alex, 17 Oct), 3% smaller than the 18px they were */

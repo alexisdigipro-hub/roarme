@@ -5,7 +5,9 @@ import { locale } from './i18n.js'
 
 /* Admin (Alex, 17 Oct: "only I want to see every user in the database and what files they send"). Settings > Admin,
    shown only to Alex; the database answers only the accounts in roar_admins (supabase/admin.sql), so nobody else gets
-   anything even by calling it directly. Names, sizes, types, who and when: never message text, never the files. */
+   anything even by calling it directly. Names, sizes, types, who and when: never message text, never the files.
+   Block and Delete on each account (Alex, 19 Oct; supabase/suspend.sql): Block cuts it off at once and keeps it out,
+   Unblock lets it back; Delete removes it for good with its one-to-one chats and everything it sent. */
 
 const day = (iso) => (iso ? new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '–')
 const ago = (iso) => {
@@ -23,9 +25,14 @@ export function Admin() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [q, setQ] = useState('')
+  const [blocked, setBlocked] = useState(() => new Set())
+  const [working, setWorking] = useState('') // the account a Block or Delete is running on
+  const [meId, setMeId] = useState('')
 
   useEffect(() => {
     supabase.rpc('roar_admin_users').then(({ data, error }) => { if (error) setErr(errText(error)); else setUsers(data || []) })
+    supabase.rpc('roar_admin_blocked').then(({ data }) => setBlocked(new Set(data || [])))
+    supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id || ''))
     supabase.rpc('roar_admin_files', { before: null, lim: PAGE }).then(({ data, error }) => {
       if (error) setErr(errText(error)); else { setFiles(data || []); setMore((data || []).length === PAGE) }
     })
@@ -37,6 +44,24 @@ export function Admin() {
     setBusy(false)
     if (error) { setErr(errText(error)); return }
     setFiles((l) => [...l, ...(data || [])]); setMore((data || []).length === PAGE)
+  }
+
+  const who = (u) => (u.username ? `@${u.username}` : u.email || 'this account')
+  const block = async (u, on) => {
+    if (on && !window.confirm(`Block ${who(u)}? They are cut off from RoarMe at once and cannot sign in again until you unblock them.`)) return
+    setWorking(u.id); setErr('')
+    const { error } = await supabase.rpc('roar_admin_block', { u: u.id, block: on })
+    setWorking('')
+    if (error) { setErr(errText(error)); return }
+    setBlocked((b) => { const n = new Set(b); if (on) n.add(u.id); else n.delete(u.id); return n })
+  }
+  const remove = async (u) => {
+    if (!window.confirm(`Delete ${who(u)} for good? Their account, their one-to-one chats and everything they sent are removed. This cannot be undone.`)) return
+    setWorking(u.id); setErr('')
+    const { error } = await supabase.rpc('roar_admin_delete', { u: u.id })
+    setWorking('')
+    if (error) { setErr(errText(error)); return }
+    setUsers((l) => l.filter((x) => x.id !== u.id))
   }
 
   const s = q.trim().toLowerCase()
@@ -66,7 +91,7 @@ export function Admin() {
           {!users && !err && <p className="muted">Loading…</p>}
           {users && !shownUsers.length && <p className="muted">Nobody found.</p>}
           {shownUsers.map((u) => (
-            <div key={u.id} className="adm-row">
+            <div key={u.id} className={`adm-row${blocked.has(u.id) ? ' blocked' : ''}`}>
               <Avatar src={u.avatar_url} name={u.username ? nameOf(u) : (u.email || '?')} size={42} />
               <span className="adm-main">
                 <b>{u.username ? nameOf(u) : 'No username yet'}{u.username && <small> @{u.username}</small>}</b>
@@ -78,7 +103,14 @@ export function Admin() {
                 <i>{u.messages} messages</i>
                 <i>{u.files} files · {fmtBytes(Number(u.bytes || 0))}</i>
                 <i>{u.chats} chats</i>
+                {blocked.has(u.id) && <i className="gone">Blocked</i>}
               </span>
+              {u.id !== meId && (
+                <span className="adm-acts">
+                  <button type="button" className="btn btn-sm" disabled={working === u.id} onClick={() => block(u, !blocked.has(u.id))}>{blocked.has(u.id) ? 'Unblock' : 'Block'}</button>
+                  <button type="button" className="btn btn-sm btn-danger" disabled={working === u.id} onClick={() => remove(u)}>Delete</button>
+                </span>
+              )}
             </div>
           ))}
         </div>

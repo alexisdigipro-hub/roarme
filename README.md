@@ -487,3 +487,10 @@ chats added by hand to Unread or Groups are kept with the account in `roar_folde
 Claude 19 Oct: one row per person, each reads and writes only their own). `src/folderSync.js` sends them up a moment
 after a change and fetches them when RoarMe opens or comes back to the front; the newer side wins. The first time a
 device syncs, its own folders are added to the account's, so nothing made before is lost.
+
+## Edit Contact (19 Oct)
+Alex: "users can edit other people's profiles, shown only to them". A person's profile > More > Edit Contact: my own
+name for them, my own photo for them (now also over a photo they have) and a note. Only I see these, everywhere in the
+app (chat list, chat head, messages, calls); under the name the profile shows "Their name: …", and the note sits in the
+profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
+`supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.

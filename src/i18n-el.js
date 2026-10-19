@@ -1023,4 +1023,12 @@ export const EL = {
   'The folder names of each chat, in the chat list': 'Τα ονόματα φακέλων κάθε συνομιλίας, στη λίστα συνομιλιών',
   'Drag a folder to change the order of the tabs. Tap one to edit it.': 'Σύρε έναν φάκελο για να αλλάξεις τη σειρά των καρτελών. Πάτα έναν για να τον επεξεργαστείς.',
   'Drag a folder to change the order of the tabs. Click one to edit it, right click for more.': 'Σύρε έναν φάκελο για να αλλάξεις τη σειρά των καρτελών. Κλικ για επεξεργασία, δεξί κλικ για περισσότερα.',
+  // Edit Contact (19 Oct)
+  'Edit Contact': 'Επεξεργασία επαφής',
+  'your note · only you see it': 'η σημείωσή σου · τη βλέπεις μόνο εσύ',
+  'Saved, only you see it': 'Αποθηκεύτηκε, το βλέπεις μόνο εσύ',
+  'Use their own photo': 'Χρήση της δικής του/της φωτογραφίας',
+  'Note': 'Σημείωση',
+  'Where you met, what they do, anything': 'Πού γνωριστήκατε, τι κάνει, οτιδήποτε',
+  'Only you see these. They keep their own name and photo for everyone else.': 'Αυτά τα βλέπεις μόνο εσύ. Για όλους τους άλλους μένουν το δικό του/της όνομα και φωτογραφία.',
 }

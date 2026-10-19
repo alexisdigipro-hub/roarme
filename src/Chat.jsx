@@ -443,8 +443,8 @@ export default function Chat({ me, setMe }) {
   const inFolder = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
-    if (f === 'unread') return r.unread > 0
-    if (f === 'groups') return r.kind === 'group'
+    if (f === 'unread') return r.unread > 0 || (prefs.folderExtra?.unread || []).includes(r.room_id)
+    if (f === 'groups') return r.kind === 'group' || (prefs.folderExtra?.groups || []).includes(r.room_id)
     const mine = myFolders.find((x) => x.id === f)
     if (mine) {
       if ((mine.exclude || []).includes(r.room_id)) return false
@@ -459,7 +459,7 @@ export default function Chat({ me, setMe }) {
     const list = visible.filter((r) => (t ? titleOf(r).toLowerCase().includes(t) || (otherOf(r)?.username || '').includes(t.replace(/^@/, '')) : inFolder(r, folder)))
     // pinned chats first, in the order they were pinned
     return [...list.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...list.filter((r) => !pins.includes(r.room_id))]
-  }, [visible, folder, q, titleOf, myFolders, pins])
+  }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra])
 
   // messages that match the search, in every chat one is in (the database only gives one's own chats)
   useEffect(() => {
@@ -548,6 +548,13 @@ export default function Chat({ me, setMe }) {
     if (what === 'archive') { await mine({ archived: !r.archived }); toast(r.archived ? 'Unarchived' : 'Archived'); loadRooms() }
     if (what === 'folder') { setMyFolders((list) => list.map((f) => (f.id === arg ? { ...f, rooms: f.rooms.includes(r.room_id) ? f.rooms.filter((x) => x !== r.room_id) : [...f.rooms, r.room_id] } : f))) }
     if (what === 'newfolder') editFolder('new', [r.room_id])
+    // a chat put by hand into Unread or Groups as well as the ones that are there by themselves
+    if (what === 'readyfolder') {
+      const extra = { ...(prefs.folderExtra || {}) }
+      const l = extra[arg] || []
+      extra[arg] = l.includes(r.room_id) ? l.filter((x) => x !== r.room_id) : [...l, r.room_id]
+      setPrefs({ folderExtra: extra })
+    }
     if (what === 'clear') {
       if (!window.confirm(`Clear the history of ${titleOf(r)}? It goes for you only. Once everyone in the chat has cleared it, it leaves RoarMe's servers too.`)) return
       const at = new Date().toISOString()
@@ -897,8 +904,14 @@ export default function Chat({ me, setMe }) {
               <button type="button" onClick={() => setRoomMenu((m) => ({ ...m, sub: m.sub === 'folder' ? '' : 'folder' }))}>{I.folder}<span>Add to folder…</span><i className="sub-arrow">{I.right}</i></button>
               {roomMenu.sub === 'folder' && (
                 <div className="sub-menu menu-list">
-                  {myFolders.map((f) => <button key={f.id} type="button" onClick={() => roomAct('folder', f.id)}><span>{f.name}</span>{f.rooms.includes(roomMenu.r.room_id) && <i className="sub-check">{I.check}</i>}</button>)}
-                  {myFolders.length > 0 && <hr />}
+                  {/* every folder in the tabs, the ready-made ones too (Alex, 19 Oct); All holds every chat already */}
+                  {allFolders.filter((f) => f.id !== 'all').map((f) => {
+                    const r = roomMenu.r
+                    const on = f.custom ? f.rooms.includes(r.room_id) : f.id === 'archived' ? r.archived : (prefs.folderExtra?.[f.id] || []).includes(r.room_id)
+                    const fixed = f.id === 'groups' && r.kind === 'group'
+                    return <button key={f.id} type="button" disabled={fixed} onClick={() => roomAct(f.custom ? 'folder' : f.id === 'archived' ? 'archive' : 'readyfolder', f.id)}><span>{f.name}</span>{(on || fixed) && <i className="sub-check">{I.check}</i>}</button>
+                  })}
+                  <hr />
                   <button type="button" onClick={() => roomAct('newfolder')}>{I.plus}<span>New folder</span></button>
                 </div>
               )}

@@ -43,6 +43,8 @@ export default function App() {
     supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => setAal(data && data.nextLevel === 'aal2' && data.currentLevel !== 'aal2' ? 'need' : 'ok'))
   }, [token])
   const [locked, unlock] = useAutoLock()
+  // signing in on an iPhone can leave the page scrolled up under the clock by the keyboard: back to the top once in
+  useEffect(() => { if (token) window.scrollTo(0, 0) }, [token])
 
   const uid = session?.user?.id
   useEffect(() => {

@@ -100,7 +100,7 @@ export function Admin() {
             <div key={u.id} className={`adm-row adm-person${blocked.has(u.id) ? ' blocked' : ''}`}>
               <Avatar src={u.avatar_url} name={u.username ? nameOf(u) : (u.email || '?')} size={44} />
               <span className="adm-main">
-                <b>{u.username ? nameOf(u) : 'No username yet'}{u.username && <small> @{u.username}</small>}</b>
+                <b>{u.username ? nameOf(u) : 'No username yet'}{u.username && <small> @{u.username}</small>}{blocked.has(u.id) && <em className="adm-tag">Blocked</em>}</b>
                 <small>{u.email || 'no email'}</small>
               </span>
               {u.id !== meId && !official.includes(u.id) && (
@@ -111,7 +111,6 @@ export function Admin() {
                 </span>
               )}
               <span className="adm-chips">
-                {blocked.has(u.id) && <i className="gone">Blocked</i>}
                 <i>Joined {day(u.joined)}</i>
                 <i>Seen {ago(u.last_seen || u.last_sign_in)}</i>
                 <i>{many(u.messages, 'message')}</i>

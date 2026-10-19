@@ -79,7 +79,7 @@ export function RoarMeInbox({ onClose }) {
           {room && (
             <>
               <div className="inbox-head">
-                <button type="button" className="round inbox-back" onClick={() => setRoom(null)} aria-label="Back">{I.left}</button>
+                <button type="button" className="round inbox-back" onClick={() => setRoom(null)} aria-label="Back" data-back="">{I.left}</button>
                 <Avatar src={room.avatar_url} name={name(room)} size={34} />
                 <span><b>{name(room)}</b><small>@{room.username}</small></span>
               </div>

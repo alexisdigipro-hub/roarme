@@ -452,3 +452,6 @@ from the Home Screen every page, sign-in too, takes the whole screen's height (n
 Alex: on a phone, in Messages, a swipe left or right across the chat list goes to the next or previous folder (All ›
 Unread › Groups › Archived › your own), and the folder tabs follow. Not while searching or selecting chats, and not when
 the swipe starts on the tabs themselves.
+On a phone a swipe to the right on an open page (a chat, a Settings page, Keyboard Shortcuts, a folder, the RoarMe
+inbox) goes back, exactly where its Back button goes (the buttons carry `data-back`). Not when the swipe starts in a
+text box, on sliders, tabs, theme or wallpaper rows, in a window or in a call.

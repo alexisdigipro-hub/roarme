@@ -74,7 +74,7 @@ const overdue = (t) => t.due && active(t) && new Date(`${t.due}T23:59:59`) < new
 const byDue = (a, b) => (a.due || '9999') .localeCompare(b.due || '9999') || (b.priority === 'high') - (a.priority === 'high') || b.created_at.localeCompare(a.created_at)
 
 /* the panel: For me (with what waits for an answer on top), Given, Done */
-export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = [], titleOf = () => '', onOpenChat = () => {} }) {
+export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, rooms = [], titleOf = () => '', onOpenChat = () => {} }) {
   const [tab, setTab] = useState(() => { try { return localStorage.getItem('roarme-tasks-tab') || 'all' } catch { return 'all' } })
   const pickTab = (v) => { setTab(v); try { localStorage.setItem('roarme-tasks-tab', v) } catch { /* private window */ } }
   // on a phone a swipe left or right across the list goes to the next or previous tab, as with the chat folders (Alex, 19 Oct)
@@ -90,6 +90,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, toast, rooms = 
       const order = ['all', 'mine', 'given', 'done']
       const next = order[order.indexOf(tab) + (dx < 0 ? 1 : -1)]
       if (next) pickTab(next)
+      else onEdge?.(dx < 0 ? 1 : -1) // past All or Done: the screen beside Tasks in the bar at the foot
     },
   }
   // the calendar under the tasks (Alex, 18 Oct): the calendar button shows it at the foot of the panel and hides it

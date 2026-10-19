@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { errText, fmtBytes, nameOf, supabase } from './lib.js'
-import { Avatar, I, Lens } from './ui.jsx'
+import { Avatar, I, Lens, svg } from './ui.jsx'
 import { locale } from './i18n.js'
 
 /* Admin (Alex, 17 Oct: "only I want to see every user in the database and what files they send"). Settings > Admin,
@@ -16,6 +16,10 @@ const ago = (iso) => {
   return s < 120 ? 'now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} days ago`
 }
 const PAGE = 100
+const many = (n, word) => `${n} ${word}${Number(n) === 1 ? '' : 's'}`
+// round icons on each account (Alex, 19 Oct: a tidier row)
+const BLOCK_I = svg(<><circle cx="12" cy="12" r="8.5" /><path d="m6 6 12 12" /></>, 17)
+const UNBLOCK_I = svg(<><circle cx="12" cy="12" r="8.5" /><path d="m8.5 12 2.5 2.5 4.5-5" /></>, 17)
 
 export function Admin() {
   const [tab, setTab] = useState('people')
@@ -28,11 +32,13 @@ export function Admin() {
   const [blocked, setBlocked] = useState(() => new Set())
   const [working, setWorking] = useState('') // the account a Block or Delete is running on
   const [meId, setMeId] = useState('')
+  const [official, setOfficial] = useState([]) // the RoarMe account: never blocked or deleted
 
   useEffect(() => {
     supabase.rpc('roar_admin_users').then(({ data, error }) => { if (error) setErr(errText(error)); else setUsers(data || []) })
     supabase.rpc('roar_admin_blocked').then(({ data }) => setBlocked(new Set(data || [])))
     supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id || ''))
+    supabase.from('roar_official').select('user_id').then(({ data }) => setOfficial((data || []).map((x) => x.user_id)))
     supabase.rpc('roar_admin_files', { before: null, lim: PAGE }).then(({ data, error }) => {
       if (error) setErr(errText(error)); else { setFiles(data || []); setMore((data || []).length === PAGE) }
     })
@@ -91,26 +97,27 @@ export function Admin() {
           {!users && !err && <p className="muted">Loading…</p>}
           {users && !shownUsers.length && <p className="muted">Nobody found.</p>}
           {shownUsers.map((u) => (
-            <div key={u.id} className={`adm-row${blocked.has(u.id) ? ' blocked' : ''}`}>
-              <Avatar src={u.avatar_url} name={u.username ? nameOf(u) : (u.email || '?')} size={42} />
+            <div key={u.id} className={`adm-row adm-person${blocked.has(u.id) ? ' blocked' : ''}`}>
+              <Avatar src={u.avatar_url} name={u.username ? nameOf(u) : (u.email || '?')} size={44} />
               <span className="adm-main">
                 <b>{u.username ? nameOf(u) : 'No username yet'}{u.username && <small> @{u.username}</small>}</b>
                 <small>{u.email || 'no email'}</small>
               </span>
-              <span className="adm-chips">
-                <i>Joined {day(u.joined)}</i>
-                <i>Seen {ago(u.last_seen || u.last_sign_in)}</i>
-                <i>{u.messages} messages</i>
-                <i>{u.files} files · {fmtBytes(Number(u.bytes || 0))}</i>
-                <i>{u.chats} chats</i>
-                {blocked.has(u.id) && <i className="gone">Blocked</i>}
-              </span>
-              {u.id !== meId && (
+              {u.id !== meId && !official.includes(u.id) && (
                 <span className="adm-acts">
-                  <button type="button" className="btn btn-sm" disabled={working === u.id} onClick={() => block(u, !blocked.has(u.id))}>{blocked.has(u.id) ? 'Unblock' : 'Block'}</button>
-                  <button type="button" className="btn btn-sm btn-danger" disabled={working === u.id} onClick={() => remove(u)}>Delete</button>
+                  <button type="button" className={`adm-act${blocked.has(u.id) ? ' on' : ''}`} disabled={working === u.id} onClick={() => block(u, !blocked.has(u.id))}
+                    title={blocked.has(u.id) ? 'Unblock' : 'Block'} aria-label={blocked.has(u.id) ? 'Unblock' : 'Block'}>{blocked.has(u.id) ? UNBLOCK_I : BLOCK_I}</button>
+                  <button type="button" className="adm-act del" disabled={working === u.id} onClick={() => remove(u)} title="Delete" aria-label="Delete">{I.trash}</button>
                 </span>
               )}
+              <span className="adm-chips">
+                {blocked.has(u.id) && <i className="gone">Blocked</i>}
+                <i>Joined {day(u.joined)}</i>
+                <i>Seen {ago(u.last_seen || u.last_sign_in)}</i>
+                <i>{many(u.messages, 'message')}</i>
+                <i>{many(u.files, 'file')} · {fmtBytes(Number(u.bytes || 0))}</i>
+                <i>{many(u.chats, 'chat')}</i>
+              </span>
             </div>
           ))}
         </div>

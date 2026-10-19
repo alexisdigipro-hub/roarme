@@ -3013,8 +3013,21 @@ html[data-mode='light'] .wordmark.with-by .rm-mark { filter: none; }
 .adm-more { align-self: center; border-radius: 999px; }
 .adm-note { margin: 4px 2px 0; font-size: 12px; }
 /* Block and Delete on each account (Alex, 19 Oct) */
-.adm-acts { display: flex; gap: 6px; margin-left: auto; }
-.adm-acts .btn { border-radius: 999px; }
+/* an account: the photo down the left, name and email with the round Block / Delete on their right, the chips under
+   them (Alex, 19 Oct: a tidier row) */
+.adm-row.adm-person { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: 'av main acts' 'av chips chips'; column-gap: 12px; row-gap: 8px; align-items: center; padding: 12px 14px; }
+.adm-person > .av { grid-area: av; align-self: start; }
+.adm-person > .adm-main { grid-area: main; }
+.adm-person > .adm-chips { grid-area: chips; }
+.adm-acts { grid-area: acts; display: flex; gap: 6px; }
+.adm-act { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 1px solid var(--edge); background: var(--glass-2); color: var(--text); cursor: pointer; transition: background .15s, color .15s, border-color .15s, transform .1s; }
+.adm-act svg { width: 17px; height: 17px; }
+.adm-act:hover { background: color-mix(in srgb, var(--text) 12%, transparent); }
+.adm-act:active { transform: scale(.94); }
+.adm-act:disabled { opacity: .5; cursor: default; }
+.adm-act.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.adm-act.del { color: var(--danger); }
+.adm-act.del:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
 .adm-row.blocked .adm-main, .adm-row.blocked > .av { opacity: .55; }
 /* what a blocked account sees */
 .blocked-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; color: var(--text); }

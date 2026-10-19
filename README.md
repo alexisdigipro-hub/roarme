@@ -382,3 +382,8 @@ top of changes.js** (and their Greek in i18n-el.js).
   RoarMe account, newest first; pick one, read it (marks it read for RoarMe) and answer: the answer goes as RoarMe from
   your own login. `supabase/official-inbox.sql` (`roar_official_inbox / _messages / _send`, admins only; run by Claude
   and tested). Admins do not get the Feedback & Help row.
+
+## The bar's icons: geometric (19 Oct)
+Alex chose style H out of eight drawn for him: solid, abstract shapes (`FOOT_I` in src/ui.jsx): a head and shoulders,
+a quarter-round handset, a round speech bubble, a square with its tick cut out, a ring. The cut-outs are holes
+(evenodd), so they show the bar behind them in every theme. Only the bar at the foot uses them.

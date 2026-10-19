@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
-import { Avatar, CropModal, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
+import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import Profile from './Profile.jsx'
 import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
@@ -707,13 +707,13 @@ export default function Chat({ me, setMe }) {
         ) : (
           <nav ref={footLens} className="foot lens" onClickCapture={(e) => { if (tasksOpen && !e.target.closest('.foot-tasks') && window.matchMedia('(max-width: 760px)').matches) showTasks(false) }}>
             {/* Contacts · Calls · Messages in the middle, a little bigger · Tasks · Settings (Alex, 19 Oct); AllMedia lives in Settings */}
-            <button type="button" className={tab === 'contacts' ? 'on' : ''} onClick={() => setTab('contacts')}>{I.person}<span>Contacts</span></button>
-            {prefs.callsTab && <button type="button" className={tab === 'calls' ? 'on' : ''} onClick={() => setTab('calls')}>{I.calls}<span>Calls</span></button>}
-            <button type="button" className={`foot-main${tab === 'chats' ? ' on' : ''}`} onClick={() => setTab('chats')}><span className="foot-ico">{I.chats}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Messages</span></button>
+            <button type="button" className={tab === 'contacts' ? 'on' : ''} onClick={() => setTab('contacts')}>{FOOT_I.contacts}<span>Contacts</span></button>
+            {prefs.callsTab && <button type="button" className={tab === 'calls' ? 'on' : ''} onClick={() => setTab('calls')}>{FOOT_I.calls}<span>Calls</span></button>}
+            <button type="button" className={`foot-main${tab === 'chats' ? ' on' : ''}`} onClick={() => setTab('chats')}><span className="foot-ico">{FOOT_I.messages}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Messages</span></button>
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
-            <button type="button" className={`foot-tasks${tasksOpen ? ' open' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>
-            <button type="button" className={tab === 'settings' || tab === 'media' ? 'on' : ''} onClick={() => setTab('settings')}>{I.gear}<span>Settings</span></button>
+            <button type="button" className={`foot-tasks${tasksOpen ? ' open' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>
+            <button type="button" className={tab === 'settings' || tab === 'media' ? 'on' : ''} onClick={() => setTab('settings')}>{FOOT_I.settings}<span>Settings</span></button>
           </nav>
         )}
       </aside>

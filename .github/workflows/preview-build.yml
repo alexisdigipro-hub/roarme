@@ -1,0 +1,24 @@
+# temporary: builds the app and commits dist/ into preview-dist/ on this branch, for a local mobile check (Claude, 18 Oct)
+name: preview build
+on:
+  push:
+    branches: ['claude/peaceful-pascal-dbgey5']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: |
+          rm -rf preview-dist && cp -r dist preview-dist
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -f preview-dist
+          git commit -qm "preview build"
+          git push origin HEAD:${{ github.ref_name }}

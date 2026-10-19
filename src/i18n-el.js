@@ -942,4 +942,8 @@ export const EL = {
   'No device answered': 'Καμία συσκευή δεν απάντησε',
   'No device has notifications on yet': 'Καμία συσκευή δεν έχει ακόμα ανοιχτές τις ειδοποιήσεις',
   'Sign in first': 'Συνδέσου πρώτα',
+  'Messages, sounds and notifications arrive with the window closed': 'Μηνύματα, ήχοι και ειδοποιήσεις έρχονται και με κλειστό παράθυρο',
+  'Send Test in Settings > Notifications': 'Δοκιμαστική ειδοποίηση στα Settings > Notifications',
+  'Version and Check for Updates in the menu bar': 'Έκδοση και έλεγχος ενημερώσεων στη γραμμή μενού',
+  'RoarMe updates itself: Restart to update': 'Το RoarMe ενημερώνεται μόνο του: Restart to update',
 }

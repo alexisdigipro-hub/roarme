@@ -57,10 +57,21 @@ jobs:
       # the version goes into the release's name, so the app can tell an older install that a newer one is out
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: desktop/package.json
+          sparse-checkout: |
+            package.json
+            desktop/package.json
+            src/changes.js
           sparse-checkout-cone-mode: false
       - id: v
         run: echo "version=$(node -p "require('./desktop/package.json').version")" >> "$GITHUB_OUTPUT"
+      # what this version brings, in short bullets, from src/changes.js (the same lines the app shows)
+      - id: notes
+        run: |
+          {
+            echo 'text<<NOTES_END'
+            node --input-type=module -e "import('./src/changes.js').then((m) => console.log(m.notesFor('${{ steps.v.outputs.version }}').map((x) => '- ' + x).join('\\n')))"
+            echo 'NOTES_END'
+          } >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           path: files
@@ -84,5 +95,8 @@ jobs:
           make_latest: true
           body: |
             RoarMe ${{ steps.v.outputs.version }} beta for Mac and Windows.
+
+            ${{ steps.notes.outputs.text }}
+
             Mac with Apple Silicon (M1, M2, M3, M4): RoarMe-${{ steps.v.outputs.version }}-beta-Mac-arm64.dmg · Mac with Intel: RoarMe-${{ steps.v.outputs.version }}-beta-Mac-x64.dmg · Windows: RoarMe-${{ steps.v.outputs.version }}-beta-Windows-Setup.exe
           files: files/*

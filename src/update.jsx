@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { I, Modal } from './ui.jsx'
+import { notesFor } from './changes.js'
 
 /* The Mac and Windows app, newer versions and how to install them (Alex, 17 Oct).
    - The app tells the page its version in the browser's user agent ("RoarMe/1.4.5"), even the versions already
@@ -135,8 +136,40 @@ export function InstallGuide({ kind, onClose, update = false }) {
 /* start the download and show the steps */
 export const startDownload = (kind) => { window.open(dlUrl(kind), '_blank', 'noopener') }
 
+/* what a version brings, in short bullets (src/changes.js) */
+const Notes = ({ v }) => {
+  const list = notesFor(v)
+  return list.length ? <ul className="upd-notes">{list.map((x) => <li key={x}>{x}</li>)}</ul> : null
+}
+
+/* once after an update: what changed (Alex, 19 Oct) */
+const SEEN = 'roarme-seen-version'
+function WhatsNew() {
+  const now = appVersion()
+  const [show, setShow] = useState(() => {
+    if (!now) return false
+    let seen = ''
+    try { seen = localStorage.getItem(SEEN) || '' } catch { return false }
+    if (seen === now) return false
+    try { localStorage.setItem(SEEN, now) } catch { /* private window */ }
+    // the first time it is seen at all (just installed, or updated before this card existed) it shows too
+    return (!seen || newer(now, seen)) && notesFor(now).length > 0
+  })
+  if (!show) return null
+  return (
+    <div className="upd upd-new" role="status">
+      <i className="upd-ico">{I.check}</i>
+      <span className="upd-text"><b>{`Updated to RoarMe ${now}`}</b><Notes v={now} /></span>
+      <button type="button" className="upd-x" onClick={() => setShow(false)} aria-label="Close" title="Close">{I.x}</button>
+    </div>
+  )
+}
+
 /* the card in the app when a newer Mac or Windows app is out */
 export function UpdateCard() {
+  return <><WhatsNew /><UpdateOffer /></>
+}
+function UpdateOffer() {
   // 1.4.9 on: the app downloads a new version by itself and only asks for a restart (desktop/updater.js)
   const desk = typeof window !== 'undefined' ? window.roarDesktop?.update : null
   const [us, setUs] = useState(null)
@@ -156,7 +189,8 @@ export function UpdateCard() {
         <i className="upd-ico">{I.download}</i>
         <span className="upd-text">
           <b>{done ? `RoarMe ${us.version} is ready` : `Downloading RoarMe ${us.version}`}</b>
-          <small>{done ? 'Restart to update. It takes a few seconds and RoarMe opens again.' : `${us.progress || 0}%`}</small>
+          {(!done || !notesFor(us.version).length) && <small>{done ? 'Restart to update. It takes a few seconds and RoarMe opens again.' : `${us.progress || 0}%`}</small>}
+          {done && <Notes v={us.version} />}
         </span>
         {done && <button type="button" className="btn btn-main upd-go" disabled={us.status === 'installing'} onClick={() => { setUs({ ...us, status: 'installing' }); desk.install() }}>{I.download}<span>{us.status === 'installing' ? 'Restarting…' : 'Restart to update'}</span></button>}
       </div>
@@ -170,7 +204,7 @@ export function UpdateCard() {
       {ready && skip !== latest && !guide && (
         <div className="upd" role="status">
           <i className="upd-ico">{I.download}</i>
-          <span className="upd-text"><b>{`New RoarMe app: ${latest} ${BETA}`}</b><small>You have {installed}. Download it one last time: from 1.4.9 on, RoarMe updates itself.</small></span>
+          <span className="upd-text"><b>{`New RoarMe app: ${latest} ${BETA}`}</b><small>You have {installed}. Download it one last time: from 1.4.9 on, RoarMe updates itself.</small><Notes v={latest} /></span>
           <button type="button" className="btn btn-main upd-go" onClick={() => { startDownload(kind); setGuide(kind) }}>{I.download}<span>Download</span></button>
           <button type="button" className="upd-x" onClick={later} aria-label="Later" title="Later">{I.x}</button>
         </div>

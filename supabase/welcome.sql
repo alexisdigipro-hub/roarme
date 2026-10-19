@@ -1,5 +1,6 @@
 -- A chat with RoarMe waiting for everyone (Alex, 19 Oct 2026): every account, the ones there now and every new one,
--- finds in Messages a chat with the official RoarMe account and a welcome that says ideas and questions go there.
+-- finds in Messages a chat with the official RoarMe account and a welcome, in English (Alex), that says ideas and
+-- questions go there.
 -- Not for the admins (they answer RoarMe's chats in their RoarMe Inbox) nor for RoarMe itself. Run after official.sql.
 -- Safe to run again: someone who already has a chat with RoarMe gets nothing more.
 create or replace function public.roar_welcome(u uuid) returns uuid
@@ -16,11 +17,9 @@ begin
   insert into roar_members (room_id, user_id, role, last_read_at) values (r, o, 'admin', now()), (r, u, 'admin', now() - interval '1 second')
     on conflict do nothing;
   insert into roar_messages (room_id, user_id, kind, body) values (r, o, 'text',
-'Καλώς ήρθες στο RoarMe! 🦁
+'Welcome to RoarMe! 🦁
 
-Αυτή είναι η συζήτησή σου με την ομάδα του RoarMe. Αν θέλεις να προτείνεις κάτι, να ρωτήσεις κάτι ή να μας πεις τι σου άρεσε και τι σε δυσκόλεψε, γράψε μας εδώ: είναι ο πιο άμεσος δρόμος και απαντάμε εμείς.
-
-Welcome to RoarMe! This is your chat with the RoarMe team. Ideas, questions, anything that bugs you: write to us here, it is the quickest way and we answer.');
+This is your chat with the RoarMe team. If you want to suggest something, ask a question, or tell us what you liked and what got in your way, write to us here: it is the most direct way, and we answer.');
   return r;
 end $$;
 revoke all on function public.roar_welcome(uuid) from public, anon, authenticated;

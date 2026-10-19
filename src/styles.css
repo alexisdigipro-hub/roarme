@@ -3447,9 +3447,11 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 @media (max-width: 760px) { .upd-new + .upd { bottom: calc(214px + env(safe-area-inset-bottom, 0px)); } }
 
 /* the bar at the foot (Alex, 19 Oct): Contacts · Calls · Messages in the middle, a little bigger · Tasks · Settings */
-.foot button.foot-main { flex-grow: 1.25; }
-.foot button.foot-main svg { width: 28px; height: 28px; margin: -3px 0; } /* bigger, with its word on the same line as the others */
-.foot button.foot-main > span:last-child { font-weight: 700; }
+.foot button.foot-main { flex-grow: 1.5; }
+/* clearly bigger (Alex, 19 Oct: "a bigger difference"), its word still on the same line as the others */
+.foot button.foot-main svg { width: 34px; height: 34px; margin: -6px 0; stroke-width: 1.9; }
+.foot button.foot-main > span:last-child { font-size: 12.5px; font-weight: 800; letter-spacing: .01em; }
+.foot button.foot-main .foot-ico i { top: -8px; right: -16px; }
 
 /* the official RoarMe account's mark */
 .official { display: inline-grid; place-items: center; margin-left: 5px; vertical-align: -2px; color: var(--accent); }

@@ -2533,8 +2533,8 @@ html[data-mode='light'] .rt-tile.t-time i { color: #c27800; }
 /* the chat list, quieter (Alex, 17 Oct): smaller faces and a hairline between chats */
 .rooms .room { position: relative; }
 .rooms.no-prev .room { min-height: 52px; padding-top: 7px; padding-bottom: 7px; }
-.rooms .room + .room::before { content: ''; position: absolute; top: -2.5px; left: 62px; right: 12px; height: 1px; background: color-mix(in srgb, var(--text) 8%, transparent); pointer-events: none; transition: opacity .15s; }
-.rooms.no-prev .room + .room::before { left: 56px; }
+.rooms .room + .room::before { content: ''; position: absolute; top: -2.5px; left: 66px; right: 10px; height: 1px; background: color-mix(in srgb, var(--text) 13%, transparent); pointer-events: none; transition: opacity .15s; }
+.rooms.no-prev .room + .room::before { left: 58px; }
 .rooms .room:is(.on, :hover, .picked, .menu-on)::before, .rooms .room:is(.on, :hover, .picked, .menu-on) + .room::before { opacity: 0; }
 
 /* scroll bars: thin and see-through, only while scrolling, then they fade (Alex, 17 Oct) */
@@ -3500,4 +3500,19 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
   .inbox.has-room .inbox-list { display: none; }
   .inbox:not(.has-room) .inbox-room { display: none; }
   .inbox-back { display: grid; width: 34px; height: 34px; }
+}
+
+/* the chat list on a phone, like Telegram (Alex, 19 Oct): lower rows, the hairline between chats where the name starts,
+   and the bar at the foot that never moves: the page itself no longer scrolls or bounces, only the list inside it */
+.side > .foot { flex: none; }
+.rooms, .side-scroll { overscroll-behavior-y: contain; }
+@media (max-width: 760px) {
+  html:has(.app), html:has(.app) body { overflow: hidden; overscroll-behavior: none; } /* not the sign-in, legal or transfer pages, which scroll */
+  .rooms { gap: 2px; }
+  .rooms .room { padding-top: 6px; padding-bottom: 6px; padding-left: 8px; }
+  .rooms.no-prev .room { min-height: 48px; padding-top: 6px; padding-bottom: 6px; }
+  .rooms .room + .room::before { top: -1.5px; left: 64px; right: 6px; }
+  .rooms.no-prev .room + .room::before { left: 56px; }
+  .room-main { gap: 1px; }
+  .room-tags { margin-top: 2px; }
 }

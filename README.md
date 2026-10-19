@@ -426,3 +426,8 @@ opens with its icon in its colour and one line on what it holds.
   Passcode lock, Legal, Account. **Send Large Photos** is only in Data and Storage now (it was in General too).
 - **Active Sessions**: Terminate All Other Sessions shows only when there are other devices.
 Every new text has its Greek in `src/i18n-el.js`.
+
+## Chat list on a phone, like Telegram (19 Oct)
+Alex sent Telegram's list: on a phone the chats are lower rows (6 px above and below, 48 px without the last message),
+a clearer hairline between chats (13% of the text colour, starting where the name starts, on the computer too), and
+the bar at the foot stays put: inside the app the page itself no longer scrolls or bounces on iPhone, only the list.

@@ -476,3 +476,7 @@ so in light mode every word turned into small capitals with wide spacing; it is 
 Add to folder lists every folder in the tabs (Alex, 19 Oct): your own, and the ready-made Unread and Groups (a chat put
 there by hand shows in them as well as the ones there by themselves; group chats are in Groups already) and Archived
 (the same as Archive). All holds every chat, so it is not listed.
+The chat menu opens without a stutter (a lighter blur) and the moment a finger touches the blurred space around it, it closes, on an iPhone
+too (Safari sends no tap to a plain box unless it shows a pointer).
+Pull to refresh (19 Oct): on a phone, pulling the chat list down at its top first shows the search, and pulled further a
+round arrow turns and lights up; letting go then reloads RoarMe (with any new version).

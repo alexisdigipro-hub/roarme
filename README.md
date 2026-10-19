@@ -455,3 +455,4 @@ the swipe starts on the tabs themselves.
 On a phone a swipe to the right on an open page (a chat, a Settings page, Keyboard Shortcuts, a folder, the RoarMe
 inbox) goes back, exactly where its Back button goes (the buttons carry `data-back`). Not when the swipe starts in a
 text box, on sliders, tabs, theme or wallpaper rows, in a window or in a call.
+Tasks on a phone: the same swipe across the list goes to the next or previous tab (All › For me › Given › Done).

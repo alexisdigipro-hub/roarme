@@ -7,10 +7,22 @@ import { locale, tr } from './i18n.js'
 /* Voice and video calls between two people (Alex, 16 Oct), straight from one computer to the other
    (WebRTC). The ringing, the answer and the network details travel through each person's private
    inbox on Supabase Realtime ("call:<their id>"); the database decides who may ring whom (blocks and
-   "Who can call me") and keeps the call log (roar_calls) for Recent Calls. */
+   "Who can call me") and keeps the call log (roar_calls) for Recent Calls.
+   With LiveKit set up (Alex, 19 Oct; the Edge Function roar-livekit) the sound and picture go through a LiveKit room
+   for that call instead, which gets through any network; the ringing stays the same. Without it, the old way. */
 
 const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }, { urls: 'stun:stun.cloudflare.com:3478' }] }
 const RING_FOR = 45000
+
+// a pass into this call's LiveKit room, or null when LiveKit is not set up (then the call goes straight)
+async function livekitPass(callId) {
+  const { data, error } = await supabase.functions.invoke('roar-livekit', { body: { callId } })
+  if (!error && data?.token) return data
+  if (error?.context?.status === 503) return null
+  let msg = error?.message || 'The call could not get through.'
+  try { msg = (await error.context.json()).error || msg } catch { /* plain error */ }
+  throw new Error(msg)
+}
 
 // a signal to someone's inbox, through Realtime's broadcast API (checked against the database's rules)
 async function signal(to, event, payload) {
@@ -54,10 +66,11 @@ function ringer(kind) {
 const mmss = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` }
 
 export function useCalls({ me, people, loadPeople, toast }) {
-  const [call, setCall] = useState(null) // { id, peer, roomId, video, dir, stage, liveAt, muted, camOff }
+  const [call, setCall] = useState(null) // { id, peer, roomId, video, lk, dir, stage, liveAt, muted, camOff }
   const callRef = useRef(null)
   callRef.current = call
   const pc = useRef(null)
+  const room = useRef(null) // the LiveKit room, when the call goes through LiveKit
   const local = useRef(null)
   const remote = useRef(null)
   const offer = useRef(null)
@@ -71,6 +84,9 @@ export function useCalls({ me, people, loadPeople, toast }) {
     clearTimeout(ringTimer.current)
     try { pc.current?.close() } catch { /* closed */ }
     pc.current = null
+    const r = room.current
+    room.current = null
+    if (r) r.disconnect().catch(() => {})
     local.current?.getTracks().forEach((t) => t.stop())
     local.current = null
     remote.current = null
@@ -103,6 +119,37 @@ export function useCalls({ me, people, loadPeople, toast }) {
     pc.current = p
     return p
   }
+  // through LiveKit: into the call's room, my microphone (and camera) out, the other person's sound and picture in
+  const joinRoom = async (pass, s) => {
+    const { Room, RoomEvent, Track } = await import('livekit-client')
+    const r = new Room({ adaptiveStream: false, dynacast: true })
+    room.current = r
+    const tracks = new Map()
+    const show = () => { remote.current = tracks.size ? new MediaStream([...tracks.values()]) : null; tick((n) => n + 1) }
+    r.on(RoomEvent.TrackSubscribed, (track, pub) => {
+      tracks.set(pub.trackSid, track.mediaStreamTrack)
+      show()
+      setCall((x) => (x ? { ...x, stage: 'live', liveAt: x.liveAt || Date.now() } : x))
+    })
+    r.on(RoomEvent.TrackUnsubscribed, (track, pub) => { tracks.delete(pub.trackSid); show() })
+    r.on(RoomEvent.Reconnecting, () => setCall((x) => (x?.stage === 'live' ? { ...x, stage: 'connecting' } : x)))
+    r.on(RoomEvent.Reconnected, () => setCall((x) => (x?.liveAt ? { ...x, stage: 'live' } : x)))
+    // the other person left without a goodbye (closed the app, lost the network for good)
+    r.on(RoomEvent.ParticipantDisconnected, () => {
+      if (room.current !== r || r.remoteParticipants.size) return
+      const cur = callRef.current
+      if (cur?.liveAt) { log(cur.id, { ended_at: new Date().toISOString() }); finish(`Call ended · ${mmss(Date.now() - cur.liveAt)}`) }
+    })
+    r.on(RoomEvent.Disconnected, () => {
+      if (room.current !== r) return // I hung up
+      const cur = callRef.current
+      if (cur) { signal(cur.peer.id, 'hangup', { callId: cur.id, from: me.id }).catch(() => {}); log(cur.id, { ended_at: new Date().toISOString() }) }
+      finish('The connection dropped')
+    })
+    await r.connect(pass.url, pass.token)
+    if (room.current !== r) { r.disconnect().catch(() => {}); return }
+    for (const t of s.getTracks()) await r.localParticipant.publishTrack(t, { source: t.kind === 'audio' ? Track.Source.Microphone : Track.Source.Camera })
+  }
   const getMedia = async (video) => {
     const { micId, camId } = getPrefs() // Settings > General > Call settings
     const s = await navigator.mediaDevices.getUserMedia({
@@ -130,12 +177,21 @@ export function useCalls({ me, people, loadPeople, toast }) {
       c = { id: row.id, peer: person, roomId, video, dir: 'out', stage: 'ringing', muted: false, camOff: false }
       setCall(c)
       const s = await getMedia(video)
-      const p = newPeer(c)
-      s.getTracks().forEach((t) => p.addTrack(t, s))
-      const o = await p.createOffer()
-      await p.setLocalDescription(o)
-      await signal(person.id, 'invite', { callId: c.id, from: me.id, roomId, video, sdp: p.localDescription.toJSON() })
-      stopRing.current = ringer('out')
+      const pass = await livekitPass(c.id)
+      if (pass) {
+        c = { ...c, lk: true }
+        setCall((x) => (x?.id === c.id ? { ...x, lk: true } : x))
+        await signal(person.id, 'invite', { callId: c.id, from: me.id, roomId, video, lk: true })
+        stopRing.current = ringer('out')
+        await joinRoom(pass, s)
+      } else {
+        const p = newPeer(c)
+        s.getTracks().forEach((t) => p.addTrack(t, s))
+        const o = await p.createOffer()
+        await p.setLocalDescription(o)
+        await signal(person.id, 'invite', { callId: c.id, from: me.id, roomId, video, sdp: p.localDescription.toJSON() })
+        stopRing.current = ringer('out')
+      }
       ringTimer.current = setTimeout(() => {
         const cur = callRef.current
         if (cur?.id === c.id && cur.stage === 'ringing') {
@@ -145,7 +201,8 @@ export function useCalls({ me, people, loadPeople, toast }) {
         }
       }, RING_FOR)
     } catch (e) {
-      if (c) log(c.id, { status: 'cancelled', ended_at: new Date().toISOString() })
+      if (c && callRef.current?.id !== c.id) return // hung up while it was still getting through
+      if (c) { log(c.id, { status: 'cancelled', ended_at: new Date().toISOString() }); signal(person.id, 'cancel', { callId: c.id, from: me.id }).catch(() => {}) }
       finish(e?.name === 'NotAllowedError' ? 'RoarMe needs your microphone (and camera) to call' : errText(e))
     }
   }, [me.id, toast, finish]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -158,15 +215,21 @@ export function useCalls({ me, people, loadPeople, toast }) {
     setCall({ ...c, stage: 'connecting', video: withVideo })
     try {
       const s = await getMedia(withVideo)
-      const p = newPeer(c)
-      s.getTracks().forEach((t) => p.addTrack(t, s))
-      await p.setRemoteDescription(offer.current)
-      const a = await p.createAnswer()
-      await p.setLocalDescription(a)
-      await signal(c.peer.id, 'answer', { callId: c.id, from: me.id, sdp: p.localDescription.toJSON() })
-      await addPending()
+      if (c.lk) {
+        await joinRoom(await livekitPass(c.id), s)
+        await signal(c.peer.id, 'answer', { callId: c.id, from: me.id })
+      } else {
+        const p = newPeer(c)
+        s.getTracks().forEach((t) => p.addTrack(t, s))
+        await p.setRemoteDescription(offer.current)
+        const a = await p.createAnswer()
+        await p.setLocalDescription(a)
+        await signal(c.peer.id, 'answer', { callId: c.id, from: me.id, sdp: p.localDescription.toJSON() })
+        await addPending()
+      }
       log(c.id, { status: 'answered', answered_at: new Date().toISOString() })
     } catch (e) {
+      if (callRef.current?.id !== c.id) return
       signal(c.peer.id, 'hangup', { callId: c.id, from: me.id }).catch(() => {})
       finish(e?.name === 'NotAllowedError' ? 'RoarMe needs your microphone (and camera) to answer' : errText(e))
     }
@@ -220,7 +283,7 @@ export function useCalls({ me, people, loadPeople, toast }) {
           if (!peer) { await loadPeople([payload.from]); peer = people.current[payload.from] || { id: payload.from, username: '', display_name: 'Someone' } }
           offer.current = payload.sdp
           pending.current = []
-          setCall({ id: payload.callId, peer, roomId: payload.roomId, video: !!payload.video, dir: 'in', stage: 'ringing', muted: false, camOff: false })
+          setCall({ id: payload.callId, peer, roomId: payload.roomId, video: !!payload.video, lk: !!payload.lk, dir: 'in', stage: 'ringing', muted: false, camOff: false })
           stopRing.current = ringer('in')
           if (document.hidden && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             try { new Notification(nameOf(peer), { body: tr(payload.video ? 'Incoming video call' : 'Incoming call'), icon: peer.avatar_url || './icon.svg', tag: `call-${payload.callId}` }) } catch { /* not here */ }
@@ -230,7 +293,11 @@ export function useCalls({ me, people, loadPeople, toast }) {
           return
         }
         if (!cur || cur.id !== payload.callId) return
-        if (event === 'answer' && pc.current) {
+        if (event === 'answer' && cur.lk) {
+          stopRing.current(); stopRing.current = () => {}
+          clearTimeout(ringTimer.current)
+          setCall((x) => (x.stage === 'live' ? x : { ...x, stage: 'connecting' }))
+        } else if (event === 'answer' && pc.current) {
           stopRing.current(); stopRing.current = () => {}
           clearTimeout(ringTimer.current)
           setCall((x) => ({ ...x, stage: 'connecting' }))

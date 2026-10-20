@@ -14,3 +14,9 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
   a person links their own account (src/hubLink.jsx, supabase/hub-link.sql, Edge Function roar-hub-link with a shared
   secret in roar_hub_conf). The hub never gets a RoarMe token or the service key; the person can remove the link in
   Settings > Privacy and Security > Linked apps. RoarMe still never touches the hub's tables.
+- Phase 2 (20 Oct, applied and tested): project group chats run by the hub. roar_rooms.hub_project marks one;
+  supabase/hub-bridge.sql locks it (no admins; add, remove, leave, rename, photo, auto-delete, delete and Encrypted
+  Chat refused by guards on roar_members / roar_rooms / roar_e2e_sessions), members are set only by
+  roar_hub_sync_project / roar_hub_close_project (service role only) through the Edge Function roar-hub-bridge
+  (same x-hub-secret as roar-hub-link). Removing the hub link takes the person out of every project group.
+  Not yet in the app's UI: a project group still shows the usual Leave / group menu (they answer with a clear refusal).

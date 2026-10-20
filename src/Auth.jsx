@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
 import { Wordmark } from './ui.jsx'
 import { pendingInvite } from './invite.jsx'
-import { finishHubSignin, pendingHubSignin, startHubSignin } from './hubLink.jsx'
+import { embeddedHubSignin, finishHubSignin, isHubEmbed, pendingHubSignin, startHubSignin } from './hubLink.jsx'
 
 function Brand() {
   return (
@@ -22,10 +22,11 @@ export function Auth() {
   const [err, setErr] = useState('')
   const [note, setNote] = useState('')
   // back from the hub with a one-time code: sign in with it (Sign in with THEMADLIONS Hub, hubLink.jsx)
-  const [viaHub, setViaHub] = useState(() => !!pendingHubSignin())
+  const [viaHub, setViaHub] = useState(() => !!pendingHubSignin() || isHubEmbed())
   useEffect(() => {
     if (!viaHub) return
-    finishHubSignin().catch((x) => { setErr(errText(x)); setViaHub(false) })
+    // inside the hub's RoarMe page the hub hands the code over at once; otherwise it came back in the address
+    ;(isHubEmbed() && !pendingHubSignin() ? embeddedHubSignin() : finishHubSignin()).catch((x) => { setErr(errText(x)); setViaHub(false) })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async (e) => {

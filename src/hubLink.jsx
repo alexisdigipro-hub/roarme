@@ -143,3 +143,54 @@ export async function finishHubSignin() {
   const { error } = await supabase.auth.verifyOtp({ token_hash: out.token_hash, type: 'magiclink' })
   if (error) throw new Error(errText(error))
 }
+
+/* RoarMe inside the hub (Alex, 20 Oct: phase 4). The hub's RoarMe page shows this app in a frame at ?embed=hub.
+   Signing in needs no click: this frame makes a state and asks the hub page around it (only https://hub.themadlions.com)
+   for a one-time code; the hub page gets one from its own server for its signed-in member and hands it back to this
+   frame only (it checks the frame's address). Then the usual sign-in with the code runs (finishHubSignin).
+   The hub page also says which hub member it is; a frame signed in as someone else signs out and starts again. */
+const EMBED_KEY = 'roarme-embed'
+export function takeEmbed() {
+  try {
+    const q = new window.URLSearchParams(window.location.search)
+    if (q.get('embed') === 'hub' && window.parent !== window) sessionStorage.setItem(EMBED_KEY, 'hub')
+    if (sessionStorage.getItem(EMBED_KEY) === 'hub' && window.parent !== window) document.documentElement.dataset.embed = 'hub'
+  } catch { /* private window */ }
+}
+export const isHubEmbed = () => { try { return window.parent !== window && sessionStorage.getItem(EMBED_KEY) === 'hub' } catch { return false } }
+
+const askHub = (msg) => { try { window.parent.postMessage(msg, HUB_ORIGIN) } catch { /* no hub around us */ } }
+
+export function embeddedHubSignin() {
+  return new Promise((resolve, reject) => {
+    const b = crypto.getRandomValues(new Uint8Array(32))
+    const state = btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const done = (fn) => { window.removeEventListener('message', onMsg); clearTimeout(t); fn() }
+    const onMsg = (e) => {
+      if (e.origin !== HUB_ORIGIN || e.source !== window.parent) return
+      const m = e.data
+      if (!m || m.type !== 'roarme:hub-code' || m.state !== state) return
+      if (m.error || !/^[0-9a-f]{48}$/.test(String(m.code || ''))) { done(() => reject(new Error(m.error || 'The hub could not sign you in.'))); return }
+      try { sessionStorage.setItem(HUB_SIGNIN_KEY, JSON.stringify({ state, code: m.code })) } catch { /* private window */ }
+      done(() => finishHubSignin().then(resolve, reject))
+    }
+    const t = setTimeout(() => done(() => reject(new Error('The hub did not answer. Reload the page.'))), 20000)
+    window.addEventListener('message', onMsg)
+    askHub({ type: 'roarme:need-signin', state })
+  })
+}
+
+/* signed in inside the hub: make sure it is the same person as the hub's member, else sign out (and sign in again) */
+export function watchHubMember(uid) {
+  if (!isHubEmbed() || !uid) return () => {}
+  const onMsg = async (e) => {
+    if (e.origin !== HUB_ORIGIN || e.source !== window.parent) return
+    const m = e.data
+    if (!m || m.type !== 'roarme:hub-member' || !m.id) return
+    const { data } = await supabase.from('roar_hub_links').select('hub_user_id').maybeSingle()
+    if (!data || data.hub_user_id !== m.id) supabase.auth.signOut()
+  }
+  window.addEventListener('message', onMsg)
+  askHub({ type: 'roarme:ready' })
+  return () => window.removeEventListener('message', onMsg)
+}

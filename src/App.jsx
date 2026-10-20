@@ -4,7 +4,7 @@ import { applyLook, applyMode, setPrefs, themeFor, usePrefs } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
-import { HubLinkPage, pendingHubLink } from './hubLink.jsx'
+import { HubLinkPage, pendingHubLink, watchHubMember } from './hubLink.jsx'
 
 // The order of things: sign in (or sign up) with email, then pick a @username once, then the chat.
 export default function App() {
@@ -49,6 +49,8 @@ export default function App() {
   useEffect(() => { if (token) window.scrollTo(0, 0) }, [token])
 
   const uid = session?.user?.id
+  // inside the hub's RoarMe page: the account here must be the hub member's own (hubLink.jsx)
+  useEffect(() => watchHubMember(uid), [uid])
   useEffect(() => {
     if (!uid) { setProfile(undefined); return }
     let alive = true

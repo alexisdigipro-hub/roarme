@@ -27,7 +27,31 @@ const HUB = 'https://hub.themadlions.com/'
 const inApp = (url) => typeof url === 'string' && (url.startsWith(HOME) || url.startsWith(HUB))
 // only web and mail links leave the app for the browser; any other kind (file:, smb:, custom app links) is ignored,
 // so a link in a message can never start a program on the computer (security check, 17 Oct)
-const openOutside = (url) => { if (/^(https?:|mailto:)/i.test(String(url))) shell.openExternal(url) }
+// roarmail:// too (Oct 2026): a task made from an email links back to it in RoarMail, which only opens that email
+const openOutside = (url) => { if (/^(https?:|mailto:|roarmail:\/\/message\/)/i.test(String(url))) shell.openExternal(url) }
+
+/* roarme:// links (Oct 2026, for RoarMail): roarme://c/<chat> opens that chat, roarme://m/<chat>/<message> that chat at
+   that message, roarme:// alone just the app. They become the page's own #c= / #m= links; nothing else in them is used. */
+const ID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+const linkHash = (url) => {
+  const s = String(url || '').toLowerCase()
+  if (!s.startsWith('roarme:')) return null
+  const c = s.match(new RegExp(`^roarme://c/(${ID})/?$`))
+  if (c) return `#c=${c[1]}`
+  const m = s.match(new RegExp(`^roarme://m/(${ID})/(${ID})/?$`))
+  if (m) return `#m=${m[1]}/${m[2]}`
+  return ''
+}
+let pendingHash = ''
+function openLink(url) {
+  const h = linkHash(url)
+  if (h === null) return
+  show()
+  if (!h) return
+  if (win && !win.webContents.isLoading() && win.webContents.getURL().startsWith(HOME)) {
+    win.webContents.executeJavaScript(`location.hash = ${JSON.stringify(h)}`).catch(() => {})
+  } else pendingHash = h
+}
 
 // the app's own settings, in its folder on the computer
 const file = () => path.join(app.getPath('userData'), 'roar-settings.json')
@@ -37,7 +61,12 @@ const loadSettings = () => { try { settings = { ...DEFAULTS, ...JSON.parse(fs.re
 const saveSettings = () => { try { fs.writeFileSync(file(), JSON.stringify(settings)) } catch { /* read-only */ } }
 
 if (!app.requestSingleInstanceLock()) app.quit()
-app.on('second-instance', () => show())
+// a second start (Windows and Linux bring roarme:// links this way) shows the window that is already open
+app.on('second-instance', (_e, argv) => { const l = argv.find((a) => /^roarme:/i.test(a)); if (l) openLink(l); else show() })
+// a Mac brings them here, also when the link started the app
+app.on('open-url', (e, url) => { e.preventDefault(); if (app.isReady()) openLink(url); else pendingHash = linkHash(url) || '' })
+if (process.defaultApp) { if (process.argv.length >= 2) app.setAsDefaultProtocolClient('roarme', process.execPath, [path.resolve(process.argv[1])]) }
+else app.setAsDefaultProtocolClient('roarme')
 
 // no white title bar (Alex, 16 Oct): on a Mac the three buttons sit on RoarMe's own dark band, on Windows the
 // window buttons sit on a dark strip; the site leaves room for them (html[data-desktop] in styles.css)
@@ -112,6 +141,12 @@ function open() {
   win.once('ready-to-show', () => win?.show())
   setTimeout(() => { if (win && !win.isVisible()) win.show() }, 3000) // a slow or missing network still gets a window
   win.loadURL(HOME)
+  // a roarme:// link that came before the page was there
+  win.webContents.on('did-finish-load', () => {
+    if (!pendingHash) return
+    const h = pendingHash; pendingHash = ''
+    win?.webContents.executeJavaScript(`location.hash = ${JSON.stringify(h)}`).catch(() => {})
+  })
   guard(win)
   // closing the window keeps RoarMe on in the background, so messages and calls still arrive
   win.on('close', (e) => {
@@ -180,6 +215,9 @@ ipcMain.handle('roar:set', (_e, key, value) => {
 
 app.whenReady().then(async () => {
   loadSettings()
+  // started by a roarme:// link (Windows)
+  const startLink = process.argv.find((a) => /^roarme:/i.test(a))
+  if (startLink) pendingHash = linkHash(startLink) || ''
   // always the latest RoarMe: nothing old from the last time is reused
   await session.defaultSession.clearCache().catch(() => {})
   // voice messages, calls, notifications, copy/paste and your location (Send My Location), for RoarMe only

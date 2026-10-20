@@ -1,4 +1,5 @@
 -- RoarTransfer (16 Oct 2026): files over 50 MB, up to 3 GB, kept 3 days. Safe to run again.
+-- roarmail-transfers.sql widens the four rules below (a person's own u/<id>/ folder, for RoarMail): run it after this file.
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('roar-transfers', 'roar-transfers', false, 3221225472)
 on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit;

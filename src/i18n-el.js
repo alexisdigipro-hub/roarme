@@ -847,6 +847,7 @@ export const EL = {
   'To': 'Προς',
   'Overdue': 'Εκπρόθεσμο',
   'Tomorrow': 'Αύριο',
+  'Open the email in RoarMail': 'Άνοιγμα του email στο RoarMail',
   'Accept': 'Αποδοχή',
   'Accepted': 'Το αποδέχτηκες',
   'Decline task': 'Απόρριψη task',

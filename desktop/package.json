@@ -1,7 +1,7 @@
 {
   "name": "roar",
   "productName": "RoarMe",
-  "version": "1.4.12",
+  "version": "1.5.0",
   "description": "RoarMe for Mac and Windows: the chat in an app of its own",
   "author": "THEMADLIONS",
   "private": true,
@@ -66,6 +66,14 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "RoarMe"
-    }
+    },
+    "protocols": [
+      {
+        "name": "RoarMe",
+        "schemes": [
+          "roarme"
+        ]
+      }
+    ]
   }
 }

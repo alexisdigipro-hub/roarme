@@ -7,6 +7,14 @@ import { TasksCalendar } from './calendar.jsx'
 import { hubLinkFor, useHubWork } from './hubLink.jsx'
 import { RemindersList } from './reminders.jsx'
 
+// links in a task's notes can be clicked: web pages, and roarmail://message/… that a task made in RoarMail carries
+// back to its email (Oct 2026)
+function NoteText({ text }) {
+  return String(text).split(/(https?:\/\/[^\s<>"']+|roarmail:\/\/message\/[A-Za-z0-9%._~?=&-]+)/g).map((p, i) => (i % 2
+    ? <a key={i} href={p} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{/^roarmail:/.test(p) ? tr('Open the email in RoarMail') : p}</a>
+    : p))
+}
+
 /* Tasks (Alex, 18 Oct): a small task manager beside the chats, after the hub's Tasks. Never posted into a
    conversation (it would fill the chats): the Tasks button opens a panel that stays open while you move between
    chats. A task goes to you or to someone in your Contacts (anyone you share a chat with); for someone else it
@@ -415,7 +423,7 @@ function TaskView({ t, me, person, onClose, patch, onEdit, onDelete, toast }) {
             {t.priority !== 'normal' && <span>{tr(t.priority === 'high' ? 'High priority' : 'Low priority')}</span>}
           </p>
         )}
-        {t.notes && <p className="task-notes-text">{t.notes}</p>}
+        {t.notes && <p className="task-notes-text"><NoteText text={t.notes} /></p>}
         {t.status === 'declined' && t.decline_note && <p className="task-declined">“{t.decline_note}”</p>}
 
         {t.status === 'pending' && taker && !declining && (

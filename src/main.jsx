@@ -4,6 +4,7 @@ import App from './App.jsx'
 import { TransferPage } from './transfer.jsx'
 import { LegalPage } from './legal.jsx'
 import { takeInvite } from './invite.jsx'
+import { takeHubLink } from './hubLink.jsx'
 import './styles.css'
 import { startI18n } from './i18n.js'
 
@@ -44,6 +45,8 @@ const transferToken = params.get('t')
 const legalDoc = params.get('legal')
 // a personal invite link (?u=username): kept until the person is signed in, then their chat opens
 if (!transferToken && !legalDoc) takeInvite()
+// linking this account to the THEMADLIONS hub (?link=hub&state=…): kept until signed in (hubLink.jsx)
+if (!transferToken && !legalDoc) takeHubLink()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

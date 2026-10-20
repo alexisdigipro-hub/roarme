@@ -4,12 +4,15 @@ import { applyLook, applyMode, setPrefs, themeFor, usePrefs } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
+import { HubLinkPage, pendingHubLink } from './hubLink.jsx'
 
 // The order of things: sign in (or sign up) with email, then pick a @username once, then the chat.
 export default function App() {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(undefined)
   const [recovering, setRecovering] = useState(false)
+  // opened by the hub to link this account (hubLink.jsx): that page first, once signed in
+  const [hubLink, setHubLink] = useState(pendingHubLink)
   const prefs = usePrefs()
   const { mode, lite, theme } = prefs
   useEffect(() => applyLook(prefs), [prefs.accent, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -83,5 +86,6 @@ export default function App() {
     )
   }
   if (!profile) return <Onboarding user={session.user} onDone={setProfile} />
+  if (hubLink) return <HubLinkPage me={profile} onDone={() => setHubLink('')} />
   return <Chat me={profile} setMe={setProfile} />
 }

@@ -7,6 +7,7 @@ import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
+import { LinkedApps } from './hubLink.jsx'
 import { badgeSupported, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
@@ -643,6 +644,7 @@ function Privacy({ me, setMe, toast }) {
       </Box>
       <TwoStep toast={toast} />
       <Passcode toast={toast} />
+      <LinkedApps Box={Box} toast={toast} />
       <Box title="Legal" note="No ads, no trackers, no selling of your data.">
         <Nav onClick={() => setLegal('privacy')}>{legalTitle('privacy')}</Nav>
         <Nav onClick={() => setLegal('terms')}>{legalTitle('terms')}</Nav>

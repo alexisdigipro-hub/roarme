@@ -32,12 +32,12 @@ html { background: var(--bg); color-scheme: dark; }
 body { margin: 0; min-height: 100vh; min-height: 100dvh; color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; display: flex; flex-direction: column; }
 body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background: radial-gradient(900px 560px at 50% -12%, #3c424c 0%, transparent 62%), radial-gradient(700px 520px at 50% 110%, rgba(212,0,0,.16), transparent 70%), linear-gradient(180deg, #23272e 0%, #17191d 50%, #121417 100%); }
-/* the stage (Alex, 20 Oct: laid out like Smash, the card as it is): a still from one of our films fills the screen,
-   a new one each visit, with the film named at the top; the card floats over it */
+/* the stage (Alex, 20 Oct: laid out like Smash, the card as it is): a still from one of our films (PENELOPE) fills the screen,
+   with the film named at the top; the card floats over it, centred, as frosted glass */
 .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #0d0e10; }
 .bg img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.08); transition: opacity 1.4s ease, transform 14s cubic-bezier(.16,1,.3,1); }
 .bg.on img { opacity: 1; transform: scale(1); }
-.bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,11,13,.82) 0%, rgba(10,11,13,.45) 46%, rgba(10,11,13,.12) 100%), linear-gradient(180deg, rgba(10,11,13,.55), transparent 22%, transparent 70%, rgba(10,11,13,.7)); }
+.bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(60% 70% at 50% 50%, rgba(10,11,13,.38), rgba(10,11,13,.16) 70%), linear-gradient(180deg, rgba(10,11,13,.55), transparent 22%, transparent 70%, rgba(10,11,13,.7)); }
 .credit { display: flex; align-items: center; gap: 12px; padding-left: 14px; margin-left: 4px; border-left: 1px solid rgba(255,255,255,.22); text-decoration: none; line-height: 1.2; min-width: 0; }
 .credit small { display: block; font-size: 11px; letter-spacing: .04em; color: rgba(255,255,255,.66); }
 .credit b { display: block; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -68,8 +68,7 @@ svg { display: block; }
 
 /* the card */
 main { flex: 1; display: grid; place-items: center; padding: 8px 16px 32px; }
-@media (min-width: 900px) { main { justify-items: start; padding: 8px 7vw 40px; } }
-.card { width: min(520px, 100%); padding: clamp(22px, 4vw, 34px); border-radius: 30px; background: linear-gradient(170deg, rgba(43,48,56,.78), rgba(27,30,35,.78)); border: 1px solid var(--line-2); box-shadow: 0 50px 120px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); display: grid; gap: 18px; animation: up .7s var(--ease) both; }
+.card { width: min(520px, 100%); padding: clamp(22px, 4vw, 34px); border-radius: 30px; background: linear-gradient(170deg, rgba(43,48,56,.42), rgba(20,22,26,.5)); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 50px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.14); -webkit-backdrop-filter: blur(28px) saturate(150%); backdrop-filter: blur(28px) saturate(150%); display: grid; gap: 18px; animation: up .7s var(--ease) both; }
 @keyframes up { from { opacity: 0; transform: translateY(14px) scale(.985); } }
 h1 { margin: 0; font-family: var(--disp); font-size: clamp(34px, 8vw, 48px); font-weight: 300; line-height: .98; letter-spacing: -.01em; text-wrap: balance; }
 h1 b { font-weight: 800; }
@@ -526,12 +525,9 @@ footer a { color: var(--muted); text-decoration: none; } footer a:hover { color:
   $('share').addEventListener('click', function () { navigator.share({ title: 'RoarTransfer', text: linksText() }).catch(function () {}) })
   $('again').addEventListener('click', function () { files = []; sent = []; errs = []; show('v-pick'); paint() })
 
-  // a still from one of our films behind the card, a new one each visit (kept here in stills/, nothing from elsewhere)
+  // a still from one of our films behind the card (Alex, 20 Oct: PENELOPE only) (kept here in stills/, nothing from elsewhere)
   var STILLS = [
-    { f: 'christmas-theater.jpg', t: 'Christmas Theater', k: { en: 'Commercial', el: 'Διαφημιστικό' }, v: 'ba_bR10gKRU' },
-    { f: 'epsilon.jpg', t: 'Έψιλον / Epsilon', k: { en: 'Short film', el: 'Ταινία μικρού μήκους' }, v: 'I5HramCT-5s' },
-    { f: 'penelope.jpg', t: 'PENELOPE', k: { en: 'AI film', el: 'Ταινία AI' }, v: 'MOh7XEQSFSg' },
-    { f: 'eva-ii.jpg', t: 'Eva II', k: { en: 'Film', el: 'Ταινία' }, v: '_fRXBXkcikw' }
+    { f: 'penelope.jpg', t: 'PENELOPE', k: { en: 'AI film', el: 'Ταινία AI' }, v: 'MOh7XEQSFSg' }
   ]
   var still = STILLS[Math.floor(Math.random() * STILLS.length)]
   var img = $('bg-img')

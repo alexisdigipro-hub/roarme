@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { errText, nameOf, supabase } from './lib.js'
+import { SUPABASE_KEY, SUPABASE_URL, errText, nameOf, supabase } from './lib.js'
 import { Avatar, Wordmark } from './ui.jsx'
 
 /* Linking a RoarMe account to the THEMADLIONS hub (Alex, 20 Oct: phase 1 of the hub's chat moving onto RoarMe).
@@ -78,28 +78,68 @@ export function HubLinkPage({ me, onDone }) {
   )
 }
 
-/* Settings > Privacy and Security > Linked apps: the person sees the link and can remove it */
-export function LinkedApps({ Box, toast }) {
+/* Settings > Privacy and Security > Linked apps: the person sees the link. Since 20 Oct it is the team's (one account,
+   signed in through the hub), so only a hub administrator removes it. */
+export function LinkedApps({ Box }) {
   const [links, setLinks] = useState(null)
-  const load = async () => {
-    const { data } = await supabase.from('roar_hub_links').select('hub, hub_name, linked_at')
-    setLinks(data || [])
-  }
-  useEffect(() => { load() }, [])
-  const unlink = async (l) => {
-    if (!window.confirm('Remove the link to THEMADLIONS Hub? The hub will no longer be able to add you to project chats.')) return
-    const { error } = await supabase.from('roar_hub_links').delete().eq('hub', l.hub)
-    if (error) toast(errText(error)); else { toast('Link removed'); load() }
-  }
-  if (!links) return null
+  useEffect(() => {
+    supabase.from('roar_hub_links').select('hub, hub_name, linked_at').then(({ data }) => setLinks(data || []))
+  }, [])
+  if (!links || !links.length) return null
   return (
-    <Box title="Linked apps" note={links.length ? 'A linked app can add you to its project chats and take you out. It never reads your chats.' : 'Nothing is linked to your RoarMe account.'}>
+    <Box title="Linked apps" note="Your team's hub puts you in its project chats and takes you out. It never reads your chats. Only your team's administrator can remove this link.">
       {links.map((l) => (
         <div key={l.hub} className="set-row">
           <span className="set-text">THEMADLIONS Hub<small>{l.hub_name ? `${l.hub_name} · ` : ''}since {new Date(l.linked_at).toLocaleDateString()}</small></span>
-          <button type="button" className="btn btn-sm" onClick={() => unlink(l)}>Remove</button>
         </div>
       ))}
     </Box>
   )
+}
+
+/* "Sign in with THEMADLIONS Hub" (Alex, 20 Oct: one account for the team, the hub's email and password).
+   The button sends this tab to the hub with a random state kept here; the hub sends it back with a one-time code in the
+   # part of the address; RoarMe's server checks the code with the hub's server and answers with a one-time sign-in for
+   the team member's RoarMe account (made the first time). No password ever passes through RoarMe. */
+const HUB_SIGNIN_KEY = 'roarme-hub-signin'
+const HUB_APP = 'https://hub.themadlions.com/'
+
+export function startHubSignin() {
+  const b = crypto.getRandomValues(new Uint8Array(32))
+  const state = btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  try { sessionStorage.setItem(HUB_SIGNIN_KEY, JSON.stringify({ state })) } catch { /* private window */ }
+  window.location.assign(`${HUB_APP}#/roarme-signin?state=${encodeURIComponent(state)}`)
+}
+
+/* on load: #hub_code=…&state=… from the hub is kept for this tab (only if the state is the one this tab made) and
+   taken out of the address at once */
+export function takeHubSignin() {
+  try {
+    const h = new window.URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const code = h.get('hub_code')
+    if (!code) return
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    const kept = JSON.parse(sessionStorage.getItem(HUB_SIGNIN_KEY) || 'null')
+    if (kept?.state && h.get('state') === kept.state && /^[0-9a-f]{48}$/.test(code)) {
+      sessionStorage.setItem(HUB_SIGNIN_KEY, JSON.stringify({ state: kept.state, code }))
+    } else {
+      sessionStorage.removeItem(HUB_SIGNIN_KEY)
+    }
+  } catch { /* private window */ }
+}
+export const pendingHubSignin = () => { try { const k = JSON.parse(sessionStorage.getItem(HUB_SIGNIN_KEY) || 'null'); return k?.code ? k : null } catch { return null } }
+
+export async function finishHubSignin() {
+  const k = pendingHubSignin()
+  try { sessionStorage.removeItem(HUB_SIGNIN_KEY) } catch { /* private window */ }
+  if (!k) return
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/roar-hub-signin`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'signin', code: k.code, state: k.state }),
+  })
+  const out = await res.json().catch(() => null)
+  if (!res.ok || !out?.token_hash) throw new Error(out?.error || 'Could not sign you in with the hub. Try again.')
+  const { error } = await supabase.auth.verifyOtp({ token_hash: out.token_hash, type: 'magiclink' })
+  if (error) throw new Error(errText(error))
 }

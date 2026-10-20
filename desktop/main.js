@@ -22,7 +22,9 @@ let tray = null
 let quitting = false
 let unread = 0
 
-const inApp = (url) => typeof url === 'string' && url.startsWith(HOME)
+// "Sign in with THEMADLIONS Hub" (20 Oct): the hub's sign-in page opens in the app's own window and comes back to RoarMe
+const HUB = 'https://hub.themadlions.com/'
+const inApp = (url) => typeof url === 'string' && (url.startsWith(HOME) || url.startsWith(HUB))
 // only web and mail links leave the app for the browser; any other kind (file:, smb:, custom app links) is ignored,
 // so a link in a message can never start a program on the computer (security check, 17 Oct)
 const openOutside = (url) => { if (/^(https?:|mailto:)/i.test(String(url))) shell.openExternal(url) }

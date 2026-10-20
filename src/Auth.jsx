@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
 import { Wordmark } from './ui.jsx'
 import { pendingInvite } from './invite.jsx'
+import { finishHubSignin, pendingHubSignin, startHubSignin } from './hubLink.jsx'
 
 function Brand() {
   return (
@@ -20,6 +21,12 @@ export function Auth() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [note, setNote] = useState('')
+  // back from the hub with a one-time code: sign in with it (Sign in with THEMADLIONS Hub, hubLink.jsx)
+  const [viaHub, setViaHub] = useState(() => !!pendingHubSignin())
+  useEffect(() => {
+    if (!viaHub) return
+    finishHubSignin().catch((x) => { setErr(errText(x)); setViaHub(false) })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async (e) => {
     e.preventDefault()
@@ -65,6 +72,12 @@ export function Auth() {
         {err && <p className="auth-err">{err}</p>}
         {note && <p className="auth-note">{note}</p>}
         <button className="btn btn-main" disabled={busy}>{busy ? '…' : mode === 'in' ? 'Sign in' : mode === 'up' ? 'Sign up' : 'Send the link'}</button>
+        {mode === 'in' && (
+          <>
+            <span className="auth-or">or</span>
+            <button type="button" className="btn auth-hub" disabled={viaHub} onClick={startHubSignin}>{viaHub ? 'Signing in with the hub…' : 'Sign in with THEMADLIONS Hub'}</button>
+          </>
+        )}
         {mode === 'up' && <p className="auth-legal">By signing up you accept the <a href="?legal=terms" target="_blank" rel="noreferrer">Terms of Service</a> and the <a href="?legal=privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</p>}
         <div className="auth-links">
           {mode === 'in' && <><button type="button" onClick={() => setMode('up')}>Create an account</button><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button></>}

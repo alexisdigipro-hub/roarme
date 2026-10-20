@@ -20,3 +20,8 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
   roar_hub_sync_project / roar_hub_close_project (service role only) through the Edge Function roar-hub-bridge
   (same x-hub-secret as roar-hub-link). Removing the hub link takes the person out of every project group.
   Not yet in the app's UI: a project group still shows the usual Leave / group menu (they answer with a clear refusal).
+- Since 20 Oct (Alex's decision: RoarMe is the team's work tool, one account): **Sign in with THEMADLIONS Hub** on the
+  sign-in card (src/hubLink.jsx startHubSignin / takeHubSignin / finishHubSignin, Edge Function roar-hub-signin,
+  supabase/hub-signin.sql). The hub is the source of a team member's account: linked one, else same email, else made
+  with no password. The person can no longer remove the hub link (only the hub's admin). The desktop app lets
+  hub.themadlions.com open in its window (desktop/main.js) so the round trip stays in the app; that needs a desktop release.

@@ -644,7 +644,7 @@ function Privacy({ me, setMe, toast }) {
       </Box>
       <TwoStep toast={toast} />
       <Passcode toast={toast} />
-      <LinkedApps Box={Box} toast={toast} />
+      <LinkedApps Box={Box} />
       <Box title="Legal" note="No ads, no trackers, no selling of your data.">
         <Nav onClick={() => setLegal('privacy')}>{legalTitle('privacy')}</Nav>
         <Nav onClick={() => setLegal('terms')}>{legalTitle('terms')}</Nav>

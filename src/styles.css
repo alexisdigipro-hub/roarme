@@ -3619,3 +3619,6 @@ html[data-mode='light'] .ctx { background: rgba(240, 244, 250, .5); }
 .hub-link-note { margin: 0; color: var(--muted); }
 .hub-link-acts { display: flex; gap: 10px; }
 .hub-link-acts .btn, .hub-link-card > .btn { flex: 1; justify-content: center; height: 44px; border-radius: 999px; }
+/* Sign in with THEMADLIONS Hub (20 Oct): under the usual Sign in, the team's way in */
+.auth-or { display: block; margin: 12px 0 8px; text-align: center; color: var(--muted); font-size: 13px; }
+.auth-card .auth-hub { width: 100%; justify-content: center; }

@@ -10,3 +10,7 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
   hub's tables. Every database change goes in supabase/schema.sql, written so it can be run again.
 - Desktop first (Alex, 15 Oct). Email + password sign-in, @username to be found.
 - Pushing to main deploys to GitHub Pages; open a PR, wait for the green build, merge it yourself.
+- Linked to the THEMADLIONS hub since 20 Oct 2026 (Alex: the hub's chat moves onto RoarMe, step by step, safely). Phase 1:
+  a person links their own account (src/hubLink.jsx, supabase/hub-link.sql, Edge Function roar-hub-link with a shared
+  secret in roar_hub_conf). The hub never gets a RoarMe token or the service key; the person can remove the link in
+  Settings > Privacy and Security > Linked apps. RoarMe still never touches the hub's tables.

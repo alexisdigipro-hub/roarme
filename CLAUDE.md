@@ -25,3 +25,6 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
   supabase/hub-signin.sql). The hub is the source of a team member's account: linked one, else same email, else made
   with no password. The person can no longer remove the hub link (only the hub's admin). The desktop app lets
   hub.themadlions.com open in its window (desktop/main.js) so the round trip stays in the app; that needs a desktop release.
+- Phase 4 (20 Oct): RoarMe is shown inside the hub's RoarMe page at ?embed=hub (html[data-embed=hub]). takeEmbed /
+  embeddedHubSignin / watchHubMember in src/hubLink.jsx: no-click sign-in through postMessage with
+  https://hub.themadlions.com only, and a frame signed in as another account than the hub member signs out.

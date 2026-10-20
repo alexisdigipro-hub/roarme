@@ -28,3 +28,5 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - Phase 4 (20 Oct): RoarMe is shown inside the hub's RoarMe page at ?embed=hub (html[data-embed=hub]). takeEmbed /
   embeddedHubSignin / watchHubMember in src/hubLink.jsx: no-click sign-in through postMessage with
   https://hub.themadlions.com only, and a frame signed in as another account than the hub member signs out.
+- Phase 6 (20 Oct): the person's hub tasks and calendar, shown only (useHubWork in src/hubLink.jsx, Edge Function
+  roar-hub-work -> the hub's roarme-work). Tasks has a THEMADLIONS tab; the calendar shows hub events and tasks; a tap opens the hub.

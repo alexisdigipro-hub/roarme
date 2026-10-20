@@ -3622,3 +3622,6 @@ html[data-mode='light'] .ctx { background: rgba(240, 244, 250, .5); }
 /* Sign in with THEMADLIONS Hub (20 Oct): under the usual Sign in, the team's way in */
 .auth-or { display: block; margin: 12px 0 8px; text-align: center; color: var(--muted); font-size: 13px; }
 .auth-card .auth-hub { width: 100%; justify-content: center; }
+/* the hub's tasks in Tasks > THEMADLIONS (20 Oct): a row that opens the hub */
+a.hub-task { display: flex; text-decoration: none; color: inherit; }
+a.hub-task .task-main { flex: 1; }

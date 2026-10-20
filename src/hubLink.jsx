@@ -194,3 +194,30 @@ export function watchHubMember(uid) {
   askHub({ type: 'roarme:ready' })
   return () => window.removeEventListener('message', onMsg)
 }
+
+/* The person's THEMADLIONS hub tasks and calendar, shown in Tasks and its calendar (Alex, 20 Oct: phase 6). The hub
+   stays the one source: RoarMe only shows them, and a tap opens the hub. Read through the Edge Function
+   roar-hub-work, which asks the hub with the shared secret, for this person's own hub member only and with the
+   hub's own rules (Tasks / Calendar permission, their projects, the calendar types they may see). */
+const HUB_URL = 'https://hub.themadlions.com/'
+export const hubLinkFor = (x) => `${HUB_URL}#/${x.kind === 'event' ? 'calendar' : x.projectId ? `p/${x.projectId}` : 'tasks'}`
+
+export function useHubWork() {
+  const [work, setWork] = useState({ linked: false, tasks: [], events: [], canTasks: false, canCalendar: false })
+  useEffect(() => {
+    let alive = true
+    const load = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('roar-hub-work', { body: {} })
+        if (!alive || error || !data) return
+        setWork({ linked: !!data.linked, tasks: data.tasks || [], events: data.events || [], canTasks: !!data.canTasks, canCalendar: !!data.canCalendar })
+      } catch { /* the hub is away: keep what we had */ }
+    }
+    load()
+    const back = () => { if (!document.hidden) load() }
+    document.addEventListener('visibilitychange', back)
+    const id = setInterval(load, 5 * 60e3)
+    return () => { alive = false; document.removeEventListener('visibilitychange', back); clearInterval(id) }
+  }, [])
+  return work
+}

@@ -3625,3 +3625,40 @@ html[data-mode='light'] .ctx { background: rgba(240, 244, 250, .5); }
 /* the hub's tasks in Tasks > THEMADLIONS (20 Oct): a row that opens the hub */
 a.hub-task { display: flex; text-decoration: none; color: inherit; }
 a.hub-task .task-main { flex: 1; }
+
+/* mentions as in Slack (20 Oct): the @ in the chat list, a message that reaches you, @all / @here / roles in the picker */
+.badge.at { margin-right: 4px; background: var(--accent); color: var(--accent-ink); font-size: 13px; padding: 0; width: 22px; }
+.msg.at-me .bubble { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 70%, transparent), 0 0 18px color-mix(in srgb, var(--accent) 22%, transparent); }
+.mention.me { background: color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 5px; padding: 0 3px; }
+.mention-at { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--glass-2); color: var(--accent); font-weight: 800; }
+.role-name { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 999px; background: var(--glass); }
+.role-name span { color: var(--accent); font-weight: 800; font-size: 17px; }
+.role-name input { flex: 1; min-width: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 16px; outline: none; }
+.role-hint { margin: 8px 2px 12px; font-size: 13px; }
+.role-people { max-height: 46vh; overflow: auto; }
+.role-people .person { width: 100%; }
+.role-people .tick { margin-left: auto; }
+.role-row { display: flex; align-items: center; gap: 12px; }
+.role-at { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--glass-2); color: var(--accent); font-weight: 800; font-size: 16px; }
+.role-row .smsg-acts { margin-left: auto; }
+.pin-tabs { margin: 0 0 10px; }
+
+/* Remind me (20 Oct): the card that comes at the time, and the list under Tasks */
+.rmd-about { margin: 0 0 12px; padding: 10px 14px; border-radius: 14px; background: var(--glass); color: var(--muted); font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.rmd-cards { position: fixed; right: 18px; bottom: 18px; z-index: 90; display: flex; flex-direction: column; gap: 10px; width: min(380px, calc(100vw - 32px)); }
+.rmd-card { display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; padding: 14px; border-radius: 20px; background: rgba(24, 32, 46, .94); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 18px 50px rgba(0, 0, 0, .35); animation: rmd-in .35s var(--spring, ease) both; }
+html[data-mode='light'] .rmd-card { background: rgba(255, 255, 255, .96); box-shadow: 0 18px 50px rgba(30, 50, 90, .18); }
+.rmd-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); }
+.rmd-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.rmd-text > span:last-child { color: var(--muted); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.rmd-card .rmd-acts { grid-column: 1 / -1; display: flex; gap: 8px; }
+.rmd-card .rmd-acts .btn { flex: 1; height: 36px; padding: 0 10px; font-size: 13px; }
+@keyframes rmd-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+.rmd-list { display: flex; flex-direction: column; gap: 6px; }
+.rmd-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: var(--glass); cursor: pointer; }
+.rmd-row:hover { background: var(--glass-2); }
+.rmd-row.past { opacity: .6; }
+.rmd-top { display: flex; gap: 8px; align-items: baseline; }
+.rmd-top small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rmd-row .rmd-acts { display: flex; gap: 6px; margin-left: auto; }
+@media (max-width: 760px) { .rmd-cards { right: 16px; left: 16px; width: auto; bottom: calc(84px + env(safe-area-inset-bottom)); } }

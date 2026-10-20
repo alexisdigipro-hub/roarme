@@ -5,6 +5,7 @@ import { chime } from './prefs.js'
 import { locale, tr } from './i18n.js'
 import { TasksCalendar } from './calendar.jsx'
 import { hubLinkFor, useHubWork } from './hubLink.jsx'
+import { RemindersList } from './reminders.jsx'
 
 /* Tasks (Alex, 18 Oct): a small task manager beside the chats, after the hub's Tasks. Never posted into a
    conversation (it would fill the chats): the Tasks button opens a panel that stays open while you move between
@@ -91,7 +92,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, 
       if (!st || !window.matchMedia('(max-width: 760px)').matches) return
       const dx = e.changedTouches[0].clientX - st.x, dy = e.changedTouches[0].clientY - st.y
       if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
-      const order = ['all', 'mine', 'given', 'done', ...(hubTab ? ['hub'] : [])]
+      const order = ['all', 'mine', 'given', 'done', 'reminders', ...(hubTab ? ['hub'] : [])]
       const next = order[order.indexOf(tab) + (dx < 0 ? 1 : -1)]
       if (next) pickTab(next)
       else onEdge?.(dx < 0 ? 1 : -1) // past All or Done: the screen beside Tasks in the bar at the foot
@@ -252,6 +253,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, 
         <button type="button" className={tab === 'mine' ? 'on' : ''} onClick={() => pickTab('mine')}>{tr('For me')}{forMe.length > 0 && <small>{forMe.length}</small>}</button>
         <button type="button" className={tab === 'given' ? 'on' : ''} onClick={() => pickTab('given')}>{tr('Given')}</button>
         <button type="button" className={tab === 'done' ? 'on' : ''} onClick={() => pickTab('done')}>{tr('Done')}</button>
+        <button type="button" className={tab === 'reminders' ? 'on' : ''} onClick={() => pickTab('reminders')}>{tr('Reminders')}</button>
         {hubTab && <button type="button" className={tab === 'hub' ? 'on' : ''} onClick={() => pickTab('hub')}>THEMADLIONS{hub.tasks.filter((t) => t.status !== 'done').length > 0 && <small>{hub.tasks.filter((t) => t.status !== 'done').length}</small>}</button>}
       </Lens>
       <div className="tasks-list" {...onSwipe}>
@@ -277,6 +279,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, 
         )}
         {tab === 'given' && (given.length ? given.map(row) : <Empty text="Tasks you give to others show here, with their answer." onNew={() => setEdit(true)} />)}
         {tab === 'done' && (done.length ? done.map(row) : <p className="tasks-empty muted">{tr('Finished tasks show here.')}</p>)}
+        {tab === 'reminders' && <RemindersList me={me} rooms={rooms} titleOf={titleOf} onOpen={onOpenChat} toast={toast} />}
         {tab === 'hub' && (hubTab ? (
           <>
             <p className="tasks-label">{tr('From THEMADLIONS Hub · tap to open it there')}</p>

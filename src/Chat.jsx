@@ -20,6 +20,8 @@ import { useFolderSync } from './folderSync.js'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { OrdinoCard, RoardinoSheet, ordinoBody } from './roardino.jsx'
 import { TasksPanel, taskNotice, useTasks } from './tasks.jsx'
+import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
+import { RolesWindow, mentionsMe } from './roles.jsx'
 import { CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
@@ -256,15 +258,26 @@ export default function Chat({ me, setMe }) {
     }
   }, [])
 
+  // the roles of one's groups, for @mentions (src/roles.jsx)
+  const [roles, setRoles] = useState([])
+  const rolesRef = useRef([])
+  rolesRef.current = roles
   const loadRooms = useCallback(async () => {
     const { data, error } = await supabase.rpc('roar_my_rooms')
     if (error) return
     const list = data || []
-    // the pinned message of each chat
+    // the pinned message of each chat, and the unread messages that mention one (the @ in the list)
     if (list.length) {
-      const { data: pins } = await supabase.from('roar_rooms').select('id, pinned_message_id, auto_delete_hours').in('id', list.map((r) => r.room_id))
+      const ids = list.map((r) => r.room_id)
+      const [{ data: pins }, { data: men }, { data: rl }] = await Promise.all([
+        supabase.from('roar_rooms').select('id, pinned_message_id, auto_delete_hours, hub_project').in('id', ids),
+        supabase.rpc('roar_my_mentions'),
+        supabase.from('roar_roles').select('id, room_id, name, user_ids').in('room_id', ids).order('name'),
+      ])
       const pin = Object.fromEntries((pins || []).map((x) => [x.id, x]))
-      list.forEach((r) => { r.pinned_message_id = pin[r.room_id]?.pinned_message_id || null; r.auto_delete_hours = pin[r.room_id]?.auto_delete_hours || null })
+      const at = Object.fromEntries((men || []).map((x) => [x.room_id, x.n]))
+      list.forEach((r) => { r.pinned_message_id = pin[r.room_id]?.pinned_message_id || null; r.auto_delete_hours = pin[r.room_id]?.auto_delete_hours || null; r.hub_project = pin[r.room_id]?.hub_project || null; r.mentions = at[r.room_id] || 0 })
+      setRoles(rl || [])
     }
     setRooms(list)
     loadPeople(list.flatMap((r) => r.members || []))
@@ -321,13 +334,15 @@ export default function Chat({ me, setMe }) {
   const notifyRef = useRef(null)
   notifyRef.current = (m) => {
     const room = roomsRef.current.find((r) => r.room_id === m.room_id)
-    if (room?.muted) return
+    const atMe = mentionsMe(m.body, me, rolesRef.current.filter((g) => g.room_id === m.room_id))
+    // a muted chat stays quiet, unless the message mentions you (@you, @all, @here or a role of yours)
+    if (room?.muted && !atMe) return
     if (!document.hidden && activeRef.current === m.room_id) return
     if (prefsRef.current.sound) chime()
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     const who = peopleRef.current[m.user_id]
     const title = room?.kind === 'group' ? `${room.title}` : nameOf(who)
-    const body = !prefsRef.current.notifyPreview ? 'New message' : (room?.kind === 'group' ? `${nameOf(who)}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : plainText(previewText(m.body, m.kind)))
+    const body = !prefsRef.current.notifyPreview ? (atMe ? `${nameOf(who)} mentioned you` : 'New message') : (room?.kind === 'group' ? `${nameOf(who)}${atMe ? ' mentioned you' : ''}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : plainText(previewText(m.body, m.kind)))
     try {
       const n = new Notification(title, { body: tr(body), icon: who?.avatar_url || './icon.svg', tag: m.room_id })
       n.onclick = () => { window.focus(); setTab('chats'); setActiveId(m.room_id); n.close() }
@@ -403,6 +418,7 @@ export default function Chat({ me, setMe }) {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roar_rooms' }, reloadSoon)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_reactions' }, (ev) => listeners.current.forEach((fn) => fn(ev)))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_pins' }, (ev) => listeners.current.forEach((fn) => fn(ev)))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_roles' }, reloadSoon)
       .subscribe()
     return () => { supabase.removeChannel(ch) }
   }, [me.id, reloadSoon])
@@ -741,7 +757,7 @@ export default function Chat({ me, setMe }) {
                     <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 44 : 36} />
                     <span className="room-main">
                       <span className="room-top"><strong>{titleOf(r)}{r.kind === 'direct' && officialIds.includes(otherOf(r)?.id) && OFFICIAL}</strong><small>{listTime(r.last_message_at)}</small></span>
-                      <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
+                      <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.mentions > 0 && <span className="badge at" title="You were mentioned">@</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
                       {prefs.folderTags && tagsOf(r).length > 0 && <span className="room-tags">{tagsOf(r).map((t) => <span key={t}>{t}</span>)}</span>}
                     </span>
                   </button>
@@ -837,7 +853,7 @@ export default function Chat({ me, setMe }) {
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} />
         ) : active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
-            rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]}
+            rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={roles.filter((g) => g.room_id === active.room_id)}
             onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }} onTasks={() => showTasks(true)} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={() => unblock(otherOf(active)?.id)} onCall={(v) => callRoom(active, v)} />
         ) : (
@@ -853,6 +869,16 @@ export default function Chat({ me, setMe }) {
         )}
       </main>
 
+      <ReminderCards me={me} rooms={rooms} titleOf={titleOf} onOpen={libChat}
+        onDue={(r, m) => {
+          if (prefsRef.current.sound) chime()
+          if (!document.hidden || typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+          const room = rooms.find((x) => x.room_id === r.room_id)
+          try {
+            const n = new Notification(tr('Reminder'), { body: `${room ? `${titleOf(room)}: ` : ''}${reminderText(m)}`, icon: './icon.svg', tag: `reminder-${r.id}` })
+            n.onclick = () => { window.focus(); libChat(r.room_id, r.message_id); n.close() }
+          } catch { /* not allowed here */ }
+        }} />
       {tasksOpen && <TasksPanel me={me} people={people} contacts={contacts} kit={tasksKit} toast={toast} onClose={() => showTasks(false)} onEdge={goStop} rooms={rooms} titleOf={titleOf} onOpenChat={(roomId, msgId) => { if (msgId) libChat(roomId, msgId); else { setTab('chats'); setActiveId(roomId) } }} />}
 
       {modal === 'invite' && <InviteModal me={me} toast={toast} onClose={() => setModal('')} />}
@@ -1043,7 +1069,7 @@ function PeekList({ room, me, people, clearedAt }) {
 // the official RoarMe account's mark beside its name (Alex, 19 Oct)
 const OFFICIAL = <i className="official" title="Official RoarMe account" aria-label="Official">{svg(<><path d="M12 2.5l2.4 1.8 3-.1.9 2.8 2.4 1.8-.9 2.8.9 2.8-2.4 1.8-.9 2.8-3-.1L12 21.5l-2.4-1.8-3 .1-.9-2.8L3.3 15.2l.9-2.8-.9-2.8 2.4-1.8.9-2.8 3 .1z" fill="currentColor" stroke="none" /><path d="M8.5 12.2l2.3 2.3 4.7-4.8" stroke="#fff" strokeWidth="2.2" /></>, 15)}</i>
 
-function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0 }) {
+function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [] }) {
   const [rawMsgs, setMsgs] = useState([])
   // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
   const [sealOn, reloadSeal] = useEncrypted(room.room_id)
@@ -1075,6 +1101,9 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   // scheduled messages (Alex, 18 Oct): hold Send or right click it; the clock in the box lists what waits
   const sched = useScheduled(room.room_id, me.id)
   const [schedNew, setSchedNew] = useState(false)
+  const [remindFor, setRemindFor] = useState(null) // Remind Me on a message (src/reminders.jsx)
+  const [rolesOpen, setRolesOpen] = useState(false) // the group's roles for @mentions (src/roles.jsx)
+  const [pinTab, setPinTab] = useState('all') // in the pinned window: everything, or the files only
   const [schedEdit, setSchedEdit] = useState(null)
   const [schedList, setSchedList] = useState(false)
   const holdT = useRef(null)
@@ -1274,9 +1303,14 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
     const m = before.match(/(?:^|\s)@([\p{L}\p{N}_.]{0,24})$/u)
     return m ? m[1].toLowerCase() : null
   }, [text, caret])
-  const mentionHits = mentionQ === null || room.kind !== 'group' ? [] : members.filter((p) => nameOf(p).toLowerCase().includes(mentionQ) || p.username.includes(mentionQ)).slice(0, 6)
+  // @all, @here and the group's roles first, then its people (Alex, 20 Oct: mentions as in Slack, src/roles.jsx)
+  const mentionHits = mentionQ === null || room.kind !== 'group' ? [] : [
+    ...[['all', 'Everyone', 'Everyone in this group'], ['here', 'Online now', 'Who is in RoarMe right now']].filter(([n]) => n.startsWith(mentionQ)).map(([n, label, sub]) => ({ key: n, name: n, label, sub: `@${n} · ${sub}`, special: true })),
+    ...roles.filter((g) => g.name.includes(mentionQ)).map((g) => ({ key: g.id, name: g.name, label: `@${g.name}`, sub: g.user_ids.length === 1 ? 'Role · 1 person' : `Role · ${g.user_ids.length} people`, special: true })),
+    ...members.filter((p) => nameOf(p).toLowerCase().includes(mentionQ) || p.username.includes(mentionQ)).map((p) => ({ key: p.id, name: p.username, label: nameOf(p), sub: `@${p.username}`, p })),
+  ].slice(0, 8)
   const pickMention = (p) => {
-    const before = text.slice(0, caret).replace(/@([\p{L}\p{N}_.]{0,24})$/u, `@${p.username} `)
+    const before = text.slice(0, caret).replace(/@([\p{L}\p{N}_.]{0,24})$/u, `@${p.name} `)
     const next = before + text.slice(caret)
     setText(next)
     requestAnimationFrame(() => { const el = inputRef.current; if (el) { el.focus(); el.selectionStart = el.selectionEnd = before.length; setCaret(before.length) } })
@@ -1613,10 +1647,10 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   // @username in a message, lit up
   // links that open (in the browser, a new tab) and @usernames lit up, inside a message's text
   const withMentions = (s) => {
-    const parts = String(s).split(/(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|@[a-z0-9_]{3,24})/g)
+    const parts = String(s).split(/(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|@[\p{L}\p{N}_]{2,24})/gu)
     return parts.map((p, i) => {
       if (!(i % 2)) return p
-      if (p.startsWith('@')) return <span key={i} className="mention">{p}</span>
+      if (p.startsWith('@')) return <span key={i} className={`mention${mentionsMe(p, me, roles) ? ' me' : ''}`}>{p}</span>
       const tail = (p.match(/[.,;:!?)\]]+$/) || [''])[0]
       const url = tail ? p.slice(0, -tail.length) : p
       return <span key={i}><a className="msg-link" href={url.startsWith('www.') ? `https://${url}` : url} target="_blank" rel="noreferrer noopener" onClick={(e) => e.stopPropagation()}>{url}</a>{tail}</span>
@@ -1649,6 +1683,8 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   const pinnedSet = new Set(pinRows.map((p) => p.message_id))
   const pinnedList = pinRows.map((p) => byId[p.message_id] || pinOpenedById[p.message_id]).filter((m) => m && !m.deleted_at)
   const pinned = pinnedList[pinnedList.length - 1] || null
+  // photos, videos, voice, files and transfers, for the Files tab of the pinned window (Alex, 20 Oct)
+  const isPinFile = (m) => m.kind === 'image' || m.kind === 'file' || m.kind === 'voice'
   // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
   const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt)), [msgs, clearedAt, hidden])
   // what others ask me to delete, one at a time, above the writing box
@@ -1747,6 +1783,8 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
                     {room.kind !== 'group' && other && <button type="button" onClick={() => { setHeadMenu(false); onNewGroup(other) }}>{I.people}<span>Create Group</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setMedia(true) }}>{I.image}<span>Photos, videos & files</span></button>
                     {pinned && <button type="button" onClick={() => { setHeadMenu(false); setPinView(true) }}>{I.pin}<span>Pinned messages</span></button>}
+                    {!sealOn && !editing && <button type="button" onClick={() => { setHeadMenu(false); setSchedNew(true) }}>{I.timer}<span>Schedule Message</span></button>}
+                    {room.kind === 'group' && <button type="button" onClick={() => { setHeadMenu(false); setRolesOpen(true) }}>{I.people}<span>Roles for @mentions</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setWallPick(true) }}>{I.brush}<span>Change Wallpaper</span></button>
                     <button type="button" onClick={exportChat} onMouseEnter={() => setHeadSub('')}>{I.file}<span>Export Chat History…</span></button>
                     <hr />
@@ -1819,7 +1857,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
           return (
             <div key={m.id} id={`m-${m.id}`}>
               {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
-              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${wide ? ' wide-media' : ''}`}
+              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${!mine && !m.deleted_at && mentionsMe(m.body, me, roles) ? ' at-me' : ''}${wide ? ' wide-media' : ''}`}
                 onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => onTap(e, m)}
                 onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (onBubble(e)) onDouble(m, e) }}
                 onContextMenu={(e) => { if (onBubble(e)) openMenu(e, m) }}>
@@ -1913,7 +1951,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
         })()}
         {mentionHits.length > 0 && (
           <div className="mention-pick">
-            {mentionHits.map((p) => <button key={p.id} type="button" onMouseDown={(e) => { e.preventDefault(); pickMention(p) }}><Avatar src={p.avatar_url} name={nameOf(p)} size={28} /><b>{nameOf(p)}</b><small>@{p.username}</small></button>)}
+            {mentionHits.map((h) => <button key={h.key} type="button" onMouseDown={(e) => { e.preventDefault(); pickMention(h) }}>{h.special ? <span className="mention-at">@</span> : <Avatar src={h.p.avatar_url} name={h.label} size={28} />}<b>{h.label}</b><small>{h.sub}</small></button>)}
           </div>
         )}
         {rec ? (
@@ -1973,6 +2011,8 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
 
       {schedNew && <ScheduleMessage body={text.trim()} onClose={() => setSchedNew(false)} onSave={scheduleIt} />}
       {schedEdit && <ScheduleMessage item={schedEdit} onClose={() => setSchedEdit(null)} onSave={async (v) => { const e = await sched.move(schedEdit.id, v); if (!e) { setSchedEdit(null); toast(`Scheduled for ${whenText(v.at.toISOString())}`) } return e }} />}
+      {remindFor && <RemindMe preview={textOf(remindFor)} onClose={() => setRemindFor(null)} onSave={async (at) => { const e = await addReminder(room.room_id, remindFor.id, at); if (!e) { setRemindFor(null); toast(`Reminder set for ${whenText(at.toISOString())}`) } return e }} />}
+      {rolesOpen && <RolesWindow room={room} roles={roles} people={people} me={me} toast={toast} onClose={() => setRolesOpen(false)} />}
       {schedList && !schedEdit && <ScheduledList sched={sched} toast={toast} onEdit={setSchedEdit} onClose={() => setSchedList(false)} />}
 
       {menu && (
@@ -1990,6 +2030,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
               <hr />
               {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && !menu.m.file?.ordino && <button type="button" onClick={() => { if (menu.m.file?.article) setArtOpen(menu.m); else { setEditing(menu.m); setText(menu.m.body) } setMenu(null) }}>{I.edit}<span>Edit</span></button>}
               <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
+              <button type="button" onClick={() => { setRemindFor(menu.m); setMenu(null) }}>{I.bell}<span>Remind Me</span></button>
               {!menu.m.sealed && <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>}
               <button type="button" onClick={() => { setPicked([menu.m.id]); setMenu(null) }}>{I.select}<span>Select</span></button>
               <hr />
@@ -2075,15 +2116,21 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
         <Modal title={pinnedList.length === 1 ? '1 pinned message' : `${pinnedList.length} pinned messages`} onClose={() => setPinView(false)}
           foot={pinnedList.length > 1 ? <button type="button" className="btn btn-danger pins-all" onClick={unpinAll}>{I.pin}<span>Unpin all</span></button> : null}>
           {!pinnedList.length && <p className="empty">Nothing pinned yet. Pin a message from its menu.</p>}
+          {pinnedList.some(isPinFile) && (
+            <div className="squick pin-tabs">
+              <button type="button" className={pinTab === 'all' ? 'on' : ''} onClick={() => setPinTab('all')}>All · {pinnedList.length}</button>
+              <button type="button" className={pinTab === 'files' ? 'on' : ''} onClick={() => setPinTab('files')}>Files · {pinnedList.filter(isPinFile).length}</button>
+            </div>
+          )}
           <div className="pins">
-            {[...pinnedList].reverse().map((m) => {
+            {[...pinnedList].reverse().filter((m) => pinTab !== 'files' || isPinFile(m)).map((m) => {
               const who = people[m.user_id]
               return (
                 <div key={m.id} className="pin-row" role="button" tabIndex={0} onClick={() => { setPinView(false); goTo(m.id) }}>
                   <Avatar src={who?.avatar_url} name={nameOf(who)} size={34} />
                   <span className="pin-text">
                     <span className="pin-top"><b>{m.user_id === me.id ? 'You' : nameOf(who)}</b><small>{dayLabel(m.created_at)} · {timeOf(m.created_at)}</small></span>
-                    <span className="pin-body">{m.kind === 'text' ? formatText(m.body) : textOf(m)}</span>
+                    <span className="pin-body">{m.kind === 'text' ? formatText(m.body) : <>{m.kind === 'image' ? '📷 ' : m.kind === 'voice' ? '🎤 ' : '📎 '}{textOf(m)}</>}</span>
                   </span>
                   <button type="button" className="pin-un" onClick={(e) => { e.stopPropagation(); pin(m) }} aria-label="Unpin" title="Unpin">{I.x}</button>
                 </div>

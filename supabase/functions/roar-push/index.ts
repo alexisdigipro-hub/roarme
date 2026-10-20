@@ -2,7 +2,9 @@
 // browser's own crypto (no library): the message is encrypted for each phone or browser (RFC 8291, aes128gcm) and
 // signed with this server's key (VAPID, RFC 8292).
 //   GET  ?key            the public key a browser needs to sign up (made, with its private half, the first time)
-//   POST {id} + x-roar-hook   a new message (from the trigger roar_push): notify who should know
+//   POST {id} + x-roar-hook   a new message (from the trigger roar_push): notify who should know (supabase/mentions.sql:
+//                             who is @mentioned is told even in a muted chat, and the notification says so)
+//   POST {reminder} + x-roar-hook   a reminder that is due (supabase/reminders.sql): tell the one who set it
 //   POST {test: true} + the user's sign-in   Settings > Send Test: after 5 seconds (time to close RoarMe) a test
 //                                            notification to each of that person's devices, and what each push service said
 // The private key never leaves the database table roar_push_conf, which only the server can read.
@@ -125,10 +127,10 @@ async function notify(id: string) {
   const text = preview(m)
   let sent = 0
   const gone: string[] = []
-  await Promise.all((targets as { endpoint: string; p256dh: string; auth: string; preview: boolean; unread: number }[]).map(async (t) => {
+  await Promise.all((targets as { endpoint: string; p256dh: string; auth: string; preview: boolean; unread: number; mention?: boolean }[]).map(async (t) => {
     const note = {
       title: group ? room?.title || 'Group' : name,
-      body: t.preview ? (group ? `${name}: ${text}` : text).slice(0, 180) : 'New message',
+      body: t.preview ? (group ? `${name}${t.mention ? ' mentioned you' : ''}: ${text}` : text).slice(0, 180) : t.mention ? `${name} mentioned you` : 'New message',
       room: m.room_id,
       tag: `room-${m.room_id}`,
       count: t.unread,
@@ -145,6 +147,37 @@ async function notify(id: string) {
   return { sent, gone: gone.length }
 }
 
+// a reminder that is due: to each device of the one who set it, unless RoarMe is in front of them (it shows it there)
+async function remind(id: string) {
+  const { data: r } = await sb.from('roar_reminders').select('id, user_id, room_id, message_id').eq('id', id).maybeSingle()
+  if (!r) return { sent: 0 }
+  const [{ data: m }, { data: room }, { data: me }, { data: subs }] = await Promise.all([
+    sb.from('roar_messages').select('user_id, kind, body, file, deleted_at').eq('id', r.message_id).maybeSingle(),
+    sb.from('roar_rooms').select('kind, title').eq('id', r.room_id).maybeSingle(),
+    sb.from('roar_profiles').select('active_until').eq('id', r.user_id).maybeSingle(),
+    sb.from('roar_push_subs').select('endpoint, p256dh, auth, preview').eq('user_id', r.user_id),
+  ])
+  if (!subs?.length || (me?.active_until && new Date(me.active_until).getTime() > Date.now())) return { sent: 0 }
+  let where = room?.title || ''
+  if (room?.kind !== 'group') {
+    const { data: w } = await sb.from('roar_profiles').select('display_name, username').eq('id', m?.user_id || '').maybeSingle()
+    where = w?.display_name || (w?.username ? `@${w.username}` : 'a chat')
+  }
+  const text = !m || m.deleted_at ? 'Message deleted' : preview(m)
+  let sent = 0
+  const gone: string[] = []
+  await Promise.all(subs.map(async (t) => {
+    const note = { title: 'Reminder', body: (t.preview ? `${where}: ${text}` : `A message in ${where}`).slice(0, 180), room: r.room_id, tag: `reminder-${r.id}` }
+    try {
+      const x = await push(t, note)
+      if (x.ok) sent++
+      else if (x.status === 404 || x.status === 410) gone.push(t.endpoint)
+    } catch (e) { console.log('push failed', String(e)) }
+  }))
+  if (gone.length) await sb.from('roar_push_subs').delete().in('endpoint', gone)
+  return { sent }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method === 'GET') return json({ key: (await getConf()).public_key })
@@ -153,6 +186,7 @@ Deno.serve(async (req) => {
   if (body?.test === true) return test(req)
   const c = await getConf()
   if (req.headers.get('x-roar-hook') !== String(c.hook_token)) return json({ error: 'not allowed' }, 403)
+  if (typeof body?.reminder === 'string') return /^[0-9a-f-]{36}$/i.test(body.reminder) ? json(await remind(body.reminder)) : json({ error: 'no reminder' }, 400)
   const { id } = body
   if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)) return json({ error: 'no message' }, 400)
   return json(await notify(id))

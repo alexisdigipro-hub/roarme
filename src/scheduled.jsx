@@ -72,7 +72,7 @@ export function useScheduled(roomId, meId) {
 /* RoarMe's own day and time pickers (Alex, 18 Oct: the browser's clock list was not beautiful): the days as tiles in a
    row you slide, the time as two wheels as on an iPhone, with the chosen line under a glass lens */
 const ROW = 40
-function Wheel({ count, value, onChange, label }) {
+export function Wheel({ count, value, onChange, label }) {
   const ref = useRef(null)
   const timer = useRef(0)
   const quiet = useRef(false)
@@ -104,7 +104,7 @@ function Wheel({ count, value, onChange, label }) {
   )
 }
 
-function DayStrip({ value, onChange }) {
+export function DayStrip({ value, onChange }) {
   const ref = useRef(null)
   const today = new Date(); today.setHours(12, 0, 0, 0)
   const days = Array.from({ length: 120 }, (_, n) => { const x = new Date(today); x.setDate(today.getDate() + n); return x })
@@ -143,9 +143,10 @@ export function ScheduleMessage({ item, body: firstBody = '', onSave, onClose })
     const now = new Date()
     const hour = new Date(Math.ceil((now.getTime() + 60 * 60e3) / (5 * 60e3)) * 5 * 60e3)
     const tonight = new Date(now); tonight.setHours(20, 0, 0, 0)
+    const early = new Date(now); early.setDate(now.getDate() + 1); early.setHours(8, 0, 0, 0) // a call time (Alex, 20 Oct)
     const morning = new Date(now); morning.setDate(now.getDate() + 1); morning.setHours(9, 0, 0, 0)
     const monday = new Date(now); monday.setDate(now.getDate() + (((8 - now.getDay()) % 7) || 7)); monday.setHours(9, 0, 0, 0)
-    return [['In 1 hour', hour], ...(tonight > now ? [['Tonight 20:00', tonight]] : []), ['Tomorrow 09:00', morning], ['Monday 09:00', monday]]
+    return [['In 1 hour', hour], ...(tonight > now ? [['Tonight 20:00', tonight]] : []), ['Tomorrow 08:00', early], ['Tomorrow 09:00', morning], ['Monday 09:00', monday]]
   })()
   const err = Number.isNaN(at.getTime()) ? 'Pick a day and a time.'
     : at.getTime() < Date.now() + 30e3 ? 'Pick a time later than now.'
@@ -162,7 +163,7 @@ export function ScheduleMessage({ item, body: firstBody = '', onSave, onClose })
     <Modal title={item ? 'Edit Scheduled Message' : 'Schedule Message'} onClose={onClose}
       foot={<button type="button" className="btn btn-main sch-send smsg-go" disabled={!!err || busy} onClick={save}>{I.timer}<span>{err || (item ? `Save for ${whenText(at)}` : `Send on ${whenText(at)}`)}</span></button>}>
       <div className="sch smsg">
-        {item && (
+        {(item || !firstBody) && (
           <div className="sch-box">
             <label className="sch-note"><textarea value={body} onChange={(e) => setBody(e.target.value.slice(0, 8000))} rows={3} placeholder="Message" /></label>
           </div>

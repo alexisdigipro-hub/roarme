@@ -30,3 +30,6 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
   https://hub.themadlions.com only, and a frame signed in as another account than the hub member signs out.
 - Phase 6 (20 Oct): the person's hub tasks and calendar, shown only (useHubWork in src/hubLink.jsx, Edge Function
   roar-hub-work -> the hub's roarme-work). Tasks has a THEMADLIONS tab; the calendar shows hub events and tasks; a tap opens the hub.
+- Slack features (20 Oct): @all / @here / @role mentions (src/roles.jsx, supabase/mentions.sql: roar_roles, roar_mentioned,
+  roar_my_mentions, roar_push_targets now with `mention`) reach people even in a muted chat; Remind Me on a message
+  (src/reminders.jsx, supabase/reminders.sql + pg_cron 'roar-reminders', roar-push {reminder}); Tasks > Reminders.

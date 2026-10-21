@@ -43,7 +43,14 @@ document.addEventListener('scroll', (e) => {
 // writing box sits right on the keyboard with no gap (Alex, 21 Oct; styles.css html.kb)
 if (window.matchMedia?.('(pointer: coarse)').matches) {
   const typing = (el) => el?.matches?.('textarea, [contenteditable="true"], input:not([type]), input[type=text], input[type=search], input[type=email], input[type=password], input[type=url], input[type=tel], input[type=number]')
-  document.addEventListener('focusin', (e) => { if (typing(e.target)) document.documentElement.classList.add('kb') })
+  // the strip behind iOS's bar over the keyboard (^ v Done) shows the page's own dark background: it takes the
+  // app's colour instead (the band under the clock, theme-color, set in App.jsx)
+  document.addEventListener('focusin', (e) => {
+    if (!typing(e.target)) return
+    const c = document.querySelector('meta[name="theme-color"]')?.getAttribute('content')
+    if (c) document.documentElement.style.setProperty('--kb-bg', c)
+    document.documentElement.classList.add('kb')
+  })
   document.addEventListener('focusout', () => setTimeout(() => { if (!typing(document.activeElement)) document.documentElement.classList.remove('kb') }, 60))
 }
 

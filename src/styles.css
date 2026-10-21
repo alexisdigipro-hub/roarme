@@ -4035,4 +4035,5 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 @media (max-width: 760px) {
   html.kb .app, html.kb .app > .main, html.kb .app > .side { padding-bottom: 0 !important; }
   html.kb:not([data-theme='aura']) .compose-wrap { padding-bottom: 6px; }
+  html.kb, html.kb body { background: var(--kb-bg, var(--bg)); }
 }

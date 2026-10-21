@@ -153,9 +153,18 @@ export function useOpened(list, roomId, userId, retry) {
       .then(() => { if (alive) bump((x) => x + 1) })
     return () => { alive = false }
   }, [list, roomId, userId, n])
-  return useMemo(() => list.map((m) => (isSealed(m.body)
-    ? { ...m, body: opened.get(m.body) ?? '', sealed: stretchOf(m.body), locked: failed.current.has(m.body) }
-    : m)), [list, n])
+  // an opened message stays the same object while its text and state stay the same, so its row is not drawn again
+  const copies = useRef(new WeakMap())
+  return useMemo(() => list.map((m) => {
+    if (!isSealed(m.body)) return m
+    const body = opened.get(m.body) ?? ''
+    const locked = failed.current.has(m.body)
+    const was = copies.current.get(m)
+    if (was && was.body === body && was.locked === locked) return was
+    const copy = { ...m, body, sealed: stretchOf(m.body), locked }
+    copies.current.set(m, copy)
+    return copy
+  }), [list, n])
 }
 
 // whether Encrypted Chat is on in a chat now: { id, started_by, started_at } or null

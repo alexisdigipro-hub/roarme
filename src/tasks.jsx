@@ -132,8 +132,15 @@ export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, 
     e.preventDefault()
     const x0 = e.clientX, w0 = box.current?.offsetWidth || tw
     let w = w0
-    const move = (ev) => { w = Math.round(Math.min(maxW(), Math.max(320, w0 - (ev.clientX - x0)))); setTw(w) }
+    // while dragging only the width moves, once a frame; the panel is drawn again once, at the end
+    let frame = 0
+    const move = (ev) => {
+      w = Math.round(Math.min(maxW(), Math.max(320, w0 - (ev.clientX - x0))))
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; box.current?.style.setProperty('--tasks-w', `${Math.min(w, 720)}px`) })
+    }
     const up = () => {
+      cancelAnimationFrame(frame)
+      setTw(w)
       document.removeEventListener('pointermove', move)
       document.removeEventListener('pointerup', up)
       document.body.classList.remove('resizing')

@@ -4060,4 +4060,11 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
   }
   .rooms:not(.rooms-ghost) > .room { content-visibility: auto; contain-intrinsic-size: auto 56px; }
   .room .av, .room:hover .av { transition: none; transform: none; }
+  /* lighter still (Alex, 21 Oct: "try harder"): the wide soft shadows under every bubble and every face are drawn
+     again on each scroll; on a phone they are short and close, which looks the same at that size. A photo that
+     arrives fades in without the blur that was redrawn on every frame of its fade */
+  html[data-theme='stone'] .bubble { box-shadow: 0 1px 3px rgba(0, 0, 0, .06); }
+  html[data-theme='stone'] .msg.mine .bubble { box-shadow: 0 3px 8px rgba(20, 20, 22, .18); }
+  html[data-theme='stone'] .av { box-shadow: 0 2px 4px rgba(0, 0, 0, .14); }
+  .pic-img { filter: none; transform: none; transition: opacity .35s var(--ease); }
 }

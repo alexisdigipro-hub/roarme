@@ -38,7 +38,7 @@ const Hero = ({ id }) => {
   return <div className="set-hero"><span className="set-hero-ico" style={{ '--c': pg[2] }}>{pg[3]}</span><p>{pg[4]}</p></div>
 }
 
-const THEMES = [['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['prism', 'Pumba', ['#ff5d4a', 'linear-gradient(180deg, #555963, #2c2e34)']], ['aurum', 'Aurum', ['linear-gradient(180deg, #f8d29a, #e79a3d)', 'linear-gradient(180deg, #2a2927, #141414)']], ['lions', 'Lions', ['#d40000', 'radial-gradient(circle at 85% 0%, rgba(212, 0, 0, .35), transparent 60%), #0b0b0c']]]
+const THEMES = [['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['prism', 'Pumba', ['#ff5d4a', 'linear-gradient(180deg, #555963, #2c2e34)']], ['aurum', 'Aurum', ['linear-gradient(180deg, #f8d29a, #e79a3d)', 'linear-gradient(180deg, #2a2927, #141414)']], ['lions', 'Lions', ['#d40000', 'radial-gradient(circle at 85% 0%, rgba(212, 0, 0, .35), transparent 60%), #0b0b0c']], ['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">

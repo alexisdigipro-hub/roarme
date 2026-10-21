@@ -103,9 +103,6 @@ export default function Chat({ me, setMe }) {
     if (e.deltaY < -4 && listAtTop(e)) setSearchOpen(true)
     else if (e.deltaY > 4 && !searchBusy()) setSearchOpen(false)
   }
-  // on a phone a swipe left or right across the chat list goes to the next or previous folder: All, Unread, Groups…
-  // (Alex, 19 Oct); not when it starts on the folder tabs themselves, which scroll sideways
-  const swipe = useRef(null)
   // on a phone a swipe to the right on an open page (a chat, a Settings page, AllMedia, the RoarMe inbox…) goes back,
   // like Back at its top (Alex, 19 Oct): the page's own Back button is pressed, so it always goes where Back goes
   useEffect(() => {
@@ -131,22 +128,11 @@ export default function Chat({ me, setMe }) {
   const onListTouch = {
     onTouchStart: (e) => {
       pullY.current = listAtTop(e) ? e.touches[0].clientY : null
-      swipe.current = e.touches.length === 1 && !e.target.closest('.tabs') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null
     },
     onTouchEnd: (e) => {
       // pulled far enough down at the top of the list: RoarMe reloads, with any new version (Alex, 19 Oct)
       if (pull >= 1) { setPull(2); setTimeout(() => window.location.reload(), 150); return }
       if (pull) setPull(0)
-      const s = swipe.current
-      swipe.current = null
-      if (!s || picking || q.trim() || !window.matchMedia('(max-width: 760px)').matches) return
-      const dx = e.changedTouches[0].clientX - s.x, dy = e.changedTouches[0].clientY - s.y
-      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
-      const at = allFolders.findIndex((f) => f.id === folder)
-      const next = allFolders[at + (dx < 0 ? 1 : -1)]
-      if (!next) { goStop(dx < 0 ? 1 : -1); return } // past the last folder: the next screen in the bar at the foot
-      setFolder(next.id)
-      setTimeout(() => document.querySelector('.tabs-scroll > button.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }), 50)
     },
     onTouchMove: (e) => {
       if (pullY.current == null) return
@@ -491,6 +477,103 @@ export default function Chat({ me, setMe }) {
     // pinned chats first, in the order they were pinned
     return [...list.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...list.filter((r) => !pins.includes(r.room_id))]
   }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra])
+  // the chats of another folder, for the page that slides in beside the list while it is dragged
+  const listFor = (fid) => {
+    const list = visible.filter((r) => inFolder(r, fid))
+    return [...list.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...list.filter((r) => !pins.includes(r.room_id))]
+  }
+
+  /* On a phone the chat list follows the finger sideways and the next folder slides in beside it, as in
+     Telegram (Alex, 21 Oct); let go past a quarter of the width, or flick, and it moves on, else it springs
+     back. Past the first or last folder it stretches a little and goes on to the next screen at the foot.
+     Native listeners, so a sideways drag can stop the list scrolling and the drag itself never re-renders. */
+  const pagerRef = useRef(null)
+  const trackRef = useRef(null)
+  const [pageDrag, setPageDrag] = useState(null) // { dir, id }: the folder showing beside the list
+  const [swipedTo, setSwipedTo] = useState('') // a folder reached by a swipe comes in without the row cascade
+  const pagerNow = useRef({})
+  useLayoutEffect(() => {
+    const t = trackRef.current
+    if (t) { t.style.transition = 'none'; t.style.transform = '' }
+  }, [folder])
+  useEffect(() => {
+    const el = pagerRef.current
+    if (!el) return
+    let g = null
+    const move = (x) => { if (trackRef.current) trackRef.current.style.transform = x ? `translate3d(${x}px,0,0)` : '' }
+    const glide = (x, then) => {
+      const t = trackRef.current
+      if (!t) { then?.(); return }
+      t.style.transition = 'transform .26s cubic-bezier(.2,.8,.25,1)'
+      move(x)
+      let done = false
+      const fin = () => { if (done) return; done = true; t.removeEventListener('transitionend', fin); then?.() }
+      t.addEventListener('transitionend', fin)
+      setTimeout(fin, 320)
+    }
+    const start = (e) => {
+      const n = pagerNow.current
+      g = !n.busy && e.touches.length === 1 && window.matchMedia('(max-width: 760px)').matches
+        ? { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, t: Date.now(), lx: e.touches[0].clientX, lt: Date.now(), v: 0 }
+        : null
+    }
+    const touchMove = (e) => {
+      if (!g) return
+      const x = e.touches[0].clientX, dx = x - g.x, dy = e.touches[0].clientY - g.y
+      if (!g.lock) {
+        if (Math.abs(dx) < 9 && Math.abs(dy) < 9) return
+        g.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y'
+        if (g.lock === 'x') {
+          const n = pagerNow.current
+          const at = n.allFolders.findIndex((f) => f.id === n.folder)
+          g.w = el.clientWidth || 1
+          g.prev = n.allFolders[at - 1]?.id || ''
+          g.next = n.allFolders[at + 1]?.id || ''
+          if (trackRef.current) trackRef.current.style.transition = 'none'
+        }
+      }
+      if (g.lock !== 'x') return
+      if (e.cancelable) e.preventDefault()
+      const now = Date.now()
+      g.v = (x - g.lx) / Math.max(1, now - g.lt)
+      g.lx = x; g.lt = now
+      const dir = dx < 0 ? 1 : -1
+      const id = dir > 0 ? g.next : g.prev
+      if (id && g.shown !== id) { g.shown = id; setPageDrag({ dir, id }) }
+      g.dx = id ? dx : dx * 0.3 // no folder that way: it only stretches
+      move(g.dx)
+    }
+    const end = () => {
+      if (!g || g.lock !== 'x') { g = null; return }
+      const { dx, w, v, next, prev } = g
+      g = null
+      const dir = dx < 0 ? 1 : -1
+      const id = dir > 0 ? next : prev
+      const far = Math.abs(dx) > w * 0.25 || (Math.abs(v) > 0.45 && Math.abs(dx) > 30 && Math.sign(v) === Math.sign(dx))
+      if (!id) {
+        glide(0, () => setPageDrag(null))
+        if (Math.abs(dx) / 0.3 > 60) pagerNow.current.goStop(dir) // past the last folder: the next screen in the bar at the foot
+        return
+      }
+      if (!far) { glide(0, () => setPageDrag(null)); return }
+      glide(-dir * (w + 8), () => {
+        setSwipedTo(id)
+        setFolder(id)
+        setPageDrag(null)
+        setTimeout(() => document.querySelector('.tabs-scroll > button.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }), 30)
+      })
+    }
+    el.addEventListener('touchstart', start, { passive: true })
+    el.addEventListener('touchmove', touchMove, { passive: false })
+    el.addEventListener('touchend', end, { passive: true })
+    el.addEventListener('touchcancel', end, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', start)
+      el.removeEventListener('touchmove', touchMove)
+      el.removeEventListener('touchend', end)
+      el.removeEventListener('touchcancel', end)
+    }
+  }, [tab])
 
   // messages that match the search, in every chat one is in (the database only gives one's own chats)
   useEffect(() => {
@@ -539,7 +622,6 @@ export default function Chat({ me, setMe }) {
     clearTimeout(press.current?.timer)
     press.current = { x: t.clientX, y: t.clientY, timer: setTimeout(() => {
       pressed.current = true
-      swipe.current = null
       navigator.vibrate?.(12)
       setRoomMenu({ r, x: 0, y: 0, sub: '', at: Date.now() })
     }, 450) }
@@ -660,6 +742,7 @@ export default function Chat({ me, setMe }) {
     setTab(next)
     if (next === 'chats') { const f = allFolders[dir > 0 ? 0 : allFolders.length - 1]; if (f) setFolder(f.id) }
   }
+  pagerNow.current = { allFolders, folder, busy: picking || !!q.trim(), goStop } // what the sideways drag of the list reads
   const stopSwipe = useRef(null)
   const onStopTouch = {
     onTouchStart: (e) => { stopSwipe.current = tab !== 'chats' && tab !== 'media' && e.touches.length === 1 && !e.target.closest('.tabs, input, .seg') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
@@ -689,6 +772,35 @@ export default function Chat({ me, setMe }) {
     const ids = [...new Set(rooms.filter((r) => r.kind === 'direct').flatMap((r) => r.members || []))].filter((id) => id !== me.id)
     return ids.map((id) => people[id]).filter(Boolean).sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
   }, [rooms, people, me.id])
+
+  // one row of the chat list; `ghost` is the copy in the folder sliding in beside the list, never pressed
+  const roomRow = (r, ghost = false) => {
+    const other = otherOf(r)
+    const isPicked = picked.includes(r.room_id)
+    if (ghost) {
+      return (
+        <div key={r.room_id} className="room" aria-hidden="true">
+          <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 44 : 36} />
+          <span className="room-main">
+            <span className="room-top"><strong>{titleOf(r)}</strong><small>{listTime(r.last_message_at)}</small></span>
+            <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.unread > 0 && <span className={`badge${r.muted ? ' quiet' : ''}`}>{r.unread}</span>}</span>
+          </span>
+        </div>
+      )
+    }
+    return (
+      <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (Date.now() - closedAt.current < 500) return; if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
+        onTouchStart={(e) => !picking && pressStart(e, r)} onTouchMove={pressMove} onTouchEnd={pressEnd} onTouchCancel={pressEnd}>
+        {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
+        <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 44 : 36} />
+        <span className="room-main">
+          <span className="room-top"><strong>{titleOf(r)}{r.kind === 'direct' && officialIds.includes(otherOf(r)?.id) && OFFICIAL}</strong><small>{listTime(r.last_message_at)}</small></span>
+          <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.mentions > 0 && <span className="badge at" title="You were mentioned">@</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
+          {prefs.folderTags && tagsOf(r).length > 0 && <span className="room-tags">{tagsOf(r).map((t) => <span key={t}>{t}</span>)}</span>}
+        </span>
+      </button>
+    )
+  }
 
   return (
     <div className={`app${intro ? ' intro' : ''}${tasksOpen ? ' tasks-open' : ''}`} style={{ '--side-w': `${sideW}px` }}>
@@ -739,7 +851,9 @@ export default function Chat({ me, setMe }) {
               </nav>
             )}
             {pull > 0 && <div className={`ptr${pull >= 1 ? ' ready' : ''}${pull === 2 ? ' spin' : ''}`} style={{ '--p': Math.min(pull, 1) }} aria-hidden="true">{svg(<><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></>, 20)}</div>}
-            <div className={`rooms stagger${prefs.listPreview ? '' : ' no-prev'}`} key={folder}>
+            <div className="rooms-pager" ref={pagerRef}>
+            <div className="rooms-track" ref={trackRef}>
+            <div className={`rooms${swipedTo === folder ? '' : ' stagger'}${prefs.listPreview ? '' : ' no-prev'}`} key={folder}>
               {!rooms.length && (
                 <div className="rooms-empty">
                   <p>No chats yet.</p>
@@ -747,22 +861,7 @@ export default function Chat({ me, setMe }) {
                 </div>
               )}
               {rooms.length > 0 && !shown.length && !hits.length && <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : myFolders.some((f) => f.id === folder) ? 'This folder is empty. Add chats to it under Edit folders.' : 'Nothing here.'}</p>}
-              {shown.map((r) => {
-                const other = otherOf(r)
-                const isPicked = picked.includes(r.room_id)
-                return (
-                  <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (Date.now() - closedAt.current < 500) return; if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
-                    onTouchStart={(e) => !picking && pressStart(e, r)} onTouchMove={pressMove} onTouchEnd={pressEnd} onTouchCancel={pressEnd}>
-                    {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
-                    <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 44 : 36} />
-                    <span className="room-main">
-                      <span className="room-top"><strong>{titleOf(r)}{r.kind === 'direct' && officialIds.includes(otherOf(r)?.id) && OFFICIAL}</strong><small>{listTime(r.last_message_at)}</small></span>
-                      <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.mentions > 0 && <span className="badge at" title="You were mentioned">@</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
-                      {prefs.folderTags && tagsOf(r).length > 0 && <span className="room-tags">{tagsOf(r).map((t) => <span key={t}>{t}</span>)}</span>}
-                    </span>
-                  </button>
-                )
-              })}
+              {shown.map((r) => roomRow(r))}
               {hits.length > 0 && (
                 <>
                   <div className="hits-head">Messages</div>
@@ -781,6 +880,13 @@ export default function Chat({ me, setMe }) {
                   })}
                 </>
               )}
+            </div>
+            {pageDrag && (
+              <div className={`rooms rooms-ghost ${pageDrag.dir > 0 ? 'next' : 'prev'}${prefs.listPreview ? '' : ' no-prev'}`} aria-hidden="true">
+                {listFor(pageDrag.id).slice(0, 30).map((r) => roomRow(r, true))}
+              </div>
+            )}
+            </div>
             </div>
             </div>
           </>

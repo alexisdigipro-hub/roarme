@@ -1474,16 +1474,24 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   // an unsent message waits for you, per chat (shown in the list as Draft:)
   const [, setDrafts] = useLocal('roarme-drafts', {})
   const [text, setText] = useState(() => { try { return (JSON.parse(localStorage.getItem('roarme-drafts')) || {})[room.room_id] || '' } catch { return '' } })
+  // while typing it is kept quietly on the device (the list does not show this chat's own draft while it is open, so
+  // nothing needs drawing again); on leaving the chat the list is told, and shows Draft: (Alex, 21 Oct: lighter)
+  const withDraft = (d, t) => {
+    const has = !!t.trim()
+    if (!has && !(room.room_id in d)) return d
+    const n = { ...d }
+    if (has) n[room.room_id] = t; else delete n[room.room_id]
+    return n
+  }
+  const textNow = useRef(text)
+  textNow.current = text
   useEffect(() => {
-    const id = setTimeout(() => setDrafts((d) => {
-      const has = !!text.trim()
-      if (!has && !(room.room_id in d)) return d
-      const n = { ...d }
-      if (has) n[room.room_id] = text; else delete n[room.room_id]
-      return n
-    }), 400)
+    const id = setTimeout(() => {
+      try { const d = JSON.parse(localStorage.getItem('roarme-drafts')) || {}; const n = withDraft(d, text); if (n !== d) localStorage.setItem('roarme-drafts', JSON.stringify(n)) } catch { /* private window */ }
+    }, 400)
     return () => clearTimeout(id)
   }, [text, room.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => setDrafts((d) => withDraft(d, textNow.current)), [room.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
   const [caret, setCaret] = useState(0)
   const [replyTo, setReplyTo] = useState(null)
   const [editing, setEditing] = useState(null)

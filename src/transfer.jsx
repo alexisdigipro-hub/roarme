@@ -31,7 +31,8 @@ export async function transferLink(file) {
   const expires = file.expires || new Date(Date.now() + TRANSFER_DAYS * 864e5).toISOString()
   const { error } = await supabase.from('roar_transfer_links').insert({ token, path: file.path, name: file.name || 'file', size: file.size || 0, type: file.type || '', expires_at: expires })
   if (error) throw error
-  const url = `${window.location.origin}${window.location.pathname}?t=${token}`
+  // RoarTransfer's own address since 21 Oct (Alex: roartransfer.com); older ?t= links on RoarMe keep working
+  const url = `https://roartransfer.com/?t=${token}`
   links.set(file.path, url)
   return url
 }

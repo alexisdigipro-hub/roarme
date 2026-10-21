@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, I, Lens, Modal } from './ui.jsx'
 import { errText, nameOf, supabase } from './lib.js'
-import { chime } from './prefs.js'
+import { chime, usePrefs } from './prefs.js'
 import { locale, tr } from './i18n.js'
 import { TasksCalendar } from './calendar.jsx'
 import { RemindersList } from './reminders.jsx'
@@ -85,6 +85,7 @@ const byDue = (a, b) => (a.due || '9999') .localeCompare(b.due || '9999') || (b.
 /* the panel: For me (with what waits for an answer on top), Given, Done */
 export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, rooms = [], titleOf = () => '', onOpenChat = () => {} }) {
   // the THEMADLIONS tab left Tasks (Alex, 21 Oct: "no point"); a device that was on it opens on All
+  const tabsDown = usePrefs().folderTabs === 'bottom'
   const [tab, setTab] = useState(() => { try { const t = localStorage.getItem('roarme-tasks-tab'); return t && t !== 'hub' ? t : 'all' } catch { return 'all' } })
   const pickTab = (v) => { setTab(v); try { localStorage.setItem('roarme-tasks-tab', v) } catch { /* private window */ } }
   // on a phone a swipe left or right across the list goes to the next or previous tab, as with the chat folders (Alex, 19 Oct)
@@ -253,7 +254,8 @@ export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, 
         <button type="button" className="round" onClick={() => setEdit(true)} aria-label="New task" title="New task">{I.plus}</button>
         <button type="button" className="round" onClick={onClose} aria-label="Close" title="Close">{I.x}</button>
       </div>
-      <Lens as="nav" className="tabs tasks-tabs" dep={tab}>
+      {/* at the bottom like the chat folders when those are at the bottom, and drawn the same (Alex, 21 Oct) */}
+      <Lens as="nav" className={`tabs tasks-tabs${tabsDown ? ' at-bottom' : ''}`} dep={tab}>
         <button type="button" className={tab === 'all' ? 'on' : ''} onClick={() => pickTab('all')}>{tr('All')}</button>
         <button type="button" className={tab === 'mine' ? 'on' : ''} onClick={() => pickTab('mine')}>{tr('For me')}{forMe.length > 0 && <small>{forMe.length}</small>}</button>
         <button type="button" className={tab === 'given' ? 'on' : ''} onClick={() => pickTab('given')}>{tr('Given')}</button>

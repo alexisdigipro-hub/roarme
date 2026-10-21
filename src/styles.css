@@ -835,6 +835,7 @@ button.set-row:disabled:hover { background: none; }
 .rooms-area.bottom { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
 .rooms-area.bottom .rooms { flex: 1; min-height: 0; }
 .rooms-area.bottom .tabs { order: 1; flex: none; }
+.tasks-tabs.at-bottom { order: 10; }
 
 /* Calls and Contacts */
 .new-call { display: flex; align-items: center; gap: 14px; width: 100%; padding: 10px 12px; border: 0; border-radius: 16px; background: none; color: var(--accent); font-size: 15px; font-weight: 600; text-align: left; }
@@ -3911,13 +3912,15 @@ button.cc-row:hover { background: rgba(255, 255, 255, .04); }
 /* Stone's folder tabs, clearer (Alex, 21 Oct): at the bottom they are a light pill bar above the dark foot bar, the
    words darker and bolder, the chosen folder a graphite pill with white words; at the top the words are darker too */
 html[data-theme='stone'] .tabs button { font-weight: 600; color: color-mix(in srgb, var(--text) 62%, transparent); }
-html[data-theme='stone'] .rooms-area.bottom .tabs { border-radius: 22px; background: rgba(255, 255, 255, .5); border: 1px solid rgba(0, 0, 0, .08); border-top: 1px solid rgba(0, 0, 0, .08); box-shadow: 0 8px 22px rgba(20, 20, 22, .1), inset 0 1px 0 rgba(255, 255, 255, .7); padding: 4px; }
-html[data-theme='stone'] .rooms-area.bottom .tabs button { border-radius: 16px; height: 40px; font-size: 14.5px; }
-html[data-theme='stone'] .rooms-area.bottom .tabs.lens::before { height: var(--lh, 0); border-radius: 16px; background: var(--rail); border: 0; box-shadow: 0 6px 16px rgba(20, 20, 22, .25), inset 0 1px 0 rgba(255, 255, 255, .12); transform: translate(var(--lx, 0), var(--ly, 0)); }
-html[data-theme='stone'] .rooms-area.bottom .tabs.lens.lens-on > .on, html[data-theme='stone'] .rooms-area.bottom .tabs button.on { color: #fff; }
-html[data-theme='stone'] .rooms-area.bottom .tabs button.on small { background: #fff; color: var(--rail); }
-html[data-theme='stone']:not([data-mode='light']) .rooms-area.bottom .tabs { background: rgba(255, 255, 255, .2); border-color: rgba(255, 255, 255, .25); }
+html[data-theme='stone'] .rooms-area.bottom .tabs, html[data-theme='stone'] .tasks-tabs.at-bottom { border-radius: 22px; background: rgba(255, 255, 255, .5); border: 1px solid rgba(0, 0, 0, .08); border-top: 1px solid rgba(0, 0, 0, .08); box-shadow: 0 8px 22px rgba(20, 20, 22, .1), inset 0 1px 0 rgba(255, 255, 255, .7); padding: 4px; }
+html[data-theme='stone'] .rooms-area.bottom .tabs button, html[data-theme='stone'] .tasks-tabs.at-bottom button { border-radius: 16px; height: 40px; font-size: 14.5px; }
+html[data-theme='stone'] .rooms-area.bottom .tabs.lens::before, html[data-theme='stone'] .tasks-tabs.at-bottom.lens::before { height: var(--lh, 0); border-radius: 16px; background: var(--rail); border: 0; box-shadow: 0 6px 16px rgba(20, 20, 22, .25), inset 0 1px 0 rgba(255, 255, 255, .12); transform: translate(var(--lx, 0), var(--ly, 0)); }
+html[data-theme='stone'] .rooms-area.bottom .tabs.lens.lens-on > .on, html[data-theme='stone'] .rooms-area.bottom .tabs button.on, html[data-theme='stone'] .tasks-tabs.at-bottom.lens.lens-on > .on, html[data-theme='stone'] .tasks-tabs.at-bottom button.on { color: #fff; }
+html[data-theme='stone'] .rooms-area.bottom .tabs button.on small, html[data-theme='stone'] .tasks-tabs.at-bottom button.on small { background: #fff; color: var(--rail); }
+html[data-theme='stone']:not([data-mode='light']) .rooms-area.bottom .tabs, html[data-theme='stone']:not([data-mode='light']) .tasks-tabs.at-bottom { background: rgba(255, 255, 255, .2); border-color: rgba(255, 255, 255, .25); }
 
 /* Tasks open in Stone (Alex, 21 Oct: the button went black, nothing showed): Stone's own colour is graphite like its
    foot bar, so the open Tasks button is the bar's lighter graphite with a white icon and word, as a chosen tab */
 html[data-theme='stone'] .foot button.foot-tasks.open { color: #fff; background: var(--rail-2); border-radius: 16px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
+.tasks-tabs.at-bottom button { white-space: nowrap; padding: 0 6px; }
+html[data-theme='stone'] .tasks-tabs.at-bottom button { font-size: 13.5px; }

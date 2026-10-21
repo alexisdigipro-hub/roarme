@@ -313,3 +313,46 @@ create index if not exists roar_transfer_auth_log_ip on public.roar_transfer_aut
 create index if not exists roar_transfer_auth_log_email on public.roar_transfer_auth_log (email, created_at);
 alter table public.roar_transfer_auth_log enable row level security;
 revoke all on public.roar_transfer_auth_log from anon, authenticated;
+
+-- Admin counts the world, not the admins (Alex, 22 Oct: "my own I see in My transfers; I want to see if people upload"):
+-- roar_transfer_items_people() is roar_transfer_items() without the admins' own transfers (sends without an account
+-- stay in), and the Admin list and numbers read it. Written as a block so it follows whatever those two look like now.
+do $do$
+declare cols text; d text;
+begin
+  select pg_get_function_result('public.roar_transfer_items()'::regprocedure) into cols;
+  execute format('create or replace function public.roar_transfer_items_people() returns %s language sql stable security definer set search_path = public as %L', cols,
+    'select t.* from public.roar_transfer_items() t where t.user_id is null or not exists (select 1 from public.roar_admins a where a.user_id = t.user_id)');
+  execute 'revoke all on function public.roar_transfer_items_people() from public, anon, authenticated';
+  d := pg_get_functiondef('public.roar_admin_transfer_stats()'::regprocedure);
+  execute replace(d, 'public.roar_transfer_items()', 'public.roar_transfer_items_people()');
+  d := pg_get_functiondef('public.roar_admin_transfers(timestamptz,int,uuid)'::regprocedure);
+  execute replace(d, 'public.roar_transfer_items()', 'public.roar_transfer_items_people()');
+end $do$;
+
+-- Admin > Accounts (Alex, 22 Oct: every sign-up and each one's numbers): everyone who signed up on roartransfer.com
+-- (user_metadata.app = 'roartransfer', set by roartransfer-auth) or sent a link from it, admins left out
+create or replace function public.roar_admin_transfer_accounts()
+returns table (id uuid, email text, display_name text, username text, avatar_url text, created_at timestamptz,
+  last_sign_in_at timestamptz, confirmed boolean, here boolean, n bigint, bytes bigint, downloads bigint, opens bigint, last timestamptz)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.roar_is_admin() then raise exception 'not allowed' using errcode = '42501'; end if;
+  return query
+  with s as (
+    select t.user_id, count(*) as n, coalesce(sum(t.size), 0)::bigint as bytes, coalesce(sum(t.downloads), 0)::bigint as downloads,
+      coalesce(sum(t.opens), 0)::bigint as opens, max(t.created_at) as last
+    from public.roar_transfer_items_people() t where t.source = 'link' and t.user_id is not null group by t.user_id)
+  select u.id, u.email::text, coalesce(nullif(u.raw_user_meta_data ->> 'name', ''), p.display_name), p.username, p.avatar_url,
+    u.created_at, u.last_sign_in_at, u.email_confirmed_at is not null, coalesce(u.raw_user_meta_data ->> 'app', '') = 'roartransfer',
+    coalesce(s.n, 0), coalesce(s.bytes, 0), coalesce(s.downloads, 0), coalesce(s.opens, 0), s.last
+  from auth.users u
+  left join public.roar_profiles p on p.id = u.id
+  left join s on s.user_id = u.id
+  where (coalesce(u.raw_user_meta_data ->> 'app', '') = 'roartransfer' or s.user_id is not null)
+    and not exists (select 1 from public.roar_admins a where a.user_id = u.id)
+  order by u.created_at desc
+  limit 1000;
+end $$;
+revoke all on function public.roar_admin_transfer_accounts() from public, anon;
+grant execute on function public.roar_admin_transfer_accounts() to authenticated;

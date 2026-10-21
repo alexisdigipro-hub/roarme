@@ -80,6 +80,30 @@ async function handle(req: Request): Promise<Response> {
   const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
   const { data: who } = jwt ? await sb.auth.getUser(jwt) : { data: { user: null } }
   const uid = who?.user?.id
+  // Admin > Storage (Alex, 22 Oct: "how much room is left"): what is in the bucket right now, by kind, and the uploads
+  // that never finished (they take room too until R2's 7-day rule clears them). Cloudflare gives 10 GB free.
+  if (b.action === 'usage') {
+    const { data: admin } = uid ? await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle() : { data: null }
+    if (!admin) return json({ error: 'not allowed' }, 403)
+    const u = { bytes: 0, files: 0, guest: 0, free: 0, pro: 0, other: 0, open: 0 }
+    let next = ''
+    for (let i = 0; i < 50; i++) {
+      const r = await r2.fetch(`${base}?list-type=2&max-keys=1000${next ? '&continuation-token=' + encodeURIComponent(next) : ''}`)
+      const xml = await r.text()
+      if (!r.ok) return json({ error: `Could not read the storage (${r.status})` }, 502)
+      for (const c of xml.split('<Contents>').slice(1)) {
+        const key = tag(c, 'Key'), size = Number(tag(c, 'Size')) || 0
+        u.bytes += size; u.files++
+        if (key.startsWith('free/guest/')) u.guest += size; else if (key.startsWith('free/')) u.free += size; else if (key.startsWith('pro/')) u.pro += size; else u.other += size
+      }
+      next = tag(xml, 'NextContinuationToken')
+      if (tag(xml, 'IsTruncated') !== 'true' || !next) break
+    }
+    const up = await r2.fetch(`${base}?uploads`)
+    if (up.ok) u.open = ((await up.text()).match(/<Upload>/g) || []).length
+    return json({ ...u, included: 10 * GB })
+  }
+
   // without an account: only uploads, their link and abort, within GUEST; the files go to free/guest/<random>/…
   const guest = !uid
   if (guest && !['create', 'sign', 'complete', 'bundle', 'abort', 'guest'].includes(b.action)) return json({ error: 'signed-out' }, 401)

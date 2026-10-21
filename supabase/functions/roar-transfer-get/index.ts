@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   const q = new URL(req.url).searchParams
   const t = q.get('t') || ''
-  if (!/^[A-Za-z0-9]{10,32}$/.test(t)) return json({ error: 'not_found' }, 404)
+  if (!/^[A-Za-z0-9]{6,32}$/.test(t)) return json({ error: 'not_found' }, 404)
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store').eq('token', t).maybeSingle()
   if (link) {
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   const { data: bundle } = await sb.from('roar_transfer_bundles').select('tokens, expires_at, title, message, password_hash, created_by').eq('token', t).maybeSingle()
   if (!bundle) return json({ error: 'not_found' }, 404)
   // who sent it, the title and the message (roartransfer.com, Alex 21 Oct); with a password, nothing else until it is right
-  const { data: p } = await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle()
+  const { data: p } = bundle.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle() : { data: null }
   const head = { bundle: true, title: bundle.title || '', from: p?.display_name || (p?.username ? '@' + p.username : '') }
   if (bundle.password_hash) {
     const given = q.get('p') || ''

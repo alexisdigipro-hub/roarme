@@ -11,7 +11,7 @@ const esc = (s: string) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;',
 Deno.serve(async (req) => {
   let b: { bundle?: string, file?: string } = {}
   try { b = await req.json() } catch { return json({ error: 'bad request' }, 400) }
-  if (!/^[A-Za-z0-9]{10,32}$/.test(b.bundle || '')) return json({ error: 'bad request' }, 400)
+  if (!/^[A-Za-z0-9]{6,32}$/.test(b.bundle || '')) return json({ error: 'bad request' }, 400)
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const { data: x } = await sb.from('roar_transfer_bundles').select('token, tokens, title, created_by, notify, notified_at').eq('token', b.bundle).maybeSingle()
   if (!x || !x.notify || !x.notified_at || Date.now() - new Date(x.notified_at).getTime() > 120000) return json({ skipped: true })

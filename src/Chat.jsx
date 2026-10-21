@@ -10,6 +10,9 @@ import { E2E_OFF, E2E_ON, endEncrypted, hasStretchKey, isSealed, myDevice, openT
 const Profile = lazy(() => import('./Profile.jsx'))
 const SettingsMenu = lazy(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsMenu })))
 const SettingsPage = lazy(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsPage })))
+// fetched quietly a moment after RoarMe opens, so opening Settings never waits on it (Alex, 21 Oct: the foot bar
+// jumped to the top for a second while Settings loaded)
+if (typeof window !== 'undefined') setTimeout(() => { import('./SettingsPages.jsx'); import('./Profile.jsx') }, 2500)
 import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
@@ -994,7 +997,7 @@ export default function Chat({ me, setMe }) {
           <button type="button" className="new-call new-call-bar" onClick={() => setModal('newcall')}><span className="new-call-ico">{svg(<><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /><path d="M18 3v6M15 6h6" /></>, 20)}</span><span>Create New Call</span></button>
           </>
         )}
-        {tab === 'settings' && <Suspense fallback={null}><SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
+        {tab === 'settings' && <Suspense fallback={<div className="side-scroll" />}><SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
           onInbox={isAdmin && officialIds.length ? () => setInboxOpen(true) : null} inboxCount={inboxCount} /></Suspense>}
         {tab === 'media' && <LibrarySide data={lib} rooms={visible} titleOf={titleOf} room={libRoom} onRoom={setLibRoom}
           face={(r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />} />}
@@ -1023,7 +1026,7 @@ export default function Chat({ me, setMe }) {
       <main className="main">
         <NowPlaying onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
         {tab === 'settings' ? (
-          <Suspense fallback={null}><SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast} me={me} setMe={setMe}
+          <Suspense fallback={<div className="set-body" />}><SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast} me={me} setMe={setMe}
             profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : openFolders())}
             folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>

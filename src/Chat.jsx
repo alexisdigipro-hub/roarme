@@ -1054,7 +1054,7 @@ export default function Chat({ me, setMe }) {
           <div className="people">
             {calls.map((p) => (
               <div key={p.id} className="person call-row">
-                <Avatar src={p.avatar_url} name={nameOf(p)} size={40} online={onlineNow(p)} />
+                <Avatar src={p.avatar_url} name={nameOf(p)} size={48} online={onlineNow(p)} />
                 <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
                 <button type="button" className="round" onClick={() => { setModal(''); startCall(p, directWith(p), false) }} aria-label="Voice call">{I.phone}</button>
                 <button type="button" className="round" onClick={() => { setModal(''); startCall(p, directWith(p), true) }} aria-label="Video call">{I.video}</button>

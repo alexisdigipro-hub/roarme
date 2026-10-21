@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { dayLabel, fileLink, thumbOf, fmtBytes, nameOf, supabase } from './lib.js'
-import { I, Lens } from './ui.jsx'
+import { I, Lens, useSeen } from './ui.jsx'
 import { MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { CopyLink } from './transfer.jsx'
 
@@ -61,19 +61,6 @@ export function LibrarySide({ data, rooms, titleOf, face, room, onRoom }) {
 }
 
 /* a tile appears as it scrolls into view, so hundreds of photos do not all load at once */
-function useSeen() {
-  const ref = useRef(null)
-  const [seen, setSeen] = useState(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!el || seen) return undefined
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect() } }, { rootMargin: '300px' })
-    io.observe(el)
-    return () => io.disconnect()
-  }, [seen])
-  return [ref, seen]
-}
-
 function Tile({ m, who, where, onOpen, onChat }) {
   const [ref, seen] = useSeen()
   const [url, setUrl] = useState('')

@@ -61,6 +61,12 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
   window.visualViewport?.addEventListener('resize', () => setTimeout(down, 60))
 }
 
+// the service worker keeps the app's built files on the device, so RoarMe starts faster (public/sw.js); the desktop
+// app has its own
+if ('serviceWorker' in navigator && !window.roarDesktop && import.meta.env.PROD) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {}))
+}
+
 // a RoarTransfer download link (?t=…) opens its own page, no account needed
 const params = new window.URLSearchParams(window.location.search)
 const transferToken = params.get('t')

@@ -276,3 +276,17 @@ export function CropModal({ file, title = 'Adjust photo', onDone, onClose }) {
     </Modal>
   )
 }
+
+// true once the element has come near the screen: a grid of hundreds of tiles asks for each picture only then
+export function useSeen() {
+  const ref = useRef(null)
+  const [seen, setSeen] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || seen) return undefined
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect() } }, { rootMargin: '300px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [seen])
+  return [ref, seen]
+}

@@ -43,7 +43,7 @@ export function TasksCalendar({ me, tasks, titleOf, rooms, onTask, onNewTask, on
     const back = () => { if (!document.hidden) again() }
     window.addEventListener('roarme-cal', again)
     document.addEventListener('visibilitychange', back)
-    const id = setInterval(again, 60e3)
+    const id = setInterval(() => { if (!document.hidden) again() }, 60e3) // in the background it waits for the app to come back
     return () => { window.removeEventListener('roarme-cal', again); document.removeEventListener('visibilitychange', back); clearInterval(id) }
   }, [])
   useEffect(() => {

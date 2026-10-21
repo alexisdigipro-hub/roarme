@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
@@ -669,7 +669,7 @@ export default function Chat({ me, setMe }) {
           sheet(Math.round(90 * (1 - Math.exp(-dy / 200))), false)
           const p = Math.max(0, Math.min(1.15, (dy - 120) / 160))
           if (p >= 1 && !g.felt) { g.felt = true; navigator.vibrate?.(8) }
-          setPull(p)
+          setPull(Math.round(p * 20) / 20) // in steps: the app is drawn again some 20 times a pull, not on every finger move
         }
         return
       }
@@ -1042,6 +1042,20 @@ export default function Chat({ me, setMe }) {
     )
   }
 
+  // the open chat is drawn again only when something it is given has changed: its hands below stay the same from one
+  // redraw of the app to the next (they always do what the app means now), and its roles are the same list while
+  // they are the same roles (Alex, 21 Oct: RoarMe lighter; a toast or a chat elsewhere no longer redraws the open one)
+  const roomHands = useRef({})
+  roomHands.current = {
+    onInfo: () => setModal('info'), onBack: () => setActiveId(''), onAct: (what, arg) => roomAct(what, arg, active),
+    onNewGroup: (p) => { setGroupWith(p); setModal('newgroup') }, onTasks: () => showTasks(true),
+    onUnblock: () => unblock(otherOf(active)?.id), onCall: (v) => callRoom(active, v),
+  }
+  const hands = useMemo(() => Object.fromEntries(Object.keys(roomHands.current).map((k) => [k, (...a) => roomHands.current[k](...a)])), [])
+  const activeRoles = useRef([])
+  const nowRoles = roles.filter((g) => g.room_id === active?.room_id)
+  if (JSON.stringify(nowRoles) !== JSON.stringify(activeRoles.current)) activeRoles.current = nowRoles
+
   return (
     <div className={`app${intro ? ' intro' : ''}${tasksOpen ? ' tasks-open' : ''}`} style={{ '--side-w': `${sideW}px` }}>
       <span className="side-grip" onPointerDown={drag} onDoubleClick={() => { setSideW(370); try { localStorage.setItem('roarme-side', '370') } catch { /* private window */ } }} title="Drag to widen, double-click to reset" />
@@ -1219,10 +1233,10 @@ export default function Chat({ me, setMe }) {
         ) : tab === 'media' ? (
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} />
         ) : active ? (
-          <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={() => setModal('info')} onBack={() => setActiveId('')}
-            rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={roles.filter((g) => g.room_id === active.room_id)}
-            onAct={(what, arg) => roomAct(what, arg, active)} onNewGroup={(p) => { setGroupWith(p); setModal('newgroup') }} onTasks={() => showTasks(true)} tasksCount={tasksKit.count}
-            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={() => unblock(otherOf(active)?.id)} onCall={(v) => callRoom(active, v)} />
+          <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
+            rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
+            onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={hands.onTasks} tasksCount={tasksKit.count}
+            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} />
         ) : (
           <div className="pick">
             <span className="pick-mark"><Wordmark by /></span>
@@ -1459,7 +1473,7 @@ const ROW_W = 156 // how far a chat slides open to show its two buttons
 const REORDER = svg(<><rect x="3" y="4" width="18" height="6" rx="2" /><path d="M5 15v4M12 15v4M19 15v4M3.5 15h17" /></>, 16)
 const OFFICIAL = <i className="official" title="Official RoarMe account" aria-label="Official">{svg(<><path d="M12 2.5l2.4 1.8 3-.1.9 2.8 2.4 1.8-.9 2.8.9 2.8-2.4 1.8-.9 2.8-3-.1L12 21.5l-2.4-1.8-3 .1-.9-2.8L3.3 15.2l.9-2.8-.9-2.8 2.4-1.8.9-2.8 3 .1z" fill="currentColor" stroke="none" /><path d="M8.5 12.2l2.3 2.3 4.7-4.8" stroke="#fff" strokeWidth="2.2" /></>, 15)}</i>
 
-function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [] }) {
+const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [] }) {
   const [rawMsgs, setMsgs] = useState([])
   // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
   const [sealOn, reloadSeal] = useEncrypted(room.room_id)
@@ -1643,8 +1657,10 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   }, [loadReacts, loadReads, loadPins])
 
   // live messages and reactions for this room
+  const readsSoon = useRef(0)
+  useEffect(() => () => clearTimeout(readsSoon.current), [])
   useEffect(() => listen((ev) => {
-    if (ev.table === 'roar_pins') { loadPins(); return }
+    if (ev.table === 'roar_pins') { if ((ev.new?.room_id || ev.old?.room_id || room.room_id) === room.room_id) loadPins(); return }
     if (ev.table === 'roar_reactions') {
       const r = ev.new?.room_id ? ev.new : ev.old
       if (r?.room_id === room.room_id) loadReacts()
@@ -1653,7 +1669,8 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
     const m = ev.new
     if (!m || m.room_id !== room.room_id) return
     if (ev.eventType === 'INSERT' && m.kind === 'system' && (m.body === E2E_ON || m.body === E2E_OFF)) reloadSeal()
-    if (ev.eventType === 'INSERT') { setMsgs((list) => (list.some((x) => x.id === m.id) ? list : [...list, m])); setTimeout(loadReads, 1500) }
+    // a burst of messages asks once who has read them
+    if (ev.eventType === 'INSERT') { setMsgs((list) => (list.some((x) => x.id === m.id) ? list : [...list, m])); clearTimeout(readsSoon.current); readsSoon.current = setTimeout(loadReads, 1500) }
     if (ev.eventType === 'UPDATE') setMsgs((list) => list.map((x) => (x.id === m.id ? m : x)))
   }), [listen, room.room_id, loadReacts, loadReads, loadPins, reloadSeal])
 
@@ -1788,7 +1805,13 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
 
   // what is on its way up: one tile each, with a ring that fills (Alex, 16 Oct)
   const setOut = (id, patch) => setOutbox((l) => l.map((x) => (x.id === id ? { ...x, ...patch } : x)))
-  const dropOut = (id) => setOutbox((l) => { const x = l.find((y) => y.id === id); if (x?.preview) URL.revokeObjectURL(x.preview); return l.filter((y) => y.id !== id) })
+  // the little pictures of photos on their way up: made small (a phone photo shown whole takes some 48 MB), and let go
+  // when the photo is sent, or when the chat is left halfway (Alex, 21 Oct: RoarMe lighter)
+  const previews = useRef(new Map())
+  const left = useRef(false)
+  useEffect(() => { left.current = false; return () => { left.current = true; previews.current.forEach((u) => URL.revokeObjectURL(u)); previews.current.clear() } }, [])
+  const dropPreview = (id) => { const u = previews.current.get(id); if (u) { URL.revokeObjectURL(u); previews.current.delete(id) } }
+  const dropOut = (id) => { dropPreview(id); setOutbox((l) => l.filter((y) => y.id !== id)) }
   const upload = async (file, kind, extra = {}, outId = null, viaTransfer = false) => {
     const safe = (file.name || 'file').normalize('NFKD').replace(/[^\w.-]+/g, '_').slice(-80) || 'file'
     const path = `${room.room_id}/${crypto.randomUUID()}-${safe}`
@@ -1819,7 +1842,17 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
     const ok = files.filter((f) => { if (f.size > TRANSFER_MAX) { setErr(`${f.name} is over 3 GB, the most RoarTransfer takes.`); return false } return true })
     // Safari lets a video play only from inside the tap: each clip is readied now, before anything waits
     const handles = new Map(ok.filter(shrinkVid).map((f) => [f, prepareVideo(f)]))
-    const tiles = ok.map((f) => ({ id: crypto.randomUUID(), name: f.name, size: f.size, big: viaTransfer || (f.size > SMALL_MAX && !shrinkVid(f)), batch: hooks.batch, preview: /^image\//.test(f.type) ? URL.createObjectURL(f) : '', p: 0, stage: 'prep' }))
+    const tiles = ok.map((f) => ({ id: crypto.randomUUID(), name: f.name, size: f.size, big: viaTransfer || (f.size > SMALL_MAX && !shrinkVid(f)), batch: hooks.batch, preview: '', p: 0, stage: 'prep' }))
+    ok.forEach((f, i) => {
+      if (!/^image\//.test(f.type)) return
+      shrinkImage(f, 320, 0.7).then((small) => {
+        const id = tiles[i].id
+        if (left.current) return
+        const u = URL.createObjectURL(small)
+        previews.current.set(id, u)
+        setOutbox((l) => { if (!l.some((y) => y.id === id)) { dropPreview(id); return l } return l.map((y) => (y.id === id ? { ...y, preview: u } : y)) })
+      }).catch(() => {})
+    })
     setOutbox((l) => [...l, ...tiles])
     let n = 0
     for (const raw of ok) {
@@ -2198,7 +2231,6 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
         }
       }
       if (g.lock !== 'x') return
-      if (e.cancelable) e.preventDefault()
       const a = Math.min(0, dx), m = a < -70 ? -70 + (a + 70) * 0.25 : a
       g.dx = a
       g.msg.style.transform = `translate3d(${m}px,0,0)`
@@ -2220,7 +2252,8 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
       if (dx <= -56) hands.current.setReplyTo(m)
     }
     box.addEventListener('touchstart', start, { passive: true })
-    box.addEventListener('touchmove', move, { passive: false })
+    // passive: the scroll never waits for this; a sideways pull is kept from the page by touch-action: pan-y (styles.css)
+    box.addEventListener('touchmove', move, { passive: true })
     box.addEventListener('touchend', end, { passive: true })
     box.addEventListener('touchcancel', end, { passive: true })
     return () => {
@@ -2674,7 +2707,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
       {cinema && <OnTop><Cinema item={cinema} onClose={() => setCinema(null)} /></OnTop>}
     </div>
   )
-}
+})
 
 /* Forward: pick a chat, the messages go there as copies (a photo or file is copied into that chat) */
 function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {

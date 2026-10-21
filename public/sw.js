@@ -1,8 +1,31 @@
-// RoarMe's service worker (Alex, 18 Oct 2026): only notifications with the app closed (supabase/push.sql). It keeps
-// nothing offline, so RoarMe always loads fresh. A push shows the message and puts the unread count on the icon;
+// RoarMe's service worker (Alex, 18 Oct 2026): notifications with the app closed (supabase/push.sql), and the app's
+// built files kept on the device (below); the page itself always loads fresh. A push shows the message and puts the unread count on the icon;
 // a tap opens RoarMe at that chat.
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()))
+
+// the app's own built files (assets/, each name carries its own fingerprint, so a file never changes under its name)
+// are kept on the device: RoarMe starts without fetching them again. The page itself always comes fresh, so a new
+// version is there on the next start as before (Alex, 21 Oct: RoarMe lighter)
+const ASSETS = 'roarme-assets-1'
+self.addEventListener('fetch', (e) => {
+  const req = e.request
+  if (req.method !== 'GET') return
+  const url = new URL(req.url)
+  if (!url.href.startsWith(new URL('./assets/', self.registration.scope).href)) return
+  e.respondWith((async () => {
+    const cache = await caches.open(ASSETS)
+    const hit = await cache.match(req)
+    if (hit) return hit
+    const res = await fetch(req)
+    if (res.ok) {
+      cache.put(req, res.clone())
+      // only the newest few versions are kept
+      cache.keys().then((keys) => keys.slice(0, Math.max(0, keys.length - 40)).forEach((k) => cache.delete(k)))
+    }
+    return res
+  })())
+})
 
 self.addEventListener('push', (e) => {
   let d = {}

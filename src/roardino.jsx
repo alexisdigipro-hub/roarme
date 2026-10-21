@@ -52,7 +52,8 @@ export const ordinoBody = (o) => [`${o.label || 'Ordino'} · ${o.title || 'Ordin
 
 /* the ordino in the chat: its mark, the title, day and call, where, Open */
 export function OrdinoCard({ o }) {
-  const open = () => window.open(o.url, '_blank', 'noopener')
+  // only a real Roardino page opens: a card someone made by hand cannot send people anywhere else
+  const open = () => { if (typeof o.url === 'string' && o.url.startsWith(ROARDINO)) window.open(o.url, '_blank', 'noopener') }
   const when = [dayOf(o.date), o.call && `Call ${o.call}`].filter(Boolean).join(' · ')
   return (
     <span className="trx artc ordc" role="button" tabIndex={0} style={{ '--oc': o.accent || '#d40000' }}

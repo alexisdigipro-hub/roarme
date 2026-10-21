@@ -275,3 +275,23 @@ begin
 end $$;
 revoke all on function public.roar_transfer_hit(text, boolean) from public;
 grant execute on function public.roar_transfer_hit(text, boolean) to anon, authenticated, service_role;
+
+-- sending without an account (Alex, 21 Oct: a way to get to know us): link only, 24 hours, up to 1 GB, 3 transfers
+-- a day per address. roartransfer-r2 makes these with no account (created_by null) and keeps the address for the limit.
+alter table public.roar_transfer_links alter column created_by drop not null;
+alter table public.roar_transfer_links add column if not exists ip text;
+create index if not exists roar_transfer_links_guest on public.roar_transfer_links (ip, created_at) where created_by is null;
+alter table public.roar_transfer_bundles alter column created_by drop not null;
+alter table public.roar_transfer_bundles add column if not exists ip text;
+create index if not exists roar_transfer_bundles_anon on public.roar_transfer_bundles (ip, created_at) where created_by is null;
+
+-- "Report abuse" on the download page; only the Edge Function writes and reads it, the admins get an email
+create table if not exists public.roar_transfer_reports (
+  id uuid primary key default gen_random_uuid(),
+  token text,
+  reason text not null default '',
+  ip text,
+  created_at timestamptz not null default now()
+);
+alter table public.roar_transfer_reports enable row level security;
+revoke all on public.roar_transfer_reports from anon, authenticated;

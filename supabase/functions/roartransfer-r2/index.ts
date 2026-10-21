@@ -12,6 +12,8 @@ import { AwsClient } from 'npm:aws4fetch@1.0.20'
 const BUCKET = 'roartransfer'
 const GB = 1024 ** 3
 const plan = (days: unknown) => (Number(days) === 1 ? { days: 1, max: 5 * GB } : { days: 3, max: 3 * GB })
+// without an account (Alex, 21 Oct: a way to get to know us): link only, 24 hours, up to 1 GB, 3 transfers a day
+const GUEST = { days: 1, max: 1 * GB, perDay: 3 }
 const FROM = 'RoarTransfer <noreply@themadlions.com>'
 const PAGE = 'https://roartransfer.com/'
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
@@ -56,17 +58,48 @@ async function handle(req: Request): Promise<Response> {
     return json({ ok: !!(account && Deno.env.get('R2_ACCESS_KEY_ID') && Deno.env.get('R2_SECRET_ACCESS_KEY')), account: !!account, reach })
   }
 
+  // "Report abuse" on the download page: anyone, no account; the admins hear of it by email
+  if (b.action === 'report') {
+    const t = String(b.token || '')
+    if (!/^[A-Za-z0-9]{10,32}$/.test(t)) return json({ error: 'bad request' }, 400)
+    const ip = clientIp(req)
+    const { count } = await sb.from('roar_transfer_reports').select('id', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', new Date(Date.now() - 864e5).toISOString())
+    if ((count || 0) >= 20) return json({ ok: true })
+    const reason = String(b.reason || '').trim().slice(0, 1000)
+    await sb.from('roar_transfer_reports').insert({ token: t, reason, ip })
+    const { data: admins } = await sb.from('roar_admins').select('user_id')
+    for (const a of admins || []) {
+      const { data: u } = await sb.auth.admin.getUserById(a.user_id)
+      if (u?.user?.email) await sendMail({ to: u.user.email, subject: 'RoarTransfer: a link was reported', html: `<p>A RoarTransfer link was reported: <a href="${PAGE}?t=${t}">${PAGE}?t=${t}</a></p><p>${esc(reason || '(no reason given)')}</p><p>Check it in Admin, and delete it there if it breaks the rules.</p>`, text: `A RoarTransfer link was reported: ${PAGE}?t=${t}\n\n${reason || '(no reason given)'}` })
+    }
+    return json({ ok: true })
+  }
+
   const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
   const { data: who } = jwt ? await sb.auth.getUser(jwt) : { data: { user: null } }
   const uid = who?.user?.id
-  if (!uid) return json({ error: 'signed-out' }, 401)
-  const mine = (key: string) => typeof key === 'string' && key.startsWith(`free/${uid}/`) && !key.includes('..')
+  // without an account: only uploads, their link and abort, within GUEST; the files go to free/guest/<random>/…
+  const guest = !uid
+  if (guest && !['create', 'sign', 'complete', 'bundle', 'abort', 'guest'].includes(b.action)) return json({ error: 'signed-out' }, 401)
+  const ip = clientIp(req)
+  const guestLeft = async () => {
+    const { count } = await sb.from('roar_transfer_bundles').select('token', { count: 'exact', head: true }).is('created_by', null).eq('ip', ip).gte('created_at', new Date(Date.now() - 864e5).toISOString())
+    return Math.max(0, GUEST.perDay - (count || 0))
+  }
+  if (b.action === 'guest') return json({ left: await guestLeft(), ...GUEST })
+  const mine = (key: string) => typeof key === 'string' && !key.includes('..') && (guest ? /^free\/guest\/[0-9a-f-]{36}\//.test(key) : key.startsWith(`free/${uid}/`))
 
   if (b.action === 'create') {
     const size = Number(b.size) || 0
-    const { days, max } = plan(b.days)
-    if (size <= 0 || size > max) return json({ error: `Files kept ${days === 1 ? '1 day' : '3 days'} can be up to ${max / GB} GB.` }, 400)
-    const key = `free/${uid}/${crypto.randomUUID()}-${safeName(b.name)}`
+    const { days, max } = guest ? GUEST : plan(b.days)
+    if (size <= 0 || size > max) return json({ error: guest ? 'Without an account, files can be up to 1 GB. Sign up free for up to 5 GB.' : `Files kept ${days === 1 ? '1 day' : '3 days'} can be up to ${max / GB} GB.` }, 400)
+    if (guest) {
+      if ((await guestLeft()) <= 0) return json({ error: 'limit', limit: true }, 429)
+      // and no more than 3 GB of files a day from one address, links made or not
+      const { data: today } = await sb.from('roar_transfer_links').select('size').is('created_by', null).eq('ip', ip).gte('created_at', new Date(Date.now() - 864e5).toISOString())
+      if ((today || []).reduce((a: number, r: any) => a + Number(r.size || 0), 0) + size > GUEST.max * GUEST.perDay) return json({ error: 'limit', limit: true }, 429)
+    }
+    const key = guest ? `free/guest/${crypto.randomUUID()}/${safeName(b.name)}` : `free/${uid}/${crypto.randomUUID()}-${safeName(b.name)}`
     const r = await r2.fetch(`${at(key)}?uploads`, { method: 'POST', headers: { 'Content-Type': b.type || 'application/octet-stream' } })
     const uploadId = tag(await r.text(), 'UploadId')
     if (!r.ok || !uploadId) return json({ error: `Could not start the upload (${r.status})` }, 502)
@@ -92,11 +125,11 @@ async function handle(req: Request): Promise<Response> {
     // the real size, from R2 itself
     const head = await r2.fetch(at(b.key), { method: 'HEAD' })
     const size = Number(head.headers.get('content-length')) || Number(b.size) || 0
-    const { days, max } = plan(b.days)
-    if (size > max) { await r2.fetch(at(b.key), { method: 'DELETE' }); return json({ error: `Files kept ${days === 1 ? '1 day' : '3 days'} can be up to ${max / GB} GB.` }, 400) }
+    const { days, max } = guest ? GUEST : plan(b.days)
+    if (size > max) { await r2.fetch(at(b.key), { method: 'DELETE' }); return json({ error: `Files can be up to ${max / GB} GB.` }, 400) }
     const token = newToken()
     const expires = new Date(Date.now() + days * 864e5).toISOString()
-    const { error } = await sb.from('roar_transfer_links').insert({ token, path: b.key, name: String(b.name || 'file').slice(0, 300), size, type: String(b.type || ''), expires_at: expires, created_by: uid, store: 'r2' })
+    const { error } = await sb.from('roar_transfer_links').insert({ token, path: b.key, name: String(b.name || 'file').slice(0, 300), size, type: String(b.type || ''), expires_at: expires, created_by: uid || null, ip: guest ? ip : null, store: 'r2' })
     if (error) return json({ error: error.message }, 500)
     return json({ token, expires, size })
   }
@@ -105,8 +138,15 @@ async function handle(req: Request): Promise<Response> {
   if (b.action === 'bundle') {
     const tokens = (Array.isArray(b.tokens) ? b.tokens : []).map(String).filter((t: string) => /^[A-Za-z0-9]{10,32}$/.test(t)).slice(0, 200)
     if (!tokens.length) return json({ error: 'nothing to link' }, 400)
-    const { data: rows } = await sb.from('roar_transfer_links').select('token, expires_at').in('token', tokens).eq('created_by', uid)
+    // one's own file links; without an account, links with no account made in the last hour, 1 GB in all
+    const q = sb.from('roar_transfer_links').select('token, expires_at, size, created_at').in('token', tokens)
+    const { data: rows } = await (guest ? q.is('created_by', null).gte('created_at', new Date(Date.now() - 36e5).toISOString()) : q.eq('created_by', uid))
     if (!rows || rows.length !== new Set(tokens).size) return json({ error: 'not allowed' }, 403)
+    if (guest) {
+      if (rows.reduce((a: number, r: any) => a + Number(r.size || 0), 0) > GUEST.max) return json({ error: 'Without an account, a transfer can be up to 1 GB.' }, 400)
+      if ((await guestLeft()) <= 0) return json({ error: 'limit', limit: true }, 429)
+      b.recipients = []; b.notify = false
+    }
     const token = newToken()
     const expires = rows.reduce((a: string, r: any) => (r.expires_at > a ? r.expires_at : a), rows[0].expires_at)
     const title = String(b.title || '').trim().slice(0, 120)
@@ -115,7 +155,7 @@ async function handle(req: Request): Promise<Response> {
       .filter((e: string) => /^[^\s@<>,;]+@[^\s@<>,;]+\.[a-z]{2,}$/i.test(e)))].slice(0, 20) as string[]
     const password = String(b.password || '').slice(0, 100)
     const { error } = await sb.from('roar_transfer_bundles').insert({
-      token, tokens, created_by: uid, expires_at: expires, title, message, recipients,
+      token, tokens, created_by: uid || null, ip: guest ? ip : null, expires_at: expires, title, message, recipients,
       password_hash: password ? await sha(`${token}:${password}`) : null, notify: !!b.notify,
     })
     if (error) return json({ error: error.message }, 500)
@@ -125,7 +165,7 @@ async function handle(req: Request): Promise<Response> {
     if (recipients.length) {
       const { data: files } = await sb.from('roar_transfer_links').select('token, name, size').in('token', tokens)
       const ordered = (files || []).sort((a: any, z: any) => tokens.indexOf(a.token) - tokens.indexOf(z.token))
-      const from = await senderName(uid, who?.user?.email || '')
+      const from = await senderName(uid as string, who?.user?.email || '')
       const mail = invite({ from, title, message, files: ordered, expires, url: PAGE + '?t=' + token, locked: !!password })
       for (const to of recipients) {
         const r = await sendMail({ to, subject: mail.subject, html: mail.html, text: mail.text, reply_to: who?.user?.email || undefined })
@@ -145,7 +185,7 @@ async function handle(req: Request): Promise<Response> {
   if (b.action === 'delete') {
     const key = String(b.key || '')
     const { data: admin } = await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
-    if (!(mine(key) || (admin && /^(free|pro)\//.test(key)))) return json({ error: 'not allowed' }, 403)
+    if (!(key.startsWith(`free/${uid}/`) || (admin && /^(free|pro)\//.test(key)))) return json({ error: 'not allowed' }, 403)
     await sb.from('roar_transfer_links').update({ stopped_at: new Date().toISOString(), expires_at: new Date().toISOString() }).eq('path', key)
     await r2.fetch(at(key), { method: 'DELETE' })
     return json({ ok: true })
@@ -153,6 +193,9 @@ async function handle(req: Request): Promise<Response> {
 
   return json({ error: 'unknown action' }, 400)
 }
+
+// the caller's address, for the limits without an account
+const clientIp = (req: Request) => (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
 
 // ---- email (Resend, as RoarMe's own emails) ----
 async function sendMail(m: { to: string, subject: string, html: string, text: string, reply_to?: string }): Promise<true | string> {

@@ -207,12 +207,21 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
   const [url, setUrl] = useState('')
   const ref = useRef(null)
   useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
+  // playing by itself, a video plays only while it is on the screen: a chat with many videos no longer plays them
+  // all at once out of sight (Alex, 21 Oct: RoarMe lighter)
+  useEffect(() => {
+    const v = ref.current
+    if (!play || !v || typeof IntersectionObserver === 'undefined') return undefined
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) v.play?.().catch(() => {}); else v.pause() }, { threshold: 0.25 })
+    io.observe(v)
+    return () => io.disconnect()
+  }, [play, url])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{I.play}<span>Video · {fmtBytes(file?.size)}</span><small>Tap to load</small></button>
   // videos can play by themselves, silent and on a loop (Settings > Data and Storage)
   if (!url) return <span className="pic-wait" />
   return (
     <span className="vid-box">
-      <video ref={ref} className="pic-img ready" src={url} controls preload="metadata" autoPlay={play} muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} />
+      <video ref={ref} className="pic-img ready" src={url} controls preload="metadata" muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} />
       <VideoTools wide={wide} onWide={onWide} onCinema={onCinema && (() => { const v = ref.current; const at = v?.currentTime || 0; v?.pause(); onCinema({ kind: 'file', src: url, at }) })} />
     </span>
   )

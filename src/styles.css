@@ -3818,3 +3818,10 @@ html[data-mode='light'] .rmd-card { background: rgba(255, 255, 255, .96); box-sh
 .rmd-top small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rmd-row .rmd-acts { display: flex; gap: 6px; margin-left: auto; }
 @media (max-width: 760px) { .rmd-cards { right: 16px; left: 16px; width: auto; bottom: calc(84px + env(safe-area-inset-bottom)); } }
+
+/* Stone, last word (21 Oct): the name at the top and the glass ink in the text colour, as the reference's dark type
+   on stone (these come after the shared wordmark and Glass Look rules, so they must sit at the end) */
+html[data-theme='stone'] .wordmark b.wm, html[data-theme='stone'] .wordmark b.wm span { color: var(--text); }
+html[data-theme='stone'] .wordmark b.wm .wm-beta { color: var(--text); border-color: rgba(0, 0, 0, .3); background: rgba(255, 255, 255, .25); }
+html[data-bubbles='glass'][data-theme='stone'] { --gl-ink: var(--text); }
+html[data-theme='stone'] .ask-bar .btn { border-radius: 12px; }

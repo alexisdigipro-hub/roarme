@@ -292,9 +292,10 @@ export default function Chat({ me, setMe }) {
     loadPeople(list.flatMap((r) => r.members || []).filter((id) => !known[id]))
   }, [loadPeople])
 
-  // a burst of messages reloads the list once
+  // a burst of messages reloads the list once; a message read in the open chat (the message, then one's own read mark,
+  // then the server's echo of it) is one reload too, not two or three (Alex, 21 Oct: lighter)
   const reloadTimer = useRef(0)
-  const reloadSoon = useCallback(() => { clearTimeout(reloadTimer.current); reloadTimer.current = setTimeout(loadRooms, 250) }, [loadRooms])
+  const reloadSoon = useCallback(() => { clearTimeout(reloadTimer.current); reloadTimer.current = setTimeout(loadRooms, 600) }, [loadRooms])
 
   useEffect(() => { loadRooms() }, [loadRooms])
   // opened from someone's invite link: their chat opens by itself, once
@@ -1610,11 +1611,24 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   // (Alex, 17 Oct, as on Telegram) and it shrinks back once the message is sent
   const [bigBox, setBigBox] = useState(false)
   const [tall, setTall] = useState(false)
+  // typing on (more letters, no fewer lines) only ever grows the box: it is measured as it is, without first being
+  // squashed to nothing, which made the phone lay out the whole chat twice on every letter (Alex, 21 Oct: lighter)
+  const sized = useRef({ text: null, big: null })
   useLayoutEffect(() => {
     const el = inputRef.current
     if (!el) return
-    el.style.height = 'auto'
+    const was = sized.current
+    const lines = (s) => s.split('\n').length
+    const grew = was.big === bigBox && was.text !== null && text.length >= was.text.length && lines(text) >= lines(was.text)
+    sized.current = { text, big: bigBox }
     const max = bigBox ? Math.round(window.innerHeight * 0.55) : 200
+    if (grew) {
+      const full = el.scrollHeight
+      if (!bigBox && full > el.clientHeight) el.style.height = `${Math.min(max, full)}px`
+      setTall(full > 90)
+      return
+    }
+    el.style.height = 'auto'
     const full = el.scrollHeight
     el.style.height = `${bigBox ? max : Math.min(max, full)}px`
     setTall(full > 90)

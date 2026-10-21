@@ -173,7 +173,7 @@ async function handle(req: Request): Promise<Response> {
     if (recipients.length) {
       const { data: files } = await sb.from('roar_transfer_links').select('token, name, size').in('token', tokens)
       const ordered = (files || []).sort((a: any, z: any) => tokens.indexOf(a.token) - tokens.indexOf(z.token))
-      const from = await senderName(uid as string, who?.user?.email || '')
+      const from = await senderName(uid as string, who?.user?.user_metadata?.name || who?.user?.email || '')
       const mail = invite({ from, title, message, files: ordered, expires, url: PAGE + token, locked: !!password })
       for (const to of recipients) {
         const r = await sendMail({ to, subject: mail.subject, html: mail.html, text: mail.text, reply_to: who?.user?.email || undefined })

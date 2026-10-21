@@ -321,12 +321,6 @@ export function useCalls({ me, people, loadPeople, toast }) {
     return () => { alive = false; if (ch) supabase.removeChannel(ch) }
   }, [me.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // the clock while talking
-  useEffect(() => {
-    if (call?.stage !== 'live') return undefined
-    const id = setInterval(() => tick((n) => n + 1), 1000)
-    return () => clearInterval(id)
-  }, [call?.stage])
   useEffect(() => () => cleanup(), [cleanup])
 
   const screen = call && (
@@ -349,6 +343,13 @@ function CallScreen({ call, local, remote, onAccept, onDecline, onHangup, onMute
   const [small, setSmall] = useState(false)
   const peer = call.peer
   const remoteVideo = !!remote?.getVideoTracks().length
+  // the clock while talking ticks here, in the call screen only, not in the whole chat behind it (Alex, 21 Oct: RoarMe lighter)
+  const [, tickClock] = useState(0)
+  useEffect(() => {
+    if (call.stage !== 'live') return undefined
+    const id = setInterval(() => tickClock((n) => n + 1), 1000)
+    return () => clearInterval(id)
+  }, [call.stage])
   const status = call.stage === 'live' ? mmss(Date.now() - call.liveAt)
     : call.dir === 'in' && call.stage === 'ringing' ? (call.video ? 'Incoming video call' : 'Incoming call')
     : call.stage === 'ringing' ? 'Calling…' : 'Connecting…'

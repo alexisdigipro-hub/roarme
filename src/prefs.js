@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /* Chat settings, kept on this device (as in the THEMADLIONS chat): how the chat looks and behaves.
    A change is announced with the 'roarme-prefs' event so every open part of the app follows it. */
@@ -83,7 +83,8 @@ export function setPrefs(patch) {
 export function usePrefs() {
   const [p, setP] = useState(getPrefs)
   useEffect(() => {
-    const on = () => setP(getPrefs())
+    // the same settings again leave the screen alone: no re-render of the whole app for nothing
+    const on = () => { const n = getPrefs(); setP((o) => (JSON.stringify(o) === JSON.stringify(n) ? o : n)) }
     window.addEventListener('roarme-prefs', on)
     window.addEventListener('storage', on)
     return () => { window.removeEventListener('roarme-prefs', on); window.removeEventListener('storage', on) }
@@ -93,11 +94,20 @@ export function usePrefs() {
 
 /* Things kept on this device: chats hidden from the list, pins, drafts… (custom folders too, and folderSync.js keeps them in step across devices) */
 const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
-const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } window.dispatchEvent(new Event('roarme-local')) }
+// the event names the key that changed, so a draft being saved does not wake every other list kept here
+const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } window.dispatchEvent(new CustomEvent('roarme-local', { detail: k })) }
+const raw = (k) => { try { return localStorage.getItem(k) } catch { return null } }
 export function useLocal(key, initial) {
   const [v, setV] = useState(() => read(key, initial))
+  const seen = useRef(raw(key))
   useEffect(() => {
-    const on = () => setV(read(key, initial))
+    const on = (e) => {
+      if (e.detail && e.detail !== key) return
+      const now = raw(key)
+      if (now === seen.current) return
+      seen.current = now
+      setV(read(key, initial))
+    }
     window.addEventListener('roarme-local', on)
     return () => window.removeEventListener('roarme-local', on)
   }, [key])

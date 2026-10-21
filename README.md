@@ -506,3 +506,15 @@ name for them, my own photo for them (now also over a photo they have) and a not
 app (chat list, chat head, messages, calls); under the name the profile shows "Their name: …", and the note sits in the
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
+
+## Lighter RoarMe (21 Oct)
+Alex: "see what weighs RoarMe down and lighten it". Nothing looks different except a still background.
+- The backdrop no longer drifts: a moving background made every glass panel above it re-blur on each frame (battery on an iPhone).
+- Typing no longer redraws every message: the message list is memoised (`msgList` in Room) and its buttons reach the newest handlers through `act`.
+- A setting or a draft saved on the device only wakes the hook for that key (`useLocal` events carry the key; `usePrefs` ignores identical settings).
+- A new message still reloads the chat list once (debounced), but chats and people that did not change keep their objects, an unchanged list does not re-render, only people not known yet are fetched (everyone is refreshed every 90 s, not while RoarMe is hidden), and the read ticks only change when someone really read further.
+- Times and dates use cached `Intl.DateTimeFormat` objects (lib.js).
+- Settings and a profile load only when opened (React.lazy); the Greek dictionary only for someone using Greek, with translations remembered; the themes' fonts no longer hold up the first paint.
+- Photos and avatars load lazily (`loading="lazy"`), and the photo links of a chat are asked for in one request (`createSignedUrls`).
+- One page of older messages at a time; back at the bottom of a long chat the oldest pages read are let go (kept at 150).
+- The call clock ticks in the call screen only, not in the whole chat.

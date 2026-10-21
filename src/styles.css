@@ -4082,5 +4082,5 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
   .room-view .scroll { touch-action: pan-y; }
 }
 
-/* the expiry on the download page (Alex, 21 Oct: "not yellow, I can't read it"): the card's own text colour on soft glass */
-.rt-card .rt-facts .tr-exp, html[data-mode] .rt-card .rt-facts .tr-exp { color: var(--text); background: rgba(127, 127, 127, .16); border-color: rgba(127, 127, 127, .35); }
+/* the expiry on the download page (Alex, 21 Oct: "not yellow, I cannot read it ... let it be black") */
+.rt-card .rt-facts .tr-exp, html[data-mode] .rt-card .rt-facts .tr-exp { color: #111; background: rgba(255, 255, 255, .55); border-color: rgba(0, 0, 0, .18); }

@@ -695,6 +695,9 @@ export default function Chat({ me, setMe }) {
       pressed.current = true
       navigator.vibrate?.(12)
       setRoomMenu({ r, x: 0, y: 0, sub: '', at: Date.now() })
+      // the finger is still down: no word under it gets selected (Alex, 21 Oct)
+      const clear = () => window.getSelection?.()?.removeAllRanges()
+      clear(); setTimeout(clear, 60); setTimeout(clear, 400)
     }, 450) }
   }
   const pressMove = (e) => {

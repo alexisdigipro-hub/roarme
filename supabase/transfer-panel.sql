@@ -313,3 +313,19 @@ create index if not exists roar_transfer_auth_log_ip on public.roar_transfer_aut
 create index if not exists roar_transfer_auth_log_email on public.roar_transfer_auth_log (email, created_at);
 alter table public.roar_transfer_auth_log enable row level security;
 revoke all on public.roar_transfer_auth_log from anon, authenticated;
+
+-- Admin counts the world, not the admins (Alex, 22 Oct: "my own I see in My transfers; I want to see if people upload"):
+-- roar_transfer_items_people() is roar_transfer_items() without the admins' own transfers (sends without an account
+-- stay in), and the Admin list and numbers read it. Written as a block so it follows whatever those two look like now.
+do $do$
+declare cols text; d text;
+begin
+  select pg_get_function_result('public.roar_transfer_items()'::regprocedure) into cols;
+  execute format('create or replace function public.roar_transfer_items_people() returns %s language sql stable security definer set search_path = public as %L', cols,
+    'select t.* from public.roar_transfer_items() t where t.user_id is null or not exists (select 1 from public.roar_admins a where a.user_id = t.user_id)');
+  execute 'revoke all on function public.roar_transfer_items_people() from public, anon, authenticated';
+  d := pg_get_functiondef('public.roar_admin_transfer_stats()'::regprocedure);
+  execute replace(d, 'public.roar_transfer_items()', 'public.roar_transfer_items_people()');
+  d := pg_get_functiondef('public.roar_admin_transfers(timestamptz,int,uuid)'::regprocedure);
+  execute replace(d, 'public.roar_transfer_items()', 'public.roar_transfer_items_people()');
+end $do$;

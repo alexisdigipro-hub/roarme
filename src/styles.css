@@ -3969,3 +3969,7 @@ html[data-theme] .install-card .install-later, html .install-card .install-later
 }
 /* the long-press menu: nothing in it can be selected or called up by the finger that opened it (Alex, 21 Oct) */
 .ctx, .ctx * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* the tick at the top right of a folder's page: done, back out (Alex, 21 Oct) */
+.set-head > .round.set-done { left: auto; right: 14px; color: var(--accent); }
+html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
+.tabs-scroll > button { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }

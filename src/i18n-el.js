@@ -1071,4 +1071,8 @@ export const EL = {
   'Install App': 'Εγκατάσταση',
   'Not Now': 'Όχι τώρα',
   'Preview Messages': 'Προεπισκόπηση μηνυμάτων',
+  'Mute All': 'Σίγαση όλων',
+  'Unmute All': 'Ήχος σε όλα',
+  'Reorder Tabs': 'Αλλαγή σειράς',
+  'No chats in this folder': 'Δεν υπάρχουν συνομιλίες σε αυτόν τον φάκελο',
 }

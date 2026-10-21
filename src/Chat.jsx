@@ -549,7 +549,12 @@ export default function Chat({ me, setMe }) {
           sheet(Math.round(56 * (1 - Math.exp(-dy / 110))), false) // the list gives a little, then resists
           if (dy >= PULL_OPEN && !g.felt) { g.felt = true; navigator.vibrate?.(8) } // the click of the magnet where it will open
         } else if (g.phone) {
-          setPull(Math.max(0, Math.min(1.15, (dy - 50) / 110)))
+          // the reload wants a long, deliberate pull (Alex, 21 Oct: it got mixed up with the search): the arrow shows after
+          // 120 px and is full at 280 px; the list follows with resistance all the way
+          sheet(Math.round(90 * (1 - Math.exp(-dy / 200))), false)
+          const p = Math.max(0, Math.min(1.15, (dy - 120) / 160))
+          if (p >= 1 && !g.felt) { g.felt = true; navigator.vibrate?.(8) }
+          setPull(p)
         }
         return
       }
@@ -574,6 +579,7 @@ export default function Chat({ me, setMe }) {
           return
         }
         // pulled far enough down with the search open: RoarMe reloads, with any new version (Alex, 19 Oct)
+        sheet(0, true)
         const p = pagerNow.current.pull
         if (p >= 1) { setPull(2); setTimeout(() => window.location.reload(), 150); return }
         if (p) setPull(0)

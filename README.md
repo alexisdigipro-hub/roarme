@@ -527,7 +527,8 @@ Alex: the sideways folder swipe must never also pull the list down and open the 
 the slightest touch. A drag on the list now commits to one direction after its first few pixels: sideways is the folder
 swipe only, downward at the top is the pull only. With the search closed the list follows the finger with resistance and
 the search opens only after a clear pull (90 px), snapping like a magnet when let go; a shorter pull springs back. With the
-search already open, the same pull reloads RoarMe as before. Both live in the native listeners of `rooms-pager` in Chat.jsx.
+search already open, a much longer pull reloads RoarMe: the arrow shows after 120 px and is full at 280 px, the list
+following with resistance, so the reload never comes by accident. Both live in the native listeners of `rooms-pager` in Chat.jsx.
 
 ## Lighter RoarMe (21 Oct)
 Alex: "see what weighs RoarMe down and lighten it". Nothing looks different except a still background.

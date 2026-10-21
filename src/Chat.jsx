@@ -2088,7 +2088,71 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   /* The messages, drawn again only when something they show changes (Alex, 21 Oct: RoarMe lighter): typing in the box
      below no longer redraws every message. Their buttons call the newest handlers through `hands`. */
   const hands = useRef({})
-  hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setArtView, setCinema }
+  hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setArtView, setCinema, byId, picked, setReplyTo }
+  // a message slid to the left on a phone is answered, like Telegram (Alex, 21 Oct): the bubble follows the finger,
+  // the reply arrow fills in on its right, and past 56 px letting go starts the reply
+  useEffect(() => {
+    const box = scrollRef.current
+    if (!box) return undefined
+    let g = null
+    const ARROW = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 6 6v4"/></svg>'
+    const start = (e) => {
+      g = null
+      if (e.touches.length !== 1 || !window.matchMedia('(max-width: 760px)').matches || hands.current.picked) return
+      const row = e.target.closest?.('[id^="m-"]')
+      const msg = row?.querySelector(':scope > .msg')
+      const m = row && hands.current.byId[row.id.slice(2)]
+      if (!msg || !m || m.deleted_at) return
+      g = { msg, m, x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, felt: false }
+    }
+    const move = (e) => {
+      if (!g) return
+      const dx = e.touches[0].clientX - g.x, dy = e.touches[0].clientY - g.y
+      if (!g.lock) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        g.lock = dx < 0 && Math.abs(dx) > Math.abs(dy) * 1.3 ? 'x' : 'no'
+        if (g.lock === 'x') {
+          g.msg.style.transition = 'none'
+          g.icon = document.createElement('span')
+          g.icon.className = 'swipe-reply'
+          g.icon.innerHTML = ARROW
+          g.msg.parentElement.style.position = 'relative'
+          g.msg.parentElement.appendChild(g.icon)
+        }
+      }
+      if (g.lock !== 'x') return
+      if (e.cancelable) e.preventDefault()
+      const a = Math.min(0, dx), m = a < -70 ? -70 + (a + 70) * 0.25 : a
+      g.dx = a
+      g.msg.style.transform = `translate3d(${m}px,0,0)`
+      const p = Math.min(1, -a / 56)
+      g.icon.style.opacity = String(p)
+      g.icon.style.transform = `translateY(-50%) scale(${0.6 + p * 0.4})`
+      if (p >= 1 && !g.felt) { g.felt = true; navigator.vibrate?.(8); g.icon.classList.add('ready') }
+      if (p < 1 && g.felt) { g.felt = false; g.icon.classList.remove('ready') }
+    }
+    const end = () => {
+      if (!g || g.lock !== 'x') { g = null; return }
+      const { msg, icon, dx, m } = g
+      g = null
+      msg.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)'
+      msg.style.transform = ''
+      icon.style.transition = 'opacity .2s'
+      icon.style.opacity = '0'
+      setTimeout(() => icon.remove(), 250)
+      if (dx <= -56) hands.current.setReplyTo(m)
+    }
+    box.addEventListener('touchstart', start, { passive: true })
+    box.addEventListener('touchmove', move, { passive: false })
+    box.addEventListener('touchend', end, { passive: true })
+    box.addEventListener('touchcancel', end, { passive: true })
+    return () => {
+      box.removeEventListener('touchstart', start)
+      box.removeEventListener('touchmove', move)
+      box.removeEventListener('touchend', end)
+      box.removeEventListener('touchcancel', end)
+    }
+  }, [room.room_id])
   const msgList = useMemo(() => shownMsgs.map((m, i) => {
           const prev = shownMsgs[i - 1]
           const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()

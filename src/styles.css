@@ -4004,3 +4004,11 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 .tab-x { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 6px; border-radius: 50%; color: var(--muted); font-style: normal; }
 .tab-x svg { width: 14px; height: 14px; }
 .tabs-scroll.editing > button > small { display: none; }
+
+/* inside a chat on a phone (Alex, 21 Oct): a long press opens the message's menu and selects no text (Copy is in the menu);
+   a message slid to the left shows the reply arrow on its right and is answered on letting go */
+@media (max-width: 760px) {
+  .scroll .msg, .scroll .msg * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+}
+.swipe-reply { position: absolute; right: 10px; top: 50%; transform: translateY(-50%) scale(.6); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--glass-2); color: var(--accent); opacity: 0; pointer-events: none; }
+.swipe-reply.ready { background: var(--accent); color: var(--accent-ink); }

@@ -3975,3 +3975,40 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 .tabs-scroll > button { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 /* menus opened by a long press: nothing in them gets selected by the finger (Alex, 21 Oct) */
 :is(.menu-list, .scrim), :is(.menu-list, .scrim) * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* a chat slid open on a phone, like Telegram (Alex, 21 Oct): two round buttons with their word under them */
+.rooms:not(.rooms-ghost) { position: relative; }
+.row-acts { position: absolute; z-index: 0; display: flex; align-items: center; gap: 6px; padding: 0 6px; width: 156px; }
+.row-acts.right { right: 0; }
+.row-acts.left { left: 0; }
+.row-acts button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 11.5px; font-weight: 500; }
+.row-acts button i { display: grid; place-items: center; width: 100%; height: 34px; border-radius: 999px; color: #fff; font-style: normal; }
+.row-acts button i svg { width: 18px; height: 18px; }
+.row-acts .ra-unread i { background: #3a8dff; }
+.row-acts .ra-pin i { background: #34c759; }
+.row-acts .ra-mute i { background: #f0a030; }
+.row-acts .ra-del i { background: #ff3b30; }
+.rooms .room[data-rid] { z-index: 1; }
+/* Settings > Folders: slide a folder left and Delete shows behind it (Alex, 21 Oct) */
+.fold-swipe { position: relative; overflow: hidden; }
+.fold-swipe + .fold-swipe { border-top: 1px solid var(--edge); }
+.fold-swipe > .fold-row { border-top: 0 !important; transition: transform .25s cubic-bezier(.22, 1, .36, 1); }
+.set-box:has(.fold-swipe) { overflow: hidden; } /* the red Delete keeps the box's round corners */
+.fold-swipe.dragging { z-index: 5; }
+.fold-del { position: absolute; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; border: 0; background: var(--danger, #ff453a); color: #fff; font-size: 12px; font-weight: 600; }
+.fold-del svg { width: 20px; height: 20px; }
+
+/* the folder tabs in Edit (Alex, 21 Oct, like Telegram): each one has its ×, and dragging one sideways reorders them live */
+.tabs-scroll.editing > button { touch-action: none; cursor: grab; }
+.tabs-scroll.editing > button.tab-dragging { z-index: 3; cursor: grabbing; transition: none !important; box-shadow: 0 8px 22px rgba(0, 0, 0, .18); background: var(--glass-2); border-radius: 999px; }
+.tab-x { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 6px; border-radius: 50%; color: var(--muted); font-style: normal; }
+.tab-x svg { width: 14px; height: 14px; }
+.tabs-scroll.editing > button > small { display: none; }
+
+/* inside a chat on a phone (Alex, 21 Oct): a long press opens the message's menu and selects no text (Copy is in the menu);
+   a message slid to the left shows the reply arrow on its right and is answered on letting go */
+@media (max-width: 760px) {
+  .scroll .msg, .scroll .msg * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+}
+.swipe-reply { position: absolute; right: 10px; top: 50%; transform: translateY(-50%) scale(.6); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--glass-2); color: var(--accent); opacity: 0; pointer-events: none; }
+.swipe-reply.ready { background: var(--accent); color: var(--accent-ink); }

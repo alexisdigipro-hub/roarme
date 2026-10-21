@@ -3841,7 +3841,7 @@ html[data-theme='stone'] .set-nav.on, html[data-theme='stone'] .set-nav.on :is(.
 .modal:has(.cc) .modal-head { position: absolute; right: 0; top: 0; z-index: 2; padding: 12px; }
 .modal:has(.cc) .modal-head h2 { display: none; }
 .cc { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 0 2px; }
-.cc-edit { position: absolute; top: -2px; left: 0; z-index: 1; }
+.cc-top { align-self: stretch; display: flex; gap: 8px; min-height: 40px; padding-right: 60px; margin-top: -4px; }
 .cc .av { margin-top: 4px; box-shadow: 0 14px 40px rgba(0, 0, 0, .25), inset 0 0 0 1px rgba(255, 255, 255, .25); }
 .cc-name { margin: 4px 0 0; font-size: 23px; font-weight: 700; text-align: center; letter-spacing: -.01em; line-height: 1.15; }
 .cc-sub { margin: -4px 0 0; color: var(--muted); font-size: 13.5px; text-align: center; }
@@ -3870,7 +3870,6 @@ button.cc-row:hover { background: rgba(255, 255, 255, .04); }
 .av, .av img { border-radius: 30%; }
 .av-on { right: -3px; bottom: -3px; width: 14px; height: 14px; }
 /* the contact card in Edit (Alex, 21 Oct: edit the contact right there): the name, the note and the photo in place */
-.cc-edit-two { display: flex; gap: 8px; left: 0; }
 .cc-done { background: var(--accent); color: var(--accent-ink, #fff); border-color: transparent; }
 .cc-pic { position: relative; margin-top: 4px; padding: 0; border: 0; background: none; border-radius: 30%; }
 .cc-pic .pf-pic-cam { position: absolute; right: -4px; bottom: -4px; }
@@ -3878,3 +3877,14 @@ button.cc-row:hover { background: rgba(255, 255, 255, .04); }
 .cc-name-in { width: 100%; max-width: 320px; text-align: center; background: var(--glass); border: 1px solid var(--edge); border-radius: 999px; padding: 6px 16px; color: var(--text); font: inherit; font-size: 20px; font-weight: 700; }
 .cc-note-in { width: 100%; min-height: 54px; resize: none; border: 0; background: none; color: var(--text); font: inherit; font-size: 15px; padding: 0; outline: none; }
 .cc-hint { margin: -2px 0 0; font-size: 12px; text-align: center; }
+
+/* Windows taller on a phone (Alex, 21 Oct): every window may use the whole screen's height, and a person's card or a
+   chat's card fills it, its parts spread down the card rather than crowded at the top */
+@media (max-width: 760px) {
+  .modal { max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+  .modal:has(.cc), .modal:has(.pf) { height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+  .modal:has(.cc) .modal-body { padding-top: 14px; }
+  .cc { gap: 12px; min-height: 100%; }
+  .cc-acts { margin: 8px 0 6px; }
+  .cc-notes { min-height: 84px; }
+}

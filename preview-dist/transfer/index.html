@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- RoarTransfer on its own (Alex, 20 Oct 2026): send big files without opening a chat, as on WeTransfer. Sign in
+     with the RoarMe account (the same saved sign-in as RoarMe on this site, storage key roarme-auth-2), drop files,
+     and each one gets a download link anyone can open for 3 days (RoarMe's ?t= page, Edge Function roar-transfer-get).
+     The files go to the person's own folder u/<id>/ in roar-transfers, as RoarMail's do (supabase/roarmail-transfers.sql),
+     in 6 MB resumable pieces (TUS, as src/lib.js tusUpload); roar-transfer-sweep removes them after 3 days.
+     Plain HTML in public/, so it needs no build step and no change to the database. -->
+<title>RoarTransfer · Send big files, up to 3 GB · RoarMe</title>
+<meta name="description" content="RoarTransfer by RoarMe: send files up to 3 GB with a link anyone can download for 3 days. Sign in with your RoarMe account.">
+<meta name="theme-color" content="#16181c">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+@font-face { font-family: 'Jost RoarMe'; src: url(../fonts/jost.woff2) format('woff2'); font-weight: 100 900; font-display: swap; }
+:root {
+  --bg: #16181c; --line: rgba(255,255,255,.09); --line-2: rgba(255,255,255,.16);
+  --text: #eef0f3; --muted: rgba(214,220,228,.62); --dim: rgba(214,220,228,.4);
+  --red: #d40000; --red-hi: #ff3b2f; --ok: #2fd36b; --warn: #ffd666;
+  --glass: rgba(255,255,255,.055); --glass-edge: rgba(255,255,255,.12);
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --disp: 'Jost RoarMe', Jost, Futura, var(--sans);
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color-scheme: dark; }
+body { margin: 0; min-height: 100vh; min-height: 100dvh; color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; display: flex; flex-direction: column; }
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(900px 560px at 50% -12%, #3c424c 0%, transparent 62%), radial-gradient(700px 520px at 50% 110%, rgba(212,0,0,.16), transparent 70%), linear-gradient(180deg, #23272e 0%, #17191d 50%, #121417 100%); }
+/* the stage (Alex, 20 Oct: laid out like Smash, the card as it is): a picture fills the screen (a new one each visit),
+   a film's name at the top when it is a still from one of ours; the card floats over it, centred, as frosted glass */
+.bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #0d0e10; }
+.bg img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.08); transition: opacity 1.4s ease, transform 14s cubic-bezier(.16,1,.3,1); }
+.bg.on img { opacity: 1; transform: scale(1); }
+.bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(60% 70% at 50% 50%, rgba(10,11,13,.38), rgba(10,11,13,.16) 70%), linear-gradient(180deg, rgba(10,11,13,.55), transparent 22%, transparent 70%, rgba(10,11,13,.7)); }
+.credit { display: flex; align-items: center; gap: 12px; padding-left: 14px; margin-left: 4px; border-left: 1px solid rgba(255,255,255,.22); text-decoration: none; line-height: 1.2; min-width: 0; }
+.credit small { display: block; font-size: 11px; letter-spacing: .04em; color: rgba(255,255,255,.66); }
+.credit b { display: block; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.credit:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.top .more { display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; background: rgba(255,255,255,.92); color: #16181c; font-size: 13px; font-weight: 700; text-decoration: none; transition: background .2s; }
+.top .more:hover { background: #fff; }
+a { color: inherit; }
+button, input { font: inherit; color: inherit; }
+svg { display: block; }
+:focus-visible { outline: 2px solid var(--red-hi); outline-offset: 3px; border-radius: 10px; }
+[hidden] { display: none !important; }
+
+/* top bar */
+.top { display: flex; align-items: center; gap: 12px; padding: calc(14px + env(safe-area-inset-top)) clamp(16px, 4vw, 40px) 14px; }
+.mark { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.mark i { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(180deg, #ff4a3d, #b50000); box-shadow: 0 8px 22px rgba(212,0,0,.35); }
+.mark i svg { width: 19px; height: 19px; }
+.mark b { font-family: var(--disp); font-size: 21px; font-weight: 800; letter-spacing: -.01em; }
+.mark b span { color: var(--red-hi); }
+.top .end { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.lang { display: flex; padding: 3px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-edge); }
+.lang button { border: 0; background: transparent; cursor: pointer; padding: 6px 11px; border-radius: 999px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--muted); }
+.lang button.on { background: rgba(255,255,255,.14); color: var(--text); }
+.who { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-edge); font-size: 12.5px; color: var(--muted); max-width: 46vw; }
+.who span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who button { flex: none; border: 0; cursor: pointer; padding: 6px 11px; border-radius: 999px; background: rgba(255,255,255,.08); font-size: 12px; font-weight: 600; }
+.who button:hover { background: rgba(255,255,255,.16); }
+
+/* the card */
+main { flex: 1; display: grid; place-items: center; padding: 8px 16px 32px; }
+.card { width: min(520px, 100%); padding: clamp(22px, 4vw, 34px); border-radius: 30px; background: linear-gradient(170deg, rgba(43,48,56,.42), rgba(20,22,26,.5)); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 50px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.14); -webkit-backdrop-filter: blur(28px) saturate(150%); backdrop-filter: blur(28px) saturate(150%); display: grid; gap: 18px; animation: up .7s var(--ease) both; }
+@keyframes up { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+h1 { margin: 0; font-family: var(--disp); font-size: clamp(34px, 8vw, 48px); font-weight: 300; line-height: .98; letter-spacing: -.01em; text-wrap: balance; }
+h1 b { font-weight: 800; }
+.sub { margin: -6px 0 0; font-size: 15px; line-height: 1.55; color: var(--muted); }
+
+/* sign in */
+.field { display: grid; gap: 6px; }
+.field label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.field input { height: 48px; padding: 0 18px; border-radius: 999px; background: rgba(0,0,0,.22); border: 1px solid var(--line-2); font-size: 16px; outline: none; transition: border-color .2s; }
+.field input:focus { border-color: rgba(255,90,80,.7); }
+.err { margin: 0; padding: 10px 14px; border-radius: 14px; background: rgba(212,0,0,.12); border: 1px solid rgba(255,90,80,.4); color: #ffb4ad; font-size: 13.5px; line-height: 1.45; }
+.alt { display: grid; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line); }
+.alt p { margin: 10px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+.alt a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+/* pills */
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 50px; padding: 0 24px; border-radius: 999px; font-size: 15.5px; font-weight: 650; border: 1px solid var(--glass-edge); background: var(--glass); cursor: pointer; text-decoration: none; transition: transform .3s var(--ease), background .2s, filter .2s, opacity .2s; }
+.pill:hover { background: rgba(255,255,255,.1); }
+.pill:active { transform: scale(.97); }
+.pill.main { background: var(--red); border-color: transparent; color: #fff; box-shadow: 0 14px 36px rgba(212,0,0,.34); }
+.pill.main:hover { filter: brightness(1.1); }
+.pill:disabled { opacity: .5; cursor: default; transform: none; filter: none; }
+.pill svg { width: 18px; height: 18px; flex: none; }
+.pill.sm { min-height: 40px; padding: 0 16px; font-size: 13.5px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.row .pill { flex: 1 1 0; }
+
+/* drop area */
+.drop { position: relative; display: grid; justify-items: center; gap: 12px; padding: clamp(28px, 6vw, 44px) 18px; border-radius: 24px; border: 1.5px dashed rgba(255,255,255,.2); background: rgba(0,0,0,.14); cursor: pointer; text-align: center; transition: border-color .25s, background .25s, transform .4s var(--ease); width: 100%; }
+.drop:hover, .drop.over { border-color: rgba(255,90,80,.8); background: rgba(212,0,0,.08); }
+.drop.over { transform: scale(1.015); }
+.drop .ic { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(180deg, #ff4a3d, #b50000); box-shadow: 0 0 0 8px rgba(212,0,0,.14), 0 16px 40px rgba(212,0,0,.4); }
+.drop .ic svg { width: 30px; height: 30px; }
+.drop .t { display: grid; gap: 4px; }
+.drop b { font-size: 18px; font-weight: 700; }
+.drop small { font-size: 13.5px; color: var(--muted); }
+.drop.has { padding: 16px; grid-template-columns: auto 1fr; justify-items: start; text-align: left; }
+.drop.has .ic { width: 40px; height: 40px; box-shadow: 0 8px 22px rgba(212,0,0,.35); } .drop.has .ic svg { width: 20px; height: 20px; }
+.drop.has b { font-size: 15px; } .drop.has .t { display: grid; gap: 2px; }
+
+/* files */
+.files { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow: auto; }
+.files li { display: flex; align-items: center; gap: 11px; padding: 9px 10px 9px 12px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid var(--line); min-width: 0; }
+.files .fi { flex: none; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: rgba(212,0,0,.18); color: #ff8f86; }
+.files .fi svg { width: 17px; height: 17px; }
+.files .ft { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.files .ft b { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.files .ft small { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.files .ft small.bad { color: #ff8f86; }
+.files .x { flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: var(--muted); display: grid; place-items: center; }
+.files .x:hover { background: rgba(255,255,255,.08); color: var(--text); }
+.files .x svg { width: 15px; height: 15px; }
+.files .cp { flex: none; min-height: 36px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--glass-edge); background: var(--glass); cursor: pointer; font-size: 12.5px; font-weight: 650; display: inline-flex; align-items: center; gap: 6px; }
+.files .cp svg { width: 14px; height: 14px; }
+.files .cp.ok { background: rgba(47,211,107,.16); border-color: rgba(47,211,107,.45); color: #a6efc0; }
+.files li .p { position: relative; flex: none; width: 34px; height: 34px; }
+.files li.sent .fi { background: rgba(47,211,107,.16); color: #7ee2a0; }
+
+/* meter + facts */
+.meter { display: grid; gap: 7px; }
+.meter .bar { height: 6px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; }
+.meter .bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #ff6b5e, #d40000); transition: width .5s var(--ease); }
+.meter.over .bar i { background: #ff3b2f; }
+.meter small { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.meter small b { color: var(--text); font-weight: 500; }
+.meter.over small { color: #ff8f86; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.facts span { display: grid; gap: 3px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+.facts i { width: 24px; height: 24px; color: #ff8f86; } .facts i svg { width: 18px; height: 18px; }
+.facts b { font-family: var(--disp); font-size: 21px; font-weight: 700; }
+.facts small { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+
+/* sending */
+.ring { position: relative; justify-self: center; width: 172px; height: 172px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 7; }
+.ring .tr { stroke: rgba(255,255,255,.08); }
+.ring .fl { stroke: url(#rg); stroke-linecap: round; transition: stroke-dashoffset .4s var(--ease); filter: drop-shadow(0 0 10px rgba(255,59,47,.5)); }
+.ring b { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--disp); font-size: 42px; font-weight: 300; }
+.center { text-align: center; }
+.note { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--muted); text-align: center; }
+.note.warn { color: var(--warn); }
+.done-ic { justify-self: center; width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(180deg, #3fe07c, #1f9d52); box-shadow: 0 0 0 10px rgba(47,211,107,.12), 0 18px 44px rgba(47,211,107,.32); animation: pop .6s var(--ease) both; }
+.done-ic.fail { background: linear-gradient(180deg, #ff4a3d, #b50000); box-shadow: 0 0 0 10px rgba(212,0,0,.14); }
+.done-ic svg { width: 36px; height: 36px; }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } }
+.until { justify-self: center; display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line-2); font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.until svg { width: 14px; height: 14px; }
+
+footer { padding: 0 16px calc(20px + env(safe-area-inset-bottom)); text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; color: var(--dim); }
+footer a { color: var(--muted); text-decoration: none; } footer a:hover { color: var(--text); }
+.wait { justify-self: center; width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,.14); border-top-color: var(--red-hi); animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 700px) { .credit, .top .more { display: none; } }
+@media (max-width: 480px) {
+  .top .mark b { font-size: 18px; }
+  .who { max-width: 40vw; padding-left: 10px; }
+  .facts { gap: 6px; } .facts span { padding: 10px; min-width: 0; } .facts b { font-size: 16px; overflow-wrap: anywhere; }
+  .card { border-radius: 26px; }
+}
+@media (prefers-reduced-motion: reduce) { .card, .done-ic { animation: none; } .drop, .pill, .ring .fl, .meter .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6b5e"/><stop offset="1" stop-color="#d40000"/></linearGradient>
+  <symbol id="i-up" viewBox="0 0 24 24"><g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h-.5a4.5 4.5 0 0 1-.9-8.9A6 6 0 0 1 17.3 8 4.5 4.5 0 0 1 17.5 18H17"/><path d="M12 20v-8M8.5 15 12 11.5 15.5 15"/></g></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></g></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9.5 4.5 2.5-4.5 2.5z"/></g></symbol>
+  <symbol id="i-img" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></g></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></g></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9.5 2.5h5"/></g></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m4 12 16-8-6 16-2.5-6.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></g></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></g></symbol>
+</defs></svg>
+
+<div class="bg" id="bg" aria-hidden="true"><img id="bg-img" alt=""></div>
+
+<header class="top">
+  <a class="mark" href="./" aria-label="RoarTransfer"><i><svg><use href="#i-up"/></svg></i><b>Roar<span>Transfer</span></b></a>
+  <a class="credit" id="credit" target="_blank" rel="noopener" hidden><span><small data-t="cr">A still from</small><b id="credit-t"></b></span></a>
+  <div class="end">
+    <a class="more" href="https://themadlions.com/lab/roartransfer/" target="_blank" rel="noopener" data-t="more">What is it?</a>
+    <div class="who" id="who" hidden><span id="who-mail"></span><button type="button" id="out" data-t="out">Sign out</button></div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="el">GR</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- while the saved sign-in is read -->
+  <div class="card" id="v-wait"><span class="wait" aria-label="Loading"></span></div>
+
+  <!-- signed out -->
+  <form class="card" id="v-in" hidden>
+    <h1 data-t="in.title" data-html>Big files, <b>one link</b>.</h1>
+    <p class="sub" data-t="in.sub">Up to 3 GB, kept for 3 days, for anyone with the link. Sign in with your RoarMe account to send.</p>
+    <div class="field"><label for="em" data-t="in.email">Email</label><input id="em" type="email" autocomplete="username" required inputmode="email"></div>
+    <div class="field"><label for="pw" data-t="in.pass">Password</label><input id="pw" type="password" autocomplete="current-password" required></div>
+    <p class="err" id="in-err" hidden></p>
+    <button class="pill main" type="submit" id="in-go"><span data-t="in.go">Sign in</span></button>
+    <div class="alt">
+      <p data-t="in.hub" data-html>Signed in to RoarMe with <b>THEMADLIONS Hub</b>, or no account yet? <a href="../">Open RoarMe</a>, sign in there, then come back here: this page uses the same sign-in.</p>
+    </div>
+  </form>
+
+  <!-- pick files -->
+  <div class="card" id="v-pick" hidden>
+    <h1 data-t="pk.title" data-html>Send <b>big files</b>.</h1>
+    <button type="button" class="drop" id="drop">
+      <span class="ic"><svg><use href="#i-up"/></svg></span>
+      <span class="t"><b id="drop-b" data-t="pk.drop">Drop your files here</b><small id="drop-s" data-t="pk.or">or click to choose them</small></span>
+    </button>
+    <input type="file" id="pick" multiple hidden>
+    <ul class="files" id="list" hidden></ul>
+    <div class="meter" id="meter" hidden><span class="bar"><i id="meter-i"></i></span><small id="meter-t"></small></div>
+    <div class="facts">
+      <span><i><svg><use href="#i-up"/></svg></i><b>3 GB</b><small data-t="pk.f1">per transfer</small></span>
+      <span><i><svg><use href="#i-timer"/></svg></i><b data-t="pk.f2b">3 days</b><small id="f-until"></small></span>
+      <span><i><svg><use href="#i-link"/></svg></i><b data-t="pk.f3b">Link</b><small data-t="pk.f3">for anyone, no account</small></span>
+    </div>
+    <button type="button" class="pill main" id="go" hidden><span id="go-t" data-t="pk.go">Transfer</span><svg><use href="#i-send"/></svg></button>
+  </div>
+
+  <!-- sending -->
+  <div class="card center" id="v-up" hidden>
+    <div class="ring"><svg viewBox="0 0 128 128" aria-hidden="true"><circle class="tr" cx="64" cy="64" r="56"/><circle class="fl" id="ring" cx="64" cy="64" r="56"/></svg><b id="pct">0%</b></div>
+    <p class="sub" id="up-t" style="margin:0"></p>
+    <p class="note" id="up-n" data-t="up.keep">Keep this page open until it is done. If the connection drops, it goes on from where it stopped.</p>
+    <button type="button" class="pill" id="stop"><svg><use href="#i-x"/></svg><span data-t="up.stop">Stop</span></button>
+  </div>
+
+  <!-- done -->
+  <div class="card" id="v-done" hidden>
+    <span class="done-ic" id="done-ic"><svg><use href="#i-check"/></svg></span>
+    <h1 class="center" id="done-h"></h1>
+    <span class="until" id="done-until"><svg><use href="#i-timer"/></svg><span></span></span>
+    <p class="err" id="done-err" hidden></p>
+    <ul class="files" id="done-list"></ul>
+    <div class="row" id="done-acts">
+      <button type="button" class="pill main" id="copy-all"><svg><use href="#i-link"/></svg><span data-t="dn.all">Copy all links</span></button>
+      <button type="button" class="pill" id="share" hidden><svg><use href="#i-share"/></svg><span data-t="dn.share">Share</span></button>
+      <a class="pill" id="mail"><svg><use href="#i-mail"/></svg><span data-t="dn.mail">Email</span></a>
+    </div>
+    <button type="button" class="pill" id="again"><span data-t="dn.again">Send more files</span></button>
+  </div>
+</main>
+
+<footer><a href="https://themadlions.com/lab/roartransfer/" target="_blank" rel="noopener" data-t="ft">RoarTransfer · by The Mad Lions</a></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  // RoarMe's own project and public key (src/lib.js); what each person may write is enforced by the database
+  var URL_ = 'https://bzmjhbnwhdwmncxkqkdl.supabase.co'
+  var KEY = 'sb_publishable_7mQ3e0NH5lCmdoIKx2-FUA_EgCoXx9X'
+  var BUCKET = 'roar-transfers'
+  var MAX = 3 * 1024 * 1024 * 1024
+  var DAYS = 3
+  var PIECE = 6 * 1024 * 1024
+  var TUS = URL_.replace('.supabase.co', '.storage.supabase.co') + '/storage/v1/upload/resumable'
+  // the download page every RoarTransfer link opens (RoarMe's ?t=, src/transfer.jsx TransferPage)
+  // (the site's own one; a copy opened elsewhere, as in a local test, links to the live page)
+  var PAGE = /\/roarme\/transfer\/?$/.test(location.pathname) ? new URL('../', location.href).href : 'https://alexisdigipro-hub.github.io/roarme/'
+
+  var EL = {
+    'out': 'Αποσύνδεση',
+    'in.title': 'Μεγάλα αρχεία, <b>ένας σύνδεσμος</b>.', 'in.sub': 'Ως 3 GB, για 3 μέρες, για όποιον έχει τον σύνδεσμο. Συνδέσου με τον λογαριασμό σου στο RoarMe για να στείλεις.',
+    'in.email': 'Email', 'in.pass': 'Κωδικός', 'in.go': 'Σύνδεση',
+    'in.hub': 'Μπαίνεις στο RoarMe με το <b>THEMADLIONS Hub</b>, ή δεν έχεις ακόμα λογαριασμό; <a href="../">Άνοιξε το RoarMe</a>, συνδέσου εκεί και γύρνα εδώ: η σελίδα χρησιμοποιεί την ίδια σύνδεση.',
+    'pk.title': 'Στείλε <b>μεγάλα αρχεία</b>.', 'pk.drop': 'Άφησε τα αρχεία σου εδώ', 'pk.or': 'ή πάτα για να τα διαλέξεις',
+    'pk.f1': 'ανά αποστολή', 'pk.f2b': '3 μέρες', 'pk.f3b': 'Link','pk.f3': 'για όλους, χωρίς λογαριασμό', 'pk.go': 'Αποστολή',
+    'up.keep': 'Κράτα τη σελίδα ανοιχτή ώσπου να τελειώσει. Αν πέσει η σύνδεση, συνεχίζει από εκεί που σταμάτησε.', 'up.stop': 'Διακοπή',
+    'dn.all': 'Αντιγραφή όλων', 'dn.share': 'Κοινοποίηση', 'dn.mail': 'Email', 'dn.again': 'Στείλε κι άλλα αρχεία',
+    'cr': 'Ένα καρέ από', 'more': 'Τι είναι;',
+    'ft': 'RoarTransfer · από τους The Mad Lions'
+  }
+  var W = {
+    en: {
+      more: 'Add more', more2: 'or drop them here', of: 'of 3 GB', file: 'file', files: 'files', over: 'Over 3 GB', tooBig: 'over 3 GB',
+      until: 'until', sent: 'sent', sentOne: 'Sent!', sentMany: function (n) { return n + ' files sent!' }, none: 'Nothing was sent',
+      left: 'Anyone with the link can download until', copy: 'Copy link', copied: 'Copied', allCopied: 'All links copied', cant: 'Could not copy',
+      bad: 'Wrong email or password.', offline: 'Could not reach RoarMe. Check the connection and try again.',
+      off: 'RoarTransfer is not open to this account yet.', stopped: 'Stopped.', leave: 'Files are still uploading.',
+      mailSub: 'Files for you (RoarTransfer)', mailBody: 'Download them here, until', remove: 'Remove'
+    },
+    el: {
+      more: 'Πρόσθεσε κι άλλα', more2: 'ή άφησέ τα εδώ', of: 'από 3 GB', file: 'αρχείο', files: 'αρχεία', over: 'Πάνω από 3 GB', tooBig: 'πάνω από 3 GB',
+      until: 'ως', sent: 'στάλθηκαν', sentOne: 'Στάλθηκε!', sentMany: function (n) { return 'Στάλθηκαν ' + n + ' αρχεία!' }, none: 'Δεν στάλθηκε τίποτα',
+      left: 'Όποιος έχει τον σύνδεσμο μπορεί να κατεβάσει ως', copy: 'Αντιγραφή', copied: 'Αντιγράφηκε', allCopied: 'Αντιγράφηκαν όλοι', cant: 'Δεν αντιγράφηκε',
+      bad: 'Λάθος email ή κωδικός.', offline: 'Δεν βρέθηκε το RoarMe. Έλεγξε τη σύνδεση και δοκίμασε ξανά.',
+      off: 'Το RoarTransfer δεν είναι ακόμα ανοιχτό σε αυτόν τον λογαριασμό.', stopped: 'Διακόπηκε.', leave: 'Τα αρχεία ανεβαίνουν ακόμα.',
+      mailSub: 'Αρχεία για σένα (RoarTransfer)', mailBody: 'Κατέβασέ τα εδώ, ως', remove: 'Αφαίρεση'
+    }
+  }
+  var lang = 'en'
+  var w = function (k) { return W[lang][k] }
+  var $ = function (id) { return document.getElementById(id) }
+
+  // the language: the one picked here before, else the browser's
+  var nodes = [].slice.call(document.querySelectorAll('[data-t]'))
+  var EN = {}
+  nodes.forEach(function (n) { EN[n.dataset.t] = n.hasAttribute('data-html') ? n.innerHTML : n.textContent })
+  function setLang(l) {
+    lang = l === 'el' ? 'el' : 'en'
+    var d = lang === 'el' ? EL : EN
+    nodes.forEach(function (n) { var v = d[n.dataset.t]; if (v == null) v = EN[n.dataset.t]; if (n.hasAttribute('data-html')) n.innerHTML = v; else n.textContent = v })
+    document.documentElement.lang = lang
+    document.querySelectorAll('.lang button').forEach(function (b) { b.classList.toggle('on', b.dataset.lang === lang) })
+    try { localStorage.setItem('roartransfer.lang', lang) } catch (e) {}
+    paint()
+  }
+  document.querySelectorAll('.lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.dataset.lang) }) })
+
+  var day = function (ms) { return new Date(ms).toLocaleDateString(lang === 'el' ? 'el-GR' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }
+  var hour = function (ms) { return new Date(ms).toLocaleTimeString(lang === 'el' ? 'el-GR' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) }
+  var size = function (n) { return n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round((n || 0) / 1e3)) + ' KB' }
+  var icon = function (t) { return /^video\//.test(t) ? 'i-play' : /^image\//.test(t) ? 'i-img' : 'i-file' }
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] }) }
+
+  // the same saved sign-in as RoarMe on this site (src/lib.js storageKey)
+  var sb = window.supabase.createClient(URL_, KEY, { auth: { storageKey: 'roarme-auth-2', persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } })
+  var user = null
+
+  var views = ['v-wait', 'v-in', 'v-pick', 'v-up', 'v-done']
+  var view = 'v-wait'
+  function show(v) { view = v; views.forEach(function (id) { $(id).hidden = id !== v }); $('who').hidden = !user || v === 'v-in' }
+
+  // ---- sign in ----
+  $('v-in').addEventListener('submit', function (e) {
+    e.preventDefault()
+    var err = $('in-err'); err.hidden = true
+    $('in-go').disabled = true
+    sb.auth.signInWithPassword({ email: $('em').value.trim(), password: $('pw').value }).then(function (r) {
+      $('in-go').disabled = false
+      if (r.error) { err.textContent = /invalid/i.test(r.error.message) ? w('bad') : /fetch|network/i.test(r.error.message) ? w('offline') : r.error.message; err.hidden = false }
+    }).catch(function () { $('in-go').disabled = false; err.textContent = w('offline'); err.hidden = false })
+  })
+  $('out').addEventListener('click', function () { if (busy) return; sb.auth.signOut() })
+  sb.auth.onAuthStateChange(function (ev, session) {
+    user = session && session.user || null
+    $('who-mail').textContent = user ? user.email || '' : ''
+    if (!user) { if (!busy) show('v-in') } else if (view === 'v-wait' || view === 'v-in') { $('pw').value = ''; show('v-pick'); paint() }
+    else $('who').hidden = false
+  })
+  sb.auth.getSession().then(function (r) { if (!r.data.session) show('v-in') })
+
+  // ---- pick ----
+  var files = []
+  var total = function () { return files.reduce(function (n, f) { return n + f.size }, 0) }
+  function add(list) {
+    [].slice.call(list || []).forEach(function (f) { if (!files.some(function (x) { return x.name === f.name && x.size === f.size })) files.push(f) })
+    paint()
+  }
+  function paint() {
+    $('f-until').textContent = w('until') + ' ' + day(Date.now() + DAYS * 864e5)
+    var t = total(), over = t > MAX, has = files.length > 0
+    $('drop').classList.toggle('has', has)
+    $('drop-b').textContent = has ? w('more') : (lang === 'el' ? EL['pk.drop'] : EN['pk.drop'])
+    $('drop-s').textContent = has ? w('more2') : (lang === 'el' ? EL['pk.or'] : EN['pk.or'])
+    $('list').hidden = !has; $('meter').hidden = !has; $('go').hidden = !has
+    $('list').innerHTML = files.map(function (f, n) {
+      return '<li><span class="fi"><svg><use href="#' + icon(f.type) + '"/></svg></span><span class="ft"><b>' + esc(f.name) + '</b><small' + (f.size > MAX ? ' class="bad"' : '') + '>' + size(f.size) + (f.size > MAX ? ' · ' + w('tooBig') : '') + '</small></span>'
+        + '<button type="button" class="x" data-n="' + n + '" aria-label="' + w('remove') + '"><svg><use href="#i-x"/></svg></button></li>'
+    }).join('')
+    $('meter').classList.toggle('over', over)
+    $('meter-i').style.width = Math.min(100, t / MAX * 100) + '%'
+    $('meter-t').innerHTML = '<b>' + size(t) + '</b> ' + w('of') + ' · ' + files.length + ' ' + (files.length === 1 ? w('file') : w('files'))
+    $('go').disabled = over
+    $('go-t').textContent = over ? w('over') : (lang === 'el' ? EL['pk.go'] : EN['pk.go'])
+    if (view === 'v-done') paintDone()
+  }
+  $('list').addEventListener('click', function (e) { var b = e.target.closest('.x'); if (b) { files.splice(+b.dataset.n, 1); paint() } })
+  $('drop').addEventListener('click', function () { $('pick').click() })
+  $('pick').addEventListener('change', function (e) { add(e.target.files); e.target.value = '' })
+  var drop = $('drop')
+  ;['dragenter', 'dragover'].forEach(function (k) { drop.addEventListener(k, function (e) { e.preventDefault(); drop.classList.add('over') }) })
+  drop.addEventListener('dragleave', function () { drop.classList.remove('over') })
+  drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('over'); add(e.dataTransfer && e.dataTransfer.files) })
+  // a file dropped anywhere on the page counts too, instead of the browser opening it
+  window.addEventListener('dragover', function (e) { e.preventDefault() })
+  window.addEventListener('drop', function (e) { e.preventDefault(); if (view === 'v-pick') add(e.dataTransfer && e.dataTransfer.files) })
+
+  // ---- send: each file in 6 MB pieces, resumable (as RoarMe's tusUpload and RoarMail's transfer) ----
+  var busy = false, stopped = false, xhr = null
+  var sent = [], errs = []
+  var C = 2 * Math.PI * 56
+  $('ring').style.strokeDasharray = C
+  function progress(done) {
+    var t = total(), p = t ? Math.min(1, done / t) : 0
+    $('ring').style.strokeDashoffset = C * (1 - p)
+    $('pct').textContent = Math.round(p * 100) + '%'
+    $('up-t').textContent = size(done) + ' / ' + size(t) + ' · ' + sent.length + ' / ' + files.length + ' ' + w('sent')
+  }
+  var b64 = function (t) { var s = ''; new TextEncoder().encode(t).forEach(function (c) { s += String.fromCharCode(c) }); return btoa(s) }
+  function head() {
+    return sb.auth.getSession().then(function (r) {
+      var s = r.data.session; if (!s) throw new Error('signed-out')
+      return { Authorization: 'Bearer ' + s.access_token, apikey: KEY, 'Tus-Resumable': '1.0.0' }
+    })
+  }
+  function call(method, url, headers, body, onUp) {
+    return new Promise(function (ok, no) {
+      if (stopped) { no(new Error('cancelled')); return }
+      xhr = new XMLHttpRequest()
+      xhr.open(method, url)
+      Object.keys(headers).forEach(function (k) { xhr.setRequestHeader(k, headers[k]) })
+      if (onUp) xhr.upload.onprogress = function (e) { onUp(e.loaded) }
+      xhr.onload = function () { ok(xhr) }
+      xhr.onerror = function () { no(new Error('offline')) }
+      xhr.onabort = function () { no(new Error('cancelled')) }
+      xhr.send(body == null ? null : body)
+    })
+  }
+  var failed = function (r) {
+    if (r.status === 403 || /row-level security|unauthorized/i.test(r.responseText)) return new Error(w('off'))
+    var m = 'Upload failed (' + r.status + ')'; try { m = JSON.parse(r.responseText).message || m } catch (e) {}
+    return Object.assign(new Error(m), { fatal: true })
+  }
+  var wait = function (ms) { return new Promise(function (ok) { setTimeout(ok, ms) }) }
+  async function upOne(f, before) {
+    var safe = (f.name || 'file').normalize('NFKD').replace(/[^\w.-]+/g, '_').slice(-80) || 'file'
+    var path = 'u/' + user.id + '/' + crypto.randomUUID() + '-' + safe
+    var type = f.type || 'application/octet-stream'
+    var meta = [['bucketName', BUCKET], ['objectName', path], ['contentType', type], ['cacheControl', '3600']].map(function (p) { return p[0] + ' ' + b64(p[1]) }).join(',')
+    var made = await call('POST', TUS, Object.assign(await head(), { 'Upload-Length': String(f.size), 'x-upsert': 'false', 'Upload-Metadata': meta }))
+    if (made.status !== 201) throw failed(made)
+    var loc = made.getResponseHeader('Location') || ''
+    var at = /^https?:/.test(loc) ? loc : new URL(loc, TUS).href
+    var off = 0, tries = 0
+    while (off < f.size) {
+      var piece = f.slice(off, Math.min(off + PIECE, f.size))
+      try {
+        var start = off
+        var r = await call('PATCH', at, Object.assign(await head(), { 'Upload-Offset': String(off), 'Content-Type': 'application/offset+octet-stream' }), piece, function (n) { progress(before + start + n) })
+        if (r.status === 204) { off = Number(r.getResponseHeader('Upload-Offset')) || off + piece.size; tries = 0; progress(before + off); continue }
+        if (r.status !== 409 && r.status < 500) throw failed(r)
+        throw new Error('Upload failed (' + r.status + ')')
+      } catch (e) {
+        if (stopped || e.fatal || e.message === 'cancelled') throw e
+        if (++tries > 6) throw e
+        // wait a little, then ask the server how far it really got and go on from there
+        await wait(Math.min(30000, 1000 * Math.pow(2, tries)))
+        try { var h = await call('HEAD', at, await head()); if (h.status === 200) off = Number(h.getResponseHeader('Upload-Offset')) || off } catch (x) { if (x.message === 'cancelled') throw x }
+      }
+    }
+    // its link: a short token anyone can open on RoarMe's download page until the 3 days are up
+    var abc = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+    var token = Array.from(crypto.getRandomValues(new Uint8Array(12)), function (n) { return abc[n % abc.length] }).join('')
+    var expires = new Date(Date.now() + DAYS * 864e5).toISOString()
+    var ins = await sb.from('roar_transfer_links').insert({ token: token, path: path, name: f.name || 'file', size: f.size, type: f.type || '', expires_at: expires })
+    if (ins.error) throw new Error(/row-level security/i.test(ins.error.message) ? w('off') : ins.error.message)
+    return { name: f.name, size: f.size, type: f.type, url: PAGE + '?t=' + token, expires: expires }
+  }
+  $('go').addEventListener('click', async function () {
+    if (!files.length || total() > MAX || busy) return
+    busy = true; stopped = false; sent = []; errs = []
+    $('up-n').classList.remove('warn')
+    show('v-up'); progress(0)
+    var before = 0
+    for (var i = 0; i < files.length; i++) {
+      if (stopped) break
+      var f = files[i]
+      try { sent.push(await upOne(f, before)) } catch (e) {
+        if (stopped || e.message === 'cancelled') break
+        errs.push(f.name + ': ' + (e.message === 'offline' ? w('offline') : e.message === 'signed-out' ? w('bad') : e.message))
+      }
+      before += f.size; progress(before)
+    }
+    busy = false
+    if (stopped && !sent.length) { show('v-pick'); paint(); return }
+    if (stopped) errs.push(w('stopped'))
+    show('v-done'); paintDone()
+  })
+  $('stop').addEventListener('click', function () { stopped = true; if (xhr) xhr.abort() })
+  window.addEventListener('beforeunload', function (e) { if (busy) { e.preventDefault(); e.returnValue = w('leave') } })
+
+  // ---- done ----
+  function linksText() { return sent.map(function (m) { return m.name + ' (' + size(m.size) + ')\n' + m.url }).join('\n\n') }
+  function paintDone() {
+    var ok = sent.length > 0
+    $('done-ic').classList.toggle('fail', !ok)
+    $('done-ic').innerHTML = '<svg><use href="#' + (ok ? 'i-check' : 'i-x') + '"/></svg>'
+    $('done-h').textContent = !ok ? w('none') : sent.length === 1 ? w('sentOne') : w('sentMany')(sent.length)
+    $('done-until').hidden = !ok
+    if (ok) { var ms = new Date(sent[0].expires).getTime(); $('done-until').querySelector('span').textContent = w('left') + ' ' + day(ms) + ' ' + hour(ms) }
+    $('done-err').hidden = !errs.length; $('done-err').textContent = errs.join(' · ')
+    $('done-acts').hidden = !ok
+    $('done-list').hidden = !ok
+    $('done-list').innerHTML = sent.map(function (m, n) {
+      return '<li class="sent"><span class="fi"><svg><use href="#' + icon(m.type) + '"/></svg></span><span class="ft"><b>' + esc(m.name) + '</b><small>' + size(m.size) + '</small></span>'
+        + '<button type="button" class="cp" data-n="' + n + '"><svg><use href="#i-link"/></svg><span>' + w('copy') + '</span></button></li>'
+    }).join('')
+    if (ok) {
+      var ms2 = new Date(sent[0].expires).getTime()
+      $('mail').href = 'mailto:?subject=' + encodeURIComponent(w('mailSub')) + '&body=' + encodeURIComponent(w('mailBody') + ' ' + day(ms2) + ' ' + hour(ms2) + ':\n\n' + linksText())
+      $('share').hidden = !navigator.share
+    }
+  }
+  function copy(text, btn, word) {
+    var label = btn.querySelector('span'), was = label.textContent
+    var done = function (good) { label.textContent = good ? word : w('cant'); btn.classList.toggle('ok', good); setTimeout(function () { label.textContent = was; btn.classList.remove('ok') }, 1800) }
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { done(true) }, function () { done(false) })
+    else done(false)
+  }
+  $('done-list').addEventListener('click', function (e) { var b = e.target.closest('.cp'); if (b) copy(sent[+b.dataset.n].url, b, w('copied')) })
+  $('copy-all').addEventListener('click', function () { copy(sent.length === 1 ? sent[0].url : linksText(), $('copy-all'), w('allCopied')) })
+  $('share').addEventListener('click', function () { navigator.share({ title: 'RoarTransfer', text: linksText() }).catch(function () {}) })
+  $('again').addEventListener('click', function () { files = []; sent = []; errs = []; show('v-pick'); paint() })
+
+  // one of Alex's pictures behind the card, a new one each visit (Alex, 20 Oct; kept here in stills/, nothing from
+  // elsewhere). A picture from one of our films can carry t / k / v to name the film at the top, with a link to it.
+  var STILLS = [{ f: 'salon.webp' }, { f: 'shoes.webp' }, { f: 'tartan.webp' }, { f: 'corridor.webp' }, { f: 'sunflower.webp' }, { f: 'silhouette.webp' }]
+  var still = STILLS[Math.floor(Math.random() * STILLS.length)]
+  var img = $('bg-img')
+  img.onload = function () { $('bg').classList.add('on') }
+  img.src = 'stills/' + still.f
+  function credit() { if (still.t) $('credit-t').textContent = still.t + ' · ' + still.k[lang] }
+  if (still.t) { $('credit').href = 'https://www.youtube.com/watch?v=' + still.v; $('credit').hidden = false }
+  var _setLang = setLang
+  setLang = function (l) { _setLang(l); credit() }
+
+  var saved = ''
+  try { saved = localStorage.getItem('roartransfer.lang') || '' } catch (e) {}
+  setLang(saved || (/^el\b/i.test(navigator.language || '') ? 'el' : 'en'))
+})()
+</script>
+</body>
+</html>

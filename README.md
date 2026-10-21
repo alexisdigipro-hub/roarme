@@ -541,3 +541,4 @@ Alex: "see what weighs RoarMe down and lighten it". Nothing looks different exce
 - Photos and avatars load lazily (`loading="lazy"`), and the photo links of a chat are asked for in one request (`createSignedUrls`).
 - One page of older messages at a time; back at the bottom of a long chat the oldest pages read are let go (kept at 150).
 - The call clock ticks in the call screen only, not in the whole chat.
+- New profile, group and contact photos are saved at 400 px instead of 640 (the largest circle they fill is 132 px).

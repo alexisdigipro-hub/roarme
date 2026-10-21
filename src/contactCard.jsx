@@ -54,7 +54,7 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
     <Modal title="" onClose={onClose}>
       <div className="cc">
         <button type="button" className="cc-edit pill-btn" onClick={() => setEditing(true)}>Edit</button>
-        <Avatar src={p.avatar_url} name={name} size={132} online={onlineNow(p)} />
+        <Avatar src={p.avatar_url} name={name} size={96} online={onlineNow(p)} />
         <h2 className="cc-name">{name}</h2>
         <p className="cc-sub">{lastSeenText(p) || `@${p.username}`}</p>
         {p.nickname && <p className="cc-sub cc-real">{`Their name: ${p.real_name || `@${p.username}`}`}</p>}

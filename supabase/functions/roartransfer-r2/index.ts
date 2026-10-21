@@ -27,6 +27,10 @@ async function presign(method: string, key: string, query: Record<string, string
   return (await r2.sign(new Request(u, { method }), { aws: { signQuery: true } })).url
 }
 const tag = (xml: string, name: string) => (xml.match(new RegExp(`<${name}>([^<]*)</${name}>`)) || [])[1] || ''
+const newToken = () => {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+  return Array.from(crypto.getRandomValues(new Uint8Array(12)), (n) => abc[n % abc.length]).join('')
+}
 const safeName = (n: string) => (n || 'file').normalize('NFKD').replace(/[^\w.-]+/g, '_').slice(-80) || 'file'
 
 Deno.serve(async (req) => {
@@ -84,12 +88,24 @@ async function handle(req: Request): Promise<Response> {
     const head = await r2.fetch(at(b.key), { method: 'HEAD' })
     const size = Number(head.headers.get('content-length')) || Number(b.size) || 0
     if (size > MAX) { await r2.fetch(at(b.key), { method: 'DELETE' }); return json({ error: 'Files can be up to 3 GB.' }, 400) }
-    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
-    const token = Array.from(crypto.getRandomValues(new Uint8Array(12)), (n) => abc[n % abc.length]).join('')
+    const token = newToken()
     const expires = new Date(Date.now() + DAYS * 864e5).toISOString()
     const { error } = await sb.from('roar_transfer_links').insert({ token, path: b.key, name: String(b.name || 'file').slice(0, 300), size, type: String(b.type || ''), expires_at: expires, created_by: uid, store: 'r2' })
     if (error) return json({ error: error.message }, 500)
     return json({ token, expires, size })
+  }
+
+  // one link for the whole upload (Alex, 21 Oct): the file links it holds must all be the caller's own
+  if (b.action === 'bundle') {
+    const tokens = (Array.isArray(b.tokens) ? b.tokens : []).map(String).filter((t: string) => /^[A-Za-z0-9]{10,32}$/.test(t)).slice(0, 200)
+    if (!tokens.length) return json({ error: 'nothing to link' }, 400)
+    const { data: rows } = await sb.from('roar_transfer_links').select('token, expires_at').in('token', tokens).eq('created_by', uid)
+    if (!rows || rows.length !== new Set(tokens).size) return json({ error: 'not allowed' }, 403)
+    const token = newToken()
+    const expires = rows.reduce((a: string, r: any) => (r.expires_at > a ? r.expires_at : a), rows[0].expires_at)
+    const { error } = await sb.from('roar_transfer_bundles').insert({ token, tokens, created_by: uid, expires_at: expires })
+    if (error) return json({ error: error.message }, 500)
+    return json({ token, expires })
   }
 
   if (b.action === 'abort') {

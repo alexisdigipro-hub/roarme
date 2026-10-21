@@ -215,3 +215,28 @@ begin
 end $$;
 revoke all on function public.roar_transfer_stop(text) from public, anon;
 grant execute on function public.roar_transfer_stop(text) to authenticated;
+
+-- One link for a whole upload (Alex, 21 Oct 2026: "one link, one file or many"). roartransfer-r2 'bundle' makes it
+-- from the caller's own file links; roar-transfer-get ?t=<bundle> lists every file still alive with its address.
+create table if not exists public.roar_transfer_bundles (
+  token text primary key check (token ~ '^[A-Za-z0-9]{10,32}$'),
+  tokens text[] not null,
+  created_by uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null
+);
+alter table public.roar_transfer_bundles enable row level security;
+revoke all on public.roar_transfer_bundles from anon, authenticated;
+
+-- an open of a bundle counts as an open of each of its files; a download is always one file
+create or replace function public.roar_transfer_hit(t text, dl boolean) returns void
+language sql security definer set search_path = public as $$
+  update public.roar_transfer_links
+  set opens = opens + case when dl then 0 else 1 end,
+      downloads = downloads + case when dl then 1 else 0 end,
+      last_download = case when dl then now() else last_download end
+  where expires_at > now()
+    and (token = t or (not dl and token = any (coalesce((select b.tokens from public.roar_transfer_bundles b where b.token = t), '{}'))))
+$$;
+revoke all on function public.roar_transfer_hit(text, boolean) from public;
+grant execute on function public.roar_transfer_hit(text, boolean) to anon, authenticated, service_role;

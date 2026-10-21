@@ -27,20 +27,44 @@ Deno.serve(async (req) => {
   const t = new URL(req.url).searchParams.get('t') || ''
   if (!/^[A-Za-z0-9]{10,32}$/.test(t)) return json({ error: 'not_found' }, 404)
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  const { data: link } = await sb.from('roar_transfer_links').select('path, name, size, type, expires_at, store').eq('token', t).maybeSingle()
-  if (!link) return json({ error: 'not_found' }, 404)
-  const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at }
-  if (new Date(link.expires_at).getTime() <= Date.now()) return json({ ...info, error: 'expired' }, 410)
+  const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store').eq('token', t).maybeSingle()
+  if (link) {
+    const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at }
+    if (new Date(link.expires_at).getTime() <= Date.now()) return json({ ...info, error: 'expired' }, 410)
+    const one = await addresses(sb, link)
+    if (!one) return json({ ...info, error: 'expired' }, 410)
+    return json({ ...info, ...one })
+  }
+  // one link for a whole upload (roartransfer.com, Alex 21 Oct): every file still alive, each with its own address
+  const { data: bundle } = await sb.from('roar_transfer_bundles').select('tokens, expires_at').eq('token', t).maybeSingle()
+  if (!bundle) return json({ error: 'not_found' }, 404)
+  const { data: rows } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store').in('token', bundle.tokens)
+  const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > Date.now())
+    .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
+  if (!live.length) return json({ bundle: true, expires: bundle.expires_at, error: 'expired' }, 410)
+  // deno-lint-ignore no-explicit-any
+  const files: any[] = []
+  for (const r of live) {
+    const one = await addresses(sb, r)
+    if (one) files.push({ token: r.token, name: r.name, size: r.size, type: r.type, expires: r.expires_at, ...one })
+  }
+  if (!files.length) return json({ bundle: true, expires: bundle.expires_at, error: 'expired' }, 410)
+  return json({ bundle: true, expires: files.reduce((a, f) => (f.expires > a ? f.expires : a), files[0].expires), files })
+})
+
+// a file's download address (with its real name) and, for a video, a picture or audio, one to play it
+// deno-lint-ignore no-explicit-any
+async function addresses(sb: any, link: any): Promise<{ url: string, view: string } | null> {
   const media = /^(video|audio|image)\//.test(link.type)
   if (link.store === 'r2') {
     const url = await r2Url(link.path, { 'response-content-disposition': disposition(link.name || 'file') })
     const view = media ? await r2Url(link.path, { 'response-content-type': link.type }) : ''
-    return json({ ...info, url, view })
+    return { url, view }
   }
   const { data: signed } = await sb.storage.from('roar-transfers').createSignedUrl(link.path, 3600)
   const { data: play } = media ? await sb.storage.from('roar-transfers').createSignedUrl(link.path, 3600) : { data: null }
-  if (!signed?.signedUrl) return json({ ...info, error: 'expired' }, 410)
+  if (!signed?.signedUrl) return null
   const url = new URL(signed.signedUrl)
   url.searchParams.delete('download')
-  return json({ ...info, url: `${url.toString()}&download=${encodeURIComponent(link.name || 'file')}`, view: play?.signedUrl || '' })
-})
+  return { url: `${url.toString()}&download=${encodeURIComponent(link.name || 'file')}`, view: play?.signedUrl || '' }
+}

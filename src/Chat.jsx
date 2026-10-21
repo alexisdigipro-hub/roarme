@@ -519,6 +519,17 @@ export default function Chat({ me, setMe }) {
   const [pageDrag, setPageDrag] = useState(null) // { dir, id }: the folder showing beside the list
   const [swipedTo, setSwipedTo] = useState('') // a folder reached by a swipe comes in without the row cascade
   const pagerNow = useRef({})
+  // a slow slide on one chat shows Telegram's buttons under it (Alex, 21 Oct): to the left Mute and Delete,
+  // to the right Unread and Pin; a quick flick still turns the folder
+  const [rowActs, setRowActs] = useState(null) // { id, side: 'left' | 'right', top, h }
+  const rowNow = useRef(null) // { el, id }: the chat slid open
+  const rowSkip = useRef(0)
+  const shutRow = () => {
+    const o = rowNow.current
+    rowNow.current = null
+    if (o?.el) { o.el.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)'; o.el.style.transform = '' }
+    setTimeout(() => { if (!rowNow.current) setRowActs(null) }, 280)
+  }
   useLayoutEffect(() => {
     const t = trackRef.current
     if (t) { t.style.transition = 'none'; t.style.transform = '' }
@@ -551,9 +562,12 @@ export default function Chat({ me, setMe }) {
     const start = (e) => {
       const n = pagerNow.current
       if (e.touches.length !== 1) { g = null; return }
+      if (e.target.closest?.('.row-acts')) { g = null; return } // a tap on Mute, Delete, Unread or Pin
+      if (rowNow.current) { shutRow(); rowSkip.current = Date.now(); g = null; return } // a touch anywhere closes the open chat first
       const phone = window.matchMedia('(max-width: 760px)').matches
       g = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, t: Date.now(), lx: e.touches[0].clientX, lt: Date.now(), v: 0,
-        side: !n.busy && phone, top: (el.querySelector('.rooms')?.scrollTop || 0) <= 0, open: n.searchOpen, phone, pull: 0 }
+        side: !n.busy && phone, top: (el.querySelector('.rooms')?.scrollTop || 0) <= 0, open: n.searchOpen, phone, pull: 0,
+        rowEl: phone && !n.picking ? e.target.closest?.('.rooms:not(.rooms-ghost) .room[data-rid]') : null }
     }
     const touchMove = (e) => {
       if (!g) return
@@ -561,6 +575,12 @@ export default function Chat({ me, setMe }) {
       if (!g.lock) {
         if (Math.abs(dx) < 7 && Math.abs(dy) < 7) return
         g.lock = Math.abs(dx) > Math.abs(dy) * 1.1 ? (g.side ? 'x' : 'none') : 'y'
+        if (g.lock === 'x' && g.rowEl && Math.abs(dx) / Math.max(1, Date.now() - g.t) < 0.5) {
+          g.lock = 'row'
+          g.rs = dx < 0 ? 'right' : 'left'
+          g.rowEl.style.transition = 'none'
+          setRowActs({ id: g.rowEl.dataset.rid, side: g.rs, top: g.rowEl.offsetTop, h: g.rowEl.offsetHeight })
+        }
         if (g.lock === 'x') {
           const n = pagerNow.current
           const at = n.allFolders.findIndex((f) => f.id === n.folder)
@@ -589,6 +609,15 @@ export default function Chat({ me, setMe }) {
         }
         return
       }
+      if (g.lock === 'row') {
+        if (e.cancelable) e.preventDefault()
+        const rs = dx < 0 ? 'right' : 'left'
+        if (rs !== g.rs) { g.rs = rs; setRowActs((a) => (a ? { ...a, side: rs } : a)) }
+        const a = Math.abs(dx), m = a > ROW_W ? ROW_W + (a - ROW_W) * 0.25 : a
+        g.dx = dx
+        g.rowEl.style.transform = `translate3d(${Math.sign(dx) * m}px,0,0)`
+        return
+      }
       if (g.lock !== 'x') return
       if (e.cancelable) e.preventDefault()
       const now = Date.now()
@@ -601,6 +630,17 @@ export default function Chat({ me, setMe }) {
       move(g.dx)
     }
     const end = () => {
+      if (g?.lock === 'row') {
+        const { rowEl, dx } = g
+        g = null
+        rowSkip.current = Date.now()
+        if (Math.abs(dx) > 56) {
+          rowEl.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)'
+          rowEl.style.transform = `translate3d(${Math.sign(dx) * ROW_W}px,0,0)`
+          rowNow.current = { el: rowEl, id: rowEl.dataset.rid }
+        } else { rowNow.current = { el: rowEl }; shutRow() }
+        return
+      }
       if (g?.lock === 'y') {
         const { pull: pulled, open } = g
         g = null
@@ -898,7 +938,7 @@ export default function Chat({ me, setMe }) {
       )
     }
     return (
-      <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (Date.now() - closedAt.current < 500) return; if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
+      <button key={r.room_id} type="button" data-rid={r.room_id} className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (Date.now() - rowSkip.current < 450) return; if (Date.now() - closedAt.current < 500) return; if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
         onTouchStart={(e) => !picking && pressStart(e, r)} onTouchMove={pressMove} onTouchEnd={pressEnd} onTouchCancel={pressEnd}>
         {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
         <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 54 : 48} />
@@ -972,6 +1012,21 @@ export default function Chat({ me, setMe }) {
               )}
               {rooms.length > 0 && !shown.length && !hits.length && <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : myFolders.some((f) => f.id === folder) ? 'This folder is empty. Add chats to it under Edit folders.' : 'Nothing here.'}</p>}
               {shown.map((r) => roomRow(r))}
+              {rowActs && (() => {
+                const r = rooms.find((x) => x.room_id === rowActs.id)
+                if (!r) return null
+                const go = (what) => { shutRow(); roomAct(what, what === 'mute' ? 0 : undefined, r) }
+                const unread = r.unread > 0 || marked.includes(r.room_id)
+                return (
+                  <div className={`row-acts ${rowActs.side}`} style={{ top: rowActs.top, height: rowActs.h }}>
+                    {rowActs.side === 'left'
+                      ? <><button type="button" className="ra-unread" onClick={() => go('unread')}><i>{I.unread}</i><span>{unread ? 'Read' : 'Unread'}</span></button>
+                          <button type="button" className="ra-pin" onClick={() => go('pin')}><i>{I.pin}</i><span>{pins.includes(r.room_id) ? 'Unpin' : 'Pin'}</span></button></>
+                      : <><button type="button" className="ra-mute" onClick={() => go('mute')}><i>{r.muted ? I.bell : I.bellOff}</i><span>{r.muted ? 'Unmute' : 'Mute'}</span></button>
+                          <button type="button" className="ra-del" onClick={() => go('delete')}><i>{I.trash}</i><span>Delete</span></button></>}
+                  </div>
+                )
+              })()}
               {hits.length > 0 && (
                 <>
                   <div className="hits-head">Messages</div>
@@ -1304,6 +1359,7 @@ function PeekList({ room, me, people, clearedAt }) {
 /* ---------- one conversation ---------- */
 // the official RoarMe account's mark beside its name (Alex, 19 Oct)
 const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />, 15)
+const ROW_W = 156 // how far a chat slides open to show its two buttons
 const REORDER = svg(<><rect x="3" y="4" width="18" height="6" rx="2" /><path d="M5 15v4M12 15v4M19 15v4M3.5 15h17" /></>, 16)
 const OFFICIAL = <i className="official" title="Official RoarMe account" aria-label="Official">{svg(<><path d="M12 2.5l2.4 1.8 3-.1.9 2.8 2.4 1.8-.9 2.8.9 2.8-2.4 1.8-.9 2.8-3-.1L12 21.5l-2.4-1.8-3 .1-.9-2.8L3.3 15.2l.9-2.8-.9-2.8 2.4-1.8.9-2.8 3 .1z" fill="currentColor" stroke="none" /><path d="M8.5 12.2l2.3 2.3 4.7-4.8" stroke="#fff" strokeWidth="2.2" /></>, 15)}</i>
 

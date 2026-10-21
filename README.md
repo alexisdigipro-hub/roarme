@@ -507,6 +507,13 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Pull down for the search (21 Oct)
+Alex: the sideways folder swipe must never also pull the list down and open the search, and the search must not open at
+the slightest touch. A drag on the list now commits to one direction after its first few pixels: sideways is the folder
+swipe only, downward at the top is the pull only. With the search closed the list follows the finger with resistance and
+the search opens only after a clear pull (90 px), snapping like a magnet when let go; a shorter pull springs back. With the
+search already open, the same pull reloads RoarMe as before. Both live in the native listeners of `rooms-pager` in Chat.jsx.
+
 ## Lighter RoarMe (21 Oct)
 Alex: "see what weighs RoarMe down and lighten it". Nothing looks different except a still background.
 - The backdrop no longer drifts: a moving background made every glass panel above it re-blur on each frame (battery on an iPhone).

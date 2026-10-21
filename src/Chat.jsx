@@ -98,7 +98,6 @@ export default function Chat({ me, setMe }) {
   const searchRef = useRef(null)
   // the search box hides and comes out when the list is pulled down at its top (Alex, 17 Oct), as on the iPhone
   const [searchOpen, setSearchOpen] = useState(false)
-  const pullY = useRef(null)
   const listAtTop = (e) => (e.target.closest?.('.rooms')?.scrollTop || 0) <= 0
   const searchBusy = () => !!q.trim() || document.activeElement === searchRef.current
   const onListWheel = (e) => {
@@ -127,23 +126,6 @@ export default function Chat({ me, setMe }) {
     document.addEventListener('touchend', end, { passive: true })
     return () => { document.removeEventListener('touchstart', start); document.removeEventListener('touchend', end) }
   }, [])
-  const onListTouch = {
-    onTouchStart: (e) => {
-      pullY.current = listAtTop(e) ? e.touches[0].clientY : null
-    },
-    onTouchEnd: (e) => {
-      // pulled far enough down at the top of the list: RoarMe reloads, with any new version (Alex, 19 Oct)
-      if (pull >= 1) { setPull(2); setTimeout(() => window.location.reload(), 150); return }
-      if (pull) setPull(0)
-    },
-    onTouchMove: (e) => {
-      if (pullY.current == null) return
-      const d = e.touches[0].clientY - pullY.current
-      if (d > 36) setSearchOpen(true)
-      else if (d < -24 && !searchBusy()) setSearchOpen(false)
-      if (window.matchMedia('(max-width: 760px)').matches && !picking) setPull(Math.max(0, Math.min(1.15, (d - 50) / 110)))
-    },
-  }
   const [pull, setPull] = useState(0) // how far the list is pulled down for a refresh: 0 to 1 (ready), 2 = reloading
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
@@ -524,18 +506,29 @@ export default function Chat({ me, setMe }) {
       t.addEventListener('transitionend', fin)
       setTimeout(fin, 320)
     }
+    // pulled down at the top of the list (Alex, 21 Oct): only that, never together with the sideways drag. With the search
+    // closed the list follows the finger with a little resistance and the search opens only past a clear pull, like a
+    // magnet; with the search open, the same pull reloads RoarMe (the arrow fills, let go when it is full)
+    const PULL_OPEN = 90
+    const sheet = (y, ease) => {
+      const list = el.querySelector('.rooms')
+      if (!list) return
+      list.style.transition = ease ? 'transform .3s cubic-bezier(.2,.8,.25,1)' : 'none'
+      list.style.transform = y ? `translate3d(0,${y}px,0)` : ''
+    }
     const start = (e) => {
       const n = pagerNow.current
-      g = !n.busy && e.touches.length === 1 && window.matchMedia('(max-width: 760px)').matches
-        ? { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, t: Date.now(), lx: e.touches[0].clientX, lt: Date.now(), v: 0 }
-        : null
+      if (e.touches.length !== 1) { g = null; return }
+      const phone = window.matchMedia('(max-width: 760px)').matches
+      g = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, t: Date.now(), lx: e.touches[0].clientX, lt: Date.now(), v: 0,
+        side: !n.busy && phone, top: (el.querySelector('.rooms')?.scrollTop || 0) <= 0, open: n.searchOpen, phone, pull: 0 }
     }
     const touchMove = (e) => {
       if (!g) return
       const x = e.touches[0].clientX, dx = x - g.x, dy = e.touches[0].clientY - g.y
       if (!g.lock) {
         if (Math.abs(dx) < 9 && Math.abs(dy) < 9) return
-        g.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y'
+        g.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? (g.side ? 'x' : 'none') : 'y'
         if (g.lock === 'x') {
           const n = pagerNow.current
           const at = n.allFolders.findIndex((f) => f.id === n.folder)
@@ -544,6 +537,20 @@ export default function Chat({ me, setMe }) {
           g.next = n.allFolders[at + 1]?.id || ''
           if (trackRef.current) trackRef.current.style.transition = 'none'
         }
+      }
+      if (g.lock === 'y') {
+        const n = pagerNow.current
+        if (dy < -24 && n.searchOpen && !n.searchBusy()) { setSearchOpen(false); g.open = false }
+        if (!g.top || dy <= 0 || n.picking) return
+        if (e.cancelable) e.preventDefault()
+        if (!g.open) {
+          g.pull = dy
+          sheet(Math.round(56 * (1 - Math.exp(-dy / 110))), false) // the list gives a little, then resists
+          if (dy >= PULL_OPEN && !g.felt) { g.felt = true; navigator.vibrate?.(8) } // the click of the magnet where it will open
+        } else if (g.phone) {
+          setPull(Math.max(0, Math.min(1.15, (dy - 50) / 110)))
+        }
+        return
       }
       if (g.lock !== 'x') return
       if (e.cancelable) e.preventDefault()
@@ -557,6 +564,20 @@ export default function Chat({ me, setMe }) {
       move(g.dx)
     }
     const end = () => {
+      if (g?.lock === 'y') {
+        const { pull: pulled, open } = g
+        g = null
+        if (!open) {
+          sheet(0, true)
+          if (pulled >= PULL_OPEN) setSearchOpen(true)
+          return
+        }
+        // pulled far enough down with the search open: RoarMe reloads, with any new version (Alex, 19 Oct)
+        const p = pagerNow.current.pull
+        if (p >= 1) { setPull(2); setTimeout(() => window.location.reload(), 150); return }
+        if (p) setPull(0)
+        return
+      }
       if (!g || g.lock !== 'x') { g = null; return }
       const { dx, w, v, next, prev } = g
       g = null
@@ -755,7 +776,7 @@ export default function Chat({ me, setMe }) {
     setTab(next)
     if (next === 'chats') { const f = allFolders[dir > 0 ? 0 : allFolders.length - 1]; if (f) setFolder(f.id) }
   }
-  pagerNow.current = { allFolders, folder, busy: picking || !!q.trim(), goStop } // what the sideways drag of the list reads
+  pagerNow.current = { allFolders, folder, busy: picking || !!q.trim(), picking, searchOpen: searchOpen || !!q.trim(), searchBusy, pull, goStop } // what the drags on the list read
   const stopSwipe = useRef(null)
   const onStopTouch = {
     onTouchStart: (e) => { stopSwipe.current = tab !== 'chats' && tab !== 'media' && e.touches.length === 1 && !e.target.closest('.tabs, input, .seg') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
@@ -854,7 +875,7 @@ export default function Chat({ me, setMe }) {
                 onBlur={() => { if (!q.trim()) setTimeout(() => setSearchOpen(false), 1200) }}
                 onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur(); setSearchOpen(false) } }} /></label>
             </div></div>
-            <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel} {...onListTouch}>
+            <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
             {!q.trim() && (
               <nav ref={tabsLens} className="tabs lens tabs-scroll" onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
                 {allFolders.map((f) => {

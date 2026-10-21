@@ -517,7 +517,9 @@ Alex: in Contacts no icons on the right; a tap on someone opens their card, like
 the big picture and name (last seen, and their own name when I gave them another), round Message · Call · Video · Share,
 then glass tiles: username (tap to copy) and bio, Notes (my note for them, tap to edit), Share Contact (the share sheet with
 their RoarMe link, or copy), Add to / Remove from Favourites, and Block Contact (or Unblock) on its own in red. Edit (top
-left) is Edit Contact: my own name, photo and note for them, which only I see (moved here from Profile.jsx). Favourites are
+left) turns the card itself into the form (21 Oct): my own name for them in place of the name, the note as a text box,
+the photo with a camera to change it (and Use their own photo), Cancel and Done; only I see these. Edit Contact as a
+separate window stays for a chat's card (Profile.jsx). Favourites are
 kept on the device (`roarme-fav`), come first in Contacts and carry a small star.
 
 ## Project chats: Alex names them (21 Oct)

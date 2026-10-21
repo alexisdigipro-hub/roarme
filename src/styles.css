@@ -3869,3 +3869,12 @@ button.cc-row:hover { background: rgba(255, 255, 255, .04); }
    sits on the corner. The chat list shows no time on the right any more, only who is online. */
 .av, .av img { border-radius: 30%; }
 .av-on { right: -3px; bottom: -3px; width: 14px; height: 14px; }
+/* the contact card in Edit (Alex, 21 Oct: edit the contact right there): the name, the note and the photo in place */
+.cc-edit-two { display: flex; gap: 8px; left: 0; }
+.cc-done { background: var(--accent); color: var(--accent-ink, #fff); border-color: transparent; }
+.cc-pic { position: relative; margin-top: 4px; padding: 0; border: 0; background: none; border-radius: 30%; }
+.cc-pic .pf-pic-cam { position: absolute; right: -4px; bottom: -4px; }
+.cc-own { font-size: 13px; margin-top: -2px; }
+.cc-name-in { width: 100%; max-width: 320px; text-align: center; background: var(--glass); border: 1px solid var(--edge); border-radius: 999px; padding: 6px 16px; color: var(--text); font: inherit; font-size: 20px; font-weight: 700; }
+.cc-note-in { width: 100%; min-height: 54px; resize: none; border: 0; background: none; color: var(--text); font: inherit; font-size: 15px; padding: 0; outline: none; }
+.cc-hint { margin: -2px 0 0; font-size: 12px; text-align: center; }

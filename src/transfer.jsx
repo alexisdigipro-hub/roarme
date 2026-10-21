@@ -188,8 +188,12 @@ const countHit = (t, dl) => fetch(`${SUPABASE_URL}/rest/v1/rpc/roar_transfer_hit
 }).catch(() => {})
 
 /* the page a download link opens (?t=…): no account needed, the file's name, size, expiry and a Download button */
+// one of Alex's stills behind the card, a new one each visit, as on RoarTransfer's own page (public/transfer/stills)
+const STILLS = ['salon', 'shoes', 'tartan', 'corridor', 'sunflower', 'silhouette']
 export function TransferPage({ token }) {
   const [info, setInfo] = useState(null)
+  const [still] = useState(() => `${import.meta.env.BASE_URL}transfer/stills/${STILLS[Math.floor(Math.random() * STILLS.length)]}.webp`)
+  const [bgOn, setBgOn] = useState(false)
   useEffect(() => {
     document.documentElement.dataset.theme = document.documentElement.dataset.theme || 'glass'
     fetch(`${SUPABASE_URL}/functions/v1/roar-transfer-get?t=${encodeURIComponent(token)}`)
@@ -202,6 +206,8 @@ export function TransferPage({ token }) {
   const isImg = /^image\//.test(info?.type || '')
   return (
     <div className="rt-page">
+      {/* Alex, 21 Oct: the changing pictures and the same frosted glass as RoarTransfer's own page */}
+      <div className={`rt-bg${bgOn ? ' on' : ''}`} aria-hidden="true"><img src={still} alt="" onLoad={() => setBgOn(true)} /></div>
       <div className="rt-card">
         <TransferMark big />
         {!info && <span className="pic-wait rt-wait" />}

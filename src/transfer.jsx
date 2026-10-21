@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { SUPABASE_URL, fmtBytes, supabase } from './lib.js'
+import { SUPABASE_URL, fmtBytes, supabase, withName } from './lib.js'
 import { locale } from './i18n.js'
 import { I, Modal, Wordmark } from './ui.jsx'
 
@@ -216,7 +216,7 @@ export function TransferPage({ token }) {
               </li>
             </ul>
             <div className="rt-facts"><span className={`tr-exp${left < 864e5 ? ' soon' : ''}`}>{I.timer}<span>Expires {untilDate(Date.now() + left)} {untilTime(Date.now() + left)}</span></span></div>
-            <a className="btn btn-main rt-go" href={info.url} download={info.name} onClick={() => { supabase.rpc('roar_transfer_hit', { t: token, dl: true }).then(() => {}) }}>{I.download}<span>Download</span></a>
+            <a className="btn btn-main rt-go" href={withName(info.url, info.name)} download={info.name} onClick={() => { supabase.rpc('roar_transfer_hit', { t: token, dl: true }).then(() => {}) }}>{I.download}<span>Download</span></a>
           </>
         )}
         <a className="rt-foot" href={`${window.location.origin}${window.location.pathname}`}><Wordmark by /></a>

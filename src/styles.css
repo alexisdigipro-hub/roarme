@@ -3290,7 +3290,7 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
   .tabs-view { justify-content: flex-start; gap: 12px; }
   .tv-pic { width: 128px; height: 96px; }
 
-  :is(.tabs-scroll, .lib-seg, .pf-tabs) { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); }
+  :is(.tabs-scroll[data-more], .lib-seg, .pf-tabs) { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); }
 
   /* contacts: the search shrinks, the add button stays whole, the three actions closer together */
   .contacts-top .search { min-width: 0; }

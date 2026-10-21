@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
-import Profile from './Profile.jsx'
 import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { E2E_OFF, E2E_ON, endEncrypted, hasStretchKey, isSealed, myDevice, openText, previewText, sealText, startEncrypted, systemText, useEncrypted, useOpened, withoutDevice } from './e2e.js'
-import { SettingsMenu, SettingsPage } from './SettingsPages.jsx'
+// Settings and a profile load only when opened (Alex, 21 Oct: RoarMe lighter at start)
+const Profile = lazy(() => import('./Profile.jsx'))
+const SettingsMenu = lazy(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsMenu })))
+const SettingsPage = lazy(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsPage })))
 import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
@@ -96,7 +98,6 @@ export default function Chat({ me, setMe }) {
   const searchRef = useRef(null)
   // the search box hides and comes out when the list is pulled down at its top (Alex, 17 Oct), as on the iPhone
   const [searchOpen, setSearchOpen] = useState(false)
-  const pullY = useRef(null)
   const listAtTop = (e) => (e.target.closest?.('.rooms')?.scrollTop || 0) <= 0
   const searchBusy = () => !!q.trim() || document.activeElement === searchRef.current
   const onListWheel = (e) => {
@@ -125,23 +126,6 @@ export default function Chat({ me, setMe }) {
     document.addEventListener('touchend', end, { passive: true })
     return () => { document.removeEventListener('touchstart', start); document.removeEventListener('touchend', end) }
   }, [])
-  const onListTouch = {
-    onTouchStart: (e) => {
-      pullY.current = listAtTop(e) ? e.touches[0].clientY : null
-    },
-    onTouchEnd: (e) => {
-      // pulled far enough down at the top of the list: RoarMe reloads, with any new version (Alex, 19 Oct)
-      if (pull >= 1) { setPull(2); setTimeout(() => window.location.reload(), 150); return }
-      if (pull) setPull(0)
-    },
-    onTouchMove: (e) => {
-      if (pullY.current == null) return
-      const d = e.touches[0].clientY - pullY.current
-      if (d > 36) setSearchOpen(true)
-      else if (d < -24 && !searchBusy()) setSearchOpen(false)
-      if (window.matchMedia('(max-width: 760px)').matches && !picking) setPull(Math.max(0, Math.min(1.15, (d - 50) / 110)))
-    },
-  }
   const [pull, setPull] = useState(0) // how far the list is pulled down for a refresh: 0 to 1 (ready), 2 = reloading
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
@@ -240,7 +224,11 @@ export default function Chat({ me, setMe }) {
         if (x.my_photo) x.avatar_url = x.my_photo
         if (x.nickname) x.display_name = x.nickname
       })
-      setPeople((p) => ({ ...p, ...Object.fromEntries(data.map((x) => [x.id, x])) }))
+      // someone who has not changed keeps the same object, and nobody changed means no re-render at all
+      setPeople((p) => {
+        const fresh = data.filter((x) => JSON.stringify(p[x.id]) !== JSON.stringify(x))
+        return fresh.length ? { ...p, ...Object.fromEntries(fresh.map((x) => [x.id, x])) } : p
+      })
     }
   }, [])
 
@@ -265,8 +253,15 @@ export default function Chat({ me, setMe }) {
       list.forEach((r) => { r.pinned_message_id = pin[r.room_id]?.pinned_message_id || null; r.auto_delete_hours = pin[r.room_id]?.auto_delete_hours || null; r.hub_project = pin[r.room_id]?.hub_project || null; r.mentions = at[r.room_id] || 0 })
       setRoles(rl || [])
     }
-    setRooms(list)
-    loadPeople(list.flatMap((r) => r.members || []))
+    // chats that did not change keep the same object, and an unchanged list leaves the screen alone
+    setRooms((old) => {
+      const was = Object.fromEntries(old.map((r) => [r.room_id, r]))
+      const next = list.map((r) => (was[r.room_id] && JSON.stringify(was[r.room_id]) === JSON.stringify(r) ? was[r.room_id] : r))
+      return next.length === old.length && next.every((r, i) => r === old[i]) ? old : next
+    })
+    // only people not known yet; the others are refreshed every 90 seconds
+    const known = peopleRef.current || {}
+    loadPeople(list.flatMap((r) => r.members || []).filter((id) => !known[id]))
   }, [loadPeople])
 
   // a burst of messages reloads the list once
@@ -302,7 +297,7 @@ export default function Chat({ me, setMe }) {
     beat()
     myDevice(me.id) // this device's keys for Encrypted Chat, made the first time
     const id = setInterval(() => { if (!document.hidden && document.hasFocus()) beat() }, 60 * 1000)
-    const ppl = setInterval(() => loadPeople(Object.keys(peopleRef.current)), 90 * 1000)
+    const ppl = setInterval(() => { if (!document.hidden) loadPeople(Object.keys(peopleRef.current)) }, 90 * 1000)
     document.addEventListener('visibilitychange', beat)
     window.addEventListener('focus', beat)
     window.addEventListener('blur', beat)
@@ -511,18 +506,29 @@ export default function Chat({ me, setMe }) {
       t.addEventListener('transitionend', fin)
       setTimeout(fin, 320)
     }
+    // pulled down at the top of the list (Alex, 21 Oct): only that, never together with the sideways drag. With the search
+    // closed the list follows the finger with a little resistance and the search opens only past a clear pull, like a
+    // magnet; with the search open, the same pull reloads RoarMe (the arrow fills, let go when it is full)
+    const PULL_OPEN = 90
+    const sheet = (y, ease) => {
+      const list = el.querySelector('.rooms')
+      if (!list) return
+      list.style.transition = ease ? 'transform .3s cubic-bezier(.2,.8,.25,1)' : 'none'
+      list.style.transform = y ? `translate3d(0,${y}px,0)` : ''
+    }
     const start = (e) => {
       const n = pagerNow.current
-      g = !n.busy && e.touches.length === 1 && window.matchMedia('(max-width: 760px)').matches
-        ? { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, t: Date.now(), lx: e.touches[0].clientX, lt: Date.now(), v: 0 }
-        : null
+      if (e.touches.length !== 1) { g = null; return }
+      const phone = window.matchMedia('(max-width: 760px)').matches
+      g = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, t: Date.now(), lx: e.touches[0].clientX, lt: Date.now(), v: 0,
+        side: !n.busy && phone, top: (el.querySelector('.rooms')?.scrollTop || 0) <= 0, open: n.searchOpen, phone, pull: 0 }
     }
     const touchMove = (e) => {
       if (!g) return
       const x = e.touches[0].clientX, dx = x - g.x, dy = e.touches[0].clientY - g.y
       if (!g.lock) {
         if (Math.abs(dx) < 9 && Math.abs(dy) < 9) return
-        g.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y'
+        g.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? (g.side ? 'x' : 'none') : 'y'
         if (g.lock === 'x') {
           const n = pagerNow.current
           const at = n.allFolders.findIndex((f) => f.id === n.folder)
@@ -531,6 +537,20 @@ export default function Chat({ me, setMe }) {
           g.next = n.allFolders[at + 1]?.id || ''
           if (trackRef.current) trackRef.current.style.transition = 'none'
         }
+      }
+      if (g.lock === 'y') {
+        const n = pagerNow.current
+        if (dy < -24 && n.searchOpen && !n.searchBusy()) { setSearchOpen(false); g.open = false }
+        if (!g.top || dy <= 0 || n.picking) return
+        if (e.cancelable) e.preventDefault()
+        if (!g.open) {
+          g.pull = dy
+          sheet(Math.round(56 * (1 - Math.exp(-dy / 110))), false) // the list gives a little, then resists
+          if (dy >= PULL_OPEN && !g.felt) { g.felt = true; navigator.vibrate?.(8) } // the click of the magnet where it will open
+        } else if (g.phone) {
+          setPull(Math.max(0, Math.min(1.15, (dy - 50) / 110)))
+        }
+        return
       }
       if (g.lock !== 'x') return
       if (e.cancelable) e.preventDefault()
@@ -544,6 +564,20 @@ export default function Chat({ me, setMe }) {
       move(g.dx)
     }
     const end = () => {
+      if (g?.lock === 'y') {
+        const { pull: pulled, open } = g
+        g = null
+        if (!open) {
+          sheet(0, true)
+          if (pulled >= PULL_OPEN) setSearchOpen(true)
+          return
+        }
+        // pulled far enough down with the search open: RoarMe reloads, with any new version (Alex, 19 Oct)
+        const p = pagerNow.current.pull
+        if (p >= 1) { setPull(2); setTimeout(() => window.location.reload(), 150); return }
+        if (p) setPull(0)
+        return
+      }
       if (!g || g.lock !== 'x') { g = null; return }
       const { dx, w, v, next, prev } = g
       g = null
@@ -742,7 +776,7 @@ export default function Chat({ me, setMe }) {
     setTab(next)
     if (next === 'chats') { const f = allFolders[dir > 0 ? 0 : allFolders.length - 1]; if (f) setFolder(f.id) }
   }
-  pagerNow.current = { allFolders, folder, busy: picking || !!q.trim(), goStop } // what the sideways drag of the list reads
+  pagerNow.current = { allFolders, folder, busy: picking || !!q.trim(), picking, searchOpen: searchOpen || !!q.trim(), searchBusy, pull, goStop } // what the drags on the list read
   const stopSwipe = useRef(null)
   const onStopTouch = {
     onTouchStart: (e) => { stopSwipe.current = tab !== 'chats' && tab !== 'media' && e.touches.length === 1 && !e.target.closest('.tabs, input, .seg') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
@@ -841,7 +875,7 @@ export default function Chat({ me, setMe }) {
                 onBlur={() => { if (!q.trim()) setTimeout(() => setSearchOpen(false), 1200) }}
                 onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur(); setSearchOpen(false) } }} /></label>
             </div></div>
-            <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel} {...onListTouch}>
+            <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
             {!q.trim() && (
               <nav ref={tabsLens} className="tabs lens tabs-scroll" onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
                 {allFolders.map((f) => {
@@ -922,8 +956,8 @@ export default function Chat({ me, setMe }) {
               empty={<div className="calls-empty"><span className="side-panel-ico">{I.calls}</span><b>No calls yet</b><p>Call someone from Create New Call, or from the phone and camera buttons in a chat.</p></div>} />
           </div>
         )}
-        {tab === 'settings' && <SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
-          onInbox={isAdmin && officialIds.length ? () => setInboxOpen(true) : null} inboxCount={inboxCount} />}
+        {tab === 'settings' && <Suspense fallback={null}><SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
+          onInbox={isAdmin && officialIds.length ? () => setInboxOpen(true) : null} inboxCount={inboxCount} /></Suspense>}
         {tab === 'media' && <LibrarySide data={lib} rooms={visible} titleOf={titleOf} room={libRoom} onRoom={setLibRoom}
           face={(r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />} />}
         </div>
@@ -951,10 +985,10 @@ export default function Chat({ me, setMe }) {
       <main className="main">
         <NowPlaying onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
         {tab === 'settings' ? (
-          <SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast} me={me} setMe={setMe}
+          <Suspense fallback={null}><SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast} me={me} setMe={setMe}
             profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : openFolders())}
             folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
-            onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} />
+            onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} />
         ) : active ? (
@@ -1006,10 +1040,10 @@ export default function Chat({ me, setMe }) {
         </Modal>
       )}
       {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null) }} onOpen={(id) => { setGroupWith(null); openRoom(id) }} />}
-      {modal === 'info' && active && <Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
+      {modal === 'info' && active && <Suspense fallback={null}><Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
         onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople}
-        blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={active.kind === 'direct' ? (v) => { setModal(''); callRoom(active, v) } : null} />}
+        blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} siteAdmin={isAdmin} onCall={active.kind === 'direct' ? (v) => { setModal(''); callRoom(active, v) } : null} /></Suspense>}
       {modal === 'pickfolder' && (
         <Modal title="Add to a folder" onClose={() => setModal('')}>
           {myFolders.length ? (
@@ -1301,7 +1335,11 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
 
   // reactions and how far each person has read
   const loadReacts = useCallback(() => supabase.from('roar_reactions').select('message_id, user_id, emoji').eq('room_id', room.room_id).then(({ data }) => setReacts(data || [])), [room.room_id])
-  const loadReads = useCallback(() => supabase.from('roar_members').select('user_id, last_read_at').eq('room_id', room.room_id).then(({ data }) => setReads(Object.fromEntries((data || []).map((x) => [x.user_id, x.last_read_at])))), [room.room_id])
+  // who has read up to where: the same answer again changes nothing on screen
+  const loadReads = useCallback(() => supabase.from('roar_members').select('user_id, last_read_at').eq('room_id', room.room_id).then(({ data }) => {
+    const n = Object.fromEntries((data || []).map((x) => [x.user_id, x.last_read_at]))
+    setReads((o) => (JSON.stringify(o) === JSON.stringify(n) ? o : n))
+  }), [room.room_id])
   // pinned messages: as many as one likes, each with a pin on it; the bar opens them all in a window (Alex, 16 Oct)
   const [pinRows, setPinRows] = useState([])
   const [pinView, setPinView] = useState(false)
@@ -1329,7 +1367,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   const loadPins = useCallback(() => supabase.from('roar_pins').select('message_id, pinned_by, pinned_at').eq('room_id', room.room_id).order('pinned_at').then(({ data }) => setPinRows(data || [])), [room.room_id])
   useEffect(() => {
     loadReacts(); loadReads(); loadPins()
-    const id = setInterval(loadReads, 15000)
+    const id = setInterval(() => { if (!document.hidden) loadReads() }, 15000)
     return () => clearInterval(id)
   }, [loadReacts, loadReads, loadPins])
 
@@ -1366,17 +1404,24 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
     const el = scrollRef.current
     if (el && stick.current) el.scrollTop = el.scrollHeight
   }, [msgs, outbox.length])
+  const olderBusy = useRef(false) // one page of older messages at a time, however fast the scroll events come
   const onScroll = async (e) => {
     const el = e.currentTarget
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
     if (menu) setMenu(null)
-    if (el.scrollTop < 60 && more && msgs.length) {
+    // back at the bottom of a long chat: the oldest pages read on the way up are let go, and come back if needed
+    // (Alex, 21 Oct: RoarMe lighter; a chat scrolled far back no longer keeps every message in memory)
+    if (stick.current && msgs.length > 240 && !find && !picked) { setMsgs((list) => list.slice(-150)); setMore(true) }
+    if (el.scrollTop < 60 && more && msgs.length && !olderBusy.current) {
+      olderBusy.current = true
       const h = el.scrollHeight
-      const older = await load(msgs[0].created_at)
-      if (older.length) {
-        setMsgs((list) => [...older, ...list])
-        requestAnimationFrame(() => { el.scrollTop = el.scrollHeight - h + el.scrollTop })
-      }
+      try {
+        const older = await load(msgs[0].created_at)
+        if (older.length) {
+          setMsgs((list) => { const have = new Set(list.map((m) => m.id)); return [...older.filter((m) => !have.has(m.id)), ...list] })
+          requestAnimationFrame(() => { el.scrollTop = el.scrollHeight - h + el.scrollTop })
+        }
+      } finally { olderBusy.current = false }
     }
   }
 
@@ -1782,11 +1827,11 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
     const missing = pinRows.map((p) => p.message_id).filter((id) => !byId[id] && !pinExtra[id])
     if (!missing.length) return
     supabase.from('roar_messages').select('*').in('id', missing).then(({ data }) => { if (data?.length) setPinExtra((x) => ({ ...x, ...Object.fromEntries(data.map((m) => [m.id, m])) })) })
-  }, [pinRows]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pinRows, byId]) // eslint-disable-line react-hooks/exhaustive-deps -- byId too: a long chat trimmed back can drop an old pinned one
   const pinExtraList = useMemo(() => Object.values(pinExtra), [pinExtra])
   const pinOpened = useOpened(pinExtraList, room.room_id, me.id, sealOn?.id)
   const pinOpenedById = useMemo(() => Object.fromEntries(pinOpened.map((m) => [m.id, m])), [pinOpened])
-  const pinnedSet = new Set(pinRows.map((p) => p.message_id))
+  const pinnedSet = useMemo(() => new Set(pinRows.map((p) => p.message_id)), [pinRows])
   const pinnedList = pinRows.map((p) => byId[p.message_id] || pinOpenedById[p.message_id]).filter((m) => m && !m.deleted_at)
   const pinned = pinnedList[pinnedList.length - 1] || null
   // photos, videos, voice, files and transfers, for the Files tab of the pinned window (Alex, 20 Oct)
@@ -1832,6 +1877,78 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
     document.body.appendChild(a); a.click(); a.remove()
     setTimeout(() => URL.revokeObjectURL(a.href), 4000)
   }
+
+  /* The messages, drawn again only when something they show changes (Alex, 21 Oct: RoarMe lighter): typing in the box
+     below no longer redraws every message. Their buttons call the newest handlers through `hands`. */
+  const hands = useRef({})
+  hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setArtView, setCinema }
+  const msgList = useMemo(() => shownMsgs.map((m, i) => {
+          const prev = shownMsgs[i - 1]
+          const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
+          const mine = m.user_id === me.id
+          const first = newDay || !prev || prev.user_id !== m.user_id || new Date(m.created_at) - new Date(prev.created_at) > 5 * 60 * 1000
+          const who = people[m.user_id]
+          const quoted = m.reply_to ? byId[m.reply_to] : null
+          const rx = reactsOf[m.id]
+          const seen = mine && seenBy(m).length > 0
+          const isPicked = picked?.includes(m.id)
+          const big = prefs.bigEmoji && m.kind === 'text' && !m.deleted_at && !quoted && isEmojiOnly(m.body)
+          const isTransfer = m.kind === 'file' && m.file?.bucket === TRANSFER_BUCKET
+          const isVideo = m.kind === 'file' && !isTransfer && /^video\//.test(m.file?.type || '')
+          const isGifFile = m.kind === 'file' && !isTransfer && /gif/.test(m.file?.type || '')
+          const vlink = !m.deleted_at && m.kind === 'text' ? videoLinkOf(m.body) : null
+          const wide = wideIds.has(m.id)
+          const hit = find && found.includes(m.id)
+          // a line in the middle when someone turns Encrypted Chat on or off
+          if (m.kind === 'system') {
+            return (
+              <div key={m.id} id={`m-${m.id}`}>
+                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+                <div className="sys-note"><span>{m.body === E2E_OFF ? I.unlock : I.lock}<b>{mine ? 'You' : nameOf(who)}</b><span>{systemText(m.body)}</span><small>{timeOf(m.created_at)}</small><button type="button" className="sys-x" onClick={() => hands.current.hideForMe(m)} aria-label="Delete for Me" title="Delete for Me">{I.x}</button></span></div>
+              </div>
+            )
+          }
+          return (
+            <div key={m.id} id={`m-${m.id}`}>
+              {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${!mine && !m.deleted_at && mentionsMe(m.body, me, roles) ? ' at-me' : ''}${wide ? ' wide-media' : ''}`}
+                onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => hands.current.onTap(e, m)}
+                onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (hands.current.onBubble(e)) hands.current.onDouble(m, e) }}
+                onContextMenu={(e) => { if (hands.current.onBubble(e)) hands.current.openMenu(e, m) }}>
+                {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
+                {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
+                <div className="bubble-col">
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.file?.ordino && !m.deleted_at ? ' art-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                    {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
+                    {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
+                    {m.deleted_at ? <i>Message deleted</i>
+                      : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
+                      : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => hands.current.setArtView(m)} />
+                      : m.file?.ordino ? <OrdinoCard o={m.file.ordino} />
+                      : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} canJoin={room.kind !== 'group'} onJoin={(v) => hands.current.onCall(v)} />
+                      : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : hands.current.openPhoto(m))} />
+                      : m.kind === 'voice' ? <AudioNote file={m.file} />
+                      : isTransfer ? <TransferTile file={m.file} onCinema={hands.current.setCinema} />
+                      : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />
+                      : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
+                      : m.kind === 'file' ? <FileTile file={m.file} />
+                      : null}
+                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && !m.file?.ordino && <span className="text">{formatText(m.body, withMentions)}</span>}
+                    {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
+                    {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
+                    <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
+                  </div>
+                  {(rx || replyCount[m.id]) && (
+                    <span className="rx">
+                      {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); hands.current.react(m, e) }}>{e}{v.n > 1 && <small>{v.n}</small>}</button>)}
+                      {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); hands.current.setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+  }), [shownMsgs, people, picked, prefs, byId, reactsOf, reads, wideIds, find, found, flash, roles, room, title, autoDl, pinnedSet, replyCount, me]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={wall} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 15.5}px` }}
@@ -1934,73 +2051,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
 
       <div className={`scroll${picked ? ' picking' : ''}`} ref={scrollRef} onScroll={onScroll}>
         {!shownMsgs.length && <p className="empty">{room.kind === 'group' ? 'No messages yet.' : `No messages with ${title} yet. Say hi.`}</p>}
-        {shownMsgs.map((m, i) => {
-          const prev = shownMsgs[i - 1]
-          const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
-          const mine = m.user_id === me.id
-          const first = newDay || !prev || prev.user_id !== m.user_id || new Date(m.created_at) - new Date(prev.created_at) > 5 * 60 * 1000
-          const who = people[m.user_id]
-          const quoted = m.reply_to ? byId[m.reply_to] : null
-          const rx = reactsOf[m.id]
-          const seen = mine && seenBy(m).length > 0
-          const isPicked = picked?.includes(m.id)
-          const big = prefs.bigEmoji && m.kind === 'text' && !m.deleted_at && !quoted && isEmojiOnly(m.body)
-          const isTransfer = m.kind === 'file' && m.file?.bucket === TRANSFER_BUCKET
-          const isVideo = m.kind === 'file' && !isTransfer && /^video\//.test(m.file?.type || '')
-          const isGifFile = m.kind === 'file' && !isTransfer && /gif/.test(m.file?.type || '')
-          const vlink = !m.deleted_at && m.kind === 'text' ? videoLinkOf(m.body) : null
-          const wide = wideIds.has(m.id)
-          const hit = find && found.includes(m.id)
-          // a line in the middle when someone turns Encrypted Chat on or off
-          if (m.kind === 'system') {
-            return (
-              <div key={m.id} id={`m-${m.id}`}>
-                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
-                <div className="sys-note"><span>{m.body === E2E_OFF ? I.unlock : I.lock}<b>{mine ? 'You' : nameOf(who)}</b><span>{systemText(m.body)}</span><small>{timeOf(m.created_at)}</small><button type="button" className="sys-x" onClick={() => hideForMe(m)} aria-label="Delete for Me" title="Delete for Me">{I.x}</button></span></div>
-              </div>
-            )
-          }
-          return (
-            <div key={m.id} id={`m-${m.id}`}>
-              {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
-              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${!mine && !m.deleted_at && mentionsMe(m.body, me, roles) ? ' at-me' : ''}${wide ? ' wide-media' : ''}`}
-                onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => onTap(e, m)}
-                onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (onBubble(e)) onDouble(m, e) }}
-                onContextMenu={(e) => { if (onBubble(e)) openMenu(e, m) }}>
-                {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
-                {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
-                <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.file?.ordino && !m.deleted_at ? ' art-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
-                    {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
-                    {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
-                    {m.deleted_at ? <i>Message deleted</i>
-                      : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => setLocView(m.file.location)} />
-                      : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => setArtView(m)} />
-                      : m.file?.ordino ? <OrdinoCard o={m.file.ordino} />
-                      : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} canJoin={room.kind !== 'group'} onJoin={(v) => onCall(v)} />
-                      : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : openPhoto(m))} />
-                      : m.kind === 'voice' ? <AudioNote file={m.file} />
-                      : isTransfer ? <TransferTile file={m.file} onCinema={setCinema} />
-                      : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />
-                      : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
-                      : m.kind === 'file' ? <FileTile file={m.file} />
-                      : null}
-                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && !m.file?.ordino && <span className="text">{formatText(m.body, withMentions)}</span>}
-                    {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
-                    {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => flipWide(m.id)} onCinema={setCinema} />}
-                    <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
-                  </div>
-                  {(rx || replyCount[m.id]) && (
-                    <span className="rx">
-                      {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); react(m, e) }}>{e}{v.n > 1 && <small>{v.n}</small>}</button>)}
-                      {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        {msgList}
         {outbox.map((o) => {
           const c = 2 * Math.PI * 19
           return (
@@ -2298,7 +2349,7 @@ function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
   const [ready, setReady] = useState(false)
   useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>
-  return url ? <img className={`pic-img${ready ? ' ready' : ''}`} src={url} alt={file?.name || ''} onLoad={() => setReady(true)} onClick={(e) => { e.stopPropagation(); onOpen(url) }} /> : <span className="pic-wait" />
+  return url ? <img className={`pic-img${ready ? ' ready' : ''}`} src={url} alt={file?.name || ''} loading="lazy" decoding="async" onLoad={() => setReady(true)} onClick={(e) => { e.stopPropagation(); onOpen(url) }} /> : <span className="pic-wait" />
 }
 
 function FileTile({ file }) {

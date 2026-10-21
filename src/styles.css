@@ -876,7 +876,7 @@ body::before {
     radial-gradient(600px 420px at 22% 26%, rgba(70, 130, 230, .22) 0%, transparent 62%),
     radial-gradient(520px 420px at 78% 70%, rgba(30, 170, 170, .18) 0%, transparent 62%),
     radial-gradient(460px 360px at 60% 18%, rgba(140, 100, 230, .14) 0%, transparent 60%);
-  animation: drift 46s ease-in-out infinite alternate;
+  /* still, since 21 Oct: a backdrop that moves makes every glass panel above it re-blur on each frame, which costs an iPhone its battery */
 }
 html[data-mode='light'] body::before {
   background:

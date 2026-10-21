@@ -506,3 +506,29 @@ name for them, my own photo for them (now also over a photo they have) and a not
 app (chat list, chat head, messages, calls); under the name the profile shows "Their name: …", and the note sits in the
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
+
+## Project chats: Alex names them (21 Oct)
+Alex: in a project chat from THEMADLIONS Hub, only he may change the name and the photo. RoarMe's admin (roar_admins)
+now gets the camera on the group's picture, the name as an editable field and Remove group photo; everyone else sees
+neither, and Leave group is hidden there (the hub decides who is in). A name he sets stays: the hub's sync no longer
+writes the project title over it (roar_rooms.hub_title_custom). Members, auto-delete and Encrypted Chat stay the hub's.
+Database: supabase/hub-owner.sql (applied by Claude on 21 Oct; safe to run again).
+
+## Pull down for the search (21 Oct)
+Alex: the sideways folder swipe must never also pull the list down and open the search, and the search must not open at
+the slightest touch. A drag on the list now commits to one direction after its first few pixels: sideways is the folder
+swipe only, downward at the top is the pull only. With the search closed the list follows the finger with resistance and
+the search opens only after a clear pull (90 px), snapping like a magnet when let go; a shorter pull springs back. With the
+search already open, the same pull reloads RoarMe as before. Both live in the native listeners of `rooms-pager` in Chat.jsx.
+
+## Lighter RoarMe (21 Oct)
+Alex: "see what weighs RoarMe down and lighten it". Nothing looks different except a still background.
+- The backdrop no longer drifts: a moving background made every glass panel above it re-blur on each frame (battery on an iPhone).
+- Typing no longer redraws every message: the message list is memoised (`msgList` in Room) and its buttons reach the newest handlers through `act`.
+- A setting or a draft saved on the device only wakes the hook for that key (`useLocal` events carry the key; `usePrefs` ignores identical settings).
+- A new message still reloads the chat list once (debounced), but chats and people that did not change keep their objects, an unchanged list does not re-render, only people not known yet are fetched (everyone is refreshed every 90 s, not while RoarMe is hidden), and the read ticks only change when someone really read further.
+- Times and dates use cached `Intl.DateTimeFormat` objects (lib.js).
+- Settings and a profile load only when opened (React.lazy); the Greek dictionary only for someone using Greek, with translations remembered; the themes' fonts no longer hold up the first paint.
+- Photos and avatars load lazily (`loading="lazy"`), and the photo links of a chat are asked for in one request (`createSignedUrls`).
+- One page of older messages at a time; back at the bottom of a long chat the oldest pages read are let go (kept at 150).
+- The call clock ticks in the call screen only, not in the whole chat.

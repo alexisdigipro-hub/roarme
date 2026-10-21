@@ -96,7 +96,7 @@ export const colorOf = (id) => ownColors[id] || NAME_COLORS[[...String(id || '')
 export function Avatar({ src, name, size = 44, online = false, group = false }) {
   return (
     <span className={`av${group ? ' av-group' : ''}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}>
-      {src ? <img src={src} alt="" /> : <span>{initialsOf(name)}</span>}
+      {src ? <img src={src} alt="" loading="lazy" decoding="async" /> : <span>{initialsOf(name)}</span>}
       {online && <i className="av-on" />}
     </span>
   )

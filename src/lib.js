@@ -23,7 +23,15 @@ export const initialsOf = (s) => String(s || '?').replace(/^@/, '').split(/\s+/)
 export const onlineNow = (p) => !!p?.last_seen && Date.now() - new Date(p.last_seen).getTime() < 3 * 60 * 1000
 
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-export const timeOf = (iso) => new Date(iso).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
+// one formatter per locale and style, kept: making a new one for every time on screen is slow, above all on an iPhone
+const fmts = new Map()
+const fmt = (opts) => {
+  const k = `${locale() || ''}|${JSON.stringify(opts)}`
+  let f = fmts.get(k)
+  if (!f) { f = new Intl.DateTimeFormat(locale() || undefined, opts); fmts.set(k, f) }
+  return f
+}
+export const timeOf = (iso) => fmt({ hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
 export const listTime = (iso) => {
   if (!iso) return ''
   const d = new Date(iso)
@@ -31,8 +39,8 @@ export const listTime = (iso) => {
   if (sameDay(d, now)) return timeOf(iso)
   const y = new Date(now); y.setDate(now.getDate() - 1)
   if (sameDay(d, y)) return 'Yesterday'
-  if (now - d < 6 * 864e5) return d.toLocaleDateString(locale(), { weekday: 'short' })
-  return d.toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
+  if (now - d < 6 * 864e5) return fmt({ weekday: 'short' }).format(d)
+  return fmt({ day: 'numeric', month: 'short' }).format(d)
 }
 export const dayLabel = (iso) => {
   const d = new Date(iso)
@@ -40,7 +48,7 @@ export const dayLabel = (iso) => {
   if (sameDay(d, now)) return 'Today'
   const y = new Date(now); y.setDate(now.getDate() - 1)
   if (sameDay(d, y)) return 'Yesterday'
-  return d.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) })
+  return fmt({ weekday: 'long', day: 'numeric', month: 'long', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) }).format(d)
 }
 export const lastSeenText = (p) => {
   if (!p?.last_seen) return ''
@@ -81,9 +89,36 @@ export async function fileLink(file, download = '') {
   const key = `${bucket}|${path}|${download}`
   const hit = signed.get(key)
   if (hit && hit.until > Date.now()) return hit.url
-  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600, download ? { download } : undefined)
+  if (!download) return batchLink(bucket, path, key)
+  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600, { download })
   if (data?.signedUrl) signed.set(key, { url: data.signedUrl, until: Date.now() + 3500 * 1000 })
   return data?.signedUrl || ''
+}
+/* the links asked for in the same moment (a chat opening with twenty photos) go to the server as one request,
+   not twenty (Alex, 21 Oct: RoarMe lighter) */
+const waiting = new Map() // bucket -> Map(path -> [{ key, resolve }])
+function batchLink(bucket, path, key) {
+  return new Promise((resolve) => {
+    let q = waiting.get(bucket)
+    if (!q) {
+      q = new Map()
+      waiting.set(bucket, q)
+      setTimeout(async () => {
+        waiting.delete(bucket)
+        const paths = [...q.keys()]
+        let rows = []
+        try { rows = (await supabase.storage.from(bucket).createSignedUrls(paths, 3600)).data || [] } catch { rows = [] }
+        const byPath = Object.fromEntries(rows.filter((r) => r?.signedUrl).map((r) => [r.path, r.signedUrl]))
+        q.forEach((list, p) => list.forEach((w) => {
+          const url = byPath[p] || ''
+          if (url) signed.set(w.key, { url, until: Date.now() + 3500 * 1000 })
+          w.resolve(url)
+        }))
+      }, 30)
+    }
+    if (!q.has(path)) q.set(path, [])
+    q.get(path).push({ key, resolve })
+  })
 }
 
 export const errText = (e) => {

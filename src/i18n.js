@@ -1,10 +1,13 @@
-import { EL } from './i18n-el.js'
 import { getPrefs } from './prefs.js'
 
 /* RoarMe in English or Greek (Alex, 16 Oct: "only English and Greek, the whole app in Greek").
    The app is written in English; in Greek every interface text on the page is swapped for its
    translation as it appears (exact texts from i18n-el.js, the changing ones from PATTERNS below).
    Messages, names and bios are never touched. Changing the language reloads RoarMe. */
+
+// the Greek dictionary (about 90 KB) is fetched only for someone who reads RoarMe in Greek
+let EL = {}
+const done = new Map() // texts already looked up: the patterns below run once per text, not on every redraw
 
 export const LANGS = [['en', 'English', 'English'], ['el', 'Greek', 'Ελληνικά']]
 export const lang = () => (getPrefs().lang === 'el' ? 'el' : 'en')
@@ -145,12 +148,18 @@ export function tr(s) {
   if (lang() !== 'el' || typeof s !== 'string') return s
   const t = s.trim()
   if (!t || !/[A-Za-z]/.test(t)) return s
-  let out = EL[t]
-  if (out == null) {
-    for (const [re, f] of PATTERNS) {
-      const m = t.match(re)
-      if (m) { out = f(...m); break }
+  let out = done.get(t)
+  if (out === undefined) {
+    out = EL[t]
+    if (out == null) {
+      for (const [re, f] of PATTERNS) {
+        const m = t.match(re)
+        if (m) { out = f(...m); break }
+      }
     }
+    if (out == null) out = null
+    if (done.size > 5000) done.clear()
+    done.set(t, out)
   }
   return out == null ? s : s.replace(t, out)
 }
@@ -201,5 +210,9 @@ export function startI18n() {
     walk(document.body)
     obs.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS })
   }
-  if (document.body) go(); else document.addEventListener('DOMContentLoaded', go)
+  import('./i18n-el.js').then((m) => {
+    EL = m.EL
+    done.clear()
+    if (document.body) go(); else document.addEventListener('DOMContentLoaded', go)
+  })
 }

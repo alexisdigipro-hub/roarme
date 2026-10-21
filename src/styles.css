@@ -4012,3 +4012,20 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 }
 .swipe-reply { position: absolute; right: 10px; top: 50%; transform: translateY(-50%) scale(.6); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--glass-2); color: var(--accent); opacity: 0; pointer-events: none; }
 .swipe-reply.ready { background: var(--accent); color: var(--accent-ink); }
+
+/* RoarTransfer panels (Alex, 21 Oct): Settings > RoarTransfer for everyone, Admin > RoarTransfer for the admin */
+.rt-stats { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.rt-stats b { font-size: 21px; }
+.rt-seg { align-self: flex-start; }
+.rt-acts { display: flex; gap: 6px; margin-left: auto; }
+.rt-h { margin: 8px 4px 0; font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.rt-chart { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 18px; background: var(--glass); border: 1px solid var(--edge); }
+.rt-bars { display: flex; align-items: flex-end; gap: 3px; height: 90px; }
+.rt-bars i { flex: 1; min-width: 0; border-radius: 4px 4px 2px 2px; background: var(--accent); opacity: .85; }
+.rt-bars i.none { opacity: .18; }
+.rt-chart small { font-size: 11.5px; color: var(--muted); }
+.rt-kinds { padding: 0 2px; }
+.rt-top { display: flex; flex-direction: column; gap: 6px; }
+.rt-sender { width: 100%; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+.rt-sender.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--glass)); }
+@media (max-width: 760px) { .rt-stats { grid-template-columns: repeat(2, 1fr); } }

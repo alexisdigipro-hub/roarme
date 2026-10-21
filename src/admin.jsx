@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { errText, fmtBytes, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, svg } from './ui.jsx'
 import { locale } from './i18n.js'
+import { transferAlive, transferIcon } from './transfer.jsx'
 
 /* Admin (Alex, 17 Oct: "only I want to see every user in the database and what files they send"). Settings > Admin,
    shown only to Alex; the database answers only the accounts in roar_admins (supabase/admin.sql), so nobody else gets
@@ -87,8 +88,9 @@ export function Admin() {
         <Lens className="seg" dep={tab}>
           <button type="button" className={tab === 'people' ? 'on' : ''} onClick={() => setTab('people')}>People</button>
           <button type="button" className={tab === 'files' ? 'on' : ''} onClick={() => setTab('files')}>Files</button>
+          <button type="button" className={tab === 'transfer' ? 'on' : ''} onClick={() => setTab('transfer')}>RoarTransfer</button>
         </Lens>
-        <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : 'File, person or group'} /></label>
+        <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : tab === 'transfer' ? 'File or person' : 'File, person or group'} /></label>
       </div>
       {err && <p className="adm-err">{err}</p>}
 
@@ -144,7 +146,102 @@ export function Admin() {
           {more && !s && <button type="button" className="btn adm-more" disabled={busy} onClick={loadMore}>{busy ? 'Loading…' : 'More'}</button>}
         </div>
       )}
+      {tab === 'transfer' && <AdminTransfers q={s} />}
       <p className="adm-note muted">Only you see this page. It shows who is on RoarMe and what files they sent (name, size, type, when), never what the messages or the files say.</p>
+    </div>
+  )
+}
+
+/* Admin > RoarTransfer (Alex, 21 Oct): the totals, the last 30 days, the kinds of files, who sends the most, and every
+   transfer with who sent it, where, how big, how long it stays and how often it was opened and downloaded.
+   roar_admin_transfer_stats and roar_admin_transfers answer only the accounts in roar_admins. */
+function AdminTransfers({ q }) {
+  const [st, setSt] = useState(null)
+  const [list, setList] = useState(null)
+  const [more, setMore] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const [who, setWho] = useState(null) // one sender picked from the top list
+  const load = (person) => {
+    setList(null)
+    supabase.rpc('roar_admin_transfers', { before: null, lim: PAGE, who: person?.id || null }).then(({ data, error }) => {
+      if (error) setErr(errText(error)); else { setList(data || []); setMore((data || []).length === PAGE) }
+    })
+  }
+  useEffect(() => {
+    supabase.rpc('roar_admin_transfer_stats').then(({ data, error }) => { if (error) setErr(errText(error)); else setSt(data || {}) })
+    load(null)
+  }, [])
+  const loadMore = async () => {
+    if (!list?.length) return
+    setBusy(true)
+    const { data, error } = await supabase.rpc('roar_admin_transfers', { before: list[list.length - 1].created_at, lim: PAGE, who: who?.id || null })
+    setBusy(false)
+    if (error) { setErr(errText(error)); return }
+    setList((l) => [...l, ...(data || [])]); setMore((data || []).length === PAGE)
+  }
+  const pick = (u) => { const next = who?.id === u.id ? null : u; setWho(next); load(next) }
+  const shown = (list || []).filter((t) => !q || [t.name, t.username, t.display_name, t.email, t.room_title, t.type].some((x) => (x || '').toLowerCase().includes(q)))
+  const days = st?.days || []
+  const peak = Math.max(1, ...days.map((d) => Number(d.bytes || 0)))
+  const KIND = { video: 'Video', image: 'Photos', audio: 'Audio', other: 'Other' }
+  return (
+    <div className="adm-list">
+      {err && <p className="adm-err">{err}</p>}
+      <div className="adm-stats rt-stats">
+        <span><b>{st ? st.transfers : '…'}</b><small>Transfers</small></span>
+        <span><b>{st ? fmtBytes(Number(st.bytes || 0)) : '…'}</b><small>Sent in all</small></span>
+        <span><b>{st ? st.senders : '…'}</b><small>People sending</small></span>
+        <span><b>{st ? st.active : '…'}</b><small>Live now · {st ? fmtBytes(Number(st.active_bytes || 0)) : '…'}</small></span>
+        <span><b>{st ? st.week : '…'}</b><small>This week · {st ? fmtBytes(Number(st.week_bytes || 0)) : '…'}</small></span>
+        <span><b>{st ? `${st.opens} / ${st.downloads}` : '…'}</b><small>Opened / downloaded</small></span>
+        <span><b>{st ? fmtBytes(Number(st.stored_bytes || 0)) : '…'}</b><small>On the server now · {st ? st.stored : '…'} files</small></span>
+        <span><b>{st ? fmtBytes(Number(st.biggest || 0)) : '…'}</b><small>Biggest file</small></span>
+        <span><b>{st ? `${st.from_chat} / ${st.from_link}` : '…'}</b><small>From chats / by email</small></span>
+      </div>
+      {days.length > 0 && (
+        <div className="rt-chart" aria-label="The last 30 days">
+          <div className="rt-bars">{days.map((d) => <i key={d.day} style={{ height: `${Math.max(3, (Number(d.bytes || 0) / peak) * 100)}%` }} title={`${day(d.day)}: ${d.n} · ${fmtBytes(Number(d.bytes || 0))}`} className={Number(d.n) ? '' : 'none'} />)}</div>
+          <small>The last 30 days, by size sent</small>
+        </div>
+      )}
+      {(st?.kinds || []).length > 0 && (
+        <span className="adm-chips rt-kinds">{st.kinds.map((k) => <i key={k.kind}>{KIND[k.kind] || k.kind} · {k.n} · {fmtBytes(Number(k.bytes || 0))}</i>)}</span>
+      )}
+      {(st?.top || []).length > 0 && (
+        <>
+          <p className="rt-h">Who sends the most{who ? ' · tap again to show everyone' : ''}</p>
+          <div className="rt-top">
+            {st.top.map((u) => (
+              <button key={u.id} type="button" className={`adm-row rt-sender${who?.id === u.id ? ' on' : ''}`} onClick={() => pick(u)}>
+                <Avatar src={u.avatar_url} name={u.username ? nameOf(u) : (u.email || '?')} size={36} />
+                <span className="adm-main"><b>{u.username ? nameOf(u) : (u.email || 'Someone')}</b><small>{many(u.n, 'transfer')} · {fmtBytes(Number(u.bytes || 0))} · {many(u.downloads, 'download')} · last {day(u.last)}</small></span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <p className="rt-h">{who ? `Sent by ${who.username ? nameOf(who) : who.email}` : 'Every transfer'}</p>
+      {!list && !err && <p className="muted">Loading…</p>}
+      {list && !shown.length && <p className="muted">No transfers.</p>}
+      {shown.map((t) => {
+        const alive = transferAlive(t)
+        return (
+          <div key={t.path} className={`adm-row${alive ? '' : ' gone'}`}>
+            <span className="adm-ico tr">{transferIcon(t.type)}</span>
+            <span className="adm-main">
+              <b title={t.name}>{t.name}</b>
+              <small>{t.username ? `@${t.username}` : (t.email || 'Someone')} · {t.source === 'link' ? 'by email' : t.room_kind === 'group' ? (t.room_title || 'a group') : 'a private chat'} · {day(t.created_at)}</small>
+            </span>
+            <span className="adm-chips">
+              <i>{fmtBytes(Number(t.size || 0))}</i>
+              <i className={alive ? 'tr' : 'gone'}>{t.deleted ? 'Deleted' : t.stopped ? 'Stopped' : alive ? `until ${day(t.expires)}` : 'Expired'}</i>
+              <i>{Number(t.opens || 0)} opened · {Number(t.downloads || 0)} downloaded</i>
+            </span>
+          </div>
+        )
+      })}
+      {more && !q && <button type="button" className="btn adm-more" disabled={busy} onClick={loadMore}>{busy ? 'Loading…' : 'More'}</button>}
     </div>
   )
 }

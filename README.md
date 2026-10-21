@@ -507,6 +507,13 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Project chats: Alex names them (21 Oct)
+Alex: in a project chat from THEMADLIONS Hub, only he may change the name and the photo. RoarMe's admin (roar_admins)
+now gets the camera on the group's picture, the name as an editable field and Remove group photo; everyone else sees
+neither, and Leave group is hidden there (the hub decides who is in). A name he sets stays: the hub's sync no longer
+writes the project title over it (roar_rooms.hub_title_custom). Members, auto-delete and Encrypted Chat stay the hub's.
+Database: supabase/hub-owner.sql (applied by Claude on 21 Oct; safe to run again).
+
 ## Pull down for the search (21 Oct)
 Alex: the sideways folder swipe must never also pull the list down and open the search, and the search must not open at
 the slightest touch. A drag on the list now commits to one direction after its first few pixels: sideways is the folder

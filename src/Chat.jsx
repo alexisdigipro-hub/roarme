@@ -1494,7 +1494,12 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   }, [room.room_id, toast])
   useEffect(() => { if (jump && msgs.length) { goTo(jump); onJumped() } }, [jump, msgs.length, goTo, onJumped])
 
-  useEffect(() => { if (find === null) inputRef.current?.focus() }, [room.room_id, replyTo, editing, find])
+  // on a phone, opening a chat no longer brings the keyboard up (Alex, 21 Oct): the box takes the focus there only for a reply or an edit
+  useEffect(() => {
+    if (find !== null) return
+    if (window.matchMedia('(pointer: coarse)').matches && !replyTo && !editing) return
+    inputRef.current?.focus()
+  }, [room.room_id, replyTo, editing, find])
 
   // the people of this chat, for @mentions
   const members = useMemo(() => (room.members || []).filter((id) => id !== me.id).map((id) => people[id]).filter(Boolean), [room.members, people, me.id])

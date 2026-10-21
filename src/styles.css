@@ -3891,3 +3891,7 @@ button.cc-row:hover { background: rgba(255, 255, 255, .04); }
   .cc-acts { margin: 8px 0 6px; }
   .cc-notes { min-height: 84px; }
 }
+
+/* Contacts in the chat list's rows (Alex, 21 Oct): same picture size, gaps and lines; the list scrolls with the page */
+.side-scroll .rooms.contacts-list { flex: none; overflow: visible; margin: 0; padding: 0; }
+.contacts-list .room { padding-top: 7px; padding-bottom: 7px; }

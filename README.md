@@ -507,6 +507,11 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Contacts like the chat list (21 Oct)
+Alex: Contacts with the same sizes and gaps as Messages. The contacts sit in the chat list's own rows (`.rooms
+.contacts-list`): the same 48 px pictures (54 with previews), the same gaps and the thin lines between rows; the last
+seen line stays under each name.
+
 ## Taller windows on a phone (21 Oct)
 Alex: Cancel and Done sat over the picture in a contact's card, and cards should be taller. Edit, Cancel and Done now sit in
 a row of their own at the top, level with the close button. On a phone every window may use the whole screen's height,

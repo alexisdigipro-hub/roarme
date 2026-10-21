@@ -1122,7 +1122,7 @@ export default function Chat({ me, setMe }) {
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
               : (
-                <div className={`has-sub${roomMenu.sub === 'mute' ? ' open' : ''}`} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: 'mute' }))}>
+                <div className={`has-sub${roomMenu.sub === 'mute' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: 'mute' })) }}>
                   <button type="button" onClick={() => setRoomMenu((m) => ({ ...m, sub: m.sub === 'mute' ? '' : 'mute' }))}>{I.bellOff}<span>Mute</span><i className="sub-arrow">{I.right}</i></button>
                   {roomMenu.sub === 'mute' && (
                     <div className="sub-menu menu-list">
@@ -1135,10 +1135,10 @@ export default function Chat({ me, setMe }) {
                   )}
                 </div>
               )}
-            <button type="button" onClick={() => roomAct('unread')} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: '' }))}>{I.unread}<span>{roomMenu.r.unread > 0 || marked.includes(roomMenu.r.room_id) ? 'Mark As Read' : 'Mark As Unread'}</span></button>
+            <button type="button" onClick={() => roomAct('unread')} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: '' })) }}>{I.unread}<span>{roomMenu.r.unread > 0 || marked.includes(roomMenu.r.room_id) ? 'Mark As Read' : 'Mark As Unread'}</span></button>
             <hr />
             <button type="button" onClick={() => roomAct('archive')}>{I.archive}<span>{roomMenu.r.archived ? 'Unarchive' : 'Archive'}</span></button>
-            <div className={`has-sub${roomMenu.sub === 'folder' ? ' open' : ''}`} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: 'folder' }))}>
+            <div className={`has-sub${roomMenu.sub === 'folder' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: 'folder' })) }}>
               <button type="button" onClick={() => setRoomMenu((m) => ({ ...m, sub: m.sub === 'folder' ? '' : 'folder' }))}>{I.folder}<span>Add to folder…</span><i className="sub-arrow">{I.right}</i></button>
               {roomMenu.sub === 'folder' && (
                 <div className="sub-menu menu-list">
@@ -1155,7 +1155,7 @@ export default function Chat({ me, setMe }) {
               )}
             </div>
             <hr />
-            <button type="button" onClick={() => roomAct('clear')} onMouseEnter={() => setRoomMenu((m) => ({ ...m, sub: '' }))}>{I.clear}<span>Clear History</span></button>
+            <button type="button" onClick={() => roomAct('clear')} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: '' })) }}>{I.clear}<span>Clear History</span></button>
             <button type="button" className="danger" onClick={() => roomAct('delete')}>{I.trash}<span>{roomMenu.r.kind === 'group' ? 'Delete and Leave' : 'Delete Chat'}</span></button>
           </div>
           </div>
@@ -2046,14 +2046,14 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
                   <button type="button" className="scrim" aria-label="Close" onClick={() => setHeadMenu(false)} />
                   <div className="menu head-menu" onMouseLeave={() => setHeadSub('')}>
                     {/* on a phone the search sits here, so the name has room in the head (Alex, 17 Oct) */}
-                    <button type="button" className="only-phone" onClick={() => { setHeadMenu(false); setFind(''); setFindAt(0) }} onMouseEnter={() => setHeadSub('')}>{I.search}<span>Search</span></button>
-                    {room.kind === 'group' && room.role === 'admin' && <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onMouseEnter={() => setHeadSub('')}>{I.edit}<span>Edit</span></button>}
-                    <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onMouseEnter={() => setHeadSub('')}>{I.info}<span>Info</span></button>
-                    <button type="button" onClick={() => { setHeadMenu(false); if (sealOn) turnOff(); else askSeal() }} onMouseEnter={() => setHeadSub('')}>{sealOn ? I.unlock : I.lock}<span>{sealOn ? 'Turn Off Encrypted Chat' : 'Encrypted Chat'}</span></button>
+                    <button type="button" className="only-phone" onClick={() => { setHeadMenu(false); setFind(''); setFindAt(0) }} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.search}<span>Search</span></button>
+                    {room.kind === 'group' && room.role === 'admin' && <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.edit}<span>Edit</span></button>}
+                    <button type="button" onClick={() => { setHeadMenu(false); onInfo() }} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.info}<span>Info</span></button>
+                    <button type="button" onClick={() => { setHeadMenu(false); if (sealOn) turnOff(); else askSeal() }} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{sealOn ? I.unlock : I.lock}<span>{sealOn ? 'Turn Off Encrypted Chat' : 'Encrypted Chat'}</span></button>
                     {room.muted
-                      ? <button type="button" onClick={() => act('mute')} onMouseEnter={() => setHeadSub('')}>{I.bell}<span>Unmute</span></button>
+                      ? <button type="button" onClick={() => act('mute')} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.bell}<span>Unmute</span></button>
                       : (
-                        <div className={`has-sub${headSub === 'mute' ? ' open' : ''}`} onMouseEnter={() => setHeadSub('mute')}>
+                        <div className={`has-sub${headSub === 'mute' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('mute') }}>
                           <button type="button" onClick={() => setHeadSub((s) => (s === 'mute' ? '' : 'mute'))}>{I.bellOff}<span>Mute</span><i className="sub-arrow">{I.right}</i></button>
                           {headSub === 'mute' && (
                             <div className="sub-menu menu-list">
@@ -2062,17 +2062,17 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
                           )}
                         </div>
                       )}
-                    <button type="button" onClick={() => { setHeadMenu(false); onCall(true) }} onMouseEnter={() => setHeadSub('')}>{I.video}<span>Video</span></button>
-                    {room.kind !== 'group' && <button type="button" onClick={() => { setHeadMenu(false); setSchedOpen(true) }} onMouseEnter={() => setHeadSub('')}>{I.timer}<span>Schedule Call</span></button>}
+                    <button type="button" onClick={() => { setHeadMenu(false); onCall(true) }} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.video}<span>Video</span></button>
+                    {room.kind !== 'group' && <button type="button" onClick={() => { setHeadMenu(false); setSchedOpen(true) }} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.timer}<span>Schedule Call</span></button>}
                     {room.kind !== 'group' && other && <button type="button" onClick={() => { setHeadMenu(false); onNewGroup(other) }}>{I.people}<span>Create Group</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setMedia(true) }}>{I.image}<span>Photos, videos & files</span></button>
                     {pinned && <button type="button" onClick={() => { setHeadMenu(false); setPinView(true) }}>{I.pin}<span>Pinned messages</span></button>}
                     {!sealOn && !editing && <button type="button" onClick={() => { setHeadMenu(false); setSchedNew(true) }}>{I.timer}<span>Schedule Message</span></button>}
                     {room.kind === 'group' && <button type="button" onClick={() => { setHeadMenu(false); setRolesOpen(true) }}>{I.people}<span>Roles for @mentions</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setWallPick(true) }}>{I.brush}<span>Change Wallpaper</span></button>
-                    <button type="button" onClick={exportChat} onMouseEnter={() => setHeadSub('')}>{I.file}<span>Export Chat History…</span></button>
+                    <button type="button" onClick={exportChat} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.file}<span>Export Chat History…</span></button>
                     <hr />
-                    <div className={`has-sub${headSub === 'auto' ? ' open' : ''}`} onMouseEnter={() => setHeadSub('auto')}>
+                    <div className={`has-sub${headSub === 'auto' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('auto') }}>
                       <button type="button" onClick={() => setHeadSub((s) => (s === 'auto' ? '' : 'auto'))}>{I.timer}<span>Auto-Delete Messages</span><i className="sub-arrow">{I.right}</i></button>
                       {headSub === 'auto' && (
                         <div className="sub-menu menu-list">
@@ -2081,7 +2081,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
                         </div>
                       )}
                     </div>
-                    <button type="button" onClick={() => act('clear')} onMouseEnter={() => setHeadSub('')}>{I.clear}<span>Clear Chat History</span></button>
+                    <button type="button" onClick={() => act('clear')} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.clear}<span>Clear Chat History</span></button>
                     <button type="button" className="danger" onClick={() => act('delete')}>{I.trash}<span>{room.kind === 'group' ? 'Delete and Leave' : 'Delete Chat'}</span></button>
                   </div>
                 </>

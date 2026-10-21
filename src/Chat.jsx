@@ -558,7 +558,7 @@ export default function Chat({ me, setMe }) {
       const x = e.touches[0].clientX, dx = x - g.x, dy = e.touches[0].clientY - g.y
       if (!g.lock) {
         if (Math.abs(dx) < 9 && Math.abs(dy) < 9) return
-        g.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? (g.side ? 'x' : 'none') : 'y'
+        g.lock = Math.abs(dx) > Math.abs(dy) * 1.5 ? (g.side ? 'x' : 'none') : 'y' // clearly sideways, not a slanted scroll
         if (g.lock === 'x') {
           const n = pagerNow.current
           const at = n.allFolders.findIndex((f) => f.id === n.folder)
@@ -619,10 +619,11 @@ export default function Chat({ me, setMe }) {
       g = null
       const dir = dx < 0 ? 1 : -1
       const id = dir > 0 ? next : prev
-      const far = Math.abs(dx) > w * 0.25 || (Math.abs(v) > 0.45 && Math.abs(dx) > 30 && Math.sign(v) === Math.sign(dx))
+      // less magnetic (Alex, 21 Oct): the next folder takes past 40% of the width, or a quick flick of 70 px or more
+      const far = Math.abs(dx) > w * 0.4 || (Math.abs(v) > 0.7 && Math.abs(dx) > 70 && Math.sign(v) === Math.sign(dx))
       if (!id) {
         glide(0, () => setPageDrag(null))
-        if (Math.abs(dx) / 0.3 > 60) pagerNow.current.goStop(dir) // past the last folder: the next screen in the bar at the foot
+        if (Math.abs(dx) / 0.3 > 170) pagerNow.current.goStop(dir) // past the last folder: the next screen in the bar at the foot
         return
       }
       if (!far) { glide(0, () => setPageDrag(null)); return }

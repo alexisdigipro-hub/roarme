@@ -423,6 +423,8 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toas
   return (
     <div className="recent-calls">
       <div className="hits-head calls-head"><span>Recent Calls</span><button type="button" className="calls-clear" disabled={busy} onClick={clearAll}>Clear all</button></div>
+      {/* the chat list's rows (Alex, 21 Oct): its picture size, gaps and lines */}
+      <div className="rooms contacts-list calls-list">
       {list.map((r) => {
         const out = r.caller === me.id
         const other = people[out ? r.callee : r.caller] || { id: out ? r.callee : r.caller, display_name: '…' }
@@ -432,7 +434,7 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toas
         return (
           <div key={r.id} className="call-row">
           <button type="button" className="room call-log" onClick={() => onCall(other, r.room_id, r.video)} title={r.video ? 'Video call back' : 'Call back'}>
-            <Avatar src={other.avatar_url} name={nameOf(other)} />
+            <Avatar src={other.avatar_url} name={nameOf(other)} size={48} />
             <span className="room-main">
               <span className="room-top"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong><small>{new Date(r.started_at).toLocaleDateString(locale(), { day: 'numeric', month: 'numeric', year: '2-digit' })}</small></span>
               <span className="room-bottom"><span className="room-prev"><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}{dur && ` (${dur})`}</span></span>
@@ -442,6 +444,7 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toas
           </div>
         )
       })}
+      </div>
     </div>
   )
 }

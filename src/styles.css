@@ -3895,3 +3895,10 @@ button.cc-row:hover { background: rgba(255, 255, 255, .04); }
 /* Contacts in the chat list's rows (Alex, 21 Oct): same picture size, gaps and lines; the list scrolls with the page */
 .side-scroll .rooms.contacts-list { flex: none; overflow: visible; margin: 0; padding: 0; }
 .contacts-list .room { padding-top: 7px; padding-bottom: 7px; }
+
+/* Recent Calls and New call in the same rows as the chat list (Alex, 21 Oct): 48 px pictures, the same gaps, a thin line */
+.calls-list .call-row { position: relative; }
+.calls-list .call-row + .call-row::before { content: ''; position: absolute; top: -2.5px; left: 66px; right: 10px; height: 1px; background: color-mix(in srgb, var(--text) 13%, transparent); pointer-events: none; }
+.calls-list .call-row .room { padding-top: 7px; padding-bottom: 7px; }
+.modal .people .person.call-row { padding-top: 7px; padding-bottom: 7px; position: relative; }
+.modal .people .person.call-row + .person.call-row::before { content: ''; position: absolute; top: -2px; left: 66px; right: 6px; height: 1px; background: color-mix(in srgb, var(--text) 13%, transparent); pointer-events: none; }

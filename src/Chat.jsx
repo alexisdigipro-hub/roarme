@@ -881,6 +881,7 @@ export default function Chat({ me, setMe }) {
                   <div className="menu">
                     <button type="button" onClick={() => { setPlus(false); setModal('newchat') }}>{I.person}<span>New chat</span></button>
                     <button type="button" onClick={() => { setPlus(false); setModal('newgroup') }}>{I.people}<span>New group</span></button>
+                    <button type="button" onClick={() => { setPlus(false); setModal('newcall') }}>{I.phone}<span>New call</span></button>
                     <button type="button" onClick={() => { setPlus(false); setModal('invite') }}>{I.link}<span>Invite people</span></button>
                     <button type="button" onClick={() => { setPlus(false); editFolder('new') }}>{I.folder}<span>New folder</span></button>
                     {myFolders.length > 0 && <button type="button" onClick={() => { setPlus(false); openFolders() }}>{I.edit}<span>Edit folders</span></button>}
@@ -1053,7 +1054,7 @@ export default function Chat({ me, setMe }) {
           <div className="people">
             {calls.map((p) => (
               <div key={p.id} className="person call-row">
-                <Avatar src={p.avatar_url} name={nameOf(p)} size={40} online={onlineNow(p)} />
+                <Avatar src={p.avatar_url} name={nameOf(p)} size={48} online={onlineNow(p)} />
                 <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
                 <button type="button" className="round" onClick={() => { setModal(''); startCall(p, directWith(p), false) }} aria-label="Voice call">{I.phone}</button>
                 <button type="button" className="round" onClick={() => { setModal(''); startCall(p, directWith(p), true) }} aria-label="Video call">{I.video}</button>

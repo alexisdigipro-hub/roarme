@@ -3989,3 +3989,11 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 .row-acts .ra-mute i { background: #f0a030; }
 .row-acts .ra-del i { background: #ff3b30; }
 .rooms .room[data-rid] { z-index: 1; }
+/* Settings > Folders: slide a folder left and Delete shows behind it (Alex, 21 Oct) */
+.fold-swipe { position: relative; overflow: hidden; }
+.fold-swipe + .fold-swipe { border-top: 1px solid var(--edge); }
+.fold-swipe > .fold-row { border-top: 0 !important; transition: transform .25s cubic-bezier(.22, 1, .36, 1); }
+.set-box:has(.fold-swipe) { overflow: hidden; } /* the red Delete keeps the box's round corners */
+.fold-swipe.dragging { z-index: 5; }
+.fold-del { position: absolute; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; border: 0; background: var(--danger, #ff453a); color: #fff; font-size: 12px; font-weight: 600; }
+.fold-del svg { width: 20px; height: 20px; }

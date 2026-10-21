@@ -1007,13 +1007,21 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
   const [dragId, setDragId] = useState('')
   const [dy, setDy] = useState(0)
   useEffect(() => { if (drag.current) drag.current.lock = false }, [list]) // a swap waits for the rows to move
+  // slide a folder to the left and Delete shows behind it, like Telegram (Alex, 21 Oct); All cannot go
+  const [swipe, setSwipe] = useState({ id: '', x: 0, open: false })
+  const DEL_W = 88
   const down = (e, f) => {
     if (e.button !== 0) return
-    drag.current = { id: f.id, y0: e.clientY, moved: false }
+    if (swipe.open && swipe.id !== f.id) setSwipe({ id: '', x: 0, open: false })
+    const base = swipe.open && swipe.id === f.id ? -DEL_W : 0
+    drag.current = { id: f.id, y0: e.clientY, x0: e.clientX, moved: false, side: false, base }
     const move = (ev) => {
       const d = drag.current
       if (!d) return
       let off = ev.clientY - d.y0
+      const sx = ev.clientX - d.x0
+      if (d.side) { ev.preventDefault(); setSwipe({ id: d.id, x: Math.max(-DEL_W - 30, Math.min(0, d.base + sx)), open: false }); return }
+      if (!d.moved && f.id !== 'all' && Math.abs(sx) > 8 && Math.abs(sx) > Math.abs(off) * 1.2) { d.side = true; d.moved = true; return }
       if (!d.moved) { if (Math.abs(off) < 6) return; d.moved = true; setDragId(d.id) }
       ev.preventDefault()
       if (d.lock) { setDy(off); return }
@@ -1032,6 +1040,11 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
       window.removeEventListener('pointercancel', up)
       const d = drag.current
       setDragId(''); setDy(0)
+      if (d?.side) {
+        setSwipe((w) => (w.x < -DEL_W / 2 ? { id: d.id, x: -DEL_W, open: true } : { id: '', x: 0, open: false }))
+        setTimeout(() => { drag.current = null }, 0)
+        return
+      }
       if (d?.moved) {
         setPrefs({ folderOrder: listRef.current.map((x) => x.id) })
         setTimeout(() => { drag.current = null }, 0) // the click that ends a drag opens nothing
@@ -1045,17 +1058,23 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
     <>
       <Box title="Folders" note={onPhone() ? 'Drag a folder to change the order of the tabs. Tap one to edit it.' : 'Drag a folder to change the order of the tabs. Click one to edit it, right click for more.'}>
         <div ref={rowsRef} className="fold-rows">
-        {list.map((f) => (
-          <button key={f.id} type="button" data-fid={f.id} className={`set-row set-pick fold-row${f.custom ? '' : ' set-fixed'}${dragId === f.id ? ' dragging' : ''}`} style={dragId === f.id ? { transform: `translateY(${dy}px)` } : undefined}
+        {list.map((f) => {
+          const sx = swipe.id === f.id ? swipe.x : 0
+          return (
+          <div key={f.id} data-fid={f.id} className={`fold-swipe${dragId === f.id ? ' dragging' : ''}`} style={dragId === f.id ? { transform: `translateY(${dy}px)` } : undefined}>
+          {sx < 0 && <button type="button" className="fold-del" style={{ width: Math.max(DEL_W, -sx) }} onClick={() => { setSwipe({ id: '', x: 0, open: false }); onFolders(`delete:${f.id}`) }}>{I.trash}<span>Delete</span></button>}
+          <button type="button" className={`set-row set-pick fold-row${f.custom ? '' : ' set-fixed'}${dragId === f.id ? ' dragging' : ''}`} style={sx ? { transform: `translateX(${sx}px)`, transition: drag.current?.side ? 'none' : undefined } : undefined}
             onPointerDown={(e) => down(e, f)}
             onContextMenu={(e) => { e.preventDefault(); onFolderMenu?.(f, e) }}
-            onClick={() => { if (drag.current?.moved) return; onFolders(`folder:${f.id}`) }}>
+            onClick={() => { if (drag.current?.moved) return; if (swipe.open) { setSwipe({ id: '', x: 0, open: false }); return } onFolders(`folder:${f.id}`) }}>
             <span className="fold-grip" aria-hidden="true">{svg(<><circle cx="9" cy="6" r="1.2" /><circle cx="15" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" /><circle cx="15" cy="18" r="1.2" /></>)}</span>
             <span className="fold-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span>
             <span className="set-text">{f.name}{f.custom && <small>{`${f.rooms.length} chat${f.rooms.length === 1 ? '' : 's'}`}</small>}</span>
             {f.custom && <><i className="fold-dot" style={{ background: colorOf(f.id) }} /><i className="set-chev">{I.right}</i></>}
           </button>
-        ))}
+          </div>
+          )
+        })}
         </div>
         <button type="button" className="set-row set-pick set-add" onClick={() => onFolders('newfolder')}><span className="set-text">Add a Custom Folder</span><i className="set-chev">{I.right}</i></button>
       </Box>

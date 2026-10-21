@@ -763,6 +763,14 @@ export default function Chat({ me, setMe }) {
     onTouchEnd: (e) => { const h = tabHold.current; if (!h) return; clearTimeout(h.timer); if (h.fired && e.cancelable) e.preventDefault() },
     onTouchCancel: () => clearTimeout(tabHold.current?.timer),
   })
+  const deleteFolder = (f) => {
+    if (!f || f.id === 'all') return
+    if (!window.confirm(`Delete the folder ${f.name}? The chats in it stay.`)) return
+    if (f.custom) setMyFolders((list) => list.filter((x) => x.id !== f.id))
+    else setPrefs({ hiddenFolders: [...new Set([...(prefs.hiddenFolders || []), f.id])] })
+    if (folder === f.id) setFolder('all')
+    toast('Folder deleted')
+  }
   const muteFolder = async (f) => {
     const ids = listFor(f.id).map((r) => r.room_id)
     if (!ids.length) { toast('No chats in this folder'); return }
@@ -1118,7 +1126,7 @@ export default function Chat({ me, setMe }) {
         <NowPlaying onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
         {tab === 'settings' ? (
           <Suspense fallback={<div className="set-body" />}><SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} onFolderDone={doneFolder} toast={toast} me={me} setMe={setMe}
-            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : openFolders())}
+            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : m.startsWith('delete:') ? deleteFolder(allFolders.find((f) => f.id === m.slice(7))) : openFolders())}
             folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (

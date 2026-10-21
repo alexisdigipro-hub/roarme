@@ -1,13 +1,15 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import { TransferPage } from './transfer.jsx'
-import { LegalPage } from './legal.jsx'
 import { InstallPrompt } from './install.jsx'
 import { takeInvite } from './invite.jsx'
 import { takeEmbed, takeHubLink, takeHubSignin } from './hubLink.jsx'
 import './styles.css'
 import { startI18n } from './i18n.js'
+
+// the Privacy Policy and the Terms come only when opened, not with every start of RoarMe
+const LegalPage = lazy(() => import('./legal.jsx').then((m) => ({ default: m.LegalPage })))
 
 startI18n()
 
@@ -30,11 +32,12 @@ window.addEventListener('resize', () => {
 })
 
 // scroll bars show only while something scrolls, then fade (Alex, 17 Oct): the scrolling box gets .is-scrolling
+// a phone draws its own thin bars over the content, so there it is left alone and the list is not restyled on every scroll
 const scrollTimers = new WeakMap()
-document.addEventListener('scroll', (e) => {
+if (!window.matchMedia?.('(pointer: coarse)').matches) document.addEventListener('scroll', (e) => {
   const el = e.target === document ? document.documentElement : e.target
   if (!el?.classList) return
-  el.classList.add('is-scrolling')
+  if (!el.classList.contains('is-scrolling')) el.classList.add('is-scrolling')
   clearTimeout(scrollTimers.get(el))
   scrollTimers.set(el, setTimeout(() => el.classList.remove('is-scrolling'), 900))
 }, true)
@@ -74,6 +77,6 @@ if (!transferToken && !legalDoc) takeEmbed()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {transferToken ? <TransferPage token={transferToken} /> : legalDoc ? <LegalPage doc={legalDoc} /> : <><App /><InstallPrompt /></>}
+    {transferToken ? <TransferPage token={transferToken} /> : legalDoc ? <Suspense fallback={null}><LegalPage doc={legalDoc} /></Suspense> : <><App /><InstallPrompt /></>}
   </StrictMode>,
 )

@@ -202,8 +202,16 @@ export default function Chat({ me, setMe }) {
     const w0 = sideW
     const max = () => Math.max(370, Math.min(720, window.innerWidth - 480))
     let w = w0
-    const move = (ev) => { w = Math.round(Math.min(max(), Math.max(370, w0 + ev.clientX - x0))); setSideW(w) }
+    // while dragging only the width moves, once a frame; the app itself is drawn again once, at the end
+    const app = e.currentTarget.closest('.app')
+    let frame = 0
+    const move = (ev) => {
+      w = Math.round(Math.min(max(), Math.max(370, w0 + ev.clientX - x0)))
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; app?.style.setProperty('--side-w', `${w}px`) })
+    }
     const up = () => {
+      cancelAnimationFrame(frame)
+      setSideW(w)
       document.removeEventListener('pointermove', move)
       document.removeEventListener('pointerup', up)
       document.body.classList.remove('resizing')
@@ -990,7 +998,22 @@ export default function Chat({ me, setMe }) {
   }, [rooms, people, me.id])
 
   // one row of the chat list; `ghost` is the copy in the folder sliding in beside the list, never pressed
+  // a chat in the list is kept as it was while nothing it shows has changed: typing (the draft is saved every few
+  // moments), a toast or a message in another chat no longer draws every chat in the list again (Alex, 21 Oct)
+  const roomRows = useRef(new Map())
   const roomRow = (r, ghost = false) => {
+    const other = otherOf(r)
+    const key = [r, other, onlineNow(other), titleOf(r), picked.includes(r.room_id), picking, r.room_id === activeId, roomMenu?.r.room_id === r.room_id, prefs,
+      drafts[r.room_id], cleared[r.room_id], people[r.last_user] ? nameOf(people[r.last_user]) : '', officialIds.includes(other?.id),
+      marked.includes(r.room_id), pins.includes(r.room_id), tagsOf(r).join('\n')]
+    const id = `${r.room_id}${ghost ? ' ghost' : ''}`
+    const had = roomRows.current.get(id)
+    if (had && key.every((x, j) => x === had.key[j])) return had.el
+    const el = drawRoom(r, ghost)
+    roomRows.current.set(id, { key, el })
+    return el
+  }
+  const drawRoom = (r, ghost) => {
     const other = otherOf(r)
     const isPicked = picked.includes(r.room_id)
     if (ghost) {
@@ -2177,7 +2200,32 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
       box.removeEventListener('touchcancel', end)
     }
   }, [room.room_id])
-  const msgList = useMemo(() => shownMsgs.map((m, i) => {
+  // each message's row is kept as it was while nothing it shows has changed: a new message, a reaction or a "seen"
+  // draws that one row again, not every message in the chat (Alex, 21 Oct: RoarMe lighter, "try harder")
+  const rowCache = useRef({ look: null, rows: new Map() })
+  const peopleLook = useMemo(() => Object.values(people).map((p) => `${p.id}:${nameOf(p)}:${p.avatar_url || ''}:${p.name_color || ''}`).join('|'), [people])
+  const rolesLook = JSON.stringify(roles) // a new list on every redraw of the app, the same roles
+  const msgList = useMemo(() => {
+    const c = rowCache.current
+    const look = [peopleLook, !!picked, prefs, rolesLook, room.kind, room.room_id, title, autoDl, me]
+    if (!c.look || look.some((x, i) => x !== c.look[i])) { c.look = look; c.rows = new Map() }
+    const hits = find ? new Set(found) : null
+    const rows = new Map()
+    const list = shownMsgs.map((m, i) => {
+      const prev = shownMsgs[i - 1]
+      const quoted = m.reply_to ? byId[m.reply_to] : null
+      const rx = reactsOf[m.id]
+      const key = [m, prev?.user_id, prev?.created_at, quoted, rx ? JSON.stringify(rx) : '', m.user_id === me.id ? seenBy(m).join() : '',
+        !!picked?.includes(m.id), wideIds.has(m.id), !!hits?.has(m.id), flash === m.id, pinnedSet.has(m.id), replyCount[m.id] || 0]
+      const had = c.rows.get(m.id)
+      const el = had && key.every((x, j) => x === had.key[j]) ? had.el : drawMsg(m, i)
+      rows.set(m.id, { key, el })
+      return el
+    })
+    c.rows = rows
+    return list
+  }, [shownMsgs, peopleLook, picked, prefs, byId, reactsOf, reads, wideIds, find, found, flash, rolesLook, room.kind, room.room_id, title, autoDl, pinnedSet, replyCount, me]) // eslint-disable-line react-hooks/exhaustive-deps
+  function drawMsg(m, i) {
           const prev = shownMsgs[i - 1]
           const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
           const mine = m.user_id === me.id
@@ -2243,7 +2291,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
               </div>
             </div>
           )
-  }), [shownMsgs, people, picked, prefs, byId, reactsOf, reads, wideIds, find, found, flash, roles, room, title, autoDl, pinnedSet, replyCount, me]) // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   return (
     <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={wall} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 15.5}px` }}

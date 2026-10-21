@@ -607,8 +607,10 @@ export default function Chat({ me, setMe }) {
       const phone = window.matchMedia('(max-width: 760px)').matches
       g = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, t: Date.now(), lx: e.touches[0].clientX, lt: Date.now(), v: 0,
         side: !n.busy && phone, top: (el.querySelector('.rooms')?.scrollTop || 0) <= 0, open: n.searchOpen, phone, pull: 0,
-        // from the screen's edges the slide turns the folder; from anywhere else on a chat it opens that chat's buttons (Alex, 21 Oct)
-        rowEl: phone && !n.picking && e.touches[0].clientX > EDGE && e.touches[0].clientX < window.innerWidth - EDGE ? e.target.closest?.('.rooms:not(.rooms-ghost) .room[data-rid]') : null }
+        // the middle of the screen turns the folder; a slide that starts at either edge of a chat opens its buttons
+        // (Alex, 21 Oct): from the right edge to the left Mute and Delete, from the left edge to the right Unread and Pin
+        rowEl: phone && !n.picking && (e.touches[0].clientX < EDGE || e.touches[0].clientX > window.innerWidth - EDGE) ? e.target.closest?.('.rooms:not(.rooms-ghost) .room[data-rid]') : null,
+        fromLeft: e.touches[0].clientX < EDGE }
     }
     const touchMove = (e) => {
       if (!g) return
@@ -616,7 +618,7 @@ export default function Chat({ me, setMe }) {
       if (!g.lock) {
         if (Math.abs(dx) < 7 && Math.abs(dy) < 7) return
         g.lock = Math.abs(dx) > Math.abs(dy) * 1.1 ? (g.side ? 'x' : 'none') : 'y'
-        if (g.lock === 'x' && g.rowEl) {
+        if (g.lock === 'x' && g.rowEl && (g.fromLeft ? dx > 0 : dx < 0)) {
           g.lock = 'row'
           g.rs = dx < 0 ? 'right' : 'left'
           g.rowEl.style.transition = 'none'
@@ -1419,7 +1421,7 @@ function PeekList({ room, me, people, clearedAt }) {
 /* ---------- one conversation ---------- */
 // the official RoarMe account's mark beside its name (Alex, 19 Oct)
 const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />, 15)
-const EDGE = 36 // px from either side of the screen where a slide turns the folder
+const EDGE = 64 // px from either side of the screen where a slide on a chat opens its buttons
 const ROW_W = 156 // how far a chat slides open to show its two buttons
 const REORDER = svg(<><rect x="3" y="4" width="18" height="6" rx="2" /><path d="M5 15v4M12 15v4M19 15v4M3.5 15h17" /></>, 16)
 const OFFICIAL = <i className="official" title="Official RoarMe account" aria-label="Official">{svg(<><path d="M12 2.5l2.4 1.8 3-.1.9 2.8 2.4 1.8-.9 2.8.9 2.8-2.4 1.8-.9 2.8-3-.1L12 21.5l-2.4-1.8-3 .1-.9-2.8L3.3 15.2l.9-2.8-.9-2.8 2.4-1.8.9-2.8 3 .1z" fill="currentColor" stroke="none" /><path d="M8.5 12.2l2.3 2.3 4.7-4.8" stroke="#fff" strokeWidth="2.2" /></>, 15)}</i>

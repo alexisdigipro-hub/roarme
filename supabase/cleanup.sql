@@ -37,7 +37,7 @@ language sql stable security definer set search_path = public, storage as $$
   where o.bucket_id in ('roar-files', 'roar-transfers')
     and o.created_at < now() - interval '1 hour'
     and not exists (select 1 from roar_messages m
-      where m.file->>'path' = o.name and coalesce(m.file->>'bucket', 'roar-files') = o.bucket_id)
+      where (m.file->>'path' = o.name or m.file->>'thumb' = o.name) and coalesce(m.file->>'bucket', 'roar-files') = o.bucket_id)
   limit 1000
 $$;
 revoke all on function public.roar_cleanup_rows(), public.roar_orphan_files() from public, anon, authenticated;

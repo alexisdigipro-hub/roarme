@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { errText, fileLink, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
+import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
 import { Avatar, CropModal, I, Modal, OnTop } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { usePrefs } from './prefs.js'
@@ -365,7 +365,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
 function Thumb({ m, onClick }) {
   const [url, setUrl] = useState('')
   const [dur, setDur] = useState(0)
-  useEffect(() => { let alive = true; fileLink(m.file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path])
+  useEffect(() => { let alive = true; fileLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path])
   const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   return (
     <button type="button" className="pf-thumb" onClick={onClick}>

@@ -507,6 +507,12 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Stone is RoarMe's theme (21 Oct)
+Alex: a first start opens Stone in light mode, with the theme's own graphite (no accent) and the folder tabs at the
+bottom on every device; every other theme is only for Alex (THEME_LAB), and anyone else left on one moves to Stone.
+In Stone the folder tabs are clearer: at the bottom a light pill bar above the dark foot bar, bolder darker words, the
+chosen folder a graphite pill with white words. The loading screen is Stone's light grey from the very first moment.
+
 ## Contacts like the chat list (21 Oct)
 Alex: Contacts with the same sizes and gaps as Messages. The contacts sit in the chat list's own rows (`.rooms
 .contacts-list`): the same 48 px pictures (54 with previews), the same gaps and the thin lines between rows; the last

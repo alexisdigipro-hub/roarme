@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="ember">
+<html lang="en" data-theme="stone">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -24,13 +24,13 @@
          no black); React puts the same picture up (.boot) until it is ready, so nothing jumps -->
     <style>
       html, body { margin: 0; height: 100%; background: #22262c; }
-      html[data-splash='light'], html[data-splash='light'] body { background: #eef2f7; }
+      html[data-splash='light'], html[data-splash='light'] body { background: #dcdcdd; }
       .splash { position: fixed; inset: 0; display: grid; place-items: center; background: linear-gradient(180deg, #2b3038 0%, #1c1f24 55%, #15171b 100%); }
-      html[data-splash='light'] .splash { background: linear-gradient(180deg, #f4f7fb 0%, #eaf0f7 100%); }
+      html[data-splash='light'] .splash { background: linear-gradient(180deg, #e2e2e3 0%, #d4d4d5 100%); }
       .splash img { width: 64px; height: 64px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
     </style>
     <script>
-      try { var p = JSON.parse(localStorage.getItem('roarme-prefs') || '{}'); if (p.mode === 'light' || (p.mode === 'auto' && matchMedia('(prefers-color-scheme: light)').matches)) document.documentElement.dataset.splash = 'light' } catch (e) {}
+      try { var p = JSON.parse(localStorage.getItem('roarme-prefs') || '{}'); if (!p.mode || p.mode === 'light' || (p.mode === 'auto' && matchMedia('(prefers-color-scheme: light)').matches)) document.documentElement.dataset.splash = 'light' } catch (e) {}
     </script>
   </head>
   <body>

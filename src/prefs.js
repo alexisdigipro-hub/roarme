@@ -3,10 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 /* Chat settings, kept on this device (as in the THEMADLIONS chat): how the chat looks and behaves.
    A change is announced with the 'roarme-prefs' event so every open part of the app follows it. */
 export const DEFAULTS = {
-  mode: 'dark', // dark | light | auto (follows the computer)
+  mode: 'light', // dark | light | auto (follows the computer); a first start opens Stone in light (Alex, 21 Oct)
   lang: 'en', // en | el, the interface language (i18n.js)
-  theme: 'ember', // ember, shown as Simba (the main one, Alex 16 Oct) | prism (Pumba); the rest only for Alex, see THEME_LAB
-  accent: 'red', // a first start opens Simba in red (Alex, 17 Oct); '' = the theme's own colour, or one of ACCENTS
+  theme: 'stone', // Stone is the main theme since 21 Oct (Alex); the rest only for Alex, see THEME_LAB
+  accent: '', // the theme's own colour (Stone's graphite) on a first start (Alex, 21 Oct); or one of ACCENTS
   density: 'standard', // relaxed | standard | tight
   font: 'system', // one of FONTS
   radius: 12, // corners of the Ember theme, 4 to 16
@@ -37,7 +37,7 @@ export const DEFAULTS = {
   notifyPreview: true,
   translateTo: 'auto', // auto = Greek to English and back
   // top | bottom (left until 16 Oct, now bottom); on a phone they start at the bottom, by the thumb (Alex, 19 Oct)
-  folderTabs: typeof window !== 'undefined' && window.matchMedia?.('(max-width: 760px)').matches ? 'bottom' : 'top',
+  folderTabs: 'bottom', // the folder tabs at the bottom from the start, on every device (Alex, 21 Oct)
   folderOrder: [], // folder ids in the order dragged in Settings > Folders
   folderNames: {}, // the ready-made folders renamed: { unread: 'New' }
   hiddenFolders: [], // ready-made folders deleted (Unread, Groups, Archived; All stays)
@@ -173,11 +173,11 @@ export function applyMode(mode) {
 
 /* the look that sits on top of any theme (Alex, 16 Oct, from his Themes reference):
    accent colour, density, font, corner radius, animations, focus rings */
-/* everyone gets Simba (ember) and Pumba (prism); the other themes stay in Alex's lab until they are ready (Alex, 17 Oct) */
-export const PUBLIC_THEMES = ['ember', 'prism']
+/* everyone gets Stone (Alex, 21 Oct: the main theme); every other theme stays in Alex's lab, only he sees them */
+export const PUBLIC_THEMES = ['stone']
 const THEME_LAB = ['98f8b6e1-0ce2-4576-805b-cffa25667d22'] // @iamalexkon
 export const inThemeLab = (me) => !!me && THEME_LAB.includes(me.id)
-export const themeFor = (theme, me) => (PUBLIC_THEMES.includes(theme) || inThemeLab(me) ? theme || 'ember' : 'ember')
+export const themeFor = (theme, me) => (PUBLIC_THEMES.includes(theme) || inThemeLab(me) ? theme || 'stone' : 'stone')
 export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#d40000'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57'], ['white', 'White', '#ffffff'], ['black', 'Black', '#111111']]
 export const FONTS = [
   ['system', 'SF Pro / System', "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif"],

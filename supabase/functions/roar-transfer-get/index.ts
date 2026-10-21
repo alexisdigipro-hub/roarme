@@ -24,7 +24,8 @@ const disposition = (name: string) => `attachment; filename="${name.replace(/[^\
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
-  const t = new URL(req.url).searchParams.get('t') || ''
+  const q = new URL(req.url).searchParams
+  const t = q.get('t') || ''
   if (!/^[A-Za-z0-9]{10,32}$/.test(t)) return json({ error: 'not_found' }, 404)
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store').eq('token', t).maybeSingle()
@@ -36,20 +37,29 @@ Deno.serve(async (req) => {
     return json({ ...info, ...one })
   }
   // one link for a whole upload (roartransfer.com, Alex 21 Oct): every file still alive, each with its own address
-  const { data: bundle } = await sb.from('roar_transfer_bundles').select('tokens, expires_at').eq('token', t).maybeSingle()
+  const { data: bundle } = await sb.from('roar_transfer_bundles').select('tokens, expires_at, title, message, password_hash, created_by').eq('token', t).maybeSingle()
   if (!bundle) return json({ error: 'not_found' }, 404)
+  // who sent it, the title and the message (roartransfer.com, Alex 21 Oct); with a password, nothing else until it is right
+  const { data: p } = await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle()
+  const head = { bundle: true, title: bundle.title || '', from: p?.display_name || (p?.username ? '@' + p.username : '') }
+  if (bundle.password_hash) {
+    const given = q.get('p') || ''
+    if (!given) return json({ ...head, expires: bundle.expires_at, error: 'password' }, 401)
+    if ((await sha(`${t}:${given}`)) !== bundle.password_hash) return json({ ...head, expires: bundle.expires_at, error: 'password', wrong: true }, 401)
+  }
+  Object.assign(head, { message: bundle.message || '' })
   const { data: rows } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store').in('token', bundle.tokens)
   const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > Date.now())
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
-  if (!live.length) return json({ bundle: true, expires: bundle.expires_at, error: 'expired' }, 410)
+  if (!live.length) return json({ ...head, expires: bundle.expires_at, error: 'expired' }, 410)
   // deno-lint-ignore no-explicit-any
   const files: any[] = []
   for (const r of live) {
     const one = await addresses(sb, r)
     if (one) files.push({ token: r.token, name: r.name, size: r.size, type: r.type, expires: r.expires_at, ...one })
   }
-  if (!files.length) return json({ bundle: true, expires: bundle.expires_at, error: 'expired' }, 410)
-  return json({ bundle: true, expires: files.reduce((a, f) => (f.expires > a ? f.expires : a), files[0].expires), files })
+  if (!files.length) return json({ ...head, expires: bundle.expires_at, error: 'expired' }, 410)
+  return json({ ...head, expires: files.reduce((a, f) => (f.expires > a ? f.expires : a), files[0].expires), files })
 })
 
 // a file's download address (with its real name) and, for a video, a picture or audio, one to play it
@@ -67,4 +77,9 @@ async function addresses(sb: any, link: any): Promise<{ url: string, view: strin
   const url = new URL(signed.signedUrl)
   url.searchParams.delete('download')
   return { url: `${url.toString()}&download=${encodeURIComponent(link.name || 'file')}`, view: play?.signedUrl || '' }
+}
+
+async function sha(s: string) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return Array.from(new Uint8Array(d), (x) => x.toString(16).padStart(2, '0')).join('')
 }

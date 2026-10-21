@@ -240,3 +240,38 @@ language sql security definer set search_path = public as $$
 $$;
 revoke all on function public.roar_transfer_hit(text, boolean) from public;
 grant execute on function public.roar_transfer_hit(text, boolean) to anon, authenticated, service_role;
+
+-- Send by email, title, message, password, "email me when they download" (Alex, 21 Oct 2026, roartransfer.com).
+alter table public.roar_transfer_bundles add column if not exists title text not null default '';
+alter table public.roar_transfer_bundles add column if not exists message text not null default '';
+alter table public.roar_transfer_bundles add column if not exists recipients text[] not null default '{}';
+alter table public.roar_transfer_bundles add column if not exists password_hash text;
+alter table public.roar_transfer_bundles add column if not exists notify boolean not null default false;
+alter table public.roar_transfer_bundles add column if not exists notified_at timestamptz;
+create index if not exists roar_transfer_bundles_tokens on public.roar_transfer_bundles using gin (tokens);
+
+-- a download can tell the sender: at most one email an hour per upload (roartransfer-notify sends it)
+create or replace function public.roar_transfer_hit(t text, dl boolean) returns void
+language plpgsql security definer set search_path = public as $$
+declare b text;
+begin
+  update public.roar_transfer_links
+  set opens = opens + case when dl then 0 else 1 end,
+      downloads = downloads + case when dl then 1 else 0 end,
+      last_download = case when dl then now() else last_download end
+  where expires_at > now()
+    and (token = t or (not dl and token = any (coalesce((select x.tokens from public.roar_transfer_bundles x where x.token = t), '{}'))));
+  if dl then
+    update public.roar_transfer_bundles set notified_at = now()
+    where t = any (tokens) and notify and (notified_at is null or notified_at < now() - interval '1 hour')
+    returning token into b;
+    if b is not null then
+      perform net.http_post(
+        url := 'https://bzmjhbnwhdwmncxkqkdl.supabase.co/functions/v1/roartransfer-notify',
+        headers := '{"Content-Type": "application/json"}'::jsonb,
+        body := jsonb_build_object('bundle', b, 'file', t));
+    end if;
+  end if;
+end $$;
+revoke all on function public.roar_transfer_hit(text, boolean) from public;
+grant execute on function public.roar_transfer_hit(text, boolean) to anon, authenticated, service_role;

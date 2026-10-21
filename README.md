@@ -449,6 +449,7 @@ in light mode); React keeps exactly that picture up until the account is read, s
 from the Home Screen every page, sign-in too, takes the whole screen's height (no black strip at the bottom).
 
 ## Swipe between folders (19 Oct)
+Since 21 Oct the list follows the finger, as in Telegram: drag sideways and the next folder's chats slide in beside it; let go past a quarter of the screen (or flick) and it moves on, otherwise it springs back. Past the first or last folder the list only stretches and goes on to the next screen at the foot. A folder reached this way comes in without the row cascade. (Chat.jsx: `rooms-pager` / `rooms-track`, native touch listeners, the drag itself never re-renders.)
 Alex: on a phone, in Messages, a swipe left or right across the chat list goes to the next or previous folder (All ›
 Unread › Groups › Archived › your own), and the folder tabs follow. Not while searching or selecting chats, and not when
 the swipe starts on the tabs themselves.

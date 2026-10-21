@@ -824,6 +824,14 @@ button.set-row:disabled:hover { background: none; }
 /* folder tabs: names only, at the top or at the bottom right above the foot (Alex, 16 Oct, like TML Chat) */
 .tabs .tab-ico { display: none; }
 .rooms-area { display: contents; }
+/* the chat list as pages that follow the finger (Alex, 21 Oct, like Telegram): the folder beside it rides along */
+.rooms-pager { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; overflow: hidden; margin: 0 -4px; padding: 0 4px; }
+.rooms-track { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
+.rooms-ghost { position: absolute; inset: 0; margin: 0; overflow: hidden; pointer-events: none; }
+.rooms-ghost.next { transform: translateX(calc(100% + 8px)); }
+.rooms-ghost.prev { transform: translateX(calc(-100% - 8px)); }
+.rooms-area.bottom .rooms-pager { flex: 1; min-height: 0; }
+.rooms-pager .rooms { margin: 0; padding: 0; }
 .rooms-area.bottom { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
 .rooms-area.bottom .rooms { flex: 1; min-height: 0; }
 .rooms-area.bottom .tabs { order: 1; flex: none; }

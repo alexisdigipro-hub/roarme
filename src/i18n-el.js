@@ -748,6 +748,7 @@ export const EL = {
   'Glass Look': 'Γυάλινη εμφάνιση',
   'Your messages and the buttons see-through, with a thin edge in your colour; off: filled with your colour': 'Τα μηνύματα και τα κουμπιά σου διάφανα, με λεπτό περίγραμμα στο χρώμα σου· κλειστό: γεμάτα με το χρώμα σου',
   'White': 'Λευκό',
+  'Black': 'Μαύρο',
   'Only you': 'Μόνο εσύ',
   'Simba (the main one): graphite glass with a glowing accent. Pumba: slate panels with a neon edge and coral glow. Each has dark and light.': 'Simba (το βασικό): γραφίτης και γυαλί με φωτεινό accent. Pumba: σκούρα πάνελ με νέον άκρη και κοραλί λάμψη. Το καθένα έχει σκοτεινό και φωτεινό.',
   'Simba (the main one): graphite glass with a glowing accent. Pumba: slate panels with a neon edge and coral glow. Only you see the rest, to work on them: Glass, Aura, Studio, Aurum, Lions. Each has dark and light.': 'Simba (το βασικό): γραφίτης και γυαλί με φωτεινό accent. Pumba: σκούρα πάνελ με νέον άκρη και κοραλί λάμψη. Τα υπόλοιπα τα βλέπεις μόνο εσύ, για να τα δουλέψουμε: Glass, Aura, Studio, Aurum, Lions. Το καθένα έχει σκοτεινό και φωτεινό.',

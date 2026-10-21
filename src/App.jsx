@@ -20,12 +20,13 @@ export default function App() {
   // the colour of the band under the clock on a phone follows day and night (Alex, 19 Oct: no black at the top)
   useEffect(() => {
     const m = document.querySelector('meta[name="theme-color"]')
-    const set = () => m?.setAttribute('content', document.documentElement.dataset.mode === 'light' ? '#eef2f7' : '#383d46')
+    // Stone is grey stone in either mode (21 Oct)
+    const set = () => { const d = document.documentElement.dataset; m?.setAttribute('content', d.theme === 'stone' ? (d.mode === 'light' ? '#e2e2e3' : '#ababac') : d.mode === 'light' ? '#eef2f7' : '#383d46') }
     set()
     const mq = window.matchMedia?.('(prefers-color-scheme: light)')
     mq?.addEventListener?.('change', set)
     return () => mq?.removeEventListener?.('change', set)
-  }, [mode])
+  }, [mode, theme])
   useEffect(() => { if (lite) document.documentElement.dataset.lite = '1'; else delete document.documentElement.dataset.lite }, [lite])
 
   useEffect(() => {

@@ -1806,7 +1806,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
     const missing = pinRows.map((p) => p.message_id).filter((id) => !byId[id] && !pinExtra[id])
     if (!missing.length) return
     supabase.from('roar_messages').select('*').in('id', missing).then(({ data }) => { if (data?.length) setPinExtra((x) => ({ ...x, ...Object.fromEntries(data.map((m) => [m.id, m])) })) })
-  }, [pinRows]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pinRows, byId]) // eslint-disable-line react-hooks/exhaustive-deps -- byId too: a long chat trimmed back can drop an old pinned one
   const pinExtraList = useMemo(() => Object.values(pinExtra), [pinExtra])
   const pinOpened = useOpened(pinExtraList, room.room_id, me.id, sealOn?.id)
   const pinOpenedById = useMemo(() => Object.fromEntries(pinOpened.map((m) => [m.id, m])), [pinOpened])
@@ -1858,9 +1858,9 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
   }
 
   /* The messages, drawn again only when something they show changes (Alex, 21 Oct: RoarMe lighter): typing in the box
-     below no longer redraws every message. Their buttons call the newest handlers through `act`. */
-  const act = useRef({})
-  act.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setArtView, setCinema }
+     below no longer redraws every message. Their buttons call the newest handlers through `hands`. */
+  const hands = useRef({})
+  hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setArtView, setCinema }
   const msgList = useMemo(() => shownMsgs.map((m, i) => {
           const prev = shownMsgs[i - 1]
           const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
@@ -1883,7 +1883,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
             return (
               <div key={m.id} id={`m-${m.id}`}>
                 {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
-                <div className="sys-note"><span>{m.body === E2E_OFF ? I.unlock : I.lock}<b>{mine ? 'You' : nameOf(who)}</b><span>{systemText(m.body)}</span><small>{timeOf(m.created_at)}</small><button type="button" className="sys-x" onClick={() => act.current.hideForMe(m)} aria-label="Delete for Me" title="Delete for Me">{I.x}</button></span></div>
+                <div className="sys-note"><span>{m.body === E2E_OFF ? I.unlock : I.lock}<b>{mine ? 'You' : nameOf(who)}</b><span>{systemText(m.body)}</span><small>{timeOf(m.created_at)}</small><button type="button" className="sys-x" onClick={() => hands.current.hideForMe(m)} aria-label="Delete for Me" title="Delete for Me">{I.x}</button></span></div>
               </div>
             )
           }
@@ -1891,36 +1891,36 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
             <div key={m.id} id={`m-${m.id}`}>
               {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
               <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${!mine && !m.deleted_at && mentionsMe(m.body, me, roles) ? ' at-me' : ''}${wide ? ' wide-media' : ''}`}
-                onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => act.current.onTap(e, m)}
-                onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (act.current.onBubble(e)) act.current.onDouble(m, e) }}
-                onContextMenu={(e) => { if (act.current.onBubble(e)) act.current.openMenu(e, m) }}>
+                onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => hands.current.onTap(e, m)}
+                onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (hands.current.onBubble(e)) hands.current.onDouble(m, e) }}
+                onContextMenu={(e) => { if (hands.current.onBubble(e)) hands.current.openMenu(e, m) }}>
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">
                   <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.file?.ordino && !m.deleted_at ? ' art-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
-                    {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); act.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
+                    {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
                     {m.deleted_at ? <i>Message deleted</i>
-                      : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => act.current.setLocView(m.file.location)} />
-                      : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => act.current.setArtView(m)} />
+                      : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
+                      : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => hands.current.setArtView(m)} />
                       : m.file?.ordino ? <OrdinoCard o={m.file.ordino} />
-                      : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} canJoin={room.kind !== 'group'} onJoin={(v) => act.current.onCall(v)} />
-                      : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : act.current.openPhoto(m))} />
+                      : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} canJoin={room.kind !== 'group'} onJoin={(v) => hands.current.onCall(v)} />
+                      : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : hands.current.openPhoto(m))} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
-                      : isTransfer ? <TransferTile file={m.file} onCinema={act.current.setCinema} />
-                      : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => act.current.flipWide(m.id)} onCinema={act.current.setCinema} />
+                      : isTransfer ? <TransferTile file={m.file} onCinema={hands.current.setCinema} />
+                      : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
                     {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && !m.file?.ordino && <span className="text">{formatText(m.body, withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
-                    {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => act.current.flipWide(m.id)} onCinema={act.current.setCinema} />}
+                    {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
                     <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
                   {(rx || replyCount[m.id]) && (
                     <span className="rx">
-                      {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); act.current.react(m, e) }}>{e}{v.n > 1 && <small>{v.n}</small>}</button>)}
-                      {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); act.current.setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
+                      {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); hands.current.react(m, e) }}>{e}{v.n > 1 && <small>{v.n}</small>}</button>)}
+                      {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); hands.current.setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
                     </span>
                   )}
                 </div>

@@ -3997,3 +3997,10 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 .fold-swipe.dragging { z-index: 5; }
 .fold-del { position: absolute; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; border: 0; background: var(--danger, #ff453a); color: #fff; font-size: 12px; font-weight: 600; }
 .fold-del svg { width: 20px; height: 20px; }
+
+/* the folder tabs in Edit (Alex, 21 Oct, like Telegram): each one has its ×, and dragging one sideways reorders them live */
+.tabs-scroll.editing > button { touch-action: none; cursor: grab; }
+.tabs-scroll.editing > button.tab-dragging { z-index: 3; cursor: grabbing; transition: none !important; box-shadow: 0 8px 22px rgba(0, 0, 0, .18); background: var(--glass-2); border-radius: 999px; }
+.tab-x { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 6px; border-radius: 50%; color: var(--muted); font-style: normal; }
+.tab-x svg { width: 14px; height: 14px; }
+.tabs-scroll.editing > button > small { display: none; }

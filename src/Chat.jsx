@@ -73,6 +73,8 @@ export default function Chat({ me, setMe }) {
   const [tab, setTab] = useState('chats') // the bar at the foot: contacts | calls | chats | settings
   const [cq, setCq] = useState('') // search in Contacts
   const [picking, setPicking] = useState(false)
+  const [tabsEdit, setTabsEdit] = useState(false) // the folder tabs being reordered in place, like Telegram (Alex, 21 Oct)
+  const [tabDrag, setTabDrag] = useState(null) // { id, dx, order }: the tab under the finger and the order so far
   const [picked, setPicked] = useState([])
   const [hits, setHits] = useState([])
   const [myFolders, setMyFolders] = useLocal('roarme-folders', [])
@@ -469,6 +471,39 @@ export default function Chat({ me, setMe }) {
   const hiddenF = prefs.hiddenFolders || []
   const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true }))]
     .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
+  const tabsShown = tabDrag?.order ? tabDrag.order.map((id) => allFolders.find((f) => f.id === id)).filter(Boolean) : allFolders
+  const editTabs = tabsEdit || picking
+  // a tab dragged sideways in the bar: it follows the finger and swaps places as it passes a neighbour's middle
+  const tabDown = (e, f) => {
+    if (!editTabs || (e.button != null && e.button !== 0)) return
+    const nav = tabsLens.current
+    const el = e.currentTarget
+    let d = { id: f.id, x0: e.clientX, moved: false, order: tabsShown.map((x) => x.id), shift: 0 }
+    const move = (ev) => {
+      let off = ev.clientX - d.x0 - d.shift
+      if (!d.moved) { if (Math.abs(ev.clientX - d.x0) < 6) return; d.moved = true }
+      ev.preventDefault()
+      if (nav) { const r = nav.getBoundingClientRect(); if (ev.clientX < r.left + 30) nav.scrollLeft -= 8; else if (ev.clientX > r.right - 30) nav.scrollLeft += 8 }
+      const btns = [...(nav?.querySelectorAll('button[data-tab]') || [])]
+      const at = d.order.indexOf(d.id)
+      const next = btns.find((b) => b.dataset.tab === d.order[at + 1]), prev = btns.find((b) => b.dataset.tab === d.order[at - 1])
+      if (next && off > next.offsetWidth / 2) { const o = [...d.order]; [o[at], o[at + 1]] = [o[at + 1], o[at]]; d.order = o; d.shift += next.offsetWidth; off -= next.offsetWidth }
+      else if (prev && off < -prev.offsetWidth / 2) { const o = [...d.order]; [o[at - 1], o[at]] = [o[at], o[at - 1]]; d.order = o; d.shift -= prev.offsetWidth; off += prev.offsetWidth }
+      setTabDrag({ id: d.id, dx: off, order: d.order })
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      if (d.moved) { setPrefs({ folderOrder: d.order }); tabSkip.current = Date.now() }
+      setTabDrag(null)
+      d = null
+    }
+    el.setPointerCapture?.(e.pointerId)
+    window.addEventListener('pointermove', move, { passive: false })
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
   useEffect(() => { if (folder !== 'all' && hiddenF.includes(folder)) setFolder('all') }, [hiddenF.join(), folder])
   const fits = (r, f) => {
     if (f === 'archived') return r.archived
@@ -519,6 +554,7 @@ export default function Chat({ me, setMe }) {
   const [pageDrag, setPageDrag] = useState(null) // { dir, id }: the folder showing beside the list
   const [swipedTo, setSwipedTo] = useState('') // a folder reached by a swipe comes in without the row cascade
   const pagerNow = useRef({})
+  const tabSkip = useRef(0)
   // a slow slide on one chat shows Telegram's buttons under it (Alex, 21 Oct): to the left Mute and Delete,
   // to the right Unread and Pin; a quick flick still turns the folder
   const [rowActs, setRowActs] = useState(null) // { id, side: 'left' | 'right', top, h }
@@ -900,7 +936,7 @@ export default function Chat({ me, setMe }) {
     setTab(next)
     if (next === 'chats') { const f = allFolders[dir > 0 ? 0 : allFolders.length - 1]; if (f) setFolder(f.id) }
   }
-  pagerNow.current = { allFolders, folder, busy: picking || !!q.trim(), picking, searchOpen: searchOpen || !!q.trim(), searchBusy, pull, goStop } // what the drags on the list read
+  pagerNow.current = { allFolders, folder, busy: picking || tabsEdit || !!q.trim(), picking, searchOpen: searchOpen || !!q.trim(), searchBusy, pull, goStop } // what the drags on the list read
   const stopSwipe = useRef(null)
   const onStopTouch = {
     onTouchStart: (e) => { stopSwipe.current = tab !== 'chats' && tab !== 'media' && e.touches.length === 1 && !e.target.closest('.tabs, input, .seg') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
@@ -966,7 +1002,7 @@ export default function Chat({ me, setMe }) {
       <aside className="side">
         <div className="side-col" {...onStopTouch}>
         <div className="side-head">
-          <button type="button" className="pill-btn" onClick={() => { setPlus(false); if (picking) endPick(); else { setTab('chats'); setPicking(true) } }}>{picking ? 'Done' : 'Edit'}</button>
+          <button type="button" className="pill-btn" onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}>{picking || tabsEdit ? 'Done' : 'Edit'}</button>
           <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <Wordmark />}</span>
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
@@ -1002,10 +1038,12 @@ export default function Chat({ me, setMe }) {
             </div></div>
             <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
             {!q.trim() && (
-              <nav ref={tabsLens} className="tabs lens tabs-scroll" onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
-                {allFolders.map((f) => {
+              <nav ref={tabsLens} className={`tabs lens tabs-scroll${editTabs ? ' editing' : ''}`} onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
+                {tabsShown.map((f) => {
                   const n = folderUnread(f)
-                  return <button key={f.id} type="button" title={f.name} className={folder === f.id ? 'on' : ''} {...tabPress(f)} onClick={(e) => { setFolder(f.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                  const dragged = tabDrag?.id === f.id
+                  return <button key={f.id} type="button" data-tab={f.id} title={f.name} className={`${folder === f.id ? 'on' : ''}${dragged ? ' tab-dragging' : ''}`} style={dragged ? { transform: `translateX(${tabDrag.dx}px)` } : undefined}
+                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{editTabs ? (f.id !== 'all' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
                 })}
               </nav>
             )}
@@ -1261,7 +1299,7 @@ export default function Chat({ me, setMe }) {
       {folderMenu && (() => {
         const allMuted = listFor(folderMenu.f.id).length > 0 && listFor(folderMenu.f.id).every((r) => r.muted)
         const folderMute = <button type="button" onClick={() => { const f = folderMenu.f; setFolderMenu(null); muteFolder(f) }}>{allMuted ? I.bell : I.bellOff}<span>{allMuted ? 'Unmute All' : 'Mute All'}</span></button>
-        const folderReorder = <><hr /><button type="button" onClick={() => { setFolderMenu(null); openFolders() }}>{REORDER}<span>Reorder Tabs</span></button></>
+        const folderReorder = <><hr /><button type="button" onClick={() => { setFolderMenu(null); setTab('chats'); setTabsEdit(true) }}>{REORDER}<span>Reorder Tabs</span></button></>
         return (
         <OnTop>
           <button type="button" className="scrim" aria-label="Close" onClick={() => { if (!folderMenu.at || Date.now() - folderMenu.at > 350) setFolderMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu(null) }} />

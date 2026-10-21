@@ -881,6 +881,7 @@ export default function Chat({ me, setMe }) {
                   <div className="menu">
                     <button type="button" onClick={() => { setPlus(false); setModal('newchat') }}>{I.person}<span>New chat</span></button>
                     <button type="button" onClick={() => { setPlus(false); setModal('newgroup') }}>{I.people}<span>New group</span></button>
+                    <button type="button" onClick={() => { setPlus(false); setModal('newcall') }}>{I.phone}<span>New call</span></button>
                     <button type="button" onClick={() => { setPlus(false); setModal('invite') }}>{I.link}<span>Invite people</span></button>
                     <button type="button" onClick={() => { setPlus(false); editFolder('new') }}>{I.folder}<span>New folder</span></button>
                     {myFolders.length > 0 && <button type="button" onClick={() => { setPlus(false); openFolders() }}>{I.edit}<span>Edit folders</span></button>}

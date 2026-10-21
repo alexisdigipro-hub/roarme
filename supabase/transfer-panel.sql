@@ -299,3 +299,17 @@ revoke all on public.roar_transfer_reports from anon, authenticated;
 -- the shared link as short as it can be (Alex, 21 Oct): roartransfer.com/<6 characters>
 alter table public.roar_transfer_bundles drop constraint if exists roar_transfer_bundles_token_check;
 alter table public.roar_transfer_bundles add constraint roar_transfer_bundles_token_check check (token ~ '^[A-Za-z0-9]{6,32}$');
+
+-- RoarTransfer's own sign-up and password reset (Alex, 21 Oct: everything inside roartransfer; Edge Function
+-- roartransfer-auth): who asked, from where, to keep it to 5 an hour per address and 3 per email
+create table if not exists public.roar_transfer_auth_log (
+  id bigserial primary key,
+  kind text not null,
+  ip text,
+  email text,
+  created_at timestamptz not null default now()
+);
+create index if not exists roar_transfer_auth_log_ip on public.roar_transfer_auth_log (ip, created_at);
+create index if not exists roar_transfer_auth_log_email on public.roar_transfer_auth_log (email, created_at);
+alter table public.roar_transfer_auth_log enable row level security;
+revoke all on public.roar_transfer_auth_log from anon, authenticated;

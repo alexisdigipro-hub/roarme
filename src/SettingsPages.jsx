@@ -7,6 +7,7 @@ import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
+import { MyTransfers } from './transfer.jsx'
 import { LinkedApps } from './hubLink.jsx'
 import { badgeSupported, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
@@ -23,6 +24,7 @@ export const PAGES = [
   ['appearance', 'Appearance', '#40c8e0', svg(<><path d="M14.5 4.5l5 5L11 18l-5-5z" /><path d="M6 13c-2 0-3 1.5-3 3.5S2 20 2 20s3.5.5 5-1 1.5-3 0-4" /></>, 16), 'Theme, colours, text and wallpaper.', 1],
   ['notify', 'Notifications and Sounds', '#ff453a', svg(<><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></>, 16), 'What reaches you, and how it sounds.', 1],
   ['language', 'Language', '#bf5af2', svg(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" /></>, 16), 'The language of RoarMe and of translations.', 1],
+  ['transfer', 'RoarTransfer', '#ff6b57', I.transfer, 'Everything you sent with RoarTransfer: where it went, how long it stays, who opened and downloaded it.', 2],
   ['folders', 'Chat Folders', '#a78bfa', I.folder, 'Create folders for different groups of chats and quickly switch between them.', 2],
   ['autoreply', 'Auto-Reply', '#64d2ff', svg(<><path d="M20 12a8 8 0 1 1-3-6.2" /><path d="M20 4v5h-5" /><path d="M8.5 12.5h7M8.5 9.5h4" /></>, 16), 'An answer that goes out by itself while you are busy.', 2],
   ['data', 'Data and Storage', '#30d158', svg(<><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" /></>, 16), 'How photos are sent and what loads by itself.', 2],
@@ -176,6 +178,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
         {page === 'appearance' && <Appearance p={p} toast={toast} me={me} setMe={setMe} />}
         {page === 'language' && <Language p={p} />}
         {page === 'admin' && inThemeLab(me) && <Admin />}
+        {page === 'transfer' && <MyTransfers toast={toast} />}
         {page === 'folders' && <Folders p={p} folders={folders} onFolders={onFolders} onFolderMenu={onFolderMenu} />}
         {page.startsWith('folder:') && folderKit && (READY_FOLDERS[page.slice(7)]
           ? <ReadyFolderEdit key={page} id={page.slice(7)} p={p} onDone={() => onPage('folders')} toast={toast} />

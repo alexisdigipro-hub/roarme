@@ -1,8 +1,8 @@
 -- RoarTransfer panels (Alex, 21 Oct 2026): "for each user a panel where they see what they have sent, and for me, the
--- admin, what everyone has sent and the overall numbers". Shown on RoarTransfer's own page (public/transfer/):
--- My transfers for everyone, Admin only for the accounts in roar_admins (supabase/admin.sql).
--- Each link now counts how often its page was opened and how often the file was downloaded (Edge Function
--- roar-transfer-get, through roar_transfer_hit). A person can stop a transfer from their own folder before the 3 days.
+-- admin, what everyone has sent and the overall numbers". Shown in the app (Settings > RoarTransfer, Admin > RoarTransfer)
+-- and on RoarTransfer's own page (public/transfer/: My transfers, and Admin only for the accounts in roar_admins).
+-- Each link now counts how often its page was opened and how often the file was downloaded (the download page
+-- calls roar_transfer_hit itself). A person can stop a transfer from their own folder before the 3 days.
 -- Names, sizes, types, when, how often downloaded: never what the files say. Run after transfers.sql,
 -- roarmail-transfers.sql and admin.sql. Safe to run again.
 
@@ -22,8 +22,10 @@ language sql security definer set search_path = public as $$
       last_download = case when dl then now() else last_download end
   where token = t and expires_at > now()
 $$;
-revoke all on function public.roar_transfer_hit(text, boolean) from public, anon, authenticated;
-grant execute on function public.roar_transfer_hit(text, boolean) to service_role;
+-- the public download page (?t=…, signed out, src/transfer.jsx TransferPage) counts its own opens and downloads:
+-- only a token that is known and still alive moves anything
+revoke all on function public.roar_transfer_hit(text, boolean) from public;
+grant execute on function public.roar_transfer_hit(text, boolean) to anon, authenticated, service_role;
 
 -- every transfer ever sent, one row per file: from a chat (roar_messages, bucket roar-transfers) or from a person's
 -- own folder u/<id>/ (RoarTransfer's page, RoarMail). Its links add up how often it was opened and downloaded.

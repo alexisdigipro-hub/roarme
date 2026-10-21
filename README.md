@@ -507,6 +507,11 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Tasks without the hub (21 Oct)
+Alex: the link to the hub in Tasks has no point. The THEMADLIONS tab is gone from Tasks and the tasks calendar no longer
+shows hub tasks or events (Tasks no longer calls useHubWork); a device that was on that tab opens on All. The hub link
+itself (sign-in, project chats) is untouched.
+
 ## Stone is RoarMe's theme (21 Oct)
 Alex: a first start opens Stone in light mode, with the theme's own graphite (no accent) and the folder tabs at the
 bottom on every device; every other theme is only for Alex (THEME_LAB), and anyone else left on one moves to Stone.

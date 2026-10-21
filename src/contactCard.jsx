@@ -65,9 +65,12 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
   return (
     <Modal title="" onClose={onClose}>
       <div className="cc">
-        {editing
-          ? <span className="cc-edit cc-edit-two"><button type="button" className="pill-btn" onClick={() => setEditing(false)}>Cancel</button><button type="button" className="pill-btn cc-done" disabled={saving} onClick={saveEdit}>{saving ? '…' : 'Done'}</button></span>
-          : <button type="button" className="cc-edit pill-btn" onClick={startEdit}>Edit</button>}
+        {/* a row of its own at the top, level with the close button, so nothing sits over the picture */}
+        <div className="cc-top">
+          {editing
+            ? <><button type="button" className="pill-btn" onClick={() => setEditing(false)}>Cancel</button><button type="button" className="pill-btn cc-done" disabled={saving} onClick={saveEdit}>{saving ? '…' : 'Done'}</button></>
+            : <button type="button" className="pill-btn" onClick={startEdit}>Edit</button>}
+        </div>
         {editing ? (
           <button type="button" className="cc-pic" onClick={() => picRef.current?.click()} title="Set a photo for them, only you see it">
             <Avatar src={p.avatar_url} name={nick.trim() || name} size={96} />

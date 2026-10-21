@@ -507,6 +507,11 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Taller windows on a phone (21 Oct)
+Alex: Cancel and Done sat over the picture in a contact's card, and cards should be taller. Edit, Cancel and Done now sit in
+a row of their own at the top, level with the close button. On a phone every window may use the whole screen's height,
+and a contact's card and a chat's card fill it.
+
 ## Each chat in one folder (21 Oct)
 Alex: a setting so a chat shows in one folder only. Settings > Chat Folders > **Each Chat in One Folder** (`folderAlone`,
 off by default). On: an unread chat (or one marked unread) sits only in Unread; otherwise a chat in a folder of one's own

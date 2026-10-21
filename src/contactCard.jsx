@@ -8,7 +8,19 @@ import { inviteLink } from './invite.jsx'
    Share Contact and Add to Favourites, and Block Contact on its own. Edit (top right) is Edit Contact: my own name,
    photo and note for them, which only I see. */
 export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMessage, onCall, onClose, loadPeople, toast }) {
+  // Edit turns the card itself into the form (Alex, 21 Oct): my name for them, my note, my photo; Done saves
   const [editing, setEditing] = useState(false)
+  const [nick, setNick] = useState('')
+  const [note, setNote] = useState('')
+  const [saving, setSaving] = useState(false)
+  const startEdit = () => { setNick(p.nickname || ''); setNote(p.my_note || ''); setErr(''); setEditing(true) }
+  const saveEdit = async () => {
+    setSaving(true); setErr('')
+    const { error } = await supabase.from('roar_contacts').upsert({ owner: me.id, person: p.id, nickname: nick.trim(), note: note.trim(), updated_at: new Date().toISOString() })
+    setSaving(false)
+    if (error) { setErr(errText(error)); return }
+    setEditing(false); loadPeople([p.id]); toast('Saved, only you see it')
+  }
   const [cropFile, setCropFile] = useState(null)
   const [err, setErr] = useState('')
   const picRef = useRef(null)
@@ -53,9 +65,19 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
   return (
     <Modal title="" onClose={onClose}>
       <div className="cc">
-        <button type="button" className="cc-edit pill-btn" onClick={() => setEditing(true)}>Edit</button>
-        <Avatar src={p.avatar_url} name={name} size={96} online={onlineNow(p)} />
-        <h2 className="cc-name">{name}</h2>
+        {editing
+          ? <span className="cc-edit cc-edit-two"><button type="button" className="pill-btn" onClick={() => setEditing(false)}>Cancel</button><button type="button" className="pill-btn cc-done" disabled={saving} onClick={saveEdit}>{saving ? '…' : 'Done'}</button></span>
+          : <button type="button" className="cc-edit pill-btn" onClick={startEdit}>Edit</button>}
+        {editing ? (
+          <button type="button" className="cc-pic" onClick={() => picRef.current?.click()} title="Set a photo for them, only you see it">
+            <Avatar src={p.avatar_url} name={nick.trim() || name} size={96} />
+            <span className="pf-pic-cam">{I.camera}</span>
+          </button>
+        ) : <Avatar src={p.avatar_url} name={name} size={96} online={onlineNow(p)} />}
+        {editing && p.my_photo && <button type="button" className="link cc-own" onClick={dropMyPhoto}>Use their own photo</button>}
+        {editing
+          ? <input className="cc-name cc-name-in" value={nick} onChange={(e) => setNick(e.target.value)} placeholder={p.real_name || `@${p.username}`} maxLength={60} autoFocus aria-label="Name" />
+          : <h2 className="cc-name">{name}</h2>}
         <p className="cc-sub">{lastSeenText(p) || `@${p.username}`}</p>
         {p.nickname && <p className="cc-sub cc-real">{`Their name: ${p.real_name || `@${p.username}`}`}</p>}
 
@@ -73,10 +95,18 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
           {p.bio && <div className="cc-row"><small>bio</small><span className="cc-text">{p.bio}</span></div>}
         </div>
 
-        <button type="button" className="cc-card cc-notes" onClick={() => setEditing(true)}>
-          <small>Notes</small>
-          <span className="cc-text">{p.my_note || ''}</span>
-        </button>
+        {editing ? (
+          <label className="cc-card cc-notes">
+            <small>Notes</small>
+            <textarea className="cc-note-in" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Where you met, what they do, anything" maxLength={500} />
+          </label>
+        ) : (
+          <button type="button" className="cc-card cc-notes" onClick={startEdit}>
+            <small>Notes</small>
+            <span className="cc-text">{p.my_note || ''}</span>
+          </button>
+        )}
+        {editing && <p className="muted cc-hint">Only you see these. They keep their own name and photo for everyone else.</p>}
 
         <div className="cc-card">
           <button type="button" className="cc-row cc-link" onClick={share}>Share Contact</button>
@@ -90,7 +120,6 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
       </div>
       <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { setCropFile(e.target.files?.[0] || null); e.target.value = '' }} />
       {cropFile && <CropModal file={cropFile} title={`Your photo for ${name}`} onDone={pickPic} onClose={() => setCropFile(null)} />}
-      {editing && <ContactEdit me={me} other={p} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); loadPeople([p.id]); toast('Saved, only you see it') }} onPhoto={() => { setEditing(false); picRef.current?.click() }} onDropPhoto={dropMyPhoto} />}
     </Modal>
   )
 }

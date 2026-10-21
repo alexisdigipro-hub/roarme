@@ -456,7 +456,8 @@ export default function Chat({ me, setMe }) {
   const inFolder = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
-    if (f === 'unread') return r.unread > 0 || (prefs.folderExtra?.unread || []).includes(r.room_id)
+    // a chat marked as unread by hand belongs here too (Alex, 21 Oct), even when its last message is one's own
+    if (f === 'unread') return r.unread > 0 || marked.includes(r.room_id) || (prefs.folderExtra?.unread || []).includes(r.room_id)
     if (f === 'groups') return r.kind === 'group' || (prefs.folderExtra?.groups || []).includes(r.room_id)
     const mine = myFolders.find((x) => x.id === f)
     if (mine) {
@@ -472,7 +473,7 @@ export default function Chat({ me, setMe }) {
     const list = visible.filter((r) => (t ? titleOf(r).toLowerCase().includes(t) || (otherOf(r)?.username || '').includes(t.replace(/^@/, '')) : inFolder(r, folder)))
     // pinned chats first, in the order they were pinned
     return [...list.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...list.filter((r) => !pins.includes(r.room_id))]
-  }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra])
+  }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra, marked])
   // the chats of another folder, for the page that slides in beside the list while it is dragged
   const listFor = (fid) => {
     const list = visible.filter((r) => inFolder(r, fid))
@@ -825,9 +826,9 @@ export default function Chat({ me, setMe }) {
     if (ghost) {
       return (
         <div key={r.room_id} className="room" aria-hidden="true">
-          <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 44 : 36} />
+          <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 54 : 48} />
           <span className="room-main">
-            <span className="room-top"><strong>{titleOf(r)}</strong><small>{listTime(r.last_message_at)}</small></span>
+            <span className="room-top"><strong>{titleOf(r)}</strong></span>
             <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.unread > 0 && <span className={`badge${r.muted ? ' quiet' : ''}`}>{r.unread}</span>}</span>
           </span>
         </div>
@@ -837,9 +838,9 @@ export default function Chat({ me, setMe }) {
       <button key={r.room_id} type="button" className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (Date.now() - closedAt.current < 500) return; if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
         onTouchStart={(e) => !picking && pressStart(e, r)} onTouchMove={pressMove} onTouchEnd={pressEnd} onTouchCancel={pressEnd}>
         {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
-        <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 44 : 36} />
+        <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 54 : 48} />
         <span className="room-main">
-          <span className="room-top"><strong>{titleOf(r)}{r.kind === 'direct' && officialIds.includes(otherOf(r)?.id) && OFFICIAL}</strong><small>{listTime(r.last_message_at)}</small></span>
+          <span className="room-top"><strong>{titleOf(r)}{r.kind === 'direct' && officialIds.includes(otherOf(r)?.id) && OFFICIAL}</strong></span>
           <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.mentions > 0 && <span className="badge at" title="You were mentioned">@</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
           {prefs.folderTags && tagsOf(r).length > 0 && <span className="room-tags">{tagsOf(r).map((t) => <span key={t}>{t}</span>)}</span>}
         </span>

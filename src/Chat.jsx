@@ -529,12 +529,12 @@ export default function Chat({ me, setMe }) {
     const glide = (x, then) => {
       const t = trackRef.current
       if (!t) { then?.(); return }
-      t.style.transition = 'transform .26s cubic-bezier(.2,.8,.25,1)'
+      t.style.transition = 'transform .32s cubic-bezier(.22,1,.36,1)' // a soft ease-out, no snap
       move(x)
       let done = false
       const fin = () => { if (done) return; done = true; t.removeEventListener('transitionend', fin); then?.() }
       t.addEventListener('transitionend', fin)
-      setTimeout(fin, 320)
+      setTimeout(fin, 380)
     }
     // pulled down at the top of the list (Alex, 21 Oct): only that, never together with the sideways drag. With the search
     // closed the list follows the finger with a little resistance and the search opens only past a clear pull, like a
@@ -557,8 +557,8 @@ export default function Chat({ me, setMe }) {
       if (!g) return
       const x = e.touches[0].clientX, dx = x - g.x, dy = e.touches[0].clientY - g.y
       if (!g.lock) {
-        if (Math.abs(dx) < 9 && Math.abs(dy) < 9) return
-        g.lock = Math.abs(dx) > Math.abs(dy) * 1.5 ? (g.side ? 'x' : 'none') : 'y' // clearly sideways, not a slanted scroll
+        if (Math.abs(dx) < 7 && Math.abs(dy) < 7) return
+        g.lock = Math.abs(dx) > Math.abs(dy) * 1.1 ? (g.side ? 'x' : 'none') : 'y'
         if (g.lock === 'x') {
           const n = pagerNow.current
           const at = n.allFolders.findIndex((f) => f.id === n.folder)
@@ -619,11 +619,11 @@ export default function Chat({ me, setMe }) {
       g = null
       const dir = dx < 0 ? 1 : -1
       const id = dir > 0 ? next : prev
-      // less magnetic (Alex, 21 Oct): the next folder takes past 40% of the width, or a quick flick of 70 px or more
-      const far = Math.abs(dx) > w * 0.4 || (Math.abs(v) > 0.7 && Math.abs(dx) > 70 && Math.sign(v) === Math.sign(dx))
+      // soft and easy (Alex, 21 Oct): the next folder from a fifth of the width, or any light flick that way
+      const far = Math.abs(dx) > w * 0.2 || (Math.abs(v) > 0.25 && Math.abs(dx) > 24 && Math.sign(v) === Math.sign(dx))
       if (!id) {
         glide(0, () => setPageDrag(null))
-        if (Math.abs(dx) / 0.3 > 170) pagerNow.current.goStop(dir) // past the last folder: the next screen in the bar at the foot
+        if (Math.abs(dx) / 0.3 > 120) pagerNow.current.goStop(dir) // past the last folder: the next screen in the bar at the foot
         return
       }
       if (!far) { glide(0, () => setPageDrag(null)); return }
@@ -958,7 +958,7 @@ export default function Chat({ me, setMe }) {
             </div>
             {pageDrag && (
               <div className={`rooms rooms-ghost ${pageDrag.dir > 0 ? 'next' : 'prev'}${prefs.listPreview ? '' : ' no-prev'}`} aria-hidden="true">
-                {listFor(pageDrag.id).slice(0, 30).map((r) => roomRow(r, true))}
+                {listFor(pageDrag.id).slice(0, 16).map((r) => roomRow(r, true))}
               </div>
             )}
             </div>

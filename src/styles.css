@@ -3825,3 +3825,4 @@ html[data-theme='stone'] .wordmark b.wm, html[data-theme='stone'] .wordmark b.wm
 html[data-theme='stone'] .wordmark b.wm .wm-beta { color: var(--text); border-color: rgba(0, 0, 0, .3); background: rgba(255, 255, 255, .25); }
 html[data-bubbles='glass'][data-theme='stone'] { --gl-ink: var(--text); }
 html[data-theme='stone'] .ask-bar .btn { border-radius: 12px; }
+html[data-theme='stone'] .set-nav.on, html[data-theme='stone'] .set-nav.on :is(.set-chev, .set-val, .nav-ico) { color: var(--text); }

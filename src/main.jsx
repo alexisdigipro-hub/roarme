@@ -51,7 +51,11 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
     if (c) document.documentElement.style.setProperty('--kb-bg', c)
     document.documentElement.classList.add('kb')
   })
-  document.addEventListener('focusout', () => setTimeout(() => { if (!typing(document.activeElement)) document.documentElement.classList.remove('kb') }, 60))
+  const down = () => { if (!typing(document.activeElement) || !document.activeElement.isConnected) { document.documentElement.classList.remove('kb'); if (window.scrollY) window.scrollTo(0, 0) } }
+  document.addEventListener('focusout', () => setTimeout(down, 60))
+  // a field taken off the page while it had the keyboard (closing a chat) never says focusout: the keyboard going
+  // down still shrinks or grows the visible area, and that is checked too (Alex, 21 Oct: the bar at the foot hung low)
+  window.visualViewport?.addEventListener('resize', () => setTimeout(down, 60))
 }
 
 // a RoarTransfer download link (?t=…) opens its own page, no account needed

@@ -550,6 +550,15 @@ export default function Chat({ me, setMe }) {
      back. Past the first or last folder it stretches a little and goes on to the next screen at the foot.
      Native listeners, so a sideways drag can stop the list scrolling and the drag itself never re-renders. */
   const pagerRef = useRef(null)
+  // leaving a chat on a phone: the box that had the keyboard is gone without a blur, so the page is told the keyboard
+  // is down (html.kb, main.jsx) and goes back to the top; otherwise the bar at the foot hung below the screen (Alex, 21 Oct)
+  useEffect(() => {
+    if (activeId) return
+    const f = document.activeElement
+    if (f && f !== document.body && !f.isConnected) f.blur?.()
+    document.documentElement.classList.remove('kb')
+    window.scrollTo(0, 0)
+  }, [activeId])
   const trackRef = useRef(null)
   const [pageDrag, setPageDrag] = useState(null) // { dir, id }: the folder showing beside the list
   const [swipedTo, setSwipedTo] = useState('') // a folder reached by a swipe comes in without the row cascade

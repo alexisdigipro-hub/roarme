@@ -3470,7 +3470,7 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 }
 @media (max-width: 760px) {
   .tasks-panel { inset: 0; width: auto; border-radius: 0; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); background: var(--bg); }
-  html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: 10px; }
+  html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: 0; } /* the app's own frame stays as it is: the foot bar keeps its width with Tasks open (Alex, 21 Oct) */
   .task-row2 { grid-template-columns: 1fr; }
 }
 

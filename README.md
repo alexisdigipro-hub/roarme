@@ -507,6 +507,14 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Contact card (21 Oct)
+Alex: in Contacts no icons on the right; a tap on someone opens their card, like the iPhone's Contacts. src/contactCard.jsx:
+the big picture and name (last seen, and their own name when I gave them another), round Message · Call · Video · Share,
+then glass tiles: username (tap to copy) and bio, Notes (my note for them, tap to edit), Share Contact (the share sheet with
+their RoarMe link, or copy), Add to / Remove from Favourites, and Block Contact (or Unblock) on its own in red. Edit (top
+left) is Edit Contact: my own name, photo and note for them, which only I see (moved here from Profile.jsx). Favourites are
+kept on the device (`roarme-fav`), come first in Contacts and carry a small star.
+
 ## Project chats: Alex names them (21 Oct)
 Alex: in a project chat from THEMADLIONS Hub, only he may change the name and the photo. RoarMe's admin (roar_admins)
 now gets the camera on the group's picture, the name as an editable field and Remove group photo; everyone else sees

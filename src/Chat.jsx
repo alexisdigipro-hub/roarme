@@ -19,6 +19,7 @@ import { pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
+import { ContactCard } from './contactCard.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { OrdinoCard, RoardinoSheet, ordinoBody } from './roardino.jsx'
 import { TasksPanel, taskNotice, useTasks } from './tasks.jsx'
@@ -763,6 +764,10 @@ export default function Chat({ me, setMe }) {
     return ids.map((id) => people[id]).filter(Boolean).sort((a, b) => seen(b) - seen(a) || nameOf(a).localeCompare(nameOf(b)))
   }, [rooms, people, me.id])
   // Tasks (Alex, 18 Oct): the panel stays open while you move between chats, and remembers it on this device
+  // a tap on someone in Contacts opens their card (Alex, 21 Oct, like the iPhone's Contacts); favourites come first
+  const [card, setCard] = useState('')
+  const [favs, setFavs] = useLocal('roarme-fav', [])
+  const cardPerson = card ? people[card] : null
   const [tasksOpen, setTasksOpen] = useState(() => { try { return localStorage.getItem('roarme-tasks') === '1' } catch { return false } })
   const showTasks = (v) => { setTasksOpen(v); try { localStorage.setItem('roarme-tasks', v ? '1' : '0') } catch { /* private window */ } }
   // on a phone the swipe runs on through the bar at the foot (Alex, 19 Oct): Contacts · Calls · Messages and its folders ·
@@ -931,19 +936,14 @@ export default function Chat({ me, setMe }) {
               <label className="search">{I.search}<input value={cq} onChange={(e) => setCq(e.target.value)} placeholder="Search" /></label>
               <button type="button" className="round" onClick={() => setModal('newchat')} title="Find people" aria-label="Find people">{I.addPerson}</button>
             </div>
-            {contacts.filter((p) => !cq.trim() || `${nameOf(p)} ${p.username}`.toLowerCase().includes(cq.trim().toLowerCase().replace(/^@/, ''))).map((p) => (
-              <div key={p.id} className="room contact" role="button" tabIndex={0} onClick={() => chatWith(p)} onKeyDown={(e) => { if (e.key === 'Enter') chatWith(p) }}>
+            {[...contacts].sort((a, b) => favs.includes(b.id) - favs.includes(a.id)).filter((p) => !cq.trim() || `${nameOf(p)} ${p.username}`.toLowerCase().includes(cq.trim().toLowerCase().replace(/^@/, ''))).map((p) => (
+              <div key={p.id} className="room contact" role="button" tabIndex={0} onClick={() => setCard(p.id)} onKeyDown={(e) => { if (e.key === 'Enter') setCard(p.id) }}>
                 <Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} />
                 <span className="room-main">
                   <span className="room-top"><strong>{nameOf(p)}</strong></span>
                   <span className="room-bottom"><span className={`room-prev${onlineNow(p) ? ' is-online' : ''}`}>{lastSeenText(p)}</span></span>
                 </span>
-                {/* call, video call, message: small icons on the right (Alex, 16 Oct) */}
-                <span className="contact-acts">
-                  <button type="button" onClick={(e) => { e.stopPropagation(); startCall(p, directWith(p), false) }} title="Call" aria-label="Call">{I.phone}</button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); startCall(p, directWith(p), true) }} title="Video call" aria-label="Video call">{I.video}</button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); chatWith(p) }} title="Message" aria-label="Message">{I.chats}</button>
-                </span>
+                {favs.includes(p.id) && <span className="contact-fav" title="Favourite">{FAV_STAR}</span>}
               </div>
             ))}
             {!contacts.length && <div className="calls-empty"><span className="side-panel-ico">{I.person}</span><b>No contacts yet</b><p>People you chat with show up here.</p><button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find people</button></div>}
@@ -1044,6 +1044,12 @@ export default function Chat({ me, setMe }) {
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
         onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople}
         blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} siteAdmin={isAdmin} onCall={active.kind === 'direct' ? (v) => { setModal(''); callRoom(active, v) } : null} /></Suspense>}
+      {cardPerson && (
+        <ContactCard me={me} person={cardPerson} toast={toast} loadPeople={loadPeople} onClose={() => setCard('')}
+          fav={favs.includes(cardPerson.id)} onFav={() => { const on = favs.includes(cardPerson.id); setFavs(on ? favs.filter((x) => x !== cardPerson.id) : [...favs, cardPerson.id]); toast(on ? 'Removed from Favourites' : 'Added to Favourites') }}
+          blocked={blocks.has(cardPerson.id)} onBlocks={loadBlocks}
+          onMessage={() => { setCard(''); chatWith(cardPerson) }} onCall={(v) => { setCard(''); startCall(cardPerson, directWith(cardPerson), v) }} />
+      )}
       {modal === 'pickfolder' && (
         <Modal title="Add to a folder" onClose={() => setModal('')}>
           {myFolders.length ? (
@@ -1207,6 +1213,7 @@ function PeekList({ room, me, people, clearedAt }) {
 
 /* ---------- one conversation ---------- */
 // the official RoarMe account's mark beside its name (Alex, 19 Oct)
+const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />, 15)
 const OFFICIAL = <i className="official" title="Official RoarMe account" aria-label="Official">{svg(<><path d="M12 2.5l2.4 1.8 3-.1.9 2.8 2.4 1.8-.9 2.8.9 2.8-2.4 1.8-.9 2.8-3-.1L12 21.5l-2.4-1.8-3 .1-.9-2.8L3.3 15.2l.9-2.8-.9-2.8 2.4-1.8.9-2.8 3 .1z" fill="currentColor" stroke="none" /><path d="M8.5 12.2l2.3 2.3 4.7-4.8" stroke="#fff" strokeWidth="2.2" /></>, 15)}</i>
 
 function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [] }) {

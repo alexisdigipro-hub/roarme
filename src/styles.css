@@ -3864,3 +3864,8 @@ button.cc-row:hover { background: rgba(255, 255, 255, .04); }
 .cc-link.danger { color: var(--danger); }
 .contact-fav { flex: none; margin-left: auto; color: var(--accent); display: grid; place-items: center; }
 .contact-fav svg { fill: currentColor; }
+
+/* Profile pictures as soft squares, like the buttons (Alex, 21 Oct), in every theme; the green dot of someone online
+   sits on the corner. The chat list shows no time on the right any more, only who is online. */
+.av, .av img { border-radius: 30%; }
+.av-on { right: -3px; bottom: -3px; width: 14px; height: 14px; }

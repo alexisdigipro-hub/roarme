@@ -507,6 +507,11 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Chat list: bigger faces, no times (21 Oct)
+Alex: the profile pictures in the chat list a little bigger (48 px, 54 with previews), no date or time on the right, a
+green dot on the picture only for someone online right now, and every profile picture as a soft square (30% corners)
+like the buttons, in every theme. The search's message hits keep their time.
+
 ## Contact card (21 Oct)
 Alex: in Contacts no icons on the right; a tap on someone opens their card, like the iPhone's Contacts. src/contactCard.jsx:
 the big picture and name (last seen, and their own name when I gave them another), round Message · Call · Video · Share,

@@ -2252,6 +2252,45 @@ html[data-theme='stone'] .set-tick { background: var(--rail); color: #fff; }
 html[data-theme='stone'] .set-preview .pv.mine, html[data-theme='stone'] .wall-b.mine { background: var(--rail); color: #fff; }
 html[data-theme='stone'] .set-sec > h4 { font-size: 13px; font-weight: 500; letter-spacing: .01em; color: var(--muted); }
 
+/* Stone's buttons, not only its colours (Alex, 21 Oct: "take the buttons too"): the reference's shapes. Rounded squares
+   instead of pills and circles; a plain button is a thin dashed outline as its "See Report"; the main one and the send
+   button solid charcoal as its settings key; icon keys raised frosted glass; the tabs a light bar under the chosen
+   word as its "Workflows"; sentence case. One colour family: charcoal and stone, whatever accent is picked, so the
+   Glass Look turns to smoky charcoal glass here. */
+html[data-theme='stone'] { --accent: #2a2a2c !important; --accent-2: #1f1f20 !important; --accent-ink: #ffffff !important; }
+html[data-theme='stone'] .round { border-radius: 15px; background: linear-gradient(180deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, .18)); border: 1px solid rgba(255, 255, 255, .62); box-shadow: 0 6px 14px rgba(0, 0, 0, .1), inset 0 1px 0 rgba(255, 255, 255, .7); color: var(--text); }
+html[data-theme='stone'] .round:hover { background: linear-gradient(180deg, rgba(255, 255, 255, .58), rgba(255, 255, 255, .28)); }
+html[data-theme='stone'] .round.on { background: var(--rail); color: #fff; border-color: transparent; box-shadow: 0 8px 18px rgba(20, 20, 22, .28); }
+html[data-theme='stone'] .round:active { transform: scale(.94); }
+html[data-theme='stone'] :is(.btn, .pill-btn) { border-radius: 14px; text-transform: none; letter-spacing: 0; font-size: 14.5px; font-weight: 500; color: var(--text); background: rgba(255, 255, 255, .08); border: 1px dashed rgba(0, 0, 0, .26); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='stone'] :is(.btn, .pill-btn):hover { background: rgba(255, 255, 255, .26); border-style: solid; border-color: rgba(255, 255, 255, .7); }
+html[data-theme='stone'][data-bubbles] :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send):not(:disabled) {
+  color: #fff !important; background: linear-gradient(180deg, #3a3a3d, #252527) !important; border: 1px solid rgba(0, 0, 0, .35) !important; border-radius: 14px;
+  box-shadow: 0 10px 22px rgba(20, 20, 22, .28), inset 0 1px 0 rgba(255, 255, 255, .14) !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-theme='stone'][data-bubbles] :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send):not(:disabled):hover { background: linear-gradient(180deg, #48484b, #2f2f31) !important; }
+html[data-theme='stone'] .send.ready, html[data-theme='stone'] .new-call-ico { border-radius: 15px; }
+html[data-theme='stone'] :is(.input, .compose textarea) { border-radius: 16px; }
+html[data-theme='stone'] .search { border-radius: 16px; background: rgba(255, 255, 255, .1); border: 1px dashed rgba(0, 0, 0, .24); box-shadow: none; }
+html[data-theme='stone'] .compose-box { border-radius: 20px; }
+html[data-theme='stone'] .head-card { border-radius: 20px; }
+html[data-theme='stone'] :is(.room, .set-menu .set-nav) { border-radius: 14px !important; }
+/* the tabs: words on a thin light line, a brighter bar under the chosen one */
+html[data-theme='stone'] .tabs { border-radius: 0; background: none; border: 0; border-bottom: 1px solid rgba(255, 255, 255, .4); box-shadow: none; padding: 0 0 2px; }
+html[data-theme='stone'] .tabs button { border-radius: 0; background: none; text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 500; color: var(--muted); }
+html[data-theme='stone'] .tabs button.on, html[data-theme='stone'] .tabs.lens.lens-on > .on { color: var(--text); background: none; }
+html[data-theme='stone'] .tabs.lens::before { height: 3px; border-radius: 3px; border: 0; background: rgba(255, 255, 255, .85); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); transform: translate(var(--lx, 0), calc(var(--ly, 0) + var(--lh, 0) - 1px)); }
+html[data-theme='stone'] .tabs small { background: rgba(0, 0, 0, .1); color: var(--muted); box-shadow: none; }
+html[data-theme='stone'] .tabs button.on small { background: var(--rail); color: #fff; }
+/* the Glass Look in Stone: your messages smoky charcoal glass */
+html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble:not(.pic):not(.big-emoji) { color: #f4f4f5 !important; background: linear-gradient(180deg, rgba(58, 58, 61, .9), rgba(36, 36, 38, .9)) !important; border: 1px solid rgba(255, 255, 255, .1) !important; box-shadow: 0 8px 20px rgba(20, 20, 22, .2) !important; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.meta, .ticks, .file-text small, .voice small) { color: rgba(255, 255, 255, .6) !important; }
+html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble .ticks.seen { color: var(--mint) !important; }
+html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.msg-link, .mention, .text a, .tr-tag, .rt-link) { color: var(--mint) !important; text-decoration-color: rgba(116, 220, 164, .5) !important; }
+html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble .quote { background: rgba(255, 255, 255, .08) !important; border-left-color: var(--mint) !important; }
+html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble .quote :is(b, span) { color: #fff !important; }
+/* the name at the top in the text colour, as the reference's dark type on stone */
+html[data-theme='stone'] .wordmark b.wm, html[data-theme='stone'] .wordmark b.wm span, html[data-theme='stone'] .wm :is(.wm-a, .wm-b) { color: var(--text); }
+
 /* videos in messages (Alex, 16 Oct): ⇔ across the chat, lights off over the whole screen */
 .vid-box { position: relative; display: block; }
 .vid-box > video { display: block; }

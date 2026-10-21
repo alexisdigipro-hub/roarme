@@ -49,6 +49,7 @@ export const DEFAULTS = {
   camId: '',
   speakerId: '',
   folderTags: false,
+  folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
   background: 'soft', // one of WALLS
 }
 export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], ['night', 'Night'], ['ocean', 'Ocean'], ['dusk', 'Dusk'], ['forest', 'Forest'], ['ember', 'Ember']]

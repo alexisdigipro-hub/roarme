@@ -186,7 +186,7 @@ export function TransferPage({ token }) {
     document.documentElement.dataset.theme = document.documentElement.dataset.theme || 'glass'
     fetch(`${SUPABASE_URL}/functions/v1/roar-transfer-get?t=${encodeURIComponent(token)}`)
       .then((r) => r.json())
-      .then(setInfo)
+      .then((d) => { setInfo(d); if (!d?.error) supabase.rpc('roar_transfer_hit', { t: token, dl: false }).then(() => {}) })
       .catch(() => setInfo({ error: 'offline' }))
   }, [token])
   const left = info?.expires ? new Date(info.expires).getTime() - Date.now() : 0
@@ -216,11 +216,81 @@ export function TransferPage({ token }) {
               </li>
             </ul>
             <div className="rt-facts"><span className={`tr-exp${left < 864e5 ? ' soon' : ''}`}>{I.timer}<span>Expires {untilDate(Date.now() + left)} {untilTime(Date.now() + left)}</span></span></div>
-            <a className="btn btn-main rt-go" href={info.url} download={info.name}>{I.download}<span>Download</span></a>
+            <a className="btn btn-main rt-go" href={info.url} download={info.name} onClick={() => { supabase.rpc('roar_transfer_hit', { t: token, dl: true }).then(() => {}) }}>{I.download}<span>Download</span></a>
           </>
         )}
         <a className="rt-foot" href={`${window.location.origin}${window.location.pathname}`}><Wordmark by /></a>
       </div>
+    </div>
+  )
+}
+
+/* Settings > RoarTransfer (Alex, 21 Oct): everything this person sent with RoarTransfer, newest first: where it went,
+   how big, how long it stays, how many opened the link and downloaded it; Copy link while it lives, Stop on an emailed one.
+   The data: roar_my_transfers (one row per file, from the chats and from RoarMail links). */
+const dayOf = (iso) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
+const leftOf = (iso) => {
+  const ms = new Date(iso).getTime() - Date.now()
+  if (ms <= 0) return ''
+  const h = Math.round(ms / 36e5)
+  return h < 24 ? `${Math.max(1, h)} h left` : `${Math.round(h / 24)} days left`
+}
+export const transferIcon = (type = '') => (/^video\//.test(type) ? I.play : /^image\//.test(type) ? I.image : /^audio\//.test(type) ? I.mic : I.file)
+export const transferAlive = (t) => !t.deleted && !t.stopped && new Date(t.expires).getTime() > Date.now()
+
+export function MyTransfers({ toast }) {
+  const [list, setList] = useState(null)
+  const [err, setErr] = useState('')
+  const [show, setShow] = useState('all')
+  const load = () => supabase.rpc('roar_my_transfers').then(({ data, error }) => { if (error) setErr(error.message); else setList(data || []) })
+  useEffect(() => { load() }, [])
+  const stop = async (t) => {
+    if (!window.confirm(`Stop the link to ${t.name}? Nobody can download it any more.`)) return
+    const { error } = await supabase.rpc('roar_transfer_stop', { p: t.path })
+    if (error) { toast?.(error.message); return }
+    toast?.('Link stopped'); load()
+  }
+  const all = list || []
+  const live = all.filter(transferAlive)
+  const shown = show === 'live' ? live : all
+  const sum = (l, k) => l.reduce((a, t) => a + Number(t[k] || 0), 0)
+  return (
+    <div className="adm rt-panel">
+      <div className="adm-stats rt-stats">
+        <span><b>{list ? all.length : '…'}</b><small>Sent</small></span>
+        <span><b>{list ? fmtBytes(sum(all, 'size')) : '…'}</b><small>In all</small></span>
+        <span><b>{list ? live.length : '…'}</b><small>Live now</small></span>
+        <span><b>{list ? sum(all, 'downloads') : '…'}</b><small>Downloads</small></span>
+      </div>
+      <div className="seg rt-seg">
+        <button type="button" className={show === 'all' ? 'on' : ''} onClick={() => setShow('all')}>All</button>
+        <button type="button" className={show === 'live' ? 'on' : ''} onClick={() => setShow('live')}>Live</button>
+      </div>
+      {err && <p className="adm-err">{err}</p>}
+      <div className="adm-list">
+        {!list && !err && <p className="muted">Loading…</p>}
+        {list && !shown.length && <p className="muted">{show === 'live' ? 'Nothing live right now.' : 'You have not sent anything with RoarTransfer yet. Files over 50 MB in a chat go with it.'}</p>}
+        {shown.map((t) => {
+          const alive = transferAlive(t)
+          return (
+            <div key={t.path} className={`adm-row rt-row${alive ? '' : ' gone'}`}>
+              <span className="adm-ico tr">{transferIcon(t.type)}</span>
+              <span className="adm-main">
+                <b title={t.name}>{t.name}</b>
+                <small>{t.source === 'link' ? 'By email' : t.room_kind === 'group' ? (t.room_title || 'A group') : 'A private chat'} · {dayOf(t.created_at)}</small>
+              </span>
+              {alive && <span className="rt-acts"><CopyLink file={{ path: t.path, name: t.name, size: t.size, type: t.type, expires: t.expires }} round />{t.source === 'link' && <button type="button" className="trx-round" onClick={() => stop(t)} title="Stop the link" aria-label="Stop the link">{I.x}</button>}</span>}
+              <span className="adm-chips">
+                <i>{fmtBytes(Number(t.size || 0))}</i>
+                <i className={alive ? 'tr' : 'gone'}>{t.deleted ? 'Deleted' : t.stopped ? 'Stopped' : alive ? leftOf(t.expires) : 'Expired'}</i>
+                <i>{Number(t.opens || 0)} opened</i>
+                <i>{Number(t.downloads || 0)} downloaded{t.last_download ? ` · last ${dayOf(t.last_download)}` : ''}</i>
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      <p className="adm-note muted">Files stay 3 days, then they are removed; the list keeps them. Opens and downloads count the people who used a download link.</p>
     </div>
   )
 }

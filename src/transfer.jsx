@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { SUPABASE_URL, fmtBytes, supabase, withName } from './lib.js'
+import { SUPABASE_KEY, SUPABASE_URL, fmtBytes, supabase, withName } from './lib.js'
 import { locale } from './i18n.js'
 import { I, Modal } from './ui.jsx'
 
@@ -179,14 +179,26 @@ export function TransferWindow({ title, outbox, onStart, onClose }) {
   )
 }
 
+/* one open or one download for the sender's panel (roar_transfer_hit). keepalive: a click on Download starts the file
+   at once and the browser drops an ordinary request on the way, so downloads stayed at 0 (Alex, 21 Oct) */
+const countHit = (t, dl) => fetch(`${SUPABASE_URL}/rest/v1/rpc/roar_transfer_hit`, {
+  method: 'POST', keepalive: true,
+  headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ t, dl }),
+}).catch(() => {})
+
 /* the page a download link opens (?t=…): no account needed, the file's name, size, expiry and a Download button */
+// one of Alex's stills behind the card, a new one each visit, as on RoarTransfer's own page (public/transfer/stills)
+const STILLS = ['salon', 'shoes', 'tartan', 'corridor', 'sunflower', 'silhouette']
 export function TransferPage({ token }) {
   const [info, setInfo] = useState(null)
+  const [still] = useState(() => `${import.meta.env.BASE_URL}transfer/stills/${STILLS[Math.floor(Math.random() * STILLS.length)]}.webp`)
+  const [bgOn, setBgOn] = useState(false)
   useEffect(() => {
     document.documentElement.dataset.theme = document.documentElement.dataset.theme || 'glass'
     fetch(`${SUPABASE_URL}/functions/v1/roar-transfer-get?t=${encodeURIComponent(token)}`)
       .then((r) => r.json())
-      .then((d) => { setInfo(d); if (!d?.error) supabase.rpc('roar_transfer_hit', { t: token, dl: false }).then(() => {}) })
+      .then((d) => { setInfo(d); if (!d?.error) countHit(token, false) })
       .catch(() => setInfo({ error: 'offline' }))
   }, [token])
   const left = info?.expires ? new Date(info.expires).getTime() - Date.now() : 0
@@ -194,6 +206,8 @@ export function TransferPage({ token }) {
   const isImg = /^image\//.test(info?.type || '')
   return (
     <div className="rt-page">
+      {/* Alex, 21 Oct: the changing pictures and the same frosted glass as RoarTransfer's own page */}
+      <div className={`rt-bg${bgOn ? ' on' : ''}`} aria-hidden="true"><img src={still} alt="" onLoad={() => setBgOn(true)} /></div>
       <div className="rt-card">
         <TransferMark big />
         {!info && <span className="pic-wait rt-wait" />}
@@ -216,7 +230,7 @@ export function TransferPage({ token }) {
               </li>
             </ul>
             <div className="rt-facts"><span className={`tr-exp${left < 864e5 ? ' soon' : ''}`}>{I.timer}<span>Expires {untilDate(Date.now() + left)} {untilTime(Date.now() + left)}</span></span></div>
-            <a className="btn btn-main rt-go" href={withName(info.url, info.name)} download={info.name} onClick={() => { supabase.rpc('roar_transfer_hit', { t: token, dl: true }).then(() => {}) }}>{I.download}<span>Download</span></a>
+            <a className="btn btn-main rt-go" href={withName(info.url, info.name)} download={info.name} onClick={() => countHit(token, true)}>{I.download}<span>Download</span></a>
           </>
         )}
       </div>

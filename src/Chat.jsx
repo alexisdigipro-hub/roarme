@@ -711,9 +711,12 @@ export default function Chat({ me, setMe }) {
       tabHold.current = { x: t.clientX, y: t.clientY, fired: false, timer: setTimeout(() => {
         tabHold.current.fired = true
         navigator.vibrate?.(12)
-        window.getSelection?.()?.removeAllRanges()
+        const clear = () => window.getSelection?.()?.removeAllRanges()
+        clear(); setTimeout(clear, 60); setTimeout(clear, 400)
         const b = el.getBoundingClientRect()
-        setFolderMenu({ f, x: Math.max(8, Math.min(b.left, window.innerWidth - 248)), y: Math.min(b.bottom + 8, window.innerHeight - 300), at: Date.now() })
+        const x = Math.max(8, Math.min(b.left, window.innerWidth - 248))
+        // tabs at the foot: the menu opens above them, never over the tab itself
+        setFolderMenu(b.top > window.innerHeight / 2 ? { f, x, bottom: window.innerHeight - b.top + 8, at: Date.now() } : { f, x, y: b.bottom + 8, at: Date.now() })
       }, 450) }
     },
     onTouchMove: (e) => { const h = tabHold.current, t = e.touches[0]; if (h && !h.fired && Math.hypot(t.clientX - h.x, t.clientY - h.y) > 8) clearTimeout(h.timer) },
@@ -1198,7 +1201,7 @@ export default function Chat({ me, setMe }) {
         return (
         <OnTop>
           <button type="button" className="scrim" aria-label="Close" onClick={() => { if (!folderMenu.at || Date.now() - folderMenu.at > 350) setFolderMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu(null) }} />
-          <div className="room-menu folder-menu menu-list" style={{ left: folderMenu.x, top: folderMenu.y }}>
+          <div className="room-menu folder-menu menu-list" style={folderMenu.bottom != null ? { left: folderMenu.x, bottom: folderMenu.bottom, top: 'auto' } : { left: folderMenu.x, top: folderMenu.y }}>
             {folderMenu.f.custom ? (
               <>
                 <button type="button" onClick={() => { const f = folderMenu.f; setFolderMenu(null); editFolder(f.id) }}>{I.edit}<span>Edit Folder</span></button>

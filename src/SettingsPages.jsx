@@ -149,7 +149,7 @@ export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe, onInbox, inb
 }
 
 /* the page on the right */
-export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, onFolders, onFolderMenu, folderKit, toast, me, setMe }) {
+export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profile, folders, onFolders, onFolderMenu, folderKit, toast, me, setMe }) {
   const p = usePrefs()
   const title = pageTitle(page)
   return (
@@ -159,6 +159,8 @@ export function SettingsPage({ page, chosen, onPage, onBack, profile, folders, o
           ? <button type="button" className="round" onClick={() => onPage(page === 'keys' ? 'general' : 'folders')} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
           : <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>}
         <strong>{title}</strong>
+        {/* the folder is kept as it is typed; the tick takes you out (Alex, 21 Oct) */}
+        {page.startsWith('folder:') && <button type="button" className="round set-done" onClick={() => (onFolderDone ? onFolderDone() : onPage('folders'))} aria-label="Done" title="Done">{svg(<path d="M5 12.5l4.5 4.5L19 7.5" />)}</button>}
       </header>
       <div className="set-body stagger" key={page}>
         <Hero id={page} />

@@ -95,7 +95,9 @@ export default function Chat({ me, setMe }) {
   const [folderSeed, setFolderSeed] = useState([]) // chats a new folder starts with
   // a folder is edited on a page of its own in Settings, like Telegram's (Alex, 16 Oct)
   const openFolders = () => { setModal(''); setTab('settings'); setSetPage('folders') }
-  const editFolder = (id, seed = []) => { setModal(''); setFolderSeed(seed); setTab('settings'); setSetPage(`folder:${id}`) }
+  const folderBack = useRef('') // the screen a folder was opened for editing from: its tick goes back there
+  const editFolder = (id, seed = []) => { folderBack.current = tab === 'settings' ? '' : tab; setModal(''); setFolderSeed(seed); setTab('settings'); setSetPage(`folder:${id}`) }
+  const doneFolder = () => { document.activeElement?.blur?.(); const back = folderBack.current; folderBack.current = ''; if (back) { setSetPage(''); setTab(back) } else setSetPage('folders') }
   const tabsLens = useLens(`${tab}|${folder}|${prefs.folderTabs}|${myFolders.length}|${!q.trim()}`)
   // the folder tabs fade at the right edge only while more tabs wait past it (Alex, 21 Oct: the last tab looked shaded)
   useEffect(() => {
@@ -700,6 +702,33 @@ export default function Chat({ me, setMe }) {
       clear(); setTimeout(clear, 60); setTimeout(clear, 400)
     }, 450) }
   }
+  // a long press on a folder tab opens its menu, like Telegram (Alex, 21 Oct)
+  const tabHold = useRef(null)
+  const tabPress = (f) => ({
+    onTouchStart: (e) => {
+      const t = e.touches[0], el = e.currentTarget
+      clearTimeout(tabHold.current?.timer)
+      tabHold.current = { x: t.clientX, y: t.clientY, fired: false, timer: setTimeout(() => {
+        tabHold.current.fired = true
+        navigator.vibrate?.(12)
+        window.getSelection?.()?.removeAllRanges()
+        const b = el.getBoundingClientRect()
+        setFolderMenu({ f, x: Math.max(8, Math.min(b.left, window.innerWidth - 248)), y: Math.min(b.bottom + 8, window.innerHeight - 300), at: Date.now() })
+      }, 450) }
+    },
+    onTouchMove: (e) => { const h = tabHold.current, t = e.touches[0]; if (h && !h.fired && Math.hypot(t.clientX - h.x, t.clientY - h.y) > 8) clearTimeout(h.timer) },
+    onTouchEnd: (e) => { const h = tabHold.current; if (!h) return; clearTimeout(h.timer); if (h.fired && e.cancelable) e.preventDefault() },
+    onTouchCancel: () => clearTimeout(tabHold.current?.timer),
+  })
+  const muteFolder = async (f) => {
+    const ids = listFor(f.id).map((r) => r.room_id)
+    if (!ids.length) { toast('No chats in this folder'); return }
+    const all = listFor(f.id).every((r) => r.muted)
+    const { error } = await supabase.from('roar_members').update({ muted: !all }).eq('user_id', me.id).in('room_id', ids)
+    if (error) { toast(errText(error)); return }
+    if (all) setMuteUntil((m) => { const n = { ...m }; ids.forEach((id) => delete n[id]); return n })
+    toast(all ? 'Sounds on' : 'Muted'); loadRooms()
+  }
   const pressMove = (e) => {
     const p = press.current, t = e.touches[0]
     if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 10) { clearTimeout(p.timer); press.current = null }
@@ -924,7 +953,7 @@ export default function Chat({ me, setMe }) {
               <nav ref={tabsLens} className="tabs lens tabs-scroll" onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
                 {allFolders.map((f) => {
                   const n = folderUnread(f)
-                  return <button key={f.id} type="button" title={f.name} className={folder === f.id ? 'on' : ''} onClick={(e) => { setFolder(f.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                  return <button key={f.id} type="button" title={f.name} className={folder === f.id ? 'on' : ''} {...tabPress(f)} onClick={(e) => { setFolder(f.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
                 })}
               </nav>
             )}
@@ -1030,7 +1059,7 @@ export default function Chat({ me, setMe }) {
       <main className="main">
         <NowPlaying onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
         {tab === 'settings' ? (
-          <Suspense fallback={<div className="set-body" />}><SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} toast={toast} me={me} setMe={setMe}
+          <Suspense fallback={<div className="set-body" />}><SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} onFolderDone={doneFolder} toast={toast} me={me} setMe={setMe}
             profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : openFolders())}
             folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
@@ -1162,14 +1191,19 @@ export default function Chat({ me, setMe }) {
           </div>
         </OnTop>
       )}
-      {folderMenu && (
+      {folderMenu && (() => {
+        const allMuted = listFor(folderMenu.f.id).length > 0 && listFor(folderMenu.f.id).every((r) => r.muted)
+        const folderMute = <button type="button" onClick={() => { const f = folderMenu.f; setFolderMenu(null); muteFolder(f) }}>{allMuted ? I.bell : I.bellOff}<span>{allMuted ? 'Unmute All' : 'Mute All'}</span></button>
+        const folderReorder = <><hr /><button type="button" onClick={() => { setFolderMenu(null); openFolders() }}>{REORDER}<span>Reorder Tabs</span></button></>
+        return (
         <OnTop>
-          <button type="button" className="scrim" aria-label="Close" onClick={() => setFolderMenu(null)} onContextMenu={(e) => { e.preventDefault(); setFolderMenu(null) }} />
+          <button type="button" className="scrim" aria-label="Close" onClick={() => { if (!folderMenu.at || Date.now() - folderMenu.at > 350) setFolderMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu(null) }} />
           <div className="room-menu folder-menu menu-list" style={{ left: folderMenu.x, top: folderMenu.y }}>
             {folderMenu.f.custom ? (
               <>
                 <button type="button" onClick={() => { const f = folderMenu.f; setFolderMenu(null); editFolder(f.id) }}>{I.edit}<span>Edit Folder</span></button>
                 <button type="button" onClick={() => { setFolderChats(folderMenu.f.id); setFolderMenu(null) }}>{I.plus}<span>Add Chats</span></button>
+                {folderMute}
                 <hr />
                 <button type="button" className="danger" onClick={() => {
                   const f = folderMenu.f
@@ -1179,11 +1213,13 @@ export default function Chat({ me, setMe }) {
                   if (folder === f.id) setFolder('all')
                   toast('Folder deleted')
                 }}>{I.trash}<span>Delete</span></button>
+                {folderReorder}
               </>
             ) : (
               <>
                 <button type="button" onClick={() => { const f = folderMenu.f; setFolderMenu(null); editFolder(f.id) }}>{I.edit}<span>Edit Folder</span></button>
                 <button type="button" onClick={() => { setFolderMenu(null); editFolder('new') }}>{I.plus}<span>New Folder</span></button>
+                {folderMenu.f.id !== 'archived' && folderMute}
                 {folderMenu.f.id !== 'all' && (
                   <>
                     <hr />
@@ -1197,11 +1233,13 @@ export default function Chat({ me, setMe }) {
                     }}>{I.trash}<span>Delete</span></button>
                   </>
                 )}
+                {folderReorder}
               </>
             )}
           </div>
         </OnTop>
-      )}
+        )
+      })()}
       {folderChats && (() => {
         const f = myFolders.find((x) => x.id === folderChats)
         if (!f) return null
@@ -1263,6 +1301,7 @@ function PeekList({ room, me, people, clearedAt }) {
 /* ---------- one conversation ---------- */
 // the official RoarMe account's mark beside its name (Alex, 19 Oct)
 const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />, 15)
+const REORDER = svg(<><rect x="3" y="4" width="18" height="6" rx="2" /><path d="M5 15v4M12 15v4M19 15v4M3.5 15h17" /></>, 16)
 const OFFICIAL = <i className="official" title="Official RoarMe account" aria-label="Official">{svg(<><path d="M12 2.5l2.4 1.8 3-.1.9 2.8 2.4 1.8-.9 2.8.9 2.8-2.4 1.8-.9 2.8-3-.1L12 21.5l-2.4-1.8-3 .1-.9-2.8L3.3 15.2l.9-2.8-.9-2.8 2.4-1.8.9-2.8 3 .1z" fill="currentColor" stroke="none" /><path d="M8.5 12.2l2.3 2.3 4.7-4.8" stroke="#fff" strokeWidth="2.2" /></>, 15)}</i>
 
 function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [] }) {

@@ -620,6 +620,7 @@ export default function Chat({ me, setMe }) {
           g.lock = 'row'
           g.rs = dx < 0 ? 'right' : 'left'
           g.rowEl.style.transition = 'none'
+          g.rowEl.style.animation = 'none' // the list's fade-in animation holds transform and would keep the chat from moving
           // the buttons lie under the chat, in its own place in the list: the chat slides off them
           const list = g.rowEl.closest('.rooms'), rr = g.rowEl.getBoundingClientRect(), lr = list.getBoundingClientRect()
           setRowActs({ id: g.rowEl.dataset.rid, side: g.rs, top: rr.top - lr.top + list.scrollTop, h: rr.height })

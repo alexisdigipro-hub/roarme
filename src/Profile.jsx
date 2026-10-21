@@ -5,6 +5,7 @@ import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { usePrefs } from './prefs.js'
 import { CopyLink } from './transfer.jsx'
 import { locale } from './i18n.js'
+import { ContactEdit } from './contactCard.jsx'
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
 const monthOf = (iso) => new Date(iso).toLocaleDateString(locale(), { month: 'long', year: 'numeric' }).toUpperCase()
@@ -374,31 +375,3 @@ function Thumb({ m, onClick }) {
   )
 }
 
-/* Edit Contact (Alex, 19 Oct): my own name, photo and note for someone, which only I see; they never know */
-function ContactEdit({ me, other, onClose, onSaved, onPhoto, onDropPhoto }) {
-  const [name, setName] = useState(other.nickname || '')
-  const [note, setNote] = useState(other.my_note || '')
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState('')
-  const save = async () => {
-    setBusy(true); setErr('')
-    const { error } = await supabase.from('roar_contacts').upsert({ owner: me.id, person: other.id, nickname: name.trim(), note: note.trim(), updated_at: new Date().toISOString() })
-    setBusy(false)
-    if (error) setErr(errText(error)); else onSaved()
-  }
-  return (
-    <Modal title="Edit Contact" onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" disabled={busy} onClick={save}>{busy ? '…' : 'Save'}</button></>}>
-      <div className="ce">
-        <button type="button" className="ce-pic" onClick={onPhoto} title="Set a photo for them">
-          <Avatar src={other.avatar_url} name={name.trim() || other.real_name || other.username} size={88} />
-          <span className="pf-pic-cam">{I.camera}</span>
-        </button>
-        {other.my_photo && <button type="button" className="link" onClick={() => { onDropPhoto(); onClose() }}>Use their own photo</button>}
-        <label className="field"><span>Name</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={other.real_name || `@${other.username}`} maxLength={60} autoFocus /></label>
-        <label className="field"><span>Note</span><textarea className="input ce-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Where you met, what they do, anything" maxLength={500} /></label>
-        <p className="muted ce-hint">Only you see these. They keep their own name and photo for everyone else.</p>
-        {err && <p className="auth-err">{err}</p>}
-      </div>
-    </Modal>
-  )
-}

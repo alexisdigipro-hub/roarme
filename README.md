@@ -507,6 +507,14 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Contact card (21 Oct)
+Alex: in Contacts no icons on the right; a tap on someone opens their card, like the iPhone's Contacts. src/contactCard.jsx:
+the big picture and name (last seen, and their own name when I gave them another), round Message · Call · Video · Share,
+then glass tiles: username (tap to copy) and bio, Notes (my note for them, tap to edit), Share Contact (the share sheet with
+their RoarMe link, or copy), Add to / Remove from Favourites, and Block Contact (or Unblock) on its own in red. Edit (top
+left) is Edit Contact: my own name, photo and note for them, which only I see (moved here from Profile.jsx). Favourites are
+kept on the device (`roarme-fav`), come first in Contacts and carry a small star.
+
 ## Project chats: Alex names them (21 Oct)
 Alex: in a project chat from THEMADLIONS Hub, only he may change the name and the photo. RoarMe's admin (roar_admins)
 now gets the camera on the group's picture, the name as an editable field and Remove group photo; everyone else sees
@@ -519,7 +527,8 @@ Alex: the sideways folder swipe must never also pull the list down and open the 
 the slightest touch. A drag on the list now commits to one direction after its first few pixels: sideways is the folder
 swipe only, downward at the top is the pull only. With the search closed the list follows the finger with resistance and
 the search opens only after a clear pull (90 px), snapping like a magnet when let go; a shorter pull springs back. With the
-search already open, the same pull reloads RoarMe as before. Both live in the native listeners of `rooms-pager` in Chat.jsx.
+search already open, a much longer pull reloads RoarMe: the arrow shows after 120 px and is full at 280 px, the list
+following with resistance, so the reload never comes by accident. Both live in the native listeners of `rooms-pager` in Chat.jsx.
 
 ## Lighter RoarMe (21 Oct)
 Alex: "see what weighs RoarMe down and lighten it". Nothing looks different except a still background.

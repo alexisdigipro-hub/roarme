@@ -160,3 +160,58 @@ begin
 end $$;
 revoke all on function public.roar_admin_transfer_stats() from public, anon;
 grant execute on function public.roar_admin_transfer_stats() to authenticated;
+
+-- RoarTransfer on Cloudflare R2 (Alex, 21 Oct 2026: roartransfer.com, its own storage). A link made by the Edge
+-- Function roartransfer-r2 has store 'r2' and its path is the R2 key free/<account>/… (pro/… later); R2's own lifecycle
+-- rules delete free/ after 3 days and pro/ after 30. roar-transfer-get signs the download on R2 for those.
+alter table public.roar_transfer_links add column if not exists store text not null default 'supabase';
+
+create or replace function public.roar_transfer_items()
+returns table (path text, user_id uuid, name text, size bigint, type text, created_at timestamptz, expires timestamptz,
+  source text, room_kind text, room_title text, token text, links integer, opens bigint, downloads bigint,
+  last_download timestamptz, stopped boolean, deleted boolean)
+language sql stable security definer set search_path = public as $$
+  with s as (
+    select l.path, (array_agg(l.token order by l.created_at desc))[1] as token, count(*)::int as links,
+      sum(l.opens)::bigint as opens, sum(l.downloads)::bigint as downloads, max(l.last_download) as last_download,
+      bool_or(l.stopped_at is not null) as stopped, min(l.created_at) as created_at, max(l.expires_at) as expires,
+      (array_agg(l.name order by l.created_at))[1] as name, max(l.size) as size, (array_agg(l.type order by l.created_at))[1] as type,
+      (array_agg(l.created_by order by l.created_at))[1] as created_by, bool_or(l.store = 'r2') as r2
+    from public.roar_transfer_links l group by l.path
+  ), i as (
+    (select distinct on (m.file ->> 'path') m.file ->> 'path' as path, m.user_id, m.file ->> 'name' as name,
+      public.roar_file_size(m.file) as size, m.file ->> 'type' as type, m.created_at,
+      case when m.file ? 'expires' then (m.file ->> 'expires')::timestamptz end as expires,
+      'chat'::text as source, r.kind as room_kind, case when r.kind = 'group' then r.title end as room_title,
+      m.deleted_at is not null as deleted
+    from public.roar_messages m left join public.roar_rooms r on r.id = m.room_id
+    where m.file ->> 'bucket' = 'roar-transfers' and m.file ? 'path'
+    order by m.file ->> 'path', m.created_at)
+    union all
+    select s.path, s.created_by, s.name, s.size, s.type, s.created_at, s.expires, 'link', null, null, false
+    from s where s.path like 'u/%' or s.r2
+  )
+  select i.path, i.user_id, coalesce(nullif(i.name, ''), 'file'), coalesce(i.size, 0), coalesce(i.type, ''), i.created_at,
+    coalesce(i.expires, s.expires, i.created_at + interval '3 days'),
+    i.source, i.room_kind, i.room_title, s.token, coalesce(s.links, 0), coalesce(s.opens, 0), coalesce(s.downloads, 0),
+    s.last_download, coalesce(s.stopped, false), i.deleted
+  from i left join s on s.path = i.path
+$$;
+revoke all on function public.roar_transfer_items() from public, anon, authenticated;
+
+-- Stop: one's own u/, free/ or pro/ file, or any of them for the admin (the file on R2 is removed by roartransfer-r2)
+create or replace function public.roar_transfer_stop(p text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p is null or not (
+       public.roar_is_admin()
+       or (split_part(p, '/', 1) in ('u', 'free', 'pro') and split_part(p, '/', 2) = auth.uid()::text and split_part(p, '/', 3) <> '')
+     ) then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  if split_part(p, '/', 1) not in ('u', 'free', 'pro') then raise exception 'not allowed' using errcode = '42501'; end if;
+  update public.roar_transfer_links set stopped_at = coalesce(stopped_at, now()), expires_at = least(expires_at, now())
+  where path = p;
+end $$;
+revoke all on function public.roar_transfer_stop(text) from public, anon;
+grant execute on function public.roar_transfer_stop(text) to authenticated;

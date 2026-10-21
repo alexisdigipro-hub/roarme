@@ -92,9 +92,21 @@ export async function fileLink(file, download = '') {
   const hit = signed.get(key)
   if (hit && hit.until > Date.now()) return hit.url
   if (!download) return batchLink(bucket, path, key)
-  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600, { download })
-  if (data?.signedUrl) signed.set(key, { url: data.signedUrl, until: Date.now() + 3500 * 1000 })
-  return data?.signedUrl || ''
+  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600)
+  const url = data?.signedUrl ? withName(data.signedUrl, download) : ''
+  if (url) signed.set(key, { url, until: Date.now() + 3500 * 1000 })
+  return url
+}
+/* a download link that saves under the file's real name, Greek, spaces, & and all (Alex, 21 Oct: a RoarTransfer came down
+   as "%CE%93%CE%B9…"): the name goes in encoded exactly once. supabase-js leaves it raw or, in the Edge Function, encodes
+   it twice; any download= already there is replaced */
+export function withName(url, name) {
+  if (!url || !name || name === true) return url
+  try {
+    const u = new URL(url)
+    u.searchParams.delete('download')
+    return `${u.toString()}${u.search ? '&' : '?'}download=${encodeURIComponent(name)}`
+  } catch { return url }
 }
 /* the links asked for in the same moment (a chat opening with twenty photos) go to the server as one request,
    not twenty (Alex, 21 Oct: RoarMe lighter) */

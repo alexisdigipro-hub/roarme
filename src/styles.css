@@ -3921,6 +3921,6 @@ html[data-theme='stone']:not([data-mode='light']) .rooms-area.bottom .tabs, html
 
 /* Tasks open in Stone (Alex, 21 Oct: the button went black, nothing showed): Stone's own colour is graphite like its
    foot bar, so the open Tasks button is the bar's lighter graphite with a white icon and word, as a chosen tab */
-html[data-theme='stone'] .foot button.foot-tasks.open { color: #fff; background: var(--rail-2); border-radius: 16px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
+html[data-theme='stone'] .foot button.foot-tasks.open { color: #fff; } /* the bar's glass lens slides under it, as for the other tabs */
 .tasks-tabs.at-bottom button { white-space: nowrap; padding: 0 6px; }
 html[data-theme='stone'] .tasks-tabs.at-bottom button { font-size: 13.5px; }

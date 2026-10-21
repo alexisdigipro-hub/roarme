@@ -456,7 +456,8 @@ export default function Chat({ me, setMe }) {
   const inFolder = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
-    if (f === 'unread') return r.unread > 0 || (prefs.folderExtra?.unread || []).includes(r.room_id)
+    // a chat marked as unread by hand belongs here too (Alex, 21 Oct), even when its last message is one's own
+    if (f === 'unread') return r.unread > 0 || marked.includes(r.room_id) || (prefs.folderExtra?.unread || []).includes(r.room_id)
     if (f === 'groups') return r.kind === 'group' || (prefs.folderExtra?.groups || []).includes(r.room_id)
     const mine = myFolders.find((x) => x.id === f)
     if (mine) {
@@ -472,7 +473,7 @@ export default function Chat({ me, setMe }) {
     const list = visible.filter((r) => (t ? titleOf(r).toLowerCase().includes(t) || (otherOf(r)?.username || '').includes(t.replace(/^@/, '')) : inFolder(r, folder)))
     // pinned chats first, in the order they were pinned
     return [...list.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...list.filter((r) => !pins.includes(r.room_id))]
-  }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra])
+  }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra, marked])
   // the chats of another folder, for the page that slides in beside the list while it is dragged
   const listFor = (fid) => {
     const list = visible.filter((r) => inFolder(r, fid))

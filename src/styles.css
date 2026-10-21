@@ -3967,3 +3967,5 @@ html[data-theme] .install-card .install-later, html .install-card .install-later
 @media (max-width: 760px) {
   .ctx .ctx-menu { align-self: center; width: min(300px, 100%); max-height: 80vh; transform-origin: center; }
 }
+/* the long-press menu: nothing in it can be selected or called up by the finger that opened it (Alex, 21 Oct) */
+.ctx, .ctx * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

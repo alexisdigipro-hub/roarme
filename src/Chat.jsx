@@ -563,7 +563,11 @@ export default function Chat({ me, setMe }) {
   const shutRow = () => {
     const o = rowNow.current
     rowNow.current = null
-    if (o?.el) { o.el.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)'; o.el.style.transform = '' }
+    if (o?.el) {
+      o.el.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)'; o.el.style.transform = ''
+      const acts = o.el.parentElement?.querySelector('.row-acts')
+      if (acts) { acts.style.transition = 'width .28s cubic-bezier(.22,1,.36,1)'; acts.style.width = '0px' }
+    }
     setTimeout(() => { if (!rowNow.current) setRowActs(null) }, 280)
   }
   useLayoutEffect(() => {
@@ -616,7 +620,9 @@ export default function Chat({ me, setMe }) {
           g.lock = 'row'
           g.rs = dx < 0 ? 'right' : 'left'
           g.rowEl.style.transition = 'none'
-          setRowActs({ id: g.rowEl.dataset.rid, side: g.rs, top: g.rowEl.offsetTop, h: g.rowEl.offsetHeight })
+          // the buttons lie under the chat, in its own place in the list: the chat slides off them
+          const list = g.rowEl.closest('.rooms'), rr = g.rowEl.getBoundingClientRect(), lr = list.getBoundingClientRect()
+          setRowActs({ id: g.rowEl.dataset.rid, side: g.rs, top: rr.top - lr.top + list.scrollTop, h: rr.height })
         }
         if (g.lock === 'x') {
           const n = pagerNow.current
@@ -653,6 +659,8 @@ export default function Chat({ me, setMe }) {
         const a = Math.abs(dx), m = a > ROW_W ? ROW_W + (a - ROW_W) * 0.25 : a
         g.dx = dx
         g.rowEl.style.transform = `translate3d(${Math.sign(dx) * m}px,0,0)`
+        const acts = g.rowEl.parentElement?.querySelector('.row-acts')
+        if (acts) { acts.style.transition = 'none'; acts.style.width = `${m}px` }
         return
       }
       if (g.lock !== 'x') return
@@ -674,6 +682,8 @@ export default function Chat({ me, setMe }) {
         if (Math.abs(dx) > 56) {
           rowEl.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)'
           rowEl.style.transform = `translate3d(${Math.sign(dx) * ROW_W}px,0,0)`
+          const acts = rowEl.parentElement?.querySelector('.row-acts')
+          if (acts) { acts.style.transition = 'width .28s cubic-bezier(.22,1,.36,1)'; acts.style.width = `${ROW_W}px` }
           rowNow.current = { el: rowEl, id: rowEl.dataset.rid }
         } else { rowNow.current = { el: rowEl }; shutRow() }
         return
@@ -1066,11 +1076,13 @@ export default function Chat({ me, setMe }) {
                 const unread = r.unread > 0 || marked.includes(r.room_id)
                 return (
                   <div className={`row-acts ${rowActs.side}`} style={{ top: rowActs.top, height: rowActs.h }}>
+                    <div className="ra-in">
                     {rowActs.side === 'left'
                       ? <><button type="button" className="ra-unread" onClick={() => go('unread')}><i>{I.unread}</i><span>{unread ? 'Read' : 'Unread'}</span></button>
                           <button type="button" className="ra-pin" onClick={() => go('pin')}><i>{I.pin}</i><span>{pins.includes(r.room_id) ? 'Unpin' : 'Pin'}</span></button></>
                       : <><button type="button" className="ra-mute" onClick={() => go('mute')}><i>{r.muted ? I.bell : I.bellOff}</i><span>{r.muted ? 'Unmute' : 'Mute'}</span></button>
                           <button type="button" className="ra-del" onClick={() => go('delete')}><i>{I.trash}</i><span>Delete</span></button></>}
+                    </div>
                   </div>
                 )
               })()}

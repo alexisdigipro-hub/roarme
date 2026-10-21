@@ -4046,3 +4046,18 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
   html.kb:not([data-theme='aura']) .compose-wrap { padding-bottom: 6px; }
   html.kb, html.kb body { background: var(--kb-bg, var(--bg)); }
 }
+
+/* RoarMe lighter on a phone (Alex, 21 Oct: "a bit laggy, not so smooth"). The glass blur is the heaviest thing an
+   iPhone draws, and it was on every message bubble, every round button and every tile, redrawn on each scroll.
+   On a phone it stays only where it shows: the bars at the foot and the top, the writing box, menus and windows,
+   at a lighter strength; everything else keeps its tint without the blur. Rows off screen are not drawn. */
+@media (max-width: 760px) {
+  html[data-theme] { --blur: blur(14px) saturate(140%) !important; }
+  :is(.bubble, .round, .btn, .pill-btn, .set-box, .set-row, .room, .person, .adm-row, .adm-stats span, .sys-note > span, .day span,
+    .task, .row-acts button, .tabs button, .foot button, .seg, .seg button, .search, .new-call, .wall-tile, .theme-tile, .tv-tile,
+    .rt-chart, .pic, .tr-card, .rx button, .cc, .pf-row, .att, .att-tile) {
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+  .rooms:not(.rooms-ghost) > .room { content-visibility: auto; contain-intrinsic-size: auto 56px; }
+  .room .av, .room:hover .av { transition: none; transform: none; }
+}

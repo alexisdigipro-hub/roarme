@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { TRANSFER_BUCKET, USERNAME_RE, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
@@ -1835,6 +1835,14 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
           setOut(tile.id, { stage: 'prep', p: 0 })
         }
         const meta = await upload(file, null, {}, tile.id, viaTransfer)
+        // a small copy of a photo for the chat itself: a phone no longer opens every photo whole (a 1600 px photo
+        // takes about 8 MB once opened); the whole photo still opens full screen (Alex, 21 Oct: RoarMe lighter)
+        if (/^image\/(jpeg|png|webp)$/.test(file.type) && !meta.bucket) {
+          try {
+            const small = await shrinkImage(file, 900, 0.78)
+            if (small !== file) meta.thumb = (await upload(small)).path
+          } catch { /* the chat shows the whole photo */ }
+        }
         stick.current = true
         const last = n === ok.length
         const { data, error } = await supabase.from('roar_messages').insert({
@@ -2684,6 +2692,12 @@ function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
         const { error } = await supabase.storage.from(file.bucket || 'roar-files').copy(file.path, to)
         if (error) { setErr(errText(error)); continue }
         file = { ...file, path: to, ...(file.bucket ? { expires: new Date(Date.now() + TRANSFER_DAYS * 864e5).toISOString() } : {}) }
+        // the photo's small copy goes along too; without it the chat simply shows the whole photo
+        if (file.thumb) {
+          const tTo = `${r.room_id}/${crypto.randomUUID()}-thumb.jpg`
+          const { error: tErr } = await supabase.storage.from(file.bucket || 'roar-files').copy(file.thumb, tTo)
+          file = { ...file, thumb: tErr ? undefined : tTo }
+        }
       }
       const { error } = await supabase.from('roar_messages').insert({ room_id: r.room_id, user_id: me.id, kind: m.kind === 'system' ? 'text' : m.kind, body: m.body, file })
       if (error) setErr(errText(error)); else n += 1
@@ -2712,7 +2726,7 @@ function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
   const [go, setGo] = useState(auto && !still)
   const [url, setUrl] = useState('')
   const [ready, setReady] = useState(false)
-  useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
+  useEffect(() => { if (!go) return undefined; let alive = true; fileLink(thumbOf(file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>
   return url ? <img className={`pic-img${ready ? ' ready' : ''}`} src={url} alt={file?.name || ''} loading="lazy" decoding="async" onLoad={() => setReady(true)} onClick={(e) => { e.stopPropagation(); onOpen(url) }} /> : <span className="pic-wait" />
 }

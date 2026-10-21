@@ -82,6 +82,8 @@ export async function shrinkImage(file, max = 1920, quality = 0.85) {
 // ({ path, bucket }) or a bare path; RoarTransfer files live in their own bucket
 const signed = new Map()
 export const TRANSFER_BUCKET = 'roar-transfers'
+// a photo's small copy, for the chat and the media grids; the whole photo opens full screen (Alex, 21 Oct: lighter)
+export const thumbOf = (file) => (file?.thumb ? { path: file.thumb, bucket: file.bucket } : file)
 export async function fileLink(file, download = '') {
   const path = typeof file === 'string' ? file : file?.path
   if (!path) return ''

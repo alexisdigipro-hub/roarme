@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { dayLabel, fileLink, fmtBytes, nameOf, supabase } from './lib.js'
+import { dayLabel, fileLink, thumbOf, fmtBytes, nameOf, supabase } from './lib.js'
 import { I, Lens } from './ui.jsx'
 import { MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { CopyLink } from './transfer.jsx'
@@ -78,7 +78,7 @@ function Tile({ m, who, where, onOpen, onChat }) {
   const [ref, seen] = useSeen()
   const [url, setUrl] = useState('')
   const isVid = /^video\//.test(m.file?.type || '')
-  useEffect(() => { if (!seen) return undefined; let alive = true; fileLink(m.file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [seen, m.file])
+  useEffect(() => { if (!seen) return undefined; let alive = true; fileLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [seen, m.file])
   return (
     <div ref={ref} className="lib-tile" role="button" tabIndex={0} onClick={onOpen}>
       {url && (isVid ? <video src={url} muted preload="metadata" /> : <img src={url} alt="" loading="lazy" />)}

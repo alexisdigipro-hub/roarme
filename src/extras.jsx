@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { errText, fileLink, fmtBytes, supabase, timeOf } from './lib.js'
+import { errText, fileLink, thumbOf, fmtBytes, supabase, timeOf } from './lib.js'
 import { EMOJIS, WALLS, setPrefs, usePrefs } from './prefs.js'
 import { I, Modal } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
@@ -320,10 +320,10 @@ export function SharedMedia({ roomId, onOpen, onClose }) {
 }
 function MediaThumb({ m, onClick }) {
   const [url, setUrl] = useState('')
-  useEffect(() => { let alive = true; fileLink(m.file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path])
+  useEffect(() => { let alive = true; fileLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path])
   return (
     <button type="button" className="media-thumb" onClick={onClick}>
-      {url && (/^video\//.test(m.file?.type || '') ? <video src={url} muted preload="metadata" /> : <img src={url} alt="" />)}
+      {url && (/^video\//.test(m.file?.type || '') ? <video src={url} muted preload="metadata" /> : <img src={url} alt="" loading="lazy" decoding="async" />)}
       {/^video\//.test(m.file?.type || '') && <i className="attach-play">{I.play}</i>}
     </button>
   )

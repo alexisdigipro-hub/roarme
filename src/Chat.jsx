@@ -94,6 +94,17 @@ export default function Chat({ me, setMe }) {
   const openFolders = () => { setModal(''); setTab('settings'); setSetPage('folders') }
   const editFolder = (id, seed = []) => { setModal(''); setFolderSeed(seed); setTab('settings'); setSetPage(`folder:${id}`) }
   const tabsLens = useLens(`${tab}|${folder}|${prefs.folderTabs}|${myFolders.length}|${!q.trim()}`)
+  // the folder tabs fade at the right edge only while more tabs wait past it (Alex, 21 Oct: the last tab looked shaded)
+  useEffect(() => {
+    const el = tabsLens.current
+    if (!el) return undefined
+    const check = () => { if (el.scrollWidth - el.clientWidth - el.scrollLeft > 4) el.dataset.more = ''; else delete el.dataset.more }
+    check()
+    el.addEventListener('scroll', check, { passive: true })
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    return () => { el.removeEventListener('scroll', check); ro.disconnect() }
+  }, [tab, prefs.folderTabs, myFolders.length, !q.trim()]) // eslint-disable-line react-hooks/exhaustive-deps
   const footLens = useLens(`${tab}|${prefs.callsTab}|${picking}`) // the Settings page open on the right
   const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
   const searchRef = useRef(null)

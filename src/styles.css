@@ -3978,16 +3978,25 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 
 /* a chat slid open on a phone, like Telegram (Alex, 21 Oct): two round buttons with their word under them */
 .rooms:not(.rooms-ghost) { position: relative; }
-.row-acts { position: absolute; z-index: 0; display: flex; align-items: center; gap: 6px; padding: 0 6px; width: 156px; }
+.row-acts { position: absolute; z-index: 0; width: 0; overflow: hidden; }
 .row-acts.right { right: 0; }
 .row-acts.left { left: 0; }
-.row-acts button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 11.5px; font-weight: 500; }
-.row-acts button i { display: grid; place-items: center; width: 100%; height: 34px; border-radius: 999px; color: #fff; font-style: normal; }
-.row-acts button i svg { width: 18px; height: 18px; }
-.row-acts .ra-unread i { background: #3a8dff; }
-.row-acts .ra-pin i { background: #34c759; }
-.row-acts .ra-mute i { background: #f0a030; }
-.row-acts .ra-del i { background: #ff3b30; }
+/* the two buttons keep their size and stay at the screen's edge; the chat sliding away uncovers them (Alex, 21 Oct) */
+.ra-in { position: absolute; top: 0; bottom: 0; width: 156px; display: flex; gap: 6px; padding: 5px 4px; box-sizing: border-box; }
+.row-acts.right .ra-in { right: 0; }
+.row-acts.left .ra-in { left: 0; }
+.row-acts button { --c: 255, 59, 48; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; border-radius: 16px;
+  color: #fff; font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  background: linear-gradient(180deg, rgba(var(--c), .62), rgba(var(--c), .42)); border: 1px solid rgba(255, 255, 255, .4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6); backdrop-filter: blur(14px) saturate(1.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 6px 16px rgba(var(--c), .22); }
+.row-acts button:active { transform: scale(.95); }
+.row-acts button i { display: grid; place-items: center; font-style: normal; }
+.row-acts button i svg { width: 19px; height: 19px; }
+.row-acts .ra-unread { --c: 58, 141, 255; }
+.row-acts .ra-pin { --c: 52, 199, 89; }
+.row-acts .ra-mute { --c: 240, 150, 40; }
+.row-acts .ra-del { --c: 255, 59, 48; }
 .rooms .room[data-rid] { z-index: 1; }
 /* Settings > Folders: slide a folder left and Delete shows behind it (Alex, 21 Oct) */
 .fold-swipe { position: relative; overflow: hidden; }

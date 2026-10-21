@@ -33,9 +33,11 @@ async function presign(method: string, key: string, query: Record<string, string
   return (await r2.sign(new Request(u, { method }), { aws: { signQuery: true } })).url
 }
 const tag = (xml: string, name: string) => (xml.match(new RegExp(`<${name}>([^<]*)</${name}>`)) || [])[1] || ''
-const newToken = () => {
+// a file's own token is 12 characters; the link people share (the upload's) only 6, as short as it can be and still not
+// guessable (Alex, 21 Oct): roartransfer.com/<token>. 56^6 is about 3 * 10^10, and a link lives a few days.
+const newToken = (n = 12) => {
   const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
-  return Array.from(crypto.getRandomValues(new Uint8Array(12)), (n) => abc[n % abc.length]).join('')
+  return Array.from(crypto.getRandomValues(new Uint8Array(n)), (x) => abc[x % abc.length]).join('')
 }
 const safeName = (n: string) => (n || 'file').normalize('NFKD').replace(/[^\w.-]+/g, '_').slice(-80) || 'file'
 
@@ -61,7 +63,7 @@ async function handle(req: Request): Promise<Response> {
   // "Report abuse" on the download page: anyone, no account; the admins hear of it by email
   if (b.action === 'report') {
     const t = String(b.token || '')
-    if (!/^[A-Za-z0-9]{10,32}$/.test(t)) return json({ error: 'bad request' }, 400)
+    if (!/^[A-Za-z0-9]{6,32}$/.test(t)) return json({ error: 'bad request' }, 400)
     const ip = clientIp(req)
     const { count } = await sb.from('roar_transfer_reports').select('id', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', new Date(Date.now() - 864e5).toISOString())
     if ((count || 0) >= 20) return json({ ok: true })
@@ -70,7 +72,7 @@ async function handle(req: Request): Promise<Response> {
     const { data: admins } = await sb.from('roar_admins').select('user_id')
     for (const a of admins || []) {
       const { data: u } = await sb.auth.admin.getUserById(a.user_id)
-      if (u?.user?.email) await sendMail({ to: u.user.email, subject: 'RoarTransfer: a link was reported', html: `<p>A RoarTransfer link was reported: <a href="${PAGE}?t=${t}">${PAGE}?t=${t}</a></p><p>${esc(reason || '(no reason given)')}</p><p>Check it in Admin, and delete it there if it breaks the rules.</p>`, text: `A RoarTransfer link was reported: ${PAGE}?t=${t}\n\n${reason || '(no reason given)'}` })
+      if (u?.user?.email) await sendMail({ to: u.user.email, subject: 'RoarTransfer: a link was reported', html: `<p>A RoarTransfer link was reported: <a href="${PAGE}${t}">${PAGE}${t}</a></p><p>${esc(reason || '(no reason given)')}</p><p>Check it in Admin, and delete it there if it breaks the rules.</p>`, text: `A RoarTransfer link was reported: ${PAGE}${t}\n\n${reason || '(no reason given)'}` })
     }
     return json({ ok: true })
   }
@@ -147,17 +149,23 @@ async function handle(req: Request): Promise<Response> {
       if ((await guestLeft()) <= 0) return json({ error: 'limit', limit: true }, 429)
       b.recipients = []; b.notify = false
     }
-    const token = newToken()
+    let token = newToken(6)
     const expires = rows.reduce((a: string, r: any) => (r.expires_at > a ? r.expires_at : a), rows[0].expires_at)
     const title = String(b.title || '').trim().slice(0, 120)
     const message = String(b.message || '').trim().slice(0, 2000)
     const recipients = [...new Set((Array.isArray(b.recipients) ? b.recipients : []).map((e: unknown) => String(e).trim().toLowerCase())
       .filter((e: string) => /^[^\s@<>,;]+@[^\s@<>,;]+\.[a-z]{2,}$/i.test(e)))].slice(0, 20) as string[]
     const password = String(b.password || '').slice(0, 100)
-    const { error } = await sb.from('roar_transfer_bundles').insert({
-      token, tokens, created_by: uid || null, ip: guest ? ip : null, expires_at: expires, title, message, recipients,
-      password_hash: password ? await sha(`${token}:${password}`) : null, notify: !!b.notify,
-    })
+    // a short token can already be taken: try another
+    let error: { message: string, code?: string } | null = null
+    for (let i = 0; i < 4; i++) {
+      if (i) token = newToken(6)
+      ;({ error } = await sb.from('roar_transfer_bundles').insert({
+        token, tokens, created_by: uid || null, ip: guest ? ip : null, expires_at: expires, title, message, recipients,
+        password_hash: password ? await sha(`${token}:${password}`) : null, notify: !!b.notify,
+      }))
+      if (!error || error.code !== '23505') break
+    }
     if (error) return json({ error: error.message }, 500)
     // the email to the people it is for: who sent it, the title, the message, the files, until when, Download
     let mailed = 0
@@ -166,7 +174,7 @@ async function handle(req: Request): Promise<Response> {
       const { data: files } = await sb.from('roar_transfer_links').select('token, name, size').in('token', tokens)
       const ordered = (files || []).sort((a: any, z: any) => tokens.indexOf(a.token) - tokens.indexOf(z.token))
       const from = await senderName(uid as string, who?.user?.email || '')
-      const mail = invite({ from, title, message, files: ordered, expires, url: PAGE + '?t=' + token, locked: !!password })
+      const mail = invite({ from, title, message, files: ordered, expires, url: PAGE + token, locked: !!password })
       for (const to of recipients) {
         const r = await sendMail({ to, subject: mail.subject, html: mail.html, text: mail.text, reply_to: who?.user?.email || undefined })
         if (r === true) mailed++; else mailErrors.push(`${to}: ${r}`)

@@ -295,3 +295,7 @@ create table if not exists public.roar_transfer_reports (
 );
 alter table public.roar_transfer_reports enable row level security;
 revoke all on public.roar_transfer_reports from anon, authenticated;
+
+-- the shared link as short as it can be (Alex, 21 Oct): roartransfer.com/<6 characters>
+alter table public.roar_transfer_bundles drop constraint if exists roar_transfer_bundles_token_check;
+alter table public.roar_transfer_bundles add constraint roar_transfer_bundles_token_check check (token ~ '^[A-Za-z0-9]{6,32}$');

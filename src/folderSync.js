@@ -97,7 +97,7 @@ export function useFolderSync(uid) {
     const changed = () => { clearTimeout(timer); timer = setTimeout(push, 800) }
     const back = () => { if (document.visibilityState === 'visible') pull() }
     pull()
-    const tick = setInterval(() => { if (document.visibilityState === 'visible') pull() }, 30000) // two devices open at once stay in step
+    const tick = setInterval(() => { if (document.visibilityState === 'visible') pull() }, 120000) // two devices open at once stay in step (coming back to the app pulls at once too)
     window.addEventListener('roarme-local', changed)
     window.addEventListener('roarme-prefs', changed)
     document.addEventListener('visibilitychange', back)

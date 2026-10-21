@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
-import { Avatar, CropModal, I, Modal, OnTop } from './ui.jsx'
+import { Avatar, CropModal, I, Modal, OnTop, useSeen } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { usePrefs } from './prefs.js'
 import { CopyLink } from './transfer.jsx'
@@ -363,12 +363,13 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
 }
 
 function Thumb({ m, onClick }) {
+  const [ref, seen] = useSeen()
   const [url, setUrl] = useState('')
   const [dur, setDur] = useState(0)
-  useEffect(() => { let alive = true; fileLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path])
+  useEffect(() => { if (!seen) return undefined; let alive = true; fileLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path, seen])
   const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   return (
-    <button type="button" className="pf-thumb" onClick={onClick}>
+    <button ref={ref} type="button" className="pf-thumb" onClick={onClick}>
       {url && (isVideo(m) ? <video src={url} muted preload="metadata" onLoadedMetadata={(e) => setDur(e.currentTarget.duration || 0)} /> : <img src={url} alt="" loading="lazy" />)}
       {isVideo(m) && dur > 0 && <span className="pf-dur">{mmss(dur)}</span>}
     </button>

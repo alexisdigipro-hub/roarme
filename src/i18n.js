@@ -182,13 +182,25 @@ function fixAttrs(el) {
     if (v) { const n = tr(v); if (n !== v) el.setAttribute(a, n) }
   })
 }
+// one pass over what came in: a part never translated (a message, a name) is passed over whole, so opening a chat
+// no longer checks every word of every message against the list above (Alex, 21 Oct: RoarMe lighter)
+const NEVER = `${SKIP}, script, style, svg`
+const prune = { acceptNode: (n) => (n.nodeType === 1 && n.matches(NEVER) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) }
+function setAttrs(el) {
+  for (const a of ATTRS) {
+    const v = el.getAttribute(a)
+    if (v) { const n = tr(v); if (n !== v) el.setAttribute(a, n) }
+  }
+}
 function walk(root) {
   if (root.nodeType === 3) { fixText(root); return }
-  if (root.nodeType !== 1) return
-  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
-  for (let n = w.nextNode(); n; n = w.nextNode()) fixText(n)
-  fixAttrs(root)
-  root.querySelectorAll('[placeholder], [title], [aria-label]').forEach(fixAttrs)
+  if (root.nodeType !== 1 || root.closest(NEVER)) return
+  setAttrs(root)
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, prune)
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    if (n.nodeType === 1) setAttrs(n)
+    else { const v = n.nodeValue; const t = tr(v); if (t !== v) n.nodeValue = t }
+  }
 }
 
 export function startI18n() {

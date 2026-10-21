@@ -14,7 +14,7 @@ export function useInboxCount(on) {
     let alive = true
     const load = () => supabase.rpc('roar_official_inbox').then(({ data }) => { if (alive) setN((data || []).reduce((a, x) => a + (x.unread || 0), 0)) })
     load()
-    const id = setInterval(load, 60e3)
+    const id = setInterval(() => { if (!document.hidden) load() }, 60e3)
     return () => { alive = false; clearInterval(id) }
   }, [on])
   return n
@@ -39,7 +39,7 @@ export function RoarMeInbox({ onClose }) {
   useEffect(() => { loadList() }, [loadList])
   // what comes in while it is open
   useEffect(() => {
-    const id = setInterval(() => { loadList(); if (room) loadRoom(room.room_id) }, 15e3)
+    const id = setInterval(() => { if (document.hidden) return; loadList(); if (room) loadRoom(room.room_id) }, 15e3)
     return () => clearInterval(id)
   }, [room, loadList, loadRoom])
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [msgs])

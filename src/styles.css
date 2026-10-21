@@ -4068,3 +4068,16 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
   html[data-theme='stone'] .av { box-shadow: 0 2px 4px rgba(0, 0, 0, .14); }
   .pic-img { filter: none; transform: none; transition: opacity .35s var(--ease); }
 }
+
+/* the Media library can hold hundreds of tiles (Alex, 21 Oct: RoarMe lighter): a tile off screen is not drawn, only
+   the first rows pop in, and on a phone the hidden "go to chat" button (shown on hover only) keeps no glass blur */
+.lib-tile { content-visibility: auto; contain-intrinsic-size: auto 120px; }
+.lib-tile:nth-child(n+25) { animation: none; }
+@media (max-width: 760px) {
+  .lib-go { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (max-width: 760px) {
+  /* the messages scroll up and down by themselves; a sideways pull (swipe to reply) is the app's, so the scroll never
+     waits for the app's code on each finger move (Alex, 21 Oct: RoarMe lighter) */
+  .room-view .scroll { touch-action: pan-y; }
+}

@@ -2321,7 +2321,7 @@ function Room({ room, me, people, title, other, official = false, listen, onRead
       )}
 
       <div className={`scroll${picked ? ' picking' : ''}`} ref={scrollRef} onScroll={onScroll}>
-        {!shownMsgs.length && <p className="empty">{room.kind === 'group' ? 'No messages yet.' : `No messages with ${title} yet. Say hi.`}</p>}
+        {!shownMsgs.length && <p className="empty">No messages yet.</p>}
         {msgList}
         {outbox.map((o) => {
           const c = 2 * Math.PI * 19

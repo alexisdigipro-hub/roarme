@@ -39,6 +39,14 @@ document.addEventListener('scroll', (e) => {
   scrollTimers.set(el, setTimeout(() => el.classList.remove('is-scrolling'), 900))
 }, true)
 
+// on a phone, while the keyboard is up (a text field has the focus), the room kept for the home bar goes, so the
+// writing box sits right on the keyboard with no gap (Alex, 21 Oct; styles.css html.kb)
+if (window.matchMedia?.('(pointer: coarse)').matches) {
+  const typing = (el) => el?.matches?.('textarea, [contenteditable="true"], input:not([type]), input[type=text], input[type=search], input[type=email], input[type=password], input[type=url], input[type=tel], input[type=number]')
+  document.addEventListener('focusin', (e) => { if (typing(e.target)) document.documentElement.classList.add('kb') })
+  document.addEventListener('focusout', () => setTimeout(() => { if (!typing(document.activeElement)) document.documentElement.classList.remove('kb') }, 60))
+}
+
 // a RoarTransfer download link (?t=…) opens its own page, no account needed
 const params = new window.URLSearchParams(window.location.search)
 const transferToken = params.get('t')

@@ -4029,3 +4029,10 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 .rt-sender { width: 100%; text-align: left; color: inherit; font: inherit; cursor: pointer; }
 .rt-sender.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--glass)); }
 @media (max-width: 760px) { .rt-stats { grid-template-columns: repeat(2, 1fr); } }
+
+/* the keyboard is up on a phone (main.jsx html.kb; Alex, 21 Oct): no gap between it and the writing box. The bottom
+   inset is for the home bar, which the keyboard covers anyway */
+@media (max-width: 760px) {
+  html.kb .app, html.kb .app > .main, html.kb .app > .side { padding-bottom: 0 !important; }
+  html.kb:not([data-theme='aura']) .compose-wrap { padding-bottom: 6px; }
+}

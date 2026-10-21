@@ -3924,3 +3924,22 @@ html[data-theme='stone']:not([data-mode='light']) .rooms-area.bottom .tabs, html
 html[data-theme='stone'] .foot button.foot-tasks.open { color: #fff; } /* the bar's glass lens slides under it, as for the other tabs */
 .tasks-tabs.at-bottom button { white-space: nowrap; padding: 0 6px; }
 html[data-theme='stone'] .tasks-tabs.at-bottom button { font-size: 13.5px; }
+
+/* RoarMe in a phone's browser: the card in the middle of the screen that puts it on the Home Screen (src/install.jsx, Alex 21 Oct) */
+.install-back { z-index: 90; }
+.install-card { width: min(340px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 26px 20px 18px; border-radius: 28px; text-align: center;
+  background: var(--panel, rgba(20, 27, 39, .9)); border: 1px solid var(--edge); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow);
+  animation: install-pop .4s cubic-bezier(.2, .9, .25, 1.2) both; }
+@keyframes install-pop { from { opacity: 0; transform: scale(.9); } }
+.install-card img { width: 64px; height: 64px; border-radius: 30%; box-shadow: 0 8px 22px rgba(0, 0, 0, .25); }
+.install-card h2 { margin: 2px 0 0; font-size: 21px; font-weight: 800; letter-spacing: -.02em; }
+.install-card p { margin: 0 0 4px; font-size: 14.5px; line-height: 1.45; color: var(--muted); }
+.install-card .btn { width: 100%; height: 48px; }
+.install-later { background: none; border-color: transparent; color: var(--muted); }
+.install-steps { width: 100%; margin: 2px 0 6px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.install-steps li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 18px; background: var(--glass); font-size: 14.5px; line-height: 1.35; }
+.install-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--glass-2); color: var(--accent); }
+html[data-theme='stone'] .install-card { background: #f4f4f5; }
+html[data-theme='stone'] .install-ico { color: #2a2a2c; }
+html[data-theme='stone'] .install-card .btn-main { background: #2a2a2c; color: #fff; }
+html[data-theme] .install-card .install-later, html .install-card .install-later { border: 0; background: none; box-shadow: none; color: var(--muted); }

@@ -1066,4 +1066,8 @@ export const EL = {
   'Note': 'Σημείωση',
   'Where you met, what they do, anything': 'Πού γνωριστήκατε, τι κάνει, οτιδήποτε',
   'Only you see these. They keep their own name and photo for everyone else.': 'Αυτά τα βλέπεις μόνο εσύ. Για όλους τους άλλους μένουν το δικό του/της όνομα και φωτογραφία.',
+  'Get the RoarMe App': 'Κατέβασε την εφαρμογή RoarMe',
+  'Add RoarMe to your Home Screen: it opens full screen, like an app, with notifications when it is closed.': 'Πρόσθεσε το RoarMe στην οθόνη Αφετηρίας: ανοίγει σε πλήρη οθόνη, σαν εφαρμογή, με ειδοποιήσεις όταν είναι κλειστό.',
+  'Install App': 'Εγκατάσταση',
+  'Not Now': 'Όχι τώρα',
 }

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import { TransferPage } from './transfer.jsx'
 import { LegalPage } from './legal.jsx'
+import { InstallPrompt } from './install.jsx'
 import { takeInvite } from './invite.jsx'
 import { takeEmbed, takeHubLink, takeHubSignin } from './hubLink.jsx'
 import './styles.css'
@@ -54,6 +55,6 @@ if (!transferToken && !legalDoc) takeEmbed()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {transferToken ? <TransferPage token={transferToken} /> : legalDoc ? <LegalPage doc={legalDoc} /> : <App />}
+    {transferToken ? <TransferPage token={transferToken} /> : legalDoc ? <LegalPage doc={legalDoc} /> : <><App /><InstallPrompt /></>}
   </StrictMode>,
 )

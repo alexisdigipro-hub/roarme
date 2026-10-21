@@ -13,7 +13,8 @@ const DAYS = 3
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
-const account = Deno.env.get('R2_ACCOUNT_ID') || ''
+// the account id alone, even when the secret holds the whole S3 address (https://<id>.r2.cloudflarestorage.com)
+const account = ((Deno.env.get('R2_ACCOUNT_ID') || '').match(/[0-9a-f]{32}/i) || [''])[0]
 const r2 = new AwsClient({ accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID') || '', secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY') || '', service: 's3', region: 'auto' })
 const base = `https://${account}.r2.cloudflarestorage.com/${BUCKET}`
 const at = (key: string) => `${base}/${key.split('/').map(encodeURIComponent).join('/')}`
@@ -30,10 +31,22 @@ const safeName = (n: string) => (n || 'file').normalize('NFKD').replace(/[^\w.-]
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  // anything unexpected still answers with CORS, so the page shows the reason instead of "Load failed"
+  try { return await handle(req) } catch (e) {
+    console.error(e)
+    return json({ error: 'RoarTransfer could not reach its storage. Try again in a minute.' }, 502)
+  }
+})
+
+async function handle(req: Request): Promise<Response> {
   let b: Record<string, any> = {}
   try { b = await req.json() } catch { return json({ error: 'bad request' }, 400) }
   // whether the keys are in place, without showing them
-  if (b.action === 'health') return json({ ok: !!(account && Deno.env.get('R2_ACCESS_KEY_ID') && Deno.env.get('R2_SECRET_ACCESS_KEY')) })
+  if (b.action === 'health') {
+    let reach = 0
+    if (account) { try { reach = (await r2.fetch(`${base}?max-keys=1`)).status } catch { reach = -1 } }
+    return json({ ok: !!(account && Deno.env.get('R2_ACCESS_KEY_ID') && Deno.env.get('R2_SECRET_ACCESS_KEY')), account: !!account, reach })
+  }
 
   const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
   const { data: who } = jwt ? await sb.auth.getUser(jwt) : { data: { user: null } }
@@ -96,4 +109,4 @@ Deno.serve(async (req) => {
   }
 
   return json({ error: 'unknown action' }, 400)
-})
+}

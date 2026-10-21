@@ -507,6 +507,12 @@ app (chat list, chat head, messages, calls); under the name the profile shows "T
 profile's card. Kept in `roar_contacts` (RLS: only the owner reads or writes a row; the `note` column is new,
 `supabase/contacts.sql`, run by Claude 19 Oct), so it is the same on every device.
 
+## Each chat in one folder (21 Oct)
+Alex: a setting so a chat shows in one folder only. Settings > Chat Folders > **Each Chat in One Folder** (`folderAlone`,
+off by default). On: an unread chat (or one marked unread) sits only in Unread; otherwise a chat in a folder of one's own
+only there (the first such folder in the tabs' order); otherwise a group only in Groups; All keeps the rest; Archived
+stays Archived. Hidden folders are skipped. Read a chat in Unread and it goes back to its own folder. (Chat.jsx `homeOf`.)
+
 ## Chat list: bigger faces, no times (21 Oct)
 Alex: the profile pictures in the chat list a little bigger (48 px, 54 with previews), no date or time on the right, a
 green dot on the picture only for someone online right now, and every profile picture as a soft square (30% corners)

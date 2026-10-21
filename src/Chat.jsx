@@ -453,7 +453,7 @@ export default function Chat({ me, setMe }) {
   const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true }))]
     .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
   useEffect(() => { if (folder !== 'all' && hiddenF.includes(folder)) setFolder('all') }, [hiddenF.join(), folder])
-  const inFolder = (r, f) => {
+  const fits = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
     // a chat marked as unread by hand belongs here too (Alex, 21 Oct), even when its last message is one's own
@@ -468,12 +468,25 @@ export default function Chat({ me, setMe }) {
     }
     return true
   }
+  /* Each chat in one folder only (Settings > Chat Folders, Alex, 21 Oct): an unread chat sits only in Unread, a chat in a
+     folder of one's own only there (the first such folder in the tabs' order), a group otherwise only in Groups, and All
+     keeps what is left. Archived stays Archived. Off, a chat shows in every folder it fits, as before. */
+  const homeOf = (r) => {
+    if (r.archived) return 'archived'
+    const has = (id) => allFolders.some((f) => f.id === id)
+    if (has('unread') && fits(r, 'unread')) return 'unread'
+    const own = allFolders.find((f) => f.custom && fits(r, f.id))
+    if (own) return own.id
+    if (has('groups') && fits(r, 'groups')) return 'groups'
+    return 'all'
+  }
+  const inFolder = (r, f) => (prefs.folderAlone ? homeOf(r) === f : fits(r, f))
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase()
     const list = visible.filter((r) => (t ? titleOf(r).toLowerCase().includes(t) || (otherOf(r)?.username || '').includes(t.replace(/^@/, '')) : inFolder(r, folder)))
     // pinned chats first, in the order they were pinned
     return [...list.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...list.filter((r) => !pins.includes(r.room_id))]
-  }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra, marked])
+  }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra, marked, prefs.folderAlone, prefs.folderOrder, hiddenF.join()]) // eslint-disable-line react-hooks/exhaustive-deps
   // the chats of another folder, for the page that slides in beside the list while it is dragged
   const listFor = (fid) => {
     const list = visible.filter((r) => inFolder(r, fid))

@@ -456,6 +456,8 @@ export const EL = {
   'Show': 'Εμφάνιση',
   'Show Calls Tab': 'Εμφάνιση καρτέλας Κλήσεις',
   'Show Folder Tags': 'Εμφάνιση ετικετών φακέλων',
+  'Each Chat in One Folder': 'Κάθε συζήτηση σε έναν φάκελο',
+  'An unread chat shows only in Unread, a chat you put in a folder only there, a group only in Groups; All keeps the rest': 'Μια αδιάβαστη συζήτηση φαίνεται μόνο στα Αδιάβαστα, μια συζήτηση που έβαλες σε φάκελο μόνο εκεί, μια ομάδα μόνο στις Ομάδες· τα Όλα κρατούν τις υπόλοιπες',
   'Show Icon in Menu Bar': 'Εμφάνιση εικονιδίου στη γραμμή μενού',
   'Show My Devices': 'Εμφάνιση των συσκευών μου',
   'Show User IDs in Profile': 'Εμφάνιση ID χρήστη στο προφίλ',

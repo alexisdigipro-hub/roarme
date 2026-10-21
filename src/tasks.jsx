@@ -4,7 +4,6 @@ import { errText, nameOf, supabase } from './lib.js'
 import { chime } from './prefs.js'
 import { locale, tr } from './i18n.js'
 import { TasksCalendar } from './calendar.jsx'
-import { hubLinkFor, useHubWork } from './hubLink.jsx'
 import { RemindersList } from './reminders.jsx'
 
 // links in a task's notes can be clicked: web pages, and roarmail://message/… that a task made in RoarMail carries
@@ -85,11 +84,9 @@ const byDue = (a, b) => (a.due || '9999') .localeCompare(b.due || '9999') || (b.
 
 /* the panel: For me (with what waits for an answer on top), Given, Done */
 export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, rooms = [], titleOf = () => '', onOpenChat = () => {} }) {
-  const [tab, setTab] = useState(() => { try { return localStorage.getItem('roarme-tasks-tab') || 'all' } catch { return 'all' } })
+  // the THEMADLIONS tab left Tasks (Alex, 21 Oct: "no point"); a device that was on it opens on All
+  const [tab, setTab] = useState(() => { try { const t = localStorage.getItem('roarme-tasks-tab'); return t && t !== 'hub' ? t : 'all' } catch { return 'all' } })
   const pickTab = (v) => { setTab(v); try { localStorage.setItem('roarme-tasks-tab', v) } catch { /* private window */ } }
-  // the team's hub tasks and calendar, shown only (Alex, 20 Oct: phase 6; hubLink.jsx)
-  const hub = useHubWork()
-  const hubTab = hub.linked && hub.canTasks
   // on a phone a swipe left or right across the list goes to the next or previous tab, as with the chat folders (Alex, 19 Oct)
   const swipe = useRef(null)
   const onSwipe = {
@@ -100,7 +97,7 @@ export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, 
       if (!st || !window.matchMedia('(max-width: 760px)').matches) return
       const dx = e.changedTouches[0].clientX - st.x, dy = e.changedTouches[0].clientY - st.y
       if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
-      const order = ['all', 'mine', 'given', 'done', 'reminders', ...(hubTab ? ['hub'] : [])]
+      const order = ['all', 'mine', 'given', 'done', 'reminders']
       const next = order[order.indexOf(tab) + (dx < 0 ? 1 : -1)]
       if (next) pickTab(next)
       else onEdge?.(dx < 0 ? 1 : -1) // past All or Done: the screen beside Tasks in the bar at the foot
@@ -262,7 +259,6 @@ export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, 
         <button type="button" className={tab === 'given' ? 'on' : ''} onClick={() => pickTab('given')}>{tr('Given')}</button>
         <button type="button" className={tab === 'done' ? 'on' : ''} onClick={() => pickTab('done')}>{tr('Done')}</button>
         <button type="button" className={tab === 'reminders' ? 'on' : ''} onClick={() => pickTab('reminders')}>{tr('Reminders')}</button>
-        {hubTab && <button type="button" className={tab === 'hub' ? 'on' : ''} onClick={() => pickTab('hub')}>THEMADLIONS{hub.tasks.filter((t) => t.status !== 'done').length > 0 && <small>{hub.tasks.filter((t) => t.status !== 'done').length}</small>}</button>}
       </Lens>
       <div className="tasks-list" {...onSwipe}>
         {tab === 'all' && (
@@ -288,24 +284,10 @@ export function TasksPanel({ me, people, contacts, kit, onClose, onEdge, toast, 
         {tab === 'given' && (given.length ? given.map(row) : <Empty text="Tasks you give to others show here, with their answer." onNew={() => setEdit(true)} />)}
         {tab === 'done' && (done.length ? done.map(row) : <p className="tasks-empty muted">{tr('Finished tasks show here.')}</p>)}
         {tab === 'reminders' && <RemindersList me={me} rooms={rooms} titleOf={titleOf} onOpen={onOpenChat} toast={toast} />}
-        {tab === 'hub' && (hubTab ? (
-          <>
-            <p className="tasks-label">{tr('From THEMADLIONS Hub · tap to open it there')}</p>
-            {hub.tasks.map((t) => (
-              <a key={`${t.projectId || 'todo'}-${t.id}`} className={`task hub-task${t.status === 'done' ? ' done' : ''}`} href={hubLinkFor({ kind: 'task', projectId: t.projectId })} target="_blank" rel="noreferrer">
-                <span className="task-main">
-                  <b>{t.priority === 'high' && <i className="task-hi" title="High priority">!</i>}{t.title || tr('Task')}</b>
-                  <span className="task-meta"><span>{t.project || tr('To-do')}</span>{t.due && <span className="task-due">{I.calendar}{new Date(`${t.due.slice(0, 10)}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })}</span>}{t.status === 'done' && <span>{tr('Done')}</span>}</span>
-                </span>
-              </a>
-            ))}
-            {!hub.tasks.length && <p className="tasks-empty muted">{tr('No hub tasks for you.')}</p>}
-          </>
-        ) : <p className="tasks-empty muted">{tr('No hub tasks for you.')}</p>)}
       </div>
       {cal && (
         <div className="tasks-cal">
-          <TasksCalendar me={me} tasks={tasks} rooms={rooms} titleOf={titleOf} onTask={setView} onOpenChat={onOpenChat} hubTasks={hub.canTasks ? hub.tasks : []} hubEvents={hub.canCalendar ? hub.events : []} />
+          <TasksCalendar me={me} tasks={tasks} rooms={rooms} titleOf={titleOf} onTask={setView} onOpenChat={onOpenChat} />
         </div>
       )}
 

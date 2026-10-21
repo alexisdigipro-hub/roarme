@@ -1036,6 +1036,8 @@ export const EL = {
   'Nobody is blocked': 'Δεν έχεις μπλοκάρει κανέναν',
   'Signs you out everywhere except here': 'Σε αποσυνδέει παντού εκτός από εδώ',
   'Sign out old devices by itself': 'Αυτόματη αποσύνδεση παλιών συσκευών',
+  'Stone is RoarMe\'s theme: soft grey stone with graphite buttons.': 'Το Stone είναι το θέμα του RoarMe: απαλή γκρι πέτρα με κουμπιά γραφίτη.',
+  'Stone is RoarMe\'s theme: soft grey stone with graphite buttons. Only you see the others, to work on them.': 'Το Stone είναι το θέμα του RoarMe: απαλή γκρι πέτρα με κουμπιά γραφίτη. Τα υπόλοιπα τα βλέπεις μόνο εσύ, για να τα δουλέψεις.',
   'Simba is the main one: graphite glass with a glowing accent. Pumba: slate with a neon edge and a coral glow.': 'Το Simba είναι το κύριο: γραφίτης και γυαλί με φωτεινό χρώμα έμφασης. Pumba: σχιστόλιθος με νέον περίγραμμα και κοραλί λάμψη.',
   'Simba is the main one: graphite glass with a glowing accent. Pumba: slate with a neon edge and a coral glow. Only you see the others, to work on them.': 'Το Simba είναι το κύριο: γραφίτης και γυαλί με φωτεινό χρώμα έμφασης. Pumba: σχιστόλιθος με νέον περίγραμμα και κοραλί λάμψη. Τα υπόλοιπα τα βλέπεις μόνο εσύ, για να τα δουλέψεις.',
   'Day and Night': 'Μέρα και νύχτα',

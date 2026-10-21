@@ -753,7 +753,7 @@ function Appearance({ p, toast, me, setMe }) {
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
   return (
     <>
-      <Box title="Theme" note={`Simba is the main one: graphite glass with a glowing accent. Pumba: slate with a neon edge and a coral glow.${lab ? ' Only you see the others, to work on them.' : ''}`}>
+      <Box title="Theme" note={`Stone is RoarMe's theme: soft grey stone with graphite buttons.${lab ? ' Only you see the others, to work on them.' : ''}`}>
         <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={p.background} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 15.5}px` }}>
           <span className="pv mine">Good morning! 👋</span>
           <span className="pv"><i>Good morning! 👋</i>Do you know what time it is?</span>

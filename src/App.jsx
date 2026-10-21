@@ -64,12 +64,12 @@ export default function App() {
     if (!uid) { setBlocked(false); return }
     supabase.rpc('roar_am_blocked').then(({ data }) => setBlocked(data === true))
   }, [uid])
-  // a theme still in Alex's lab shows only for him; anyone else sees Simba
+  // a theme still in Alex's lab shows only for him; anyone else sees Stone
   useEffect(() => {
     const t = themeFor(theme, profile)
     document.documentElement.dataset.theme = t
-    // once signed in, someone left on a lab theme moves to Simba for good
-    if (profile && t !== (theme || 'ember')) setPrefs({ theme: t })
+    // once signed in, someone left on a lab theme moves to Stone for good
+    if (profile && t !== (theme || 'stone')) setPrefs({ theme: t })
   }, [theme, profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (session === undefined || (uid && profile === undefined)) return <div className="splash"><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" /></div>

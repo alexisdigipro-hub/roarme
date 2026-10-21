@@ -218,7 +218,7 @@ export const Wordmark = ({ by = false }) => (
 )
 
 /* Adjust a new picture before it is saved (Alex, 16 Oct): drag to place it, slide or scroll to zoom,
-   inside the round frame it will be shown in. Gives back a square JPEG, 640 px. */
+   inside the round frame it will be shown in. Gives back a square JPEG, 400 px (Alex, 21 Oct: RoarMe lighter; the biggest circle it fills is 132 px, so 400 is sharp on any phone). */
 const FRAME = 280
 export function CropModal({ file, title = 'Adjust photo', onDone, onClose }) {
   const [img, setImg] = useState(null)
@@ -246,7 +246,7 @@ export function CropModal({ file, title = 'Adjust photo', onDone, onClose }) {
   const up = () => { drag.current = null }
   const save = () => {
     if (!img) return
-    const O = 640
+    const O = 400
     const r = O / FRAME
     const c = document.createElement('canvas')
     c.width = O

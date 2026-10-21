@@ -3943,3 +3943,22 @@ html[data-theme='stone'] .install-card { background: #f4f4f5; }
 html[data-theme='stone'] .install-ico { color: #2a2a2c; }
 html[data-theme='stone'] .install-card .btn-main { background: #2a2a2c; color: #fff; }
 html[data-theme] .install-card .install-later, html .install-card .install-later { border: 0; background: none; box-shadow: none; color: var(--muted); }
+
+/* the chat list on a phone in Telegram's measures (Alex, 21 Oct, from his own Telegram on the iPhone): a row of 56,
+   the face 49 at 16 from the screen's edge, 11 to the text, the name 13 and the last message 12 on up to two lines
+   right under it, the hairline where the name starts. Contacts and Calls take the same rows. */
+@media (max-width: 760px) {
+  html[data-theme] .rooms { gap: 0; }
+  html[data-theme] :is(.rooms, .calls-list) .room { min-height: 56px; padding: 2.5px 4px; gap: 11px; align-items: flex-start; }
+  html[data-theme] :is(.rooms, .calls-list) .room .av { flex: none; width: 49px !important; height: 49px !important; font-size: 18px !important; }
+  html[data-theme] :is(.rooms, .calls-list) .room .room-main { gap: 0; padding-top: 3px; }
+  html[data-theme] :is(.rooms, .calls-list) .room .room-top strong { font-size: 13px; line-height: 17px; font-weight: 500; }
+  html[data-theme] :is(.rooms, .calls-list) .room .room-prev { font-size: 12px; line-height: 15px; }
+  html[data-theme] .rooms:not(.contacts-list) .room .room-prev { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+  html:not([data-font]) :is(.rooms, .calls-list) .room :is(.room-top strong, .room-prev) { font-family: -apple-system, 'SF Pro Text', Inter, system-ui, sans-serif; }
+  html[data-theme] .rooms.no-prev .room { align-items: center; }
+  html[data-theme] .rooms.no-prev .room .room-main { padding-top: 0; }
+  html[data-theme] .rooms .room + .room::before { top: -0.5px; left: 64px; right: 4px; }
+  html[data-theme] .calls-list .call-row + .call-row::before { top: -0.5px; left: 64px; right: 4px; }
+  html[data-theme] :is(.contacts-list, .calls-list .call-row) .room { padding-top: 2.5px; padding-bottom: 2.5px; }
+}

@@ -4081,3 +4081,6 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
      waits for the app's code on each finger move (Alex, 21 Oct: RoarMe lighter) */
   .room-view .scroll { touch-action: pan-y; }
 }
+
+/* the expiry on the download page (Alex, 21 Oct: "not yellow, I can't read it"): the card's own text colour on soft glass */
+.rt-card .rt-facts .tr-exp, html[data-mode] .rt-card .rt-facts .tr-exp { color: var(--text); background: rgba(127, 127, 127, .16); border-color: rgba(127, 127, 127, .35); }

@@ -72,7 +72,7 @@ async function handle(req: Request): Promise<Response> {
     const { data: admins } = await sb.from('roar_admins').select('user_id')
     for (const a of admins || []) {
       const { data: u } = await sb.auth.admin.getUserById(a.user_id)
-      if (u?.user?.email) await sendMail({ to: u.user.email, subject: 'RoarTransfer: a link was reported', html: `<p>A RoarTransfer link was reported: <a href="${PAGE}${t}">${PAGE}${t}</a></p><p>${esc(reason || '(no reason given)')}</p><p>Check it in Admin, and delete it there if it breaks the rules.</p>`, text: `A RoarTransfer link was reported: ${PAGE}${t}\n\n${reason || '(no reason given)'}` })
+      if (u?.user?.email) await sendMail({ to: u.user.email, subject: 'RoarTransfer: a link was reported', html: frame(`<tr><td style="color:#ff8f86;font-size:13px;font-weight:700;padding-bottom:8px">A link was reported</td></tr><tr><td style="color:#ffffff;font-size:18px;font-weight:700;padding-bottom:14px;word-break:break-all">${PAGE}${t}</td></tr><tr><td style="padding-bottom:22px"><div style="color:#d9dde2;font-size:14px;line-height:1.55;padding:14px 18px;background:rgba(255,255,255,.06);border-radius:18px;white-space:pre-wrap">${esc(reason || '(no reason given)')}</div></td></tr><tr><td align="center" style="padding-bottom:10px">${button(PAGE + t, 'Open it', '#ffffff', '#111317')}</td></tr><tr><td align="center" style="color:#8b929b;font-size:12px">Check it in Admin, and delete it there if it breaks the rules.</td></tr>`), text: `A RoarTransfer link was reported: ${PAGE}${t}\n\n${reason || '(no reason given)'}` })
     }
     return json({ ok: true })
   }
@@ -227,27 +227,42 @@ async function senderName(uid: string, email: string) {
 const esc = (s: string) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c])
 const fmtSize = (n: number) => (n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' KB')
 const fmtDate = (iso: string) => new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Athens' })
+// the look of every RoarTransfer email (Alex, 21 Oct): white page, one dark glassy card, the ROARTRANSFER wordmark
+// (ROAR thin, TRANSFER bold, as on the site), little else
+const FONT = "Jost,Futura,'Trebuchet MS',Helvetica,Arial,sans-serif"
+const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+function frame(rows: string) {
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;800&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:${SANS}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="background:#ffffff;padding:40px 14px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#15171b" style="max-width:500px;background:#15171b;background-image:linear-gradient(155deg,#2a2d33 0%,#15171b 45%,#0d0e11 100%);border:1px solid #2c2f35;border-radius:28px;box-shadow:0 24px 60px rgba(15,17,21,.22)">
+<tr><td style="padding:34px 32px 30px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td style="padding-bottom:30px;font-family:${FONT};font-size:21px;letter-spacing:.05em;color:#ffffff;line-height:1"><span style="font-weight:200">ROAR</span><span style="font-weight:800">TRANSFER</span></td></tr>
+${rows}
+</table></td></tr></table>
+<p style="margin:22px 0 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#a3a8b0">Powered by <a href="https://www.themadlions.com" style="color:#5f6570;text-decoration:none;font-weight:600">The Mad Lions</a></p>
+</td></tr></table></body></html>`
+}
+const button = (href: string, label: string, bg = '#d40000', fg = '#ffffff') =>
+  `<a href="${href}" style="display:inline-block;background:${bg};color:${fg};text-decoration:none;font-weight:700;font-size:15px;padding:14px 34px;border-radius:999px">${label}</a>`
 function invite(v: { from: string, title: string, message: string, files: any[], expires: string, url: string, locked: boolean }) {
   const n = v.files.length
   const total = v.files.reduce((a, f) => a + Number(f.size || 0), 0)
   const what = n === 1 ? v.files[0].name : `${n} files`
   const subject = v.title ? `${v.from} sent you ${v.title}` : `${v.from} sent you ${what} with RoarTransfer`
-  const list = v.files.slice(0, 8).map((f) => `<tr><td style="padding:8px 0;border-top:1px solid #2a2e35;color:#eef0f3;font-size:14px">${esc(f.name)}</td><td style="padding:8px 0;border-top:1px solid #2a2e35;color:#9aa3ad;font-size:12px;text-align:right;white-space:nowrap">${fmtSize(Number(f.size || 0))}</td></tr>`).join('')
-    + (n > 8 ? `<tr><td colspan="2" style="padding:8px 0;border-top:1px solid #2a2e35;color:#9aa3ad;font-size:12px">and ${n - 8} more</td></tr>` : '')
-  const html = `<!doctype html><html><body style="margin:0;background:#101215;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#101215;padding:32px 12px"><tr><td align="center">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#1b1e23;border:1px solid #2f343c;border-radius:24px;padding:28px">
-<tr><td style="font-size:20px;font-weight:800;color:#eef0f3;padding-bottom:18px">Roar<span style="color:#ff3b2f">Transfer</span></td></tr>
-<tr><td style="color:#9aa3ad;font-size:14px;padding-bottom:6px">${esc(v.from)} sent you</td></tr>
-<tr><td style="color:#ffffff;font-size:24px;font-weight:700;line-height:1.25;padding-bottom:14px">${esc(v.title || what)}</td></tr>
-${v.message ? `<tr><td style="color:#d6dce4;font-size:15px;line-height:1.55;padding:12px 16px;background:#23272e;border-radius:14px;white-space:pre-wrap">${esc(v.message)}</td></tr><tr><td style="height:14px"></td></tr>` : ''}
-<tr><td><table width="100%" cellpadding="0" cellspacing="0">${list}</table></td></tr>
-<tr><td style="color:#9aa3ad;font-size:12px;padding-top:6px">${n === 1 ? '1 file' : n + ' files'} · ${fmtSize(total)}</td></tr>
-<tr><td align="center" style="padding:24px 0 12px"><a href="${v.url}" style="display:inline-block;background:#d40000;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:14px 34px;border-radius:999px">${n > 1 ? 'Download all files' : 'Download'}</a></td></tr>
-<tr><td align="center" style="color:#7ee2a0;font-size:13px;font-weight:700">Available until ${fmtDate(v.expires)}</td></tr>
-${v.locked ? `<tr><td align="center" style="color:#9aa3ad;font-size:12px;padding-top:8px">It is protected with a password: ask ${esc(v.from)} for it.</td></tr>` : ''}
-<tr><td align="center" style="color:#5f6873;font-size:11px;padding-top:22px">RoarTransfer · by The Mad Lions · <a href="${PAGE}" style="color:#5f6873">roartransfer.com</a></td></tr>
-</table></td></tr></table></body></html>`
-  const text = `${v.from} sent you ${v.title || what}\n\n${v.message ? v.message + '\n\n' : ''}${v.files.map((f) => `- ${f.name} (${fmtSize(Number(f.size || 0))})`).join('\n')}\n\nDownload: ${v.url}\nAvailable until ${fmtDate(v.expires)}${v.locked ? '\nIt is protected with a password: ask the sender for it.' : ''}\n\nRoarTransfer · roartransfer.com`
+  const list = v.files.slice(0, 8).map((f) => `<tr><td style="padding:11px 0;border-top:1px solid rgba(255,255,255,.08);color:#e9ebee;font-size:14px;word-break:break-all">${esc(f.name)}</td><td style="padding:11px 0 11px 12px;border-top:1px solid rgba(255,255,255,.08);color:#8b929b;font-size:12px;text-align:right;white-space:nowrap">${fmtSize(Number(f.size || 0))}</td></tr>`).join('')
+    + (n > 8 ? `<tr><td colspan="2" style="padding:11px 0;border-top:1px solid rgba(255,255,255,.08);color:#8b929b;font-size:12px">and ${n - 8} more</td></tr>` : '')
+  const html = frame(`
+<tr><td style="color:#8b929b;font-size:14px;padding-bottom:6px">${esc(v.from)} sent you</td></tr>
+<tr><td style="color:#ffffff;font-size:26px;font-weight:700;line-height:1.2;padding-bottom:20px;word-break:break-word">${esc(v.title || what)}</td></tr>
+${v.message ? `<tr><td style="padding-bottom:20px"><div style="color:#d9dde2;font-size:15px;line-height:1.55;padding:14px 18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);border-radius:18px;white-space:pre-wrap">${esc(v.message)}</div></td></tr>` : ''}
+<tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${list}</table></td></tr>
+<tr><td style="color:#8b929b;font-size:12px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">${n === 1 ? '1 file' : n + ' files'} · ${fmtSize(total)}</td></tr>
+<tr><td align="center" style="padding:30px 0 14px">${button(v.url, n > 1 ? 'Download all files' : 'Download')}</td></tr>
+<tr><td align="center"><span style="display:inline-block;padding:6px 14px;border-radius:999px;background:rgba(126,226,160,.12);color:#7ee2a0;font-size:12.5px;font-weight:700">Available until ${fmtDate(v.expires)}</span></td></tr>
+${v.locked ? `<tr><td align="center" style="color:#8b929b;font-size:12px;padding-top:12px">Protected with a password: ask ${esc(v.from)} for it.</td></tr>` : ''}`)
+  const text = `${v.from} sent you ${v.title || what}\n\n${v.message ? v.message + '\n\n' : ''}${v.files.map((f) => `- ${f.name} (${fmtSize(Number(f.size || 0))})`).join('\n')}\n\nDownload: ${v.url}\nAvailable until ${fmtDate(v.expires)}${v.locked ? '\nIt is protected with a password: ask the sender for it.' : ''}\n\nRoarTransfer · roartransfer.com · Powered by The Mad Lions`
   return { subject, html, text }
 }

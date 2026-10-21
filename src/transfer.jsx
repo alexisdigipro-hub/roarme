@@ -216,7 +216,9 @@ export function TransferPage({ token }) {
               </li>
             </ul>
             <div className="rt-facts"><span className={`tr-exp${left < 864e5 ? ' soon' : ''}`}>{I.timer}<span>Expires {untilDate(Date.now() + left)} {untilTime(Date.now() + left)}</span></span></div>
-            <a className="btn btn-main rt-go" href={info.url} download={info.name}>{I.download}<span>Download</span></a>
+            {/* one download counted for the sender's panel (Alex, 21 Oct; roar-transfer-get &dl=1) */}
+            <a className="btn btn-main rt-go" href={info.url} download={info.name}
+              onClick={() => { fetch(`${SUPABASE_URL}/functions/v1/roar-transfer-get?t=${encodeURIComponent(token)}&dl=1`, { keepalive: true }).catch(() => {}) }}>{I.download}<span>Download</span></a>
           </>
         )}
         <a className="rt-foot" href={`${window.location.origin}${window.location.pathname}`}><Wordmark by /></a>

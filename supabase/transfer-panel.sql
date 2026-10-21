@@ -1,0 +1,160 @@
+-- RoarTransfer panels (Alex, 21 Oct 2026): "for each user a panel where they see what they have sent, and for me, the
+-- admin, what everyone has sent and the overall numbers". Shown on RoarTransfer's own page (public/transfer/):
+-- My transfers for everyone, Admin only for the accounts in roar_admins (supabase/admin.sql).
+-- Each link now counts how often its page was opened and how often the file was downloaded (Edge Function
+-- roar-transfer-get, through roar_transfer_hit). A person can stop a transfer from their own folder before the 3 days.
+-- Names, sizes, types, when, how often downloaded: never what the files say. Run after transfers.sql,
+-- roarmail-transfers.sql and admin.sql. Safe to run again.
+
+alter table public.roar_transfer_links add column if not exists opens integer not null default 0;
+alter table public.roar_transfer_links add column if not exists downloads integer not null default 0;
+alter table public.roar_transfer_links add column if not exists last_download timestamptz;
+alter table public.roar_transfer_links add column if not exists stopped_at timestamptz;
+create index if not exists roar_transfer_links_path on public.roar_transfer_links (path);
+create index if not exists roar_transfer_links_by on public.roar_transfer_links (created_by, created_at desc);
+
+-- the download page was opened (dl = false) or the file downloaded (dl = true); only the Edge Function may count
+create or replace function public.roar_transfer_hit(t text, dl boolean) returns void
+language sql security definer set search_path = public as $$
+  update public.roar_transfer_links
+  set opens = opens + case when dl then 0 else 1 end,
+      downloads = downloads + case when dl then 1 else 0 end,
+      last_download = case when dl then now() else last_download end
+  where token = t and expires_at > now()
+$$;
+revoke all on function public.roar_transfer_hit(text, boolean) from public, anon, authenticated;
+grant execute on function public.roar_transfer_hit(text, boolean) to service_role;
+
+-- every transfer ever sent, one row per file: from a chat (roar_messages, bucket roar-transfers) or from a person's
+-- own folder u/<id>/ (RoarTransfer's page, RoarMail). Its links add up how often it was opened and downloaded.
+-- Kept after the 3 days (the file goes, the record stays), so the numbers cover all time. Only the functions below use it.
+create or replace function public.roar_transfer_items()
+returns table (path text, user_id uuid, name text, size bigint, type text, created_at timestamptz, expires timestamptz,
+  source text, room_kind text, room_title text, token text, links integer, opens bigint, downloads bigint,
+  last_download timestamptz, stopped boolean, deleted boolean)
+language sql stable security definer set search_path = public as $$
+  with s as (
+    select l.path, (array_agg(l.token order by l.created_at desc))[1] as token, count(*)::int as links,
+      sum(l.opens)::bigint as opens, sum(l.downloads)::bigint as downloads, max(l.last_download) as last_download,
+      bool_or(l.stopped_at is not null) as stopped, min(l.created_at) as created_at, max(l.expires_at) as expires,
+      (array_agg(l.name order by l.created_at))[1] as name, max(l.size) as size, (array_agg(l.type order by l.created_at))[1] as type,
+      (array_agg(l.created_by order by l.created_at))[1] as created_by
+    from public.roar_transfer_links l group by l.path
+  ), i as (
+    (select distinct on (m.file ->> 'path') m.file ->> 'path' as path, m.user_id, m.file ->> 'name' as name,
+      public.roar_file_size(m.file) as size, m.file ->> 'type' as type, m.created_at,
+      case when m.file ? 'expires' then (m.file ->> 'expires')::timestamptz end as expires,
+      'chat'::text as source, r.kind as room_kind, case when r.kind = 'group' then r.title end as room_title,
+      m.deleted_at is not null as deleted
+    from public.roar_messages m left join public.roar_rooms r on r.id = m.room_id
+    where m.file ->> 'bucket' = 'roar-transfers' and m.file ? 'path'
+    order by m.file ->> 'path', m.created_at)
+    union all
+    select s.path, s.created_by, s.name, s.size, s.type, s.created_at, s.expires, 'link', null, null, false
+    from s where s.path like 'u/%'
+  )
+  select i.path, i.user_id, coalesce(nullif(i.name, ''), 'file'), coalesce(i.size, 0), coalesce(i.type, ''), i.created_at,
+    coalesce(i.expires, s.expires, i.created_at + interval '3 days'),
+    i.source, i.room_kind, i.room_title, s.token, coalesce(s.links, 0), coalesce(s.opens, 0), coalesce(s.downloads, 0),
+    s.last_download, coalesce(s.stopped, false), i.deleted
+  from i left join s on s.path = i.path
+$$;
+revoke all on function public.roar_transfer_items() from public, anon, authenticated;
+
+-- My transfers: what the caller sent, newest first
+create or replace function public.roar_my_transfers()
+returns table (path text, name text, size bigint, type text, created_at timestamptz, expires timestamptz, source text,
+  room_kind text, room_title text, token text, opens bigint, downloads bigint, last_download timestamptz, stopped boolean, deleted boolean)
+language sql stable security definer set search_path = public as $$
+  select t.path, t.name, t.size, t.type, t.created_at, t.expires, t.source, t.room_kind, t.room_title, t.token,
+    t.opens, t.downloads, t.last_download, t.stopped, t.deleted
+  from public.roar_transfer_items() t
+  where auth.uid() is not null and t.user_id = auth.uid()
+  order by t.created_at desc
+  limit 1000
+$$;
+revoke all on function public.roar_my_transfers() from public, anon;
+grant execute on function public.roar_my_transfers() to authenticated;
+
+-- stop a transfer before its 3 days: its links stop working at once; the page then removes the file itself
+-- (Storage API, policy roar_transfers_delete below). Only for files in the caller's own folder, or any one for the admin;
+-- a file in a chat stays with its message.
+create or replace function public.roar_transfer_stop(p text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p is null or split_part(p, '/', 1) <> 'u' or not (public.roar_own_transfer(p) or public.roar_is_admin()) then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  update public.roar_transfer_links set stopped_at = coalesce(stopped_at, now()), expires_at = least(expires_at, now())
+  where path = p;
+end $$;
+revoke all on function public.roar_transfer_stop(text) from public, anon;
+grant execute on function public.roar_transfer_stop(text) to authenticated;
+
+drop policy if exists roar_transfers_delete on storage.objects;
+create policy roar_transfers_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'roar-transfers' and split_part(name, '/', 1) = 'u' and (public.roar_own_transfer(name) or public.roar_is_admin()));
+
+-- Admin: every transfer with who sent it, newest first, a page at a time; who = one sender only
+create or replace function public.roar_admin_transfers(before timestamptz default null, lim int default 100, who uuid default null)
+returns table (path text, user_id uuid, username text, display_name text, avatar_url text, email text, name text, size bigint,
+  type text, created_at timestamptz, expires timestamptz, source text, room_kind text, room_title text, token text,
+  opens bigint, downloads bigint, last_download timestamptz, stopped boolean, deleted boolean)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.roar_is_admin() then raise exception 'not allowed' using errcode = '42501'; end if;
+  return query
+  select t.path, t.user_id, p.username, p.display_name, p.avatar_url, u.email::text, t.name, t.size, t.type, t.created_at,
+    t.expires, t.source, t.room_kind, t.room_title, t.token, t.opens, t.downloads, t.last_download, t.stopped, t.deleted
+  from public.roar_transfer_items() t
+  left join public.roar_profiles p on p.id = t.user_id
+  left join auth.users u on u.id = t.user_id
+  where (before is null or t.created_at < before) and (who is null or t.user_id = who)
+  order by t.created_at desc
+  limit least(greatest(coalesce(lim, 100), 1), 500);
+end $$;
+revoke all on function public.roar_admin_transfers(timestamptz, int, uuid) from public, anon;
+grant execute on function public.roar_admin_transfers(timestamptz, int, uuid) to authenticated;
+
+-- Admin: the overall numbers, the last 30 days, the kinds of file and the people who send the most
+create or replace function public.roar_admin_transfer_stats() returns jsonb
+language plpgsql stable security definer set search_path = public, storage as $$
+declare res jsonb;
+begin
+  if not public.roar_is_admin() then raise exception 'not allowed' using errcode = '42501'; end if;
+  with t as (select * from public.roar_transfer_items())
+  select jsonb_build_object(
+    'transfers', (select count(*) from t),
+    'bytes', (select coalesce(sum(size), 0) from t),
+    'senders', (select count(distinct user_id) from t),
+    'from_chat', (select count(*) from t where source = 'chat'),
+    'from_link', (select count(*) from t where source = 'link'),
+    'active', (select count(*) from t where expires > now() and not stopped and not deleted),
+    'active_bytes', (select coalesce(sum(size), 0) from t where expires > now() and not stopped and not deleted),
+    'opens', (select coalesce(sum(opens), 0) from t),
+    'downloads', (select coalesce(sum(downloads), 0) from t),
+    'week', (select count(*) from t where created_at > now() - interval '7 days'),
+    'week_bytes', (select coalesce(sum(size), 0) from t where created_at > now() - interval '7 days'),
+    'biggest', (select coalesce(max(size), 0) from t),
+    'stored', (select count(*) from storage.objects o where o.bucket_id = 'roar-transfers'),
+    'stored_bytes', (select coalesce(sum((o.metadata ->> 'size')::bigint), 0) from storage.objects o where o.bucket_id = 'roar-transfers'),
+    'days', (select coalesce(jsonb_agg(jsonb_build_object('day', d.day, 'n', d.n, 'bytes', d.bytes) order by d.day), '[]'::jsonb) from (
+      select g::date as day, count(t.path) as n, coalesce(sum(t.size), 0) as bytes
+      from generate_series((now() - interval '29 days')::date, now()::date, interval '1 day') g
+      left join t on t.created_at::date = g::date
+      group by g) d),
+    'kinds', (select coalesce(jsonb_agg(jsonb_build_object('kind', k.kind, 'n', k.n, 'bytes', k.bytes)), '[]'::jsonb) from (
+      select case when type like 'video/%' then 'video' when type like 'image/%' then 'image' when type like 'audio/%' then 'audio' else 'other' end as kind,
+        count(*) as n, coalesce(sum(size), 0) as bytes
+      from t group by 1) k),
+    'top', (select coalesce(jsonb_agg(to_jsonb(x) order by x.bytes desc), '[]'::jsonb) from (
+      select t.user_id as id, p.username, p.display_name, p.avatar_url, u.email::text as email,
+        count(*) as n, coalesce(sum(t.size), 0) as bytes, coalesce(sum(t.downloads), 0) as downloads, max(t.created_at) as last
+      from t left join public.roar_profiles p on p.id = t.user_id left join auth.users u on u.id = t.user_id
+      group by t.user_id, p.username, p.display_name, p.avatar_url, u.email
+      order by bytes desc limit 20) x)
+  ) into res;
+  return res;
+end $$;
+revoke all on function public.roar_admin_transfer_stats() from public, anon;
+grant execute on function public.roar_admin_transfer_stats() to authenticated;

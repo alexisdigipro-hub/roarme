@@ -1070,4 +1070,5 @@ export const EL = {
   'Add RoarMe to your Home Screen: it opens full screen, like an app, with notifications when it is closed.': 'Πρόσθεσε το RoarMe στην οθόνη Αφετηρίας: ανοίγει σε πλήρη οθόνη, σαν εφαρμογή, με ειδοποιήσεις όταν είναι κλειστό.',
   'Install App': 'Εγκατάσταση',
   'Not Now': 'Όχι τώρα',
+  'Preview Messages': 'Προεπισκόπηση μηνυμάτων',
 }

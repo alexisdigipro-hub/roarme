@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SUPABASE_KEY, SUPABASE_URL, fmtBytes, supabase, withName } from './lib.js'
 import { locale } from './i18n.js'
 import { I, Modal } from './ui.jsx'
+import { PLANS, planOf, r2Transfer } from './r2upload.js'
 
 /* RoarTransfer (Alex, 16 Oct): its own window, as on WeTransfer. Pick or drop files, see how big they are against
    the 3 GB, send. The window shows the upload; "Keep chatting" closes it and the upload goes on in the
@@ -62,43 +63,49 @@ export function CopyLink({ file, className = '', round = false }) {
   )
 }
 
-export function TransferWindow({ title, outbox, onStart, onClose }) {
+/* The RoarTransfer window (Alex, 22 Oct: "the same as roartransfer.com"): the files go to Cloudflare R2 through
+   src/r2upload.js, 1 day up to 5 GB or 3 days up to 3 GB, and come back as ONE link for all of them, with a title,
+   a message, a password and an email to you when someone downloads. The chat gets one card for the whole transfer
+   (BundleCard). Closing the window while it uploads only hides it: the upload goes on and the card comes when done. */
+export function TransferWindow({ title, hidden = false, onHide, onClose, onSent, onProgress }) {
   const [files, setFiles] = useState([])
   const [phase, setPhase] = useState('pick')
-  const [batch] = useState(() => crypto.randomUUID())
-  const [sent, setSent] = useState([])
-  const [errs, setErrs] = useState([])
+  const [days, setDays] = useState(3)
+  const [name, setName] = useState('')
+  const [note, setNote] = useState('')
+  const [pw, setPw] = useState('')
+  const [notify, setNotify] = useState(true)
+  const [done, setDone] = useState(0)
+  const [res, setRes] = useState(null)
   const [over, setOver] = useState(false)
-  const stop = useRef(false)
+  const [copied, setCopied] = useState(false)
+  const job = useRef(null)
   const pick = useRef(null)
+  const { max } = planOf(days)
   const total = files.reduce((n, f) => n + f.size, 0)
-  const tooBig = total > TRANSFER_MAX
+  const tooBig = total > max
   const add = (list) => setFiles((l) => [...l, ...list.filter((f) => !l.some((x) => x.name === f.name && x.size === f.size))])
+  const p = total ? Math.min(1, done / total) : 0
+  useEffect(() => { if (phase === 'up') onProgress?.(p) }, [p, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  const until = (iso) => `${untilDate(new Date(iso).getTime())} ${untilTime(new Date(iso).getTime())}`
 
-  // how far the whole transfer has got: what is sent plus what is on its way
-  const tiles = outbox.filter((o) => o.batch === batch)
-  const doneBytes = sent.reduce((n, m) => n + (m.size || 0), 0)
-  const upBytes = Math.min(total, doneBytes + tiles.reduce((n, o) => n + (o.stage === 'up' || o.stage === 'send' ? (o.size || 0) * (o.p || 0) : 0), 0))
-  const p = total ? upBytes / total : 0
-
-  const start = () => {
-    setPhase('up')
-    onStart(files, '', {
-      batch,
-      stopped: () => stop.current,
-      onFile: (meta) => setSent((l) => [...l, meta]),
-      onError: (name, msg) => setErrs((l) => [...l, `${name}: ${msg}`]),
-      onEnd: () => setPhase('done'),
-    })
+  const start = async () => {
+    setPhase('up'); setDone(0)
+    const opts = { days, title: name.trim(), message: note.trim(), password: pw, notify }
+    job.current = r2Transfer({ onProgress: setDone })
+    const r = await job.current.start(files, opts)
+    setRes(r); setPhase('done')
+    if (r.url) onSent?.({ ...r, title: opts.title, message: opts.message, locked: !!pw })
   }
-  const cancel = () => { stop.current = true; tiles.forEach((o) => o.holder?.abort?.()) }
+  const cancel = () => { job.current?.stop() }
+  // while it uploads, closing only hides the window
+  const close = phase === 'up' ? onHide : onClose
+  if (hidden) return null
 
   const R = 54
   const C = 2 * Math.PI * R
   return (
-    <Modal title="RoarTransfer" onClose={onClose}>
-      {/* fresher (Alex, 17 Oct): the mark at the top left like the card in the chat, a glowing drop area, three small
-          fact tiles (size, days, link) and one pill to send */}
+    <Modal title="RoarTransfer" onClose={close}>
       <div className={`rt is-${phase}`}>
         <div className="rt-top"><TransferMark /></div>
         {phase === 'pick' && (
@@ -126,17 +133,27 @@ export function TransferWindow({ title, outbox, onStart, onClose }) {
             )}
             {files.length > 0 && (
               <div className={`rt-meter${tooBig ? ' over' : ''}`}>
-                <span className="rt-bar"><i style={{ width: `${Math.min(100, (total / TRANSFER_MAX) * 100)}%` }} /></span>
-                <small><b>{fmtBytes(total)}</b> of 3 GB · {files.length === 1 ? '1 file' : `${files.length} files`}</small>
+                <span className="rt-bar"><i style={{ width: `${Math.min(100, (total / max) * 100)}%` }} /></span>
+                <small><b>{fmtBytes(total)}</b>{` of ${max / 1024 ** 3} GB · ${files.length === 1 ? '1 file' : `${files.length} files`}`}</small>
               </div>
             )}
-            <div className="rt-tiles">
-              <span className="rt-tile"><i>{I.transfer}</i><b>3 GB</b><small>per transfer</small></span>
-              <span className="rt-tile t-time"><i>{I.timer}</i><b>3 days</b><small>until {untilDate()}</small></span>
-              <span className="rt-tile"><i>{I.link}</i><b>Link</b><small>for anyone</small></span>
+            {/* how long and how big, as on roartransfer.com: 1 day up to 5 GB, or 3 days up to 3 GB */}
+            <div className="rt-plans" role="radiogroup" aria-label="How long the link lasts">
+              {PLANS.map((x) => (
+                <button key={x.days} type="button" role="radio" aria-checked={days === x.days} className={`rt-tile rt-plan${days === x.days ? ' on' : ''}`} onClick={() => setDays(x.days)}>
+                  <i>{I.timer}</i><b>{x.days === 1 ? '1 day' : '3 days'}</b><small>{`up to ${x.max / 1024 ** 3} GB · until ${untilDate(Date.now() + x.days * 864e5)}`}</small>
+                </button>
+              ))}
             </div>
-            {/* the send pill comes in only once there are files (Alex, 17 Oct: a dead button before that says nothing) */}
-            {files.length > 0 && <button type="button" className="rt-send" disabled={tooBig} onClick={start}>{tooBig ? 'Over 3 GB' : 'Transfer'}{!tooBig && I.send}</button>}
+            {files.length > 0 && (
+              <div className="rt-opts">
+                <input className="rt-in" value={name} onChange={(e) => setName(e.target.value.slice(0, 120))} placeholder="Title (optional)" />
+                <textarea className="rt-in" rows={2} value={note} onChange={(e) => setNote(e.target.value.slice(0, 2000))} placeholder="Message (optional)" />
+                <label className="rt-in rt-pw">{I.lock}<input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value.slice(0, 100))} placeholder="Password (optional)" /></label>
+                <label className="rt-check"><input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} /><span>Email me when it is downloaded</span></label>
+              </div>
+            )}
+            {files.length > 0 && <button type="button" className="rt-send" disabled={tooBig} onClick={start}>{tooBig ? `Over ${max / 1024 ** 3} GB` : 'Transfer'}{!tooBig && I.send}</button>}
           </>
         )}
         {phase === 'up' && (
@@ -148,36 +165,58 @@ export function TransferWindow({ title, outbox, onStart, onClose }) {
               </svg>
               <b>{Math.round(p * 100)}%</b>
             </span>
-            <p className="rt-sub">{fmtBytes(upBytes)} of {fmtBytes(total)} · {sent.length} of {files.length} sent</p>
-            <p className="rt-hint">You can keep chatting: it goes on uploading in the chat.</p>
+            <p className="rt-sub">{fmtBytes(Math.min(done, total))} of {fmtBytes(total)}</p>
+            <p className="rt-hint">You can keep chatting: it goes on uploading, and the link comes into the chat when it is done.</p>
             <div className="rt-acts">
               <button type="button" className="btn" onClick={cancel}>{I.x}<span>Stop</span></button>
-              <button type="button" className="btn btn-main" onClick={onClose}>{I.check}<span>Keep chatting</span></button>
+              <button type="button" className="btn btn-main" onClick={onHide}>{I.check}<span>Keep chatting</span></button>
             </div>
           </>
         )}
-        {phase === 'done' && (
+        {phase === 'done' && res && (
           <>
-            <span className={`rt-done${sent.length ? '' : ' fail'}`}>{sent.length ? I.check : I.x}</span>
-            <p className="rt-title">{sent.length ? (sent.length === 1 ? 'Sent!' : `${sent.length} files sent!`) : 'Nothing was sent'}</p>
-            {sent.length > 0 && <p className="rt-sub">In {title}, and anyone with the link can download until {untilDate(new Date(sent[0].expires).getTime())} {untilTime(new Date(sent[0].expires).getTime())}.</p>}
-            {errs.length > 0 && <p className="auth-err">{errs.join(' · ')}</p>}
-            {sent.length > 0 && (
-              <ul className="rt-files">
-                {sent.map((m) => (
-                  <li key={m.path}>
-                    <span className="rt-file-ico">{/^video\//.test(m.type) ? I.play : /^image\//.test(m.type) ? I.image : I.file}</span>
-                    <span className="rt-file-text"><b>{m.name}</b><small>{fmtBytes(m.size)}</small></span>
-                    <CopyLink file={m} className="small" />
-                  </li>
-                ))}
-              </ul>
+            <span className={`rt-done${res.url ? '' : ' fail'}`}>{res.url ? I.check : I.x}</span>
+            <p className="rt-title">{res.url ? 'Sent!' : 'Nothing was sent'}</p>
+            {res.url && <p className="rt-sub">{`In ${title}, and anyone with the link can download until ${until(res.expires)}.`}</p>}
+            {res.url && pw && <p className="rt-sub">It asks for the password.</p>}
+            {res.errs.length > 0 && <p className="auth-err">{res.errs.join(' · ')}</p>}
+            {res.url && (
+              <button type="button" className={`rt-link${copied ? ' ok' : ''}`} onClick={async () => { try { await navigator.clipboard.writeText(res.url); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* not allowed */ } }}>
+                {copied ? I.check : I.link}<span>{copied ? 'Link copied' : res.url.replace('https://', '')}</span>
+              </button>
             )}
             <button type="button" className="btn btn-main rt-go" onClick={onClose}><span>Done</span></button>
           </>
         )}
       </div>
     </Modal>
+  )
+}
+
+/* one transfer in the chat: its title, its files, until when, Open and Copy link (the files live on roartransfer.com) */
+export function BundleCard({ t }) {
+  const [copied, setCopied] = useState(false)
+  const files = t.files || []
+  const size = files.reduce((n, f) => n + (f.size || 0), 0)
+  const gone = t.expires && new Date(t.expires).getTime() < Date.now()
+  const copy = async (e) => { e.stopPropagation(); try { await navigator.clipboard.writeText(t.url); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* not allowed */ } }
+  return (
+    <div className={`rt-card${gone ? ' gone' : ''}`}>
+      <div className="rt-card-head"><TransferMark /><small>{`${files.length === 1 ? '1 file' : `${files.length} files`} · ${fmtBytes(size)}`}</small></div>
+      {t.title && <b className="rt-card-title">{t.title}</b>}
+      {t.message && <p className="rt-card-msg">{t.message}</p>}
+      <ul className="rt-card-files">
+        {files.slice(0, 5).map((f) => <li key={f.token || f.name}><span>{/^video\//.test(f.type) ? I.play : /^image\//.test(f.type) ? I.image : I.file}</span><b>{f.name}</b><small>{fmtBytes(f.size)}</small></li>)}
+        {files.length > 5 && <li className="more"><small>{`and ${files.length - 5} more`}</small></li>}
+      </ul>
+      <p className="rt-card-until">{t.locked && <>{I.lock}<span>Password</span><span>·</span></>}<span>{gone ? 'Expired' : `Until ${untilDate(new Date(t.expires).getTime())} ${untilTime(new Date(t.expires).getTime())}`}</span></p>
+      {!gone && (
+        <div className="rt-card-acts">
+          <a className="btn btn-main" href={t.url} target="_blank" rel="noreferrer noopener" onClick={(e) => e.stopPropagation()}>{I.download}<span>Open</span></a>
+          <button type="button" className="btn" onClick={copy}>{copied ? I.check : I.link}<span>{copied ? 'Copied' : 'Copy link'}</span></button>
+        </div>
+      )}
+    </div>
   )
 }
 

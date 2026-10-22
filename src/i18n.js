@@ -22,6 +22,14 @@ const ago = (s) => s.replace(/^now$/, 'τώρα').replace(/^(\d+) min ago$/, 'π
 
 // texts with names and numbers in them
 const PATTERNS = [
+  [/^up to (\d) GB · until (.+)$/, (_, g, d) => `έως ${g} GB · ως ${d}`],
+  [/^(\d+) files · (.+) of (\d) GB$/, (_, n, s, g) => `${n} αρχεία · ${s} από ${g} GB`],
+  [/^1 file · (.+) of (\d) GB$/, (_, s, g) => `1 αρχείο · ${s} από ${g} GB`],
+  [/^Over (\d) GB$/, (_, g) => `Πάνω από ${g} GB`],
+  [/^Until (.+)$/, (_, d) => `Ως ${d}`],
+  [/^and (\d+) more$/, (_, n) => `και ${n} ακόμα`],
+  [/^(\d+) files · (.+)$/, (_, n, s) => `${n} αρχεία · ${s}`],
+  [/^1 file · (.+)$/, (_, s) => `1 αρχείο · ${s}`],
   [/^Remind me on (.+) at (\d{1,2}:\d{2})$/, (_, d, h) => `Υπενθύμιση ${d}, ${h}`],
   [/^Reminder set for (.+) at (\d{1,2}:\d{2})$/, (_, d, h) => `Υπενθύμιση για ${d}, ${h}`],
   [/^Role · (\d+) people$/, (_, n) => `Ρόλος · ${n} άτομα`],

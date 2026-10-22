@@ -1,5 +1,14 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  // RoarTransfer on R2 (22 Oct)
+  '1 day': '1 μέρα',
+  'Title (optional)': 'Τίτλος (προαιρετικά)',
+  'Message (optional)': 'Μήνυμα (προαιρετικά)',
+  'Password (optional)': 'Κωδικός (προαιρετικά)',
+  'Email me when it is downloaded': 'Στείλε μου email όταν το κατεβάσουν',
+  'RoarTransfer sent': 'Το RoarTransfer στάλθηκε',
+  'It asks for the password.': 'Ζητάει τον κωδικό.',
+  'You can keep chatting: it goes on uploading, and the link comes into the chat when it is done.': 'Μπορείς να συνεχίσεις τη συζήτηση: το ανέβασμα συνεχίζει και το link μπαίνει στη συζήτηση μόλις τελειώσει.',
   // mentions, roles and reminders (20 Oct)
   'Remind Me': 'Υπενθύμιση',
   'Reminder': 'Υπενθύμιση',

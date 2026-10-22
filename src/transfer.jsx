@@ -79,6 +79,12 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
   const [res, setRes] = useState(null)
   const [over, setOver] = useState(false)
   const [copied, setCopied] = useState(false)
+  // the admin's own tick (Alex, 22 Oct): a copy into the hub's pCloud too, RoarTransfer/<month> (roar-pcloud)
+  const [admin, setAdmin] = useState(false)
+  const [toPc, setToPc] = useState(() => { try { return localStorage.getItem('roarme-pcloud') === '1' } catch { return false } })
+  const [pc, setPc] = useState(null) // { busy } | { ok, path } | { err }
+  useEffect(() => { supabase.rpc('roar_is_admin').then(({ data }) => setAdmin(data === true)) }, [])
+  const pickPc = (v) => { setToPc(v); try { localStorage.setItem('roarme-pcloud', v ? '1' : '0') } catch { /* private window */ } }
   const job = useRef(null)
   const pick = useRef(null)
   const { max } = planOf(days)
@@ -96,6 +102,16 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
     const r = await job.current.start(files, opts)
     setRes(r); setPhase('done')
     if (r.url) onSent?.({ ...r, title: opts.title, message: opts.message, locked: !!pw })
+    if (admin && toPc && r.sent?.length) {
+      setPc({ busy: true })
+      let path = '', err = ''
+      for (const m of r.sent) {
+        const { data, error } = await supabase.functions.invoke('roar-pcloud', { body: { token: m.token } })
+        if (error || data?.error) err = data?.error || error?.message || 'pCloud did not answer'
+        else path = data.path
+      }
+      setPc(err ? { err } : { ok: true, path })
+    }
   }
   const cancel = () => { job.current?.stop() }
   // while it uploads, closing only hides the window
@@ -151,6 +167,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
                 <textarea className="rt-in" rows={2} value={note} onChange={(e) => setNote(e.target.value.slice(0, 2000))} placeholder="Message (optional)" />
                 <label className="rt-in rt-pw">{I.lock}<input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value.slice(0, 100))} placeholder="Password (optional)" /></label>
                 <label className="rt-check"><input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} /><span>Email me when it is downloaded</span></label>
+                {admin && <label className="rt-check"><input type="checkbox" checked={toPc} onChange={(e) => pickPc(e.target.checked)} /><span>Also save it to my pCloud</span></label>}
               </div>
             )}
             {files.length > 0 && <button type="button" className="rt-send" disabled={tooBig} onClick={start}>{tooBig ? `Over ${max / 1024 ** 3} GB` : 'Transfer'}{!tooBig && I.send}</button>}
@@ -180,6 +197,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
             {res.url && <p className="rt-sub">{`In ${title}, and anyone with the link can download until ${until(res.expires)}.`}</p>}
             {res.url && pw && <p className="rt-sub">It asks for the password.</p>}
             {res.errs.length > 0 && <p className="auth-err">{res.errs.join(' · ')}</p>}
+            {pc && <p className={pc.err ? 'auth-err' : 'rt-sub'}>{pc.busy ? 'Saving it to your pCloud…' : pc.err ? `pCloud: ${pc.err}` : `Going into your pCloud: ${pc.path.replace(/^\//, '')}. A big file takes pCloud a few minutes.`}</p>}
             {res.url && (
               <button type="button" className={`rt-link${copied ? ' ok' : ''}`} onClick={async () => { try { await navigator.clipboard.writeText(res.url); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* not allowed */ } }}>
                 {copied ? I.check : I.link}<span>{copied ? 'Link copied' : res.url.replace('https://', '')}</span>
@@ -292,12 +310,23 @@ const leftOf = (iso) => {
 export const transferIcon = (type = '') => (/^video\//.test(type) ? I.play : /^image\//.test(type) ? I.image : /^audio\//.test(type) ? I.mic : I.file)
 export const transferAlive = (t) => !t.deleted && !t.stopped && new Date(t.expires).getTime() > Date.now()
 
+const PCLOUD_I = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1-.5 8.5z" /><path d="M12 15.5v-5M9.8 12.6 12 10.4l2.2 2.2" /></svg>
 export function MyTransfers({ toast }) {
   const [list, setList] = useState(null)
   const [err, setErr] = useState('')
   const [show, setShow] = useState('all')
   const load = () => supabase.rpc('roar_my_transfers').then(({ data, error }) => { if (error) setErr(error.message); else setList(data || []) })
   useEffect(() => { load() }, [])
+  // the admin can send any live one of their transfers to the hub's pCloud too (Alex, 22 Oct)
+  const [admin, setAdmin] = useState(false)
+  const [pcBusy, setPcBusy] = useState('')
+  useEffect(() => { supabase.rpc('roar_is_admin').then(({ data }) => setAdmin(data === true)) }, [])
+  const toPcloud = async (t) => {
+    setPcBusy(t.path)
+    const { data, error } = await supabase.functions.invoke('roar-pcloud', { body: { token: t.token } })
+    setPcBusy('')
+    toast?.(error || data?.error ? `pCloud: ${data?.error || error.message}` : `Going into your pCloud: ${String(data.path || '').replace(/^\//, '')}`)
+  }
   const stop = async (t) => {
     if (!window.confirm(`Stop the link to ${t.name}? Nobody can download it any more.`)) return
     const { error } = await supabase.rpc('roar_transfer_stop', { p: t.path })
@@ -333,7 +362,7 @@ export function MyTransfers({ toast }) {
                 <b title={t.name}>{t.name}</b>
                 <small>{t.source === 'link' ? 'By email' : t.room_kind === 'group' ? (t.room_title || 'A group') : 'A private chat'} · {dayOf(t.created_at)}</small>
               </span>
-              {alive && <span className="rt-acts"><CopyLink file={{ path: t.path, name: t.name, size: t.size, type: t.type, expires: t.expires }} round />{t.source === 'link' && <button type="button" className="trx-round" onClick={() => stop(t)} title="Stop the link" aria-label="Stop the link">{I.x}</button>}</span>}
+              {alive && <span className="rt-acts"><CopyLink file={{ path: t.path, name: t.name, size: t.size, type: t.type, expires: t.expires }} round />{admin && t.token && <button type="button" className="trx-round" disabled={pcBusy === t.path} onClick={() => toPcloud(t)} title="Save to my pCloud" aria-label="Save to my pCloud">{PCLOUD_I}</button>}{t.source === 'link' && <button type="button" className="trx-round" onClick={() => stop(t)} title="Stop the link" aria-label="Stop the link">{I.x}</button>}</span>}
               <span className="adm-chips">
                 <i>{fmtBytes(Number(t.size || 0))}</i>
                 <i className={alive ? 'tr' : 'gone'}>{t.deleted ? 'Deleted' : t.stopped ? 'Stopped' : alive ? leftOf(t.expires) : 'Expired'}</i>

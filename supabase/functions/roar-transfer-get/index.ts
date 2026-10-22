@@ -1,7 +1,8 @@
 // RoarTransfer's download link (Alex, 16 Oct): whoever has the link (?t=token) gets the file's name, size and expiry,
 // and a download address good for one hour. Nothing else is reachable: the token must be in roar_transfer_links, and
 // it stops working when its days are up. Files are in Supabase Storage (roar-transfers, from the chats) or, since
-// 21 Oct, in Cloudflare R2 (store 'r2', roartransfer.com, Edge Function roartransfer-r2).
+// 21 Oct, in Cloudflare R2 (store 'r2', roartransfer.com, Edge Function roartransfer-r2), or since 22 Oct only in the
+// hub's pCloud (store 'pcloud', Alex's own transfers, Edge Function roar-pcloud).
 // The download address carries the file's own name encoded exactly once, so Greek names come down as they are.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { AwsClient } from 'npm:aws4fetch@1.0.20'
@@ -66,6 +67,13 @@ Deno.serve(async (req) => {
 // deno-lint-ignore no-explicit-any
 async function addresses(sb: any, link: any): Promise<{ url: string, view: string } | null> {
   const media = /^(video|audio|image)\//.test(link.type)
+  // kept only in the hub's pCloud (Alex, 22 Oct): pCloud's direct address works only for the browser that asks for it,
+  // so the page gets the public link's code and asks pCloud itself (getpublinkdownload); url is pCloud's own page
+  if (link.store === 'pcloud') {
+    const [host, code] = String(link.path).split('|')
+    if (!code) return null
+    return { url: `https://${host === 'api.pcloud.com' ? 'u' : 'e'}.pcloud.link/publink/show?code=${encodeURIComponent(code)}`, view: '', pcloud: { host, code } } as any
+  }
   if (link.store === 'r2') {
     const url = await r2Url(link.path, { 'response-content-disposition': disposition(link.name || 'file') })
     const view = media ? await r2Url(link.path, { 'response-content-type': link.type }) : ''

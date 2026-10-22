@@ -79,7 +79,8 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
   const [res, setRes] = useState(null)
   const [over, setOver] = useState(false)
   const [copied, setCopied] = useState(false)
-  // the admin's own tick (Alex, 22 Oct): a copy into the hub's pCloud too, RoarTransfer/<month> (roar-pcloud)
+  // the admin's own tick (Alex, 22 Oct): the files are kept only in the hub's pCloud (roar-pcloud): they go up to R2
+  // as always, pCloud fetches each one, and once it is whole there the link points to pCloud and R2's copy goes
   const [admin, setAdmin] = useState(false)
   const [toPc, setToPc] = useState(() => { try { return localStorage.getItem('roarme-pcloud') === '1' } catch { return false } })
   const [pc, setPc] = useState(null) // { busy } | { ok, path } | { err }
@@ -104,13 +105,26 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
     if (r.url) onSent?.({ ...r, title: opts.title, message: opts.message, locked: !!pw })
     if (admin && toPc && r.sent?.length) {
       setPc({ busy: true })
-      let path = '', err = ''
-      for (const m of r.sent) {
-        const { data, error } = await supabase.functions.invoke('roar-pcloud', { body: { token: m.token } })
-        if (error || data?.error) err = data?.error || error?.message || 'pCloud did not answer'
-        else path = data.path
+      const call = async (body) => {
+        const { data, error } = await supabase.functions.invoke('roar-pcloud', { body })
+        if (error || data?.error) throw new Error(data?.error || error?.message || 'pCloud did not answer')
+        return data
       }
-      setPc(err ? { err } : { ok: true, path })
+      try {
+        let path = ''
+        for (const m of r.sent) path = (await call({ token: m.token })).path || path
+        let left = r.sent.map((m) => m.token)
+        const until = Date.now() + 60 * 60e3
+        while (left.length && Date.now() < until) {
+          await new Promise((ok) => setTimeout(ok, 6000))
+          const still = []
+          for (const t of left) if (!(await call({ action: 'check', token: t, only: true })).done) still.push(t)
+          left = still
+          if (left.length) setPc({ busy: true, n: r.sent.length - left.length, of: r.sent.length })
+        }
+        if (left.length) throw new Error('pCloud is taking long. The link still works from RoarTransfer.')
+        setPc({ ok: true, path })
+      } catch (e) { setPc({ err: e.message }) }
     }
   }
   const cancel = () => { job.current?.stop() }
@@ -167,7 +181,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
                 <textarea className="rt-in" rows={2} value={note} onChange={(e) => setNote(e.target.value.slice(0, 2000))} placeholder="Message (optional)" />
                 <label className="rt-in rt-pw">{I.lock}<input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value.slice(0, 100))} placeholder="Password (optional)" /></label>
                 <label className="rt-check"><input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} /><span>Email me when it is downloaded</span></label>
-                {admin && <label className="rt-check"><input type="checkbox" checked={toPc} onChange={(e) => pickPc(e.target.checked)} /><span>Also save it to my pCloud</span></label>}
+                {admin && <label className="rt-check"><input type="checkbox" checked={toPc} onChange={(e) => pickPc(e.target.checked)} /><span>Keep it only in my pCloud</span></label>}
               </div>
             )}
             {files.length > 0 && <button type="button" className="rt-send" disabled={tooBig} onClick={start}>{tooBig ? `Over ${max / 1024 ** 3} GB` : 'Transfer'}{!tooBig && I.send}</button>}
@@ -197,7 +211,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
             {res.url && <p className="rt-sub">{`In ${title}, and anyone with the link can download until ${until(res.expires)}.`}</p>}
             {res.url && pw && <p className="rt-sub">It asks for the password.</p>}
             {res.errs.length > 0 && <p className="auth-err">{res.errs.join(' · ')}</p>}
-            {pc && <p className={pc.err ? 'auth-err' : 'rt-sub'}>{pc.busy ? 'Saving it to your pCloud…' : pc.err ? `pCloud: ${pc.err}` : `Going into your pCloud: ${pc.path.replace(/^\//, '')}. A big file takes pCloud a few minutes.`}</p>}
+            {pc && <p className={pc.err ? 'auth-err' : 'rt-sub'}>{pc.busy ? `Moving it to your pCloud…${pc.of ? ` ${pc.n}/${pc.of}` : ''} Keep RoarMe open.` : pc.err ? `pCloud: ${pc.err}` : `In your pCloud only: ${pc.path.replace(/^\//, '')}`}</p>}
             {res.url && (
               <button type="button" className={`rt-link${copied ? ' ok' : ''}`} onClick={async () => { try { await navigator.clipboard.writeText(res.url); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* not allowed */ } }}>
                 {copied ? I.check : I.link}<span>{copied ? 'Link copied' : res.url.replace('https://', '')}</span>

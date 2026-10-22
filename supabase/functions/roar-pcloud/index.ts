@@ -7,7 +7,10 @@
 // roar_hub_conf) to have pCloud fetch it into the hub's pCloud, folder RoarTransfer/<YYYY-MM>. No bytes pass through
 // here and the pCloud token stays in the hub. Secrets used: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY.
 //
-// POST { token } -> { ok: true, path } | { error }
+// POST { token } -> { ok: true, path } | { error }: pCloud starts fetching the file into RoarTransfer/<YYYY-MM>/<token>/
+// POST { action: 'check', token, only } -> { done: false } | { done: true }: once the whole file is in pCloud, and only
+//   when Alex chose "only in my pCloud" (only: true), its link switches to pCloud (store 'pcloud', path '<api host>|<code>',
+//   roar-transfer-get hands the code to the download page) and the copy in R2 is deleted.
 
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'npm:@supabase/supabase-js@2'
@@ -51,12 +54,31 @@ Deno.serve(async (req) => {
   const { data: conf } = await sb.from('roar_hub_conf').select('secret').eq('id', 1).maybeSingle()
   if (!conf?.secret) return json({ error: 'not set up' }, 500)
   let src = ''
+  if (file.store === 'pcloud') return json(body.action === 'check' ? { done: true } : { error: 'Already only in your pCloud.' })
   if (file.store === 'r2') src = await r2Get(file.path)
   else { const { data: s } = await sb.storage.from('roar-transfers').createSignedUrl(file.path, 6 * 3600); src = s?.signedUrl || '' }
   if (!src) return json({ error: 'The file is no longer there.' }, 404)
-  const res = await fetch(HUB_PCLOUD, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-roarme-secret': conf.secret },
-    body: JSON.stringify({ hub_user_id: link.hub_user_id, url: src, name: String(file.name || 'file') }) })
-  const out = await res.json().catch(() => null)
-  if (!res.ok || !out || out.error) return json({ error: out?.error || 'The hub did not answer.' }, 502)
-  return json(out)
+  const where = { hub_user_id: link.hub_user_id, name: String(file.name || 'file'), key: token, month: String(file.created_at).slice(0, 7), size: Number(file.size) || 0 }
+  const hub = async (extra: any) => {
+    const res = await fetch(HUB_PCLOUD, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-roarme-secret': conf.secret }, body: JSON.stringify({ ...where, ...extra }) })
+    const out = await res.json().catch(() => null)
+    if (!res.ok || !out || out.error) throw new Error(out?.error || 'The hub did not answer.')
+    return out
+  }
+  try {
+    if (body.action === 'check') {
+      const st = await hub({ action: 'check' })
+      if (!st.done) return json({ done: false, got: st.got || 0 })
+      if (body.only && file.store !== 'pcloud') {
+        const { error } = await sb.from('roar_transfer_links').update({ store: 'pcloud', path: `${st.host}|${st.code}` }).eq('token', token)
+        if (error) return json({ error: error.message }, 500)
+        if (file.store === 'r2') await r2.fetch(`https://${account}.r2.cloudflarestorage.com/roartransfer/${file.path.split('/').map(encodeURIComponent).join('/')}`, { method: 'DELETE' }).catch(() => null)
+        else await sb.storage.from('roar-transfers').remove([file.path])
+      }
+      return json({ done: true, path: st.path })
+    }
+    return json(await hub({ url: src }))
+  } catch (e) {
+    return json({ error: String((e as Error)?.message || e) }, 502)
+  }
 })

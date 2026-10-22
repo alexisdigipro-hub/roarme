@@ -1099,4 +1099,5 @@ export const EL = {
   'Also save it to my pCloud': 'Αποθήκευση και στο pCloud μου',
   'Save to my pCloud': 'Αποθήκευση στο pCloud μου',
   'Saving it to your pCloud…': 'Αποθηκεύεται στο pCloud σου…',
+  'Keep it only in my pCloud': 'Να μείνει μόνο στο pCloud μου',
 }

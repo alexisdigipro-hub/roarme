@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, fileLink, thumbOf, fmtBytes, supabase, timeOf } from './lib.js'
-import { EMOJIS, WALLS, setPrefs, usePrefs } from './prefs.js'
+import { EMOJIS, setPrefs, usePrefs } from './prefs.js'
+import { useWalls, wallUrl } from './walls.js'
 import { I, Modal, useSeen } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
@@ -332,10 +333,11 @@ function MediaThumb({ m, onClick }) {
 
 /* the chat wallpapers as small tiles to pick from */
 export function WallTiles({ value, onPick }) {
+  const walls = useWalls()
   return (
     <div className="walls">
-      {WALLS.map(([k, l]) => (
-        <button key={k} type="button" className={`wall-tile${value === k ? ' on' : ''}`} data-bg={k} onClick={() => onPick(k)}>
+      {walls.map(({ key: k, name: l, path }) => (
+        <button key={k} type="button" className={`wall-tile${value === k ? ' on' : ''}${path ? ' img' : ''}`} data-bg={k} style={path ? { backgroundImage: `url("${wallUrl(path)}")` } : undefined} onClick={() => onPick(k)}>
           <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>{l}</small>
         </button>
       ))}

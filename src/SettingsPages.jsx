@@ -3,6 +3,7 @@ import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, DEFAULTS, FONTS, PUBLIC_THEMES, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
+import { useWalls, wallStyle } from './walls.js'
 import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
@@ -754,12 +755,13 @@ function Sessions({ me, setMe, toast }) {
 }
 
 function Appearance({ p, toast, me, setMe }) {
+  const wallImg = wallStyle(p.background, useWalls(true))
   const lab = inThemeLab(me)
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
   return (
     <>
       <Box title="Theme" note={`Stone is RoarMe's theme: soft grey stone with graphite buttons.${lab ? ' Only you see the others, to work on them.' : ''}`}>
-        <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={p.background} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 15.5}px` }}>
+        <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={p.background} data-img={wallImg ? '' : undefined} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 15.5}px`, ...wallImg }}>
           <span className="pv mine">Good morning! 👋</span>
           <span className="pv"><i>Good morning! 👋</i>Do you know what time it is?</span>
           <span className="pv mine">It's morning in Tokyo 😎</span>

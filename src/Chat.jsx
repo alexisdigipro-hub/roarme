@@ -29,6 +29,7 @@ import { TasksPanel, taskNotice, useTasks } from './tasks.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
+import { useWalls, wallStyle } from './walls.js'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
 
@@ -1583,6 +1584,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [headSub, setHeadSub] = useState('') // Mute › or Auto-Delete › open in the ⋯ menu
   const [walls, setWalls] = useLocal('roarme-walls', {}) // a wallpaper of its own, per chat
   const wall = walls[room.room_id] || prefs.background
+  const wallList = useWalls(true)
+  const wallImg = wallStyle(wall, wallList)
   const [wallPick, setWallPick] = useState(false)
   const [rec, setRec] = useState(null) // { started }
   const [outbox, setOutbox] = useState([]) // { id, name, preview, p, stage, holder }
@@ -2363,7 +2366,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
 
   return (
-    <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={wall} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 15.5}px` }}
+    <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={wall} data-img={wallImg ? '' : undefined} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 15.5}px`, ...wallImg }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
       <header className="room-head">
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>

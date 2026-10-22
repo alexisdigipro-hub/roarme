@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { errText, fmtBytes, nameOf, supabase } from './lib.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { errText, fmtBytes, nameOf, shrinkImage, supabase } from './lib.js'
 import { Avatar, I, Lens, svg } from './ui.jsx'
 import { locale } from './i18n.js'
 import { transferAlive, transferIcon } from './transfer.jsx'
+import { WALL_BUCKET, loadWalls, useWalls, wallUrl } from './walls.js'
 
 /* Admin (Alex, 17 Oct: "only I want to see every user in the database and what files they send"). Settings > Admin,
    shown only to Alex; the database answers only the accounts in roar_admins (supabase/admin.sql), so nobody else gets
@@ -89,8 +90,9 @@ export function Admin() {
           <button type="button" className={tab === 'people' ? 'on' : ''} onClick={() => setTab('people')}>People</button>
           <button type="button" className={tab === 'files' ? 'on' : ''} onClick={() => setTab('files')}>Files</button>
           <button type="button" className={tab === 'transfer' ? 'on' : ''} onClick={() => setTab('transfer')}>RoarTransfer</button>
+          <button type="button" className={tab === 'walls' ? 'on' : ''} onClick={() => setTab('walls')}>Wallpapers</button>
         </Lens>
-        <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : tab === 'transfer' ? 'File or person' : 'File, person or group'} /></label>
+        {tab !== 'walls' && <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : tab === 'transfer' ? 'File or person' : 'File, person or group'} /></label>}
       </div>
       {err && <p className="adm-err">{err}</p>}
 
@@ -147,6 +149,7 @@ export function Admin() {
         </div>
       )}
       {tab === 'transfer' && <AdminTransfers q={s} />}
+      {tab === 'walls' && <AdminWalls />}
       <p className="adm-note muted">Only you see this page. It shows who is on RoarMe and what files they sent (name, size, type, when), never what the messages or the files say.</p>
     </div>
   )
@@ -242,6 +245,117 @@ function AdminTransfers({ q }) {
         )
       })}
       {more && !q && <button type="button" className="btn adm-more" disabled={busy} onClick={loadMore}>{busy ? 'Loading…' : 'More'}</button>}
+    </div>
+  )
+}
+
+/* Admin > Wallpapers (Alex, 22 Oct: "upload more, change them, and see the ones there are now"): every wallpaper in the
+   order people see it, the built-in ones too. Add Photos uploads one or more (made smaller first, up to 2560 px); on each:
+   its name, up and down, Hide (people no longer see it; a chat that has it keeps it), Replace the photo, and Delete for an
+   uploaded one. supabase/wallpapers.sql lets only the accounts in roar_admins change any of it. */
+const BUILT_IN = ['soft', 'dots', 'grid', 'night', 'ocean', 'dusk', 'forest', 'ember']
+const HIDE_I = svg(<><path d="M3 3l18 18" /><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>, 17)
+const SWAP_I = svg(<><path d="M4 8h13l-3-3" /><path d="M20 16H7l3 3" /></>, 17)
+
+function AdminWalls() {
+  const walls = useWalls(true)
+  const [busy, setBusy] = useState('')
+  const [err, setErr] = useState('')
+  const [names, setNames] = useState({})
+  const pickRef = useRef(null)
+  const swapRef = useRef(null)
+  const swapKey = useRef('')
+
+  const run = async (what, fn) => {
+    setBusy(what); setErr('')
+    try { await fn() } catch (e) { setErr(errText(e)) }
+    await loadWalls()
+    setBusy('')
+  }
+  const put = async (key, file) => {
+    const img = await shrinkImage(file, 2560, 0.86)
+    const ext = (img.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')
+    const path = `${key}/${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from(WALL_BUCKET).upload(path, img, { contentType: img.type, cacheControl: '31536000' })
+    if (error) throw error
+    return path
+  }
+  const add = (files) => run('add', async () => {
+    let pos = walls.reduce((m, w) => Math.max(m, w.position), -1)
+    for (const f of files) {
+      if (!/^image\//.test(f.type)) continue
+      const key = `img-${crypto.randomUUID().slice(0, 8)}`
+      const path = await put(key, f)
+      const name = f.name.replace(/\.\w+$/, '').replace(/[-_]+/g, ' ').trim().slice(0, 40) || 'Wallpaper'
+      const { error } = await supabase.from('roar_wallpapers').insert({ key, name, path, position: ++pos })
+      if (error) throw error
+    }
+  })
+  const swap = (w, file) => run(w.key, async () => {
+    const path = await put(w.key, file)
+    const { error } = await supabase.from('roar_wallpapers').update({ path, updated_at: new Date().toISOString() }).eq('key', w.key)
+    if (error) throw error
+    if (w.path) await supabase.storage.from(WALL_BUCKET).remove([w.path])
+  })
+  const patch = (w, fields) => run(w.key, async () => {
+    const { error } = await supabase.from('roar_wallpapers').update({ ...fields, updated_at: new Date().toISOString() }).eq('key', w.key)
+    if (error) throw error
+  })
+  const rename = (w) => {
+    const name = (names[w.key] ?? w.name).trim().slice(0, 40)
+    if (!name || name === w.name) { setNames((n) => ({ ...n, [w.key]: undefined })); return }
+    patch(w, { name }).then(() => setNames((n) => ({ ...n, [w.key]: undefined })))
+  }
+  const move = (i, d) => {
+    const j = i + d
+    if (j < 0 || j >= walls.length) return
+    const order = walls.map((w) => w.key)
+    ;[order[i], order[j]] = [order[j], order[i]]
+    run(walls[i].key, async () => {
+      for (const [n, key] of order.entries()) {
+        const w = walls.find((x) => x.key === key)
+        if (w.position !== n) { const { error } = await supabase.from('roar_wallpapers').update({ position: n }).eq('key', key); if (error) throw error }
+      }
+    })
+  }
+  const remove = (w) => {
+    if (!window.confirm(`Delete the wallpaper "${w.name}" for good? A chat that uses it goes back to plain.`)) return
+    run(w.key, async () => {
+      const { error } = await supabase.from('roar_wallpapers').delete().eq('key', w.key)
+      if (error) throw error
+      if (w.path) await supabase.storage.from(WALL_BUCKET).remove([w.path])
+    })
+  }
+
+  const shown = walls.filter((w) => !w.hidden).length
+  return (
+    <div className="adm-list">
+      {err && <p className="adm-err">{err}</p>}
+      <div className="adm-walls-head">
+        <span className="muted">{walls.length} wallpapers · {shown} shown to people</span>
+        <button type="button" className="btn btn-main adm-walls-add" disabled={busy === 'add'} onClick={() => pickRef.current?.click()}>{I.image}<span>{busy === 'add' ? 'Uploading…' : 'Add Photos'}</span></button>
+        <input ref={pickRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple hidden onChange={(e) => { const f = [...e.target.files]; e.target.value = ''; if (f.length) add(f) }} />
+        <input ref={swapRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" hidden onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; const w = walls.find((x) => x.key === swapKey.current); if (f && w) swap(w, f) }} />
+      </div>
+      <div className="adm-walls">
+        {walls.map((w, i) => (
+          <div key={w.key} className={`adm-wall${w.hidden ? ' off' : ''}${busy === w.key ? ' busy' : ''}`}>
+            <div className={`wall-tile adm-wall-pic${w.path ? ' img' : ''}`} data-bg={w.key} style={w.path ? { backgroundImage: `url("${wallUrl(w.path)}")` } : undefined}>
+              <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i>
+              {w.hidden && <em className="adm-tag">Hidden</em>}
+            </div>
+            <input className="input adm-wall-name" value={names[w.key] ?? w.name} maxLength={40} aria-label="Name"
+              onChange={(e) => setNames((n) => ({ ...n, [w.key]: e.target.value }))} onBlur={() => rename(w)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
+            <span className="adm-wall-acts">
+              <button type="button" className="adm-act" disabled={!!busy || i === 0} onClick={() => move(i, -1)} title="Move up" aria-label="Move up">{I.up}</button>
+              <button type="button" className="adm-act" disabled={!!busy || i === walls.length - 1} onClick={() => move(i, 1)} title="Move down" aria-label="Move down">{I.down}</button>
+              <button type="button" className={`adm-act${w.hidden ? ' on' : ''}`} disabled={!!busy} onClick={() => patch(w, { hidden: !w.hidden })} title={w.hidden ? 'Show' : 'Hide'} aria-label={w.hidden ? 'Show' : 'Hide'}>{w.hidden ? I.eye : HIDE_I}</button>
+              <button type="button" className="adm-act" disabled={!!busy} onClick={() => { swapKey.current = w.key; swapRef.current?.click() }} title={w.path ? 'Replace photo' : 'Use a photo'} aria-label="Replace photo">{SWAP_I}</button>
+              {!BUILT_IN.includes(w.key) && <button type="button" className="adm-act del" disabled={!!busy} onClick={() => remove(w)} title="Delete" aria-label="Delete">{I.trash}</button>}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

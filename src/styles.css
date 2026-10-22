@@ -4145,3 +4145,26 @@ html:not([data-theme='studio']) .auth .auth-note { color: #b6f5cc; }
 .rt-card-acts .btn { flex: 1; height: 36px; font-size: 13px; text-decoration: none; }
 .rt-card.gone { opacity: .6; }
 @media (max-width: 420px) { .rt-plans { grid-template-columns: 1fr; } }
+
+/* photo wallpapers from Admin > Wallpapers (Alex, 22 Oct): the photo fills the chat behind the messages, a little darker
+   (lighter by day) so the bubbles stay easy to read */
+:is(.room-view[data-img] .scroll, .set-preview[data-img]) { background-image: linear-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3)), var(--wall); background-size: cover; background-position: center; background-repeat: no-repeat; }
+html[data-mode='light'] :is(.room-view[data-img] .scroll, .set-preview[data-img]) { background-image: linear-gradient(rgba(255, 255, 255, .18), rgba(255, 255, 255, .18)), var(--wall); }
+.wall-tile.img { background-size: cover !important; background-position: center; background-repeat: no-repeat; }
+.adm-walls-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+.adm-walls-add { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; }
+.adm-walls-add svg { width: 17px; height: 17px; }
+.adm-walls { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.adm-wall { display: flex; flex-direction: column; gap: 8px; padding: 8px; border-radius: 18px; background: var(--glass); border: 1px solid var(--edge); transition: opacity .2s; }
+.adm-wall.off .adm-wall-pic { opacity: .45; }
+.adm-wall.busy { opacity: .6; pointer-events: none; }
+.adm-wall-pic { height: 150px; border-color: transparent; cursor: default; }
+.adm-wall-pic .adm-tag { position: absolute; top: 8px; right: 8px; margin: 0; }
+.adm-wall-name { height: 36px; border-radius: 999px; padding: 0 14px; font-size: 13.5px; }
+.adm-wall-acts { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+@media (max-width: 760px) {
+  .adm-walls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .adm-wall-pic { height: 120px; }
+  .adm-wall-acts { gap: 4px; }
+  .adm-wall-acts .adm-act { width: 30px; height: 30px; }
+}

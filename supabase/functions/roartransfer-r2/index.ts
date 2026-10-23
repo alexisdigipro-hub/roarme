@@ -17,7 +17,9 @@ const GB = 1024 ** 3
 const plan = (days: unknown) => (Number(days) === 1 ? { days: 1, max: 5 * GB } : Number(days) === 7 ? { days: 7, max: 1 * GB } : { days: 3, max: 3 * GB })
 const dayText = (d: number) => (d === 1 ? '1 day' : `${d} days`)
 // without an account (Alex, 21 Oct: a way to get to know us): link only, 24 hours, up to 1 GB, 3 transfers a day
-const GUEST = { days: 1, max: 1 * GB, perDay: 3 }
+const GUEST = { days: 1, max: 1 * GB, perDay: 3, downloads: 1 }
+// downloads per file with an account (Alex, 23 Oct: something for Pro to lift later)
+const FREE_DOWNLOADS = 5
 const FROM = 'RoarTransfer <noreply@themadlions.com>'
 const PAGE = 'https://roartransfer.com/'
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
@@ -200,9 +202,12 @@ async function handle(req: Request): Promise<Response> {
     if (size > max) { await r2.fetch(at(b.key), { method: 'DELETE' }); return json({ error: `Files can be up to ${max / GB} GB.` }, 400) }
     const token = newToken()
     const expires = new Date(Date.now() + days * 864e5).toISOString()
-    const { error } = await sb.from('roar_transfer_links').insert({ token, path: b.key, name: String(b.name || 'file').slice(0, 300), size, type: String(b.type || ''), expires_at: expires, created_by: uid || null, ip: guest ? ip : null, store: 'r2' })
+    // how many times each file can be downloaded (Alex, 23 Oct): FastTransfer once, an account 5 times, the admins without limit
+    const { data: admin } = guest ? { data: null } : await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
+    const maxDownloads = guest ? GUEST.downloads : admin ? null : FREE_DOWNLOADS
+    const { error } = await sb.from('roar_transfer_links').insert({ token, path: b.key, name: String(b.name || 'file').slice(0, 300), size, type: String(b.type || ''), expires_at: expires, created_by: uid || null, ip: guest ? ip : null, store: 'r2', max_downloads: maxDownloads })
     if (error) return json({ error: error.message }, 500)
-    return json({ token, expires, size })
+    return json({ token, expires, size, downloads: maxDownloads })
   }
 
   // one link for the whole upload (Alex, 21 Oct): the file links it holds must all be the caller's own

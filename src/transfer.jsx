@@ -178,6 +178,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
                 </button>
               ))}
             </div>
+            <p className="rt-eco rt-dls">{I.download}<span>Each file can be downloaded up to 5 times.</span></p>
             <p className="rt-eco">{LEAF}<span>The greener choice is also the bigger one: most files are picked up the same day, so a 1-day link spends less time on our servers and carries up to 5 GB.</span></p>
             {files.length > 0 && (
               <div className="rt-opts">
@@ -275,7 +276,7 @@ export function TransferPage({ token }) {
     document.documentElement.dataset.theme = document.documentElement.dataset.theme || 'glass'
     fetch(`${SUPABASE_URL}/functions/v1/roar-transfer-get?t=${encodeURIComponent(token)}`)
       .then((r) => r.json())
-      .then((d) => { setInfo(d); if (!d?.error) countHit(token, false) })
+      .then((d) => { setInfo(d?.used ? { ...d, error: 'used' } : d); if (!d?.error) countHit(token, false) })
       .catch(() => setInfo({ error: 'offline' }))
   }, [token])
   const left = info?.expires ? new Date(info.expires).getTime() - Date.now() : 0
@@ -291,8 +292,8 @@ export function TransferPage({ token }) {
         {info?.error && (
           <>
             <span className="rt-done fail">{info.error === 'offline' ? I.x : I.timer}</span>
-            <p className="rt-title">{info.error === 'expired' ? 'This transfer has expired' : info.error === 'offline' ? 'Could not reach RoarTransfer' : 'This link does not work'}</p>
-            <p className="rt-sub">{info.error === 'expired' ? 'Files on RoarTransfer are kept 3 days. Ask for it to be sent again.' : info.error === 'offline' ? 'Check the connection and try again.' : 'Check that the whole link was copied.'}</p>
+            <p className="rt-title">{info.error === 'expired' ? 'This transfer has expired' : info.error === 'used' ? 'Download limit reached' : info.error === 'offline' ? 'Could not reach RoarTransfer' : 'This link does not work'}</p>
+            <p className="rt-sub">{info.error === 'expired' ? 'Files on RoarTransfer are kept 1 to 7 days. Ask for it to be sent again.' : info.error === 'used' ? 'This file has been downloaded as many times as it can be. Ask for it to be sent again.' : info.error === 'offline' ? 'Check the connection and try again.' : 'Check that the whole link was copied.'}</p>
           </>
         )}
         {info && !info.error && (
@@ -303,11 +304,11 @@ export function TransferPage({ token }) {
             <ul className="rt-files">
               <li>
                 <span className="rt-file-ico">{isVid ? I.play : isImg ? I.image : I.file}</span>
-                <span className="rt-file-text"><b>{info.name}</b><small>{fmtBytes(info.size)}</small></span>
+                <span className="rt-file-text"><b>{info.name}</b><small>{fmtBytes(info.size)}{info.left != null && ` · ${info.left === 1 ? '1 download left' : `${info.left} downloads left`}`}</small></span>
               </li>
             </ul>
             <div className="rt-facts"><span className={`tr-exp${left < 864e5 ? ' soon' : ''}`}>{I.timer}<span>Expires {untilDate(Date.now() + left)} {untilTime(Date.now() + left)}</span></span></div>
-            <a className="btn btn-main rt-go" href={withName(info.url, info.name)} download={info.name} onClick={() => countHit(token, true)}>{I.download}<span>Download</span></a>
+            <a className="btn btn-main rt-go" href={withName(info.url, info.name)} download={info.name} onClick={() => { if (!info.counted) countHit(token, true) }}>{I.download}<span>Download</span></a>
           </>
         )}
       </div>

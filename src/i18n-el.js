@@ -3,6 +3,9 @@ export const EL = {
   // RoarTransfer on R2 (22 Oct)
   '1 day': '1 μέρα',
   '7 days': '7 μέρες',
+  'Each file can be downloaded up to 5 times.': 'Κάθε αρχείο κατεβαίνει ως 5 φορές.',
+  'Download limit reached': 'Έφτασε το όριο λήψεων',
+  'This file has been downloaded as many times as it can be. Ask for it to be sent again.': 'Αυτό το αρχείο κατέβηκε όσες φορές επιτρέπεται. Ζήτα να σου το ξαναστείλουν.',
   'Recommended': 'Προτείνεται',
   'The greener choice is also the bigger one: most files are picked up the same day, so a 1-day link spends less time on our servers and carries up to 5 GB.': 'Η πιο πράσινη επιλογή είναι και η πιο μεγάλη: τα περισσότερα αρχεία παραλαμβάνονται την ίδια μέρα, οπότε ένα link μιας μέρας μένει λιγότερο στους servers μας και χωράει ως 5 GB.',
   'Title (optional)': 'Τίτλος (προαιρετικά)',

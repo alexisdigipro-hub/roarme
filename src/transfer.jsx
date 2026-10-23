@@ -72,7 +72,7 @@ export function CopyLink({ file, className = '', round = false }) {
 export function TransferWindow({ title, hidden = false, onHide, onClose, onSent, onProgress }) {
   const [files, setFiles] = useState([])
   const [phase, setPhase] = useState('pick')
-  const [days, setDays] = useState(3)
+  const [days, setDays] = useState(1)
   const [name, setName] = useState('')
   const [note, setNote] = useState('')
   const [pw, setPw] = useState('')
@@ -169,8 +169,8 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
                 <small><b>{fmtBytes(total)}</b>{` of ${max / 1024 ** 3} GB · ${files.length === 1 ? '1 file' : `${files.length} files`}`}</small>
               </div>
             )}
-            {/* how long and how big, as on roartransfer.com: 1 day up to 5 GB, 3 days up to 3 GB, 7 days up to 1 GB; the two
-                short ones carry the leaf (Alex, 23 Oct: the "recommended durations" idea, in our words) */}
+            {/* how long and how big, as on roartransfer.com: 1 day up to 5 GB (first, chosen, with the leaf), 3 days up to 3 GB,
+                7 days up to 1 GB, and one small line why (Alex, 23 Oct) */}
             <div className="rt-plans" role="radiogroup" aria-label="How long the link lasts">
               {PLANS.map((x) => (
                 <button key={x.days} type="button" role="radio" aria-checked={days === x.days} className={`rt-tile rt-plan${days === x.days ? ' on' : ''}`} onClick={() => setDays(x.days)}>
@@ -178,7 +178,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
                 </button>
               ))}
             </div>
-            <p className="rt-eco">{LEAF}<span><b>Recommended: 1 or 3 days.</b> Most files are downloaded on the first day. A shorter link uses less energy on our servers, and lets you send bigger files.</span></p>
+            <p className="rt-eco">{LEAF}<span>The greener choice is also the bigger one: most files are picked up the same day, so a 1-day link spends less time on our servers and carries up to 5 GB.</span></p>
             {files.length > 0 && (
               <div className="rt-opts">
                 <input className="rt-in" value={name} onChange={(e) => setName(e.target.value.slice(0, 120))} placeholder="Title (optional)" />

@@ -10,8 +10,8 @@ const PART = 16 * 1024 * 1024
 const FN = `${SUPABASE_URL}/functions/v1/roartransfer-r2`
 export const PAGE = 'https://roartransfer.com/'
 // the free choices, the same as roartransfer.com: 1 day up to 5 GB, 3 days up to 3 GB, 7 days up to 1 GB (Alex, 23 Oct);
-// the shorter two are the recommended ones (eco)
-export const PLANS = [{ days: 1, max: 5 * GB, eco: true }, { days: 3, max: 3 * GB, eco: true }, { days: 7, max: 1 * GB }]
+// 1 day is the first, chosen and recommended one (eco)
+export const PLANS = [{ days: 1, max: 5 * GB, eco: true }, { days: 3, max: 3 * GB }, { days: 7, max: 1 * GB }]
 export const planOf = (days) => PLANS.find((p) => p.days === days) || PLANS[1]
 
 async function bridge(body) {

@@ -2,7 +2,8 @@
 // RoarMe keeps its room). The page never holds a key: it asks here, signed in with its RoarMe account, and gets
 // short-lived signed addresses for each 16 MB piece of a file, which it sends straight to R2 (bucket roartransfer).
 // When every piece is up, this puts the file together and makes its download link (roar_transfer_links, store 'r2').
-// Files go to free/<account id>/…; R2's own lifecycle rule deletes free/ after 3 days (pro/ after 30, for later).
+// Files go to free/<account id>/…; the hourly sweep below deletes each one as soon as its link has ended (R2's own
+// lifecycle rule, free/ after 3 days, pro/ after 30, stays as a backstop).
 // Secrets (Supabase > Edge Functions > Secrets): R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY; RESEND_API_KEY for email.
 // Free (Alex, 21 Oct): 1 day up to 5 GB, or 3 days up to 3 GB. One link per upload (bundle) with an optional title,
 // message, password, emails to the people it is for, and an email to the sender when someone downloads.
@@ -102,6 +103,47 @@ async function handle(req: Request): Promise<Response> {
     const up = await r2.fetch(`${base}?uploads`)
     if (up.ok) u.open = ((await up.text()).match(/<Upload>/g) || []).length
     return json({ ...u, included: 10 * GB })
+  }
+
+  // Sweep (Alex, 23 Oct: "the links have expired but the room has not emptied"): every file in the bucket that no live
+  // link points at any more (expired, stopped, or a link that was never made) goes at once, not when R2's 3-day rule gets
+  // to it, and uploads left half done for a day are aborted. A file gets 6 hours before it counts as without a link, so
+  // one being put together right now is never touched. roar-transfer-sweep calls this every hour with the service key;
+  // an admin may call it too.
+  if (b.action === 'sweep') {
+    const service = !!jwt && jwt === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const { data: admin } = !service && uid ? await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle() : { data: null }
+    if (!service && !admin) return json({ error: 'not allowed' }, 403)
+    const { data: live, error } = await sb.from('roar_transfer_links').select('path').eq('store', 'r2').gt('expires_at', new Date().toISOString()).is('stopped_at', null)
+    if (error) return json({ error: error.message }, 500)
+    const keep = new Set((live || []).map((r: any) => r.path))
+    const old = Date.now() - 6 * 36e5
+    const out = { removed: 0, bytes: 0, kept: 0, aborted: 0 }
+    let next = ''
+    for (let i = 0; i < 50; i++) {
+      const r = await r2.fetch(`${base}?list-type=2&max-keys=1000${next ? '&continuation-token=' + encodeURIComponent(next) : ''}`)
+      const xml = await r.text()
+      if (!r.ok) return json({ error: `Could not read the storage (${r.status})` }, 502)
+      for (const c of xml.split('<Contents>').slice(1)) {
+        const key = tag(c, 'Key'), size = Number(tag(c, 'Size')) || 0
+        if (keep.has(key) || new Date(tag(c, 'LastModified')).getTime() > old) { out.kept++; continue }
+        const d = await r2.fetch(at(key), { method: 'DELETE' })
+        if (d.ok || d.status === 404) { out.removed++; out.bytes += size }
+      }
+      next = tag(xml, 'NextContinuationToken')
+      if (tag(xml, 'IsTruncated') !== 'true' || !next) break
+    }
+    const up = await r2.fetch(`${base}?uploads`)
+    if (up.ok) {
+      for (const u of (await up.text()).split('<Upload>').slice(1)) {
+        const key = tag(u, 'Key'), id = tag(u, 'UploadId')
+        if (key && id && new Date(tag(u, 'Initiated')).getTime() < Date.now() - 864e5) {
+          const d = await r2.fetch(`${at(key)}?uploadId=${encodeURIComponent(id)}`, { method: 'DELETE' })
+          if (d.ok || d.status === 404) out.aborted++
+        }
+      }
+    }
+    return json(out)
   }
 
   // without an account: only uploads, their link and abort, within GUEST; the files go to free/guest/<random>/…

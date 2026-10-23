@@ -12,6 +12,16 @@ Deno.serve(async () => {
     const { error: e2 } = await sb.storage.from('roar-transfers').remove(names)
     if (e2) return new Response(JSON.stringify({ error: e2.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
+  // RoarTransfer's files on Cloudflare R2 (Alex, 23 Oct): those whose link has ended leave R2 now, not after 3 days
+  let r2: unknown = null
+  try {
+    const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/roartransfer-r2`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+      body: JSON.stringify({ action: 'sweep' }),
+    })
+    r2 = await r.json()
+  } catch (e) { r2 = { error: String(e) } }
   await sb.from('roar_transfer_links').delete().lt('expires_at', new Date().toISOString())
-  return new Response(JSON.stringify({ removed: names.length }), { headers: { 'Content-Type': 'application/json' } })
+  return new Response(JSON.stringify({ removed: names.length, r2 }), { headers: { 'Content-Type': 'application/json' } })
 })

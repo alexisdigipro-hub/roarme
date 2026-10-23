@@ -4108,12 +4108,21 @@ html:not([data-theme='studio']) .auth :is(.input, input) { color: var(--text); }
 html:not([data-theme='studio']) .auth .input::placeholder { color: rgba(220, 226, 234, .45); }
 html:not([data-theme='studio']) .auth .auth-err { color: #ffb3b3; }
 html:not([data-theme='studio']) .auth .auth-note { color: #b6f5cc; }
-/* Sign in itself (Alex, 23 Oct: "here I cannot tell the letters"): a light button with dark letters on the dark card,
-   whatever colour the theme gives its main button */
-html:not([data-theme='studio']) .auth .auth-card .btn-main { color: #1c1c1e !important; background: linear-gradient(180deg, #ffffff, #e4e4e8) !important; border: 1px solid rgba(255, 255, 255, .7) !important; box-shadow: 0 8px 22px rgba(0, 0, 0, .28), inset 0 1px 0 #fff !important; font-weight: 700; }
-html:not([data-theme='studio']) .auth .auth-card .btn-main:not(:disabled):hover { background: linear-gradient(180deg, #ffffff, #f0f0f3) !important; }
-html:not([data-theme='studio']) .auth .auth-card .btn-main:disabled { opacity: .7; }
-html:not([data-theme='studio']) .auth .auth-card .auth-hub { color: #f2f4f7 !important; }
+/* The sign-in card with clear contrast (Alex, 23 Oct: "with the greys they do not show clearly"): a deep charcoal card,
+   white letters, fields with a visible light edge, Sign in a white button with black letters, the hub button an outline */
+html[data-theme]:not([data-theme='studio']) .auth .auth-card { background: linear-gradient(170deg, rgba(28, 29, 33, .94), rgba(14, 15, 18, .96)) !important; border: 1px solid rgba(255, 255, 255, .14) !important; box-shadow: 0 40px 90px rgba(0, 0, 0, .35) !important; color: #fff; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card h1 { color: #fff; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card :is(.auth-sub, .auth-or, .auth-links button) { color: rgba(255, 255, 255, .72) !important; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .auth-links button:hover { color: #fff !important; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .field > span { color: rgba(255, 255, 255, .8) !important; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .input { color: #fff !important; background: rgba(255, 255, 255, .07) !important; border: 1px solid rgba(255, 255, 255, .22) !important; box-shadow: none !important; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .input:focus { border-color: rgba(255, 255, 255, .6) !important; background: rgba(255, 255, 255, .1) !important; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .input::placeholder { color: rgba(255, 255, 255, .42) !important; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main, html[data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main:not(:disabled) { color: #111214 !important; background: #fff !important; border: 1px solid #fff !important; box-shadow: 0 10px 26px rgba(0, 0, 0, .35) !important; font-weight: 700; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main:not(:disabled):hover { background: #e9e9ec !important; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main:disabled { opacity: .75; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .auth-hub { color: #fff !important; background: transparent !important; border: 1px solid rgba(255, 255, 255, .45) !important; font-weight: 600; }
+html[data-theme]:not([data-theme='studio']) .auth .auth-card .auth-hub:not(:disabled):hover { background: rgba(255, 255, 255, .1) !important; border-color: #fff !important; }
 
 /* RoarTransfer as on roartransfer.com (22 Oct): two plans, the options, the card in the chat, the % on the button */
 .rt-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

@@ -4,6 +4,10 @@
 // 21 Oct, in Cloudflare R2 (store 'r2', roartransfer.com, Edge Function roartransfer-r2), or since 22 Oct only in the
 // hub's pCloud (store 'pcloud', Alex's own transfers, Edge Function roar-pcloud).
 // The download address carries the file's own name encoded exactly once, so Greek names come down as they are.
+// Download limits (Alex, 23 Oct; supabase/transfer-limits.sql): a file on R2 is not handed out directly any more. Its
+// download address is this function again with &dl=1, which counts the download here (roar_transfer_hit, which also
+// sends the "downloaded" email) and only then sends the browser on to R2; once max_downloads is reached the file is
+// shown as used and its address goes back to its own page.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { AwsClient } from 'npm:aws4fetch@1.0.20'
 
@@ -14,12 +18,16 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const account = ((Deno.env.get('R2_ACCOUNT_ID') || '').match(/[0-9a-f]{32}/i) || [''])[0]
 const r2 = new AwsClient({ accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID') || '', secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY') || '', service: 's3', region: 'auto' })
 const r2At = (key: string) => `https://${account}.r2.cloudflarestorage.com/roartransfer/${key.split('/').map(encodeURIComponent).join('/')}`
-async function r2Url(key: string, query: Record<string, string>) {
+async function r2Url(key: string, query: Record<string, string>, expires = 3600) {
   const u = new URL(r2At(key))
   for (const [k, v] of Object.entries(query)) u.searchParams.set(k, v)
-  u.searchParams.set('X-Amz-Expires', '3600')
+  u.searchParams.set('X-Amz-Expires', String(expires))
   return (await r2.sign(new Request(u), { aws: { signQuery: true } })).url
 }
+const PAGE = 'https://roartransfer.com/'
+const SELF = `${Deno.env.get('SUPABASE_URL')}/functions/v1/roar-transfer-get`
+// deno-lint-ignore no-explicit-any
+const used = (f: any) => f.max_downloads != null && (f.downloads || 0) >= f.max_downloads
 // attachment with the real name: a plain ASCII one for old browsers, the UTF-8 one for the rest
 const disposition = (name: string) => `attachment; filename="${name.replace(/[^\x20-\x7e]|["\\]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(name)}`
 
@@ -29,7 +37,16 @@ Deno.serve(async (req) => {
   const t = q.get('t') || ''
   if (!/^[A-Za-z0-9]{6,32}$/.test(t)) return json({ error: 'not_found' }, 404)
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store').eq('token', t).maybeSingle()
+  // a download of one R2 file: count it, then on to R2 (six hours, so a big file can finish and resume)
+  if (q.get('dl') === '1') {
+    const { data: f } = await sb.from('roar_transfer_links').select('token, path, name, expires_at, store, downloads, max_downloads').eq('token', t).maybeSingle()
+    const page = `${PAGE}${t}`
+    if (!f || f.store !== 'r2' || new Date(f.expires_at).getTime() <= Date.now() || used(f)) return Response.redirect(page, 302)
+    if (req.method === 'GET') await sb.rpc('roar_transfer_hit', { t, dl: true })
+    const to = await r2Url(f.path, { 'response-content-disposition': disposition(f.name || 'file') }, 6 * 3600)
+    return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
+  }
+  const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads').eq('token', t).maybeSingle()
   if (link) {
     const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at }
     if (new Date(link.expires_at).getTime() <= Date.now()) return json({ ...info, error: 'expired' }, 410)
@@ -49,7 +66,7 @@ Deno.serve(async (req) => {
     if ((await sha(`${t}:${given}`)) !== bundle.password_hash) return json({ ...head, expires: bundle.expires_at, error: 'password', wrong: true }, 401)
   }
   Object.assign(head, { message: bundle.message || '' })
-  const { data: rows } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store').in('token', bundle.tokens)
+  const { data: rows } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads').in('token', bundle.tokens)
   const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > Date.now())
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
   if (!live.length) return json({ ...head, expires: bundle.expires_at, error: 'expired' }, 410)
@@ -75,9 +92,11 @@ async function addresses(sb: any, link: any): Promise<{ url: string, view: strin
     return { url: `https://${host === 'api.pcloud.com' ? 'u' : 'e'}.pcloud.link/publink/show?code=${encodeURIComponent(code)}`, view: '', pcloud: { host, code } } as any
   }
   if (link.store === 'r2') {
-    const url = await r2Url(link.path, { 'response-content-disposition': disposition(link.name || 'file') })
+    const left = link.max_downloads == null ? null : Math.max(0, link.max_downloads - (link.downloads || 0))
+    if (left === 0) return { url: '', view: '', used: true, left } as any
+    const url = `${SELF}?t=${encodeURIComponent(link.token)}&dl=1`
     const view = media ? await r2Url(link.path, { 'response-content-type': link.type }) : ''
-    return { url, view }
+    return { url, view, counted: true, left } as any
   }
   const { data: signed } = await sb.storage.from('roar-transfers').createSignedUrl(link.path, 3600)
   const { data: play } = media ? await sb.storage.from('roar-transfers').createSignedUrl(link.path, 3600) : { data: null }

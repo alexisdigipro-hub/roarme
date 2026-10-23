@@ -4176,3 +4176,5 @@ html[data-mode='light'] :is(.room-view[data-img] .scroll, .set-preview[data-img]
 .rt-eco { display: flex; align-items: flex-start; gap: 6px; margin: 0 4px; font-size: 11px; line-height: 1.4; color: var(--muted); opacity: .85; }
 .rt-eco > svg { flex: none; width: 12px; height: 12px; margin-top: 1px; color: #5fd38d; }
 @media (max-width: 520px) { .rt-plans { grid-template-columns: 1fr; } }
+.rt-dls > svg { width: 12px; height: 12px; color: var(--muted); }
+.rt-eco.rt-dls { margin-bottom: -4px; }

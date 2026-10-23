@@ -4108,6 +4108,12 @@ html:not([data-theme='studio']) .auth :is(.input, input) { color: var(--text); }
 html:not([data-theme='studio']) .auth .input::placeholder { color: rgba(220, 226, 234, .45); }
 html:not([data-theme='studio']) .auth .auth-err { color: #ffb3b3; }
 html:not([data-theme='studio']) .auth .auth-note { color: #b6f5cc; }
+/* Sign in itself (Alex, 23 Oct: "here I cannot tell the letters"): a light button with dark letters on the dark card,
+   whatever colour the theme gives its main button */
+html:not([data-theme='studio']) .auth .auth-card .btn-main { color: #1c1c1e !important; background: linear-gradient(180deg, #ffffff, #e4e4e8) !important; border: 1px solid rgba(255, 255, 255, .7) !important; box-shadow: 0 8px 22px rgba(0, 0, 0, .28), inset 0 1px 0 #fff !important; font-weight: 700; }
+html:not([data-theme='studio']) .auth .auth-card .btn-main:not(:disabled):hover { background: linear-gradient(180deg, #ffffff, #f0f0f3) !important; }
+html:not([data-theme='studio']) .auth .auth-card .btn-main:disabled { opacity: .7; }
+html:not([data-theme='studio']) .auth .auth-card .auth-hub { color: #f2f4f7 !important; }
 
 /* RoarTransfer as on roartransfer.com (22 Oct): two plans, the options, the card in the chat, the % on the button */
 .rt-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

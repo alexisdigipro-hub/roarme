@@ -2,7 +2,7 @@
 // RoarMe keeps its room). The page never holds a key: it asks here, signed in with its RoarMe account, and gets
 // short-lived signed addresses for each 16 MB piece of a file, which it sends straight to R2 (bucket roartransfer).
 // When every piece is up, this puts the file together and makes its download link (roar_transfer_links, store 'r2').
-// Files go to free/<account id>/…; the hourly sweep below deletes each one as soon as its link has ended (R2's own
+// Files go to free/<account id>/… (7-day ones to week/<account id>/…); the hourly sweep below deletes each one as soon as its link has ended (R2's own
 // lifecycle rule, free/ after 3 days, pro/ after 30, stays as a backstop).
 // Secrets (Supabase > Edge Functions > Secrets): R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY; RESEND_API_KEY for email.
 // Free (Alex, 21 Oct): 1 day up to 5 GB, or 3 days up to 3 GB. One link per upload (bundle) with an optional title,
@@ -12,7 +12,10 @@ import { AwsClient } from 'npm:aws4fetch@1.0.20'
 
 const BUCKET = 'roartransfer'
 const GB = 1024 ** 3
-const plan = (days: unknown) => (Number(days) === 1 ? { days: 1, max: 5 * GB } : { days: 3, max: 3 * GB })
+// 7 days up to 1 GB (Alex, 23 Oct); those go under week/, which R2's 3-day rule on free/ does not touch: the hourly sweep
+// deletes them when their link ends
+const plan = (days: unknown) => (Number(days) === 1 ? { days: 1, max: 5 * GB } : Number(days) === 7 ? { days: 7, max: 1 * GB } : { days: 3, max: 3 * GB })
+const dayText = (d: number) => (d === 1 ? '1 day' : `${d} days`)
 // without an account (Alex, 21 Oct: a way to get to know us): link only, 24 hours, up to 1 GB, 3 transfers a day
 const GUEST = { days: 1, max: 1 * GB, perDay: 3 }
 const FROM = 'RoarTransfer <noreply@themadlions.com>'
@@ -95,7 +98,7 @@ async function handle(req: Request): Promise<Response> {
       for (const c of xml.split('<Contents>').slice(1)) {
         const key = tag(c, 'Key'), size = Number(tag(c, 'Size')) || 0
         u.bytes += size; u.files++
-        if (key.startsWith('free/guest/')) u.guest += size; else if (key.startsWith('free/')) u.free += size; else if (key.startsWith('pro/')) u.pro += size; else u.other += size
+        if (key.startsWith('free/guest/')) u.guest += size; else if (key.startsWith('free/') || key.startsWith('week/')) u.free += size; else if (key.startsWith('pro/')) u.pro += size; else u.other += size
       }
       next = tag(xml, 'NextContinuationToken')
       if (tag(xml, 'IsTruncated') !== 'true' || !next) break
@@ -155,19 +158,19 @@ async function handle(req: Request): Promise<Response> {
     return Math.max(0, GUEST.perDay - (count || 0))
   }
   if (b.action === 'guest') return json({ left: await guestLeft(), ...GUEST })
-  const mine = (key: string) => typeof key === 'string' && !key.includes('..') && (guest ? /^free\/guest\/[0-9a-f-]{36}\//.test(key) : key.startsWith(`free/${uid}/`))
+  const mine = (key: string) => typeof key === 'string' && !key.includes('..') && (guest ? /^free\/guest\/[0-9a-f-]{36}\//.test(key) : (key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`)))
 
   if (b.action === 'create') {
     const size = Number(b.size) || 0
     const { days, max } = guest ? GUEST : plan(b.days)
-    if (size <= 0 || size > max) return json({ error: guest ? 'Without an account, files can be up to 1 GB. Sign up free for up to 5 GB.' : `Files kept ${days === 1 ? '1 day' : '3 days'} can be up to ${max / GB} GB.` }, 400)
+    if (size <= 0 || size > max) return json({ error: guest ? 'Without an account, files can be up to 1 GB. Sign up free for up to 5 GB.' : `Files kept ${dayText(days)} can be up to ${max / GB} GB.` }, 400)
     if (guest) {
       if ((await guestLeft()) <= 0) return json({ error: 'limit', limit: true }, 429)
       // and no more than 3 GB of files a day from one address, links made or not
       const { data: today } = await sb.from('roar_transfer_links').select('size').is('created_by', null).eq('ip', ip).gte('created_at', new Date(Date.now() - 864e5).toISOString())
       if ((today || []).reduce((a: number, r: any) => a + Number(r.size || 0), 0) + size > GUEST.max * GUEST.perDay) return json({ error: 'limit', limit: true }, 429)
     }
-    const key = guest ? `free/guest/${crypto.randomUUID()}/${safeName(b.name)}` : `free/${uid}/${crypto.randomUUID()}-${safeName(b.name)}`
+    const key = guest ? `free/guest/${crypto.randomUUID()}/${safeName(b.name)}` : `${days === 7 ? 'week' : 'free'}/${uid}/${crypto.randomUUID()}-${safeName(b.name)}`
     const r = await r2.fetch(`${at(key)}?uploads`, { method: 'POST', headers: { 'Content-Type': b.type || 'application/octet-stream' } })
     const uploadId = tag(await r.text(), 'UploadId')
     if (!r.ok || !uploadId) return json({ error: `Could not start the upload (${r.status})` }, 502)
@@ -259,7 +262,7 @@ async function handle(req: Request): Promise<Response> {
   if (b.action === 'delete') {
     const key = String(b.key || '')
     const { data: admin } = await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
-    if (!(key.startsWith(`free/${uid}/`) || (admin && /^(free|pro)\//.test(key)))) return json({ error: 'not allowed' }, 403)
+    if (!(key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`) || (admin && /^(free|week|pro)\//.test(key)))) return json({ error: 'not allowed' }, 403)
     await sb.from('roar_transfer_links').update({ stopped_at: new Date().toISOString(), expires_at: new Date().toISOString() }).eq('path', key)
     await r2.fetch(at(key), { method: 'DELETE' })
     return json({ ok: true })

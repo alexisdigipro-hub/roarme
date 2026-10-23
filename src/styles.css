@@ -4168,3 +4168,11 @@ html[data-mode='light'] :is(.room-view[data-img] .scroll, .set-preview[data-img]
   .adm-wall-acts { gap: 4px; }
   .adm-wall-acts .adm-act { width: 30px; height: 30px; }
 }
+
+/* RoarTransfer's recommended durations (Alex, 23 Oct): three choices, the two short ones with a green leaf and one line why */
+.rt-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rt-plan b { display: inline-flex; align-items: center; gap: 6px; }
+.rt-leaf { display: inline-grid; place-items: center; color: #5fd38d; }
+.rt-eco { display: flex; align-items: flex-start; gap: 6px; margin: 0 4px; font-size: 11px; line-height: 1.4; color: var(--muted); opacity: .85; }
+.rt-eco > svg { flex: none; width: 12px; height: 12px; margin-top: 1px; color: #5fd38d; }
+@media (max-width: 520px) { .rt-plans { grid-template-columns: 1fr; } }

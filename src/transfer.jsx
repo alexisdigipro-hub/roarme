@@ -11,6 +11,8 @@ import { PLANS, planOf, r2Transfer } from './r2upload.js'
 export const TRANSFER_MAX = 3 * 1024 ** 3
 export const TRANSFER_DAYS = 3
 const untilDate = (ms = Date.now() + TRANSFER_DAYS * 864e5) => new Date(ms).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' })
+// the leaf on the recommended durations (Alex, 23 Oct)
+const LEAF = <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14z" /><path d="M5 19 13 11" /></svg>
 const untilTime = (ms) => new Date(ms).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
 
 export function TransferMark({ big = false }) {
@@ -70,7 +72,7 @@ export function CopyLink({ file, className = '', round = false }) {
 export function TransferWindow({ title, hidden = false, onHide, onClose, onSent, onProgress }) {
   const [files, setFiles] = useState([])
   const [phase, setPhase] = useState('pick')
-  const [days, setDays] = useState(3)
+  const [days, setDays] = useState(1)
   const [name, setName] = useState('')
   const [note, setNote] = useState('')
   const [pw, setPw] = useState('')
@@ -167,14 +169,16 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
                 <small><b>{fmtBytes(total)}</b>{` of ${max / 1024 ** 3} GB · ${files.length === 1 ? '1 file' : `${files.length} files`}`}</small>
               </div>
             )}
-            {/* how long and how big, as on roartransfer.com: 1 day up to 5 GB, or 3 days up to 3 GB */}
+            {/* how long and how big, as on roartransfer.com: 1 day up to 5 GB (first, chosen, with the leaf), 3 days up to 3 GB,
+                7 days up to 1 GB, and one small line why (Alex, 23 Oct) */}
             <div className="rt-plans" role="radiogroup" aria-label="How long the link lasts">
               {PLANS.map((x) => (
                 <button key={x.days} type="button" role="radio" aria-checked={days === x.days} className={`rt-tile rt-plan${days === x.days ? ' on' : ''}`} onClick={() => setDays(x.days)}>
-                  <i>{I.timer}</i><b>{x.days === 1 ? '1 day' : '3 days'}</b><small>{`up to ${x.max / 1024 ** 3} GB · until ${untilDate(Date.now() + x.days * 864e5)}`}</small>
+                  <i>{I.timer}</i><b>{x.days === 1 ? '1 day' : `${x.days} days`}{x.eco && <span className="rt-leaf" title="Recommended">{LEAF}</span>}</b><small>{`up to ${x.max / 1024 ** 3} GB · until ${untilDate(Date.now() + x.days * 864e5)}`}</small>
                 </button>
               ))}
             </div>
+            <p className="rt-eco">{LEAF}<span>The greener choice is also the bigger one: most files are picked up the same day, so a 1-day link spends less time on our servers and carries up to 5 GB.</span></p>
             {files.length > 0 && (
               <div className="rt-opts">
                 <input className="rt-in" value={name} onChange={(e) => setName(e.target.value.slice(0, 120))} placeholder="Title (optional)" />

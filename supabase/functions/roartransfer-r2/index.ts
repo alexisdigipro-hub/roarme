@@ -20,6 +20,10 @@ const dayText = (d: number) => (d === 1 ? '1 day' : `${d} days`)
 const GUEST = { days: 1, max: 1 * GB, perDay: 3, downloads: 1 }
 // downloads per file with an account (Alex, 23 Oct: something for Pro to lift later)
 const FREE_DOWNLOADS = 5
+// Pro "Receive files" (Alex, 23 Oct; supabase/transfer-pro.sql): roartransfer.com/u/<slug> takes files for a Pro from
+// anyone, without an account: up to 20 GB a file, kept 30 days, with limits per sender's address so it cannot be flooded
+const INBOX = { max: 20 * GB, days: 30, perDayFiles: 200, perDayBytes: 100 * GB, perDaySends: 30 }
+const SLUG = /^[a-z0-9](?:[a-z0-9-]{1,28})[a-z0-9]$/
 const FROM = 'RoarTransfer <noreply@themadlions.com>'
 const PAGE = 'https://roartransfer.com/'
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
@@ -151,28 +155,117 @@ async function handle(req: Request): Promise<Response> {
     return json(out)
   }
 
+  // ---- Pro (Alex, 23 Oct): the admins always, and whoever has a live row in roar_transfer_pro ----
+  const isPro = async (id: string | undefined) => {
+    if (!id) return false
+    const { data: a } = await sb.from('roar_admins').select('user_id').eq('user_id', id).maybeSingle()
+    if (a) return true
+    const { data: p } = await sb.from('roar_transfer_pro').select('until').eq('user_id', id).maybeSingle()
+    return !!p && (!p.until || new Date(p.until).getTime() > Date.now())
+  }
+  const dayAgo = new Date(Date.now() - 864e5).toISOString()
+  // a Receive-files page: whose it is, if its owner is Pro
+  const box = b.inbox ? await (async () => {
+    const slug = String(b.inbox || '').toLowerCase()
+    if (!SLUG.test(slug)) return null
+    const { data } = await sb.from('roar_transfer_pro').select('user_id, name, slug').eq('slug', slug).maybeSingle()
+    return data && (await isPro(data.user_id)) ? data : null
+  })() : null
+  if (b.inbox && !box) return json({ error: 'This page does not take files.', gone: true }, 404)
+  if (b.action === 'inbox-info') return box ? json({ name: box.name || box.slug, max: INBOX.max, days: INBOX.days }) : json({ error: 'not found', gone: true }, 404)
+
+  // the Pro's own: are they Pro, their page's name, and every drop they received in the last 30 days
+  if (b.action === 'pro') {
+    if (!uid) return json({ error: 'signed-out' }, 401)
+    if (!(await isPro(uid))) return json({ pro: false })
+    const { data: me } = await sb.from('roar_transfer_pro').select('slug, name').eq('user_id', uid).maybeSingle()
+    const { data: got } = await sb.from('roar_transfer_inbox').select('id, bundle, sender_name, sender_email, message, files, bytes, created_at')
+      .eq('owner', uid).gte('created_at', new Date(Date.now() - INBOX.days * 864e5).toISOString()).order('created_at', { ascending: false }).limit(200)
+    return json({ pro: true, slug: me?.slug || '', name: me?.name || '', received: got || [], days: INBOX.days, max: INBOX.max })
+  }
+  if (b.action === 'pro-set') {
+    if (!uid || !(await isPro(uid))) return json({ error: 'not allowed' }, 403)
+    const slug = String(b.slug || '').toLowerCase().trim()
+    if (!SLUG.test(slug)) return json({ error: 'Use 3 to 30 letters, numbers or dashes.' }, 400)
+    const name = String(b.name || '').trim().slice(0, 80)
+    const { error } = await sb.from('roar_transfer_pro').upsert({ user_id: uid, slug, name }, { onConflict: 'user_id' })
+    if (error) return json({ error: error.code === '23505' ? 'That name is taken. Try another.' : error.message }, 400)
+    return json({ ok: true, slug, name })
+  }
+
+  // a drop on a Receive-files page is sent: one link for its files, a row in the owner's Received, and an email to them
+  if (b.action === 'inbox-send') {
+    if (!box) return json({ error: 'not found', gone: true }, 404)
+    const ip = clientIp(req)
+    const sender = String(b.name || '').trim().slice(0, 80)
+    if (!sender) return json({ error: 'Write your name, so they know who sent it.' }, 400)
+    const { count: sends } = await sb.from('roar_transfer_inbox').select('id', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', dayAgo)
+    if ((sends || 0) >= INBOX.perDaySends) return json({ error: 'limit', limit: true }, 429)
+    const tokens = (Array.isArray(b.tokens) ? b.tokens : []).map(String).filter((t: string) => /^[A-Za-z0-9]{10,32}$/.test(t)).slice(0, 200)
+    const { data: rows } = tokens.length ? await sb.from('roar_transfer_links').select('token, name, size, expires_at').in('token', tokens)
+      .eq('created_by', box.user_id).eq('ip', ip).like('path', `pro/${box.user_id}/inbox/%`).gte('created_at', new Date(Date.now() - 6 * 36e5).toISOString()) : { data: [] }
+    if (!rows || !rows.length || rows.length !== new Set(tokens).size) return json({ error: 'not allowed' }, 403)
+    const email = String(b.email || '').trim().toLowerCase().slice(0, 200)
+    const from = /^[^\s@<>,;]+@[^\s@<>,;]+\.[a-z]{2,}$/i.test(email) ? email : ''
+    const message = String(b.message || '').trim().slice(0, 2000)
+    const expires = rows.reduce((a: string, r: any) => (r.expires_at > a ? r.expires_at : a), rows[0].expires_at)
+    let token = newToken(6)
+    let error: { message: string, code?: string } | null = null
+    for (let i = 0; i < 4; i++) {
+      if (i) token = newToken(6)
+      ;({ error } = await sb.from('roar_transfer_bundles').insert({ token, tokens, created_by: null, ip: null, expires_at: expires, title: `From ${sender}`, message, recipients: [], notify: false }))
+      if (!error || error.code !== '23505') break
+    }
+    if (error) return json({ error: error.message }, 500)
+    const bytes = rows.reduce((a: number, r: any) => a + Number(r.size || 0), 0)
+    await sb.from('roar_transfer_inbox').insert({ owner: box.user_id, bundle: token, sender_name: sender, sender_email: from, message, files: rows.length, bytes, ip })
+    const { data: o } = await sb.auth.admin.getUserById(box.user_id)
+    if (o?.user?.email) {
+      const ordered = rows.sort((a: any, z: any) => tokens.indexOf(a.token) - tokens.indexOf(z.token))
+      const what = rows.length === 1 ? '1 file' : `${rows.length} files`
+      const list = ordered.slice(0, 8).map((f: any) => `<tr><td style="padding:11px 0;border-top:1px solid rgba(255,255,255,.08);color:#e9ebee;font-size:14px;word-break:break-all">${esc(f.name)}</td><td style="padding:11px 0 11px 12px;border-top:1px solid rgba(255,255,255,.08);color:#8b929b;font-size:12px;text-align:right;white-space:nowrap">${fmtSize(Number(f.size || 0))}</td></tr>`).join('')
+      await sendMail({
+        to: o.user.email, reply_to: from || undefined,
+        subject: `${sender} sent you ${what} on RoarTransfer`,
+        html: frame(`<tr><td style="color:#8b929b;font-size:14px;padding-bottom:6px">Received on your page roartransfer.com/u/${esc(box.slug)}</td></tr>
+<tr><td style="color:#ffffff;font-size:24px;font-weight:700;line-height:1.25;padding-bottom:18px;word-break:break-word">${esc(sender)} sent you ${what} · ${fmtSize(bytes)}</td></tr>
+${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-size:15px;line-height:1.55;padding:14px 18px;background:rgba(255,255,255,.06);border-radius:18px;white-space:pre-wrap">${esc(message)}</div></td></tr>` : ''}
+<tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${list}</table></td></tr>
+<tr><td align="center" style="padding:28px 0 12px">${button(PAGE + token, 'Open', '#2b2f36', '#ffffff')}&nbsp;&nbsp;${button(PAGE + token + '#dl', rows.length > 1 ? 'Download all' : 'Download')}</td></tr>
+<tr><td align="center" style="color:#8b929b;font-size:12px">${from ? `Reply to this email to answer ${esc(sender)}. ` : ''}Kept until ${fmtDate(expires)}.</td></tr>`),
+        text: `${sender}${from ? ` (${from})` : ''} sent you ${what} on RoarTransfer.\n\n${message ? message + '\n\n' : ''}${ordered.map((f: any) => `- ${f.name} (${fmtSize(Number(f.size || 0))})`).join('\n')}\n\nOpen: ${PAGE}${token}\nKept until ${fmtDate(expires)}.`,
+      })
+    }
+    return json({ ok: true, name: box.name || box.slug })
+  }
+
   // without an account: only uploads, their link and abort, within GUEST; the files go to free/guest/<random>/…
   const guest = !uid
-  if (guest && !['create', 'sign', 'complete', 'bundle', 'abort', 'guest'].includes(b.action)) return json({ error: 'signed-out' }, 401)
+  if (guest && !box && !['create', 'sign', 'complete', 'bundle', 'abort', 'guest'].includes(b.action)) return json({ error: 'signed-out' }, 401)
   const ip = clientIp(req)
   const guestLeft = async () => {
     const { count } = await sb.from('roar_transfer_bundles').select('token', { count: 'exact', head: true }).is('created_by', null).eq('ip', ip).gte('created_at', new Date(Date.now() - 864e5).toISOString())
     return Math.max(0, GUEST.perDay - (count || 0))
   }
   if (b.action === 'guest') return json({ left: await guestLeft(), ...GUEST })
-  const mine = (key: string) => typeof key === 'string' && !key.includes('..') && (guest ? /^free\/guest\/[0-9a-f-]{36}\//.test(key) : (key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`)))
+  const mine = (key: string) => typeof key === 'string' && !key.includes('..') && (box ? key.startsWith(`pro/${box.user_id}/inbox/`) : guest ? /^free\/guest\/[0-9a-f-]{36}\//.test(key) : (key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`)))
 
   if (b.action === 'create') {
     const size = Number(b.size) || 0
-    const { days, max } = guest ? GUEST : plan(b.days)
-    if (size <= 0 || size > max) return json({ error: guest ? 'Without an account, files can be up to 1 GB. Sign up free for up to 5 GB.' : `Files kept ${dayText(days)} can be up to ${max / GB} GB.` }, 400)
-    if (guest) {
+    const { days, max } = box ? INBOX : guest ? GUEST : plan(b.days)
+    // a file for someone's Receive-files page: its own size and the sender's limits for the day
+    if (box) {
+      if (size <= 0 || size > max) return json({ error: `Files can be up to ${max / GB} GB.` }, 400)
+      const { data: today } = await sb.from('roar_transfer_links').select('size').like('path', 'pro/%/inbox/%').eq('ip', ip).gte('created_at', dayAgo)
+      if ((today || []).length >= INBOX.perDayFiles || (today || []).reduce((a: number, r: any) => a + Number(r.size || 0), 0) + size > INBOX.perDayBytes) return json({ error: 'limit', limit: true }, 429)
+    } else if (size <= 0 || size > max) return json({ error: guest ? 'Without an account, files can be up to 1 GB. Sign up free for up to 5 GB.' : `Files kept ${dayText(days)} can be up to ${max / GB} GB.` }, 400)
+    if (guest && !box) {
       if ((await guestLeft()) <= 0) return json({ error: 'limit', limit: true }, 429)
       // and no more than 3 GB of files a day from one address, links made or not
       const { data: today } = await sb.from('roar_transfer_links').select('size').is('created_by', null).eq('ip', ip).gte('created_at', new Date(Date.now() - 864e5).toISOString())
       if ((today || []).reduce((a: number, r: any) => a + Number(r.size || 0), 0) + size > GUEST.max * GUEST.perDay) return json({ error: 'limit', limit: true }, 429)
     }
-    const key = guest ? `free/guest/${crypto.randomUUID()}/${safeName(b.name)}` : `${days === 7 ? 'week' : 'free'}/${uid}/${crypto.randomUUID()}-${safeName(b.name)}`
+    const key = box ? `pro/${box.user_id}/inbox/${crypto.randomUUID()}-${safeName(b.name)}` : guest ? `free/guest/${crypto.randomUUID()}/${safeName(b.name)}` : `${days === 7 ? 'week' : 'free'}/${uid}/${crypto.randomUUID()}-${safeName(b.name)}`
     const r = await r2.fetch(`${at(key)}?uploads`, { method: 'POST', headers: { 'Content-Type': b.type || 'application/octet-stream' } })
     const uploadId = tag(await r.text(), 'UploadId')
     if (!r.ok || !uploadId) return json({ error: `Could not start the upload (${r.status})` }, 502)
@@ -198,14 +291,14 @@ async function handle(req: Request): Promise<Response> {
     // the real size, from R2 itself
     const head = await r2.fetch(at(b.key), { method: 'HEAD' })
     const size = Number(head.headers.get('content-length')) || Number(b.size) || 0
-    const { days, max } = guest ? GUEST : plan(b.days)
+    const { days, max } = box ? INBOX : guest ? GUEST : plan(b.days)
     if (size > max) { await r2.fetch(at(b.key), { method: 'DELETE' }); return json({ error: `Files can be up to ${max / GB} GB.` }, 400) }
     const token = newToken()
     const expires = new Date(Date.now() + days * 864e5).toISOString()
     // how many times each file can be downloaded (Alex, 23 Oct): FastTransfer once, an account 5 times, the admins without limit
-    const { data: admin } = guest ? { data: null } : await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
-    const maxDownloads = guest ? GUEST.downloads : admin ? null : FREE_DOWNLOADS
-    const { error } = await sb.from('roar_transfer_links').insert({ token, path: b.key, name: String(b.name || 'file').slice(0, 300), size, type: String(b.type || ''), expires_at: expires, created_by: uid || null, ip: guest ? ip : null, store: 'r2', max_downloads: maxDownloads })
+    const { data: admin } = guest || box ? { data: null } : await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
+    const maxDownloads = box ? null : guest ? GUEST.downloads : admin ? null : FREE_DOWNLOADS
+    const { error } = await sb.from('roar_transfer_links').insert({ token, path: b.key, name: String(b.name || 'file').slice(0, 300), size, type: String(b.type || ''), expires_at: expires, created_by: box ? box.user_id : uid || null, ip: guest || box ? ip : null, store: 'r2', max_downloads: maxDownloads })
     if (error) return json({ error: error.message }, 500)
     return json({ token, expires, size, downloads: maxDownloads })
   }

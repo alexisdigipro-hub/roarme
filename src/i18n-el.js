@@ -2,6 +2,10 @@
 export const EL = {
   // RoarTransfer on R2 (22 Oct)
   '1 day': '1 μέρα',
+  '7 days': '7 μέρες',
+  'Recommended': 'Προτείνεται',
+  'Recommended: 1 or 3 days.': 'Προτείνεται: 1 ή 3 μέρες.',
+  'Most files are downloaded on the first day. A shorter link uses less energy on our servers, and lets you send bigger files.': 'Τα περισσότερα αρχεία κατεβαίνουν την πρώτη μέρα. Ένα πιο σύντομο link θέλει λιγότερη ενέργεια στους servers μας και σου επιτρέπει να στείλεις μεγαλύτερα αρχεία.',
   'Title (optional)': 'Τίτλος (προαιρετικά)',
   'Message (optional)': 'Μήνυμα (προαιρετικά)',
   'Password (optional)': 'Κωδικός (προαιρετικά)',

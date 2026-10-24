@@ -1,0 +1,22 @@
+name: Build for the site's screens
+# temporary (Alex, 25 Oct): the web build kept on this branch (site-screens/dist), so the screens of RoarMe's page
+# on themadlions.com can be taken from the real app in the Stone theme. Never merged into main.
+on:
+  push:
+    branches: [claude/determined-hopper-eu3zod]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --no-audit --no-fund && npx vite build
+      - name: Keep dist on this branch
+        run: |
+          rm -rf site-screens && mkdir -p site-screens && cp -r dist site-screens/dist
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f site-screens && git commit -q -m "RoarMe web build for the site's screens" && git push

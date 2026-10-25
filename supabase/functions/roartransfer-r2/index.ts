@@ -5,6 +5,7 @@
 // Files go to free/<account id>/… (7-day ones to week/<account id>/…); the hourly sweep below deletes each one as soon as its link has ended (R2's own
 // lifecycle rule, free/ after 3 days, pro/ after 30, stays as a backstop).
 // Secrets (Supabase > Edge Functions > Secrets): R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY; RESEND_API_KEY for email.
+// Pro (25 Oct): up to 20 GB, 1 to 30 days, no download limit, under pro/<id>/.
 // Free (Alex, 21 Oct): 1 day up to 5 GB, or 3 days up to 3 GB. One link per upload (bundle) with an optional title,
 // message, password, emails to the people it is for, and an email to the sender when someone downloads.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
@@ -15,6 +16,10 @@ const GB = 1024 ** 3
 // 7 days up to 1 GB (Alex, 23 Oct); those go under week/, which R2's 3-day rule on free/ does not touch: the hourly sweep
 // deletes them when their link ends
 const plan = (days: unknown) => (Number(days) === 1 ? { days: 1, max: 5 * GB } : Number(days) === 7 ? { days: 7, max: 1 * GB } : { days: 3, max: 3 * GB })
+// Pro (Alex, 25 Oct): up to 20 GB, kept 1, 3, 7 or 30 days, downloaded without limit; under pro/<id>/, which R2's own
+// 30-day rule on pro/ backs up (the hourly sweep follows the link as for everyone)
+const PRO_DAYS = [1, 3, 7, 30]
+const proPlan = (days: unknown) => ({ days: PRO_DAYS.includes(Number(days)) ? Number(days) : 7, max: 20 * GB })
 const dayText = (d: number) => (d === 1 ? '1 day' : `${d} days`)
 // without an account (Alex, 21 Oct: a way to get to know us): link only, 24 hours, up to 1 GB, 3 transfers a day
 const GUEST = { days: 1, max: 1 * GB, perDay: 3, downloads: 1 }
@@ -175,7 +180,13 @@ async function handle(req: Request): Promise<Response> {
     return data && (await isPro(data.user_id)) ? data : null
   })() : null
   if (b.inbox && !box) return json({ error: 'This page does not take files.', gone: true }, 404)
-  if (b.action === 'inbox-info') return box ? json({ name: box.name || box.slug, max: INBOX.max, days: INBOX.days }) : json({ error: 'not found', gone: true }, 404)
+  if (b.action === 'inbox-info') {
+    if (!box) return json({ error: 'not found', gone: true }, 404)
+    // the Pro's own name, logo and backgrounds on their page (Alex, 25 Oct)
+    const { data: br } = await sb.from('roar_transfer_pro').select('brand_name, brand_logo, brand_bgs').eq('user_id', box.user_id).maybeSingle()
+    const brand = br && (br.brand_name || br.brand_logo || (br.brand_bgs || []).length) ? { name: br.brand_name || '', logo: br.brand_logo || '', bgs: br.brand_bgs || [] } : null
+    return json({ name: br?.brand_name || box.name || box.slug, max: INBOX.max, days: INBOX.days, brand })
+  }
 
   // the Pro's own: are they Pro, their page's name, and every drop they received in the last 30 days
   if (b.action === 'pro') {
@@ -251,11 +262,13 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
     return Math.max(0, GUEST.perDay - (count || 0))
   }
   if (b.action === 'guest') return json({ left: await guestLeft(), ...GUEST })
-  const mine = (key: string) => typeof key === 'string' && !key.includes('..') && (box ? key.startsWith(`pro/${box.user_id}/inbox/`) : guest ? /^free\/guest\/[0-9a-f-]{36}\//.test(key) : (key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`)))
+  const mine = (key: string) => typeof key === 'string' && !key.includes('..') && (box ? key.startsWith(`pro/${box.user_id}/inbox/`) : guest ? /^free\/guest\/[0-9a-f-]{36}\//.test(key) : (key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`) || key.startsWith(`pro/${uid}/`)))
+  // the caller is Pro (their own uploads, not someone's Receive-files page)
+  const proMe = !guest && !box && ['create', 'complete'].includes(b.action) ? await isPro(uid) : false
 
   if (b.action === 'create') {
     const size = Number(b.size) || 0
-    const { days, max } = box ? INBOX : guest ? GUEST : plan(b.days)
+    const { days, max } = box ? INBOX : guest ? GUEST : proMe ? proPlan(b.days) : plan(b.days)
     // a file for someone's Receive-files page: its own size and the sender's limits for the day
     if (box) {
       if (size <= 0 || size > max) return json({ error: `Files can be up to ${max / GB} GB.` }, 400)
@@ -268,7 +281,7 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
       const { data: today } = await sb.from('roar_transfer_links').select('size').is('created_by', null).eq('ip', ip).gte('created_at', new Date(Date.now() - 864e5).toISOString())
       if ((today || []).reduce((a: number, r: any) => a + Number(r.size || 0), 0) + size > GUEST.max * GUEST.perDay) return json({ error: 'limit', limit: true }, 429)
     }
-    const key = box ? `pro/${box.user_id}/inbox/${crypto.randomUUID()}-${safeName(b.name)}` : guest ? `free/guest/${crypto.randomUUID()}/${safeName(b.name)}` : `${days === 7 ? 'week' : 'free'}/${uid}/${crypto.randomUUID()}-${safeName(b.name)}`
+    const key = box ? `pro/${box.user_id}/inbox/${crypto.randomUUID()}-${safeName(b.name)}` : guest ? `free/guest/${crypto.randomUUID()}/${safeName(b.name)}` : proMe ? `pro/${uid}/${crypto.randomUUID()}-${safeName(b.name)}` : `${days === 7 ? 'week' : 'free'}/${uid}/${crypto.randomUUID()}-${safeName(b.name)}`
     const r = await r2.fetch(`${at(key)}?uploads`, { method: 'POST', headers: { 'Content-Type': b.type || 'application/octet-stream' } })
     const uploadId = tag(await r.text(), 'UploadId')
     if (!r.ok || !uploadId) return json({ error: `Could not start the upload (${r.status})` }, 502)
@@ -294,13 +307,13 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
     // the real size, from R2 itself
     const head = await r2.fetch(at(b.key), { method: 'HEAD' })
     const size = Number(head.headers.get('content-length')) || Number(b.size) || 0
-    const { days, max } = box ? INBOX : guest ? GUEST : plan(b.days)
+    const { days, max } = box ? INBOX : guest ? GUEST : proMe ? proPlan(b.days) : plan(b.days)
     if (size > max) { await r2.fetch(at(b.key), { method: 'DELETE' }); return json({ error: `Files can be up to ${max / GB} GB.` }, 400) }
     const token = newToken()
     const expires = new Date(Date.now() + days * 864e5).toISOString()
     // how many times each file can be downloaded (Alex, 23 Oct): FastTransfer once, an account 5 times, the admins without limit
     const { data: admin } = guest || box ? { data: null } : await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
-    const maxDownloads = box ? null : guest ? GUEST.downloads : admin ? null : FREE_DOWNLOADS
+    const maxDownloads = box ? null : guest ? GUEST.downloads : admin || proMe ? null : FREE_DOWNLOADS
     const { error } = await sb.from('roar_transfer_links').insert({ token, path: b.key, name: String(b.name || 'file').slice(0, 300), size, type: String(b.type || ''), expires_at: expires, created_by: box ? box.user_id : uid || null, ip: guest || box ? ip : null, store: 'r2', max_downloads: maxDownloads })
     if (error) return json({ error: error.message }, 500)
     return json({ token, expires, size, downloads: maxDownloads })
@@ -373,7 +386,7 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
   if (b.action === 'delete') {
     const key = String(b.key || '')
     const { data: admin } = await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
-    if (!(key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`) || (admin && /^(free|week|pro)\//.test(key)))) return json({ error: 'not allowed' }, 403)
+    if (!(key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`) || key.startsWith(`pro/${uid}/`) || (admin && /^(free|week|pro)\//.test(key)))) return json({ error: 'not allowed' }, 403)
     await sb.from('roar_transfer_links').update({ stopped_at: new Date().toISOString(), expires_at: new Date().toISOString() }).eq('path', key)
     await r2.fetch(at(key), { method: 'DELETE' })
     return json({ ok: true })

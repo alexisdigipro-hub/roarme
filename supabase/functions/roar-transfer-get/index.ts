@@ -26,6 +26,17 @@ async function r2Url(key: string, query: Record<string, string>, expires = 3600)
 }
 const PAGE = 'https://roartransfer.com/'
 const SELF = `${Deno.env.get('SUPABASE_URL')}/functions/v1/roar-transfer-get`
+// a Pro's brand (Alex, 25 Oct; supabase/transfer-pro-plus.sql): their name, logo and backgrounds on their links' pages,
+// while they are Pro (an admin, or a row in roar_transfer_pro still running)
+// deno-lint-ignore no-explicit-any
+async function brandOf(sb: any, id: string | null) {
+  if (!id) return null
+  const { data: p } = await sb.from('roar_transfer_pro').select('until, brand_name, brand_logo, brand_bgs').eq('user_id', id).maybeSingle()
+  if (!p || !(p.brand_name || p.brand_logo || (p.brand_bgs || []).length)) return null
+  const { data: a } = await sb.from('roar_admins').select('user_id').eq('user_id', id).maybeSingle()
+  if (!a && p.until && new Date(p.until).getTime() <= Date.now()) return null
+  return { name: p.brand_name || '', logo: p.brand_logo || '', bgs: p.brand_bgs || [] }
+}
 // deno-lint-ignore no-explicit-any
 const used = (f: any) => f.max_downloads != null && (f.downloads || 0) >= f.max_downloads
 // attachment with the real name: a plain ASCII one for old browsers, the UTF-8 one for the rest
@@ -44,22 +55,24 @@ Deno.serve(async (req) => {
   if (q.get('meta') === '1' || q.get('og') === '1') {
     const meta = await preview(sb, t)
     if (q.get('meta') === '1') return new Response(JSON.stringify(meta), { status: meta.gone ? 410 : 200, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=120' } })
-    const r = meta.cover ? await fetch(await r2Url(`og/${t}.jpg`, {})) : null
+    // the picture made when it was sent, else the sender's own background (a Pro's brand)
+    const r = meta.cover ? await fetch(meta.coverUrl || await r2Url(`og/${t}.jpg`, {})) : null
     if (!r || !r.ok) return new Response('not found', { status: 404, headers: cors })
-    return new Response(r.body, { headers: { ...cors, 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=3600' } })
+    return new Response(r.body, { headers: { ...cors, 'Content-Type': r.headers.get('content-type') || 'image/jpeg', 'Cache-Control': 'public, max-age=3600' } })
   }
   // a download of one R2 file: count it, then on to R2 (six hours, so a big file can finish and resume)
   if (q.get('dl') === '1') {
     const { data: f } = await sb.from('roar_transfer_links').select('token, path, name, expires_at, store, downloads, max_downloads').eq('token', t).maybeSingle()
     const page = `${PAGE}${t}`
     if (!f || f.store !== 'r2' || new Date(f.expires_at).getTime() <= Date.now() || used(f)) return Response.redirect(page, 302)
-    if (req.method === 'GET') await sb.rpc('roar_transfer_hit', { t, dl: true })
+    // counted with the country and device of whoever downloads (Cloudflare's header in front of Supabase)
+    if (req.method === 'GET') await sb.rpc('roar_transfer_hit', { t, dl: true, country: req.headers.get('cf-ipcountry'), agent: req.headers.get('user-agent') })
     const to = await r2Url(f.path, { 'response-content-disposition': disposition(f.name || 'file') }, 6 * 3600)
     return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
   }
-  const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads').eq('token', t).maybeSingle()
+  const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by').eq('token', t).maybeSingle()
   if (link) {
-    const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at }
+    const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at, brand: await brandOf(sb, link.created_by) }
     if (new Date(link.expires_at).getTime() <= Date.now()) return json({ ...info, error: 'expired' }, 410)
     const one = await addresses(sb, link)
     if (!one) return json({ ...info, error: 'expired' }, 410)
@@ -70,7 +83,7 @@ Deno.serve(async (req) => {
   if (!bundle) return json({ error: 'not_found' }, 404)
   // who sent it, the title and the message (roartransfer.com, Alex 21 Oct); with a password, nothing else until it is right
   const { data: p } = bundle.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle() : { data: null }
-  const head = { bundle: true, title: bundle.title || '', from: p?.display_name || (p?.username ? '@' + p.username : '') }
+  const head = { bundle: true, title: bundle.title || '', from: p?.display_name || (p?.username ? '@' + p.username : ''), brand: await brandOf(sb, bundle.created_by) }
   if (bundle.password_hash) {
     const given = q.get('p') || ''
     if (!given) return json({ ...head, expires: bundle.expires_at, error: 'password' }, 401)
@@ -110,11 +123,14 @@ async function preview(sb: any, t: string) {
   const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > now)
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
   const head = await r2.fetch(r2At(`og/${t}.jpg`), { method: 'HEAD' }).catch(() => null)
+  const brand = await brandOf(sb, bundle.created_by)
+  const own = !locked && !head?.ok && brand?.bgs?.length ? brand.bgs[0] : ''
   return {
+    brand: brand?.name || '', coverUrl: own,
     title: locked ? '' : bundle.title || '', from, locked, gone: !live.length,
     names: locked ? [] : live.slice(0, 3).map((r: any) => r.name || 'file'), count: live.length,
     size: live.reduce((a: number, r: any) => a + Number(r.size || 0), 0), kind: kind(live.map((r: any) => r.type || '')),
-    expires: bundle.expires_at, cover: !locked && !!head?.ok,
+    expires: bundle.expires_at, cover: !locked && (!!head?.ok || !!own),
   }
 }
 

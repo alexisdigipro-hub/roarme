@@ -2,11 +2,12 @@ import { useEffect } from 'react'
 import { locale } from './i18n.js'
 import { Wordmark } from './ui.jsx'
 
-/* Privacy Policy and Terms of Service (17 Oct 2026). Written to match what RoarMe really does: it keeps only what the
+/* Privacy Policy and Terms of Service (17 Oct 2026; brought up to date 25 Oct: emails, notifications, LiveKit calls,
+   RoarTransfer on Cloudflare R2, the THEMADLIONS Hub, folders synced, the other apps on the same account). Written to match what RoarMe really does: it keeps only what the
    chat needs, has no ads, no trackers and no analytics, and sells nothing. Greek when the app is in Greek.
    Shown in Settings > Privacy and Security, and as public pages: ?legal=privacy and ?legal=terms. */
 
-const UPDATED = { en: '17 October 2026', el: '17 Οκτωβρίου 2026' }
+const UPDATED = { en: '25 October 2026', el: '25 Οκτωβρίου 2026' }
 const CONTACT = 'info@themadlions.com'
 
 const DOCS = {
@@ -16,29 +17,40 @@ const DOCS = {
       lead: 'RoarMe is a chat by THE MAD LIONS, Athens, Greece. In short: we do not sell your data, we show no ads, we use no trackers or analytics, and we do not read or profile your messages. We keep only what the app needs to deliver your chats, and you can delete it.',
       sections: [
         ['What we keep, and why', [
-          'Your account: email address, a password (stored only as a secure hash by our database provider), your @username and display name, and, if you add them, a profile photo and an "about" line. We need these so you can sign in and people can find you.',
-          'What you send: messages, photos, videos, voice messages and files, with reactions, pins and the time each chat was last read. We keep them so they reach the people in the chat and stay in your history.',
+          'Your account: email address, a password (stored only as a secure hash by our database provider), your @username and display name and, if you add them, a profile photo, an "about" line and a name colour. We need these so you can sign in and people can find you.',
+          'What you send: messages, photos, videos, voice messages and files, and what you share in a chat (a place, a contact card, an article, an event, a task), with reactions, pins, reminders, scheduled messages and the time each chat was last read. We keep them so they reach the people in the chat and stay in your history.',
           'Your "last seen" time, if your privacy settings allow it to be shown.',
-          'Your settings (theme, chat colours, folders and similar) stay on your own device, not on our servers.',
+          'Your chat folders, so they are the same on every device you use. Your other settings (theme, chat colours, wallpaper and similar) stay on your own device.',
         ]],
         ['What we do not collect', [
           'No advertising IDs, no ads, no tracking cookies, no analytics or crash-reporting tools.',
           'We do not upload your phone contacts. Your location is read only when you open Location and ask for it, and it is sent only if you send it to a chat, as a message like any other.',
-          'We do not sell, rent or share your data with anyone for marketing, and we do not use your messages to build a profile of you.',
+          'We do not sell, rent or share your data with anyone for marketing, and we do not use your messages to build a profile of you or to train any AI.',
         ]],
-        ['RoarTransfer', [
-          'Large files sent with RoarTransfer are kept for 3 days and then deleted automatically, with their download links.',
-          'A download link works for anyone who has it until it expires. Share it only with people you want to have the file.',
+        ['Emails and notifications', [
+          'We email you to confirm your account and reset your password and, if you leave it on, to remind you of unread messages. These emails are sent through Resend and never contain what the messages say. Every reminder has a link that turns them off.',
+          'If you turn on notifications, your browser or phone gives us an address for it. Each notification (who wrote and, if you allow previews, the start of the message) is encrypted for your device before it leaves our server, so the push service that carries it (Apple, Google or Mozilla, depending on your device) cannot read it.',
         ]],
         ['Calls', [
-          'Voice and video calls go directly between the devices in the call (WebRTC). We do not record or store them. To connect the call, the devices contact connection servers run by Google and Cloudflare, which see the devices\' IP addresses.',
+          'Voice and video calls connect through LiveKit, our call service, or directly between the devices (WebRTC), helped by connection servers of Google and Cloudflare. They are encrypted in transit and we never record or store them. These services see the devices\' IP addresses for the length of the call.',
         ]],
-        ['Where your data is', [
-          'To run RoarMe and keep it safe, its administrator at The Mad Lions can see the list of accounts (name, @username, email, when they joined and were last seen) and the details of files sent (name, size, type, when, by whom). Never what the messages or the files say.',
-          'Accounts, messages and files are stored with Supabase, our database and storage provider, in London, United Kingdom. The app itself is served from GitHub Pages. These providers act on our behalf and keep short technical logs (such as IP address and device type) for security and to keep the service running.',
-          'Data is encrypted in transit (HTTPS) and at rest by our provider. Messages are not end-to-end encrypted, except text written while Encrypted Chat is on in a chat: that is encrypted on the device and only the devices of the people in that chat can read it, not RoarMe. Photos, files and voice messages are never end-to-end encrypted.',
+        ['RoarTransfer', [
+          'Large files you send with RoarTransfer are stored with Cloudflare R2. You choose how long their link lasts (1, 3 or 7 days); when it ends the file is deleted within the hour. Each file can be downloaded a limited number of times.',
+          'A download link works for anyone who has it until it ends. Share it only with people you want to have the file. RoarTransfer has its own Privacy Policy at roartransfer.com/privacy.',
+        ]],
+        ['THEMADLIONS Hub', [
+          'Members of The Mad Lions team can sign in with the THEMADLIONS Hub. Then the hub and RoarMe know that the two accounts are the same person, the hub sets who is in each project\'s group chat, and RoarMe shows you your hub tasks and calendar. The hub never receives your messages.',
+        ]],
+        ['When you use other services', [
           'The Translate button opens Google Translate with the text you chose, only when you tap it.',
           'The map in Location is OpenStreetMap\'s, and place names and search come from OpenStreetMap\'s Nominatim service. It receives the area of the map being shown (and what you search for) with your IP address, never your name or account.',
+          'A video link (YouTube, Vimeo) plays in that service\'s own player, which then receives your IP address under its own policy.',
+        ]],
+        ['Where your data is, and who sees it', [
+          'Accounts, messages and files are stored with Supabase, our database and storage provider, in London, United Kingdom; RoarTransfer files with Cloudflare R2. The app is served from GitHub Pages. These providers act on our behalf and keep short technical logs (such as IP address and device type) for security and to keep the service running.',
+          'To run RoarMe and keep it safe, its administrator at The Mad Lions can see the list of accounts (name, @username, email, when they joined and were last seen) and the details of files sent (name, size, type, when, by whom, how often downloaded). Never what the messages or the files say.',
+          'Data is encrypted in transit (HTTPS) and at rest by our providers. Messages are not end-to-end encrypted, except text written while Encrypted Chat is on in a chat: that is encrypted on the device and only the devices of the people in that chat can read it, not RoarMe. Photos, files and voice messages are never end-to-end encrypted.',
+          'Your RoarMe account also signs you in to RoarWriter, Roardino and RoarTransfer. Each of them has its own policy for what it keeps.',
         ]],
         ['How long we keep it, and how to delete it', [
           'Messages stay until they are deleted. In any chat you can turn on Auto-Delete, and messages older than the time you pick are removed.',
@@ -64,32 +76,43 @@ const DOCS = {
       lead: 'Το RoarMe είναι μια εφαρμογή συνομιλίας της THE MAD LIONS, Αθήνα. Με λίγα λόγια: δεν πουλάμε τα δεδομένα σου, δεν δείχνουμε διαφημίσεις, δεν χρησιμοποιούμε trackers ή analytics και δεν διαβάζουμε ούτε αναλύουμε τα μηνύματά σου. Κρατάμε μόνο ό,τι χρειάζεται για να λειτουργούν οι συζητήσεις σου, και μπορείς να το σβήσεις.',
       sections: [
         ['Τι κρατάμε και γιατί', [
-          'Τον λογαριασμό σου: email, κωδικό (αποθηκεύεται μόνο κρυπτογραφημένος από τον πάροχο της βάσης), το @username και το όνομά σου και, αν τα προσθέσεις, φωτογραφία προφίλ και ένα «σχετικά». Τα χρειαζόμαστε για να συνδέεσαι και να σε βρίσκουν.',
-          'Ό,τι στέλνεις: μηνύματα, φωτογραφίες, βίντεο, φωνητικά και αρχεία, μαζί με αντιδράσεις, καρφιτσώματα και πότε διαβάστηκε κάθε συζήτηση. Τα κρατάμε για να φτάνουν σε όσους είναι στη συζήτηση και να μένουν στο ιστορικό σου.',
+          'Τον λογαριασμό σου: email, κωδικό (αποθηκεύεται μόνο κρυπτογραφημένος από τον πάροχο της βάσης), το @username και το όνομά σου και, αν τα προσθέσεις, φωτογραφία προφίλ, ένα «σχετικά» και ένα χρώμα ονόματος. Τα χρειαζόμαστε για να συνδέεσαι και να σε βρίσκουν.',
+          'Ό,τι στέλνεις: μηνύματα, φωτογραφίες, βίντεο, φωνητικά και αρχεία, και ό,τι μοιράζεσαι σε μια συζήτηση (μια τοποθεσία, μια επαφή, ένα άρθρο, ένα γεγονός, μια εργασία), μαζί με αντιδράσεις, καρφιτσώματα, υπενθυμίσεις, προγραμματισμένα μηνύματα και πότε διαβάστηκε κάθε συζήτηση. Τα κρατάμε για να φτάνουν σε όσους είναι στη συζήτηση και να μένουν στο ιστορικό σου.',
           'Πότε ήσουν τελευταία φορά συνδεδεμένος, αν το επιτρέπουν οι ρυθμίσεις απορρήτου σου.',
-          'Οι ρυθμίσεις σου (θέμα, χρώματα, φάκελοι κ.λπ.) μένουν στη δική σου συσκευή, όχι στους διακομιστές μας.',
+          'Τους φακέλους των συζητήσεών σου, για να είναι ίδιοι σε κάθε συσκευή σου. Οι υπόλοιπες ρυθμίσεις σου (θέμα, χρώματα, ταπετσαρία κ.λπ.) μένουν στη δική σου συσκευή.',
         ]],
         ['Τι δεν συλλέγουμε', [
           'Κανένα αναγνωριστικό διαφήμισης, καμία διαφήμιση, κανένα cookie παρακολούθησης, κανένα εργαλείο analytics ή αναφοράς σφαλμάτων.',
           'Δεν ανεβάζουμε τις επαφές του κινητού σου. Η τοποθεσία σου διαβάζεται μόνο όταν ανοίξεις την Τοποθεσία και τη ζητήσεις, και στέλνεται μόνο αν τη στείλεις εσύ σε μια συζήτηση, ως μήνυμα όπως κάθε άλλο.',
-          'Δεν πουλάμε, δεν νοικιάζουμε και δεν δίνουμε τα δεδομένα σου σε κανέναν για μάρκετινγκ, και δεν χρησιμοποιούμε τα μηνύματά σου για να φτιάξουμε προφίλ σου.',
+          'Δεν πουλάμε, δεν νοικιάζουμε και δεν δίνουμε τα δεδομένα σου σε κανέναν για μάρκετινγκ, και δεν χρησιμοποιούμε τα μηνύματά σου για να φτιάξουμε προφίλ σου ή για να εκπαιδεύσουμε κανένα AI.',
         ]],
-        ['RoarTransfer', [
-          'Τα μεγάλα αρχεία που στέλνονται με RoarTransfer μένουν 3 μέρες και μετά σβήνονται αυτόματα, μαζί με τα link λήψης τους.',
-          'Ένα link λήψης λειτουργεί για όποιον το έχει μέχρι να λήξει. Δώσ\' το μόνο σε όσους θέλεις να έχουν το αρχείο.',
+        ['Emails και ειδοποιήσεις', [
+          'Σου στέλνουμε email για να επιβεβαιώσεις τον λογαριασμό σου και να αλλάξεις κωδικό και, αν το αφήσεις ανοιχτό, για να σου θυμίσουμε αδιάβαστα μηνύματα. Τα emails αυτά στέλνονται μέσω της Resend και δεν περιέχουν ποτέ τι λένε τα μηνύματα. Κάθε υπενθύμιση έχει ένα link που τις σταματά.',
+          'Αν ανοίξεις τις ειδοποιήσεις, ο browser ή το κινητό σου μάς δίνει μια διεύθυνση γι\' αυτό. Κάθε ειδοποίηση (ποιος έγραψε και, αν επιτρέπεις την προεπισκόπηση, η αρχή του μηνύματος) κρυπτογραφείται για τη συσκευή σου πριν φύγει από τον διακομιστή μας, οπότε η υπηρεσία που τη μεταφέρει (Apple, Google ή Mozilla, ανάλογα με τη συσκευή) δεν μπορεί να τη διαβάσει.',
         ]],
         ['Κλήσεις', [
-          'Οι φωνητικές κλήσεις και οι βιντεοκλήσεις γίνονται απευθείας ανάμεσα στις συσκευές (WebRTC). Δεν τις ηχογραφούμε ούτε τις αποθηκεύουμε. Για να συνδεθεί η κλήση, οι συσκευές επικοινωνούν με διακομιστές σύνδεσης της Google και της Cloudflare, που βλέπουν τις διευθύνσεις IP τους.',
+          'Οι φωνητικές κλήσεις και οι βιντεοκλήσεις συνδέονται μέσω της LiveKit, της υπηρεσίας κλήσεων που χρησιμοποιούμε, ή απευθείας ανάμεσα στις συσκευές (WebRTC), με τη βοήθεια διακομιστών σύνδεσης της Google και της Cloudflare. Κρυπτογραφούνται κατά τη μεταφορά και δεν τις ηχογραφούμε ούτε τις αποθηκεύουμε ποτέ. Οι υπηρεσίες αυτές βλέπουν τις διευθύνσεις IP των συσκευών όσο κρατάει η κλήση.',
         ]],
-        ['Πού βρίσκονται τα δεδομένα σου', [
-          'Για να λειτουργεί το RoarMe και να μένει ασφαλές, ο διαχειριστής του στη The Mad Lions βλέπει τη λίστα των λογαριασμών (όνομα, @username, email, πότε γράφτηκαν και πότε εμφανίστηκαν τελευταία) και τα στοιχεία των αρχείων που στέλνονται (όνομα, μέγεθος, τύπος, πότε, από ποιον). Ποτέ τι λένε τα μηνύματα ή τα αρχεία.',
-          'Οι λογαριασμοί, τα μηνύματα και τα αρχεία φυλάσσονται στη Supabase, τον πάροχο βάσης δεδομένων και αποθήκευσης, στο Λονδίνο, Ηνωμένο Βασίλειο. Η ίδια η εφαρμογή σερβίρεται από το GitHub Pages. Οι πάροχοι αυτοί λειτουργούν για λογαριασμό μας και κρατούν σύντομα τεχνικά αρχεία (όπως διεύθυνση IP και τύπο συσκευής) για ασφάλεια και για τη λειτουργία της υπηρεσίας.',
-          'Τα δεδομένα κρυπτογραφούνται κατά τη μεταφορά (HTTPS) και κατά την αποθήκευση από τον πάροχο. Τα μηνύματα δεν έχουν κρυπτογράφηση από άκρο σε άκρο, οπότε μη χρησιμοποιείς το RoarMe για πληροφορίες που χρειάζονται τέτοιο επίπεδο προστασίας.',
+        ['RoarTransfer', [
+          'Τα μεγάλα αρχεία που στέλνεις με RoarTransfer φυλάσσονται στο Cloudflare R2. Διαλέγεις πόσο κρατάει το link τους (1, 3 ή 7 μέρες)· όταν λήξει, το αρχείο σβήνεται μέσα στην ώρα. Κάθε αρχείο κατεβαίνει περιορισμένο αριθμό φορών.',
+          'Ένα link λήψης λειτουργεί για όποιον το έχει μέχρι να λήξει. Δώσ\' το μόνο σε όσους θέλεις να έχουν το αρχείο. Το RoarTransfer έχει δική του Πολιτική Απορρήτου στο roartransfer.com/privacy.',
+        ]],
+        ['THEMADLIONS Hub', [
+          'Τα μέλη της ομάδας της The Mad Lions μπορούν να συνδέονται με το THEMADLIONS Hub. Τότε το hub και το RoarMe ξέρουν ότι οι δύο λογαριασμοί είναι το ίδιο πρόσωπο, το hub ορίζει ποιοι είναι στη συζήτηση κάθε project, και το RoarMe σού δείχνει τις εργασίες και το ημερολόγιό σου από το hub. Το hub δεν παίρνει ποτέ τα μηνύματά σου.',
+        ]],
+        ['Όταν χρησιμοποιείς άλλες υπηρεσίες', [
           'Το κουμπί Μετάφραση ανοίγει το Google Translate με το κείμενο που διάλεξες, μόνο όταν το πατήσεις.',
-          'Ο χάρτης στην Τοποθεσία είναι του OpenStreetMap, και τα ονόματα και η αναζήτηση τόπων έρχονται από την υπηρεσία Nominatim του OpenStreetMap. Το OpenStreetMap λαμβάνει την περιοχή του χάρτη που βλέπεις (και ό,τι ψάχνεις) μαζί με τη διεύθυνση IP σου, ποτέ το όνομα ή τον λογαριασμό σου.',
+          'Ο χάρτης στην Τοποθεσία είναι του OpenStreetMap, και τα ονόματα και η αναζήτηση τόπων έρχονται από την υπηρεσία Nominatim του OpenStreetMap. Λαμβάνει την περιοχή του χάρτη που βλέπεις (και ό,τι ψάχνεις) μαζί με τη διεύθυνση IP σου, ποτέ το όνομα ή τον λογαριασμό σου.',
+          'Ένα link βίντεο (YouTube, Vimeo) παίζει στο δικό τους player, που τότε λαμβάνει τη διεύθυνση IP σου σύμφωνα με τη δική του πολιτική.',
+        ]],
+        ['Πού βρίσκονται τα δεδομένα σου και ποιος τα βλέπει', [
+          'Οι λογαριασμοί, τα μηνύματα και τα αρχεία φυλάσσονται στη Supabase, τον πάροχο βάσης δεδομένων και αποθήκευσης, στο Λονδίνο, Ηνωμένο Βασίλειο· τα αρχεία του RoarTransfer στο Cloudflare R2. Η εφαρμογή σερβίρεται από το GitHub Pages. Οι πάροχοι αυτοί λειτουργούν για λογαριασμό μας και κρατούν σύντομα τεχνικά αρχεία (όπως διεύθυνση IP και τύπο συσκευής) για ασφάλεια και για τη λειτουργία της υπηρεσίας.',
+          'Για να λειτουργεί το RoarMe και να μένει ασφαλές, ο διαχειριστής του στη The Mad Lions βλέπει τη λίστα των λογαριασμών (όνομα, @username, email, πότε γράφτηκαν και πότε εμφανίστηκαν τελευταία) και τα στοιχεία των αρχείων που στέλνονται (όνομα, μέγεθος, τύπος, πότε, από ποιον, πόσες φορές κατέβηκαν). Ποτέ τι λένε τα μηνύματα ή τα αρχεία.',
+          'Τα δεδομένα κρυπτογραφούνται κατά τη μεταφορά (HTTPS) και κατά την αποθήκευση από τους παρόχους. Τα μηνύματα δεν έχουν κρυπτογράφηση από άκρο σε άκρο, εκτός από το κείμενο που γράφεται όσο είναι ανοιχτή η Κρυπτογραφημένη συνομιλία: αυτό κρυπτογραφείται στη συσκευή και μόνο οι συσκευές όσων είναι στη συζήτηση μπορούν να το διαβάσουν, όχι το RoarMe. Οι φωτογραφίες, τα αρχεία και τα φωνητικά δεν έχουν ποτέ κρυπτογράφηση από άκρο σε άκρο.',
+          'Ο λογαριασμός σου στο RoarMe σε συνδέει και στα RoarWriter, Roardino και RoarTransfer. Το καθένα έχει τη δική του πολιτική για το τι κρατάει.',
         ]],
         ['Πόσο τα κρατάμε και πώς τα σβήνεις', [
-          'Τα μηνύματα μένουν μέχρι να σβηστούν. Σε κάθε συζήτηση μπορείς να ενεργοποιήσεις την Αυτόματη διαγραφή μηνυμάτων, και τα μηνύματα που είναι παλιότερα από τον χρόνο που διάλεξες σβήνονται.',
+          'Τα μηνύματα μένουν μέχρι να σβηστούν. Σε κάθε συζήτηση μπορείς να ενεργοποιήσεις την Αυτόματη διαγραφή, και τα μηνύματα που είναι παλιότερα από τον χρόνο που διάλεξες σβήνονται.',
           'Ρυθμίσεις > Απόρρητο και ασφάλεια > Διαγραφή του λογαριασμού μου: σβήνει τον λογαριασμό, το προφίλ και τις ιδιωτικές σου συζητήσεις. Τα μηνύματα που έστειλες σε ομάδες μένουν για τα άλλα μέλη, χωρίς το όνομά σου.',
           'Συσκευές που μένουν πολύ καιρό αχρησιμοποίητες αποσυνδέονται αυτόματα.',
         ]],
@@ -119,6 +142,9 @@ const DOCS = {
         ['Your content', [
           'What you send stays yours. You allow us only to store it and deliver it to the people you send it to, so the app can work. We do not use it for anything else.',
           'You are responsible for what you send and for who you share RoarTransfer links with.',
+        ]],
+        ['Free and paid', [
+          'RoarMe is free. Some features may later be offered in a paid plan (Pro); if so, the price and what you get are shown before you pay, and nothing is ever charged without your clear order.',
         ]],
         ['What is not allowed', [
           'Anything illegal; harassment, threats or hate; spam; malware or attempts to break into accounts or the service; content you have no right to share; and any content that sexualises minors, which we report to the authorities.',
@@ -152,6 +178,9 @@ const DOCS = {
         ['Το περιεχόμενό σου', [
           'Ό,τι στέλνεις μένει δικό σου. Μας επιτρέπεις μόνο να το αποθηκεύουμε και να το παραδίδουμε σε όσους το στέλνεις, για να λειτουργεί η εφαρμογή. Δεν το χρησιμοποιούμε για τίποτε άλλο.',
           'Είσαι υπεύθυνος για ό,τι στέλνεις και για το σε ποιους δίνεις links του RoarTransfer.',
+        ]],
+        ['Δωρεάν και επί πληρωμή', [
+          'Το RoarMe είναι δωρεάν. Ορισμένες λειτουργίες μπορεί αργότερα να προσφέρονται σε πληρωμένο πλάνο (Pro)· τότε η τιμή και τι περιλαμβάνει εμφανίζονται πριν πληρώσεις, και τίποτα δεν χρεώνεται ποτέ χωρίς τη ρητή εντολή σου.',
         ]],
         ['Τι δεν επιτρέπεται', [
           'Οτιδήποτε παράνομο· παρενόχληση, απειλές ή μίσος· spam· κακόβουλο λογισμικό ή απόπειρες παραβίασης λογαριασμών ή της υπηρεσίας· περιεχόμενο που δεν έχεις δικαίωμα να μοιραστείς· και κάθε περιεχόμενο που σεξουαλικοποιεί ανηλίκους, το οποίο αναφέρουμε στις αρχές.',

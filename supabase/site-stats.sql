@@ -36,11 +36,14 @@ grant execute on function public.roar_site_hit(text, text, text, text) to anon, 
 
 -- the admin's numbers for the last `days` days (Athens time): visitors and views per day, now, today, the countries,
 -- devices, pages, where people came from and languages
+-- days 0 = All time (Alex, 25 Oct: "and All time, everywhere"), from the first visit counted
 create or replace function public.roar_site_stats(days int default 30) returns json
 language plpgsql stable security definer set search_path = public as $$
-declare since timestamptz := date_trunc('day', now() at time zone 'Europe/Athens') at time zone 'Europe/Athens' - make_interval(days => greatest(days, 1) - 1);
+declare since timestamptz;
 begin
   if not public.roar_is_admin() then raise exception 'not allowed' using errcode = '42501'; end if;
+  if days > 0 then since := date_trunc('day', now() at time zone 'Europe/Athens') at time zone 'Europe/Athens' - make_interval(days => days - 1);
+  else since := coalesce((select date_trunc('day', min(at) at time zone 'Europe/Athens') at time zone 'Europe/Athens' from public.roar_site_visits), date_trunc('day', now() at time zone 'Europe/Athens') at time zone 'Europe/Athens'); end if;
   return (
     with v as (select * from public.roar_site_visits where at >= since),
     today as (select * from v where at >= date_trunc('day', now() at time zone 'Europe/Athens') at time zone 'Europe/Athens')
@@ -65,3 +68,48 @@ begin
 end $$;
 revoke all on function public.roar_site_stats(int) from public, anon;
 grant execute on function public.roar_site_stats(int) to authenticated;
+
+-- Admin > Transfers for a period too (7, 30, 90 days, 0 = All time): the same numbers as roar_admin_transfer_stats()
+-- (kept for the RoarMe app), counted over the transfers sent in that period, one bar a day from its start
+create or replace function public.roar_admin_transfer_stats(days int) returns jsonb
+language plpgsql stable security definer set search_path to 'public', 'storage' as $function$
+declare res jsonb; since timestamptz; first date;
+begin
+  if not public.roar_is_admin() then raise exception 'not allowed' using errcode = '42501'; end if;
+  if days > 0 then since := date_trunc('day', now()) - make_interval(days => days - 1); else since := '-infinity'; end if;
+  with t as (select * from public.roar_transfer_items_people() x where x.created_at >= since)
+  select coalesce(min(created_at)::date, now()::date) into first from t;
+  with t as (select * from public.roar_transfer_items_people() x where x.created_at >= since)
+  select jsonb_build_object(
+    'transfers', (select count(*) from t),
+    'bytes', (select coalesce(sum(size), 0) from t),
+    'senders', (select count(distinct user_id) from t),
+    'from_chat', (select count(*) from t where source = 'chat'),
+    'from_link', (select count(*) from t where source = 'link'),
+    'active', (select count(*) from t where expires > now() and not stopped and not deleted),
+    'active_bytes', (select coalesce(sum(size), 0) from t where expires > now() and not stopped and not deleted),
+    'opens', (select coalesce(sum(opens), 0) from t),
+    'downloads', (select coalesce(sum(downloads), 0) from t),
+    'week', (select count(*) from t where created_at > now() - interval '7 days'),
+    'week_bytes', (select coalesce(sum(size), 0) from t where created_at > now() - interval '7 days'),
+    'biggest', (select coalesce(max(size), 0) from t),
+    'days', (select coalesce(jsonb_agg(jsonb_build_object('day', d.day, 'n', d.n, 'bytes', d.bytes) order by d.day), '[]'::jsonb) from (
+      select g::date as day, count(t.path) as n, coalesce(sum(t.size), 0) as bytes
+      from generate_series(case when days > 0 then since::date else first end, now()::date, interval '1 day') g
+      left join t on t.created_at::date = g::date
+      group by g) d),
+    'kinds', (select coalesce(jsonb_agg(jsonb_build_object('kind', k.kind, 'n', k.n, 'bytes', k.bytes)), '[]'::jsonb) from (
+      select case when type like 'video/%' then 'video' when type like 'image/%' then 'image' when type like 'audio/%' then 'audio' else 'other' end as kind,
+        count(*) as n, coalesce(sum(size), 0) as bytes
+      from t group by 1) k),
+    'top', (select coalesce(jsonb_agg(to_jsonb(x) order by x.bytes desc), '[]'::jsonb) from (
+      select t.user_id as id, p.username, p.display_name, p.avatar_url, u.email::text as email,
+        count(*) as n, coalesce(sum(t.size), 0) as bytes, coalesce(sum(t.downloads), 0) as downloads, max(t.created_at) as last
+      from t left join public.roar_profiles p on p.id = t.user_id left join auth.users u on u.id = t.user_id
+      group by t.user_id, p.username, p.display_name, p.avatar_url, u.email
+      order by bytes desc limit 20) x)
+  ) into res;
+  return res;
+end $function$;
+revoke all on function public.roar_admin_transfer_stats(int) from public, anon;
+grant execute on function public.roar_admin_transfer_stats(int) to authenticated;

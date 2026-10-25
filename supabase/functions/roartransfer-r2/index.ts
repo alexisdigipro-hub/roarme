@@ -126,6 +126,9 @@ async function handle(req: Request): Promise<Response> {
     const { data: live, error } = await sb.from('roar_transfer_links').select('path').eq('store', 'r2').gt('expires_at', new Date().toISOString()).is('stopped_at', null)
     if (error) return json({ error: error.message }, 500)
     const keep = new Set((live || []).map((r: any) => r.path))
+    // each live link's preview picture (og/<token>.jpg) stays as long as its link
+    const { data: bundles } = await sb.from('roar_transfer_bundles').select('token').gt('expires_at', new Date().toISOString())
+    for (const r of bundles || []) keep.add(`og/${r.token}.jpg`)
     const old = Date.now() - 6 * 36e5
     const out = { removed: 0, bytes: 0, kept: 0, aborted: 0 }
     let next = ''
@@ -334,6 +337,16 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
       if (!error || error.code !== '23505') break
     }
     if (error) return json({ error: error.message }, 500)
+    // the link's preview picture (Alex, 25 Oct): a frame of the first video or the first picture, made 1200x630 by the
+    // page, shown when the link is pasted in WhatsApp, Messenger, iMessage, Slack… (roar-transfer-get ?og=). Never for a
+    // transfer with a password: its preview says only who sent it.
+    const cover = typeof b.cover === 'string' && !password ? b.cover.replace(/^data:image\/jpeg;base64,/, '') : ''
+    if (cover && cover.length < 600000 && cover.startsWith('/9j/')) {
+      try {
+        const bytes = Uint8Array.from(atob(cover), (c) => c.charCodeAt(0))
+        await r2.fetch(at(`og/${token}.jpg`), { method: 'PUT', body: bytes, headers: { 'Content-Type': 'image/jpeg' } })
+      } catch (e) { console.error('cover', e) }
+    }
     // the email to the people it is for: who sent it, the title, the message, the files, until when, Download
     let mailed = 0
     const mailErrors: string[] = []

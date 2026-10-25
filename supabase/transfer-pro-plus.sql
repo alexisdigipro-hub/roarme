@@ -116,3 +116,45 @@ create policy "roartransfer site insert admin" on storage.objects for insert to 
 drop policy if exists "roartransfer site delete admin" on storage.objects;
 create policy "roartransfer site delete admin" on storage.objects for delete to authenticated
   using (bucket_id = 'roartransfer-brand' and (storage.foldername(name))[1] = 'site' and public.roar_is_admin());
+
+-- 4. (25 Oct, later) A download is counted by roar-transfer-get on Supabase's servers, whose country header says where
+--    that server is (Switzerland), not the person. The person opened the page a moment before from their own browser,
+--    so a download takes the country and device of the latest open of the same link (or its upload's link) within
+--    two hours, and the header only when there was none.
+create or replace function public.roar_transfer_hit(t text, dl boolean, country text default null, agent text default null) returns void
+language plpgsql security definer set search_path = public as $$
+declare b text; h json; c text; d text; n int; o record;
+begin
+  begin h := current_setting('request.headers', true)::json; exception when others then h := null; end;
+  c := upper(left(coalesce(country, h->>'cf-ipcountry', ''), 2));
+  if c = '' or c = 'XX' or c = 'T1' then c := null; end if;
+  d := public.roar_transfer_device(coalesce(agent, h->>'user-agent'));
+  if dl then
+    select e.country, e.device into o from public.roar_transfer_events e
+    where e.kind = 'open' and e.at > now() - interval '2 hours'
+      and (e.token = t or e.token in (select x.token from public.roar_transfer_bundles x where t = any (x.tokens)))
+    order by e.at desc limit 1;
+    if found then c := coalesce(o.country, c); d := coalesce(o.device, d); end if;
+  end if;
+  update public.roar_transfer_links
+  set opens = opens + case when dl then 0 else 1 end,
+      downloads = downloads + case when dl then 1 else 0 end,
+      last_download = case when dl then now() else last_download end
+  where expires_at > now()
+    and (token = t or (not dl and token = any (coalesce((select x.tokens from public.roar_transfer_bundles x where x.token = t), '{}'))));
+  get diagnostics n = row_count;
+  if n > 0 then
+    insert into public.roar_transfer_events (token, kind, country, device) values (t, case when dl then 'download' else 'open' end, c, d);
+  end if;
+  if dl then
+    update public.roar_transfer_bundles set notified_at = now()
+    where t = any (tokens) and notify and (notified_at is null or notified_at < now() - interval '1 hour')
+    returning token into b;
+    if b is not null then
+      perform net.http_post(
+        url := 'https://bzmjhbnwhdwmncxkqkdl.supabase.co/functions/v1/roartransfer-notify',
+        headers := '{"Content-Type": "application/json"}'::jsonb,
+        body := jsonb_build_object('bundle', b, 'file', t));
+    end if;
+  end if;
+end $$;

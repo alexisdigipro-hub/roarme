@@ -72,7 +72,11 @@ Deno.serve(async (req) => {
   }
   const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by').eq('token', t).maybeSingle()
   if (link) {
-    const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at, brand: await brandOf(sb, link.created_by) }
+    // who sent it, on a file's own link too (Alex, 25 Oct: it said "Someone" on a link copied from My transfers); a Pro
+    // with a brand name sends as that name ("THEMADLIONS sent you")
+    const { data: lp } = link.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', link.created_by).maybeSingle() : { data: null }
+    const lb = await brandOf(sb, link.created_by)
+    const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at, from: lb?.name || lp?.display_name || (lp?.username ? '@' + lp.username : ''), brand: lb }
     if (new Date(link.expires_at).getTime() <= Date.now()) return json({ ...info, error: 'expired' }, 410)
     const one = await addresses(sb, link)
     if (!one) return json({ ...info, error: 'expired' }, 410)
@@ -83,7 +87,8 @@ Deno.serve(async (req) => {
   if (!bundle) return json({ error: 'not_found' }, 404)
   // who sent it, the title and the message (roartransfer.com, Alex 21 Oct); with a password, nothing else until it is right
   const { data: p } = bundle.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle() : { data: null }
-  const head = { bundle: true, title: bundle.title || '', from: p?.display_name || (p?.username ? '@' + p.username : ''), brand: await brandOf(sb, bundle.created_by) }
+  const bb = await brandOf(sb, bundle.created_by)
+  const head = { bundle: true, title: bundle.title || '', from: bb?.name || p?.display_name || (p?.username ? '@' + p.username : ''), brand: bb }
   if (bundle.password_hash) {
     const given = q.get('p') || ''
     if (!given) return json({ ...head, expires: bundle.expires_at, error: 'password' }, 401)
@@ -109,21 +114,23 @@ Deno.serve(async (req) => {
 async function preview(sb: any, t: string) {
   const now = Date.now()
   const kind = (types: string[]) => types.length && types.every((x) => /^video\//.test(x)) ? 'video' : types.length && types.every((x) => /^image\//.test(x)) ? 'image' : 'files'
-  const { data: link } = await sb.from('roar_transfer_links').select('name, size, type, expires_at').eq('token', t).maybeSingle()
+  const { data: link } = await sb.from('roar_transfer_links').select('name, size, type, expires_at, created_by').eq('token', t).maybeSingle()
   if (link) {
     const gone = new Date(link.expires_at).getTime() <= now
-    return { title: '', from: '', names: [link.name || 'file'], count: 1, size: Number(link.size || 0), kind: kind([link.type || '']), expires: link.expires_at, locked: false, cover: false, gone }
+    const { data: lp } = link.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', link.created_by).maybeSingle() : { data: null }
+    const lb = await brandOf(sb, link.created_by)
+    return { title: '', from: lb?.name || lp?.display_name || (lp?.username ? '@' + lp.username : ''), names: [link.name || 'file'], count: 1, size: Number(link.size || 0), kind: kind([link.type || '']), expires: link.expires_at, locked: false, cover: false, gone }
   }
   const { data: bundle } = await sb.from('roar_transfer_bundles').select('tokens, expires_at, title, password_hash, created_by').eq('token', t).maybeSingle()
   if (!bundle) return { gone: true, cover: false }
   const { data: p } = bundle.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle() : { data: null }
-  const from = p?.display_name || (p?.username ? '@' + p.username : '')
+  const brand = await brandOf(sb, bundle.created_by)
+  const from = brand?.name || p?.display_name || (p?.username ? '@' + p.username : '')
   const locked = !!bundle.password_hash
   const { data: rows } = await sb.from('roar_transfer_links').select('token, name, size, type, expires_at').in('token', bundle.tokens)
   const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > now)
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
   const head = await r2.fetch(r2At(`og/${t}.jpg`), { method: 'HEAD' }).catch(() => null)
-  const brand = await brandOf(sb, bundle.created_by)
   const own = !locked && !head?.ok && brand?.bgs?.length ? brand.bgs[0] : ''
   return {
     brand: brand?.name || '', coverUrl: own,

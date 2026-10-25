@@ -37,6 +37,17 @@ Deno.serve(async (req) => {
   const t = q.get('t') || ''
   if (!/^[A-Za-z0-9]{6,32}$/.test(t)) return json({ error: 'not_found' }, 404)
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  // the link's preview (Alex, 25 Oct): what roartransfer.com's Cloudflare Worker puts in the page's Open Graph tags when
+  // the link is pasted in WhatsApp, Messenger, iMessage, Slack… (?meta=1), and its picture (?og=1, og/<token>.jpg in R2,
+  // made by the page from the first video or picture; roartransfer-r2 never keeps one for a transfer with a password).
+  // Nothing here counts as a download or a view.
+  if (q.get('meta') === '1' || q.get('og') === '1') {
+    const meta = await preview(sb, t)
+    if (q.get('meta') === '1') return new Response(JSON.stringify(meta), { status: meta.gone ? 410 : 200, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=120' } })
+    const r = meta.cover ? await fetch(await r2Url(`og/${t}.jpg`, {})) : null
+    if (!r || !r.ok) return new Response('not found', { status: 404, headers: cors })
+    return new Response(r.body, { headers: { ...cors, 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=3600' } })
+  }
   // a download of one R2 file: count it, then on to R2 (six hours, so a big file can finish and resume)
   if (q.get('dl') === '1') {
     const { data: f } = await sb.from('roar_transfer_links').select('token, path, name, expires_at, store, downloads, max_downloads').eq('token', t).maybeSingle()
@@ -79,6 +90,33 @@ Deno.serve(async (req) => {
   if (!files.length) return json({ ...head, expires: bundle.expires_at, error: 'expired' }, 410)
   return json({ ...head, expires: files.reduce((a, f) => (f.expires > a ? f.expires : a), files[0].expires), files })
 })
+
+// who sent it, what and until when, for a link's preview; a password-protected transfer shows only who sent it
+// deno-lint-ignore no-explicit-any
+async function preview(sb: any, t: string) {
+  const now = Date.now()
+  const kind = (types: string[]) => types.length && types.every((x) => /^video\//.test(x)) ? 'video' : types.length && types.every((x) => /^image\//.test(x)) ? 'image' : 'files'
+  const { data: link } = await sb.from('roar_transfer_links').select('name, size, type, expires_at').eq('token', t).maybeSingle()
+  if (link) {
+    const gone = new Date(link.expires_at).getTime() <= now
+    return { title: '', from: '', names: [link.name || 'file'], count: 1, size: Number(link.size || 0), kind: kind([link.type || '']), expires: link.expires_at, locked: false, cover: false, gone }
+  }
+  const { data: bundle } = await sb.from('roar_transfer_bundles').select('tokens, expires_at, title, password_hash, created_by').eq('token', t).maybeSingle()
+  if (!bundle) return { gone: true, cover: false }
+  const { data: p } = bundle.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle() : { data: null }
+  const from = p?.display_name || (p?.username ? '@' + p.username : '')
+  const locked = !!bundle.password_hash
+  const { data: rows } = await sb.from('roar_transfer_links').select('token, name, size, type, expires_at').in('token', bundle.tokens)
+  const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > now)
+    .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
+  const head = await r2.fetch(r2At(`og/${t}.jpg`), { method: 'HEAD' }).catch(() => null)
+  return {
+    title: locked ? '' : bundle.title || '', from, locked, gone: !live.length,
+    names: locked ? [] : live.slice(0, 3).map((r: any) => r.name || 'file'), count: live.length,
+    size: live.reduce((a: number, r: any) => a + Number(r.size || 0), 0), kind: kind(live.map((r: any) => r.type || '')),
+    expires: bundle.expires_at, cover: !locked && !!head?.ok,
+  }
+}
 
 // a file's download address (with its real name) and, for a video, a picture or audio, one to play it
 // deno-lint-ignore no-explicit-any

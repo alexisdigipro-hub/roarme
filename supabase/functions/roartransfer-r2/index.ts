@@ -3,7 +3,7 @@
 // short-lived signed addresses for each 16 MB piece of a file, which it sends straight to R2 (bucket roartransfer).
 // When every piece is up, this puts the file together and makes its download link (roar_transfer_links, store 'r2').
 // Files go to free/<account id>/… (7-day ones to week/<account id>/…); the hourly sweep below deletes each one as soon as its link has ended (R2's own
-// lifecycle rule, free/ after 3 days, pro/ after 30, stays as a backstop).
+// lifecycle rule, free/ after 8 days, pro/ after 35 (5 days past the longest link, Alex 26 Oct), stays as a backstop).
 // Secrets (Supabase > Edge Functions > Secrets): R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY; RESEND_API_KEY for email.
 // Pro (25 Oct): up to 20 GB, 1 to 30 days, no download limit, under pro/<id>/.
 // Free (Alex, 21 Oct): 1 day up to 5 GB, or 3 days up to 3 GB. One link per upload (bundle) with an optional title,
@@ -13,11 +13,11 @@ import { AwsClient } from 'npm:aws4fetch@1.0.20'
 
 const BUCKET = 'roartransfer'
 const GB = 1024 ** 3
-// 7 days up to 1 GB (Alex, 23 Oct); those go under week/, which R2's 3-day rule on free/ does not touch: the hourly sweep
+// 7 days up to 1 GB (Alex, 23 Oct); those go under week/, which R2's 8-day rule on free/ does not touch: the hourly sweep
 // deletes them when their link ends
 const plan = (days: unknown) => (Number(days) === 1 ? { days: 1, max: 5 * GB } : Number(days) === 7 ? { days: 7, max: 1 * GB } : { days: 3, max: 3 * GB })
 // Pro (Alex, 25 Oct): up to 20 GB, kept 1, 3, 7 or 30 days, downloaded without limit; under pro/<id>/, which R2's own
-// 30-day rule on pro/ backs up (the hourly sweep follows the link as for everyone)
+// 35-day rule on pro/ backs up (the hourly sweep follows the link as for everyone)
 const PRO_DAYS = [1, 3, 7, 30]
 const proPlan = (days: unknown) => ({ days: PRO_DAYS.includes(Number(days)) ? Number(days) : 7, max: 20 * GB })
 const dayText = (d: number) => (d === 1 ? '1 day' : `${d} days`)
@@ -120,7 +120,7 @@ async function handle(req: Request): Promise<Response> {
   }
 
   // Sweep (Alex, 23 Oct: "the links have expired but the room has not emptied"): every file in the bucket that no live
-  // link points at any more (expired, stopped, or a link that was never made) goes at once, not when R2's 3-day rule gets
+  // link points at any more (expired, stopped, or a link that was never made) goes at once, not when R2's 8-day rule gets
   // to it, and uploads left half done for a day are aborted. A file gets 6 hours before it counts as without a link, so
   // one being put together right now is never touched. roar-transfer-sweep calls this every hour with the service key;
   // an admin may call it too.
@@ -128,10 +128,11 @@ async function handle(req: Request): Promise<Response> {
     const service = !!jwt && jwt === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const { data: admin } = !service && uid ? await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle() : { data: null }
     if (!service && !admin) return json({ error: 'not allowed' }, 403)
-    // a link from an account is kept a day after it ends, for its one last download (roar-transfer-get, Alex 26 Oct)
-    const { data: live, error } = await sb.from('roar_transfer_links').select('path, expires_at, created_by').eq('store', 'r2').gt('expires_at', new Date(Date.now() - 864e5).toISOString()).is('stopped_at', null)
+    // every file is kept 5 days after its link ends, quietly (Alex, 26 Oct: "keep them all 5 days past the longest, not
+    // shown"); an account's link gives its one last download in that time (roar-transfer-get). Stopped links go at once.
+    const { data: live, error } = await sb.from('roar_transfer_links').select('path').eq('store', 'r2').gt('expires_at', new Date(Date.now() - 5 * 864e5).toISOString()).is('stopped_at', null)
     if (error) return json({ error: error.message }, 500)
-    const keep = new Set((live || []).filter((r: any) => r.created_by || new Date(r.expires_at).getTime() > Date.now()).map((r: any) => r.path))
+    const keep = new Set((live || []).map((r: any) => r.path))
     // each live link's preview picture (og/<token>.jpg) stays as long as its link
     const { data: bundles } = await sb.from('roar_transfer_bundles').select('token').gt('expires_at', new Date().toISOString())
     for (const r of bundles || []) keep.add(`og/${r.token}.jpg`)

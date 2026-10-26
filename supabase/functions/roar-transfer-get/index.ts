@@ -37,9 +37,10 @@ async function brandOf(sb: any, id: string | null) {
   if (!a && p.until && new Date(p.until).getTime() <= Date.now()) return null
   return { name: p.brand_name || '', logo: p.brand_logo || '', bgs: p.brand_bgs || [] }
 }
-// One last time (Alex, 26 Oct; supabase/transfer-grace.sql): for a day after a link from an account has ended, someone
-// signed in can still take each file once. GRACE is how long; roartransfer-r2's sweep keeps the files that long.
-const GRACE = 864e5
+// One last time (Alex, 26 Oct; supabase/transfer-grace.sql): after a link from an account has ended, someone signed in
+// can still take each file once. GRACE is how long: 5 days (Alex, 26 Oct, later: "keep every file 5 days past its
+// longest, not shown"); roartransfer-r2's sweep keeps the files that long. The page never says how long.
+const GRACE = 5 * 864e5
 // deno-lint-ignore no-explicit-any
 const inGrace = (f: any) => f.store === 'r2' && !!f.created_by && !f.stopped_at && new Date(f.expires_at).getTime() <= Date.now() && new Date(f.expires_at).getTime() > Date.now() - GRACE
 // deno-lint-ignore no-explicit-any
@@ -119,7 +120,7 @@ Deno.serve(async (req) => {
   const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > Date.now())
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
   if (!live.length) {
-    // ended: one last download for someone signed in, within a day, if the sender has an account
+    // ended: one last download for someone signed in, within GRACE, if the sender has an account
     const last = await lastOnes(sb, (rows || []).sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token)), uid)
     if (last.files.length) return json({ ...head, last: true, expires: new Date(Date.parse(bundle.expires_at) + GRACE).toISOString(), files: last.files })
     return json({ ...head, expires: bundle.expires_at, error: 'expired', grace: last.grace }, 410)

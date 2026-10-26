@@ -13,9 +13,11 @@ const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SE
 const live = (until: string | null) => !until || new Date(until).getTime() > Date.now()
 const BRAND = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/roartransfer-brand/`
 const DAY = 864e5
-// how long a file can stay at most, from when it was sent: R2 deletes free/ after 3 days by itself, pro/ after 30;
+// how long a file can stay at most, from when it was sent: free/ 3 days, pro/ 30, and a big Pro file only as long as its
+// size was allowed (Alex, 26 Oct: 1 day up to 50 GB, 3 days 40, 7 days 30, 30 days 20; roartransfer-r2 PRO_GB);
 // week/ has no rule of its own (the hourly sweep follows the link)
-const keepMax = (path: string) => (/^free\//.test(path) ? 3 : 30) * DAY
+const GB = 1024 ** 3
+const keepMax = (path: string, size = 0) => (/^free\//.test(path) ? 3 : size > 40 * GB ? 1 : size > 30 * GB ? 3 : size > 20 * GB ? 7 : 30) * DAY
 async function sha(s: string) {
   const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
   return Array.from(new Uint8Array(d), (x) => x.toString(16).padStart(2, '0')).join('')
@@ -60,12 +62,12 @@ Deno.serve(async (req) => {
   if (b.action === 'link' || b.action === 'edit') {
     const t = String(b.token || '')
     if (!/^[A-Za-z0-9]{6,32}$/.test(t)) return json({ error: 'bad request' }, 400)
-    const { data: file } = await sb.from('roar_transfer_links').select('token, path, created_at, expires_at, created_by').eq('token', t).maybeSingle()
+    const { data: file } = await sb.from('roar_transfer_links').select('token, path, size, created_at, expires_at, created_by').eq('token', t).maybeSingle()
     if (!file || file.created_by !== uid) return json({ error: 'not allowed' }, 403)
     const { data: bundles } = await sb.from('roar_transfer_bundles').select('token, tokens, expires_at, password_hash, created_at').contains('tokens', [t]).eq('created_by', uid)
     const tokens = [...new Set([t, ...(bundles || []).flatMap((x: any) => x.tokens)])]
-    const { data: files } = await sb.from('roar_transfer_links').select('token, path, created_at, expires_at, stopped_at').in('token', tokens).eq('created_by', uid)
-    const max = Math.min(...(files || [file]).map((f: any) => new Date(f.created_at).getTime() + keepMax(f.path)))
+    const { data: files } = await sb.from('roar_transfer_links').select('token, path, size, created_at, expires_at, stopped_at').in('token', tokens).eq('created_by', uid)
+    const max = Math.min(...(files || [file]).map((f: any) => new Date(f.created_at).getTime() + keepMax(f.path, Number(f.size) || 0)))
     if (b.action === 'link') {
       const { data: ev } = await sb.from('roar_transfer_events').select('token, kind, at, country, device')
         .in('token', [...tokens, ...(bundles || []).map((x: any) => x.token)]).order('at', { ascending: false }).limit(300)

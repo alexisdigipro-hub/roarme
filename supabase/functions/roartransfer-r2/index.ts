@@ -5,7 +5,7 @@
 // Files go to free/<account id>/… (7-day ones to week/<account id>/…); the hourly sweep below deletes each one as soon as its link has ended (R2's own
 // lifecycle rule, free/ after 6 days (3 past the longest Free link, Alex 26 Oct), pro/ after 30, stays as a backstop).
 // Secrets (Supabase > Edge Functions > Secrets): R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY; RESEND_API_KEY for email.
-// Pro (25 Oct): up to 20 GB, 1 to 30 days, no download limit, under pro/<id>/.
+// Pro (25 Oct): 1 to 30 days (50 GB for 1 day down to 20 GB for 30), no download limit, under pro/<id>/.
 // Free (Alex, 21 Oct): 1 day up to 5 GB, or 3 days up to 3 GB. One link per upload (bundle) with an optional title,
 // message, password, emails to the people it is for, and an email to the sender when someone downloads.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
@@ -16,10 +16,11 @@ const GB = 1024 ** 3
 // 7 days up to 1 GB (Alex, 23 Oct); those go under week/, which R2's 6-day rule on free/ does not touch: the hourly sweep
 // deletes them when their link ends
 const plan = (days: unknown) => (Number(days) === 1 ? { days: 1, max: 5 * GB } : Number(days) === 7 ? { days: 7, max: 1 * GB } : { days: 3, max: 3 * GB })
-// Pro (Alex, 25 Oct): up to 20 GB, kept 1, 3, 7 or 30 days, downloaded without limit; under pro/<id>/, which R2's own
-// 30-day rule on pro/ backs up (the hourly sweep follows the link as for everyone)
-const PRO_DAYS = [1, 3, 7, 30]
-const proPlan = (days: unknown) => ({ days: PRO_DAYS.includes(Number(days)) ? Number(days) : 7, max: 20 * GB })
+// Pro (Alex, 25 Oct): kept 1, 3, 7 or 30 days, downloaded without limit; under pro/<id>/, which R2's own 30-day rule on
+// pro/ backs up (the hourly sweep follows the link as for everyone). The shorter, the bigger (Alex, 26 Oct): 1 day up to
+// 50 GB, 3 days 40, 7 days 30, 30 days 20 (the page's PRO_GB; roartransfer-pro keeps a later new expiry within it)
+const PRO_GB: Record<number, number> = { 1: 50, 3: 40, 7: 30, 30: 20 }
+const proPlan = (days: unknown) => { const d = PRO_GB[Number(days)] ? Number(days) : 7; return { days: d, max: PRO_GB[d] * GB } }
 const dayText = (d: number) => (d === 1 ? '1 day' : `${d} days`)
 // without an account (Alex, 21 Oct: a way to get to know us): link only, 24 hours, up to 1 GB, 3 transfers a day
 const GUEST = { days: 1, max: 1 * GB, perDay: 3, downloads: 1 }

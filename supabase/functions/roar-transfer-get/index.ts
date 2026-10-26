@@ -37,6 +37,11 @@ async function brandOf(sb: any, id: string | null) {
   if (!a && p.until && new Date(p.until).getTime() <= Date.now()) return null
   return { name: p.brand_name || '', logo: p.brand_logo || '', bgs: p.brand_bgs || [] }
 }
+// One last time (Alex, 26 Oct; supabase/transfer-grace.sql): for a day after a link from an account has ended, someone
+// signed in can still take each file once. GRACE is how long; roartransfer-r2's sweep keeps the files that long.
+const GRACE = 864e5
+// deno-lint-ignore no-explicit-any
+const inGrace = (f: any) => f.store === 'r2' && !!f.created_by && !f.stopped_at && new Date(f.expires_at).getTime() <= Date.now() && new Date(f.expires_at).getTime() > Date.now() - GRACE
 // deno-lint-ignore no-explicit-any
 const used = (f: any) => f.max_downloads != null && (f.downloads || 0) >= f.max_downloads
 // attachment with the real name: a plain ASCII one for old browsers, the UTF-8 one for the rest
@@ -62,22 +67,37 @@ Deno.serve(async (req) => {
   }
   // a download of one R2 file: count it, then on to R2 (six hours, so a big file can finish and resume)
   if (q.get('dl') === '1') {
-    const { data: f } = await sb.from('roar_transfer_links').select('token, path, name, expires_at, store, downloads, max_downloads').eq('token', t).maybeSingle()
+    const { data: f } = await sb.from('roar_transfer_links').select('token, path, name, expires_at, store, downloads, max_downloads, created_by, stopped_at').eq('token', t).maybeSingle()
     const page = `${PAGE}${t}`
+    // the one last download of an ended link: its claim, once
+    const c = q.get('c') || ''
+    if (f && c && inGrace(f) && /^[0-9a-f-]{36}$/.test(c)) {
+      const { data: cl } = await sb.from('roar_transfer_claims').update({ used_at: new Date().toISOString() }).eq('id', c).eq('token', t).is('used_at', null).select('id').maybeSingle()
+      if (!cl) return Response.redirect(page, 302)
+      const to = await r2Url(f.path, { 'response-content-disposition': disposition(f.name || 'file') }, 6 * 3600)
+      return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
+    }
     if (!f || f.store !== 'r2' || new Date(f.expires_at).getTime() <= Date.now() || used(f)) return Response.redirect(page, 302)
     // counted with the country and device of whoever downloads (Cloudflare's header in front of Supabase)
     if (req.method === 'GET') await sb.rpc('roar_transfer_hit', { t, dl: true, country: req.headers.get('cf-ipcountry'), agent: req.headers.get('user-agent') })
     const to = await r2Url(f.path, { 'response-content-disposition': disposition(f.name || 'file') }, 6 * 3600)
     return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
   }
-  const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by').eq('token', t).maybeSingle()
+  // who is asking (signed in on the download page), for the one last download
+  const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
+  const uid = jwt && jwt.split('.').length === 3 ? (await sb.auth.getUser(jwt)).data?.user?.id || '' : ''
+  const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by, stopped_at').eq('token', t).maybeSingle()
   if (link) {
     // who sent it, on a file's own link too (Alex, 25 Oct: it said "Someone" on a link copied from My transfers); a Pro
     // with a brand name sends as that name ("THEMADLIONS sent you")
     const { data: lp } = link.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', link.created_by).maybeSingle() : { data: null }
     const lb = await brandOf(sb, link.created_by)
     const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at, from: lb?.name || lp?.display_name || (lp?.username ? '@' + lp.username : ''), brand: lb }
-    if (new Date(link.expires_at).getTime() <= Date.now()) return json({ ...info, error: 'expired' }, 410)
+    if (new Date(link.expires_at).getTime() <= Date.now()) {
+      const last = await lastOnes(sb, [link], uid)
+      if (last.files.length) return json({ ...info, ...last.files[0], last: true, expires: new Date(new Date(link.expires_at).getTime() + GRACE).toISOString() })
+      return json({ ...info, error: 'expired', grace: last.grace }, 410)
+    }
     const one = await addresses(sb, link)
     if (!one) return json({ ...info, error: 'expired' }, 410)
     return json({ ...info, ...one })
@@ -95,10 +115,15 @@ Deno.serve(async (req) => {
     if ((await sha(`${t}:${given}`)) !== bundle.password_hash) return json({ ...head, expires: bundle.expires_at, error: 'password', wrong: true }, 401)
   }
   Object.assign(head, { message: bundle.message || '' })
-  const { data: rows } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads').in('token', bundle.tokens)
+  const { data: rows } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by, stopped_at').in('token', bundle.tokens)
   const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > Date.now())
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
-  if (!live.length) return json({ ...head, expires: bundle.expires_at, error: 'expired' }, 410)
+  if (!live.length) {
+    // ended: one last download for someone signed in, within a day, if the sender has an account
+    const last = await lastOnes(sb, (rows || []).sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token)), uid)
+    if (last.files.length) return json({ ...head, last: true, expires: new Date(Date.parse(bundle.expires_at) + GRACE).toISOString(), files: last.files })
+    return json({ ...head, expires: bundle.expires_at, error: 'expired', grace: last.grace }, 410)
+  }
   // deno-lint-ignore no-explicit-any
   const files: any[] = []
   for (const r of live) {
@@ -139,6 +164,28 @@ async function preview(sb: any, t: string) {
     size: live.reduce((a: number, r: any) => a + Number(r.size || 0), 0), kind: kind(live.map((r: any) => r.type || '')),
     expires: bundle.expires_at, cover: !locked && (!!head?.ok || !!own),
   }
+}
+
+// the files of an ended link that can still be taken once: `grace` says there are some (the page then offers to sign
+// up); with someone signed in, each gets a claim and an address good for one download (or `used` once taken)
+// deno-lint-ignore no-explicit-any
+async function lastOnes(sb: any, rows: any[], uid: string): Promise<{ grace: boolean, files: any[] }> {
+  const ok: any[] = []
+  for (const r of rows) {
+    if (!inGrace(r)) continue
+    const h = await r2.fetch(r2At(r.path), { method: 'HEAD' }).catch(() => null)
+    if (h?.ok) ok.push(r)
+  }
+  if (!ok.length || !uid) return { grace: ok.length > 0, files: [] }
+  const files: any[] = []
+  for (const r of ok) {
+    await sb.from('roar_transfer_claims').upsert({ token: r.token, user_id: uid }, { onConflict: 'token,user_id', ignoreDuplicates: true })
+    const { data: cl } = await sb.from('roar_transfer_claims').select('id, used_at').eq('token', r.token).eq('user_id', uid).maybeSingle()
+    const usedUp = !cl || !!cl.used_at
+    files.push({ token: r.token, name: r.name, size: r.size, type: r.type, expires: r.expires_at,
+      url: usedUp ? '' : `${SELF}?t=${encodeURIComponent(r.token)}&dl=1&c=${cl.id}`, view: '', used: usedUp, left: usedUp ? 0 : 1, counted: true })
+  }
+  return { grace: true, files }
 }
 
 // a file's download address (with its real name) and, for a video, a picture or audio, one to play it

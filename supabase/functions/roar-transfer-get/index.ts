@@ -37,12 +37,14 @@ async function brandOf(sb: any, id: string | null) {
   if (!a && p.until && new Date(p.until).getTime() <= Date.now()) return null
   return { name: p.brand_name || '', logo: p.brand_logo || '', bgs: p.brand_bgs || [] }
 }
-// One last time (Alex, 26 Oct; supabase/transfer-grace.sql): after a link from an account has ended, someone signed in
-// can still take each file once. GRACE is how long: 5 days (Alex, 26 Oct, later: "keep every file 5 days past its
-// longest, not shown"); roartransfer-r2's sweep keeps the files that long. The page never says how long.
-const GRACE = 5 * 864e5
+// One last time (Alex, 26 Oct; supabase/transfer-grace.sql): a link sent from a Free account (its files under free/<id>/
+// or week/<id>/; not Pro, not FastTransfer) is kept GRACE past its end, quietly, and someone who makes a NEW account in
+// that time (created after the link ended) can take each file once. An account that already existed gets nothing.
+// roartransfer-r2's sweep keeps those files that long. The page never says how long.
+const GRACE = 3 * 864e5
 // deno-lint-ignore no-explicit-any
-const inGrace = (f: any) => f.store === 'r2' && !!f.created_by && !f.stopped_at && new Date(f.expires_at).getTime() <= Date.now() && new Date(f.expires_at).getTime() > Date.now() - GRACE
+const inGrace = (f: any) => f.store === 'r2' && !!f.created_by && !f.stopped_at && /^(free|week)\//.test(f.path || '') && !/^free\/guest\//.test(f.path || '')
+  && new Date(f.expires_at).getTime() <= Date.now() && new Date(f.expires_at).getTime() > Date.now() - GRACE
 // deno-lint-ignore no-explicit-any
 const used = (f: any) => f.max_downloads != null && (f.downloads || 0) >= f.max_downloads
 // attachment with the real name: a plain ASCII one for old browsers, the UTF-8 one for the rest
@@ -86,7 +88,7 @@ Deno.serve(async (req) => {
   }
   // who is asking (signed in on the download page), for the one last download
   const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
-  const uid = jwt && jwt.split('.').length === 3 ? (await sb.auth.getUser(jwt)).data?.user?.id || '' : ''
+  const me = jwt && jwt.split('.').length === 3 ? (await sb.auth.getUser(jwt)).data?.user || null : null
   const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by, stopped_at').eq('token', t).maybeSingle()
   if (link) {
     // who sent it, on a file's own link too (Alex, 25 Oct: it said "Someone" on a link copied from My transfers); a Pro
@@ -95,7 +97,7 @@ Deno.serve(async (req) => {
     const lb = await brandOf(sb, link.created_by)
     const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at, from: lb?.name || lp?.display_name || (lp?.username ? '@' + lp.username : ''), brand: lb }
     if (new Date(link.expires_at).getTime() <= Date.now()) {
-      const last = await lastOnes(sb, [link], uid)
+      const last = await lastOnes(sb, [link], me)
       if (last.files.length) return json({ ...info, ...last.files[0], last: true, expires: new Date(new Date(link.expires_at).getTime() + GRACE).toISOString() })
       return json({ ...info, error: 'expired', grace: last.grace }, 410)
     }
@@ -121,7 +123,7 @@ Deno.serve(async (req) => {
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
   if (!live.length) {
     // ended: one last download for someone signed in, within GRACE, if the sender has an account
-    const last = await lastOnes(sb, (rows || []).sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token)), uid)
+    const last = await lastOnes(sb, (rows || []).sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token)), me)
     if (last.files.length) return json({ ...head, last: true, expires: new Date(Date.parse(bundle.expires_at) + GRACE).toISOString(), files: last.files })
     return json({ ...head, expires: bundle.expires_at, error: 'expired', grace: last.grace }, 410)
   }
@@ -168,15 +170,18 @@ async function preview(sb: any, t: string) {
 }
 
 // the files of an ended link that can still be taken once: `grace` says there are some (the page then offers to sign
-// up); with someone signed in, each gets a claim and an address good for one download (or `used` once taken)
+// up); with someone signed in whose account is newer than the link's end, each gets a claim and an address good for one
+// download (or `used` once taken); an older account gets neither the offer nor the files
 // deno-lint-ignore no-explicit-any
-async function lastOnes(sb: any, rows: any[], uid: string): Promise<{ grace: boolean, files: any[] }> {
+async function lastOnes(sb: any, rows: any[], me: any): Promise<{ grace: boolean, files: any[] }> {
+  const born = me?.created_at ? new Date(me.created_at).getTime() : 0
   const ok: any[] = []
   for (const r of rows) {
-    if (!inGrace(r)) continue
+    if (!inGrace(r) || (me && born <= new Date(r.expires_at).getTime())) continue
     const h = await r2.fetch(r2At(r.path), { method: 'HEAD' }).catch(() => null)
     if (h?.ok) ok.push(r)
   }
+  const uid = me?.id || ''
   if (!ok.length || !uid) return { grace: ok.length > 0, files: [] }
   const files: any[] = []
   for (const r of ok) {

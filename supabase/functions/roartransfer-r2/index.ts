@@ -26,6 +26,8 @@ const dayText = (d: number) => (d === 1 ? '1 day' : `${d} days`)
 const GUEST = { days: 1, max: 1 * GB, perDay: 3, downloads: 1 }
 // downloads per file with an account (Alex, 23 Oct: something for Pro to lift later)
 const FREE_DOWNLOADS = 5
+// a Free account sends up to 15 GB in 24 hours (Alex, 26 Oct); Pro and the admins without a daily limit
+const FREE_PER_DAY = 15 * GB
 // Pro "Receive files" (Alex, 23 Oct; supabase/transfer-pro.sql): roartransfer.com/u/<slug> takes files for a Pro from
 // anyone, without an account: up to 20 GB a file, kept 30 days, with limits per sender's address so it cannot be flooded
 const INBOX = { max: 20 * GB, days: 30, perDayFiles: 200, perDayBytes: 100 * GB, perDaySends: 30 }
@@ -272,6 +274,12 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
   // an admin's "View as Free user" (Alex, 26 Oct) sends as: 'free': the upload is a real Free one. It can only lower.
   const asFree = b.as === 'free'
   const proMe = !guest && !box && !asFree && ['create', 'complete'].includes(b.action) ? await isPro(uid) : false
+  // what a Free account has sent in the last 24 hours (its Free files only)
+  const freeToday = async () => {
+    const { data } = await sb.from('roar_transfer_links').select('size, path').eq('created_by', uid).gte('created_at', dayAgo)
+    return (data || []).filter((r: any) => /^(free|week)\//.test(r.path || '')).reduce((a: number, r: any) => a + Number(r.size || 0), 0)
+  }
+  const freeAccount = !guest && !box && !proMe
 
   if (b.action === 'create') {
     const size = Number(b.size) || 0
@@ -282,6 +290,7 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
       const { data: today } = await sb.from('roar_transfer_links').select('size').like('path', 'pro/%/inbox/%').eq('ip', ip).gte('created_at', dayAgo)
       if ((today || []).length >= INBOX.perDayFiles || (today || []).reduce((a: number, r: any) => a + Number(r.size || 0), 0) + size > INBOX.perDayBytes) return json({ error: 'limit', limit: true }, 429)
     } else if (size <= 0 || size > max) return json({ error: guest ? 'Without an account, files can be up to 1 GB. Sign up free for up to 5 GB.' : `Files kept ${dayText(days)} can be up to ${max / GB} GB.` }, 400)
+    if (freeAccount && (await freeToday()) + size > FREE_PER_DAY) return json({ error: 'daily', daily: true }, 429)
     if (guest && !box) {
       if ((await guestLeft()) <= 0) return json({ error: 'limit', limit: true }, 429)
       // and no more than 3 GB of files a day from one address, links made or not
@@ -316,6 +325,8 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
     const size = Number(head.headers.get('content-length')) || Number(b.size) || 0
     const { days, max } = box ? INBOX : guest ? GUEST : proMe ? proPlan(b.days) : plan(b.days)
     if (size > max) { await r2.fetch(at(b.key), { method: 'DELETE' }); return json({ error: `Files can be up to ${max / GB} GB.` }, 400) }
+    // the day's 15 GB again, for files started side by side
+    if (freeAccount && (await freeToday()) + size > FREE_PER_DAY) { await r2.fetch(at(b.key), { method: 'DELETE' }); return json({ error: 'daily', daily: true }, 429) }
     const token = newToken()
     const expires = new Date(Date.now() + days * 864e5).toISOString()
     // how many times each file can be downloaded (Alex, 23 Oct): FastTransfer once, an account 5 times, the admins without limit

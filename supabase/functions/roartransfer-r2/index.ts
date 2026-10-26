@@ -266,7 +266,9 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
   if (b.action === 'guest') return json({ left: await guestLeft(), ...GUEST })
   const mine = (key: string) => typeof key === 'string' && !key.includes('..') && (box ? key.startsWith(`pro/${box.user_id}/inbox/`) : guest ? /^free\/guest\/[0-9a-f-]{36}\//.test(key) : (key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`) || key.startsWith(`pro/${uid}/`)))
   // the caller is Pro (their own uploads, not someone's Receive-files page)
-  const proMe = !guest && !box && ['create', 'complete'].includes(b.action) ? await isPro(uid) : false
+  // an admin's "View as Free user" (Alex, 26 Oct) sends as: 'free': the upload is a real Free one. It can only lower.
+  const asFree = b.as === 'free'
+  const proMe = !guest && !box && !asFree && ['create', 'complete'].includes(b.action) ? await isPro(uid) : false
 
   if (b.action === 'create') {
     const size = Number(b.size) || 0
@@ -315,7 +317,7 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
     const expires = new Date(Date.now() + days * 864e5).toISOString()
     // how many times each file can be downloaded (Alex, 23 Oct): FastTransfer once, an account 5 times, the admins without limit
     const { data: admin } = guest || box ? { data: null } : await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
-    const maxDownloads = box ? null : guest ? GUEST.downloads : admin || proMe ? null : FREE_DOWNLOADS
+    const maxDownloads = box ? null : guest ? GUEST.downloads : (admin && !asFree) || proMe ? null : FREE_DOWNLOADS
     const { error } = await sb.from('roar_transfer_links').insert({ token, path: b.key, name: String(b.name || 'file').slice(0, 300), size, type: String(b.type || ''), expires_at: expires, created_by: box ? box.user_id : uid || null, ip: guest || box ? ip : null, store: 'r2', max_downloads: maxDownloads })
     if (error) return json({ error: error.message }, 500)
     return json({ token, expires, size, downloads: maxDownloads })

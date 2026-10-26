@@ -128,9 +128,10 @@ async function handle(req: Request): Promise<Response> {
     const service = !!jwt && jwt === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const { data: admin } = !service && uid ? await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle() : { data: null }
     if (!service && !admin) return json({ error: 'not allowed' }, 403)
-    const { data: live, error } = await sb.from('roar_transfer_links').select('path').eq('store', 'r2').gt('expires_at', new Date().toISOString()).is('stopped_at', null)
+    // a link from an account is kept a day after it ends, for its one last download (roar-transfer-get, Alex 26 Oct)
+    const { data: live, error } = await sb.from('roar_transfer_links').select('path, expires_at, created_by').eq('store', 'r2').gt('expires_at', new Date(Date.now() - 864e5).toISOString()).is('stopped_at', null)
     if (error) return json({ error: error.message }, 500)
-    const keep = new Set((live || []).map((r: any) => r.path))
+    const keep = new Set((live || []).filter((r: any) => r.created_by || new Date(r.expires_at).getTime() > Date.now()).map((r: any) => r.path))
     // each live link's preview picture (og/<token>.jpg) stays as long as its link
     const { data: bundles } = await sb.from('roar_transfer_bundles').select('token').gt('expires_at', new Date().toISOString())
     for (const r of bundles || []) keep.add(`og/${r.token}.jpg`)

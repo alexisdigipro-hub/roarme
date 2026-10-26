@@ -115,7 +115,17 @@ Deno.serve(async (req) => {
   if (bundle.password_hash) {
     const given = q.get('p') || ''
     if (!given) return json({ ...head, expires: bundle.expires_at, error: 'password' }, 401)
-    if ((await sha(`${t}:${given}`)) !== bundle.password_hash) return json({ ...head, expires: bundle.expires_at, error: 'password', wrong: true }, 401)
+    // no guessing (security check, Alex 26 Oct): 10 wrong tries from one address, or 50 from anywhere, in 15 minutes,
+    // and the password is not even tried until the 15 minutes are over (supabase/transfer-security.sql)
+    const ip = (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
+    const since = new Date(Date.now() - 15 * 6e4).toISOString()
+    const { count: mineWrong } = await sb.from('roar_transfer_pw_fails').select('id', { count: 'exact', head: true }).eq('token', t).eq('ip', ip).gte('at', since)
+    const { count: allWrong } = await sb.from('roar_transfer_pw_fails').select('id', { count: 'exact', head: true }).eq('token', t).gte('at', since)
+    if ((mineWrong || 0) >= 10 || (allWrong || 0) >= 50) return json({ ...head, expires: bundle.expires_at, error: 'password', slow: true }, 429)
+    if ((await sha(`${t}:${given}`)) !== bundle.password_hash) {
+      await sb.from('roar_transfer_pw_fails').insert({ token: t, ip })
+      return json({ ...head, expires: bundle.expires_at, error: 'password', wrong: true }, 401)
+    }
   }
   Object.assign(head, { message: bundle.message || '' })
   const { data: rows } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by, stopped_at').in('token', bundle.tokens)
@@ -197,7 +207,9 @@ async function lastOnes(sb: any, rows: any[], me: any): Promise<{ grace: boolean
 // a file's download address (with its real name) and, for a video, a picture or audio, one to play it
 // deno-lint-ignore no-explicit-any
 async function addresses(sb: any, link: any): Promise<{ url: string, view: string } | null> {
-  const media = /^(video|audio|image)\//.test(link.type)
+  // never SVG (it can carry code), and no full preview of a file with a download limit: the preview is the whole file,
+  // so it would be a download that is not counted (security check, Alex 26 Oct); Pro and unlimited links keep it
+  const media = /^(video|audio|image)\//.test(link.type) && !/svg/i.test(link.type)
   // kept only in the hub's pCloud (Alex, 22 Oct): pCloud's direct address works only for the browser that asks for it,
   // so the page gets the public link's code and asks pCloud itself (getpublinkdownload); url is pCloud's own page
   if (link.store === 'pcloud') {
@@ -209,7 +221,7 @@ async function addresses(sb: any, link: any): Promise<{ url: string, view: strin
     const left = link.max_downloads == null ? null : Math.max(0, link.max_downloads - (link.downloads || 0))
     if (left === 0) return { url: '', view: '', used: true, left } as any
     const url = `${SELF}?t=${encodeURIComponent(link.token)}&dl=1`
-    const view = media ? await r2Url(link.path, { 'response-content-type': link.type }) : ''
+    const view = media && link.max_downloads == null ? await r2Url(link.path, { 'response-content-type': link.type }) : ''
     return { url, view, counted: true, left } as any
   }
   const { data: signed } = await sb.storage.from('roar-transfers').createSignedUrl(link.path, 3600)

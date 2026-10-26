@@ -28,6 +28,10 @@ const GUEST = { days: 1, max: 1 * GB, perDay: 3, downloads: 1 }
 const FREE_DOWNLOADS = 5
 // a Free account sends up to 15 GB in 24 hours (Alex, 26 Oct); Pro and the admins without a daily limit
 const FREE_PER_DAY = 15 * GB
+// emails to the people a transfer is for, in 24 hours (security check, Alex 26 Oct: so nobody uses us to send spam)
+const MAILS_PER_DAY = { free: 50, pro: 200 }
+// the page sends files in 16 MB pieces; a file is never more pieces than its largest allowed size needs
+const PART = 16 * 1024 * 1024
 // Pro "Receive files" (Alex, 23 Oct; supabase/transfer-pro.sql): roartransfer.com/u/<slug> takes files for a Pro from
 // anyone, without an account: up to 20 GB a file, kept 30 days, with limits per sender's address so it cannot be flooded
 const INBOX = { max: 20 * GB, days: 30, perDayFiles: 200, perDayBytes: 100 * GB, perDaySends: 30 }
@@ -143,6 +147,8 @@ async function handle(req: Request): Promise<Response> {
     for (const r of bundles || []) keep.add(`og/${r.token}.jpg`)
     const old = Date.now() - 6 * 36e5
     const out = { removed: 0, bytes: 0, kept: 0, aborted: 0 }
+    // the wrong-password tries are needed for 15 minutes only (roar-transfer-get)
+    await sb.from('roar_transfer_pw_fails').delete().lt('at', new Date(Date.now() - 864e5).toISOString())
     let next = ''
     for (let i = 0; i < 50; i++) {
       const r = await r2.fetch(`${base}?list-type=2&max-keys=1000${next ? '&continuation-token=' + encodeURIComponent(next) : ''}`)
@@ -306,7 +312,24 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
 
   if (b.action === 'sign') {
     if (!mine(b.key) || !b.uploadId) return json({ error: 'not allowed' }, 403)
-    const parts = (Array.isArray(b.parts) ? b.parts : []).map(Number).filter((n: number) => n >= 1 && n <= 10000).slice(0, 50)
+    // what has gone up so far can never pass the largest size this kind of sender may send (security check, Alex
+    // 26 Oct): else the upload is aborted, so nobody can fill the storage with pieces of a file they never finish
+    const cap = box ? INBOX.max : guest ? GUEST.max : (await isPro(uid)) && !asFree ? 50 * GB : 5 * GB
+    const most = Math.ceil(cap / PART)
+    let up = 0, marker = ''
+    for (let i = 0; i < 10; i++) {
+      const lr = await r2.fetch(`${at(b.key)}?uploadId=${encodeURIComponent(b.uploadId)}&max-parts=1000${marker ? '&part-number-marker=' + marker : ''}`)
+      if (!lr.ok) break
+      const lx = await lr.text()
+      for (const pp of lx.split('<Part>').slice(1)) up += Number(tag(pp, 'Size')) || 0
+      marker = tag(lx, 'NextPartNumberMarker')
+      if (tag(lx, 'IsTruncated') !== 'true' || !marker) break
+    }
+    if (up > cap + PART) {
+      await r2.fetch(`${at(b.key)}?uploadId=${encodeURIComponent(b.uploadId)}`, { method: 'DELETE' })
+      return json({ error: `Files can be up to ${cap / GB} GB.` }, 400)
+    }
+    const parts = (Array.isArray(b.parts) ? b.parts : []).map(Number).filter((n: number) => n >= 1 && n <= most).slice(0, 50)
     const urls: Record<number, string> = {}
     for (const n of parts) urls[n] = await presign('PUT', b.key, { partNumber: String(n), uploadId: b.uploadId })
     return json({ urls })
@@ -357,6 +380,18 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
     const recipients = [...new Set((Array.isArray(b.recipients) ? b.recipients : []).map((e: unknown) => String(e).trim().toLowerCase())
       .filter((e: string) => /^[^\s@<>,;]+@[^\s@<>,;]+\.[a-z]{2,}$/i.test(e)))].slice(0, 20) as string[]
     const password = String(b.password || '').slice(0, 100)
+    // no more than MAILS_PER_DAY emails in 24 hours from one account; the rest are not sent and the page says so
+    const mailErrors: string[] = []
+    if (recipients.length) {
+      const { data: sentToday } = await sb.from('roar_transfer_bundles').select('recipients').eq('created_by', uid).gte('created_at', dayAgo)
+      const used = (sentToday || []).reduce((a: number, r: any) => a + ((r.recipients || []).length), 0)
+      const capMail = (await isPro(uid)) ? MAILS_PER_DAY.pro : MAILS_PER_DAY.free
+      const left = Math.max(0, capMail - used)
+      if (recipients.length > left) {
+        mailErrors.push(`daily limit of ${capMail} emails reached, not sent to ${recipients.slice(left).join(', ')}`)
+        recipients.splice(left)
+      }
+    }
     // a short token can already be taken: try another
     let error: { message: string, code?: string } | null = null
     for (let i = 0; i < 4; i++) {
@@ -380,7 +415,6 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
     }
     // the email to the people it is for: who sent it, the title, the message, the files, until when, Download
     let mailed = 0
-    const mailErrors: string[] = []
     if (recipients.length) {
       const { data: files } = await sb.from('roar_transfer_links').select('token, name, size').in('token', tokens)
       const ordered = (files || []).sort((a: any, z: any) => tokens.indexOf(a.token) - tokens.indexOf(z.token))

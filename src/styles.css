@@ -4199,6 +4199,3 @@ html[data-mode='light'] :is(.room-view[data-img] .scroll, .set-preview[data-img]
 html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.voice-btn, .music-btn) { color: #1c1c1e !important; background: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(226, 226, 230, .9)) !important; border: 1px solid rgba(255, 255, 255, .6) !important; box-shadow: 0 4px 12px rgba(0, 0, 0, .25), inset 0 1px 0 #fff !important; }
 html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.voice-bar, .music-bar) { background: rgba(255, 255, 255, .22) !important; }
 html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.voice-bar, .music-bar) i { background: #fff !important; }
-
-/* inside the hub (hubLink.jsx, wearHubLook): the sign-in card in the hub's own colours, not the dark card it has elsewhere */
-html[data-theme='hub'][data-embed] .auth .auth-card { color: var(--text) !important; background: color-mix(in srgb, var(--panel) 86%, transparent) !important; border-color: var(--edge) !important; }

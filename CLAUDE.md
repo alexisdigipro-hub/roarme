@@ -28,6 +28,9 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - Phase 4 (20 Oct): RoarMe is shown inside the hub's RoarMe page at ?embed=hub (html[data-embed=hub]). takeEmbed /
   embeddedHubSignin / watchHubMember in src/hubLink.jsx: no-click sign-in through postMessage with
   https://hub.themadlions.com only, and a frame signed in as another account than the hub member signs out.
+- Hub look (27 Oct, Alex: "it looks foreign"): at ?embed=hub RoarMe wears the hub's colours, light or dark, backdrop and
+  typeface as the 'hub' theme (wearHubLook / followHubLook in src/hubLink.jsx, roarme:want-look / roarme:hub-look from
+  the hub's pages/RoarMePage.jsx), kept in localStorage roarme-hub-look; Theme, Day and Night and Accent hidden there.
 - Phase 6 (20 Oct): the person's hub tasks and calendar, shown only (useHubWork in src/hubLink.jsx, Edge Function
   roar-hub-work -> the hub's roarme-work). Tasks has a THEMADLIONS tab; the calendar shows hub events and tasks; a tap opens the hub.
 - Slack features (20 Oct): @all / @here / @role mentions (src/roles.jsx, supabase/mentions.sql: roar_roles, roar_mentioned,

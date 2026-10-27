@@ -164,7 +164,8 @@ export const REACTIONS = ['❤️', '🎥', '👍', '🔥', '🏆', '👏', '�
 /* dark or light on the page: 'auto' follows the computer's own setting */
 export function applyMode(mode) {
   const mq = window.matchMedia?.('(prefers-color-scheme: light)')
-  const set = () => { document.documentElement.dataset.mode = mode === 'auto' ? (mq?.matches ? 'light' : 'dark') : mode }
+  // inside the hub, the hub's own light or dark wins (hubLink.jsx, wearHubLook)
+  const set = () => { const r = document.documentElement; r.dataset.mode = r.dataset.hubMode || (mode === 'auto' ? (mq?.matches ? 'light' : 'dark') : mode) }
   set()
   if (mode !== 'auto' || !mq) return () => {}
   mq.addEventListener?.('change', set)

@@ -154,7 +154,7 @@ export function takeEmbed() {
   try {
     const q = new window.URLSearchParams(window.location.search)
     if (q.get('embed') === 'hub' && window.parent !== window) sessionStorage.setItem(EMBED_KEY, 'hub')
-    if (sessionStorage.getItem(EMBED_KEY) === 'hub' && window.parent !== window) document.documentElement.dataset.embed = 'hub'
+    if (sessionStorage.getItem(EMBED_KEY) === 'hub' && window.parent !== window) { document.documentElement.dataset.embed = 'hub'; followHubLook() }
   } catch { /* private window */ }
 }
 export const isHubEmbed = () => { try { return window.parent !== window && sessionStorage.getItem(EMBED_KEY) === 'hub' } catch { return false } }
@@ -178,6 +178,62 @@ export function embeddedHubSignin() {
     window.addEventListener('message', onMsg)
     askHub({ type: 'roarme:need-signin', state })
   })
+}
+
+/* The hub's look inside the hub (Alex, 27 Oct: "now it looks foreign"): the hub page sends its colours, light or dark,
+   backdrop and typeface (roarme:hub-look, only from https://hub.themadlions.com) and sends them again when Settings >
+   Display changes. RoarMe wears them as the 'hub' theme: its plain glass look (no Stone) with the hub's colours on
+   top, written as one style sheet so a person's own accent or mode cannot override them here. The last look is kept
+   on this device, so the next start shows it from the first frame. Outside the hub nothing changes. */
+const LOOK_KEY = 'roarme-hub-look'
+const cssOk = (s) => typeof s === 'string' && s.length < 1500 && !/url\(|@import|expression|[;{}<>\\]/i.test(s)
+const FONT_CSS = /^https:\/\/fonts\.googleapis\.com\/css2?\?[^"'<>\s]+$/
+
+function wearHubLook(l) {
+  if (!l || typeof l !== 'object') return
+  const v = (k) => (cssOk(l[k]) ? l[k].trim() : '')
+  const light = l.light === true
+  const text = v('text') || (light ? '#1f2430' : '#eef3fa')
+  const accent = v('accent'), panel = v('panel'), mix = (c, p, w = 'transparent') => `color-mix(in srgb, ${c} ${p}%, ${w})`
+  const vars = {
+    '--bg': v('bg'), '--panel': panel, '--text': text, '--muted': v('muted'),
+    '--glass': v('glFill') || mix(text, light ? 5 : 6), '--glass-2': v('glFill2') || mix(text, light ? 9 : 11),
+    '--edge': v('glEdge') || mix(text, light ? 12 : 10), '--edge-2': mix(text, 22),
+    '--accent': accent, '--accent-2': accent, '--accent-ink': v('accentInk'),
+    '--mine': accent && (light ? accent : mix(accent, 55, panel || '#141b27')), '--mine-ink': light ? v('accentInk') : '',
+    '--theirs': light ? panel : v('glFill2') || v('raised'),
+    '--float': panel && mix(panel, 96), '--danger': v('danger'), '--ok': v('ok'),
+  }
+  const decl = Object.entries(vars).filter(([, x]) => x).map(([k, x]) => `${k}: ${x} !important;`).join(' ')
+  const font = v('font'), backdrop = v('backdrop') || v('bg')
+  let css = `html[data-theme='hub'] { ${decl} color-scheme: ${light ? 'light' : 'dark'}; }`
+  if (backdrop) css += ` html[data-theme='hub'] body { background: ${backdrop} !important; background-attachment: fixed !important; background-size: cover !important; }`
+  if (font) css += ` html[data-theme='hub'] body, html[data-theme='hub'] :is(button, input, textarea, select) { font-family: ${font} !important; }`
+  let tag = document.getElementById('roar-hub-look')
+  if (!tag) { tag = document.createElement('style'); tag.id = 'roar-hub-look'; document.head.append(tag) }
+  tag.textContent = css
+  const r = document.documentElement
+  r.dataset.theme = 'hub'
+  r.dataset.hubMode = light ? 'light' : 'dark'
+  r.dataset.mode = r.dataset.hubMode
+  ;(Array.isArray(l.fonts) ? l.fonts : []).slice(0, 4).forEach((href) => {
+    if (!FONT_CSS.test(String(href)) || document.querySelector(`link[href="${CSS.escape(href)}"]`)) return
+    document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href }))
+  })
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', v('bg') || (light ? '#eef1f8' : '#0b1018'))
+}
+
+function followHubLook() {
+  document.documentElement.dataset.theme = 'hub'
+  try { wearHubLook(JSON.parse(localStorage.getItem(LOOK_KEY) || 'null')) } catch { /* nothing kept yet */ }
+  window.addEventListener('message', (e) => {
+    if (e.origin !== HUB_ORIGIN || e.source !== window.parent) return
+    const m = e.data
+    if (!m || m.type !== 'roarme:hub-look' || !m.look) return
+    wearHubLook(m.look)
+    try { localStorage.setItem(LOOK_KEY, JSON.stringify(m.look)) } catch { /* private window */ }
+  })
+  askHub({ type: 'roarme:want-look' })
 }
 
 /* signed in inside the hub: make sure it is the same person as the hub's member, else sign out (and sign in again) */

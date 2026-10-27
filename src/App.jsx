@@ -4,7 +4,7 @@ import { applyLook, applyMode, setPrefs, themeFor, usePrefs } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
-import { HubLinkPage, pendingHubLink, watchHubMember } from './hubLink.jsx'
+import { HubLinkPage, isHubEmbed, pendingHubLink, watchHubMember } from './hubLink.jsx'
 
 // The order of things: sign in (or sign up) with email, then pick a @username once, then the chat.
 export default function App() {
@@ -64,8 +64,9 @@ export default function App() {
     if (!uid) { setBlocked(false); return }
     supabase.rpc('roar_am_blocked').then(({ data }) => setBlocked(data === true))
   }, [uid])
-  // a theme still in Alex's lab shows only for him; anyone else sees Stone
+  // a theme still in Alex's lab shows only for him; anyone else sees Stone. Inside the hub, the hub's look (hubLink.jsx)
   useEffect(() => {
+    if (isHubEmbed()) { document.documentElement.dataset.theme = 'hub'; return }
     const t = themeFor(theme, profile)
     document.documentElement.dataset.theme = t
     // once signed in, someone left on a lab theme moves to Stone for good

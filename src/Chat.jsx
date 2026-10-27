@@ -515,6 +515,7 @@ export default function Chat({ me, setMe }) {
     window.addEventListener('pointercancel', up)
   }
   useEffect(() => { if (folder !== 'all' && hiddenF.includes(folder)) setFolder('all') }, [hiddenF.join(), folder])
+  const inTeam = visible.some((r) => r.hub_project === 'team')
   const fits = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
@@ -528,8 +529,9 @@ export default function Chat({ me, setMe }) {
       const t = mine.types || {}
       return (!!t.private && r.kind !== 'group') || (!!t.groups && r.kind === 'group')
     }
-    // All: people, and of the groups only THEMADLIONS, the hub's team group (Alex, 27 Oct); the rest are in Groups
-    if (f === 'all' && r.kind === 'group') return r.hub_project === 'team'
+    // All: people, and of the groups only THEMADLIONS, the hub's team group (Alex, 27 Oct); the rest are in Groups.
+    // Only for the people in that group; for anyone else All keeps every group, as before.
+    if (f === 'all' && r.kind === 'group' && inTeam) return r.hub_project === 'team'
     return true
   }
   /* Each chat in one folder only (Settings > Chat Folders, Alex, 21 Oct): an unread chat sits only in Unread, a chat in a
@@ -537,6 +539,7 @@ export default function Chat({ me, setMe }) {
      keeps what is left. Archived stays Archived. Off, a chat shows in every folder it fits, as before. */
   const homeOf = (r) => {
     if (r.archived) return 'archived'
+    if (r.hub_project === 'team') return 'all'
     const has = (id) => allFolders.some((f) => f.id === id)
     if (has('unread') && fits(r, 'unread')) return 'unread'
     const own = allFolders.find((f) => f.custom && fits(r, f.id))
@@ -545,16 +548,20 @@ export default function Chat({ me, setMe }) {
     return 'all'
   }
   const inFolder = (r, f) => (prefs.folderAlone ? homeOf(r) === f : fits(r, f))
+  // THEMADLIONS always on top (Alex, 27 Oct), then the pinned chats in the order they were pinned, then the rest
+  const pinnedFirst = (list) => {
+    const team = list.filter((r) => r.hub_project === 'team'), rest = list.filter((r) => r.hub_project !== 'team')
+    return [...team, ...rest.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...rest.filter((r) => !pins.includes(r.room_id))]
+  }
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase()
     const list = visible.filter((r) => (t ? titleOf(r).toLowerCase().includes(t) || (otherOf(r)?.username || '').includes(t.replace(/^@/, '')) : inFolder(r, folder)))
-    // pinned chats first, in the order they were pinned
-    return [...list.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...list.filter((r) => !pins.includes(r.room_id))]
+    return pinnedFirst(list)
   }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra, marked, prefs.folderAlone, prefs.folderOrder, hiddenF.join()]) // eslint-disable-line react-hooks/exhaustive-deps
   // the chats of another folder, for the page that slides in beside the list while it is dragged
   const listFor = (fid) => {
     const list = visible.filter((r) => inFolder(r, fid))
-    return [...list.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...list.filter((r) => !pins.includes(r.room_id))]
+    return pinnedFirst(list)
   }
 
   /* On a phone the chat list follows the finger sideways and the next folder slides in beside it, as in

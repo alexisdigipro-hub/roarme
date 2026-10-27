@@ -210,6 +210,10 @@ function wearHubLook(l) {
   // see-through: the hub's own backdrop shows behind RoarMe, so it sits on the page like the hub's other pages
   // (Alex, 27 Oct). It needs the same color-scheme on both sides; the hub's frame and this root both take it from the look.
   css += ` html[data-theme='hub'], html[data-theme='hub'] body { background: transparent !important; }`
+  // the cards in the hub's own glass, as its side menu, and the pop-ups in its panel colour (Alex, 27 Oct: "the side
+  // menu is one colour and the chat another"); RoarMe's own dark navy is written into these rules, not in a variable
+  css += ` html[data-theme='hub'] :is(.side, .main, .tasks-panel, .auth-card) { background: var(--glass) !important; }`
+  css += ` html[data-theme='hub'] :is(.menu, .modal, .menu-list, .rx-pick, .mention-pick, .msg-acts, .toast, .rmd-card, .emoji-pick) { background: var(--float, var(--panel)) !important; }`
   // the hub's way with words: buttons and tabs in sentence case, not capitals
   css += ` html[data-theme='hub'] :is(.btn, .tabs button, .pill-btn) { text-transform: none !important; letter-spacing: 0 !important; font-size: 13.5px; font-weight: 600; }`
   if (font) css += ` html[data-theme='hub'] body, html[data-theme='hub'] :is(button, input, textarea, select) { font-family: ${font} !important; }`

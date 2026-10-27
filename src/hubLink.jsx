@@ -205,9 +205,13 @@ function wearHubLook(l) {
     '--float': panel && mix(panel, 96), '--danger': v('danger'), '--ok': v('ok'),
   }
   const decl = Object.entries(vars).filter(([, x]) => x).map(([k, x]) => `${k}: ${x} !important;`).join(' ')
-  const font = v('font'), backdrop = v('backdrop') || v('bg')
+  const font = v('font')
   let css = `html[data-theme='hub'] { ${decl} color-scheme: ${light ? 'light' : 'dark'}; }`
-  if (backdrop) css += ` html[data-theme='hub'] body { background: ${backdrop} !important; background-attachment: fixed !important; background-size: cover !important; }`
+  // see-through: the hub's own backdrop shows behind RoarMe, so it sits on the page like the hub's other pages
+  // (Alex, 27 Oct). It needs the same color-scheme on both sides; the hub's frame and this root both take it from the look.
+  css += ` html[data-theme='hub'], html[data-theme='hub'] body { background: transparent !important; }`
+  // the hub's way with words: buttons and tabs in sentence case, not capitals
+  css += ` html[data-theme='hub'] :is(.btn, .tabs button, .pill-btn) { text-transform: none !important; letter-spacing: 0 !important; font-size: 13.5px; font-weight: 600; }`
   if (font) css += ` html[data-theme='hub'] body, html[data-theme='hub'] :is(button, input, textarea, select) { font-family: ${font} !important; }`
   let tag = document.getElementById('roar-hub-look')
   if (!tag) { tag = document.createElement('style'); tag.id = 'roar-hub-look'; document.head.append(tag) }

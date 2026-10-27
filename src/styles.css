@@ -4199,3 +4199,12 @@ html[data-mode='light'] :is(.room-view[data-img] .scroll, .set-preview[data-img]
 html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.voice-btn, .music-btn) { color: #1c1c1e !important; background: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(226, 226, 230, .9)) !important; border: 1px solid rgba(255, 255, 255, .6) !important; box-shadow: 0 4px 12px rgba(0, 0, 0, .25), inset 0 1px 0 #fff !important; }
 html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.voice-bar, .music-bar) { background: rgba(255, 255, 255, .22) !important; }
 html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.voice-bar, .music-bar) i { background: #fff !important; }
+
+/* Inside the hub (?embed=hub, Alex 28 Oct: "a big gap"): the hub's own bars already sit around RoarMe, so the room kept
+   for the phone's clock and home bar (safe-area) is not needed here; it left an empty band under the hub's top bar. */
+html[data-embed='hub'] .app, html[data-embed='hub'][data-theme] .app { padding-top: 6px !important; padding-bottom: 6px !important; }
+html[data-embed='hub'] .app > .side { padding-top: 10px !important; padding-bottom: 6px !important; }
+html[data-embed='hub'] .app > .main { padding-top: 0 !important; padding-bottom: 0 !important; }
+html[data-embed='hub'] .tasks-panel { padding-top: 12px !important; padding-bottom: 12px !important; }
+html[data-embed='hub'] :is(.modal-back, .ctx) { padding-top: 12px !important; padding-bottom: 12px !important; }
+html[data-embed='hub'] .modal, html[data-embed='hub'] .modal:has(.cc), html[data-embed='hub'] .modal:has(.pf) { max-height: calc(100dvh - 24px) !important; }

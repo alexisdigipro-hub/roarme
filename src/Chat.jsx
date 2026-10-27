@@ -528,6 +528,8 @@ export default function Chat({ me, setMe }) {
       const t = mine.types || {}
       return (!!t.private && r.kind !== 'group') || (!!t.groups && r.kind === 'group')
     }
+    // All: people, and of the groups only THEMADLIONS, the hub's team group (Alex, 27 Oct); the rest are in Groups
+    if (f === 'all' && r.kind === 'group') return r.hub_project === 'team'
     return true
   }
   /* Each chat in one folder only (Settings > Chat Folders, Alex, 21 Oct): an unread chat sits only in Unread, a chat in a

@@ -51,8 +51,14 @@ Deno.serve(async (req) => {
     const { data: link } = await sb.from('roar_hub_links').select('user_id').eq('hub', 'themadlions').eq('hub_user_id', hubUser).maybeSingle()
     let uid: string | null = link?.user_id || null
     if (!uid) {
+      // only an account whose owner confirmed this email (security check, 27 Oct): an account someone else made with
+      // a team member's email and never confirmed is removed, and the member gets a new one of their own
       const { data: byMail } = await sb.rpc('roar_hub_user_by_email', { mail: email })
       uid = byMail || null
+      if (!uid) {
+        const { data: stray } = await sb.rpc('roar_hub_unconfirmed_by_email', { mail: email })
+        if (stray) await sb.auth.admin.deleteUser(stray)
+      }
     }
     if (!uid) {
       const { data: made, error } = await sb.auth.admin.createUser({ email, email_confirm: true, user_metadata: { name, via: 'themadlions-hub' } })

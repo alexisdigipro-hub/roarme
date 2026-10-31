@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, DEFAULTS, FONTS, PUBLIC_THEMES, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs } from './prefs.js'
+import { ACCENTS, DEFAULTS, FONTS, PUBLIC_THEMES, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { useWalls, wallStyle } from './walls.js'
 import { LegalDoc, legalTitle } from './legal.jsx'
@@ -773,7 +773,7 @@ function Appearance({ p, toast, me, setMe }) {
               const only = !PUBLIC_THEMES.includes(k)
               return (
                 <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}${only ? ' lab' : ''}`} title={only ? `${l} · only you see it` : l}
-                  onClick={(e) => { if (p.theme === k) return; revealFrom(e, () => { document.documentElement.dataset.theme = k; setPrefs({ theme: k }) }); toast(`Theme updated: ${l}`) }}>
+                  onClick={(e) => { if (p.theme === k) return; wearTheme(k); revealFrom(e, () => { document.documentElement.dataset.theme = k; setPrefs({ theme: k }) }); toast(`Theme updated: ${l}`) }}>
                   <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : k === 'prism' ? '0 0 10px #ff4b3e' : k === 'aurum' ? '0 0 10px rgba(240, 166, 74, .8)' : k === 'lions' ? '0 0 10px rgba(212, 0, 0, .8)' : 'none' }} />{k === 'prism' && <b className="theme-rim" />}</span>
                   <small>{l}</small>
                   {only && <em className="theme-lab">Only you</em>}

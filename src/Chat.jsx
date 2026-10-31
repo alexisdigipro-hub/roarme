@@ -8,6 +8,7 @@ import { tr } from './i18n.js'
 import { E2E_OFF, E2E_ON, endEncrypted, hasStretchKey, isSealed, myDevice, openText, previewText, sealText, startEncrypted, systemText, useEncrypted, useOpened, withoutDevice } from './e2e.js'
 // Settings and a profile load only when opened (Alex, 21 Oct: RoarMe lighter at start)
 const Profile = lazy(() => import('./Profile.jsx'))
+const TasksPanel = lazy(() => import('./tasks.jsx').then((m) => ({ default: m.TasksPanel })))
 const SettingsMenu = lazy(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsMenu })))
 const SettingsPage = lazy(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsPage })))
 // fetched quietly a moment after RoarMe opens, so opening Settings never waits on it (Alex, 21 Oct: the foot bar
@@ -25,7 +26,7 @@ import { useFolderSync } from './folderSync.js'
 import { ContactCard } from './contactCard.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { OrdinoCard, RoardinoSheet, ordinoBody } from './roardino.jsx'
-import { TasksPanel, taskNotice, useTasks } from './tasks.jsx'
+import { taskNotice, useTasks } from './taskCore.js'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
@@ -1270,7 +1271,7 @@ export default function Chat({ me, setMe }) {
             n.onclick = () => { window.focus(); libChat(r.room_id, r.message_id); n.close() }
           } catch { /* not allowed here */ }
         }} />
-      {tasksOpen && <TasksPanel me={me} people={people} contacts={contacts} kit={tasksKit} toast={toast} onClose={() => showTasks(false)} onEdge={goStop} rooms={rooms} titleOf={titleOf} onOpenChat={(roomId, msgId) => { if (msgId) libChat(roomId, msgId); else { setTab('chats'); setActiveId(roomId) } }} />}
+      {tasksOpen && <Suspense fallback={null}><TasksPanel me={me} people={people} contacts={contacts} kit={tasksKit} toast={toast} onClose={() => showTasks(false)} onEdge={goStop} rooms={rooms} titleOf={titleOf} onOpenChat={(roomId, msgId) => { if (msgId) libChat(roomId, msgId); else { setTab('chats'); setActiveId(roomId) } }} /></Suspense>}
 
       {modal === 'invite' && <InviteModal me={me} toast={toast} onClose={() => setModal('')} />}
       {inboxOpen && <RoarMeInbox onClose={() => setInboxOpen(false)} />}
@@ -2378,7 +2379,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 <div className="bubble-col">
                   <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.file?.ordino && !m.deleted_at ? ' art-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
-                    {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.quote}</i>}</span>}
+                    {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
                       : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
                       : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => hands.current.setArtView(m)} />
@@ -2594,7 +2595,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               )}
               {(replyTo || editing) && (
                 <span className="compose-ref" style={{ '--ref': editing ? 'var(--accent)' : replyTo.user_id === me.id ? 'var(--accent)' : colorOf(replyTo.user_id) }}>
-                  <span className="compose-ref-ico">{editing ? I.edit : quote ? I.quote : I.reply}</span>
+                  <span className="compose-ref-ico">{editing ? I.edit : quote ? I.qmark : I.reply}</span>
                   <span className="compose-ref-text">
                     <b>{editing ? 'Edit message' : quote ? `Quote from ${replyTo.user_id === me.id ? 'yourself' : nameOf(people[replyTo.user_id])}` : `Reply to ${replyTo.user_id === me.id ? 'yourself' : nameOf(people[replyTo.user_id])}`}</b>
                     <span>{!editing && quote ? quote : textOf(editing || replyTo)}</span>
@@ -2635,7 +2636,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         <OnTop>
           <span className="sel-bar" style={{ left: selBar.x, top: selBar.y }} onMouseDown={(e) => e.preventDefault()}>
             <button type="button" onClick={() => { copy(selBar.text, 'Text copied'); setSelBar(null) }}>{I.copy}<span>Copy</span></button>
-            <button type="button" className="on" onClick={() => quoteIt(selBar.m, selBar.text)}>{I.quote}<span>Quote</span></button>
+            <button type="button" className="on" onClick={() => quoteIt(selBar.m, selBar.text)}>{I.qmark}<span>Quote</span></button>
           </span>
         </OnTop>
       )}
@@ -2648,7 +2649,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>
-              {menu.m.kind === 'text' && textOf(menu.m) && <button type="button" onClick={() => { setQuotePick(menu.m); setMenu(null) }}>{I.quote}<span>Quote</span></button>}
+              {menu.m.kind === 'text' && textOf(menu.m) && <button type="button" onClick={() => { setQuotePick(menu.m); setMenu(null) }}>{I.qmark}<span>Quote</span></button>}
               {menu.m.body && !menu.m.sealed && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
               {menu.m.body && <button type="button" onClick={() => { const b = textOf(menu.m); copy(prefs.copyFormat === false ? plainText(b) : b, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
               <button type="button" onClick={() => { copy(linkOf(menu.m), 'Link copied'); setMenu(null) }}>{I.link}<span>Copy Message Link</span></button>
@@ -3090,7 +3091,7 @@ function QuotePick({ text, who, onQuote, onClose }) {
     onQuote(t || text)
   }
   return (
-    <Modal title="Quote" onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={picked}>{I.quote}<span>Quote</span></button></>}>
+    <Modal title="Quote" onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={picked}>{I.qmark}<span>Quote</span></button></>}>
       <p className="quote-hint">Select the words to quote, or quote the whole message.</p>
       <div className="quote-pick" ref={box}><b>{who}</b><div className="quote-pick-text">{text}</div></div>
     </Modal>

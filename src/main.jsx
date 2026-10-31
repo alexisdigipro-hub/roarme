@@ -7,11 +7,14 @@ import { takeInvite } from './invite.jsx'
 import { takeEmbed, takeHubLink, takeHubSignin } from './hubLink.jsx'
 import './styles.css'
 import { startI18n } from './i18n.js'
+import { wearTheme } from './prefs.js'
 
 // the Privacy Policy and the Terms come only when opened, not with every start of RoarMe
 const LegalPage = lazy(() => import('./legal.jsx').then((m) => ({ default: m.LegalPage })))
 
 startI18n()
+// a lab theme left on: its styles start coming now, alongside the sign-in (prefs.js wearTheme)
+try { wearTheme(JSON.parse(localStorage.getItem('roarme-prefs') || '{}').theme) } catch { /* no saved look */ }
 
 // Jost for the wordmark, from the site itself (fetched at build time into public/fonts); Futura is the fallback
 try {

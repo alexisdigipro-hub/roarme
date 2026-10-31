@@ -165,6 +165,8 @@ export const EL = {
   'Copy did not work here': 'Η αντιγραφή δεν λειτούργησε εδώ',
   'Copy Message Link': 'Αντιγραφή συνδέσμου μηνύματος',
   'Copy Text': 'Αντιγραφή κειμένου',
+  'Quote': 'Παράθεση',
+  'Select the words to quote, or quote the whole message.': 'Διάλεξε τις λέξεις που θες να παραθέσεις, ή παράθεσε όλο το μήνυμα.',
   'Copy Text Formatting': 'Αντιγραφή μορφοποίησης κειμένου',
   'Copy username': 'Αντιγραφή ονόματος χρήστη',
   'Corner Radius': 'Στρογγύλεμα γωνιών',

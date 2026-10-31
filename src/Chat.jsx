@@ -2,7 +2,7 @@ import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo,
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
-import { formatText, hasMark, plainText, toggleMark } from './format.jsx'
+import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { E2E_OFF, E2E_ON, endEncrypted, hasStretchKey, isSealed, myDevice, openText, previewText, sealText, startEncrypted, systemText, useEncrypted, useOpened, withoutDevice } from './e2e.js'
@@ -1519,6 +1519,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   useEffect(() => () => setDrafts((d) => withDraft(d, textNow.current)), [room.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
   const [caret, setCaret] = useState(0)
   const [replyTo, setReplyTo] = useState(null)
+  const [quote, setQuote] = useState('') // the words picked from replyTo (Quote), '' for a whole reply
+  const [quotePick, setQuotePick] = useState(null) // the message whose words are being picked, on a phone
+  const [selBar, setSelBar] = useState(null) // { m, text, x, y }: words selected in a message, on a computer
+  useEffect(() => { if (!replyTo) setQuote('') }, [replyTo])
   const [editing, setEditing] = useState(null)
   // scheduled messages (Alex, 18 Oct): hold Send or right click it; the clock in the box lists what waits
   const sched = useScheduled(room.room_id, me.id)
@@ -1714,6 +1718,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const el = e.currentTarget
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
     if (menu) setMenu(null)
+    if (selBar) setSelBar(null)
     // back at the bottom of a long chat: the oldest pages read on the way up are let go, and come back if needed
     // (Alex, 21 Oct: RoarMe lighter; a chat scrolled far back no longer keeps every message in memory)
     if (stick.current && msgs.length > 240 && !find && !picked) { setMsgs((list) => list.slice(-150)); setMore(true) }
@@ -1789,10 +1794,12 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     if (!body) return
     setErr('')
     // while Encrypted Chat is on the text is locked here, before it leaves the device
-    let out = body
+    const kept = editing?.reply_to ? splitQuote(editing.body).quote : ''
+    const full = editing ? (kept ? withQuote(kept, body) : body) : replyTo && quote ? withQuote(quote, body) : body
+    let out = full
     const stretch = editing ? editing.sealed : sealOn?.id
     if (stretch) {
-      try { out = await sealText(body, stretch, room.room_id, me.id) } catch (e) { setErr(errText(e)); return }
+      try { out = await sealText(full, stretch, room.room_id, me.id) } catch (e) { setErr(errText(e)); return }
       if (out.length > 20000) { setErr('Too long for one encrypted message. Send it in two parts.'); return }
     }
     if (editing) {
@@ -1813,7 +1820,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const canSched = !editing && !sealOn && !!text.trim()
   const scheduleIt = async ({ body, at, repeat }) => {
     const out = prefs.autoEmoji ? swapEmoji(body) : body
-    const e = await sched.add({ body: out, replyTo: replyTo?.id, at, repeat })
+    const e = await sched.add({ body: replyTo && quote ? withQuote(quote, out) : out, replyTo: replyTo?.id, at, repeat })
     if (e) return e
     setSchedNew(false); setText(''); setReplyTo(null)
     toast(`Scheduled for ${whenText(at.toISOString())}`)
@@ -2034,7 +2041,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     try { await endEncrypted(room.room_id); toast('Encrypted Chat is off') } catch (e) { setErr(errText(e)) }
     reloadSeal()
   }
-  const textOf = (m) => (m.kind === 'system' ? previewText(m.body, 'system') : m.sealed && !m.body ? 'Encrypted message' : m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.body)
+  const textOf = (m) => (m.kind === 'system' ? previewText(m.body, 'system') : m.sealed && !m.body ? 'Encrypted message' : m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.reply_to ? splitQuote(m.body).rest : m.body)
   const copy = async (s, what = 'Copied') => { try { await navigator.clipboard.writeText(s); toast(what) } catch { toast('Copy did not work here') } }
   const linkOf = (m) => `${window.location.origin}${window.location.pathname}#m=${room.room_id}/${m.id}`
   const translate = (s) => window.open(`https://translate.google.com/?sl=auto&tl=${prefs.translateTo && prefs.translateTo !== 'auto' ? prefs.translateTo : /[Ͱ-Ͽ]/.test(s) ? 'en' : 'el'}&op=translate&text=${encodeURIComponent(s)}`, '_blank', 'noopener')
@@ -2068,10 +2075,37 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const onDouble = (m, e) => {
     if (m.deleted_at || picked) return
     const how = prefs.doubleTap
-    if (how === 'edit' && canEdit(m)) { setReplyTo(null); setEditing(m); setText(m.body) }
+    if (how === 'edit' && canEdit(m)) { setReplyTo(null); setEditing(m); setText(textOf(m)) }
     else if (how === 'forward') { if (!m.sealed) setForward([m]) }
     else if (how === 'reply' || how === 'edit') setReplyTo(m)
     else { react(m, prefs.quick); if (!reactsOf[m.id]?.[prefs.quick]?.mine) burst(prefs.quick, e?.clientX, e?.clientY) }
+  }
+
+  // Quote (Alex, 31 Oct, after Telegram): words selected in one message with the mouse get a small bar, Copy and Quote;
+  // on a phone, where messages are not selectable, the menu's Quote opens the message to pick the words from
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || !mouse) return undefined
+    const elOf = (n) => (n?.nodeType === 1 ? n : n?.parentElement)
+    const up = () => setTimeout(() => {
+      const s = window.getSelection()
+      const t = s && !s.isCollapsed ? s.toString().trim() : ''
+      const a = t && elOf(s.anchorNode)?.closest('.bubble .text')
+      const row = a && a === elOf(s.focusNode)?.closest('.bubble .text') ? a.closest('[id^="m-"]') : null
+      const m = row && hands.current.byId[row.id.slice(2)]
+      if (!m || m.deleted_at || m.kind !== 'text') { setSelBar(null); return }
+      const r = s.getRangeAt(0).getBoundingClientRect()
+      setSelBar({ m, text: t, x: Math.max(90, Math.min(r.left + r.width / 2, window.innerWidth - 90)), y: Math.max(70, r.top) })
+    }, 0)
+    const gone = () => { const s = window.getSelection(); if (!s || s.isCollapsed) setSelBar(null) }
+    el.addEventListener('mouseup', up)
+    document.addEventListener('selectionchange', gone)
+    return () => { el.removeEventListener('mouseup', up); document.removeEventListener('selectionchange', gone) }
+  }, [room.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const quoteIt = (m, words) => {
+    setEditing(null); setReplyTo(m); setQuote(words.trim()); setSelBar(null); setQuotePick(null)
+    window.getSelection()?.removeAllRanges()
+    requestAnimationFrame(() => inputRef.current?.focus())
   }
 
   // the small format bar: it shows over the box while some text is selected (Alex, 16 Oct)
@@ -2312,6 +2346,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           const first = newDay || !prev || prev.user_id !== m.user_id || new Date(m.created_at) - new Date(prev.created_at) > 5 * 60 * 1000
           const who = people[m.user_id]
           const quoted = m.reply_to ? byId[m.reply_to] : null
+          const qs = m.reply_to && m.body && !m.deleted_at ? splitQuote(m.body) : null
           const rx = reactsOf[m.id]
           const seen = mine && seenBy(m).length > 0
           const isPicked = picked?.includes(m.id)
@@ -2343,7 +2378,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 <div className="bubble-col">
                   <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.file?.ordino && !m.deleted_at ? ' art-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
-                    {quoted && !quoted.deleted_at && <span className="quote" onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{quoted.deleted_at ? 'Message deleted' : textOf(quoted)}</span></span>}
+                    {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.quote}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
                       : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
                       : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => hands.current.setArtView(m)} />
@@ -2357,7 +2392,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
-                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && !m.file?.ordino && !m.file?.roartransfer && <span className="text">{formatText(m.body, withMentions)}</span>}
+                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && !m.file?.ordino && !m.file?.roartransfer && <span className="text">{formatText(qs ? qs.rest : m.body, withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
                     <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
@@ -2559,10 +2594,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               )}
               {(replyTo || editing) && (
                 <span className="compose-ref" style={{ '--ref': editing ? 'var(--accent)' : replyTo.user_id === me.id ? 'var(--accent)' : colorOf(replyTo.user_id) }}>
-                  <span className="compose-ref-ico">{editing ? I.edit : I.reply}</span>
+                  <span className="compose-ref-ico">{editing ? I.edit : quote ? I.quote : I.reply}</span>
                   <span className="compose-ref-text">
-                    <b>{editing ? 'Edit message' : `Reply to ${replyTo.user_id === me.id ? 'yourself' : nameOf(people[replyTo.user_id])}`}</b>
-                    <span>{textOf(editing || replyTo)}</span>
+                    <b>{editing ? 'Edit message' : quote ? `Quote from ${replyTo.user_id === me.id ? 'yourself' : nameOf(people[replyTo.user_id])}` : `Reply to ${replyTo.user_id === me.id ? 'yourself' : nameOf(people[replyTo.user_id])}`}</b>
+                    <span>{!editing && quote ? quote : textOf(editing || replyTo)}</span>
                   </span>
                   <button type="button" className="compose-ref-x" onClick={() => { setReplyTo(null); if (editing) { setEditing(null); setText('') } }} aria-label="Cancel">{I.x}</button>
                 </span>
@@ -2596,6 +2631,16 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       {rolesOpen && <RolesWindow room={room} roles={roles} people={people} me={me} toast={toast} onClose={() => setRolesOpen(false)} />}
       {schedList && !schedEdit && <ScheduledList sched={sched} toast={toast} onEdit={setSchedEdit} onClose={() => setSchedList(false)} />}
 
+      {selBar && (
+        <OnTop>
+          <span className="sel-bar" style={{ left: selBar.x, top: selBar.y }} onMouseDown={(e) => e.preventDefault()}>
+            <button type="button" onClick={() => { copy(selBar.text, 'Text copied'); setSelBar(null) }}>{I.copy}<span>Copy</span></button>
+            <button type="button" className="on" onClick={() => quoteIt(selBar.m, selBar.text)}>{I.quote}<span>Quote</span></button>
+          </span>
+        </OnTop>
+      )}
+      {quotePick && <QuotePick text={textOf(quotePick)} who={quotePick.user_id === me.id ? 'You' : nameOf(people[quotePick.user_id])} onQuote={(w) => quoteIt(quotePick, w)} onClose={() => setQuotePick(null)} />}
+
       {menu && (
         <OnTop>
           <button type="button" className="scrim blur" aria-label="Close" onClick={() => setMenu(null)} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
@@ -2603,13 +2648,14 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>
+              {menu.m.kind === 'text' && textOf(menu.m) && <button type="button" onClick={() => { setQuotePick(menu.m); setMenu(null) }}>{I.quote}<span>Quote</span></button>}
               {menu.m.body && !menu.m.sealed && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
-              {menu.m.body && <button type="button" onClick={() => { copy(prefs.copyFormat === false ? plainText(menu.m.body) : menu.m.body, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
+              {menu.m.body && <button type="button" onClick={() => { const b = textOf(menu.m); copy(prefs.copyFormat === false ? plainText(b) : b, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
               <button type="button" onClick={() => { copy(linkOf(menu.m), 'Link copied'); setMenu(null) }}>{I.link}<span>Copy Message Link</span></button>
               {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
               <hr />
-              {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && !menu.m.file?.ordino && !menu.m.file?.roartransfer && <button type="button" onClick={() => { if (menu.m.file?.article) setArtOpen(menu.m); else { setEditing(menu.m); setText(menu.m.body) } setMenu(null) }}>{I.edit}<span>Edit</span></button>}
+              {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && !menu.m.file?.ordino && !menu.m.file?.roartransfer && <button type="button" onClick={() => { if (menu.m.file?.article) setArtOpen(menu.m); else { setEditing(menu.m); setText(textOf(menu.m)) } setMenu(null) }}>{I.edit}<span>Edit</span></button>}
               <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
               <button type="button" onClick={() => { setRemindFor(menu.m); setMenu(null) }}>{I.bell}<span>Remind Me</span></button>
               {!menu.m.sealed && <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>}
@@ -3032,4 +3078,21 @@ function Settings({ me, setMe, onClose, inline = false }) {
     )
   }
   return <Modal title="Your profile" onClose={onClose} foot={acts}>{fields}</Modal>
+}
+
+/* Quote on a phone: the message opened in a window with its text selectable; Quote takes the words selected,
+   or the whole message when nothing is selected */
+function QuotePick({ text, who, onQuote, onClose }) {
+  const box = useRef(null)
+  const picked = () => {
+    const s = window.getSelection()
+    const t = s && !s.isCollapsed && box.current?.contains(s.anchorNode) ? s.toString().trim() : ''
+    onQuote(t || text)
+  }
+  return (
+    <Modal title="Quote" onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={picked}>{I.quote}<span>Quote</span></button></>}>
+      <p className="quote-hint">Select the words to quote, or quote the whole message.</p>
+      <div className="quote-pick" ref={box}><b>{who}</b><div className="quote-pick-text">{text}</div></div>
+    </Modal>
+  )
 }

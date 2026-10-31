@@ -23,6 +23,7 @@ export const I = {
   send: <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4l17.4-7.5c.8-.4.8-1.5 0-1.8L3.4 3.6c-.7-.3-1.4.3-1.3 1l1.2 5.7c.1.4.4.7.8.7l9.4 1-9.4 1c-.4 0-.7.3-.8.7L2.1 19.4c-.1.7.6 1.3 1.3 1z" /></svg>,
   info: svg(<><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.01" /></>),
   reply: svg(<path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 6 6v4" />, 16),
+  quote: svg(<path d="M10 7H6.5A1.5 1.5 0 0 0 5 8.5V12h4v1.5A2.5 2.5 0 0 1 6.5 16M19 7h-3.5A1.5 1.5 0 0 0 14 8.5V12h4v1.5a2.5 2.5 0 0 1-2.5 2.5" />, 16),
   edit: svg(<><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></>, 16),
   trash: svg(<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />, 16),
   copy: svg(<><rect x="8" y="8" width="12" height="12" rx="2.5" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></>, 16),

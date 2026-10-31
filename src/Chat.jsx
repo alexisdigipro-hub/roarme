@@ -353,7 +353,7 @@ export default function Chat({ me, setMe }) {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     const who = peopleRef.current[m.user_id]
     const title = room?.kind === 'group' ? `${room.title}` : nameOf(who)
-    const body = !prefsRef.current.notifyPreview ? (atMe ? `${nameOf(who)} mentioned you` : 'New message') : (room?.kind === 'group' ? `${nameOf(who)}${atMe ? ' mentioned you' : ''}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : plainText(previewText(m.body, m.kind)))
+    const body = !prefsRef.current.notifyPreview ? (atMe ? `${nameOf(who)} mentioned you` : 'New message') : (room?.kind === 'group' ? `${nameOf(who)}${atMe ? ' mentioned you' : ''}: ` : '') + (m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? 'File' : plainText(splitQuote(previewText(m.body, m.kind)).rest))
     try {
       const n = new Notification(title, { body: tr(body), icon: who?.avatar_url || './icon.svg', tag: m.room_id })
       n.onclick = () => { window.focus(); setTab('chats'); setActiveId(m.room_id); n.close() }
@@ -388,7 +388,7 @@ export default function Chat({ me, setMe }) {
     const total = missed.reduce((a, r) => a + r.unread, 0)
     const nameOfRoom = (r) => (r.kind === 'group' ? r.title : nameOf(people[other(r)]))
     const lastOf = (r) => {
-      const what = r.last_deleted ? 'Message deleted' : r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(previewText(r.last_body || '', r.last_kind))
+      const what = r.last_deleted ? 'Message deleted' : r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(splitQuote(previewText(r.last_body || '', r.last_kind)).rest)
       return (r.kind === 'group' ? `${nameOf(people[r.last_user])}: ` : '') + tr(what)
     }
     const preview = prefsRef.current.notifyPreview
@@ -932,7 +932,7 @@ export default function Chat({ me, setMe }) {
     if (!r.last_kind) return r.kind === 'group' ? 'Group created' : 'Say hi'
     if (r.last_deleted) return ''
     const who = r.last_user === me.id ? 'You: ' : r.kind === 'group' && people[r.last_user] ? `${nameOf(people[r.last_user]).split(' ')[0]}: ` : ''
-    const what = r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(previewText(r.last_body, r.last_kind))
+    const what = r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(splitQuote(previewText(r.last_body, r.last_kind)).rest)
     return who + what
   }
   const folderUnread = (f) => visible.filter((r) => inFolder(r, f.id) && !r.muted).reduce((a, r) => a + (r.unread || 0), 0)
@@ -1467,7 +1467,7 @@ function PeekList({ room, me, people, clearedAt }) {
         {(list || []).map((m) => (
           <div key={m.id} className={`peek-msg${m.user_id === me.id ? ' mine' : ''}`}>
             {room.kind === 'group' && m.user_id !== me.id && <b style={{ color: colorOf(m.user_id) }}>{nameOf(people[m.user_id])}</b>}
-            <span>{m.kind === 'image' ? '📷 Photo' : m.kind === 'voice' ? '🎤 Voice message' : m.kind === 'file' ? `📎 ${m.file?.name || 'File'}` : previewText(m.body, m.kind)}</span>
+            <span>{m.kind === 'image' ? '📷 Photo' : m.kind === 'voice' ? '🎤 Voice message' : m.kind === 'file' ? `📎 ${m.file?.name || 'File'}` : splitQuote(previewText(m.body, m.kind)).rest}</span>
             <small>{timeOf(m.created_at)}</small>
           </div>
         ))}

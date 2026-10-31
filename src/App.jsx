@@ -67,7 +67,7 @@ export default function App() {
   // a theme still in Alex's lab shows only for him; anyone else sees Stone. Inside the hub, the hub's look (hubLink.jsx)
   useEffect(() => {
     if (isHubEmbed()) { document.documentElement.dataset.theme = 'hub'; return }
-    const t = themeFor(theme, profile)
+    const t = themeFor(theme)
     wearTheme(t)
     document.documentElement.dataset.theme = t
     // once signed in, someone left on a lab theme moves to Stone for good

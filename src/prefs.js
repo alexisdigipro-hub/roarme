@@ -174,15 +174,16 @@ export function applyMode(mode) {
 
 /* the look that sits on top of any theme (Alex, 16 Oct, from his Themes reference):
    accent colour, density, font, corner radius, animations, focus rings */
-/* everyone gets Stone (Alex, 21 Oct: the main theme); every other theme stays in Alex's lab, only he sees them */
-export const PUBLIC_THEMES = ['stone']
+/* two themes, each dark and light (Alex, 31 Oct: "only Stone and Simba"): Stone, the main one since 21 Oct, and Simba
+   ('ember'). Glass, Aura, Studio, Pumba, Aurum and Lions are gone; anyone left on one of them is on Stone. */
+export const PUBLIC_THEMES = ['stone', 'ember']
+// Alex's own account: Settings > Admin opens only for him
 const THEME_LAB = ['98f8b6e1-0ce2-4576-805b-cffa25667d22'] // @iamalexkon
 export const inThemeLab = (me) => !!me && THEME_LAB.includes(me.id)
-// their styles (src/themes-lab.css) come only when one of them is worn (Alex, 31 Oct: RoarMe lighter)
-const LAB_LOOKS = ['studio', 'ember', 'aura', 'prism', 'aurum', 'lions']
-let labCss = null
-export const wearTheme = (t) => { if (!labCss && LAB_LOOKS.includes(t)) labCss = import('./themes-lab.css') }
-export const themeFor = (theme, me) => (PUBLIC_THEMES.includes(theme) || inThemeLab(me) ? theme || 'stone' : 'stone')
+// Simba's styles (src/themes-simba.css) come only when it is worn (Alex, 31 Oct: RoarMe lighter)
+let simbaCss = null
+export const wearTheme = (t) => { if (!simbaCss && t === 'ember') simbaCss = import('./themes-simba.css') }
+export const themeFor = (theme) => (PUBLIC_THEMES.includes(theme) ? theme : 'stone')
 export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#d40000'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57'], ['white', 'White', '#ffffff'], ['black', 'Black', '#111111']]
 export const FONTS = [
   ['system', 'SF Pro / System', "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif"],

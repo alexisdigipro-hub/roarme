@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, DEFAULTS, FONTS, PUBLIC_THEMES, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
+import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { useWalls, wallStyle } from './walls.js'
 import { LegalDoc, legalTitle } from './legal.jsx'
@@ -41,7 +41,7 @@ const Hero = ({ id }) => {
   return <div className="set-hero"><span className="set-hero-ico" style={{ '--c': pg[2] }}>{pg[3]}</span><p>{pg[4]}</p></div>
 }
 
-const THEMES = [['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['glass', 'Glass', ['#2c5d93', '#1d2635']], ['aura', 'Aura', ['#3b6ff5', 'linear-gradient(135deg, #7c3aed, #1d4ed8 45%, #06b6d4)']], ['studio', 'Studio', ['#d4ff3a', '#121210']], ['prism', 'Pumba', ['#ff5d4a', 'linear-gradient(180deg, #555963, #2c2e34)']], ['aurum', 'Aurum', ['linear-gradient(180deg, #f8d29a, #e79a3d)', 'linear-gradient(180deg, #2a2927, #141414)']], ['lions', 'Lions', ['#d40000', 'radial-gradient(circle at 85% 0%, rgba(212, 0, 0, .35), transparent 60%), #0b0b0c']], ['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']]]
+const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -756,12 +756,11 @@ function Sessions({ me, setMe, toast }) {
 
 function Appearance({ p, toast, me, setMe }) {
   const wallImg = wallStyle(p.background, useWalls(true))
-  const lab = inThemeLab(me)
   const inHub = isHubEmbed() // inside the hub RoarMe wears the hub's look (hubLink.jsx), so no theme, mode or accent here
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
   return (
     <>
-      <Box title="Theme" note={inHub ? "Inside the hub, RoarMe wears the hub's look: its colours, light or dark and typeface. Change it in the hub's Settings > Display." : `Stone is RoarMe's theme: soft grey stone with graphite buttons.${lab ? ' Only you see the others, to work on them.' : ''}`}>
+      <Box title="Theme" note={inHub ? "Inside the hub, RoarMe wears the hub's look: its colours, light or dark and typeface. Change it in the hub's Settings > Display." : 'Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Each has dark and light.'}>
         <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={p.background} data-img={wallImg ? '' : undefined} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 15.5}px`, ...wallImg }}>
           <span className="pv mine">Good morning! 👋</span>
           <span className="pv"><i>Good morning! 👋</i>Do you know what time it is?</span>
@@ -769,14 +768,12 @@ function Appearance({ p, toast, me, setMe }) {
         </div>
         {!inHub && <><div className="set-row set-col">
           <div className="themes">
-            {THEMES.filter(([k]) => PUBLIC_THEMES.includes(k) || lab).map(([k, l, [a, b]]) => {
-              const only = !PUBLIC_THEMES.includes(k)
+            {THEMES.map(([k, l, [a, b]]) => {
               return (
-                <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}${only ? ' lab' : ''}`} title={only ? `${l} · only you see it` : l}
+                <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} title={l}
                   onClick={(e) => { if (p.theme === k) return; wearTheme(k); revealFrom(e, () => { document.documentElement.dataset.theme = k; setPrefs({ theme: k }) }); toast(`Theme updated: ${l}`) }}>
                   <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : k === 'prism' ? '0 0 10px #ff4b3e' : k === 'aurum' ? '0 0 10px rgba(240, 166, 74, .8)' : k === 'lions' ? '0 0 10px rgba(212, 0, 0, .8)' : 'none' }} />{k === 'prism' && <b className="theme-rim" />}</span>
                   <small>{l}</small>
-                  {only && <em className="theme-lab">Only you</em>}
                 </button>
               )
             })}

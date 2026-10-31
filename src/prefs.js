@@ -178,6 +178,10 @@ export function applyMode(mode) {
 export const PUBLIC_THEMES = ['stone']
 const THEME_LAB = ['98f8b6e1-0ce2-4576-805b-cffa25667d22'] // @iamalexkon
 export const inThemeLab = (me) => !!me && THEME_LAB.includes(me.id)
+// their styles (src/themes-lab.css) come only when one of them is worn (Alex, 31 Oct: RoarMe lighter)
+const LAB_LOOKS = ['studio', 'ember', 'aura', 'prism', 'aurum', 'lions']
+let labCss = null
+export const wearTheme = (t) => { if (!labCss && LAB_LOOKS.includes(t)) labCss = import('./themes-lab.css') }
 export const themeFor = (theme, me) => (PUBLIC_THEMES.includes(theme) || inThemeLab(me) ? theme || 'stone' : 'stone')
 export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#d40000'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57'], ['white', 'White', '#ffffff'], ['black', 'Black', '#111111']]
 export const FONTS = [

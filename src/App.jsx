@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib.js'
-import { applyLook, applyMode, setPrefs, themeFor, usePrefs } from './prefs.js'
+import { applyLook, applyMode, setPrefs, themeFor, usePrefs, wearTheme } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
@@ -68,6 +68,7 @@ export default function App() {
   useEffect(() => {
     if (isHubEmbed()) { document.documentElement.dataset.theme = 'hub'; return }
     const t = themeFor(theme, profile)
+    wearTheme(t)
     document.documentElement.dataset.theme = t
     // once signed in, someone left on a lab theme moves to Stone for good
     if (profile && t !== (theme || 'stone')) setPrefs({ theme: t })

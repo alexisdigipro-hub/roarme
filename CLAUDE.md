@@ -37,3 +37,4 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
   roar_my_mentions, roar_push_targets now with `mention`) reach people even in a muted chat; Remind Me on a message
   (src/reminders.jsx, supabase/reminders.sql + pg_cron 'roar-reminders', roar-push {reminder}); Tasks > Reminders.
 - Quote (31 Oct, Alex from Telegram): words picked from a message ride at the top of the reply as "> " lines (src/format.jsx withQuote / splitQuote, read only on a reply); a computer selects them and gets the sel-bar (Copy, Quote), a phone uses the menu's Quote (QuotePick in src/Chat.jsx). No database change.
+- Lighter (31 Oct): the lab's themes live in src/themes-lab.css, loaded by prefs.js wearTheme only when one is worn (Stone stays in styles.css; a new lab theme's rules go there, a Stone rule never). The Tasks panel (tasks.jsx, with calendar.jsx) is lazy; what the start needs of Tasks is src/taskCore.js.

@@ -194,6 +194,23 @@ body.resizing { cursor: col-resize; user-select: none; }
 .quote { display: flex; flex-direction: column; margin: 2px 0 6px; padding: 5px 10px; border-left: 3px solid var(--accent-2); border-radius: 8px; background: rgba(0, 0, 0, .2); font-size: 13px; }
 .quote b { color: var(--accent-2); font-size: 12.5px; }
 .quote span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255, 255, 255, .75); }
+/* Quote (31 Oct): the words picked from the message, up to three lines, a quote mark in the corner */
+.quote.q-part { position: relative; padding-right: 26px; }
+.quote.q-part > span { white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.quote .q-mark { position: absolute; top: 5px; right: 6px; display: grid; opacity: .7; color: var(--accent-2); }
+.quote .q-mark svg { width: 14px; height: 14px; }
+.sel-bar { position: fixed; z-index: 90; transform: translate(-50%, calc(-100% - 10px)); display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: rgba(28, 30, 36, .92); border: 1px solid var(--edge); box-shadow: 0 14px 36px rgba(0, 0, 0, .45); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); animation: sel-pop .18s ease; }
+@keyframes sel-pop { from { opacity: 0; transform: translate(-50%, calc(-100% - 4px)) scale(.94); } }
+.sel-bar button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #fff; }
+.sel-bar button:hover { background: rgba(255, 255, 255, .1); }
+.sel-bar button.on { background: var(--accent); }
+.quote-hint { margin: 0 0 10px; font-size: 13px; opacity: .7; }
+.quote-pick { display: grid; gap: 6px; padding: 12px 14px; border-radius: 14px; border-left: 3px solid var(--accent-2); background: rgba(0, 0, 0, .2); max-height: 50vh; overflow: auto; }
+.quote-pick b { color: var(--accent-2); font-size: 13px; }
+.quote-pick-text, .quote-pick-text * { white-space: pre-wrap; font-size: 15px; line-height: 1.45; -webkit-user-select: text !important; user-select: text !important; -webkit-touch-callout: default !important; }
+html[data-mode='light'] .quote-pick { background: rgba(16, 32, 58, .06); }
+html[data-mode='light'] .sel-bar { background: rgba(255, 255, 255, .95); }
+html[data-mode='light'] .sel-bar button:not(.on) { color: #10203a; }
 .bubble.pic { padding: 4px; }
 .bubble.pic .meta { position: absolute; right: 10px; bottom: 8px; margin: 0; padding: 1px 7px; border-radius: 999px; background: rgba(0, 0, 0, .45); color: #fff; }
 .pic-img { display: block; max-width: 100%; max-height: 360px; border-radius: 14px; cursor: zoom-in; }

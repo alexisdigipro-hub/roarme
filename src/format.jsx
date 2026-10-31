@@ -74,3 +74,19 @@ export function wrapSelection(el, text, mark) {
   const caretB = caretA + picked.length
   return { next, caretA, caretB }
 }
+
+/* Quote replies (Alex, 31 Oct, after Telegram's "Hold to select text > Quote"): the words picked from the message
+   replied to ride at the top of the reply as "> " lines, so every device shows them and Encrypted Chat locks them too.
+   They are read as a quote only on a reply (reply_to); anywhere else a "> " stays plain text. */
+export const QUOTE_MAX = 500
+export function withQuote(quote, text) {
+  const q = String(quote || '').replace(/\s+$/, '').slice(0, QUOTE_MAX).trim()
+  return q ? q.split('\n').map((l) => '> ' + l).join('\n') + '\n' + text : text
+}
+export function splitQuote(body) {
+  const lines = String(body || '').split('\n')
+  let i = 0
+  while (i < lines.length && lines[i].startsWith('> ')) i++
+  if (!i || i === lines.length) return { quote: '', rest: String(body || '') }
+  return { quote: lines.slice(0, i).map((l) => l.slice(2)).join('\n'), rest: lines.slice(i).join('\n') }
+}

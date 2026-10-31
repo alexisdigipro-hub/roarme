@@ -1619,8 +1619,8 @@ html[data-density='relaxed'] { --gap-msg: 10px; }
 .bubble.outbox img { width: 100%; max-width: none; object-fit: cover; }
 
 /* the conversation's head: the name card and the round buttons beside it the same height (Alex, 16 Oct) */
-html:not([data-theme='aura']):not([data-theme='studio']) .room-head .head-card { height: 48px; }
-html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { width: 48px; height: 48px; }
+html .room-head .head-card { height: 48px; }
+html .room-head .round { width: 48px; height: 48px; }
 
 /* Settings > Folders: drag a row to reorder the tabs (Alex, 16 Oct) */
 .fold-rows { display: contents; }
@@ -2930,38 +2930,38 @@ html[data-bubbles='glass'][data-theme] .msg.mine .bubble :is(.fmt-code, .fmt-pre
 /* glass instead of solid (Alex, 17 Oct: "what is so solid does not fit: transparency, different opacities, fresh, 2026").
    Three strengths: the main action of a place (Download, Send, Join, Save) is the strongest glass, icon tiles are
    lighter, chips lighter still. Comes and goes with Settings > General > Glass Look; Studio keeps its own hard look. */
-html[data-bubbles='glass']:not([data-theme='studio']) {
+html[data-bubbles='glass'] {
   --gl-ink: color-mix(in srgb, var(--accent) 38%, #fff);
   --gl-a1: 46%; --gl-a2: 26%; --gl-t1: 34%; --gl-t2: 12%;
 }
-html[data-bubbles='glass'][data-mode='light']:not([data-theme='studio']) { --gl-ink: color-mix(in srgb, var(--accent) 78%, #000); --gl-a1: 30%; --gl-a2: 16%; --gl-t1: 24%; --gl-t2: 8%; }
-html[data-bubbles='glass']:not([data-theme='studio']) :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send):not(:disabled) {
+html[data-bubbles='glass'][data-mode='light'] { --gl-ink: color-mix(in srgb, var(--accent) 78%, #000); --gl-a1: 30%; --gl-a2: 16%; --gl-t1: 24%; --gl-t2: 8%; }
+html[data-bubbles='glass'] :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send):not(:disabled) {
   color: var(--gl-ink) !important;
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) var(--gl-a1), transparent), color-mix(in srgb, var(--accent) var(--gl-a2), transparent)) !important;
   border: 1px solid color-mix(in srgb, var(--accent) 62%, transparent) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 8px 22px color-mix(in srgb, var(--accent) 18%, transparent) !important;
   -webkit-backdrop-filter: blur(12px) saturate(1.5); backdrop-filter: blur(12px) saturate(1.5); filter: none;
 }
-html[data-bubbles='glass']:not([data-theme='studio']) :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send):not(:disabled):hover {
+html[data-bubbles='glass'] :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send):not(:disabled):hover {
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) calc(var(--gl-a1) + 12%), transparent), color-mix(in srgb, var(--accent) calc(var(--gl-a2) + 10%), transparent)) !important;
 }
-html[data-bubbles='glass']:not([data-theme='studio']) :is(.trx-type, .rt-mark i, .loc-send i, .music-btn, .voice-btn) {
+html[data-bubbles='glass'] :is(.trx-type, .rt-mark i, .loc-send i, .music-btn, .voice-btn) {
   color: var(--gl-ink) !important;
   background: linear-gradient(140deg, color-mix(in srgb, var(--accent) var(--gl-t1), transparent), color-mix(in srgb, var(--accent) var(--gl-t2), transparent)) !important;
   border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 6px 16px color-mix(in srgb, var(--accent) 12%, transparent) !important;
 }
-html[data-bubbles='glass']:not([data-theme='studio']) .attach-tile i {
+html[data-bubbles='glass'] .attach-tile i {
   color: color-mix(in srgb, var(--tint) 45%, #fff);
   background: linear-gradient(140deg, color-mix(in srgb, var(--tint) 40%, transparent), color-mix(in srgb, var(--tint) 14%, transparent));
   border: 1px solid color-mix(in srgb, var(--tint) 45%, transparent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 6px 16px color-mix(in srgb, var(--tint) 14%, transparent);
 }
-html[data-bubbles='glass'][data-mode='light']:not([data-theme='studio']) .attach-tile i { color: color-mix(in srgb, var(--tint) 80%, #000); }
-html[data-bubbles='glass']:not([data-theme='studio']) .trx-hero, html[data-bubbles='glass']:not([data-theme='studio']) .artc-hero { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--accent) 2%, transparent)); border-color: color-mix(in srgb, var(--accent) 16%, transparent); }
-html[data-bubbles='glass']:not([data-theme='studio']) .trx-left { background: rgba(255, 176, 32, .08); border-color: rgba(255, 176, 32, .26); }
-html[data-bubbles='glass']:not([data-theme='studio']) .trx-time { background: color-mix(in srgb, var(--text) 7%, transparent); }
-html[data-bubbles='glass']:not([data-theme='studio']) .trx-time i { opacity: .85; }
-html[data-bubbles='glass']:not([data-theme='studio']) .trx-round, html[data-bubbles='glass']:not([data-theme='studio']) .artc-min { background: color-mix(in srgb, var(--text) 5%, transparent); border-color: color-mix(in srgb, var(--text) 14%, transparent); }
+html[data-bubbles='glass'][data-mode='light'] .attach-tile i { color: color-mix(in srgb, var(--tint) 80%, #000); }
+html[data-bubbles='glass'] .trx-hero, html[data-bubbles='glass'] .artc-hero { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--accent) 2%, transparent)); border-color: color-mix(in srgb, var(--accent) 16%, transparent); }
+html[data-bubbles='glass'] .trx-left { background: rgba(255, 176, 32, .08); border-color: rgba(255, 176, 32, .26); }
+html[data-bubbles='glass'] .trx-time { background: color-mix(in srgb, var(--text) 7%, transparent); }
+html[data-bubbles='glass'] .trx-time i { opacity: .85; }
+html[data-bubbles='glass'] .trx-round, html[data-bubbles='glass'] .artc-min { background: color-mix(in srgb, var(--text) 5%, transparent); border-color: color-mix(in srgb, var(--text) 14%, transparent); }
 
 /* the mark beside the wordmark (Alex, 17 Oct): small to its left in the bar, big above it on the opening screens */
 .wordmark { display: inline-flex; align-items: center; gap: 8px; }
@@ -3090,8 +3090,8 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
 
   /* the conversation's head: back, the name card, call, video, ⋯ (search moves into ⋯) */
   .room-head { gap: 6px; padding: 10px 10px 6px; }
-  html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { width: 40px; height: 40px; }
-  html:not([data-theme='aura']):not([data-theme='studio']) .room-head .head-card { height: 44px; }
+  html .room-head .round { width: 40px; height: 40px; }
+  html .room-head .head-card { height: 44px; }
   .room-head .head-card { padding: 0 10px 0 4px; gap: 8px; }
   .room-head .head-card .av { width: 34px !important; height: 34px !important; font-size: 12px !important; }
   .room-head :is(.head-find, .head-video) { display: none; } /* both are in ⋯ on a phone */
@@ -3400,7 +3400,7 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 }
 /* the smallest iPhones (SE, mini): the chat's head keeps room for the name */
 @media (max-width: 380px) {
-  html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { width: 36px; height: 36px; }
+  html .room-head .round { width: 36px; height: 36px; }
   .room-head { gap: 6px; }
   .foot button { font-size: 10px; padding-left: 1px; padding-right: 1px; }
 }
@@ -3542,10 +3542,10 @@ html .app.tasks-open, html[data-theme] .app.tasks-open { padding-right: var(--ta
 /* on a phone the app fills the whole screen with its own grey, top to bottom (Alex, 19 Oct: "no black"):
    no frame around the panel (Studio keeps its own, already edge to edge), no rounded corners; the space under the clock and above the home bar is the panel's */
 @media (max-width: 760px) {
-  html:not([data-theme='studio']) .app { padding: 0; gap: 0; }
+  html .app { padding: 0; gap: 0; }
   html[data-theme] .app > :is(.side, .main), html .app > :is(.side, .main) { border: 0; border-radius: 0; box-shadow: none; }
-  html:not([data-theme='studio']) .app > .side { padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px calc(env(safe-area-inset-bottom, 0px) + 6px); }
-  html:not([data-theme='studio']) .app > .main { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html .app > .side { padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px calc(env(safe-area-inset-bottom, 0px) + 6px); }
+  html .app > .main { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
   html[data-theme] .app:has(.main .lib) .side { padding: 6px 12px calc(env(safe-area-inset-bottom, 0px) + 6px); }
   html[data-theme] .app:has(.main .lib) .main { padding-bottom: 0; }
 }
@@ -3867,7 +3867,7 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
    inset is for the home bar, which the keyboard covers anyway */
 @media (max-width: 760px) {
   html.kb .app, html.kb .app > .main, html.kb .app > .side { padding-bottom: 0 !important; }
-  html.kb:not([data-theme='aura']) .compose-wrap { padding-bottom: 6px; }
+  html.kb .compose-wrap { padding-bottom: 6px; }
   html.kb, html.kb body { background: var(--kb-bg, var(--bg)); }
 }
 
@@ -3922,31 +3922,31 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 
 /* The sign-in screen is always dark glass with white letters (Alex, 22 Oct: on a phone in light mode the card stayed
    dark and the letters went dark too). Studio keeps its own paper look. */
-html:not([data-theme='studio']) .auth {
+html .auth {
   --text: #f2f4f7; --muted: rgba(220, 226, 234, .7); --edge: rgba(255, 255, 255, .14); --edge-2: rgba(255, 255, 255, .3);
   --glass: rgba(255, 255, 255, .08); --glass-2: rgba(255, 255, 255, .14);
   color: var(--text); color-scheme: dark;
 }
-html:not([data-theme='studio']) .auth .auth-card { background: rgba(30, 33, 38, .64); color: var(--text); }
-html:not([data-theme='studio']) .auth :is(.input, input) { color: var(--text); }
-html:not([data-theme='studio']) .auth .input::placeholder { color: rgba(220, 226, 234, .45); }
-html:not([data-theme='studio']) .auth .auth-err { color: #ffb3b3; }
-html:not([data-theme='studio']) .auth .auth-note { color: #b6f5cc; }
+html .auth .auth-card { background: rgba(30, 33, 38, .64); color: var(--text); }
+html .auth :is(.input, input) { color: var(--text); }
+html .auth .input::placeholder { color: rgba(220, 226, 234, .45); }
+html .auth .auth-err { color: #ffb3b3; }
+html .auth .auth-note { color: #b6f5cc; }
 /* The sign-in card with clear contrast (Alex, 23 Oct: "with the greys they do not show clearly"): a deep charcoal card,
    white letters, fields with a visible light edge, Sign in a white button with black letters, the hub button an outline */
-html[data-theme]:not([data-theme='studio']) .auth .auth-card { background: linear-gradient(170deg, rgba(28, 29, 33, .94), rgba(14, 15, 18, .96)) !important; border: 1px solid rgba(255, 255, 255, .14) !important; box-shadow: 0 40px 90px rgba(0, 0, 0, .35) !important; color: #fff; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card h1 { color: #fff; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card :is(.auth-sub, .auth-or, .auth-links button) { color: rgba(255, 255, 255, .72) !important; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .auth-links button:hover { color: #fff !important; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .field > span { color: rgba(255, 255, 255, .8) !important; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .input { color: #fff !important; background: rgba(255, 255, 255, .07) !important; border: 1px solid rgba(255, 255, 255, .22) !important; box-shadow: none !important; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .input:focus { border-color: rgba(255, 255, 255, .6) !important; background: rgba(255, 255, 255, .1) !important; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .input::placeholder { color: rgba(255, 255, 255, .42) !important; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main, html[data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main:not(:disabled) { color: #111214 !important; background: #fff !important; border: 1px solid #fff !important; box-shadow: 0 10px 26px rgba(0, 0, 0, .35) !important; font-weight: 700; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main:not(:disabled):hover { background: #e9e9ec !important; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main:disabled { opacity: .75; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .auth-hub { color: #fff !important; background: transparent !important; border: 1px solid rgba(255, 255, 255, .45) !important; font-weight: 600; }
-html[data-theme]:not([data-theme='studio']) .auth .auth-card .auth-hub:not(:disabled):hover { background: rgba(255, 255, 255, .1) !important; border-color: #fff !important; }
+html[data-theme] .auth .auth-card { background: linear-gradient(170deg, rgba(28, 29, 33, .94), rgba(14, 15, 18, .96)) !important; border: 1px solid rgba(255, 255, 255, .14) !important; box-shadow: 0 40px 90px rgba(0, 0, 0, .35) !important; color: #fff; }
+html[data-theme] .auth .auth-card h1 { color: #fff; }
+html[data-theme] .auth .auth-card :is(.auth-sub, .auth-or, .auth-links button) { color: rgba(255, 255, 255, .72) !important; }
+html[data-theme] .auth .auth-card .auth-links button:hover { color: #fff !important; }
+html[data-theme] .auth .auth-card .field > span { color: rgba(255, 255, 255, .8) !important; }
+html[data-theme] .auth .auth-card .input { color: #fff !important; background: rgba(255, 255, 255, .07) !important; border: 1px solid rgba(255, 255, 255, .22) !important; box-shadow: none !important; }
+html[data-theme] .auth .auth-card .input:focus { border-color: rgba(255, 255, 255, .6) !important; background: rgba(255, 255, 255, .1) !important; }
+html[data-theme] .auth .auth-card .input::placeholder { color: rgba(255, 255, 255, .42) !important; }
+html[data-theme] .auth .auth-card .btn-main, html[data-theme] .auth .auth-card .btn-main:not(:disabled) { color: #111214 !important; background: #fff !important; border: 1px solid #fff !important; box-shadow: 0 10px 26px rgba(0, 0, 0, .35) !important; font-weight: 700; }
+html[data-theme] .auth .auth-card .btn-main:not(:disabled):hover { background: #e9e9ec !important; }
+html[data-theme] .auth .auth-card .btn-main:disabled { opacity: .75; }
+html[data-theme] .auth .auth-card .auth-hub { color: #fff !important; background: transparent !important; border: 1px solid rgba(255, 255, 255, .45) !important; font-weight: 600; }
+html[data-theme] .auth .auth-card .auth-hub:not(:disabled):hover { background: rgba(255, 255, 255, .1) !important; border-color: #fff !important; }
 
 /* RoarTransfer as on roartransfer.com (22 Oct): two plans, the options, the card in the chat, the % on the button */
 .rt-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

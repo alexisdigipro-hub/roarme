@@ -166,6 +166,7 @@ export const EL = {
   'Copy Message Link': 'Αντιγραφή συνδέσμου μηνύματος',
   'Copy Text': 'Αντιγραφή κειμένου',
   'Quote': 'Παράθεση',
+  'Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Each has dark and light.': 'Stone: απαλή γκρι πέτρα με κουμπιά γραφίτη. Simba: γραφίτης και γυαλί με φωτεινό χρώμα έμφασης. Το καθένα έχει σκοτεινό και φωτεινό.',
   'Select the words to quote, or quote the whole message.': 'Διάλεξε τις λέξεις που θες να παραθέσεις, ή παράθεσε όλο το μήνυμα.',
   'Copy Text Formatting': 'Αντιγραφή μορφοποίησης κειμένου',
   'Copy username': 'Αντιγραφή ονόματος χρήστη',

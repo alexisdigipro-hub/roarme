@@ -5,7 +5,7 @@ import { isIOS, isStandalone, onPhone } from './push.js'
 /* RoarMe opened in a phone's browser: a card in the middle of the screen asks to put it on the Home Screen (Alex, 21 Oct).
    Android (Chrome, Edge, Samsung) hands the page its own install window: one tap on Install App opens it.
    An iPhone lets no page do that, so the card shows the two taps in Safari's Share menu instead.
-   "Not Now" keeps it away for three days; it never shows inside the hub, in the desktop app or once installed. */
+   "Not Now" keeps it away for three days; it never shows inside a frame, in the desktop app or once installed. */
 
 const LATER_KEY = 'roarme-install-later'
 const LATER_MS = 3 * 24 * 3600 * 1000
@@ -18,7 +18,7 @@ if (typeof window !== 'undefined') {
 
 const wanted = () => {
   if (typeof window === 'undefined' || !onPhone() || isStandalone() || window.roarDesktop) return false
-  if (document.documentElement.dataset.embed || window.parent !== window) return false
+  if (window.parent !== window) return false
   try { return Date.now() - Number(localStorage.getItem(LATER_KEY) || 0) > LATER_MS } catch { return true }
 }
 

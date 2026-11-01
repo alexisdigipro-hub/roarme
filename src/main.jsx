@@ -4,7 +4,6 @@ import App from './App.jsx'
 import { TransferPage } from './transfer.jsx'
 import { InstallPrompt } from './install.jsx'
 import { takeInvite } from './invite.jsx'
-import { takeEmbed, takeHubLink, takeHubSignin } from './hubLink.jsx'
 import './styles.css'
 import { startI18n } from './i18n.js'
 import { wearTheme } from './prefs.js'
@@ -77,12 +76,6 @@ const transferToken = params.get('t')
 const legalDoc = params.get('legal')
 // a personal invite link (?u=username): kept until the person is signed in, then their chat opens
 if (!transferToken && !legalDoc) takeInvite()
-// linking this account to the THEMADLIONS hub (?link=hub&state=…): kept until signed in (hubLink.jsx)
-if (!transferToken && !legalDoc) takeHubLink()
-// back from the hub with a one-time sign-in code (#hub_code=…, "Sign in with THEMADLIONS Hub", hubLink.jsx)
-if (!transferToken && !legalDoc) takeHubSignin()
-// shown inside the hub's RoarMe page (?embed=hub): signs in through the hub without a click (hubLink.jsx)
-if (!transferToken && !legalDoc) takeEmbed()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

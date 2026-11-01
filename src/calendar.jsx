@@ -2,13 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { I } from './ui.jsx'
 import { supabase } from './lib.js'
 import { locale, tr } from './i18n.js'
-import { hubLinkFor } from './hubLink.jsx'
 
 /* The calendar under Tasks (Alex, 18 Oct): at the foot of the Tasks panel, on the same page, a month with a dot on each day for its tasks
    (by due date), scheduled calls (the cards sent in chats) and your scheduled messages (repeats included). A day
    lists them below: a task opens its window, a call goes to its card in the chat, a message to its chat. */
 
-const DOT = { task: 'var(--accent)', call: '#30d158', msg: '#64d2ff', hub: '#ff9f0a', htask: '#bf5af2' }
+const DOT = { task: 'var(--accent)', call: '#30d158', msg: '#64d2ff' }
 const STEP = { day: [0, 1], week: [0, 7], '2weeks': [0, 14], month: [1, 0], '3months': [3, 0], '6months': [6, 0], year: [12, 0] }
 const pad = (n) => String(n).padStart(2, '0')
 const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -22,7 +21,7 @@ const nth = (first, repeat, n) => {
   return d
 }
 
-export function TasksCalendar({ me, tasks, titleOf, rooms, onTask, onNewTask, onOpenChat, hubTasks = [], hubEvents = [] }) {
+export function TasksCalendar({ me, tasks, titleOf, rooms, onTask, onNewTask, onOpenChat }) {
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
   const [day, setDay] = useState(() => keyOf(new Date()))
   const [calls, setCalls] = useState([])
@@ -78,20 +77,9 @@ export function TasksCalendar({ me, tasks, titleOf, rooms, onTask, onNewTask, on
         if (at >= from && at >= new Date(s.send_at)) put(keyOf(at), { kind: 'msg', id: `s-${s.id}-${n}`, s, at, title: s.body })
       }
     })
-    // the hub's own (Alex, 20 Oct: phase 6): its events day by day (a few days long, each day), its tasks by due date
-    hubEvents.forEach((e) => {
-      const first = new Date(`${String(e.date).slice(0, 10)}T12:00:00`)
-      const last = e.endDate ? new Date(`${String(e.endDate).slice(0, 10)}T12:00:00`) : first
-      if (Number.isNaN(first.getTime())) return
-      for (let d = new Date(first), i = 0; d <= last && i < 62; d.setDate(d.getDate() + 1), i++) {
-        const at = e.start && /^\d{2}:\d{2}/.test(e.start) ? new Date(`${keyOf(d)}T${e.start.slice(0, 5)}:00`) : null
-        put(keyOf(d), { kind: 'hub', id: `h-${e.id}-${i}`, e, at, title: e.title || e.typeLabel || tr('Event') })
-      }
-    })
-    hubTasks.forEach((t) => { if (t.due) put(String(t.due).slice(0, 10), { kind: 'htask', id: `ht-${t.projectId || 'todo'}-${t.id}`, ht: t, at: null, title: t.title, done: t.status === 'done' }) })
     Object.values(out).forEach((l) => l.sort((x, y) => (x.at ? x.at.getTime() : 0) - (y.at ? y.at.getTime() : 0)))
     return out
-  }, [tasks, calls, sched, hubTasks, hubEvents]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tasks, calls, sched]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const today = keyOf(new Date())
   const chatName = (roomId) => { const r = rooms.find((x) => x.room_id === roomId); return r ? titleOf(r) : '' }
@@ -126,18 +114,17 @@ export function TasksCalendar({ me, tasks, titleOf, rooms, onTask, onNewTask, on
         <span><i style={{ background: DOT.task }} />{tr('Tasks')}</span>
         <span><i style={{ background: DOT.call }} />{tr('Calls')}</span>
         <span><i style={{ background: DOT.msg }} />{tr('Scheduled messages')}</span>
-        {(hubEvents.length > 0 || hubTasks.length > 0) && <span><i style={{ background: DOT.hub }} />THEMADLIONS</span>}
       </div>
       <p className="tasks-label">{dayDate.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
       <div className="cal-list">
         {!list.length && <p className="tasks-empty muted">{tr('Nothing on this day.')}</p>}
         {list.map((x) => (
           <button key={x.id} type="button" className={`cal-item k-${x.kind}${x.done ? ' done' : ''}`}
-            onClick={() => (x.kind === 'hub' ? window.open(hubLinkFor({ kind: 'event' }), '_blank', 'noopener') : x.kind === 'htask' ? window.open(hubLinkFor({ kind: 'task', projectId: x.ht.projectId }), '_blank', 'noopener') : x.kind === 'task' ? onTask(x.t.id) : x.kind === 'call' ? onOpenChat(x.m.room_id, x.m.id) : onOpenChat(x.s.room_id))}>
-            <span className="cal-ico" style={{ '--c': x.kind === 'hub' && x.e.color ? x.e.color : DOT[x.kind] }}>{x.kind === 'task' || x.kind === 'htask' ? I.tasks : x.kind === 'hub' ? I.calendar : x.kind === 'call' ? (x.video ? I.video : I.phone) : I.timer}</span>
+            onClick={() => (x.kind === 'task' ? onTask(x.t.id) : x.kind === 'call' ? onOpenChat(x.m.room_id, x.m.id) : onOpenChat(x.s.room_id))}>
+            <span className="cal-ico" style={{ '--c': DOT[x.kind] }}>{x.kind === 'task' ? I.tasks : x.kind === 'call' ? (x.video ? I.video : I.phone) : I.timer}</span>
             <span className="cal-text">
               <b>{x.title}</b>
-              <small>{x.kind === 'hub' ? [x.at ? hm(x.at) : tr('All day'), x.e.typeLabel, x.e.project, x.e.location].filter(Boolean).join(' · ') : x.kind === 'htask' ? [tr(x.done ? 'Done' : 'Task'), x.ht.project || 'THEMADLIONS'].join(' · ') : <>{x.at ? hm(x.at) : tr(x.done ? 'Done' : 'Task')}{x.kind !== 'task' && chatName((x.m || x.s).room_id) ? ` · ${chatName((x.m || x.s).room_id)}` : ''}</>}</small>
+              <small>{x.at ? hm(x.at) : tr(x.done ? 'Done' : 'Task')}{x.kind !== 'task' && chatName((x.m || x.s).room_id) ? ` · ${chatName((x.m || x.s).room_id)}` : ''}</small>
             </span>
           </button>
         ))}

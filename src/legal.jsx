@@ -3,11 +3,11 @@ import { locale } from './i18n.js'
 import { Wordmark } from './ui.jsx'
 
 /* Privacy Policy and Terms of Service (17 Oct 2026; brought up to date 25 Oct: emails, notifications, LiveKit calls,
-   RoarTransfer on Cloudflare R2, the THEMADLIONS Hub, folders synced, the other apps on the same account). Written to match what RoarMe really does: it keeps only what the
+   RoarTransfer on Cloudflare R2, folders synced, the other apps on the same account). Written to match what RoarMe really does: it keeps only what the
    chat needs, has no ads, no trackers and no analytics, and sells nothing. Greek when the app is in Greek.
    Shown in Settings > Privacy and Security, and as public pages: ?legal=privacy and ?legal=terms. */
 
-const UPDATED = { en: '25 October 2026', el: '25 Οκτωβρίου 2026' }
+const UPDATED = { en: '1 November 2026', el: '1 Νοεμβρίου 2026' }
 const CONTACT = 'info@themadlions.com'
 
 const DOCS = {
@@ -37,9 +37,6 @@ const DOCS = {
         ['RoarTransfer', [
           'Large files you send with RoarTransfer are stored with Cloudflare R2. You choose how long their link lasts (1, 3 or 7 days); when it ends the file is deleted within the hour. Each file can be downloaded a limited number of times.',
           'A download link works for anyone who has it until it ends. Share it only with people you want to have the file. RoarTransfer has its own Privacy Policy at roartransfer.com/privacy.',
-        ]],
-        ['THEMADLIONS Hub', [
-          'Members of The Mad Lions team can sign in with the THEMADLIONS Hub. Then the hub and RoarMe know that the two accounts are the same person, the hub sets who is in each project\'s group chat, and RoarMe shows you your hub tasks and calendar. The hub never receives your messages.',
         ]],
         ['When you use other services', [
           'The Translate button opens Google Translate with the text you chose, only when you tap it.',
@@ -96,9 +93,6 @@ const DOCS = {
         ['RoarTransfer', [
           'Τα μεγάλα αρχεία που στέλνεις με RoarTransfer φυλάσσονται στο Cloudflare R2. Διαλέγεις πόσο κρατάει το link τους (1, 3 ή 7 μέρες)· όταν λήξει, το αρχείο σβήνεται μέσα στην ώρα. Κάθε αρχείο κατεβαίνει περιορισμένο αριθμό φορών.',
           'Ένα link λήψης λειτουργεί για όποιον το έχει μέχρι να λήξει. Δώσ\' το μόνο σε όσους θέλεις να έχουν το αρχείο. Το RoarTransfer έχει δική του Πολιτική Απορρήτου στο roartransfer.com/privacy.',
-        ]],
-        ['THEMADLIONS Hub', [
-          'Τα μέλη της ομάδας της The Mad Lions μπορούν να συνδέονται με το THEMADLIONS Hub. Τότε το hub και το RoarMe ξέρουν ότι οι δύο λογαριασμοί είναι το ίδιο πρόσωπο, το hub ορίζει ποιοι είναι στη συζήτηση κάθε project, και το RoarMe σού δείχνει τις εργασίες και το ημερολόγιό σου από το hub. Το hub δεν παίρνει ποτέ τα μηνύματά σου.',
         ]],
         ['Όταν χρησιμοποιείς άλλες υπηρεσίες', [
           'Το κουμπί Μετάφραση ανοίγει το Google Translate με το κείμενο που διάλεξες, μόνο όταν το πατήσεις.',

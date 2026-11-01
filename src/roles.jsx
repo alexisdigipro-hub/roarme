@@ -4,8 +4,7 @@ import { errText, nameOf, supabase } from './lib.js'
 
 /* Roles for @mentions, as Slack's user groups (Alex, 20 Oct): a group's role has a name and its people, and @name in a
    message reaches all of them, even with the chat muted (supabase/mentions.sql). Beside them @all (everyone in the
-   chat) and @here (who is in RoarMe right now). A group's admins make the roles; in a THEMADLIONS group, run by the
-   hub with no admins, anyone in it. */
+   chat) and @here (who is in RoarMe right now). A group's admins make the roles. */
 
 export const SPECIAL = ['all', 'everyone', 'channel', 'here']
 export const roleName = (v) => String(v || '').toLowerCase().replace(/^@/, '').replace(/[^\p{L}\p{N}_]/gu, '').slice(0, 24)
@@ -19,7 +18,7 @@ export const mentionsMe = (body, me, roles = []) => {
   return mentionWords(body).some((w) => SPECIAL.includes(w) || w === me.username || roles.some((g) => g.name === w && g.user_ids.includes(me.id)))
 }
 
-export const canEditRoles = (room) => room.kind === 'group' && (room.role === 'admin' || !!room.hub_project)
+export const canEditRoles = (room) => room.kind === 'group' && room.role === 'admin'
 
 export function RolesWindow({ room, roles, people, me, onClose, toast }) {
   const can = canEditRoles(room)

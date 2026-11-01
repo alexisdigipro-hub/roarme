@@ -576,3 +576,15 @@ Alex: "see what weighs RoarMe down and lighten it". Nothing looks different exce
 - One page of older messages at a time; back at the bottom of a long chat the oldest pages read are let go (kept at 150).
 - The call clock ticks in the call screen only, not in the whole chat.
 - New profile, group and contact photos are saved at 400 px instead of 640 (the largest circle they fill is 132 px).
+
+## No tie to the THEMADLIONS hub (1 Nov 2026)
+Alex: the hub has its own chat now; RoarMe stays a separate app. Everyone's account and chats stay, and anyone keeps
+using RoarMe on its own. Gone: Sign in with THEMADLIONS Hub on the sign-in card, the hub link page and Settings > Privacy
+and Security > Linked apps, RoarMe inside the hub's page (?embed=hub, the hub's look), the hub's tasks and events in the
+calendar, the admin's "Keep it only in my pCloud" / Save to my pCloud in RoarTransfer (it went through the hub's pCloud;
+transfers already moved there still download), the THEMADLIONS group on top of the list, and the desktop app's
+allowance for hub.themadlions.com in its window (from the next desktop release). The former project chats are ordinary
+groups: whoever joined first is admin where there was none, anyone may leave, rename (admins) and change the photo.
+Database: supabase/hub-unlink.sql (safe to run again) drops the guards, the links, the one-time codes, the shared secret
+and every roar_hub_* function, and empties roar_rooms.hub_project. The Edge Functions roar-hub-link, roar-hub-bridge,
+roar-hub-signin, roar-hub-work and roar-pcloud are gone from the repository (delete them in Supabase too).

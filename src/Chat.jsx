@@ -274,13 +274,13 @@ export default function Chat({ me, setMe }) {
     if (list.length) {
       const ids = list.map((r) => r.room_id)
       const [{ data: pins }, { data: men }, { data: rl }] = await Promise.all([
-        supabase.from('roar_rooms').select('id, pinned_message_id, auto_delete_hours, hub_project').in('id', ids),
+        supabase.from('roar_rooms').select('id, pinned_message_id, auto_delete_hours').in('id', ids),
         supabase.rpc('roar_my_mentions'),
         supabase.from('roar_roles').select('id, room_id, name, user_ids').in('room_id', ids).order('name'),
       ])
       const pin = Object.fromEntries((pins || []).map((x) => [x.id, x]))
       const at = Object.fromEntries((men || []).map((x) => [x.room_id, x.n]))
-      list.forEach((r) => { r.pinned_message_id = pin[r.room_id]?.pinned_message_id || null; r.auto_delete_hours = pin[r.room_id]?.auto_delete_hours || null; r.hub_project = pin[r.room_id]?.hub_project || null; r.mentions = at[r.room_id] || 0 })
+      list.forEach((r) => { r.pinned_message_id = pin[r.room_id]?.pinned_message_id || null; r.auto_delete_hours = pin[r.room_id]?.auto_delete_hours || null; r.mentions = at[r.room_id] || 0 })
       setRoles(rl || [])
     }
     // chats that did not change keep the same object, and an unchanged list leaves the screen alone
@@ -516,7 +516,6 @@ export default function Chat({ me, setMe }) {
     window.addEventListener('pointercancel', up)
   }
   useEffect(() => { if (folder !== 'all' && hiddenF.includes(folder)) setFolder('all') }, [hiddenF.join(), folder])
-  const inTeam = visible.some((r) => r.hub_project === 'team')
   const fits = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
@@ -530,9 +529,6 @@ export default function Chat({ me, setMe }) {
       const t = mine.types || {}
       return (!!t.private && r.kind !== 'group') || (!!t.groups && r.kind === 'group')
     }
-    // All: people, and of the groups only THEMADLIONS, the hub's team group (Alex, 27 Oct); the rest are in Groups.
-    // Only for the people in that group; for anyone else All keeps every group, as before.
-    if (f === 'all' && r.kind === 'group' && inTeam) return r.hub_project === 'team'
     return true
   }
   /* Each chat in one folder only (Settings > Chat Folders, Alex, 21 Oct): an unread chat sits only in Unread, a chat in a
@@ -540,7 +536,6 @@ export default function Chat({ me, setMe }) {
      keeps what is left. Archived stays Archived. Off, a chat shows in every folder it fits, as before. */
   const homeOf = (r) => {
     if (r.archived) return 'archived'
-    if (r.hub_project === 'team') return 'all'
     const has = (id) => allFolders.some((f) => f.id === id)
     if (has('unread') && fits(r, 'unread')) return 'unread'
     const own = allFolders.find((f) => f.custom && fits(r, f.id))
@@ -549,10 +544,10 @@ export default function Chat({ me, setMe }) {
     return 'all'
   }
   const inFolder = (r, f) => (prefs.folderAlone ? homeOf(r) === f : fits(r, f))
-  // THEMADLIONS always on top (Alex, 27 Oct), then the pinned chats in the order they were pinned, then the rest
+  // the pinned chats in the order they were pinned, then the rest
   const pinnedFirst = (list) => {
-    const team = list.filter((r) => r.hub_project === 'team'), rest = list.filter((r) => r.hub_project !== 'team')
-    return [...team, ...rest.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...rest.filter((r) => !pins.includes(r.room_id))]
+    const rest = list
+    return [...rest.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...rest.filter((r) => !pins.includes(r.room_id))]
   }
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase()
@@ -1295,7 +1290,7 @@ export default function Chat({ me, setMe }) {
       {modal === 'info' && active && <Suspense fallback={null}><Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
         onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople}
-        blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} siteAdmin={isAdmin} onCall={active.kind === 'direct' ? (v) => { setModal(''); callRoom(active, v) } : null} /></Suspense>}
+        blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={active.kind === 'direct' ? (v) => { setModal(''); callRoom(active, v) } : null} /></Suspense>}
       {cardPerson && (
         <ContactCard me={me} person={cardPerson} toast={toast} loadPeople={loadPeople} onClose={() => setCard('')}
           fav={favs.includes(cardPerson.id)} onFav={() => { const on = favs.includes(cardPerson.id); setFavs(on ? favs.filter((x) => x !== cardPerson.id) : [...favs, cardPerson.id]); toast(on ? 'Removed from Favourites' : 'Added to Favourites') }}

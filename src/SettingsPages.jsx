@@ -9,7 +9,6 @@ import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } fro
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { MyTransfers } from './transfer.jsx'
-import { LinkedApps, isHubEmbed } from './hubLink.jsx'
 import { badgeSupported, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
@@ -650,7 +649,6 @@ function Privacy({ me, setMe, toast }) {
       </Box>
       <TwoStep toast={toast} />
       <Passcode toast={toast} />
-      <LinkedApps Box={Box} />
       <Box title="Legal" note="No ads, no trackers, no selling of your data.">
         <Nav onClick={() => setLegal('privacy')}>{legalTitle('privacy')}</Nav>
         <Nav onClick={() => setLegal('terms')}>{legalTitle('terms')}</Nav>
@@ -756,17 +754,16 @@ function Sessions({ me, setMe, toast }) {
 
 function Appearance({ p, toast, me, setMe }) {
   const wallImg = wallStyle(p.background, useWalls(true))
-  const inHub = isHubEmbed() // inside the hub RoarMe wears the hub's look (hubLink.jsx), so no theme, mode or accent here
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
   return (
     <>
-      <Box title="Theme" note={inHub ? "Inside the hub, RoarMe wears the hub's look: its colours, light or dark and typeface. Change it in the hub's Settings > Display." : 'Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Each has dark and light.'}>
+      <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Each has dark and light.">
         <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={p.background} data-img={wallImg ? '' : undefined} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 15.5}px`, ...wallImg }}>
           <span className="pv mine">Good morning! 👋</span>
           <span className="pv"><i>Good morning! 👋</i>Do you know what time it is?</span>
           <span className="pv mine">It's morning in Tokyo 😎</span>
         </div>
-        {!inHub && <><div className="set-row set-col">
+        <div className="set-row set-col">
           <div className="themes">
             {THEMES.map(([k, l, [a, b]]) => {
               return (
@@ -789,7 +786,7 @@ function Appearance({ p, toast, me, setMe }) {
             <button type="button" className={`acc acc-auto${!p.accent ? ' on' : ''}`} title="Theme colour" onClick={() => setPrefs({ accent: '' })}><small>Theme</small></button>
             {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}${k === 'white' ? ' acc-white' : k === 'black' ? ' acc-black' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k })}><small>{l}</small></button>)}
           </div>
-        </div></>}
+        </div>
       </Box>
       <Box title="Text">
         <div className="set-row set-col">

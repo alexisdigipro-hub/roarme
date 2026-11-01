@@ -4,15 +4,12 @@ import { applyLook, applyMode, setPrefs, themeFor, usePrefs, wearTheme } from '.
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
-import { HubLinkPage, isHubEmbed, pendingHubLink, watchHubMember } from './hubLink.jsx'
 
 // The order of things: sign in (or sign up) with email, then pick a @username once, then the chat.
 export default function App() {
   const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(undefined)
   const [recovering, setRecovering] = useState(false)
-  // opened by the hub to link this account (hubLink.jsx): that page first, once signed in
-  const [hubLink, setHubLink] = useState(pendingHubLink)
   const prefs = usePrefs()
   const { mode, lite, theme } = prefs
   useEffect(() => applyLook(prefs), [prefs.accent, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -50,8 +47,6 @@ export default function App() {
   useEffect(() => { if (token) window.scrollTo(0, 0) }, [token])
 
   const uid = session?.user?.id
-  // inside the hub's RoarMe page: the account here must be the hub member's own (hubLink.jsx)
-  useEffect(() => watchHubMember(uid), [uid])
   useEffect(() => {
     if (!uid) { setProfile(undefined); return }
     let alive = true
@@ -64,9 +59,8 @@ export default function App() {
     if (!uid) { setBlocked(false); return }
     supabase.rpc('roar_am_blocked').then(({ data }) => setBlocked(data === true))
   }, [uid])
-  // a theme still in Alex's lab shows only for him; anyone else sees Stone. Inside the hub, the hub's look (hubLink.jsx)
+  // a theme still in Alex's lab shows only for him; anyone else sees Stone
   useEffect(() => {
-    if (isHubEmbed()) { document.documentElement.dataset.theme = 'hub'; return }
     const t = themeFor(theme)
     wearTheme(t)
     document.documentElement.dataset.theme = t
@@ -91,6 +85,5 @@ export default function App() {
     )
   }
   if (!profile) return <Onboarding user={session.user} onDone={setProfile} />
-  if (hubLink) return <HubLinkPage me={profile} onDone={() => setHubLink('')} />
   return <Chat me={profile} setMe={setProfile} />
 }

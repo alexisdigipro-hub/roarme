@@ -15,13 +15,11 @@ const isAudio = (m) => m.kind === 'file' && isAudioFile(m.file)
 
 /* A chat's card, as in Telegram (Alex, 16 Oct): the big picture, the name, last seen, Message · Call ·
    Video · More, what we know about the person, and everything shared in the chat by kind. */
-export default function Profile({ room, me, people, title, other, rooms, titleOf, toast, onClose, onChanged, onLeft, onMessage, onOpenRoom, loadPeople, blocked, onBlocks, onCall, siteAdmin = false }) {
+export default function Profile({ room, me, people, title, other, rooms, titleOf, toast, onClose, onChanged, onLeft, onMessage, onOpenRoom, loadPeople, blocked, onBlocks, onCall }) {
   const group = room.kind === 'group'
-  // a project chat from THEMADLIONS Hub: only RoarMe's admin renames it or changes its photo (Alex, 21 Oct; supabase/hub-owner.sql)
-  const hub = group && !!room.hub_project
   const showIds = usePrefs().peerIds
   const admin = room.role === 'admin'
-  const canName = hub ? siteAdmin : group && admin
+  const canName = group && admin
   const [items, setItems] = useState(null)
   const [links, setLinks] = useState([])
   const [tab, setTab] = useState(group ? 'members' : 'media')
@@ -61,7 +59,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     const { error } = await supabase.from('roar_contacts').update({ photo_url: '' }).eq('owner', me.id).eq('person', other.id)
     if (error) setErr(errText(error)); else { loadPeople([other.id]); toast('Your photo for them is gone') }
   }
-  const canPic = hub ? siteAdmin : group || !!other // my own photo for someone, over theirs too: only I see it
+  const canPic = group || !!other // my own photo for someone, over theirs too: only I see it
   const dropGroupPhoto = async () => {
     setMore(false)
     if (!window.confirm('Remove the group photo?')) return
@@ -155,9 +153,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   }
   const rename = async () => {
     if (!name.trim() || name.trim() === room.title) return
-    const { error } = hub
-      ? await supabase.rpc('roar_hub_rename', { r: room.room_id, t: name.trim() })
-      : await supabase.from('roar_rooms').update({ title: name.trim() }).eq('id', room.room_id)
+    const { error } = await supabase.from('roar_rooms').update({ title: name.trim() }).eq('id', room.room_id)
     if (error) setErr(errText(error)); else onChanged()
   }
   const add = async (p) => {
@@ -246,11 +242,11 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   <button type="button" onClick={() => setMine({ archived: !room.archived }, room.archived ? 'Unarchived' : 'Archived')}>{I.archive}<span>{room.archived ? 'Unarchive' : 'Archive'}</span></button>
                   {!group && other && <button type="button" onClick={() => { setMore(false); copy(`@${other.username}`, 'Username copied') }}>{I.copy}<span>Copy username</span></button>}
                   {group && admin && <button type="button" onClick={() => { setMore(false); setTab('members'); setAdding(true) }}>{I.people}<span>Add people</span></button>}
-                  {group && !hub && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave group</span></button>}
+                  {group && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave group</span></button>}
                   {!group && other && <button type="button" onClick={() => { setMore(false); setEditing(true) }}>{I.edit}<span>Edit Contact</span></button>}
                   {canPic && <button type="button" onClick={() => { setMore(false); picRef.current?.click() }}>{I.camera}<span>{group ? 'Change group photo' : 'Set a photo for them'}</span></button>}
                   {!group && other?.my_photo && <button type="button" onClick={dropMyPhoto}>{I.x}<span>Remove my photo for them</span></button>}
-                  {group && room.avatar_url && (!hub || siteAdmin) && <button type="button" onClick={dropGroupPhoto}>{I.x}<span>Remove group photo</span></button>}
+                  {group && room.avatar_url && <button type="button" onClick={dropGroupPhoto}>{I.x}<span>Remove group photo</span></button>}
                   {group && admin && <button type="button" className="danger" onClick={deleteGroup}>{I.trash}<span>Delete group</span></button>}
                   {!group && other && <button type="button" className="danger" onClick={block}>{I.x}<span>{blocked ? 'Unblock' : 'Block'}</span></button>}
                 </div>

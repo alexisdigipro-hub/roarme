@@ -28,9 +28,17 @@
       .splash { position: fixed; inset: 0; display: grid; place-items: center; background: linear-gradient(180deg, #2b3038 0%, #1c1f24 55%, #15171b 100%); }
       html[data-splash='light'] .splash { background: linear-gradient(180deg, #e2e2e3 0%, #d4d4d5 100%); }
       .splash img { width: 64px; height: 64px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+      /* inside the hub's RoarMe page: no splash of our own, see-through from the first frame, so the hub's backdrop
+         shows and nothing white flashes while RoarMe loads (Alex, 1 Nov) */
+      html[data-splash='hub'], html[data-splash='hub'] body, html[data-splash='hub'] .splash { background: transparent; }
+      html[data-splash='hub'] .splash img { display: none; }
     </style>
     <script>
-      try { var p = JSON.parse(localStorage.getItem('roarme-prefs') || '{}'); if (!p.mode || p.mode === 'light' || (p.mode === 'auto' && matchMedia('(prefers-color-scheme: light)').matches)) document.documentElement.dataset.splash = 'light' } catch (e) {}
+      try {
+        var r = document.documentElement, inHub = window.parent !== window && (/[?&]embed=hub\b/.test(location.search) || sessionStorage.getItem('roarme-embed') === 'hub')
+        if (inHub) { var l = JSON.parse(localStorage.getItem('roarme-hub-look') || 'null'); r.dataset.splash = 'hub'; r.style.colorScheme = l && l.light ? 'light' : 'dark' }
+        else { var p = JSON.parse(localStorage.getItem('roarme-prefs') || '{}'); if (!p.mode || p.mode === 'light' || (p.mode === 'auto' && matchMedia('(prefers-color-scheme: light)').matches)) r.dataset.splash = 'light' }
+      } catch (e) {}
     </script>
   </head>
   <body>

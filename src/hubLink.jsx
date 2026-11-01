@@ -222,6 +222,7 @@ function wearHubLook(l) {
   tag.textContent = css
   const r = document.documentElement
   r.dataset.theme = 'hub'
+  r.style.removeProperty('color-scheme') // index.html's first-frame guess; from here the look's own sheet decides
   r.dataset.hubMode = light ? 'light' : 'dark'
   r.dataset.mode = r.dataset.hubMode
   ;(Array.isArray(l.fonts) ? l.fonts : []).slice(0, 4).forEach((href) => {

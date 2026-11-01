@@ -6,9 +6,7 @@
 revoke insert, update, delete, truncate, references, trigger on public.roar_people from authenticated, anon, public;
 
 -- 2. trigger functions are not something to call over the API
-revoke execute on function public.roar_hub_guard_e2e(), public.roar_hub_guard_members(), public.roar_hub_guard_rooms(),
-  public.roar_hub_unlinked() from public, anon, authenticated;
-alter function public.roar_hub_syncing() set search_path = public;
+--    (the hub's guard functions named here were removed on 1 Nov 2026 by hub-unlink.sql)
 
 -- 3. deleting messages (cleanup deletes thousands at a time) looked through every message for replies and hides
 --    to that message: now an index finds them

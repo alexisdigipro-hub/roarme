@@ -4,8 +4,7 @@
 --   @<role>                        the people of a role of this group, e.g. @montage or @μοντάζ (roar_roles)
 --   @<username>                    that person, as before
 -- Who is mentioned gets the notification even with the chat muted, and the chat list shows an @ until it is read.
--- Roles belong to a group: its admins make them, and in a THEMADLIONS group (run by the hub, no admins) anyone in it.
--- Run after push.sql and hub-bridge.sql. Safe to run again.
+-- Roles belong to a group: its admins make them. Run after push.sql. Safe to run again.
 create table if not exists public.roar_roles (
   id uuid primary key default gen_random_uuid(),
   room_id uuid not null references public.roar_rooms(id) on delete cascade,
@@ -20,7 +19,7 @@ create table if not exists public.roar_roles (
 create or replace function public.roar_roles_editor(r uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from roar_rooms x where x.id = r and x.kind = 'group'
-    and (roar_is_admin(r) or (x.hub_project is not null and roar_is_member(r))))
+    and roar_is_admin(r))
 $$;
 revoke all on function public.roar_roles_editor(uuid) from public, anon;
 grant execute on function public.roar_roles_editor(uuid) to authenticated;

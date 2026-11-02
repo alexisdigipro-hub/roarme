@@ -47,6 +47,21 @@ const inGrace = (f: any) => f.store === 'r2' && !!f.created_by && !f.stopped_at 
   && new Date(f.expires_at).getTime() <= Date.now() && new Date(f.expires_at).getTime() > Date.now() - GRACE
 // deno-lint-ignore no-explicit-any
 const used = (f: any) => f.max_downloads != null && (f.downloads || 0) >= f.max_downloads
+// The admins open every link while its time runs (Alex, 2 Nov: "as admin I want to open any link users send, even past
+// its download limit, as long as it has not expired; above all the Free ones"): no password, no download limit, their own
+// downloads not counted. A file's address then carries an admin ticket in &c= (shaped like a claim id, so roartransfer.com's
+// Worker passes it on for Download all): an HMAC of the token and a 6-hour slot under the service key, good for that slot
+// and the next, and only ever for a link that has not ended.
+const SLOT = 6 * 36e5
+async function adminTicket(t: string, slot = Math.floor(Date.now() / SLOT)) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const h = Array.from(new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`admin-dl:${t}:${slot}`))), (x) => x.toString(16).padStart(2, '0')).join('')
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`
+}
+async function isTicket(t: string, c: string) {
+  const now = Math.floor(Date.now() / SLOT)
+  return c === await adminTicket(t, now) || c === await adminTicket(t, now - 1)
+}
 // attachment with the real name: a plain ASCII one for old browsers, the UTF-8 one for the rest
 const disposition = (name: string) => `attachment; filename="${name.replace(/[^\x20-\x7e]|["\\]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(name)}`
 
@@ -72,8 +87,13 @@ Deno.serve(async (req) => {
   if (q.get('dl') === '1') {
     const { data: f } = await sb.from('roar_transfer_links').select('token, path, name, expires_at, store, downloads, max_downloads, created_by, stopped_at').eq('token', t).maybeSingle()
     const page = `${PAGE}${t}`
-    // the one last download of an ended link: its claim, once
     const c = q.get('c') || ''
+    // an admin's download: any live link, past its limit, not counted
+    if (f && f.store === 'r2' && c && !f.stopped_at && new Date(f.expires_at).getTime() > Date.now() && await isTicket(t, c)) {
+      const to = await r2Url(f.path, { 'response-content-disposition': disposition(f.name || 'file') }, 6 * 3600)
+      return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
+    }
+    // the one last download of an ended link: its claim, once
     if (f && c && inGrace(f) && /^[0-9a-f-]{36}$/.test(c)) {
       const { data: cl } = await sb.from('roar_transfer_claims').update({ used_at: new Date().toISOString() }).eq('id', c).eq('token', t).is('used_at', null).select('id').maybeSingle()
       if (!cl) return Response.redirect(page, 302)
@@ -89,6 +109,7 @@ Deno.serve(async (req) => {
   // who is asking (signed in on the download page), for the one last download
   const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
   const me = jwt && jwt.split('.').length === 3 ? (await sb.auth.getUser(jwt)).data?.user || null : null
+  const admin = me ? !!(await sb.from('roar_admins').select('user_id').eq('user_id', me.id).maybeSingle()).data : false
   const { data: link } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by, stopped_at').eq('token', t).maybeSingle()
   if (link) {
     // who sent it, on a file's own link too (Alex, 25 Oct: it said "Someone" on a link copied from My transfers); a Pro
@@ -101,7 +122,7 @@ Deno.serve(async (req) => {
       if (last.files.length) return json({ ...info, ...last.files[0], last: true, expires: new Date(new Date(link.expires_at).getTime() + GRACE).toISOString() })
       return json({ ...info, error: 'expired', grace: last.grace }, 410)
     }
-    const one = await addresses(sb, link)
+    const one = await addresses(sb, link, admin)
     if (!one) return json({ ...info, error: 'expired' }, 410)
     return json({ ...info, ...one })
   }
@@ -112,7 +133,7 @@ Deno.serve(async (req) => {
   const { data: p } = bundle.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle() : { data: null }
   const bb = await brandOf(sb, bundle.created_by)
   const head = { bundle: true, title: bundle.title || '', from: bb?.name || p?.display_name || (p?.username ? '@' + p.username : ''), brand: bb }
-  if (bundle.password_hash) {
+  if (bundle.password_hash && !admin) {
     const given = q.get('p') || ''
     if (!given) return json({ ...head, expires: bundle.expires_at, error: 'password' }, 401)
     // no guessing (security check, Alex 26 Oct): 10 wrong tries from one address, or 50 from anywhere, in 15 minutes,
@@ -140,7 +161,7 @@ Deno.serve(async (req) => {
   // deno-lint-ignore no-explicit-any
   const files: any[] = []
   for (const r of live) {
-    const one = await addresses(sb, r)
+    const one = await addresses(sb, r, admin)
     if (one) files.push({ token: r.token, name: r.name, size: r.size, type: r.type, expires: r.expires_at, ...one })
   }
   if (!files.length) return json({ ...head, expires: bundle.expires_at, error: 'expired' }, 410)
@@ -206,7 +227,7 @@ async function lastOnes(sb: any, rows: any[], me: any): Promise<{ grace: boolean
 
 // a file's download address (with its real name) and, for a video, a picture or audio, one to play it
 // deno-lint-ignore no-explicit-any
-async function addresses(sb: any, link: any): Promise<{ url: string, view: string } | null> {
+async function addresses(sb: any, link: any, admin = false): Promise<{ url: string, view: string } | null> {
   // never SVG (it can carry code), and no full preview of a file with a download limit: the preview is the whole file,
   // so it would be a download that is not counted (security check, Alex 26 Oct); Pro and unlimited links keep it
   const media = /^(video|audio|image)\//.test(link.type) && !/svg/i.test(link.type)
@@ -216,6 +237,11 @@ async function addresses(sb: any, link: any): Promise<{ url: string, view: strin
     const [host, code] = String(link.path).split('|')
     if (!code) return null
     return { url: `https://${host === 'api.pcloud.com' ? 'u' : 'e'}.pcloud.link/publink/show?code=${encodeURIComponent(code)}`, view: '', pcloud: { host, code } } as any
+  }
+  if (link.store === 'r2' && admin) {
+    const url = `${SELF}?t=${encodeURIComponent(link.token)}&dl=1&c=${await adminTicket(link.token)}`
+    const view = media ? await r2Url(link.path, { 'response-content-type': link.type }) : ''
+    return { url, view, counted: true, left: null, admin: true } as any
   }
   if (link.store === 'r2') {
     const left = link.max_downloads == null ? null : Math.max(0, link.max_downloads - (link.downloads || 0))

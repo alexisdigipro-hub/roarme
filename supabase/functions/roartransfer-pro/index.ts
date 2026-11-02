@@ -138,7 +138,10 @@ Deno.serve(async (req) => {
       ? await sb.from('roar_transfer_pro').update({ until }).eq('user_id', id)
       : await sb.from('roar_transfer_pro').insert({ user_id: id, until })
     if (error) return json({ error: error.message }, 500)
-    return json({ ok: true, id, until })
+    // Pro Trial (Alex, 2 Nov 2026): three months as a thank-you, with an email that says so and what Pro gives
+    let mailed = false
+    if (b.trial && until) mailed = await sendTrial(id, until)
+    return json({ ok: true, id, until, mailed })
   }
 
   // Pro ends now; the row (and the page name) stays, so giving it back later keeps the same link
@@ -152,3 +155,67 @@ Deno.serve(async (req) => {
 
   return json({ error: 'unknown action' }, 400)
 })
+
+// ---- the Pro Trial email (Alex, 2 Nov 2026: "thank you for your support, 3 months of Pro free, what Pro has, nice HTML";
+// wider on a computer, signed "With love, The Mad Lions"). Sent through Resend as every RoarTransfer email.
+const FROM = 'RoarTransfer <noreply@themadlions.com>'
+async function sendTrial(id: string, until: string): Promise<boolean> {
+  const key = Deno.env.get('RESEND_API_KEY')
+  if (!key) return false
+  const { data: u } = await sb.auth.admin.getUserById(id)
+  const to = u?.user?.email
+  if (!to) return false
+  const { data: p } = await sb.from('roar_profiles').select('display_name').eq('id', id).maybeSingle()
+  const name = String(p?.display_name || u?.user?.user_metadata?.name || '').trim()
+  const m = trialMail(name, until)
+  const r = await fetch('https://api.resend.com/emails', {
+    method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: FROM, to: [to], subject: m.subject, html: m.html, text: m.text }),
+  })
+  return r.ok
+}
+const FONT = "Jost,Futura,'Trebuchet MS',Helvetica,Arial,sans-serif"
+const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+const esc = (s: string) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c])
+function trialMail(name: string, until: string) {
+  const day = new Date(until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Athens' })
+  const perks = [
+    ['Up to 50 GB a transfer', '50 GB for 1 day, 40 GB for 3 days, 30 GB for 7 days, 20 GB for 30 days'],
+    ['Links up to 30 days', 'Choose 1, 3, 7 or 30 days for every link'],
+    ['Unlimited downloads', 'Send once, share with as many people as you like'],
+    ['Receive files', 'Your own page: anyone sends you up to 20 GB a file, no account needed, kept 30 days'],
+    ['Your brand', 'Your name, logo and backgrounds on every page people open from your links'],
+    ['Change it after sending', 'New expiry or password on a link you already sent'],
+    ['Who downloaded', 'Every open and download: when, from where, on what device'],
+    ['Uploads that resume', 'Lost connection? It carries on from where it stopped'],
+  ]
+  const row = ([t, d]: string[]) => `<tr><td style="padding:0 0 10px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:16px"><tr>
+<td width="44" valign="top" style="padding:15px 0 14px 16px"><div style="width:26px;height:26px;border-radius:50%;background:#d40000;box-shadow:0 0 14px rgba(212,0,0,.55);color:#fff;font-size:14px;font-weight:800;line-height:26px;text-align:center">&#10003;</div></td>
+<td style="padding:13px 16px 13px 4px"><div style="color:#ffffff;font-size:15px;font-weight:700;line-height:1.35">${t}</div><div style="color:#9aa0a8;font-size:13px;line-height:1.45;padding-top:2px">${d}</div></td></tr></table></td></tr>`
+  const hi = name ? `Hi ${esc(name)},` : 'Hi,'
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;800&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:${SANS}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="background:#ffffff;padding:40px 14px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#15171b" style="max-width:640px;background:#15171b;background-image:linear-gradient(155deg,#2a2d33 0%,#15171b 45%,#0d0e11 100%);border:1px solid #2c2f35;border-radius:28px;box-shadow:0 24px 60px rgba(15,17,21,.22)">
+<tr><td style="padding:38px 40px 36px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td style="padding-bottom:30px;font-family:${FONT};font-size:21px;letter-spacing:.05em;color:#ffffff;line-height:1"><span style="font-weight:200">ROAR</span><span style="font-weight:800">TRANSFER</span>
+<span style="display:inline-block;vertical-align:3px;margin-left:8px;padding:4px 9px;border-radius:999px;background:#d40000;box-shadow:0 0 16px rgba(212,0,0,.6);color:#fff;font-family:${SANS};font-size:10px;font-weight:800;letter-spacing:.12em">PRO</span></td></tr>
+<tr><td style="color:#ff6b6b;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding-bottom:12px">A gift from us</td></tr>
+<tr><td style="color:#ffffff;font-size:30px;font-weight:800;line-height:1.18;letter-spacing:-.01em;padding-bottom:16px">Thank you for being with us.<br><span style="color:#d40000">3 months of Pro</span>, free.</td></tr>
+<tr><td style="color:#c9cdd3;font-size:15px;line-height:1.6;padding-bottom:8px">${hi}</td></tr>
+<tr><td style="color:#c9cdd3;font-size:15px;line-height:1.6;padding-bottom:24px">Thank you for using RoarTransfer and for your support from the start. To say thanks, your account is now <b style="color:#fff">RoarTransfer Pro, free for three months</b>. No card, nothing to do: it is already on.</td></tr>
+<tr><td style="padding-bottom:26px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:18px;background:#d40000;background-image:linear-gradient(135deg,#ff2a2a 0%,#d40000 55%,#9e0000 100%);box-shadow:0 10px 30px rgba(212,0,0,.35)"><tr>
+<td style="padding:18px 20px"><div style="color:rgba(255,255,255,.8);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase">Your Pro</div><div style="color:#fff;font-size:20px;font-weight:800;padding-top:4px">Free until <span style="white-space:nowrap">${day}</span></div></td>
+<td align="right" style="padding:18px 20px;color:#fff;font-family:${FONT};font-size:38px;font-weight:800;line-height:1;white-space:nowrap">3<span style="font-size:13px;font-weight:700;letter-spacing:.08em">&nbsp;MONTHS</span></td></tr></table></td></tr>
+<tr><td style="color:#ffffff;font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding-bottom:14px">What Pro gives you</td></tr>
+${perks.map(row).join('\n')}
+<tr><td align="center" style="padding:20px 0 8px"><a href="https://roartransfer.com/#mine" style="display:inline-block;background:#d40000;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:15px 38px;border-radius:999px;box-shadow:0 0 22px rgba(212,0,0,.5)">Open my Pro</a></td></tr>
+<tr><td align="center" style="color:#8b929b;font-size:13px;line-height:1.55;padding-top:18px">With love,<br><b style="color:#c9cdd3">The Mad Lions</b></td></tr>
+</table></td></tr></table>
+<p style="margin:22px 0 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#a3a8b0">Powered by <a href="https://www.themadlions.com" style="color:#5f6570;text-decoration:none;font-weight:600">The Mad Lions</a></p>
+</td></tr></table></body></html>`
+  const text = `${hi}\n\nThank you for using RoarTransfer and for your support. Your account is now RoarTransfer Pro, free for three months (until ${day}). No card, nothing to do: it is already on.\n\nWhat Pro gives you:\n${perks.map(([t, d]: string[]) => `- ${t}: ${d}`).join('\n')}\n\nOpen my Pro: https://roartransfer.com/#mine\n\nWith love,\nThe Mad Lions`
+  return { subject: 'A gift: 3 months of RoarTransfer Pro, free', html, text }
+}

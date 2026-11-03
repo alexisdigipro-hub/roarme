@@ -3083,6 +3083,8 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
 .only-phone { display: none !important; }
 @media (max-width: 760px) {
   .only-phone { display: flex !important; }
+  /* a round button shown only on a phone stays a grid, so its icon sits in the middle (Alex, 3 Nov: Tasks beside the phone was off centre) */
+  .round.only-phone { display: grid !important; }
 
   /* windows: as wide as the screen allows, never wider */
   .modal-back { grid-template-columns: minmax(0, 1fr); padding: 12px; }

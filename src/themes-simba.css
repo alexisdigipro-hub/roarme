@@ -663,3 +663,15 @@ html[data-theme='ember'] .bubble.pic :is(.pic-img, .load-tap, .pic-wait),html[da
 html[data-theme='ember'] { --search-r: var(--r, 12px); }
 
 
+
+/* Simba on a phone (Alex, 3 Nov: "at the bottom the corners cut off sharply"): the panel floats with a thin gap at the
+   sides and the foot, its bottom corners rounded like the iPhone's own screen corners, and the folder tabs with the
+   bar at the foot sit lower, nearer the home bar. The top stays square, it runs up under the clock. */
+@media (max-width: 760px) {
+  html[data-theme='ember'] .app { padding: 0 10px 8px; gap: 0; }
+  html[data-theme='ember'] .app > :is(.side, .main) { border-radius: 0 0 38px 38px; border: 1px solid var(--edge); border-top: 0; }
+  html[data-theme='ember'] .app > .side { padding-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 12px)); }
+  html[data-theme='ember'] .side > .foot { border-radius: 26px; }
+  html[data-theme='ember'] .side > .foot button { border-radius: 20px; }
+  html[data-theme='ember'] .side > .foot.lens::before { border-radius: 20px; }
+}

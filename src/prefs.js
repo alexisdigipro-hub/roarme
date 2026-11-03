@@ -43,7 +43,7 @@ export const DEFAULTS = {
   hiddenFolders: [], // ready-made folders deleted (Unread, Groups, Archived; All stays)
   folderExtra: {}, // chats added by hand to a ready-made folder: { groups: [room ids], unread: [room ids] }
   sound: true,
-  soundKind: 'chime', // one of SOUNDS
+  soundKind: 'glass', // one of SOUNDS
   badge: true, // the unread count on the Mac/Windows app's icon
   micId: '', // the microphone, camera and speakers for calls ('' = the computer's own choice)
   camId: '',
@@ -72,6 +72,8 @@ export function getPrefs() {
     if (p.folderTabs === 'left') p.folderTabs = 'bottom'
     // the double click reacts with the red heart, no longer the camera (Alex, 16 Oct); a later pick of the camera stays
     if (!p.quickHeart) { if (p.quick === '🎥') p.quick = '❤️'; p.quickHeart = true }
+    // the new Glass sound for everyone still on the old default, Chime (Alex, 3 Nov); a later pick of Chime stays
+    if (!p.glassSound) { if (p.soundKind === 'chime') p.soundKind = 'glass'; p.glassSound = true }
     return p
   } catch { return { ...DEFAULTS } }
 }
@@ -117,6 +119,8 @@ export function useLocal(key, initial) {
 
 /* The sound when a message arrives (WebAudio, no files): a few to choose from in Settings */
 export const SOUNDS = [
+  // Glass (Alex, 3 Nov: "like the iPhone's"): our own short, bright two-note mallet, a soft woody overtone that fades fast
+  ['glass', 'Glass', 'sine', [[1047, 0], [1568, 0.1]], true],
   ['chime', 'Chime', 'sine', [[880, 0], [1320, 0.12]]],
   ['pop', 'Pop', 'sine', [[620, 0], [930, 0.05]]],
   ['ping', 'Ping', 'triangle', [[1568, 0]]],
@@ -129,7 +133,23 @@ export function chime(kind) {
   try {
     ctx = ctx || new (window.AudioContext || window.webkitAudioContext)()
     const t = ctx.currentTime
-    const [, , wave, notes] = SOUNDS.find(([k]) => k === (kind || getPrefs().soundKind)) || SOUNDS[0]
+    const [, , wave, notes, mallet] = SOUNDS.find(([k]) => k === (kind || getPrefs().soundKind)) || SOUNDS[0]
+    if (mallet) {
+      // a struck bar: the note and its fourth harmonic, a 3 ms attack, the overtone gone first
+      notes.forEach(([f, d]) => [[f, 0.16, 0.42], [f * 4, 0.035, 0.09]].forEach(([hz, peak, len]) => {
+        const o = ctx.createOscillator()
+        const g = ctx.createGain()
+        o.type = 'sine'
+        o.frequency.value = hz
+        g.gain.setValueAtTime(0.0001, t + d)
+        g.gain.exponentialRampToValueAtTime(peak, t + d + 0.003)
+        g.gain.exponentialRampToValueAtTime(0.0001, t + d + len)
+        o.connect(g).connect(ctx.destination)
+        o.start(t + d)
+        o.stop(t + d + len + 0.05)
+      }))
+      return
+    }
     notes.forEach(([f, d]) => {
       const o = ctx.createOscillator()
       const g = ctx.createGain()

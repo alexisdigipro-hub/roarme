@@ -247,7 +247,9 @@ async function handle(req: Request): Promise<Response> {
     const bytes = rows.reduce((a: number, r: any) => a + Number(r.size || 0), 0)
     await sb.from('roar_transfer_inbox').insert({ owner: box.user_id, bundle: token, sender_name: sender, sender_email: from, message, files: rows.length, bytes, ip })
     const { data: o } = await sb.auth.admin.getUserById(box.user_id)
-    if (o?.user?.email) {
+    // the Pro can turn this email off (My transfers > Emails from RoarTransfer, Alex 3 Nov); what came in still shows in Received
+    const { data: mp } = await sb.from('roar_transfer_mail_prefs').select('received').eq('user_id', box.user_id).maybeSingle()
+    if (o?.user?.email && mp?.received !== false) {
       const ordered = rows.sort((a: any, z: any) => tokens.indexOf(a.token) - tokens.indexOf(z.token))
       const what = rows.length === 1 ? '1 file' : `${rows.length} files`
       const list = ordered.slice(0, 8).map((f: any) => `<tr><td style="padding:11px 0;border-top:1px solid rgba(255,255,255,.08);color:#e9ebee;font-size:14px;word-break:break-all">${esc(f.name)}</td><td style="padding:11px 0 11px 12px;border-top:1px solid rgba(255,255,255,.08);color:#8b929b;font-size:12px;text-align:right;white-space:nowrap">${fmtSize(Number(f.size || 0))}</td></tr>`).join('')

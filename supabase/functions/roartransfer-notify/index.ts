@@ -35,6 +35,9 @@ Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const { data: x } = await sb.from('roar_transfer_bundles').select('token, tokens, title, created_by, notify, notified_at').eq('token', b.bundle).maybeSingle()
   if (!x || !x.notify || !x.notified_at || Date.now() - new Date(x.notified_at).getTime() > 120000) return json({ skipped: true })
+  // turned off in My transfers > Emails from RoarTransfer (Alex, 3 Nov; supabase/transfer-mail-prefs.sql)
+  const { data: mp } = await sb.from('roar_transfer_mail_prefs').select('downloads').eq('user_id', x.created_by).maybeSingle()
+  if (mp && mp.downloads === false) return json({ skipped: 'turned off' })
   const { data: u } = await sb.auth.admin.getUserById(x.created_by)
   const to = u?.user?.email
   if (!to) return json({ skipped: 'no email' })

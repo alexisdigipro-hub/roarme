@@ -37,7 +37,13 @@ export async function pushIsOn() {
   return !!(await current())
 }
 
+// turned off by hand in Settings on this device: never switched back on by itself
+const OFF = 'roarme-push-off'
+const offByHand = () => { try { return localStorage.getItem(OFF) === '1' } catch { return false } }
+const markOff = (v) => { try { if (v) localStorage.setItem(OFF, '1'); else localStorage.removeItem(OFF) } catch { /* private window */ } }
+
 export async function pushOn(preview) {
+  markOff(false)
   const perm = await Notification.requestPermission()
   if (perm !== 'granted') throw new Error(perm === 'denied' ? 'Notifications are blocked for RoarMe. Allow them in the settings of this phone or browser.' : 'Notifications were not allowed.')
   const reg = await registration()
@@ -52,19 +58,30 @@ export async function pushOn(preview) {
 }
 
 export async function pushOff() {
+  markOff(true)
   const sub = await current()
   if (!sub) return
   await supabase.from('roar_push_subs').delete().eq('endpoint', sub.endpoint)
   try { await sub.unsubscribe() } catch { /* already gone */ }
 }
 
-// on every start: the server still knows this browser (and whether the text may show)
+// on every start: the server still knows this browser (and whether the text may show). Allowed but not signed up
+// (and not turned off by hand), it signs up by itself, so notifications ring from the first day (Alex, 3 Nov)
 export async function pushSync(preview) {
   try {
-    if (Notification.permission !== 'granted') return
+    if (!pushSupported() || Notification.permission !== 'granted') return
     const sub = await current()
-    if (sub) { await registration(); await keep(sub, preview) }
+    if (sub) { await registration(); await keep(sub, preview) } else if (!offByHand()) await pushOn(preview)
   } catch { /* offline, or not signed in yet */ }
+}
+
+// the first tap after installing: asks for permission and signs this device up for notifications with RoarMe closed,
+// no trip to Settings needed. An iPhone allows the question only on a tap, and only from the Home Screen
+export async function pushFirstTap(preview) {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'default') return
+  if (!pushSupported()) { try { await Notification.requestPermission() } catch { /* not here */ } return }
+  if (offByHand()) return
+  try { await pushOn(preview) } catch { /* not allowed: Settings > Notifications can turn it on later */ }
 }
 
 // the unread count on the Home Screen icon while RoarMe is open (the service worker sets it while closed)

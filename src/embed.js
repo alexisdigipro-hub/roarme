@@ -8,7 +8,9 @@ import { supabase } from './lib.js'
      RoarMe -> Roardino  { type: 'roarme:ready', signedIn }   once the session is known, again when it changes
      Roardino -> RoarMe  { type: 'roardino:signin', token_hash } a one-time magic-link token (as roar-connect gives);
                           used only while signed out, through supabase.auth.verifyOtp; nothing else is ever taken
-     Roardino -> RoarMe  { type: 'roardino:look', theme: 'light' | 'dark' } */
+     Roardino -> RoarMe  { type: 'roardino:look', theme: 'light' | 'dark' }
+     Roardino -> RoarMe  { type: 'roardino:open', page: 'settings' | 'chats' | 'contacts' | 'calls' }  (Alex, 5 Nov: the chat's
+                          settings live in Roardino's Settings, and on a phone RoarMe's own bar is hidden) */
 
 const params = (() => { try { return new window.URLSearchParams(window.location.search) } catch { return null } })()
 export const IN_ROARDINO = params?.get('embed') === 'roardino'
@@ -59,6 +61,10 @@ export function startRoardino() {
     if (!d || typeof d !== 'object') return
     if (d.type === 'roardino:look') {
       if (d.theme === 'light' || d.theme === 'dark') wearLook(d.theme)
+      return
+    }
+    if (d.type === 'roardino:open') {
+      if (['settings', 'chats', 'contacts', 'calls'].includes(d.page)) window.dispatchEvent(new window.CustomEvent('roardino-open', { detail: d.page }))
       return
     }
     if (d.type === 'roardino:signin') {

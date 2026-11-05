@@ -4108,3 +4108,18 @@ html.in-roardino[data-theme][data-mode][data-bubbles] .day span { background: va
 @media (max-width: 820px) {
   html.in-roardino nav.foot.lens { display: none !important; }
 }
+
+/* Inside Roardino (Alex, 5 Nov): the folder tabs (All / Unread / Groups / Archived…) above the chats, never at the bottom, and
+   minimal: small words on no background, the chosen one in the accent with a thin line under it, no filled pill. */
+html.in-roardino .rooms-area.bottom .tabs { order: -1; }
+html.in-roardino[data-theme] .rooms-area .tabs,
+html.in-roardino[data-theme] .rooms-area.bottom .tabs {
+  background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 2px !important; gap: 4px; min-height: 0;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+html.in-roardino[data-theme] .rooms-area .tabs button {
+  height: 30px !important; padding: 0 10px !important; border-radius: 0 !important; background: none !important; box-shadow: none !important;
+  font-size: 13px !important; font-weight: 500 !important; color: var(--muted, #8a8f99) !important; border-bottom: 2px solid transparent !important;
+}
+html.in-roardino[data-theme] .rooms-area .tabs button.on { color: var(--rd-accent) !important; border-bottom-color: var(--rd-accent) !important; }
+html.in-roardino[data-theme] .rooms-area .tabs.lens::before { display: none !important; }

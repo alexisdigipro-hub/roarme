@@ -4102,3 +4102,9 @@ html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble :is(.voi
 html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble :is(.voice-bar, .music-bar) i { background: #fff !important; }
 html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble :is(.fmt-code, .fmt-pre) { background: rgba(0, 0, 0, .18) !important; }
 html.in-roardino[data-theme][data-mode][data-bubbles] .day span { background: var(--glass); border: 1px solid var(--edge); color: var(--muted); }
+
+/* Inside Roardino on a phone (Alex, 5 Nov): no Contacts / Calls / Messages / Tasks / Settings bar at the bottom; Roardino's own
+   menu is right under it. The bar for picked chats (Read, Archive…) stays. RoarMe on its own is untouched. */
+@media (max-width: 820px) {
+  html.in-roardino nav.foot.lens { display: none !important; }
+}

@@ -73,6 +73,12 @@ export default function Chat({ me, setMe }) {
   const [modal, setModal] = useState('') // '' | newchat | newgroup | info | folders | newfolder | pickfolder
   const [plus, setPlus] = useState(false)
   const [tab, setTab] = useState('chats') // the bar at the foot: contacts | calls | chats | settings
+  // inside Roardino: its Settings and its Chat tab say which page to show (src/embed.js roardino:open)
+  useEffect(() => {
+    const go = (e) => { setModal(''); setTab(e.detail); if (e.detail === 'settings') setSetPage('') }
+    window.addEventListener('roardino-open', go)
+    return () => window.removeEventListener('roardino-open', go)
+  }, [])
   const [cq, setCq] = useState('') // search in Contacts
   const [picking, setPicking] = useState(false)
   const [tabsEdit, setTabsEdit] = useState(false) // the folder tabs being reordered in place, like Telegram (Alex, 21 Oct)

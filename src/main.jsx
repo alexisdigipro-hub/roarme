@@ -7,11 +7,14 @@ import { takeInvite } from './invite.jsx'
 import './styles.css'
 import { startI18n } from './i18n.js'
 import { wearTheme } from './prefs.js'
+import { IN_ROARDINO, startRoardino } from './embed.js'
 
 // the Privacy Policy and the Terms come only when opened, not with every start of RoarMe
 const LegalPage = lazy(() => import('./legal.jsx').then((m) => ({ default: m.LegalPage })))
 
 startI18n()
+// inside Roardino's Chat tab (?embed=roardino): its look, its sign-in handover, no RoarMe name or nags (embed.js)
+startRoardino()
 // a lab theme left on: its styles start coming now, alongside the sign-in (prefs.js wearTheme)
 try { wearTheme(JSON.parse(localStorage.getItem('roarme-prefs') || '{}').theme) } catch { /* no saved look */ }
 
@@ -64,8 +67,8 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
 }
 
 // the service worker keeps the app's built files on the device, so RoarMe starts faster (public/sw.js); the desktop
-// app has its own
-if ('serviceWorker' in navigator && !window.roarDesktop && import.meta.env.PROD) {
+// app has its own; inside Roardino none, so the framed copy always loads fresh
+if ('serviceWorker' in navigator && !window.roarDesktop && !IN_ROARDINO && import.meta.env.PROD) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {}))
 }
 
@@ -79,6 +82,6 @@ if (!transferToken && !legalDoc) takeInvite()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {transferToken ? <TransferPage token={transferToken} /> : legalDoc ? <Suspense fallback={null}><LegalPage doc={legalDoc} /></Suspense> : <><App /><InstallPrompt /></>}
+    {transferToken ? <TransferPage token={transferToken} /> : legalDoc ? <Suspense fallback={null}><LegalPage doc={legalDoc} /></Suspense> : <><App />{!IN_ROARDINO && <InstallPrompt />}</>}
   </StrictMode>,
 )

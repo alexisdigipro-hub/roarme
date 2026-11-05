@@ -4006,3 +4006,99 @@ html[data-mode='light'] :is(.room-view[data-img] .scroll, .set-preview[data-img]
 html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.voice-btn, .music-btn) { color: #1c1c1e !important; background: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(226, 226, 230, .9)) !important; border: 1px solid rgba(255, 255, 255, .6) !important; box-shadow: 0 4px 12px rgba(0, 0, 0, .25), inset 0 1px 0 #fff !important; }
 html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.voice-bar, .music-bar) { background: rgba(255, 255, 255, .22) !important; }
 html[data-bubbles='glass'][data-theme='stone'][data-mode] .msg.mine .bubble :is(.voice-bar, .music-bar) i { background: #fff !important; }
+
+/* =====================================================================
+   RoarMe inside Roardino (?embed=roardino, src/embed.js): Roardino's Chat tab at themadlions.com/social/. Stone
+   underneath, in the day or night Roardino sends; on top Roardino's own look: a soft grey page (near-black at night),
+   the panels translucent glass with a bright rim, the red #d40000 for the chosen chat, your own messages, Send and the
+   unread counts, soft 12px corners. RoarMe's own name, the install card and the app nags are left out: Roardino has its
+   own bar. Only under html.in-roardino, so RoarMe on its own is untouched.
+   ===================================================================== */
+html.in-roardino.rd-light[data-theme] {
+  --bg: #eceef1; --panel: rgba(255, 255, 255, .52); --panel-2: rgba(255, 255, 255, .62);
+  --glass: rgba(255, 255, 255, .55); --glass-2: rgba(255, 255, 255, .8);
+  --edge: rgba(255, 255, 255, .9); --edge-2: #ffffff;
+  --text: #1c2333; --muted: rgba(28, 35, 51, .56);
+  --theirs: rgba(255, 255, 255, .72); --float: rgba(250, 251, 252, .95);
+  --rail: #1c2333; --rail-2: #2c3550;
+  --rd-accent: #d40000; --rd-grad: linear-gradient(135deg, #e2766d 0%, #d40000 55%, #8f0000 100%);
+  --rd-glow: 0 8px 22px rgba(212, 0, 0, .26); --rd-field: rgba(28, 35, 51, .05); --rd-line: rgba(28, 35, 51, .1);
+  --rd-inset: inset 0 1px 0 rgba(255, 255, 255, .6);
+  --blur: blur(22px) saturate(140%);
+  --shadow: 0 18px 44px rgba(28, 35, 51, .1), 0 2px 6px rgba(28, 35, 51, .05);
+  color-scheme: light;
+}
+html.in-roardino.rd-dark[data-theme] {
+  --bg: #0b0b0c; --panel: rgba(255, 255, 255, .035); --panel-2: rgba(255, 255, 255, .05);
+  --glass: rgba(255, 255, 255, .05); --glass-2: rgba(255, 255, 255, .1);
+  --edge: rgba(255, 255, 255, .13); --edge-2: rgba(255, 255, 255, .22);
+  --text: #eef0f3; --muted: rgba(238, 240, 243, .56);
+  --theirs: rgba(255, 255, 255, .07); --float: rgba(24, 24, 27, .96);
+  --rail: #1b1b1e; --rail-2: #2a2a2e;
+  --rd-accent: #ff6a5c; --rd-grad: linear-gradient(135deg, #ffc2b8 0%, #ff6a5c 50%, #e0241a 100%);
+  --rd-glow: 0 8px 24px rgba(224, 36, 26, .3); --rd-field: rgba(255, 255, 255, .05); --rd-line: rgba(255, 255, 255, .1);
+  --rd-inset: inset 0 1px 0 rgba(255, 255, 255, .06);
+  --blur: blur(22px) saturate(140%);
+  --shadow: 0 18px 44px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .3);
+  color-scheme: dark;
+}
+html.in-roardino[data-theme] { --accent: var(--rd-accent) !important; --accent-2: var(--rd-accent) !important; --accent-ink: #ffffff !important; }
+html.in-roardino.rd-light[data-theme] body { background: linear-gradient(180deg, #eceef1, #dfe1e5); background-attachment: fixed; color: var(--text); }
+html.in-roardino.rd-dark[data-theme] body { background: linear-gradient(180deg, #121214, #0b0b0c); background-attachment: fixed; color: var(--text); }
+
+/* no double chrome: Roardino's bar already carries the name */
+html.in-roardino :is(.side-brand .wordmark, .brand, .pick-mark, .install-back, .upd) { display: none !important; }
+
+/* the panels: translucent glass with a bright rim */
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.side, .main, .auth-card) { border-radius: 12px; background: var(--panel); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border: 1px solid var(--edge); box-shadow: var(--shadow), var(--rd-inset); }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.menu, .menu-list, .emoji-pick, .rx-pick, .mention-pick) { border-radius: 12px; background: var(--float); border: 1px solid var(--edge); box-shadow: var(--shadow); color: var(--text); }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.menu, .menu-list) button { border-radius: 8px; }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.menu, .menu-list) button:hover { background: var(--glass-2); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .modal { border-radius: 16px; background: var(--float); border: 1px solid var(--edge); box-shadow: var(--shadow); color: var(--text); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .set-box { border-radius: 12px; background: var(--glass); border: 1px solid var(--edge); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .set-box > button.set-row:first-child { border-radius: 12px 12px 0 0; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .set-box > button.set-row:last-child { border-radius: 0 0 12px 12px; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .set-box > button.set-row:only-child { border-radius: 12px; }
+
+/* controls: round glass and glass pills, fields as soft wells */
+html.in-roardino[data-theme][data-mode][data-bubbles] .round { border-radius: 50%; background: var(--glass); border: 1px solid var(--edge); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, .06), var(--rd-inset); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .round:hover { background: var(--glass-2); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .round.on { background: var(--glass-2); border-color: var(--edge-2); color: var(--rd-accent); }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.btn, .pill-btn) { border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.btn, .pill-btn):hover { background: var(--glass-2); border-style: solid; border-color: var(--edge-2); }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.input, .search, .compose textarea) { background: var(--rd-field); border: 1px solid var(--rd-line); box-shadow: none; color: var(--text); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .search { border-radius: 999px; }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.input, .compose textarea):focus { border-color: color-mix(in srgb, var(--rd-accent) 45%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rd-accent) 14%, transparent); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .compose-box { border-radius: 12px; background: var(--glass); border: 1px solid var(--edge); box-shadow: 0 4px 14px rgba(0, 0, 0, .06); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .compose-box:focus-within { border-color: var(--edge-2); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rd-accent) 12%, transparent); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .head-card { border-radius: 12px; background: var(--glass); border: 1px solid var(--edge); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .seg { background: var(--rd-field); border: 1px solid var(--rd-line); box-shadow: none; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .seg.lens::before { background: var(--glass-2); border: 1px solid var(--edge-2); box-shadow: 0 6px 14px rgba(0, 0, 0, .1); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .tabs { border-bottom-color: var(--rd-line); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .tabs.lens::before { background: var(--rd-accent); box-shadow: none; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .switch input:checked + span { background: var(--rd-accent); }
+
+/* the red: the main action, Send, the chosen chat, the unread counts */
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send, .new-call-ico):not(:disabled) { color: #fff !important; background: var(--rd-grad) !important; border: 1px solid transparent !important; box-shadow: var(--rd-glow) !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send, .new-call-ico):not(:disabled):hover { filter: brightness(1.06); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .room { border-radius: 12px !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .room:hover { background: var(--glass); }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.room.on, .room.menu-on, .set-nav.on) { background: color-mix(in srgb, var(--rd-accent) 9%, var(--glass-2)); border-color: color-mix(in srgb, var(--rd-accent) 32%, transparent); box-shadow: 0 6px 16px rgba(0, 0, 0, .08), inset 3px 0 0 var(--rd-accent); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .set-menu .set-nav { border-radius: 12px !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.badge:not(.quiet), .tabs small, .foot-ico i) { background: var(--rd-grad); color: #fff; box-shadow: 0 3px 10px rgba(212, 0, 0, .28); }
+html.in-roardino[data-theme][data-mode][data-bubbles] .badge.quiet { background: var(--glass-2); color: var(--muted); box-shadow: none; }
+
+/* the conversation: their messages glass, your own the red */
+html.in-roardino[data-theme][data-mode][data-bubbles] .bubble { border-radius: 16px; background: var(--theirs); border: 1px solid var(--edge); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, .05); }
+html.in-roardino[data-theme][data-mode][data-bubbles] :is(.bubble.big-emoji, .msg.mine .bubble.big-emoji) { background: none; border: 0; box-shadow: none; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji) { color: #fff !important; background: var(--rd-grad) !important; border: 1px solid transparent !important; box-shadow: var(--rd-glow) !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble :is(.meta, .ticks, .file-text small, .voice small) { color: rgba(255, 255, 255, .78) !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble .ticks.seen { color: #fff !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble :is(.msg-link, .mention, .text a, .tr-tag, .rt-link) { color: #fff !important; text-decoration-color: rgba(255, 255, 255, .6) !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble .quote { background: rgba(255, 255, 255, .16) !important; border-left-color: #fff !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble .quote :is(b, span) { color: #fff !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble .file-ico { color: #fff !important; background: rgba(255, 255, 255, .2) !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble :is(.voice-bar, .music-bar) { background: rgba(255, 255, 255, .3) !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble :is(.voice-bar, .music-bar) i { background: #fff !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .msg.mine .bubble :is(.fmt-code, .fmt-pre) { background: rgba(0, 0, 0, .18) !important; }
+html.in-roardino[data-theme][data-mode][data-bubbles] .day span { background: var(--glass); border: 1px solid var(--edge); color: var(--muted); }

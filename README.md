@@ -588,3 +588,22 @@ groups: whoever joined first is admin where there was none, anyone may leave, re
 Database: supabase/hub-unlink.sql (safe to run again) drops the guards, the links, the one-time codes, the shared secret
 and every roar_hub_* function, and empties roar_rooms.hub_project. The Edge Functions roar-hub-link, roar-hub-bridge,
 roar-hub-signin, roar-hub-work and roar-pcloud are gone from the repository (delete them in Supabase too).
+
+## Inside Roardino (5 Nov)
+
+Roardino (https://themadlions.com/social/) shows RoarMe as its Chat tab, in a frame at
+`https://alexisdigipro-hub.github.io/roarme/?embed=roardino`. Only with `embed=roardino` in the address (src/embed.js):
+RoarMe wears Stone in Roardino's day or night, with Roardino's look on top (soft grey glass by day, near-black glass at
+night, the red #d40000 for the chosen chat, your own messages, Send and the unread counts, 12px corners; styles.css, last
+block, under `html.in-roardino`, `.rd-light` / `.rd-dark`), never saved to the person's own settings. RoarMe's name, the
+install card, the app download box in Settings, the theme / day and night / accent pickers and the update cards are left
+out; no service worker is registered, so the framed copy always loads fresh. RoarMe on its own is unchanged.
+
+Messages, only with the frame's own parent and only from https://themadlions.com (or http://localhost / 127.0.0.1 for
+tests); RoarMe posts to that same origin (the referrer's, else https://themadlions.com):
+- RoarMe to Roardino: `{ type: 'roarme:ready', signedIn: true | false }` once the session is known, and again whenever it changes.
+- Roardino to RoarMe: `{ type: 'roardino:signin', token_hash }`, a one-time magic-link token (as roar-connect gives the
+  other apps). Used only while signed out, through `supabase.auth.verifyOtp({ type: 'magiclink', token_hash })`; if it
+  fails the sign-in screen stays. No session or token of any other kind is ever taken from a message.
+- Roardino to RoarMe: `{ type: 'roardino:look', theme: 'light' | 'dark' }` after roarme:ready and whenever its theme changes.
+No database change.

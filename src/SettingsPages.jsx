@@ -10,6 +10,7 @@ import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { MyTransfers } from './transfer.jsx'
 import { badgeSupported, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest } from './push.js'
+import { IN_ROARDINO } from './embed.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
@@ -243,7 +244,8 @@ function General({ p, onKeys, toast }) {
     <>
       {guide && <InstallGuide kind={guide} update={desk.on} onClose={() => setGuide('')} />}
       {/* on a phone the downloads for Mac and Windows have no place; it says how RoarMe becomes an app here (Alex, 18 Oct) */}
-      {!desk.on && onPhone() ? (
+      {/* inside Roardino, no downloads or Home Screen steps: Roardino is the place (embed.js) */}
+      {IN_ROARDINO ? null : !desk.on && onPhone() ? (
         <Box title="RoarMe app" note={isStandalone() ? '' : isIOS() ? 'In Safari: Share > Add to Home Screen, then open RoarMe from the Home Screen.' : 'In the browser menu: Add to Home Screen or Install app.'}>
           <div className="set-row"><span className="set-text">{isStandalone() ? 'On your Home Screen' : 'Add RoarMe to the Home Screen'}<small>{isStandalone() ? 'RoarMe opens as an app of its own' : 'An app of its own, with notifications when it is closed'}</small></span>{isStandalone() && <i className="set-tick">{I.check}</i>}</div>
         </Box>
@@ -763,6 +765,8 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="pv"><i>Good morning! 👋</i>Do you know what time it is?</span>
           <span className="pv mine">It's morning in Tokyo 😎</span>
         </div>
+        {/* inside Roardino the look is Roardino's own (embed.js): no theme, day and night or accent to pick here */}
+        {!IN_ROARDINO && <>
         <div className="set-row set-col">
           <div className="themes">
             {THEMES.map(([k, l, [a, b]]) => {
@@ -787,6 +791,7 @@ function Appearance({ p, toast, me, setMe }) {
             {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}${k === 'white' ? ' acc-white' : k === 'black' ? ' acc-black' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k })}><small>{l}</small></button>)}
           </div>
         </div>
+        </>}
       </Box>
       <Box title="Text">
         <div className="set-row set-col">

@@ -6,6 +6,7 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 
 - React + Vite, plain CSS in src/styles.css, no UI framework. Dark glass look like the hub's chat:
   round glass buttons, pill fields, soft rounded tiles, the chosen item as lighter glass, orange accent.
+- **Never a word with an underline as a button** (Alex, 5 Nov, for every site we make): actions are real buttons, a flat matte glass pill or a round glass icon.
 - Data in Supabase: only the `roar_*` tables and the `roar-files` / `roar-avatars` buckets; never touch the
   hub's tables. Every database change goes in supabase/schema.sql, written so it can be run again.
 - Desktop first (Alex, 15 Oct). Email + password sign-in, @username to be found.

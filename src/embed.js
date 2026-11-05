@@ -9,7 +9,7 @@ import { supabase } from './lib.js'
      Roardino -> RoarMe  { type: 'roardino:signin', token_hash } a one-time magic-link token (as roar-connect gives);
                           used only while signed out, through supabase.auth.verifyOtp; nothing else is ever taken
      Roardino -> RoarMe  { type: 'roardino:look', theme: 'light' | 'dark' }
-     Roardino -> RoarMe  { type: 'roardino:open', page: 'settings' | 'chats' | 'contacts' | 'calls' }  (Alex, 5 Nov: the chat's
+     Roardino -> RoarMe  { type: 'roardino:open', page: 'settings' | 'chats' | 'contacts' | 'calls' | 'room', room? }  (Alex, 5 Nov: the chat's
                           settings live in Roardino's Settings, and on a phone RoarMe's own bar is hidden) */
 
 const params = (() => { try { return new window.URLSearchParams(window.location.search) } catch { return null } })()
@@ -65,6 +65,8 @@ export function startRoardino() {
     }
     if (d.type === 'roardino:open') {
       if (['settings', 'chats', 'contacts', 'calls'].includes(d.page)) window.dispatchEvent(new window.CustomEvent('roardino-open', { detail: d.page }))
+      // a conversation Roardino has just opened with roar_open_direct (Message on a profile)
+      else if (d.page === 'room' && typeof d.room === 'string' && /^[0-9a-f-]{36}$/.test(d.room)) window.dispatchEvent(new window.CustomEvent('roardino-open', { detail: { room: d.room } }))
       return
     }
     if (d.type === 'roardino:signin') {

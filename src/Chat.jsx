@@ -73,9 +73,15 @@ export default function Chat({ me, setMe }) {
   const [modal, setModal] = useState('') // '' | newchat | newgroup | info | folders | newfolder | pickfolder
   const [plus, setPlus] = useState(false)
   const [tab, setTab] = useState('chats') // the bar at the foot: contacts | calls | chats | settings
+  const loadRoomsRef = useRef(null)
   // inside Roardino: its Settings and its Chat tab say which page to show (src/embed.js roardino:open)
   useEffect(() => {
-    const go = (e) => { setModal(''); setTab(e.detail); if (e.detail === 'settings') setSetPage('') }
+    const go = (e) => {
+      setModal('')
+      // a conversation (Message on a Roardino profile): straight into it
+      if (e.detail && typeof e.detail === 'object' && e.detail.room) { setTab('chats'); setActiveId(e.detail.room); loadRoomsRef.current?.(); return }
+      setTab(e.detail); if (e.detail === 'settings') setSetPage('')
+    }
     window.addEventListener('roardino-open', go)
     return () => window.removeEventListener('roardino-open', go)
   }, [])
@@ -299,6 +305,7 @@ export default function Chat({ me, setMe }) {
     const known = peopleRef.current || {}
     loadPeople(list.flatMap((r) => r.members || []).filter((id) => !known[id]))
   }, [loadPeople])
+  loadRoomsRef.current = loadRooms
 
   // a burst of messages reloads the list once; a message read in the open chat (the message, then one's own read mark,
   // then the server's echo of it) is one reload too, not two or three (Alex, 21 Oct: lighter)

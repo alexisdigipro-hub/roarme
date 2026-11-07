@@ -127,6 +127,18 @@ async function stillKeys(col: string, val: string) {
   return (data || []).map((r: any) => r.file_key)
 }
 
+// a drawing on a video note: at most 40 strokes of at most 400 points, every number between 0 and 1
+function cleanSketch(v: unknown) {
+  if (!Array.isArray(v) || !v.length) return null
+  const out = []
+  for (const st of v.slice(0, 40)) {
+    if (!st || !['pen', 'arrow', 'circle'].includes(st.t) || !Array.isArray(st.p)) continue
+    const p = st.p.slice(0, 400).map((q: any) => [Math.max(0, Math.min(1, Math.round(Number(q?.[0]) * 1e4) / 1e4 || 0)), Math.max(0, Math.min(1, Math.round(Number(q?.[1]) * 1e4) / 1e4 || 0))])
+    if (p.length >= 2) out.push({ t: st.t, p })
+  }
+  return out.length ? out : null
+}
+
 async function deleteKeys(keys: string[]) {
   for (const k of keys) if (k && k.startsWith('studio/')) { try { await r2.fetch(at(k), { method: 'DELETE' }) } catch (e) { console.error('delete', k, e) } }
 }
@@ -184,7 +196,7 @@ async function handle(req: Request): Promise<Response> {
       const { data: versions } = tids.length ? await vq : { data: [] }
       if (finals) { const has = new Set((versions || []).map((v: any) => v.track_id)); tracks = (tracks || []).filter((t: any) => has.has(t.id)) }
       const vids = (versions || []).map((v: any) => v.id)
-      const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, body, author, guest_name, done, created_at').in('version_id', vids).order('created_at') : { data: [] }
+      const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, body, author, guest_name, done, created_at, sketch').in('version_id', vids).order('created_at') : { data: [] }
       const who = await names([project?.owner, ...(comments || []).map((c: any) => c.author), ...(versions || []).map((v: any) => v.uploaded_by)])
       await logEvent(s.project_id, 'view', null, String(b.name || '').slice(0, 60) || 'Someone with the link')
       return json({ project: { ...project, owner_name: who[project?.owner] || '' }, tracks, versions, comments, names: who,
@@ -208,6 +220,8 @@ async function handle(req: Request): Promise<Response> {
       if (!body) return json({ error: 'empty' }, 400)
       const row: Record<string, unknown> = { version_id: v.id, project_id: s.project_id, body, guest_name: name, at_sec: Number.isFinite(Number(b.at_sec)) && b.at_sec !== null ? Number(b.at_sec) : null }
       if (isId(b.parent)) row.parent_id = b.parent
+      const sk = cleanSketch(b.sketch)
+      if (sk) row.sketch = sk
       const { data, error } = await sb.from('roarstudio_comments').insert(row).select().single()
       if (error) return json({ error: error.message }, 500)
       return json({ comment: data })

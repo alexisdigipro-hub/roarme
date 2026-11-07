@@ -1,5 +1,16 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  // Settings tidied, Features page (7 Nov)
+  'Features': 'Λειτουργίες',
+  'Turn on the parts of RoarMe you use. Each one you turn on gets its place in the bar at the foot.': 'Άνοιξε τα κομμάτια του RoarMe που χρησιμοποιείς. Όποιο ανοίγεις παίρνει τη θέση του στην κάτω μπάρα.',
+  'The RoarMe app, keyboard shortcuts and starting over.': 'Η εφαρμογή RoarMe, οι συντομεύσεις πληκτρολογίου και η επαναφορά.',
+  'Calls Tab': 'Καρτέλα Κλήσεις',
+  'Recent calls and Create New Call, in the bar at the foot': 'Πρόσφατες κλήσεις και Νέα κλήση, στην κάτω μπάρα',
+  'Voice and video calls, one to one. Off: the Calls tab leaves the bar at the foot; the call buttons in a chat stay.': 'Φωνητικές κλήσεις και βιντεοκλήσεις, ένας με έναν. Κλειστό: η καρτέλα Κλήσεις φεύγει από την κάτω μπάρα· τα κουμπιά κλήσης μέσα στη συνομιλία μένουν.',
+  'To-dos for you and others, reminders and a calendar, in the bar at the foot': 'Εργασίες για σένα και για άλλους, υπενθυμίσεις και ημερολόγιο, στην κάτω μπάρα',
+  'Off: nothing of your tasks is lost. They come back when you turn it on.': 'Κλειστό: δεν χάνεται καμία εργασία σου. Επιστρέφουν όταν το ανοίξεις.',
+  'Call devices': 'Συσκευές κλήσεων',
+  'Everything on this page and on Features, Chats, Appearance, Notifications, Data and Folders goes back to how RoarMe starts. The language, your account and your chats stay as they are.': 'Ό,τι υπάρχει σε αυτή τη σελίδα και στις Λειτουργίες, Συνομιλίες, Εμφάνιση, Ειδοποιήσεις, Δεδομένα και Φακέλους επιστρέφει όπως ξεκινά το RoarMe. Η γλώσσα, ο λογαριασμός και οι συνομιλίες σου μένουν ως έχουν.',
   // RoarTransfer on R2 (22 Oct)
   '1 day': '1 μέρα',
   '7 days': '7 μέρες',

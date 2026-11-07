@@ -4144,3 +4144,17 @@ html[data-theme='stone'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):no
   border: 1px solid rgba(255, 255, 255, .12) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12) !important;
 }
+
+/* one's own chat wallpaper (Alex, 8 Nov): any colour, or one's own photo at a chosen strength (src/walls.js wallLook).
+   The strength is a veil of the theme's own background over the photo: 100% is the photo as it is */
+:is(.room-view[data-bg='color'] .scroll, .set-preview[data-bg='color']) { background: var(--wall-color) !important; }
+html[data-mode] :is(.room-view[data-img][data-own] .scroll, .set-preview[data-img][data-own]) {
+  background-image: linear-gradient(color-mix(in srgb, var(--bg, #1c1c1e) calc((1 - var(--wall-op, 1)) * 100%), transparent), color-mix(in srgb, var(--bg, #1c1c1e) calc((1 - var(--wall-op, 1)) * 100%), transparent)), var(--wall);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+.wall-own { align-items: center; justify-content: center; cursor: pointer; background-size: cover; background-position: center; }
+.wall-own input[type='color'] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.wall-own-ico { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 10px; border-radius: 50%; background: var(--glass); border: 1px solid var(--edge); color: var(--text); }
+.wall-own-ico svg { width: 20px; height: 20px; }
+.wall-op { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 14px; }
+.wall-op input[type='range'] { width: 100%; }

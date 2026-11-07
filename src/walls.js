@@ -45,4 +45,23 @@ export const wallStyle = (key, l) => {
   return url ? { '--wall': `url("${url}")` } : null
 }
 
+/* One's own wallpaper (Alex, 8 Nov): any colour ('color:#rrggbb') or a photo of one's own ('img:<url>|<opacity>',
+   uploaded to roar-avatars/<id>/wall-…). Kept in the same places as a built-in key: prefs.background for every chat,
+   the roarme-walls map for one chat. */
+export const ownColor = (v) => (typeof v === 'string' && /^color:#[0-9a-f]{6}$/i.test(v) ? v.slice(6) : '')
+export const ownPhoto = (v) => {
+  const m = typeof v === 'string' && v.match(/^img:(https:\/\/[^|"\s]+)\|([\d.]+)$/)
+  return m ? { url: m[1], opacity: Math.min(1, Math.max(0.1, Number(m[2]) || 1)) } : null
+}
+export const photoValue = (url, opacity) => `img:${url}|${Math.round(opacity * 100) / 100}`
+// what a chat or a preview wears: the attributes and the style, for a built-in, a colour or a photo
+export function wallLook(v, l) {
+  const c = ownColor(v)
+  if (c) return { 'data-bg': 'color', style: { '--wall-color': c } }
+  const ph = ownPhoto(v)
+  if (ph) return { 'data-bg': 'own', 'data-img': '', 'data-own': '', style: { '--wall': `url("${ph.url}")`, '--wall-op': ph.opacity } }
+  const st = wallStyle(v, l)
+  return { 'data-bg': v, 'data-img': st ? '' : undefined, style: st || {} }
+}
+
 export const WALL_BUCKET = BUCKET

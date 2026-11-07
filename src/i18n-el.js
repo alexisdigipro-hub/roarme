@@ -1,5 +1,14 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  // own chat wallpaper (8 Nov)
+  'Colour': 'Χρώμα',
+  'Your Photo': 'Δική σου φωτογραφία',
+  'Change Photo': 'Αλλαγή φωτογραφίας',
+  'Uploading…': 'Ανεβαίνει…',
+  'Photo Strength': 'Ένταση φωτογραφίας',
+  'Lower lets the theme\'s own colour through': 'Πιο χαμηλά, αφήνει να φανεί το χρώμα του θέματος',
+  'Pick a JPEG, PNG or WebP photo': 'Διάλεξε φωτογραφία JPEG, PNG ή WebP',
+  'Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.': 'Διάλεξε μία έτοιμη, όποιο χρώμα θέλεις ή δική σου φωτογραφία. Κάθε συνομιλία μπορεί να έχει τη δική της από το μενού ⋯ > Αλλαγή ταπετσαρίας.',
   // Settings tidied, Features page (7 Nov)
   'Features': 'Λειτουργίες',
   'Turn on the parts of RoarMe you use. Each one you turn on gets its place in the bar at the foot.': 'Άνοιξε τα κομμάτια του RoarMe που χρησιμοποιείς. Όποιο ανοίγεις παίρνει τη θέση του στην κάτω μπάρα.',

@@ -3,7 +3,7 @@ import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
-import { useWalls, wallStyle } from './walls.js'
+import { useWalls, wallLook } from './walls.js'
 import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
@@ -769,12 +769,12 @@ function Sessions({ me, setMe, toast }) {
 }
 
 function Appearance({ p, toast, me, setMe }) {
-  const wallImg = wallStyle(p.background, useWalls(true))
+  const look = wallLook(p.background, useWalls(true))
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
   return (
     <>
       <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Each has dark and light.">
-        <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={p.background} data-img={wallImg ? '' : undefined} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...wallImg }}>
+        <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...look.style }}>
           <span className="pv mine">Good morning! 👋</span>
           <span className="pv"><i>Good morning! 👋</i>Do you know what time it is?</span>
           <span className="pv mine">It's morning in Tokyo 😎</span>
@@ -821,8 +821,8 @@ function Appearance({ p, toast, me, setMe }) {
           <select className="input set-select" value={p.font || 'system'} onChange={(e) => setPrefs({ font: e.target.value })}>{FONTS.map(([k, l, f]) => <option key={k} value={k} style={{ fontFamily: f }}>{l}</option>)}</select>
         </div>
       </Box>
-      <Box title="Chat wallpaper" note="One chat can have its own from its ⋯ menu.">
-        <div className="set-row set-col"><WallTiles value={p.background} onPick={(k) => setPrefs({ background: k })} /></div>
+      <Box title="Chat wallpaper" note="Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.">
+        <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
       </Box>
       <Box title="Layout">
         <div className="set-row set-col">

@@ -4,7 +4,6 @@ import { applyLook, applyMode, setPrefs, themeFor, usePrefs, wearTheme } from '.
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
-import { IN_ROARDINO, useRoardinoLook } from './embed.js'
 
 // The order of things: sign in (or sign up) with email, then pick a @username once, then the chat.
 export default function App() {
@@ -13,9 +12,7 @@ export default function App() {
   const [recovering, setRecovering] = useState(false)
   const prefs = usePrefs()
   const { lite, theme } = prefs
-  // inside Roardino: its day or night over Stone, never saved to this person's own settings (embed.js)
-  const rdLook = useRoardinoLook()
-  const mode = IN_ROARDINO ? rdLook : prefs.mode
+  const mode = prefs.mode
   useEffect(() => applyLook(prefs), [prefs.accent, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => applyMode(mode), [mode])
   // the colour of the band under the clock on a phone follows day and night (Alex, 19 Oct: no black at the top)
@@ -65,11 +62,11 @@ export default function App() {
   }, [uid])
   // a theme still in Alex's lab shows only for him; anyone else sees Stone
   useEffect(() => {
-    const t = IN_ROARDINO ? 'stone' : themeFor(theme)
+    const t = themeFor(theme)
     wearTheme(t)
     document.documentElement.dataset.theme = t
     // once signed in, someone left on a lab theme moves to Stone for good
-    if (!IN_ROARDINO && profile && t !== (theme || 'stone')) setPrefs({ theme: t })
+    if (profile && t !== (theme || 'stone')) setPrefs({ theme: t })
   }, [theme, profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (session === undefined || (uid && profile === undefined)) return <div className="splash"><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" /></div>

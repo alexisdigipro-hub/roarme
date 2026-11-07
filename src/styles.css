@@ -4181,3 +4181,22 @@ html[data-still] .rooms .room.pressing, html[data-still] .rooms .room.held { tra
 .accents { row-gap: 20px; padding-bottom: 8px; }
 .accents .acc small { display: none; }
 @media (hover: none) { .acc:hover { transform: none; } .acc.on:hover { transform: scale(1.2); } }
+
+/* the preview of a chat (Preview Chats, and the card of a chat's long-press menu) wears the chat's own bubbles
+   (Alex, 8 Nov: "why such colours in the preview"): in Stone the same flat frosted ones, never the old blue */
+html[data-theme='stone'] .peek-msg {
+  border-radius: 18px 18px 18px 6px; color: var(--text);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .8), rgba(255, 255, 255, .4) 70%, rgba(255, 255, 255, .3));
+  border: 1px solid rgba(255, 255, 255, .7); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+html[data-theme='stone'][data-mode='dark'] .peek-msg {
+  background: linear-gradient(135deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .06) 70%, rgba(255, 255, 255, .04));
+  border-color: rgba(255, 255, 255, .12); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+}
+html[data-theme='stone'] .peek-msg.mine {
+  border-radius: 18px 18px 6px 18px; color: #f4f4f5;
+  background: linear-gradient(135deg, rgba(98, 98, 103, .92), rgba(46, 46, 49, .9) 55%, rgba(24, 24, 26, .88));
+  border: 1px solid rgba(255, 255, 255, .12); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+html[data-theme='stone'] .peek-msg.mine small { color: rgba(255, 255, 255, .6); }
+html[data-theme='stone'] .peek-msg.mine :is(a, .msg-link) { color: var(--mint, #74dca4); }

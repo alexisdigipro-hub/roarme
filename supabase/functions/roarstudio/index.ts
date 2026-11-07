@@ -138,7 +138,7 @@ async function handle(req: Request): Promise<Response> {
       return v
     }
     if (b.action === 'share-open') {
-      const { data: project } = await sb.from('roarstudio_projects').select('id, title, artist, color, owner, cover').eq('id', s.project_id).maybeSingle()
+      const { data: project } = await sb.from('roarstudio_projects').select('id, title, artist, color, owner, cover, credits').eq('id', s.project_id).maybeSingle()
       const finals = s.kind === 'finals'
       let playlist: any = null
       if (s.kind === 'playlist' && s.playlist_id) {

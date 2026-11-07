@@ -187,3 +187,7 @@ create policy rs_notepads_own on public.roarstudio_notepads for all using (user_
 
 -- the studio's own background for the pages it sends (Alex, 7 Nov: "a logo, a background of their own on the Finals")
 alter table public.roarstudio_studios add column if not exists backdrop text;
+
+-- the credits of a project's Finals (Alex, 7 Nov: "credits on the final folder, a template: music, lyrics, the video's credits"):
+-- { template: music | video | photo | custom, rows: [{ role, name }], lyrics, notes }, written by editors, shown on Finals links
+alter table public.roarstudio_projects add column if not exists credits jsonb;

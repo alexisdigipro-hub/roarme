@@ -1,5 +1,5 @@
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -681,13 +681,13 @@ export default function Chat({ me, setMe }) {
         if (!g.open) {
           g.pull = dy
           sheet(Math.round(56 * (1 - Math.exp(-dy / 110))), false) // the list gives a little, then resists
-          if (dy >= PULL_OPEN && !g.felt) { g.felt = true; navigator.vibrate?.(8) } // the click of the magnet where it will open
+          if (dy >= PULL_OPEN && !g.felt) { g.felt = true; haptic(8) } // the click of the magnet where it will open
         } else if (g.phone) {
           // the reload wants a long, deliberate pull (Alex, 21 Oct: it got mixed up with the search): the arrow shows after
           // 120 px and is full at 280 px; the list follows with resistance all the way
           sheet(Math.round(90 * (1 - Math.exp(-dy / 200))), false)
           const p = Math.max(0, Math.min(1.15, (dy - 120) / 160))
-          if (p >= 1 && !g.felt) { g.felt = true; navigator.vibrate?.(8) }
+          if (p >= 1 && !g.felt) { g.felt = true; haptic(8) }
           setPull(Math.round(p * 20) / 20) // in steps: the app is drawn again some 20 times a pull, not on every finger move
         }
         return
@@ -820,9 +820,12 @@ export default function Chat({ me, setMe }) {
     const t = e.touches[0]
     pressed.current = false
     clearTimeout(press.current?.timer)
-    press.current = { x: t.clientX, y: t.clientY, timer: setTimeout(() => {
+    const row = e.currentTarget
+    row.classList.add('pressing') // it sinks under the finger, then pops when the menu opens (Alex, 8 Nov)
+    press.current = { x: t.clientX, y: t.clientY, row, timer: setTimeout(() => {
       pressed.current = true
-      navigator.vibrate?.(12)
+      row.classList.remove('pressing'); row.classList.add('held'); setTimeout(() => row.classList.remove('held'), 450)
+      haptic(12)
       setRoomMenu({ r, x: 0, y: 0, sub: '', at: Date.now() })
       // the finger is still down: no word under it gets selected (Alex, 21 Oct)
       const clear = () => window.getSelection?.()?.removeAllRanges()
@@ -837,7 +840,7 @@ export default function Chat({ me, setMe }) {
       clearTimeout(tabHold.current?.timer)
       tabHold.current = { x: t.clientX, y: t.clientY, fired: false, timer: setTimeout(() => {
         tabHold.current.fired = true
-        navigator.vibrate?.(12)
+        haptic(12)
         const clear = () => window.getSelection?.()?.removeAllRanges()
         clear(); setTimeout(clear, 60); setTimeout(clear, 400)
         const b = el.getBoundingClientRect()
@@ -869,10 +872,10 @@ export default function Chat({ me, setMe }) {
   }
   const pressMove = (e) => {
     const p = press.current, t = e.touches[0]
-    if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 10) { clearTimeout(p.timer); press.current = null }
+    if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 10) { clearTimeout(p.timer); p.row?.classList.remove('pressing'); press.current = null }
   }
   // the finger lifting after a long press must not also tap the menu that just opened
-  const pressEnd = (e) => { clearTimeout(press.current?.timer); press.current = null; if (pressed.current && e?.cancelable) e.preventDefault() }
+  const pressEnd = (e) => { clearTimeout(press.current?.timer); press.current?.row?.classList.remove('pressing'); press.current = null; if (pressed.current && e?.cancelable) e.preventDefault() }
   // the menu of a chat in the list (right click, or a long press on a phone), as in Telegram: the screen blurs, the chat's
   // last messages show on a card (a tap on it opens the chat) and the actions sit under it
   const openRoomMenu = (e, r) => {
@@ -2090,8 +2093,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const tapTimer = useRef(0)
   const mouse = typeof window !== 'undefined' && window.matchMedia?.('(hover: hover) and (pointer: fine)').matches
   const onBubble = (e) => !!e.target.closest?.('.bubble')
+  const heldAt = useRef(0) // a long press just opened the menu: the click of the finger lifting does nothing more
+  const liftGuard = useRef(0) // until then a click on the menu or its scrim is the finger lifting, not a choice
+  const lifting = () => Date.now() < liftGuard.current
   const onTap = (e, m) => {
-    if (mouse || !onBubble(e)) return
+    if (mouse || !onBubble(e) || Date.now() - heldAt.current < 800) return
     if (e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx') || window.getSelection()?.toString()) return
     const at = { preventDefault() {}, clientX: e.clientX, clientY: e.clientY }
     clearTimeout(tapTimer.current)
@@ -2277,6 +2283,51 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
      below no longer redraws every message. Their buttons call the newest handlers through `hands`. */
   const hands = useRef({})
   hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setArtView, setCinema, byId, picked, setReplyTo }
+  // Holding a message on a phone (Alex, 8 Nov: "when I hold it, a small pop-up so I know it took it"): the bubble gives
+  // under the finger at once, and after 420 ms it pops, the phone ticks and the menu opens while the finger is still down.
+  // Moving the finger (a scroll, a swipe to reply) lets it go. A short tap still opens the menu as before.
+  useEffect(() => {
+    const box = scrollRef.current
+    if (!box || mouse) return undefined
+    let h = null
+    const drop = () => { if (!h) return; clearTimeout(h.timer); h.bubble.classList.remove('pressing'); h = null }
+    const lift = () => { if (liftGuard.current === Infinity) liftGuard.current = Date.now() + 400; drop() }
+    const start = (e) => {
+      drop()
+      if (e.touches.length !== 1 || hands.current.picked) return
+      const bubble = e.target.closest?.('.bubble')
+      if (!bubble || e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx')) return
+      const row = bubble.closest('[id^="m-"]')
+      const m = row && hands.current.byId[row.id.slice(2)]
+      if (!m || m.deleted_at) return
+      const t = e.touches[0]
+      bubble.classList.add('pressing')
+      h = { bubble, x: t.clientX, y: t.clientY, timer: setTimeout(() => {
+        const b = h.bubble
+        b.classList.remove('pressing'); b.classList.remove('held'); void b.offsetWidth; b.classList.add('held')
+        setTimeout(() => b.classList.remove('held'), 450)
+        haptic(12)
+        heldAt.current = Date.now()
+        liftGuard.current = Infinity
+        clearTimeout(tapTimer.current)
+        hands.current.openMenu({ preventDefault() {}, clientX: h.x, clientY: h.y }, m)
+        window.getSelection?.()?.removeAllRanges()
+        h = null
+      }, 420) }
+    }
+    const move = (e) => { if (h && Math.hypot(e.touches[0].clientX - h.x, e.touches[0].clientY - h.y) > 10) drop() }
+    box.addEventListener('touchstart', start, { passive: true })
+    box.addEventListener('touchmove', move, { passive: true })
+    box.addEventListener('touchend', lift, { passive: true })
+    box.addEventListener('touchcancel', lift, { passive: true })
+    return () => {
+      drop()
+      box.removeEventListener('touchstart', start)
+      box.removeEventListener('touchmove', move)
+      box.removeEventListener('touchend', lift)
+      box.removeEventListener('touchcancel', lift)
+    }
+  }, [mouse]) // eslint-disable-line react-hooks/exhaustive-deps
   // a message slid to the left on a phone is answered, like Telegram (Alex, 21 Oct): the bubble follows the finger,
   // the reply arrow fills in on its right, and past 56 px letting go starts the reply
   useEffect(() => {
@@ -2315,7 +2366,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       const p = Math.min(1, -a / 56)
       g.icon.style.opacity = String(p)
       g.icon.style.transform = `translateY(-50%) scale(${0.6 + p * 0.4})`
-      if (p >= 1 && !g.felt) { g.felt = true; navigator.vibrate?.(8); g.icon.classList.add('ready') }
+      if (p >= 1 && !g.felt) { g.felt = true; haptic(8); g.icon.classList.add('ready') }
       if (p < 1 && g.felt) { g.felt = false; g.icon.classList.remove('ready') }
     }
     const end = () => {
@@ -2670,8 +2721,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
       {menu && (
         <OnTop>
-          <button type="button" className="scrim blur" aria-label="Close" onClick={() => setMenu(null)} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
-          <div ref={menuRef} className="msg-menu" style={{ left: menu.x, top: menu.y }}>
+          <button type="button" className="scrim blur" aria-label="Close" onClick={() => { if (!lifting()) setMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
+          <div ref={menuRef} className="msg-menu" style={{ left: menu.x, top: menu.y }} onClickCapture={(e) => { if (lifting()) { e.stopPropagation(); e.preventDefault() } }}>
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>

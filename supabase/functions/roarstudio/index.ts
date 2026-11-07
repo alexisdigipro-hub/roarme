@@ -1,4 +1,4 @@
-// RoarStudio (Alex, 7 Nov 2026): the cloud for music at studio.roartransfer.com. Files go to the same R2 bucket
+// RoarTransfer Studio (RoarStudio until 7 Nov 2026; Alex, 7 Nov 2026): the cloud for music at studio.roartransfer.com. Files go to the same R2 bucket
 // as RoarTransfer (roartransfer), under studio/<project id>/…, which none of RoarTransfer's lifecycle rules touch.
 // The page never holds a key: a member asks here with their Roar account and gets signed addresses for 16 MB pieces,
 // then this puts the file together and writes the version (roarstudio_versions, supabase/studio.sql). People without an
@@ -14,7 +14,7 @@ const PART = 16 * 1024 * 1024
 const RANK = ['listener', 'commenter', 'editor', 'owner']
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-roarstudio-hook', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 const PAGE = 'https://studio.roartransfer.com/'
-const FROM = 'RoarStudio <noreply@themadlions.com>'
+const FROM = 'RoarTransfer Studio <noreply@themadlions.com>'
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
 const account = ((Deno.env.get('R2_ACCOUNT_ID') || '').match(/[0-9a-f]{32}/i) || [''])[0]
@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try { return await handle(req) } catch (e) {
     console.error(e)
-    return json({ error: 'RoarStudio could not reach its storage. Try again in a minute.' }, 502)
+    return json({ error: 'RoarTransfer Studio could not reach its storage. Try again in a minute.' }, 502)
   }
 })
 
@@ -97,6 +97,34 @@ async function logEvent(project: string, kind: string, v: any, who: string | nul
     if (count) return
     await sb.from('roarstudio_events').insert({ project_id: project, kind, actor, actor_name: who, track_id: v?.track_id || null, version_id: v?.id || null })
   } catch (e) { console.error('log', e) }
+}
+
+// Stills (Alex, 7 Nov): frames grabbed from a video, with their time on them, kept for everyone to download
+async function stillsOf(versionId: string, title: string) {
+  const { data } = await sb.from('roarstudio_stills').select('id, version_id, at_sec, file_key, width, height, size, author, guest_name, created_at').eq('version_id', versionId).order('at_sec').order('created_at')
+  const who = await names((data || []).map((r: any) => r.author))
+  const out = []
+  for (const r of data || []) {
+    const t = Number(r.at_sec) || 0, hh = Math.floor(t / 3600), mm = Math.floor(t % 3600 / 60), ss = Math.floor(t % 60), ms = Math.round((t % 1) * 1000) % 1000
+    const p2 = (n: number) => String(n).padStart(2, '0')
+    const fname = `${safeName(title)}_${p2(hh)}-${p2(mm)}-${p2(ss)}.${String(ms).padStart(3, '0')}.jpg`
+    out.push({ id: r.id, version_id: r.version_id, at_sec: r.at_sec, width: r.width, height: r.height, size: r.size, author: r.author, by: r.author ? (who[r.author] || 'Member') : (r.guest_name || 'Guest'), created_at: r.created_at,
+      url: await presign('GET', r.file_key, {}, 6 * 3600), dl: await presign('GET', r.file_key, { 'response-content-disposition': `attachment; filename="${fname}"` }, 6 * 3600) })
+  }
+  return out
+}
+async function addStill(v: any, b: Record<string, any>, author: string | null, guest: string | null) {
+  const id = crypto.randomUUID()
+  const key = `studio/${v.project_id}/stills/${id}.jpg`
+  const size = Math.max(0, Math.min(40 * 1024 * 1024, Number(b.size) || 0))
+  const row = { id, version_id: v.id, project_id: v.project_id, at_sec: Math.max(0, Number(b.at_sec) || 0), file_key: key, width: Number(b.width) || null, height: Number(b.height) || null, size, author, guest_name: guest }
+  const { error } = await sb.from('roarstudio_stills').insert(row)
+  if (error) return json({ error: error.message }, 500)
+  return json({ id, put: await presign('PUT', key, {}, 900) })
+}
+async function stillKeys(col: string, val: string) {
+  const { data } = await sb.from('roarstudio_stills').select('file_key').eq(col, val)
+  return (data || []).map((r: any) => r.file_key)
 }
 
 async function deleteKeys(keys: string[]) {
@@ -183,6 +211,19 @@ async function handle(req: Request): Promise<Response> {
       const { data, error } = await sb.from('roarstudio_comments').insert(row).select().single()
       if (error) return json({ error: error.message }, 500)
       return json({ comment: data })
+    }
+    if (b.action === 'share-stills') {
+      if (s.kind === 'finals') return json({ stills: [] })
+      const v = await inShare(b.version)
+      if (!v) return json({ error: 'not found' }, 404)
+      const { data: t } = await sb.from('roarstudio_tracks').select('title').eq('id', v.track_id).maybeSingle()
+      return json({ stills: await stillsOf(v.id, t?.title || v.file_name) })
+    }
+    if (b.action === 'share-still-add') {
+      if (!s.can_comment || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
+      const v = await inShare(b.version)
+      if (!v) return json({ error: 'not found' }, 404)
+      return await addStill(v, b, null, String(b.name || '').trim().slice(0, 60) || 'Guest')
     }
     if (b.action === 'share-approve') {
       if (!s.can_approve || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
@@ -275,6 +316,25 @@ async function handle(req: Request): Promise<Response> {
     return json({ url: await presign('GET', v.file_key, q, 6 * 3600) })
   }
 
+  if (b.action === 'stills' || b.action === 'still-add') {
+    if (!isId(b.version)) return json({ error: 'not found' }, 404)
+    const { data: v } = await sb.from('roarstudio_versions').select('id, project_id, track_id, file_name').eq('id', b.version).maybeSingle()
+    const r = v ? await roleOf(uid, v.project_id) : null
+    if (!v || !can(r, 'listener')) return json({ error: 'not found' }, 404)
+    if (b.action === 'still-add') { if (!can(r, 'commenter')) return json({ error: 'not allowed' }, 403); return await addStill(v, b, uid, null) }
+    const { data: t } = await sb.from('roarstudio_tracks').select('title').eq('id', v.track_id).maybeSingle()
+    return json({ stills: await stillsOf(v.id, t?.title || v.file_name) })
+  }
+  if (b.action === 'still-delete') {
+    if (!isId(b.still)) return json({ error: 'not found' }, 404)
+    const { data: st } = await sb.from('roarstudio_stills').select('id, project_id, file_key, author').eq('id', b.still).maybeSingle()
+    if (!st) return json({ ok: true })
+    if (st.author !== uid && !can(await roleOf(uid, st.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
+    await sb.from('roarstudio_stills').delete().eq('id', st.id)
+    await deleteKeys([st.file_key])
+    return json({ ok: true })
+  }
+
   if (b.action === 'approve') {
     if (!isId(b.version)) return json({ error: 'not found' }, 404)
     const { data: v } = await sb.from('roarstudio_versions').select('id, project_id, approved_at').eq('id', b.version).maybeSingle()
@@ -300,8 +360,9 @@ async function handle(req: Request): Promise<Response> {
     if (!isId(b.version)) return json({ error: 'not found' }, 404)
     const { data: v } = await sb.from('roarstudio_versions').select('id, project_id, file_key, track_id').eq('id', b.version).maybeSingle()
     if (!v || !can(await roleOf(uid, v.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
+    const sk = await stillKeys('version_id', v.id)
     await sb.from('roarstudio_versions').delete().eq('id', v.id)
-    await deleteKeys([v.file_key])
+    await deleteKeys([v.file_key, ...sk])
     // a track with no version left goes too
     const { count } = await sb.from('roarstudio_versions').select('id', { count: 'exact', head: true }).eq('track_id', v.track_id)
     if (!count) await sb.from('roarstudio_tracks').delete().eq('id', v.track_id)
@@ -312,17 +373,20 @@ async function handle(req: Request): Promise<Response> {
     if (!isId(b.track)) return json({ error: 'not found' }, 404)
     const { data: t } = await sb.from('roarstudio_tracks').select('id, project_id').eq('id', b.track).maybeSingle()
     if (!t || !can(await roleOf(uid, t.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
-    const { data: vs } = await sb.from('roarstudio_versions').select('file_key').eq('track_id', t.id)
+    const { data: vs } = await sb.from('roarstudio_versions').select('id, file_key').eq('track_id', t.id)
+    const sk: string[] = []
+    for (const v of vs || []) sk.push(...(await stillKeys('version_id', v.id)))
     await sb.from('roarstudio_tracks').delete().eq('id', t.id)
-    await deleteKeys((vs || []).map((v: any) => v.file_key))
+    await deleteKeys([...(vs || []).map((v: any) => v.file_key), ...sk])
     return json({ ok: true })
   }
 
   if (b.action === 'delete-project') {
     if (role !== 'owner') return json({ error: 'not allowed' }, 403)
     const { data: vs } = await sb.from('roarstudio_versions').select('file_key').eq('project_id', project)
+    const sk = await stillKeys('project_id', project)
     await sb.from('roarstudio_projects').delete().eq('id', project)
-    await deleteKeys((vs || []).map((v: any) => v.file_key))
+    await deleteKeys([...(vs || []).map((v: any) => v.file_key), ...sk])
     return json({ ok: true })
   }
 
@@ -469,7 +533,7 @@ async function notifySweep() {
       const what = e.kind === 'note' ? `${by} left a note on ${tt} ${vt}` : e.kind === 'version' ? `${by} uploaded ${tt} ${vt}` : e.kind === 'approve' ? `${by} approved ${tt} ${vt}` : e.kind === 'final' ? `${tt} ${vt} is final` : `${by} added you to ${pt}`
       return { what, pt, body: e.kind === 'note' ? e.body : '', link }
     })
-    const subject = lines.length === 1 ? lines[0].what.replace(/\s+/g, ' ').trim() : `${lines.length} updates in RoarStudio`
+    const subject = lines.length === 1 ? lines[0].what.replace(/\s+/g, ' ').trim() : `${lines.length} updates in RoarTransfer Studio`
     const r = await sendMail(who.email, subject, mailHtml(who.name, lines), lines.map((l: any) => `${l.what} (${l.pt})${l.body ? '\n  "' + l.body + '"' : ''}\n  ${l.link}`).join('\n\n'))
     if (r === true) sent++
     await sb.from('roarstudio_prefs').upsert({ user_id: user, last_sent_at: until.toISOString() }, { onConflict: 'user_id' })
@@ -489,5 +553,5 @@ const escH = (s: string) => String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '
 function mailHtml(name: string, lines: any[]) {
   const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
   const rows = lines.map((l) => `<tr><td style="padding:14px 0;border-top:1px solid #2a2d33"><div style="font:600 15px ${font};color:#eef0f3">${escH(l.what)}</div><div style="font:13px ${font};color:#9aa1ab;margin-top:2px">${escH(l.pt)}</div>${l.body ? `<div style="font:14px ${font};color:#d6dbe1;margin-top:8px;padding:10px 12px;background:#22252a;border-radius:12px">${escH(l.body)}</div>` : ''}<a href="${l.link}" style="display:inline-block;margin-top:10px;padding:8px 16px;border-radius:999px;background:#6d28d9;color:#fff;text-decoration:none;font:600 13px ${font}">Open</a></td></tr>`).join('')
-  return `<div style="background:#f3f3f1;padding:30px 12px"><table role="presentation" style="max-width:560px;margin:0 auto;background:#16181c;border-radius:22px;padding:26px" width="100%"><tr><td style="font:500 22px Jost,Futura,${font};color:#fff;padding-bottom:6px">Roar<b>Studio</b></td></tr><tr><td style="font:14px ${font};color:#9aa1ab;padding-bottom:6px">Hi ${escH(name || '')}, here is what happened.</td></tr>${rows}<tr><td style="font:12px ${font};color:#6b717a;padding-top:18px;border-top:1px solid #2a2d33">Change what you get in RoarStudio · Notifications.</td></tr></table></div>`
+  return `<div style="background:#f3f3f1;padding:30px 12px"><table role="presentation" style="max-width:560px;margin:0 auto;background:#16181c;border-radius:22px;padding:26px" width="100%"><tr><td style="font:500 22px Jost,Futura,${font};color:#fff;padding-bottom:6px">RoarTransfer <b>Studio</b></td></tr><tr><td style="font:14px ${font};color:#9aa1ab;padding-bottom:6px">Hi ${escH(name || '')}, here is what happened.</td></tr>${rows}<tr><td style="font:12px ${font};color:#6b717a;padding-top:18px;border-top:1px solid #2a2d33">Change what you get in RoarTransfer Studio · Notifications.</td></tr></table></div>`
 }

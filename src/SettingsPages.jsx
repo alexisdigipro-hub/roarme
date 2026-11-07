@@ -308,6 +308,7 @@ function Chats({ p }) {
         <Switch on={p.listPreview} set={(v) => setPrefs({ listPreview: v })} hint="The last message under each chat's name">Show Last Message</Switch>
         <Switch on={p.peekBadge} set={(v) => setPrefs({ peekBadge: v })} hint={onPhone() ? 'Tap the unread count to read a chat without marking it as read' : 'Click the unread count to read a chat without marking it as read'}>Preview Chats</Switch>
         <Switch on={p.callsTab} set={(v) => setPrefs({ callsTab: v })} hint="Calls next to Contacts, Chats and Settings at the foot">Show Calls Tab</Switch>
+        <Switch on={p.tasksTab} set={(v) => setPrefs({ tasksTab: v })} hint="Tasks and reminders in the bar at the foot, beside Settings">Show Tasks Tab</Switch>
       </Box>
     </>
   )

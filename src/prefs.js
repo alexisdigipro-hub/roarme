@@ -31,6 +31,7 @@ export const DEFAULTS = {
   autoplayVideos: false,
   autoplayGifs: true,
   callsTab: true,
+  tasksTab: false, // Tasks in the bar at the foot: off until turned on in Settings (Alex, 7 Nov)
   lite: false, // power saving: no animations, no glass blur
   peekBadge: false, // a click on the unread badge previews the chat
   peerIds: false,

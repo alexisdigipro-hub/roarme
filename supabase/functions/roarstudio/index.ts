@@ -9,7 +9,7 @@ import { AwsClient } from 'npm:aws4fetch@1.0.20'
 
 const BUCKET = 'roartransfer'
 const GB = 1024 ** 3
-const MAX_FILE = 10 * GB
+const MAX_FILE = 20 * GB
 const PART = 16 * 1024 * 1024
 const RANK = ['listener', 'commenter', 'editor', 'owner']
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
@@ -102,30 +102,36 @@ async function handle(req: Request): Promise<Response> {
       if (!isId(versionId)) return null
       const { data: v } = await sb.from('roarstudio_versions').select('*').eq('id', versionId).eq('project_id', s.project_id).maybeSingle()
       if (!v || (s.track_id && v.track_id !== s.track_id)) return null
+      if (s.kind === 'finals' && !v.final_at) return null
       return v
     }
     if (b.action === 'share-open') {
       const { data: project } = await sb.from('roarstudio_projects').select('id, title, artist, color, owner').eq('id', s.project_id).maybeSingle()
+      const finals = s.kind === 'finals'
       let tq = sb.from('roarstudio_tracks').select('id, title, position').eq('project_id', s.project_id).order('position').order('created_at')
       if (s.track_id) tq = tq.eq('id', s.track_id)
-      const { data: tracks } = await tq
+      let { data: tracks } = await tq
       const tids = (tracks || []).map((t: any) => t.id)
-      const { data: versions } = tids.length ? await sb.from('roarstudio_versions').select('id, track_id, n, label, file_name, size, mime, duration, lufs, peak_db, sample_rate, channels, peaks, approved_at, approved_by, created_at, uploaded_by').in('track_id', tids).order('n') : { data: [] }
+      let vq = sb.from('roarstudio_versions').select('id, track_id, n, label, file_name, size, mime, duration, lufs, peak_db, sample_rate, channels, peaks, approved_at, approved_by, final_at, final_by, thumb, width, height, created_at, uploaded_by').in('track_id', tids).order('n')
+      if (finals) vq = vq.not('final_at', 'is', null)
+      const { data: versions } = tids.length ? await vq : { data: [] }
+      if (finals) { const has = new Set((versions || []).map((v: any) => v.track_id)); tracks = (tracks || []).filter((t: any) => has.has(t.id)) }
       const vids = (versions || []).map((v: any) => v.id)
-      const { data: comments } = vids.length ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, body, author, guest_name, done, created_at').in('version_id', vids).order('created_at') : { data: [] }
+      const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, body, author, guest_name, done, created_at').in('version_id', vids).order('created_at') : { data: [] }
       const who = await names([project?.owner, ...(comments || []).map((c: any) => c.author), ...(versions || []).map((v: any) => v.uploaded_by)])
       return json({ project: { ...project, owner_name: who[project?.owner] || '' }, tracks, versions, comments, names: who,
-        can: { comment: s.can_comment, approve: s.can_approve, download: s.can_download }, expires: s.expires_at })
+        kind: finals ? 'finals' : 'review',
+        can: finals ? { comment: false, approve: false, download: true } : { comment: s.can_comment, approve: s.can_approve, download: s.can_download }, expires: s.expires_at })
     }
     if (b.action === 'share-url') {
       const v = await inShare(b.version)
       if (!v) return json({ error: 'not found' }, 404)
-      if (b.download && !s.can_download) return json({ error: 'not allowed' }, 403)
+      if (b.download && !s.can_download && s.kind !== 'finals') return json({ error: 'not allowed' }, 403)
       const q: Record<string, string> = b.download ? { 'response-content-disposition': `attachment; filename="${safeName(v.file_name)}"` } : {}
       return json({ url: await presign('GET', v.file_key, q, 6 * 3600) })
     }
     if (b.action === 'share-comment') {
-      if (!s.can_comment) return json({ error: 'not allowed' }, 403)
+      if (!s.can_comment || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
       const v = await inShare(b.version)
       if (!v) return json({ error: 'not found' }, 404)
       const body = String(b.body || '').trim().slice(0, 4000)
@@ -138,7 +144,7 @@ async function handle(req: Request): Promise<Response> {
       return json({ comment: data })
     }
     if (b.action === 'share-approve') {
-      if (!s.can_approve) return json({ error: 'not allowed' }, 403)
+      if (!s.can_approve || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
       const v = await inShare(b.version)
       if (!v) return json({ error: 'not found' }, 404)
       const name = String(b.name || '').trim().slice(0, 60) || 'Guest'
@@ -157,7 +163,7 @@ async function handle(req: Request): Promise<Response> {
   if (b.action === 'upload-create') {
     if (!can(role, 'editor')) return json({ error: 'not allowed' }, 403)
     const size = Number(b.size) || 0
-    if (size <= 0 || size > MAX_FILE) return json({ error: 'Files can be up to 10 GB.' }, 400)
+    if (size <= 0 || size > MAX_FILE) return json({ error: 'Files can be up to 20 GB.' }, 400)
     const key = `studio/${project}/${crypto.randomUUID()}-${safeName(b.name)}`
     const r = await r2.fetch(`${at(key)}?uploads`, { method: 'POST', headers: { 'Content-Type': String(b.type || 'application/octet-stream') } })
     const uploadId = tag(await r.text(), 'UploadId')
@@ -190,7 +196,7 @@ async function handle(req: Request): Promise<Response> {
     if (!r.ok || text.includes('<Error>')) return json({ error: `Could not finish the upload (${tag(text, 'Code') || r.status})` }, 502)
     const head = await r2.fetch(at(b.key), { method: 'HEAD' })
     const size = Number(head.headers.get('content-length')) || Number(b.size) || 0
-    if (size > MAX_FILE) { await deleteKeys([b.key]); return json({ error: 'Files can be up to 10 GB.' }, 400) }
+    if (size > MAX_FILE) { await deleteKeys([b.key]); return json({ error: 'Files can be up to 20 GB.' }, 400) }
     // the track: the one given (in this project) or a new one
     let trackId = isId(b.track) ? b.track : null
     if (trackId) {
@@ -210,6 +216,8 @@ async function handle(req: Request): Promise<Response> {
       track_id: trackId, project_id: project, file_key: b.key, file_name: String(b.name || 'file').slice(0, 300), size,
       mime: String(b.type || '').slice(0, 100), label: String(b.label || '').slice(0, 80), uploaded_by: uid,
       duration: num(m.duration), lufs: num(m.lufs), peak_db: num(m.peak_db), sample_rate: num(m.sample_rate), channels: num(m.channels), peaks,
+      width: num(m.width), height: num(m.height),
+      thumb: typeof m.thumb === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(m.thumb) && m.thumb.length < 120000 ? m.thumb : null,
     }).select().single()
     if (error) { await deleteKeys([b.key]); return json({ error: error.message }, 500) }
     return json({ version: v })
@@ -230,6 +238,17 @@ async function handle(req: Request): Promise<Response> {
     const who = (await names([uid]))[uid] || 'Member'
     const upd = b.undo ? { approved_at: null, approved_by: null } : { approved_at: new Date().toISOString(), approved_by: who }
     const { data } = await sb.from('roarstudio_versions').update(upd).eq('id', v.id).select('approved_at, approved_by').single()
+    return json(data || {})
+  }
+
+  // Make it final (Alex, 7 Nov): the version goes into the project's Finals folder, or leaves it with undo
+  if (b.action === 'final') {
+    if (!isId(b.version)) return json({ error: 'not found' }, 404)
+    const { data: v } = await sb.from('roarstudio_versions').select('id, project_id').eq('id', b.version).maybeSingle()
+    if (!v || !can(await roleOf(uid, v.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
+    const who = (await names([uid]))[uid] || 'Member'
+    const upd = b.undo ? { final_at: null, final_by: null } : { final_at: new Date().toISOString(), final_by: who }
+    const { data } = await sb.from('roarstudio_versions').update(upd).eq('id', v.id).select('final_at, final_by').single()
     return json(data || {})
   }
 
@@ -270,13 +289,16 @@ async function handle(req: Request): Promise<Response> {
       const { data: t } = await sb.from('roarstudio_tracks').select('id').eq('id', b.track).eq('project_id', project).maybeSingle()
       track = t?.id || null
     }
+    const finals = b.kind === 'finals'
+    if (finals) track = null
     const days = [1, 7, 30].includes(Number(b.days)) ? Number(b.days) : null
     const password = String(b.password || '').slice(0, 100)
     let token = newToken(), error: any = null
     for (let i = 0; i < 4; i++) {
       if (i) token = newToken()
       ;({ error } = await sb.from('roarstudio_shares').insert({
-        token, project_id: project, track_id: track, can_comment: b.comment !== false, can_approve: !!b.approve, can_download: !!b.download,
+        token, project_id: project, track_id: track, kind: finals ? 'finals' : 'review',
+        can_comment: finals ? false : b.comment !== false, can_approve: finals ? false : !!b.approve, can_download: finals ? true : !!b.download,
         password_hash: password ? await sha(`${token}:${password}`) : null, expires_at: days ? new Date(Date.now() + days * 864e5).toISOString() : null, created_by: uid,
       }))
       if (!error || error.code !== '23505') break

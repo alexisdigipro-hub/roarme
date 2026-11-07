@@ -205,3 +205,18 @@ do $$ begin
 exception when others then null; end $$;
 
 grant execute on function public.roarstudio_role(uuid), public.roarstudio_can(uuid, text), public.roarstudio_people(uuid), public.roarstudio_invite(uuid, text, text) to authenticated;
+
+-- Finals and pictures (Alex, 7 Nov 2026: "video plays as video, pictures too, and a Make it final button on everything that
+-- puts it in a folder of final files we can send to whoever we want"). A version is final when final_at is set; a share
+-- link of kind 'finals' shows only the project's final files, to look at and download. thumb: a small JPEG (data URL) of a
+-- video's frame or a picture, made by the page; width/height of a picture or a video.
+alter table public.roarstudio_versions add column if not exists final_at timestamptz;
+alter table public.roarstudio_versions add column if not exists final_by text;
+alter table public.roarstudio_versions add column if not exists thumb text;
+alter table public.roarstudio_versions add column if not exists width int;
+alter table public.roarstudio_versions add column if not exists height int;
+alter table public.roarstudio_shares add column if not exists kind text not null default 'review';
+do $$ begin
+  alter table public.roarstudio_shares add constraint roarstudio_shares_kind check (kind in ('review', 'finals'));
+exception when duplicate_object then null; end $$;
+create index if not exists roarstudio_versions_final on public.roarstudio_versions(project_id) where final_at is not null;

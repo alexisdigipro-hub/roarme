@@ -87,7 +87,6 @@ export function AttachSheet({ initial = [], onClose, onSend, onTransfer, onLocat
         {!files.length && onTransfer && <button type="button" className="attach-tile only-phone" style={{ '--tint': 'var(--accent)' }} onClick={onTransfer} title="Up to 3 GB, kept 3 days"><i>{I.transfer}</i><b>Transfer</b></button>}
         {!files.length && onLocation && <button type="button" className="attach-tile" style={{ '--tint': '#30b0c7' }} onClick={onLocation} title="A place on the map"><i>{I.place}</i><b>Location</b></button>}
         {!files.length && onArticle && <button type="button" className="attach-tile" style={{ '--tint': '#af52de' }} onClick={onArticle} title="A long post with a title"><i>{I.article}</i><b>Article</b></button>}
-        {/* Roardino has its own button beside the clip (Alex, 18 Oct); on a phone it makes way for the text, so it is here */}
       </div>
       <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
       <input ref={cam} type="file" accept="image/*,video/*" capture="environment" hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />

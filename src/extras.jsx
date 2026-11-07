@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { errText, fileLink, thumbOf, fmtBytes, supabase, timeOf } from './lib.js'
+import { errText, fileLink, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, setPrefs, usePrefs } from './prefs.js'
-import { useWalls, wallUrl } from './walls.js'
+import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { I, Modal, useSeen } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
@@ -332,15 +332,53 @@ function MediaThumb({ m, onClick }) {
 }
 
 /* the chat wallpapers as small tiles to pick from */
-export function WallTiles({ value, onPick }) {
+export function WallTiles({ value, onPick, toast }) {
   const walls = useWalls()
+  const color = ownColor(value)
+  const photo = ownPhoto(value)
+  const fileRef = useRef(null)
+  const [busy, setBusy] = useState(false)
+  // one's own photo (Alex, 8 Nov): made lighter, kept in one's own folder of roar-avatars, chosen at once at full strength
+  const upload = async (f) => {
+    if (!f) return
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { toast?.('Pick a JPEG, PNG or WebP photo'); return }
+    setBusy(true)
+    try {
+      const file = await shrinkImage(f, 2400, 0.86)
+      const { data: { user } } = await supabase.auth.getUser()
+      const path = `${user.id}/wall-${Date.now()}.${file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'}`
+      const up = await supabase.storage.from('roar-avatars').upload(path, file, { contentType: file.type })
+      if (up.error) throw up.error
+      onPick(photoValue(supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl, photo?.opacity ?? 1))
+    } catch (e) { toast?.(errText(e)) }
+    setBusy(false)
+  }
   return (
-    <div className="walls">
-      {walls.map(({ key: k, name: l, path }) => (
-        <button key={k} type="button" className={`wall-tile${value === k ? ' on' : ''}${path ? ' img' : ''}`} data-bg={k} style={path ? { backgroundImage: `url("${wallUrl(path)}")` } : undefined} onClick={() => onPick(k)}>
-          <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>{l}</small>
+    <>
+      <div className="walls">
+        {walls.map(({ key: k, name: l, path }) => (
+          <button key={k} type="button" className={`wall-tile${value === k ? ' on' : ''}${path ? ' img' : ''}`} data-bg={k} style={path ? { backgroundImage: `url("${wallUrl(path)}")` } : undefined} onClick={() => onPick(k)}>
+            <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>{l}</small>
+          </button>
+        ))}
+        {/* any colour: the tile itself opens the colour picker */}
+        <label className={`wall-tile wall-own${color ? ' on' : ''}`} style={color ? { background: color } : undefined}>
+          <input type="color" value={color || '#3a3a3d'} onChange={(e) => onPick(`color:${e.target.value}`)} />
+          {!color && <span className="wall-own-ico">{I.brush}</span>}
+          <small>Colour</small>
+        </label>
+        <button type="button" className={`wall-tile wall-own${photo ? ' on img' : ''}`} style={photo ? { backgroundImage: `url("${photo.url}")` } : undefined} onClick={() => fileRef.current?.click()} disabled={busy}>
+          {!photo && <span className="wall-own-ico">{busy ? '…' : I.image}</span>}
+          <small>{busy ? 'Uploading…' : photo ? 'Change Photo' : 'Your Photo'}</small>
         </button>
-      ))}
-    </div>
+        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { upload(e.target.files?.[0]); e.target.value = '' }} />
+      </div>
+      {photo && (
+        <div className="wall-op">
+          <span className="set-text">Photo Strength<small>{`${Math.round(photo.opacity * 100)}%`}</small><small>Lower lets the theme's own colour through</small></span>
+          <input type="range" min="10" max="100" step="5" value={Math.round(photo.opacity * 100)} onChange={(e) => onPick(photoValue(photo.url, Number(e.target.value) / 100))} />
+        </div>
+      )}
+    </>
   )
 }

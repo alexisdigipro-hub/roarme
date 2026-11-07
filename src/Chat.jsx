@@ -2427,7 +2427,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
 
   return (
-    <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={wall} data-img={wallImg ? '' : undefined} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 15.5}px`, ...wallImg }}
+    <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={wall} data-img={wallImg ? '' : undefined} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...wallImg }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
       <header className="room-head">
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>

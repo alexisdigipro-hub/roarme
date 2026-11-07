@@ -54,7 +54,8 @@ export const DEFAULTS = {
   background: 'soft', // one of WALLS
 }
 export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], ['night', 'Night'], ['ocean', 'Ocean'], ['dusk', 'Dusk'], ['forest', 'Forest'], ['ember', 'Ember']]
-export const TEXT_SIZES = [13.5, 14.5, 15.5, 17, 18.5]
+// a step smaller (Alex, 8 Nov: "the letters a little smaller"); the middle one, the default, is 14.5
+export const TEXT_SIZES = [12.5, 13.5, 14.5, 16, 17.5]
 const KEY = 'roarme-prefs'
 
 // Ember became the main theme (Alex, 16 Oct): a device that still has the old default moves to it once

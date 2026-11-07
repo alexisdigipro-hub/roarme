@@ -4158,3 +4158,9 @@ html[data-mode] :is(.room-view[data-img][data-own] .scroll, .set-preview[data-im
 .wall-own-ico svg { width: 20px; height: 20px; }
 .wall-op { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 14px; }
 .wall-op input[type='range'] { width: 100%; }
+
+/* the message menu never runs off the screen (Alex, 8 Nov): Chat.jsx moves it up to fit; if it is still taller than the
+   screen, the reactions stay and the list under them scrolls */
+.msg-menu { max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+.msg-menu .menu-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.msg-menu .rx-pick { flex: none; }

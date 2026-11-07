@@ -2074,6 +2074,16 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const y = Math.max(70, Math.min(e.clientY, window.innerHeight - h - 12))
     setMenu({ m, x, y })
   }
+  // the menu always fits on the screen (Alex, 8 Nov: on a phone it ran off the bottom and could not be reached): once it
+  // is drawn it is measured and moved up as far as it needs; taller than the screen, its list scrolls (styles.css)
+  const menuRef = useRef(null)
+  useLayoutEffect(() => {
+    const el = menuRef.current
+    if (!menu || !el) return
+    const floor = window.innerHeight - 12
+    const r = el.getBoundingClientRect()
+    if (r.bottom > floor) el.style.top = `${Math.max(12, floor - r.height)}px`
+  }, [menu])
   // The menu opens only on a message itself (Alex, 16 Oct): a right click on it with a mouse, a tap on it on a
   // touch screen; a click on the empty space beside it does nothing. A double click is the quick reaction;
   // a photo, a link or a button inside it does its own thing.
@@ -2661,7 +2671,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       {menu && (
         <OnTop>
           <button type="button" className="scrim blur" aria-label="Close" onClick={() => setMenu(null)} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
-          <div className="msg-menu" style={{ left: menu.x, top: menu.y }}>
+          <div ref={menuRef} className="msg-menu" style={{ left: menu.x, top: menu.y }}>
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>

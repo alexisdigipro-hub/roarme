@@ -227,3 +227,27 @@ export async function tusUpload(bucket, path, file, type, onProgress, holder = {
   }
   onProgress?.(1)
 }
+
+/* A short tick under the finger (Alex, 8 Nov: "a small vibration, as every app does, so I know the long press took").
+   Android and most browsers: navigator.vibrate. An iPhone has no vibrate for web pages, but Safari (iOS 18 and later)
+   gives the system's own tick when a switch-style checkbox is toggled, so one hidden switch is clicked. Anything else:
+   nothing, quietly. */
+let tickEl = null
+export function haptic(ms = 10) {
+  try {
+    if (navigator.vibrate && navigator.vibrate(ms)) return
+    if (!/iP(hone|ad|od)/.test(navigator.userAgent) && !(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return
+    if (!tickEl) {
+      tickEl = document.createElement('label')
+      tickEl.setAttribute('aria-hidden', 'true')
+      tickEl.style.cssText = 'position:fixed;left:-100px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden'
+      const box = document.createElement('input')
+      box.type = 'checkbox'
+      box.setAttribute('switch', '')
+      box.tabIndex = -1
+      tickEl.appendChild(box)
+      document.body.appendChild(tickEl)
+    }
+    tickEl.click()
+  } catch { /* no tick here */ }
+}

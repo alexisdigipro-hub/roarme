@@ -4164,3 +4164,13 @@ html[data-mode] :is(.room-view[data-img][data-own] .scroll, .set-preview[data-im
 .msg-menu { max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .msg-menu .menu-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .msg-menu .rx-pick { flex: none; }
+
+/* holding a message on a phone (Alex, 8 Nov): it sinks a little under the finger, then pops as the menu opens */
+.bubble { transition: transform .18s var(--ease, ease); }
+.bubble.pressing { transform: scale(.95); transition: transform .42s cubic-bezier(.3, .7, .4, 1); }
+.bubble.held { animation: bubble-held .42s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes bubble-held { 0% { transform: scale(.95); } 45% { transform: scale(1.06); } 100% { transform: none; } }
+html[data-still] .bubble.pressing, html[data-still] .bubble.held { transform: none; animation: none; }
+.rooms .room.pressing { transform: scale(.97); transition: transform .42s cubic-bezier(.3, .7, .4, 1); }
+.rooms .room.held { animation: bubble-held .42s cubic-bezier(.3, 1.6, .5, 1) both; }
+html[data-still] .rooms .room.pressing, html[data-still] .rooms .room.held { transform: none; animation: none; }

@@ -358,6 +358,57 @@ async function handle(req: Request): Promise<Response> {
     return json({ token })
   }
 
+  // ---------- Admin (Alex, 7 Nov: "who made accounts, what they use and how, for every account") ----------
+  // only for RoarMe's admins (roar_admins); everything read with the service role
+  if (b.action === 'admin-check' || b.action === 'admin-stats') {
+    const { data: adm } = await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
+    if (b.action === 'admin-check') return json({ admin: !!adm })
+    if (!adm) return json({ error: 'not allowed' }, 403)
+    const [pr, me, vr, cm, sh, pl, fd, ev] = await Promise.all([
+      sb.from('roarstudio_projects').select('id, title, owner, created_at, updated_at'),
+      sb.from('roarstudio_members').select('project_id, user_id, role, created_at'),
+      sb.from('roarstudio_versions').select('id, project_id, size, mime, uploaded_by, created_at, final_at, approved_at'),
+      sb.from('roarstudio_comments').select('id, project_id, author, guest_name, created_at'),
+      sb.from('roarstudio_shares').select('token, project_id, kind, created_at'),
+      sb.from('roarstudio_playlists').select('id'),
+      sb.from('roarstudio_folders').select('id'),
+      sb.from('roarstudio_events').select('kind, project_id, actor, actor_name, created_at').gte('created_at', new Date(Date.now() - 30 * 864e5).toISOString()),
+    ])
+    const projects = pr.data || [], members = me.data || [], versions = vr.data || [], comments = cm.data || [], shares = sh.data || [], events = ev.data || []
+    const kindOf = (m: string) => (/^video\//.test(m || '') ? 'video' : /^image\//.test(m || '') ? 'image' : 'audio')
+    const ids = [...new Set([...projects.map((p: any) => p.owner), ...members.map((m: any) => m.user_id), ...versions.map((v: any) => v.uploaded_by)].filter(Boolean))]
+    const users: Record<string, any> = {}
+    await Promise.all(ids.map(async (id: string) => { const { data } = await sb.auth.admin.getUserById(id); if (data?.user) users[id] = data.user }))
+    const nm = await names(ids)
+    const accounts = ids.filter((id) => users[id]).map((id: string) => {
+      const own = projects.filter((p: any) => p.owner === id), ownIds = new Set(own.map((p: any) => p.id))
+      const mine = versions.filter((v: any) => v.uploaded_by === id), notes = comments.filter((c: any) => c.author === id)
+      const last = [...mine.map((v: any) => v.created_at), ...notes.map((c: any) => c.created_at), ...own.map((p: any) => p.updated_at)].sort().pop() || null
+      return { id, email: users[id].email, name: nm[id] || users[id].user_metadata?.name || '', joined: users[id].created_at, signed_in: users[id].last_sign_in_at,
+        projects: own.length, member_of: members.filter((m: any) => m.user_id === id && m.role !== 'owner').length, uploads: mine.length,
+        storage: versions.filter((v: any) => ownIds.has(v.project_id)).reduce((a: number, v: any) => a + Number(v.size || 0), 0), notes: notes.length, last }
+    }).sort((a: any, z: any) => String(z.last || '').localeCompare(String(a.last || '')))
+    const days: Record<string, any> = {}
+    for (let i = 29; i >= 0; i--) { const d = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10); days[d] = { day: d, uploads: 0, notes: 0, projects: 0, views: 0 } }
+    for (const v of versions) { const d = String(v.created_at).slice(0, 10); if (days[d]) days[d].uploads++ }
+    for (const c of comments) { const d = String(c.created_at).slice(0, 10); if (days[d]) days[d].notes++ }
+    for (const p of projects) { const d = String(p.created_at).slice(0, 10); if (days[d]) days[d].projects++ }
+    for (const e of events) { const d = String(e.created_at).slice(0, 10); if (days[d] && (e.kind === 'view' || e.kind === 'stream' || e.kind === 'download')) days[d].views++ }
+    const kinds: Record<string, { files: number, bytes: number }> = { audio: { files: 0, bytes: 0 }, video: { files: 0, bytes: 0 }, image: { files: 0, bytes: 0 } }
+    for (const v of versions) { const k = kindOf(v.mime); kinds[k].files++; kinds[k].bytes += Number(v.size || 0) }
+    const top = projects.map((p: any) => ({ id: p.id, title: p.title, owner: users[p.owner]?.email || '', files: versions.filter((v: any) => v.project_id === p.id).length, bytes: versions.filter((v: any) => v.project_id === p.id).reduce((a: number, v: any) => a + Number(v.size || 0), 0), updated: p.updated_at }))
+      .sort((a: any, z: any) => z.bytes - a.bytes).slice(0, 12)
+    const ev2 = { view: 0, stream: 0, download: 0 } as Record<string, number>
+    for (const e of events) if (ev2[e.kind] !== undefined) ev2[e.kind]++
+    return json({
+      totals: { accounts: accounts.length, projects: projects.length, files: versions.length, storage: versions.reduce((a: number, v: any) => a + Number(v.size || 0), 0),
+        notes: comments.length, guest_notes: comments.filter((c: any) => c.guest_name).length, links: shares.length, finals_links: shares.filter((s: any) => s.kind === 'finals').length,
+        playlists: (pl.data || []).length, folders: (fd.data || []).length, finals: versions.filter((v: any) => v.final_at).length, approved: versions.filter((v: any) => v.approved_at).length,
+        active7: accounts.filter((a: any) => a.last && Date.now() - new Date(a.last).getTime() < 7 * 864e5).length },
+      accounts, days: Object.values(days), kinds, top, link_activity: ev2,
+    })
+  }
+
   // storage used by the caller's own projects
   if (b.action === 'usage') {
     const { data: ps } = await sb.from('roarstudio_projects').select('id, title').eq('owner', uid)
@@ -437,6 +488,6 @@ async function sendMail(to: string, subject: string, html: string, text: string)
 const escH = (s: string) => String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c])
 function mailHtml(name: string, lines: any[]) {
   const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
-  const rows = lines.map((l) => `<tr><td style="padding:14px 0;border-top:1px solid #2a2d33"><div style="font:600 15px ${font};color:#eef0f3">${escH(l.what)}</div><div style="font:13px ${font};color:#9aa1ab;margin-top:2px">${escH(l.pt)}</div>${l.body ? `<div style="font:14px ${font};color:#d6dbe1;margin-top:8px;padding:10px 12px;background:#22252a;border-radius:12px">${escH(l.body)}</div>` : ''}<a href="${l.link}" style="display:inline-block;margin-top:10px;padding:8px 16px;border-radius:999px;background:#e3120b;color:#fff;text-decoration:none;font:600 13px ${font}">Open</a></td></tr>`).join('')
+  const rows = lines.map((l) => `<tr><td style="padding:14px 0;border-top:1px solid #2a2d33"><div style="font:600 15px ${font};color:#eef0f3">${escH(l.what)}</div><div style="font:13px ${font};color:#9aa1ab;margin-top:2px">${escH(l.pt)}</div>${l.body ? `<div style="font:14px ${font};color:#d6dbe1;margin-top:8px;padding:10px 12px;background:#22252a;border-radius:12px">${escH(l.body)}</div>` : ''}<a href="${l.link}" style="display:inline-block;margin-top:10px;padding:8px 16px;border-radius:999px;background:#6d28d9;color:#fff;text-decoration:none;font:600 13px ${font}">Open</a></td></tr>`).join('')
   return `<div style="background:#f3f3f1;padding:30px 12px"><table role="presentation" style="max-width:560px;margin:0 auto;background:#16181c;border-radius:22px;padding:26px" width="100%"><tr><td style="font:500 22px Jost,Futura,${font};color:#fff;padding-bottom:6px">Roar<b>Studio</b></td></tr><tr><td style="font:14px ${font};color:#9aa1ab;padding-bottom:6px">Hi ${escH(name || '')}, here is what happened.</td></tr>${rows}<tr><td style="font:12px ${font};color:#6b717a;padding-top:18px;border-top:1px solid #2a2d33">Change what you get in RoarStudio · Notifications.</td></tr></table></div>`
 }

@@ -774,7 +774,7 @@ function Appearance({ p, toast, me, setMe }) {
   return (
     <>
       <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Each has dark and light.">
-        <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={p.background} data-img={wallImg ? '' : undefined} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 15.5}px`, ...wallImg }}>
+        <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={p.background} data-img={wallImg ? '' : undefined} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...wallImg }}>
           <span className="pv mine">Good morning! 👋</span>
           <span className="pv"><i>Good morning! 👋</i>Do you know what time it is?</span>
           <span className="pv mine">It's morning in Tokyo 😎</span>

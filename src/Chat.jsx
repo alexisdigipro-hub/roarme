@@ -127,7 +127,7 @@ export default function Chat({ me, setMe }) {
     return () => { el.removeEventListener('scroll', check); ro.disconnect() }
   }, [tab, prefs.folderTabs, myFolders.length, !q.trim()]) // eslint-disable-line react-hooks/exhaustive-deps
   const [tasksOpen, setTasksOpen] = useState(() => { try { return localStorage.getItem('roarme-tasks') === '1' } catch { return false } })
-  const footLens = useLens(`${tab}|${prefs.callsTab}|${picking}|${tasksOpen}`) // the Settings page open on the right
+  const footLens = useLens(`${tab}|${prefs.callsTab}|${prefs.tasksTab}|${picking}|${tasksOpen}`) // the Settings page open on the right
   const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
   const searchRef = useRef(null)
   // the search box hides and comes out when the list is pulled down at its top (Alex, 17 Oct), as on the iPhone
@@ -978,7 +978,7 @@ export default function Chat({ me, setMe }) {
   // on a phone the swipe runs on through the bar at the foot (Alex, 19 Oct): Contacts · Calls · Messages and its folders ·
   // Tasks and its tabs · Settings. Coming into Messages or Tasks from the right lands on its last folder or tab.
   const goStop = (dir) => {
-    const stops = ['contacts', ...(prefs.callsTab ? ['calls'] : []), 'chats', 'tasks', 'settings']
+    const stops = ['contacts', ...(prefs.callsTab ? ['calls'] : []), 'chats', ...(prefs.tasksTab ? ['tasks'] : []), 'settings']
     const next = stops[stops.indexOf(tasksOpen ? 'tasks' : tab === 'media' ? 'settings' : tab) + dir]
     if (!next) return
     if (next === 'tasks') { try { localStorage.setItem('roarme-tasks-tab', dir > 0 ? 'all' : 'done') } catch { /* private window */ } showTasks(true); return }
@@ -999,6 +999,14 @@ export default function Chat({ me, setMe }) {
     },
   }
   const tasksKit = useTasks(me, loadPeople, (kind, t) => { const s = taskNotice(kind, t, peopleRef.current, () => showTasks(true)); if (s) toast(s) })
+  // Tasks is off until turned on in Settings (Alex, 7 Nov); whoever already has tasks keeps it, once, without asking
+  useEffect(() => {
+    if (prefs.tasksTab || !tasksKit.tasks.length) return
+    try { if ('tasksTab' in (JSON.parse(localStorage.getItem('roarme-prefs')) || {})) return } catch { /* private window */ }
+    setPrefs({ tasksTab: true })
+  }, [prefs.tasksTab, tasksKit.tasks.length])
+  // turned off: the panel closes too
+  useEffect(() => { if (!prefs.tasksTab && tasksOpen) showTasks(false) }, [prefs.tasksTab]) // eslint-disable-line react-hooks/exhaustive-deps
   const chatWith = async (p) => {
     const r = rooms.find((x) => x.kind === 'direct' && (x.members || []).includes(p.id))
     if (r) { setTab('chats'); setActiveId(r.room_id); return }
@@ -1236,7 +1244,7 @@ export default function Chat({ me, setMe }) {
             <button type="button" className={`foot-main${tab === 'chats' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('chats')}><span className="foot-ico">{FOOT_I.messages}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Messages</span></button>
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
-            <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>
+            {prefs.tasksTab && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}
             <button type="button" className={(tab === 'settings' || tab === 'media') && !tasksOpen ? 'on' : ''} onClick={() => setTab('settings')}>{FOOT_I.settings}<span>Settings</span></button>
           </nav>
         )}
@@ -1254,7 +1262,7 @@ export default function Chat({ me, setMe }) {
         ) : active ? (
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
-            onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={hands.onTasks} tasksCount={tasksKit.count}
+            onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} />
         ) : (
           <div className="pick">

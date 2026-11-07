@@ -4174,3 +4174,10 @@ html[data-still] .bubble.pressing, html[data-still] .bubble.held { transform: no
 .rooms .room.pressing { transform: scale(.97); transition: transform .42s cubic-bezier(.3, .7, .4, 1); }
 .rooms .room.held { animation: bubble-held .42s cubic-bezier(.3, 1.6, .5, 1) both; }
 html[data-still] .rooms .room.pressing, html[data-still] .rooms .room.held { transform: none; animation: none; }
+
+/* Accent Colour (Alex, 8 Nov: letters showed behind the colours): the little names under the dots stuck after a tap on
+   a phone and fell over the next row. The chosen colour's name is already under "Accent Colour", so the dots go
+   without them, and the rows get room for the bigger chosen dot */
+.accents { row-gap: 20px; padding-bottom: 8px; }
+.accents .acc small { display: none; }
+@media (hover: none) { .acc:hover { transform: none; } .acc.on:hover { transform: scale(1.2); } }

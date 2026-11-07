@@ -607,3 +607,10 @@ tests); RoarMe posts to that same origin (the referrer's, else https://themadlio
   fails the sign-in screen stays. No session or token of any other kind is ever taken from a message.
 - Roardino to RoarMe: `{ type: 'roardino:look', theme: 'light' | 'dark' }` after roarme:ready and whenever its theme changes.
 No database change.
+
+## RoarStudio (7 Nov 2026)
+
+The music cloud at studio.roartransfer.com (page in alexisdigipro-hub/roartransfer, `studio/`). Here: `supabase/studio.sql`
+(roarstudio_* tables with RLS, safe to run again) and the Edge Function `supabase/functions/roarstudio` (verify_jwt off;
+signs uploads to the R2 bucket `roartransfer` under `studio/`, plays and downloads, share links for people without an
+account). It uses the same R2 secrets as roartransfer-r2. Only roarstudio_* tables; RoarMe's and RoarTransfer's untouched.

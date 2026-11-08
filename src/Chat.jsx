@@ -1481,6 +1481,10 @@ function PeekList({ room, me, people, clearedAt }) {
   )
 }
 
+/* an admin's own corrections carry no "edited" (Alex, 8 Nov); asked once per start */
+let adminAsk = null
+const amAdmin = () => (adminAsk ||= supabase.rpc('roar_is_admin').then(({ data }) => data === true, () => false))
+
 /* ---------- one conversation ---------- */
 // the official RoarMe account's mark beside its name (Alex, 19 Oct)
 const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />, 15)
@@ -1808,9 +1812,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       if (out.length > 20000) { setErr('Too long for one encrypted message. Send it in two parts.'); return }
     }
     if (editing) {
-      const { error } = await supabase.from('roar_messages').update({ body: out, edited_at: new Date().toISOString() }).eq('id', editing.id)
+      const quiet = await amAdmin()
+      const stamp = quiet ? editing.edited_at || null : new Date().toISOString()
+      const { error } = await supabase.from('roar_messages').update({ body: out, edited_at: stamp }).eq('id', editing.id)
       if (error) { setErr(errText(error)); return }
-      setMsgs((list) => list.map((x) => (x.id === editing.id ? { ...x, body: out, edited_at: new Date().toISOString() } : x)))
+      setMsgs((list) => list.map((x) => (x.id === editing.id ? { ...x, body: out, edited_at: stamp } : x)))
       setEditing(null); setText('')
       return
     }
@@ -2803,7 +2809,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           onSend={async ({ title: t, text: x }) => {
             const body = `${t}\n\n${x}`
             if (artOpen === true) return sendCard(body, { article: { v: 1 } }, '', () => setArtOpen(null))
-            const edited = new Date().toISOString()
+            const edited = (await amAdmin()) ? artOpen.edited_at || null : new Date().toISOString()
             const { error } = await supabase.from('roar_messages').update({ body, edited_at: edited }).eq('id', artOpen.id)
             if (error) { setErr(errText(error)); return false }
             setMsgs((list) => list.map((y) => (y.id === artOpen.id ? { ...y, body, edited_at: edited } : y)))

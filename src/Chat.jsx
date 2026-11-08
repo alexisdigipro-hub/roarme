@@ -130,22 +130,60 @@ export default function Chat({ me, setMe }) {
   useEffect(() => {
     let s = null
     const NO = 'input, textarea, [contenteditable="true"], .tabs, .themes, .dpick, .wheel, .walls, .seg, .viewer, .modal-back, .call, .menu, input[type="range"]'
+    // the page follows the finger as it slides (Alex, 9 Nov: "with a slide it goes to the menu"), like an iPhone: let go
+    // past a third of the way, or with a quick flick, and it goes back; let go before, and it springs back into place
+    const backOf = (main) => [...main.querySelectorAll('[data-back]')].filter((b) => b.offsetParent).pop()
+    const reset = (main, animate) => {
+      main.style.transition = animate ? 'transform .28s cubic-bezier(.22,1,.36,1), opacity .28s' : ''
+      main.style.transform = ''
+      main.style.opacity = ''
+      if (animate) setTimeout(() => { main.style.transition = '' }, 300)
+    }
     const start = (e) => {
       const main = e.target.closest?.('.main')
-      s = window.matchMedia('(max-width: 760px)').matches && main && e.touches.length === 1 && !e.target.closest(NO) ? { main, x: e.touches[0].clientX, y: e.touches[0].clientY } : null
+      s = window.matchMedia('(max-width: 760px)').matches && main && e.touches.length === 1 && !e.target.closest(NO) && backOf(main)
+        ? { main, x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), on: false } : null
+    }
+    const move = (e) => {
+      if (!s) return
+      const dx = e.touches[0].clientX - s.x, dy = e.touches[0].clientY - s.y
+      if (!s.on) {
+        if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { s = null; return } // a scroll
+        if (dx < 12 || dx < Math.abs(dy) * 1.5 || window.getSelection?.().toString()) return
+        s.on = true
+        s.main.style.transition = 'none'
+      }
+      const w = s.main.offsetWidth || window.innerWidth
+      const d = Math.max(0, dx)
+      s.main.style.transform = `translate3d(${d}px,0,0)`
+      s.main.style.opacity = String(1 - Math.min(0.35, (d / w) * 0.5))
     }
     const end = (e) => {
       if (!s) return
-      const { main, x, y } = s
+      const { main, x, y, t, on } = s
       s = null
       const dx = e.changedTouches[0].clientX - x, dy = e.changedTouches[0].clientY - y
-      if (dx < 70 || dx < Math.abs(dy) * 1.5 || window.getSelection?.().toString()) return
-      const backs = [...main.querySelectorAll('[data-back]')].filter((b) => b.offsetParent)
-      backs[backs.length - 1]?.click()
+      const w = main.offsetWidth || window.innerWidth
+      const go = dx > w / 3 || (dx > 70 && dx > Math.abs(dy) * 1.5 && Date.now() - t < 300)
+      if (!go) { if (on) reset(main, true); return }
+      if (on) {
+        main.style.transition = 'transform .18s ease-out, opacity .18s'
+        main.style.transform = `translate3d(${w}px,0,0)`
+        main.style.opacity = '0.6'
+        setTimeout(() => { backOf(main)?.click(); reset(main, false) }, 170)
+      } else backOf(main)?.click()
     }
+    const cancel = () => { if (s?.on) reset(s.main, true); s = null }
     document.addEventListener('touchstart', start, { passive: true })
+    document.addEventListener('touchmove', move, { passive: true })
     document.addEventListener('touchend', end, { passive: true })
-    return () => { document.removeEventListener('touchstart', start); document.removeEventListener('touchend', end) }
+    document.addEventListener('touchcancel', cancel, { passive: true })
+    return () => {
+      document.removeEventListener('touchstart', start)
+      document.removeEventListener('touchmove', move)
+      document.removeEventListener('touchend', end)
+      document.removeEventListener('touchcancel', cancel)
+    }
   }, [])
   const [pull, setPull] = useState(0) // how far the list is pulled down for a refresh: 0 to 1 (ready), 2 = reloading
   const [note, setNote] = useState('')

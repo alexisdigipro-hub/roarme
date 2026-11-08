@@ -376,7 +376,7 @@ html[data-mode='light'] .sel-bar button:not(.on) { color: #10203a; }
 .room-view.compact .msg { margin-top: 1px; }
 .room-view.compact .msg.first { margin-top: 6px; }
 .room-view.compact .bubble { padding: 5px 10px 4px; }
-.room-view[data-bg='dots'] .scroll { background-image: radial-gradient(rgba(255, 255, 255, .06) 1px, transparent 1.2px); background-size: 18px 18px; }
+.room-view[data-bg='dots'] { background-image: radial-gradient(rgba(255, 255, 255, .06) 1px, transparent 1.2px); background-size: 18px 18px; }
 .findbar { display: flex; align-items: center; gap: 8px; margin: 0 14px 6px; padding: 0 6px 0 14px; height: 44px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); color: var(--muted); }
 .findbar input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; outline: none; color: var(--text); }
 .findbar small { white-space: nowrap; }
@@ -720,13 +720,13 @@ html[data-lite] *, html[data-lite] *::before, html[data-lite] *::after { animati
 .sub-note { margin: 4px 12px 6px; color: var(--muted); font-size: 12px; }
 
 /* wallpapers */
-:is(.room-view[data-bg='grid'] .scroll, .wall-tile[data-bg='grid']) { background-image: linear-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .045) 1px, transparent 1px); background-size: 26px 26px; }
+:is(.room-view[data-bg='grid'], .wall-tile[data-bg='grid']) { background-image: linear-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .045) 1px, transparent 1px); background-size: 26px 26px; }
 .wall-tile[data-bg='dots'] { background-image: radial-gradient(rgba(255, 255, 255, .1) 1px, transparent 1.2px); background-size: 12px 12px; }
-:is(.room-view[data-bg='night'] .scroll, .wall-tile[data-bg='night']) { background-image: linear-gradient(165deg, rgba(48, 70, 150, .38), rgba(14, 18, 40, .15) 70%); }
-:is(.room-view[data-bg='ocean'] .scroll, .wall-tile[data-bg='ocean']) { background-image: radial-gradient(circle at 15% 10%, rgba(60, 170, 230, .3), transparent 55%), radial-gradient(circle at 90% 95%, rgba(40, 90, 210, .28), transparent 55%); }
-:is(.room-view[data-bg='dusk'] .scroll, .wall-tile[data-bg='dusk']) { background-image: linear-gradient(170deg, rgba(150, 80, 210, .28), rgba(240, 120, 90, .2)); }
-:is(.room-view[data-bg='forest'] .scroll, .wall-tile[data-bg='forest']) { background-image: linear-gradient(160deg, rgba(40, 150, 110, .28), rgba(20, 60, 50, .12)); }
-:is(.room-view[data-bg='ember'] .scroll, .wall-tile[data-bg='ember']) { background-image: radial-gradient(circle at 85% 0%, rgba(235, 95, 60, .32), transparent 60%), radial-gradient(circle at 0% 100%, rgba(200, 60, 90, .2), transparent 55%); }
+:is(.room-view[data-bg='night'], .wall-tile[data-bg='night']) { background-image: linear-gradient(165deg, rgba(48, 70, 150, .38), rgba(14, 18, 40, .15) 70%); }
+:is(.room-view[data-bg='ocean'], .wall-tile[data-bg='ocean']) { background-image: radial-gradient(circle at 15% 10%, rgba(60, 170, 230, .3), transparent 55%), radial-gradient(circle at 90% 95%, rgba(40, 90, 210, .28), transparent 55%); }
+:is(.room-view[data-bg='dusk'], .wall-tile[data-bg='dusk']) { background-image: linear-gradient(170deg, rgba(150, 80, 210, .28), rgba(240, 120, 90, .2)); }
+:is(.room-view[data-bg='forest'], .wall-tile[data-bg='forest']) { background-image: linear-gradient(160deg, rgba(40, 150, 110, .28), rgba(20, 60, 50, .12)); }
+:is(.room-view[data-bg='ember'], .wall-tile[data-bg='ember']) { background-image: radial-gradient(circle at 85% 0%, rgba(235, 95, 60, .32), transparent 60%), radial-gradient(circle at 0% 100%, rgba(200, 60, 90, .2), transparent 55%); }
 .walls { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; width: 100%; }
 .wall-tile { position: relative; display: flex; flex-direction: column; gap: 5px; height: 112px; padding: 10px 8px 24px; border: 2px solid transparent; border-radius: 16px; background-color: rgba(0, 0, 0, .22); overflow: hidden; }
 .wall-tile.on { border-color: var(--accent); }
@@ -735,7 +735,7 @@ html[data-lite] *, html[data-lite] *::before, html[data-lite] *::after { animati
 .wall-tile small { position: absolute; left: 0; right: 0; bottom: 5px; color: var(--muted); font-size: 11.5px; font-weight: 600; text-align: center; }
 .wall-tile.on small { color: var(--accent); }
 html[data-mode='light'] .wall-tile { background-color: rgba(16, 32, 58, .06); }
-html[data-mode='light'] :is(.room-view[data-bg='grid'] .scroll, .wall-tile[data-bg='grid']) { background-image: linear-gradient(rgba(16, 32, 58, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 32, 58, .06) 1px, transparent 1px); }
+html[data-mode='light'] :is(.room-view[data-bg='grid'], .wall-tile[data-bg='grid']) { background-image: linear-gradient(rgba(16, 32, 58, .06) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 32, 58, .06) 1px, transparent 1px); }
 html[data-mode='light'] .wall-tile[data-bg='dots'] { background-image: radial-gradient(rgba(16, 32, 58, .14) 1px, transparent 1.2px); }
 
 /* ---------- Settings as in Telegram: the list on the left, the page on the right ---------- */
@@ -3952,8 +3952,8 @@ html[data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main:disabled 
 
 /* photo wallpapers from Admin > Wallpapers (Alex, 22 Oct): the photo fills the chat behind the messages, a little darker
    (lighter by day) so the bubbles stay easy to read */
-:is(.room-view[data-img] .scroll, .set-preview[data-img]) { background-image: linear-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3)), var(--wall); background-size: cover; background-position: center; background-repeat: no-repeat; }
-html[data-mode='light'] :is(.room-view[data-img] .scroll, .set-preview[data-img]) { background-image: linear-gradient(rgba(255, 255, 255, .18), rgba(255, 255, 255, .18)), var(--wall); }
+:is(.room-view[data-img], .set-preview[data-img]) { background-image: linear-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3)), var(--wall); background-size: cover; background-position: center; background-repeat: no-repeat; }
+html[data-mode='light'] :is(.room-view[data-img], .set-preview[data-img]) { background-image: linear-gradient(rgba(255, 255, 255, .18), rgba(255, 255, 255, .18)), var(--wall); }
 .wall-tile.img { background-size: cover !important; background-position: center; background-repeat: no-repeat; }
 .adm-walls-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13px; }
 .adm-walls-add { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; }
@@ -4013,8 +4013,8 @@ html[data-theme='stone'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):no
 
 /* one's own chat wallpaper (Alex, 8 Nov): any colour, or one's own photo at a chosen strength (src/walls.js wallLook).
    The strength is a veil of the theme's own background over the photo: 100% is the photo as it is */
-:is(.room-view[data-bg='color'] .scroll, .set-preview[data-bg='color']) { background: var(--wall-color) !important; }
-html[data-mode] :is(.room-view[data-img][data-own] .scroll, .set-preview[data-img][data-own]) {
+:is(.room-view[data-bg='color'], .set-preview[data-bg='color']) { background: var(--wall-color) !important; }
+html[data-mode] :is(.room-view[data-img][data-own], .set-preview[data-img][data-own]) {
   background-image: linear-gradient(color-mix(in srgb, var(--bg, #1c1c1e) calc((1 - var(--wall-op, 1)) * 100%), transparent), color-mix(in srgb, var(--bg, #1c1c1e) calc((1 - var(--wall-op, 1)) * 100%), transparent)), var(--wall);
   background-size: cover; background-position: center; background-repeat: no-repeat;
 }
@@ -4166,3 +4166,12 @@ html[data-my-bubble] .corner-demo .cd-b.mine { background: var(--my-bubble); col
 html[data-skin='halo'] .corner-demo .cd-b.mine { background: linear-gradient(145deg, var(--halo-2), var(--halo)); color: #fff; }
 html[data-skin='halo'][data-my-bubble] .corner-demo .cd-b.mine { background: var(--my-bubble); color: var(--my-bubble-ink); }
 .size-demo .cd-b { font-size: var(--demo-fs, 14.5px); transition: font-size .15s ease, border-radius .15s ease; }
+
+/* the wallpaper fills the whole chat, top to bottom (Alex, 9 Nov): it is painted on the chat itself, not only behind the
+   messages, so the head and the writing box float over it; on a phone it runs under the clock and the home bar too */
+.main .room-view { border-radius: inherit; } /* on a computer the wallpaper keeps the panel's round corners */
+@media (max-width: 760px) {
+  html:not([data-theme='studio']) .app > .main:has(.room-view) { padding-top: 0; padding-bottom: 0; }
+  .main .room-view > .room-head { padding-top: calc(env(safe-area-inset-top, 0px) + 10px); }
+  html:not(.kb) .main .room-view .compose-wrap { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+}

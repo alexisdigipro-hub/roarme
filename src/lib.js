@@ -232,22 +232,22 @@ export async function tusUpload(bucket, path, file, type, onProgress, holder = {
    Android and most browsers: navigator.vibrate. An iPhone has no vibrate for web pages, but Safari (iOS 18 and later)
    gives the system's own tick when a switch-style checkbox is toggled, so one hidden switch is clicked. Anything else:
    nothing, quietly. */
-let tickEl = null
+export const isIPhone = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+// Safari ticks only inside a real tap (a click, or the finger lifting): never from a timer while the finger is still down.
+// A fresh hidden switch each time, put in and taken out at once, as Safari expects (Alex, 8 Nov: no tick was felt)
 export function haptic(ms = 10) {
   try {
     if (navigator.vibrate && navigator.vibrate(ms)) return
-    if (!/iP(hone|ad|od)/.test(navigator.userAgent) && !(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return
-    if (!tickEl) {
-      tickEl = document.createElement('label')
-      tickEl.setAttribute('aria-hidden', 'true')
-      tickEl.style.cssText = 'position:fixed;left:-100px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden'
-      const box = document.createElement('input')
-      box.type = 'checkbox'
-      box.setAttribute('switch', '')
-      box.tabIndex = -1
-      tickEl.appendChild(box)
-      document.body.appendChild(tickEl)
-    }
-    tickEl.click()
+    if (!isIPhone()) return
+    const label = document.createElement('label')
+    label.setAttribute('aria-hidden', 'true')
+    label.style.display = 'none'
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    box.setAttribute('switch', '')
+    label.appendChild(box)
+    document.head.appendChild(label)
+    label.click()
+    document.head.removeChild(label)
   } catch { /* no tick here */ }
 }

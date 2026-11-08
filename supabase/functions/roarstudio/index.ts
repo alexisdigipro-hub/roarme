@@ -82,7 +82,7 @@ async function names(ids: string[]) {
 // an owner's studio: name, logo, banner, whether v1, v2 are hidden from people on links
 async function studioOf(owner: string | null | undefined) {
   if (!owner) return null
-  const { data } = await sb.from('roarstudio_studios').select('name, logo, banner, backdrop, hide_versions').eq('owner', owner).maybeSingle()
+  const { data } = await sb.from('roarstudio_studios').select('name, logo, banner, backdrop, hide_versions, watermark').eq('owner', owner).maybeSingle()
   return data || null
 }
 
@@ -164,6 +164,28 @@ async function extraKeys(col: string, val: string) {
   return [...(st || []).map((r: any) => r.file_key), ...(vo || []).map((r: any) => r.voice)]
 }
 
+// a point on a picture, both numbers between 0 and 1
+function cleanPos(v: any) {
+  if (!v || typeof v !== 'object') return null
+  const x = Number(v.x), y = Number(v.y)
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+  return { x: Math.max(0, Math.min(1, Math.round(x * 1e4) / 1e4)), y: Math.max(0, Math.min(1, Math.round(y * 1e4) / 1e4)) }
+}
+// picks (Alex, 8 Nov): a heart on a picture, one per person; the same call puts it on and takes it off
+async function picksOf(projectId: string) {
+  const { data } = await sb.from('roarstudio_picks').select('track_id, user_id, guest_name, created_at').eq('project_id', projectId)
+  const who = await names((data || []).map((r: any) => r.user_id))
+  return (data || []).map((r: any) => ({ track_id: r.track_id, user_id: r.user_id, by: r.user_id ? (who[r.user_id] || 'Member') : (r.guest_name || 'Guest'), created_at: r.created_at }))
+}
+async function togglePick(projectId: string, trackId: string, userId: string | null, guest: string | null) {
+  let q = sb.from('roarstudio_picks').select('id').eq('track_id', trackId)
+  q = userId ? q.eq('user_id', userId) : q.ilike('guest_name', String(guest).replace(/[%_\\]/g, (m) => '\\' + m))
+  const { data: had } = await q.maybeSingle()
+  if (had) await sb.from('roarstudio_picks').delete().eq('id', had.id)
+  else await sb.from('roarstudio_picks').insert({ project_id: projectId, track_id: trackId, user_id: userId, guest_name: userId ? null : guest })
+  return json({ picked: !had, picks: await picksOf(projectId) })
+}
+
 async function deleteKeys(keys: string[]) {
   for (const k of keys) if (k && k.startsWith('studio/')) { try { await r2.fetch(at(k), { method: 'DELETE' }) } catch (e) { console.error('delete', k, e) } }
 }
@@ -221,11 +243,11 @@ async function handle(req: Request): Promise<Response> {
       const { data: versions } = tids.length ? await vq : { data: [] }
       if (finals) { const has = new Set((versions || []).map((v: any) => v.track_id)); tracks = (tracks || []).filter((t: any) => has.has(t.id)) }
       const vids = (versions || []).map((v: any) => v.id)
-      const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec').in('version_id', vids).order('created_at') : { data: [] }
+      const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec, pos').in('version_id', vids).order('created_at') : { data: [] }
       const who = await names([project?.owner, ...(comments || []).map((c: any) => c.author), ...(versions || []).map((v: any) => v.uploaded_by)])
       await logEvent(s.project_id, 'view', null, String(b.name || '').slice(0, 60) || 'Someone with the link')
       return json({ project: { ...project, owner_name: who[project?.owner] || '' }, tracks, versions, comments, names: who,
-        kind: s.kind || 'review', playlist: playlist ? { id: playlist.id, title: playlist.title } : null, studio: await studioOf(project?.owner),
+        picks: s.kind === 'finals' ? [] : await picksOf(s.project_id), kind: s.kind || 'review', playlist: playlist ? { id: playlist.id, title: playlist.title } : null, studio: await studioOf(project?.owner),
         can: finals ? { comment: false, approve: false, download: true } : { comment: s.can_comment, approve: s.can_approve, download: s.can_download }, expires: s.expires_at })
     }
     if (b.action === 'share-url') {
@@ -248,11 +270,22 @@ async function handle(req: Request): Promise<Response> {
       if (isId(b.parent)) row.parent_id = b.parent
       const sk = cleanSketch(b.sketch)
       if (sk) row.sketch = sk
+      const ps = cleanPos(b.pos)
+      if (ps) row.pos = ps
       if (voice) { row.voice = voice; row.voice_sec = Math.max(0, Math.min(600, Number(b.voice_sec) || 0)) }
       if (row.at_sec != null && Number.isFinite(Number(b.end_sec)) && b.end_sec !== null && Number(b.end_sec) > Number(row.at_sec)) row.end_sec = Number(b.end_sec)
-      const { data, error } = await sb.from('roarstudio_comments').insert(row).select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec').single()
+      const { data, error } = await sb.from('roarstudio_comments').insert(row).select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec, pos').single()
       if (error) return json({ error: error.message }, 500)
       return json({ comment: data })
+    }
+    if (b.action === 'share-pick') {
+      if (s.kind === 'finals' || !isId(b.track)) return json({ error: 'not allowed' }, 403)
+      const { data: t } = await sb.from('roarstudio_tracks').select('id, project_id').eq('id', b.track).eq('project_id', s.project_id).maybeSingle()
+      if (!t || (s.track_id && s.track_id !== t.id)) return json({ error: 'not found' }, 404)
+      if (s.kind === 'playlist') { const { data: pl } = await sb.from('roarstudio_playlists').select('items').eq('id', s.playlist_id).maybeSingle(); if (!pl || !(pl.items || []).includes(t.id)) return json({ error: 'not found' }, 404) }
+      const name = String(b.name || '').trim().slice(0, 60)
+      if (!name) return json({ error: 'name' }, 400)
+      return await togglePick(s.project_id, t.id, null, name)
     }
     if (b.action === 'share-voice-add') {
       if (!s.can_comment || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
@@ -377,6 +410,12 @@ async function handle(req: Request): Promise<Response> {
     return json({ url: await presign('GET', v.file_key, q, 6 * 3600) })
   }
 
+  if (b.action === 'pick') {
+    if (!isId(b.track)) return json({ error: 'not found' }, 404)
+    const { data: t } = await sb.from('roarstudio_tracks').select('id, project_id').eq('id', b.track).maybeSingle()
+    if (!t || !can(await roleOf(uid, t.project_id), 'listener')) return json({ error: 'not found' }, 404)
+    return await togglePick(t.project_id, t.id, uid, null)
+  }
   if (b.action === 'voice-add' || b.action === 'stems') {
     if (!isId(b.version)) return json({ error: 'not found' }, 404)
     const { data: v } = await sb.from('roarstudio_versions').select('id, project_id').eq('id', b.version).maybeSingle()

@@ -2067,7 +2067,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
   const textOf = (m) => (m.kind === 'system' ? previewText(m.body, 'system') : m.sealed && !m.body ? 'Encrypted message' : m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.reply_to ? splitQuote(m.body).rest : m.body)
   const copy = async (s, what = 'Copied') => { try { await navigator.clipboard.writeText(s); toast(what) } catch { toast('Copy did not work here') } }
-  const linkOf = (m) => `${window.location.origin}${window.location.pathname}#m=${room.room_id}/${m.id}`
+  // the first web address written in a message (Alex, 9 Nov: Copy Link only when the message has one, and it copies that)
+  const urlIn = (m) => { const t = textOf(m); return typeof t === 'string' ? (t.match(/\bhttps?:\/\/[^\s<>"')\]]+/i)?.[0] || '').replace(/[.,;:!?]+$/, '') : '' }
   const translate = (s) => window.open(`https://translate.google.com/?sl=auto&tl=${prefs.translateTo && prefs.translateTo !== 'auto' ? prefs.translateTo : /[Ͱ-Ͽ]/.test(s) ? 'en' : 'el'}&op=translate&text=${encodeURIComponent(s)}`, '_blank', 'noopener')
 
   // who has read a message of mine: everyone else whose read mark is past it
@@ -2756,7 +2757,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {menu.m.kind === 'text' && textOf(menu.m) && <button type="button" onClick={() => { setQuotePick(menu.m); setMenu(null) }}>{I.qmark}<span>Quote</span></button>}
               {menu.m.body && !menu.m.sealed && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
               {menu.m.body && <button type="button" onClick={() => { const b = textOf(menu.m); copy(prefs.copyFormat === false ? plainText(b) : b, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
-              <button type="button" onClick={() => { copy(linkOf(menu.m), 'Link copied'); setMenu(null) }}>{I.link}<span>Copy Message Link</span></button>
+              {urlIn(menu.m) && <button type="button" onClick={() => { copy(urlIn(menu.m), 'Link copied'); setMenu(null) }}>{I.link}<span>Copy Link</span></button>}
               {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
               <hr />

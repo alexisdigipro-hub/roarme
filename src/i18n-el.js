@@ -1,5 +1,6 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  'Copy Link': 'Αντιγραφή link',
   // admin moderation (8 Nov)
   'Delete for Everyone (Admin)': 'Διαγραφή για όλους (Admin)',
   'Delete this message for everyone, as admin?': 'Να διαγραφεί αυτό το μήνυμα για όλους, ως admin;',

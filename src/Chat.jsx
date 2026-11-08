@@ -131,7 +131,8 @@ export default function Chat({ me, setMe }) {
     let s = null
     const NO = 'input, textarea, [contenteditable="true"], .tabs, .themes, .dpick, .wheel, .walls, .seg, .viewer, .modal-back, .call, .menu, input[type="range"]'
     // the page follows the finger as it slides (Alex, 9 Nov: "with a slide it goes to the menu"), like an iPhone: let go
-    // past a third of the way, or with a quick flick, and it goes back; let go before, and it springs back into place
+    // past about 90 px (a quarter of a phone's width), or with a quick flick, and it goes back; let go before, and it
+    // springs back into place (Alex, 9 Nov: a third of the screen was too far, a normal slide sprang back)
     const backOf = (main) => [...main.querySelectorAll('[data-back]')].filter((b) => b.offsetParent).pop()
     const reset = (main, animate) => {
       main.style.transition = animate ? 'transform .28s cubic-bezier(.22,1,.36,1), opacity .28s' : ''
@@ -164,7 +165,7 @@ export default function Chat({ me, setMe }) {
       s = null
       const dx = e.changedTouches[0].clientX - x, dy = e.changedTouches[0].clientY - y
       const w = main.offsetWidth || window.innerWidth
-      const go = dx > w / 3 || (dx > 70 && dx > Math.abs(dy) * 1.5 && Date.now() - t < 300)
+      const go = (dx > Math.min(90, w / 4) && dx > Math.abs(dy)) || (dx > 40 && dx > Math.abs(dy) * 1.5 && Date.now() - t < 280)
       if (!go) { if (on) reset(main, true); return }
       if (on) {
         main.style.transition = 'transform .18s ease-out, opacity .18s'

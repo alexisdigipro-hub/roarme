@@ -52,6 +52,12 @@ export const DEFAULTS = {
   folderTags: false,
   folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
   background: 'soft', // one of WALLS
+  // one's own chat theme (Alex, 9 Nov, "as a feature in Settings"): '' each = the theme's own
+  chatTheme: '', // one of CHAT_THEMES, or '' when built by hand
+  accentHex: '', // any accent colour, over the ready-made ones
+  myBubble: '', // the colour of one's own messages
+  theirBubble: '', // the colour of the others' messages
+  bubbleR: 0, // Message Corners in px (0 = the theme's own)
 }
 export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], ['night', 'Night'], ['ocean', 'Ocean'], ['dusk', 'Dusk'], ['forest', 'Forest'], ['ember', 'Ember']]
 // a step smaller (Alex, 8 Nov: "the letters a little smaller"); the middle one, the default, is 14.5
@@ -215,13 +221,13 @@ export const FONTS = [
   ['serif', 'Serif', "Georgia, 'Times New Roman', serif"],
   ['mono', 'Mono', "'JetBrains Mono', ui-monospace, Menlo, monospace"],
 ]
-const inkOn = (hex) => {
+export const inkOn = (hex) => {
   const n = parseInt(hex.slice(1), 16)
   return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 160 ? '#111111' : '#ffffff'
 }
 export function applyLook(p) {
   const r = document.documentElement
-  const hex = ACCENTS.find(([k]) => k === p.accent)?.[2]
+  const hex = (/^#[0-9a-f]{6}$/i.test(p.accentHex || '') && p.accentHex) || ACCENTS.find(([k]) => k === p.accent)?.[2]
   if (hex) { r.style.setProperty('--accent', hex); r.style.setProperty('--accent-2', hex); r.style.setProperty('--accent-ink', inkOn(hex)) } else { ['--accent', '--accent-2', '--accent-ink'].forEach((v) => r.style.removeProperty(v)) }
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
@@ -230,4 +236,23 @@ export function applyLook(p) {
   if (p.motion === false) r.dataset.still = '1'; else delete r.dataset.still
   if (p.focusRings) r.dataset.focus = 'bold'; else delete r.dataset.focus
   r.dataset.bubbles = p.glassBubbles === false ? 'solid' : 'glass'
+  // one's own chat theme: the message colours (with a readable ink on each) and the message corners
+  const tint = (key, name) => {
+    const c = /^#[0-9a-f]{6}$/i.test(p[key] || '') ? p[key] : ''
+    if (c) { r.style.setProperty(`--${name}`, c); r.style.setProperty(`--${name}-ink`, inkOn(c)); r.dataset[key] = '1' } else { r.style.removeProperty(`--${name}`); r.style.removeProperty(`--${name}-ink`); delete r.dataset[key] }
+  }
+  tint('myBubble', 'my-bubble')
+  tint('theirBubble', 'their-bubble')
+  const br = Number(p.bubbleR) || 0
+  if (br) { r.style.setProperty('--bubble-r', `${br}px`); r.dataset.bubbleR = '1' } else { r.style.removeProperty('--bubble-r'); delete r.dataset.bubbleR }
 }
+
+/* ready-made chat themes (Alex, 9 Nov): a wallpaper, the two message colours and an accent, picked at once */
+export const CHAT_THEMES = [
+  ['graphite', 'Graphite', { background: 'soft', myBubble: '#2a2a2c', theirBubble: '#ffffff', accentHex: '' }],
+  ['ocean', 'Ocean', { background: 'ocean', myBubble: '#2f6fd6', theirBubble: '#ffffff', accentHex: '#2f6fd6' }],
+  ['dusk', 'Dusk', { background: 'dusk', myBubble: '#7b4fe0', theirBubble: '#fff6ef', accentHex: '#7b4fe0' }],
+  ['forest', 'Forest', { background: 'forest', myBubble: '#2f8a5a', theirBubble: '#f2fbf5', accentHex: '#2f8a5a' }],
+  ['ember', 'Ember', { background: 'ember', myBubble: '#e2553a', theirBubble: '#fff3ee', accentHex: '#e2553a' }],
+  ['night', 'Night', { background: 'night', myBubble: '#4b5fc7', theirBubble: '#262b3d', accentHex: '#6f83ff' }],
+]

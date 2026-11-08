@@ -3,6 +3,7 @@ import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, CHAT_THEMES, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, inkOn, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
+import { ThemeEditor } from './themeEditor.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
@@ -770,19 +771,8 @@ function Sessions({ me, setMe, toast }) {
 const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
-function ColorRow({ label, hint, value, fallback, onPick }) {
-  return (
-    <div className="set-row">
-      <span className="set-text">{label}<small>{value ? value.toUpperCase() : hint}</small></span>
-      <span className="color-pick">
-        {value && <button type="button" className="round tiny" onClick={() => onPick('')} aria-label="Theme's own" title="Theme's own">{I.x}</button>}
-        <label className={`color-dot${value ? ' set' : ''}`} style={{ '--c': value || fallback }}><input type="color" value={value || fallback} onChange={(e) => onPick(e.target.value)} /></label>
-      </span>
-    </div>
-  )
-}
 function ChatTheme({ p }) {
-  const own = (patch) => setPrefs({ ...patch, chatTheme: '' })
+  const [editing, setEditing] = useState(false)
   return (
     <Box title="Chat theme" note="A ready-made theme, or your own colours. The wallpaper is below.">
       <div className="set-row set-col">
@@ -798,9 +788,12 @@ function ChatTheme({ p }) {
           ))}
         </div>
       </div>
-      <ColorRow label="Your Messages" hint="The theme's own" value={p.myBubble} fallback="#2a2a2c" onPick={(c) => own({ myBubble: c })} />
-      <ColorRow label="Their Messages" hint="The theme's own" value={p.theirBubble} fallback="#ffffff" onPick={(c) => own({ theirBubble: c })} />
-      <ColorRow label="Accent" hint="Buttons, links, the chosen tab" value={p.accentHex} fallback="#d40000" onPick={(c) => own({ accentHex: c })} />
+      <button type="button" className="set-row set-pick set-nav" onClick={() => setEditing(true)}>
+        <span className="set-text">Edit Your Theme<small>Background, accent and the colour of the messages</small></span>
+        <span className="te-dots"><i style={{ background: p.myBubble || '#2a2a2c' }} /><i style={{ background: p.theirBubble || '#ffffff' }} /><i style={{ background: p.accentHex || 'var(--accent)' }} /></span>
+        <i className="set-chev">{I.right}</i>
+      </button>
+      {editing && <ThemeEditor p={p} onClose={() => setEditing(false)} />}
       <div className="set-row set-col">
         <span className="set-text">Message Corners<small>{p.bubbleR ? `${p.bubbleR} px` : "The theme's own"}</small></span>
         <input type="range" min="0" max="26" step="2" value={p.bubbleR || 0} onChange={(e) => setPrefs({ bubbleR: Number(e.target.value) })} />

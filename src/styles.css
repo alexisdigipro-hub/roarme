@@ -4121,3 +4121,37 @@ html[data-bubble-r] .msg.first.mine .bubble:not(.big-emoji) { border-bottom-righ
 .color-dot:not(.set) { background: conic-gradient(#3b82f6, #22c55e, #facc15, #f97316, #ef4444, #d946ef, #8b5cf6, #22d3ee, #3b82f6); }
 .color-dot input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
 .chat-themes .wall-b { box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+
+/* Edit Your Theme (Alex, 9 Nov; src/themeEditor.jsx): a sheet from the foot, the chat on top as it will look, the
+   colour field under it, Cancel and Set */
+.te-back { position: fixed; inset: 0; z-index: 70; display: flex; align-items: flex-end; justify-content: center; background: rgba(5, 8, 14, .4); -webkit-backdrop-filter: var(--blur-veil); backdrop-filter: var(--blur-veil); animation: fade .2s ease both; }
+.te-sheet { display: flex; flex-direction: column; gap: 12px; width: min(560px, 100%); max-height: 100dvh; overflow-y: auto; padding: 0 14px calc(14px + env(safe-area-inset-bottom, 0px)); border-radius: 28px 28px 0 0; background: var(--float, var(--panel)); color: var(--text); box-shadow: 0 -20px 60px rgba(0, 0, 0, .25); animation: modal-in .3s var(--spring) both; }
+.te-preview { position: relative; display: flex; flex-direction: column; gap: 6px; margin: 0 -14px; padding: calc(64px + env(safe-area-inset-top, 0px)) 12px 14px; border-radius: 28px 28px 0 0; background: var(--bg); background-size: cover; min-height: 300px; justify-content: flex-end; }
+.te-tabs { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--panel) 80%, transparent); border: 1px solid var(--edge); box-shadow: 0 8px 22px rgba(0, 0, 0, .12); white-space: nowrap; }
+.te-tabs button, .te-who button { height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; }
+.te-tabs button.on, .te-who button.on { background: var(--glass-2); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
+.te-b { align-self: flex-start; display: flex; flex-direction: column; gap: 2px; max-width: 82%; padding: 7px 12px 5px; border-radius: var(--bubble-r, 18px); font-size: 14px; line-height: 1.35; border: 1px solid rgba(255, 255, 255, .45); }
+.te-b.mine { align-self: flex-end; }
+.te-b small { align-self: flex-end; font-size: 10.5px; opacity: .65; }
+.te-b small b { font-weight: 700; }
+.te-b i { display: flex; flex-direction: column; margin-bottom: 3px; padding: 2px 8px; border-left: 3px solid; border-radius: 4px; background: rgba(0, 0, 0, .05); font-style: normal; font-size: 12px; font-weight: 700; }
+.te-b i em { font-style: normal; font-weight: 400; }
+.te-b u { text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.te-who { align-self: center; display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); }
+.te-picker { display: flex; flex-direction: column; gap: 12px; }
+.te-hexrow { display: flex; align-items: center; gap: 10px; }
+.te-swatch { flex: none; width: 42px; height: 42px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15), 0 0 0 3px var(--glass); }
+.te-hex { flex: 1; height: 42px; font-size: 16px; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.te-field { position: relative; height: 190px; border-radius: 20px; touch-action: none; cursor: crosshair;
+  background: linear-gradient(180deg, transparent, #fff), linear-gradient(90deg, #f00, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00); }
+.te-dark { position: relative; height: 34px; border-radius: 999px; touch-action: none; cursor: ew-resize; }
+.te-knob { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .3); pointer-events: none; }
+.te-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 2px; }
+.te-foot .btn { height: 50px; font-size: 16px; }
+.te-dots { display: flex; gap: 4px; margin-left: auto; }
+.te-dots i { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18); }
+.te-preview[data-bg='ocean'] { background-image: radial-gradient(circle at 15% 10%, rgba(60, 170, 230, .3), transparent 55%), radial-gradient(circle at 90% 95%, rgba(40, 90, 210, .28), transparent 55%); }
+.te-preview[data-bg='dusk'] { background-image: linear-gradient(170deg, rgba(150, 80, 210, .28), rgba(240, 120, 90, .2)); }
+.te-preview[data-bg='forest'] { background-image: linear-gradient(160deg, rgba(40, 150, 110, .28), rgba(20, 60, 50, .12)); }
+.te-preview[data-bg='ember'] { background-image: radial-gradient(circle at 85% 0%, rgba(235, 95, 60, .32), transparent 60%), radial-gradient(circle at 0% 100%, rgba(200, 60, 90, .2), transparent 55%); }
+.te-preview[data-bg='night'] { background-image: linear-gradient(165deg, rgba(48, 70, 150, .38), rgba(14, 18, 40, .15) 70%); }

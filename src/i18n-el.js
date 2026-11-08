@@ -1,5 +1,12 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  // theme editor (9 Nov)
+  'Edit Your Theme': 'Επεξεργασία θέματος',
+  'Background, accent and the colour of the messages': 'Φόντο, χρώμα έμφασης και χρώμα μηνυμάτων',
+  'Background': 'Φόντο',
+  'Yours': 'Δικά σου',
+  'Theirs': 'Των άλλων',
+  'Set': 'Ορισμός',
   // Chat theme (9 Nov)
   'Chat theme': 'Θέμα συνομιλίας',
   'A ready-made theme, or your own colours. The wallpaper is below.': 'Ένα έτοιμο θέμα ή τα δικά σου χρώματα. Η ταπετσαρία είναι πιο κάτω.',

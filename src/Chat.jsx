@@ -1,5 +1,5 @@
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -836,7 +836,7 @@ export default function Chat({ me, setMe }) {
       }, 450) }
     },
     onTouchMove: (e) => { const h = tabHold.current, t = e.touches[0]; if (h && !h.fired && Math.hypot(t.clientX - h.x, t.clientY - h.y) > 8) clearTimeout(h.timer) },
-    onTouchEnd: (e) => { const h = tabHold.current; if (!h) return; clearTimeout(h.timer); if (h.fired && e.cancelable) e.preventDefault() },
+    onTouchEnd: (e) => { const h = tabHold.current; if (!h) return; clearTimeout(h.timer); if (h.fired && isIPhone()) haptic(12); if (h.fired && e.cancelable) e.preventDefault() },
     onTouchCancel: () => clearTimeout(tabHold.current?.timer),
   })
   const deleteFolder = (f) => {
@@ -861,7 +861,7 @@ export default function Chat({ me, setMe }) {
     if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 10) { clearTimeout(p.timer); p.row?.classList.remove('pressing'); press.current = null }
   }
   // the finger lifting after a long press must not also tap the menu that just opened
-  const pressEnd = (e) => { clearTimeout(press.current?.timer); press.current?.row?.classList.remove('pressing'); press.current = null; if (pressed.current && e?.cancelable) e.preventDefault() }
+  const pressEnd = (e) => { const was = press.current; clearTimeout(was?.timer); was?.row?.classList.remove('pressing'); press.current = null; if (pressed.current && was && isIPhone() && e?.type === 'touchend') haptic(12); if (pressed.current && e?.cancelable) e.preventDefault() } // an iPhone ticks only as the finger lifts
   // the menu of a chat in the list (right click, or a long press on a phone), as in Telegram: the screen blurs, the chat's
   // last messages show on a card (a tap on it opens the chat) and the actions sit under it
   const openRoomMenu = (e, r) => {
@@ -2105,7 +2105,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     if (e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx') || window.getSelection()?.toString()) return
     const at = { preventDefault() {}, clientX: e.clientX, clientY: e.clientY }
     clearTimeout(tapTimer.current)
-    tapTimer.current = setTimeout(() => openMenu(at, m), 230)
+    tapTimer.current = setTimeout(() => { haptic(10); openMenu(at, m) }, 230)
   }
   const autoDl = room.kind === 'group' ? prefs.dlGroups !== false : prefs.dlPrivate !== false
   const bornAt = useRef(Date.now()) // messages newer than the opening of the chat fly in
@@ -2294,8 +2294,22 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const box = scrollRef.current
     if (!box || mouse) return undefined
     let h = null
+    // an iPhone ticks only as the finger lifts (Safari's rule), so there the menu opens on the lift, with the tick;
+    // elsewhere it opens at 420 ms with the finger still down, with the buzz
+    const ios = isIPhone()
+    const show = (x) => {
+      haptic(12)
+      heldAt.current = Date.now()
+      clearTimeout(tapTimer.current)
+      hands.current.openMenu({ preventDefault() {}, clientX: x.x, clientY: x.y }, x.m)
+      window.getSelection?.()?.removeAllRanges()
+    }
     const drop = () => { if (!h) return; clearTimeout(h.timer); h.bubble.classList.remove('pressing'); h = null }
-    const lift = () => { if (liftGuard.current === Infinity) liftGuard.current = Date.now() + 400; drop() }
+    const lift = () => {
+      if (h?.ready) { const x = h; h = null; show(x); liftGuard.current = Date.now() + 400; return }
+      if (liftGuard.current === Infinity) liftGuard.current = Date.now() + 400
+      drop()
+    }
     const start = (e) => {
       drop()
       if (e.touches.length !== 1 || hands.current.picked) return
@@ -2306,20 +2320,17 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       if (!m || m.deleted_at) return
       const t = e.touches[0]
       bubble.classList.add('pressing')
-      h = { bubble, x: t.clientX, y: t.clientY, timer: setTimeout(() => {
+      h = { bubble, m, x: t.clientX, y: t.clientY, timer: setTimeout(() => {
         const b = h.bubble
         b.classList.remove('pressing'); b.classList.remove('held'); void b.offsetWidth; b.classList.add('held')
         setTimeout(() => b.classList.remove('held'), 450)
-        haptic(12)
         heldAt.current = Date.now()
+        if (ios) { h.ready = true; return } // the menu and the tick wait for the finger to lift
         liftGuard.current = Infinity
-        clearTimeout(tapTimer.current)
-        hands.current.openMenu({ preventDefault() {}, clientX: h.x, clientY: h.y }, m)
-        window.getSelection?.()?.removeAllRanges()
-        h = null
+        const x = h; h = null; show(x)
       }, 420) }
     }
-    const move = (e) => { if (h && Math.hypot(e.touches[0].clientX - h.x, e.touches[0].clientY - h.y) > 10) drop() }
+    const move = (e) => { if (h && !h.ready && Math.hypot(e.touches[0].clientX - h.x, e.touches[0].clientY - h.y) > 10) drop() }
     box.addEventListener('touchstart', start, { passive: true })
     box.addEventListener('touchmove', move, { passive: true })
     box.addEventListener('touchend', lift, { passive: true })

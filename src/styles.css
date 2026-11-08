@@ -4200,3 +4200,10 @@ html[data-skin='halo'][data-my-bubble] .corner-demo .cd-b.mine { background: var
 
 /* the folder tabs as a bar at the foot, a little narrower than the screen and centred (Alex, 9 Nov) */
 .rooms-area.bottom .tabs { align-self: center; width: 86%; max-width: 100%; }
+/* on a phone a thin strip from edge to edge (Alex, 9 Nov): wider than the screen, so its round ends are lost off the
+   sides; the tabs inside keep clear of the edges */
+@media (max-width: 760px) {
+  html .app > .side { overflow-x: clip; }
+  html[data-theme] .rooms-area.bottom .tabs { align-self: stretch; width: auto; max-width: none; margin-inline: -44px; padding: 3px 52px !important; }
+  html[data-theme] .rooms-area.bottom .tabs button { height: 32px; font-size: 13.5px; }
+}

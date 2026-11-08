@@ -139,6 +139,31 @@ function cleanSketch(v: unknown) {
   return out.length ? out : null
 }
 
+// Spoken notes and stems (Alex, 8 Nov)
+async function voicePut(projectId: string, type: unknown) {
+  const ext = /mp4|m4a|aac/.test(String(type)) ? 'm4a' : /ogg/.test(String(type)) ? 'ogg' : 'webm'
+  const key = `studio/${projectId}/voice/${crypto.randomUUID()}.${ext}`
+  return json({ key, put: await presign('PUT', key, {}, 900) })
+}
+async function voiceUrl(commentId: unknown, projectId: string | null) {
+  if (!isId(commentId)) return json({ error: 'not found' }, 404)
+  const { data: c } = await sb.from('roarstudio_comments').select('id, project_id, voice').eq('id', commentId).maybeSingle()
+  if (!c || !c.voice || (projectId && c.project_id !== projectId) || !String(c.voice).startsWith(`studio/${c.project_id}/voice/`)) return json({ error: 'not found' }, 404)
+  return json({ url: await presign('GET', c.voice, {}, 3 * 3600), project: c.project_id })
+}
+async function stemsOf(versionId: string) {
+  const { data } = await sb.from('roarstudio_stems').select('id, version_id, name, file_key, size, mime, position, created_by, created_at').eq('version_id', versionId).order('position').order('created_at')
+  const out = []
+  for (const r of data || []) out.push({ id: r.id, version_id: r.version_id, name: r.name, size: r.size, mime: r.mime, created_by: r.created_by, url: await presign('GET', r.file_key, {}, 6 * 3600) })
+  return out
+}
+const voiceOk = (key: unknown, projectId: string) => typeof key === 'string' && key.startsWith(`studio/${projectId}/voice/`) && !key.includes('..') && key.length < 200
+async function extraKeys(col: string, val: string) {
+  const { data: st } = await sb.from('roarstudio_stems').select('file_key').eq(col, val)
+  const { data: vo } = await sb.from('roarstudio_comments').select('voice').eq(col, val).not('voice', 'is', null)
+  return [...(st || []).map((r: any) => r.file_key), ...(vo || []).map((r: any) => r.voice)]
+}
+
 async function deleteKeys(keys: string[]) {
   for (const k of keys) if (k && k.startsWith('studio/')) { try { await r2.fetch(at(k), { method: 'DELETE' }) } catch (e) { console.error('delete', k, e) } }
 }
@@ -191,12 +216,12 @@ async function handle(req: Request): Promise<Response> {
       let { data: tracks } = await tq
       if (playlist) tracks = (playlist.items as string[]).map((id) => (tracks || []).find((t: any) => t.id === id)).filter(Boolean)
       const tids = (tracks || []).map((t: any) => t.id)
-      let vq = sb.from('roarstudio_versions').select('id, track_id, n, label, file_name, size, mime, duration, lufs, peak_db, sample_rate, channels, peaks, approved_at, approved_by, final_at, final_by, thumb, width, height, created_at, uploaded_by').in('track_id', tids).order('n')
+      let vq = sb.from('roarstudio_versions').select('id, track_id, n, label, file_name, size, mime, duration, lufs, peak_db, sample_rate, channels, peaks, approved_at, approved_by, final_at, final_by, thumb, width, height, created_at, uploaded_by, true_peak').in('track_id', tids).order('n')
       if (finals) vq = vq.not('final_at', 'is', null)
       const { data: versions } = tids.length ? await vq : { data: [] }
       if (finals) { const has = new Set((versions || []).map((v: any) => v.track_id)); tracks = (tracks || []).filter((t: any) => has.has(t.id)) }
       const vids = (versions || []).map((v: any) => v.id)
-      const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, body, author, guest_name, done, created_at, sketch').in('version_id', vids).order('created_at') : { data: [] }
+      const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec').in('version_id', vids).order('created_at') : { data: [] }
       const who = await names([project?.owner, ...(comments || []).map((c: any) => c.author), ...(versions || []).map((v: any) => v.uploaded_by)])
       await logEvent(s.project_id, 'view', null, String(b.name || '').slice(0, 60) || 'Someone with the link')
       return json({ project: { ...project, owner_name: who[project?.owner] || '' }, tracks, versions, comments, names: who,
@@ -217,14 +242,27 @@ async function handle(req: Request): Promise<Response> {
       if (!v) return json({ error: 'not found' }, 404)
       const body = String(b.body || '').trim().slice(0, 4000)
       const name = String(b.name || '').trim().slice(0, 60) || 'Guest'
-      if (!body) return json({ error: 'empty' }, 400)
+      const voice = voiceOk(b.voice, s.project_id) ? b.voice : null
+      if (!body && !voice) return json({ error: 'empty' }, 400)
       const row: Record<string, unknown> = { version_id: v.id, project_id: s.project_id, body, guest_name: name, at_sec: Number.isFinite(Number(b.at_sec)) && b.at_sec !== null ? Number(b.at_sec) : null }
       if (isId(b.parent)) row.parent_id = b.parent
       const sk = cleanSketch(b.sketch)
       if (sk) row.sketch = sk
-      const { data, error } = await sb.from('roarstudio_comments').insert(row).select().single()
+      if (voice) { row.voice = voice; row.voice_sec = Math.max(0, Math.min(600, Number(b.voice_sec) || 0)) }
+      if (row.at_sec != null && Number.isFinite(Number(b.end_sec)) && b.end_sec !== null && Number(b.end_sec) > Number(row.at_sec)) row.end_sec = Number(b.end_sec)
+      const { data, error } = await sb.from('roarstudio_comments').insert(row).select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec').single()
       if (error) return json({ error: error.message }, 500)
       return json({ comment: data })
+    }
+    if (b.action === 'share-voice-add') {
+      if (!s.can_comment || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
+      return await voicePut(s.project_id, b.type)
+    }
+    if (b.action === 'share-voice-url') return await voiceUrl(b.comment, s.project_id)
+    if (b.action === 'share-stems') {
+      const v = await inShare(b.version)
+      if (!v) return json({ error: 'not found' }, 404)
+      return json({ stems: await stemsOf(v.id) })
     }
     if (b.action === 'share-stills') {
       if (s.kind === 'finals') return json({ stills: [] })
@@ -293,6 +331,15 @@ async function handle(req: Request): Promise<Response> {
     const head = await r2.fetch(at(b.key), { method: 'HEAD' })
     const size = Number(head.headers.get('content-length')) || Number(b.size) || 0
     if (size > MAX_FILE) { await deleteKeys([b.key]); return json({ error: 'Files can be up to 20 GB.' }, 400) }
+    // a stem of a version (Alex, 8 Nov): kept beside the version, not as a new file
+    if (isId(b.stem_of)) {
+      const { data: pv } = await sb.from('roarstudio_versions').select('id').eq('id', b.stem_of).eq('project_id', project).maybeSingle()
+      if (!pv) { await deleteKeys([b.key]); return json({ error: 'not found' }, 404) }
+      const { count: sc } = await sb.from('roarstudio_stems').select('id', { count: 'exact', head: true }).eq('version_id', pv.id)
+      const { data: st, error: se } = await sb.from('roarstudio_stems').insert({ version_id: pv.id, project_id: project, name: String(b.title || b.name || 'Stem').replace(/\.[a-z0-9]{2,5}$/i, '').slice(0, 120), file_key: b.key, size, mime: String(b.type || '').slice(0, 100), position: sc || 0, created_by: uid }).select('id, version_id, name, size, mime, created_by').single()
+      if (se) { await deleteKeys([b.key]); return json({ error: se.message }, 500) }
+      return json({ stem: st })
+    }
     // the track: the one given (in this project) or a new one
     let trackId = isId(b.track) ? b.track : null
     if (trackId) {
@@ -314,7 +361,7 @@ async function handle(req: Request): Promise<Response> {
       track_id: trackId, project_id: project, file_key: b.key, file_name: String(b.name || 'file').slice(0, 300), size,
       mime: String(b.type || '').slice(0, 100), label: String(b.label || '').trim().slice(0, 80), uploaded_by: uid,
       duration: num(m.duration), lufs: num(m.lufs), peak_db: num(m.peak_db), sample_rate: num(m.sample_rate), channels: num(m.channels), peaks,
-      width: num(m.width), height: num(m.height),
+      width: num(m.width), height: num(m.height), true_peak: num(m.true_peak),
       thumb: typeof m.thumb === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(m.thumb) && m.thumb.length < 120000 ? m.thumb : null,
     }).select().single()
     if (error) { await deleteKeys([b.key]); return json({ error: error.message }, 500) }
@@ -328,6 +375,30 @@ async function handle(req: Request): Promise<Response> {
     if (b.download) await logEvent(v.project_id, 'download', v, null, uid)
     const q: Record<string, string> = b.download ? { 'response-content-disposition': `attachment; filename="${safeName(v.file_name)}"` } : {}
     return json({ url: await presign('GET', v.file_key, q, 6 * 3600) })
+  }
+
+  if (b.action === 'voice-add' || b.action === 'stems') {
+    if (!isId(b.version)) return json({ error: 'not found' }, 404)
+    const { data: v } = await sb.from('roarstudio_versions').select('id, project_id').eq('id', b.version).maybeSingle()
+    const r = v ? await roleOf(uid, v.project_id) : null
+    if (!v || !can(r, 'listener')) return json({ error: 'not found' }, 404)
+    if (b.action === 'voice-add') { if (!can(r, 'commenter')) return json({ error: 'not allowed' }, 403); return await voicePut(v.project_id, b.type) }
+    return json({ stems: await stemsOf(v.id) })
+  }
+  if (b.action === 'voice-url') {
+    const res = await voiceUrl(b.comment, null)
+    const d = await res.clone().json()
+    if (!d.project || !can(await roleOf(uid, d.project), 'listener')) return json({ error: 'not found' }, 404)
+    return json({ url: d.url })
+  }
+  if (b.action === 'stem-delete') {
+    if (!isId(b.stem)) return json({ error: 'not found' }, 404)
+    const { data: st } = await sb.from('roarstudio_stems').select('id, project_id, file_key').eq('id', b.stem).maybeSingle()
+    if (!st) return json({ ok: true })
+    if (!can(await roleOf(uid, st.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
+    await sb.from('roarstudio_stems').delete().eq('id', st.id)
+    await deleteKeys([st.file_key])
+    return json({ ok: true })
   }
 
   if (b.action === 'stills' || b.action === 'still-add') {
@@ -374,7 +445,7 @@ async function handle(req: Request): Promise<Response> {
     if (!isId(b.version)) return json({ error: 'not found' }, 404)
     const { data: v } = await sb.from('roarstudio_versions').select('id, project_id, file_key, track_id').eq('id', b.version).maybeSingle()
     if (!v || !can(await roleOf(uid, v.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
-    const sk = await stillKeys('version_id', v.id)
+    const sk = [...(await stillKeys('version_id', v.id)), ...(await extraKeys('version_id', v.id))]
     await sb.from('roarstudio_versions').delete().eq('id', v.id)
     await deleteKeys([v.file_key, ...sk])
     // a track with no version left goes too
@@ -389,7 +460,7 @@ async function handle(req: Request): Promise<Response> {
     if (!t || !can(await roleOf(uid, t.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
     const { data: vs } = await sb.from('roarstudio_versions').select('id, file_key').eq('track_id', t.id)
     const sk: string[] = []
-    for (const v of vs || []) sk.push(...(await stillKeys('version_id', v.id)))
+    for (const v of vs || []) sk.push(...(await stillKeys('version_id', v.id)), ...(await extraKeys('version_id', v.id)))
     await sb.from('roarstudio_tracks').delete().eq('id', t.id)
     await deleteKeys([...(vs || []).map((v: any) => v.file_key), ...sk])
     return json({ ok: true })
@@ -398,7 +469,7 @@ async function handle(req: Request): Promise<Response> {
   if (b.action === 'delete-project') {
     if (role !== 'owner') return json({ error: 'not allowed' }, 403)
     const { data: vs } = await sb.from('roarstudio_versions').select('file_key').eq('project_id', project)
-    const sk = await stillKeys('project_id', project)
+    const sk = [...(await stillKeys('project_id', project)), ...(await extraKeys('project_id', project))]
     await sb.from('roarstudio_projects').delete().eq('id', project)
     await deleteKeys([...(vs || []).map((v: any) => v.file_key), ...sk])
     return json({ ok: true })

@@ -4045,13 +4045,17 @@ html[data-mode] :is(.room-view[data-img][data-own] .scroll, .set-preview[data-im
 
 /* holding a message on a phone (Alex, 8 Nov): it sinks a little under the finger, then pops as the menu opens */
 .bubble { transition: transform .18s var(--ease, ease); }
-.bubble.pressing { transform: scale(.95); transition: transform .42s cubic-bezier(.3, .7, .4, 1); }
-.bubble.held { animation: bubble-held .42s cubic-bezier(.3, 1.6, .5, 1) both; }
-@keyframes bubble-held { 0% { transform: scale(.95); } 45% { transform: scale(1.06); } 100% { transform: none; } }
-html[data-still] .bubble.pressing, html[data-still] .bubble.held { transform: none; animation: none; }
-.rooms .room.pressing { transform: scale(.97); transition: transform .42s cubic-bezier(.3, .7, .4, 1); }
-.rooms .room.held { animation: bubble-held .42s cubic-bezier(.3, 1.6, .5, 1) both; }
-html[data-still] .rooms .room.pressing, html[data-still] .rooms .room.held { transform: none; animation: none; }
+/* clearer (Alex, 8 Nov: "it should shrink a little and come back"): it sinks to 92% within a fifth of a second, and comes
+   back with a small bounce, past full size and settling. The sink stays even with animations off: it is the answer to
+   the finger, not decoration */
+.bubble.pressing { transform: scale(.92) !important; transition: transform .2s cubic-bezier(.2, .8, .3, 1) !important; }
+.bubble.held { animation: bubble-held .45s cubic-bezier(.3, 1.5, .5, 1) both !important; }
+@keyframes bubble-held { 0% { transform: scale(.92); } 50% { transform: scale(1.05); } 100% { transform: none; } }
+html[data-still] .bubble.held, html[data-lite] .bubble.held { animation: none !important; }
+.rooms .room.pressing { transform: scale(.96) !important; transition: transform .2s cubic-bezier(.2, .8, .3, 1) !important; }
+.rooms .room.held { animation: room-held .45s cubic-bezier(.3, 1.5, .5, 1) both !important; }
+@keyframes room-held { 0% { transform: scale(.96); } 50% { transform: scale(1.02); } 100% { transform: none; } }
+html[data-still] .rooms .room.held, html[data-lite] .rooms .room.held { animation: none !important; }
 
 /* Accent Colour (Alex, 8 Nov: letters showed behind the colours): the little names under the dots stuck after a tap on
    a phone and fell over the next row. The chosen colour's name is already under "Accent Colour", so the dots go

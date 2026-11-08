@@ -69,7 +69,18 @@ async function openShare(b: Record<string, any>) {
   const { data: s } = await sb.from('roarstudio_shares').select('*').eq('token', token).maybeSingle()
   if (!s) return { error: 'This link does not exist.', status: 404 }
   if (s.expires_at && new Date(s.expires_at) < new Date()) return { error: 'This link has ended.', status: 410 }
-  if (s.password_hash && s.password_hash !== (await sha(`${token}:${String(b.password || '')}`))) return { error: 'password', status: 401, locked: true }
+  if (s.password_hash) {
+    const since = new Date(Date.now() - 15 * 60e3).toISOString()
+    const [{ count: byIp }, { count: all }] = await Promise.all([
+      sb.from('roarstudio_pw_fails').select('id', { count: 'exact', head: true }).eq('token', token).eq('ip', b._ip || '').gte('at', since),
+      sb.from('roarstudio_pw_fails').select('id', { count: 'exact', head: true }).eq('token', token).gte('at', since),
+    ])
+    if ((byIp || 0) >= 10 || (all || 0) >= 50) return { error: 'Too many wrong passwords. Try again in 15 minutes.', status: 429 }
+    if (s.password_hash !== (await sha(`${token}:${String(b.password || '')}`))) {
+      await sb.from('roarstudio_pw_fails').insert({ token, ip: b._ip || null })
+      return { error: 'password', status: 401, locked: true }
+    }
+  }
   return { share: s }
 }
 
@@ -85,7 +96,7 @@ async function names(ids: string[]) {
 // an owner's studio: name, logo, banner, whether v1, v2 are hidden from people on links
 async function studioOf(owner: string | null | undefined) {
   if (!owner) return null
-  const { data } = await sb.from('roarstudio_studios').select('name, logo, banner, backdrop, hide_versions, watermark').eq('owner', owner).maybeSingle()
+  const { data } = await sb.from('roarstudio_studios').select('name, logo, banner, backdrop, hide_versions, watermark, watermark_viewer').eq('owner', owner).maybeSingle()
   return data || null
 }
 
@@ -164,7 +175,55 @@ const voiceOk = (key: unknown, projectId: string) => typeof key === 'string' && 
 async function extraKeys(col: string, val: string) {
   const { data: st } = await sb.from('roarstudio_stems').select('file_key').eq(col, val)
   const { data: vo } = await sb.from('roarstudio_comments').select('voice').eq(col, val).not('voice', 'is', null)
-  return [...(st || []).map((r: any) => r.file_key), ...(vo || []).map((r: any) => r.voice)]
+  const { data: at } = await sb.from('roarstudio_comments').select('attach').eq(col, val).not('attach', 'is', null)
+  return [...(st || []).map((r: any) => r.file_key), ...(vo || []).map((r: any) => r.voice), ...(at || []).map((r: any) => r.attach)]
+}
+
+// a picture with a note (studio/<project>/att/…), reactions, @mentions and how much each person watched (Alex, 8 Nov, from Frame.io)
+async function attPut(projectId: string) {
+  const key = `studio/${projectId}/att/${crypto.randomUUID()}.jpg`
+  return json({ key, put: await presign('PUT', key, {}, 900) })
+}
+const attOk = (key: unknown, projectId: string) => typeof key === 'string' && key.startsWith(`studio/${projectId}/att/`) && !key.includes('..') && key.length < 200
+async function attUrl(commentId: unknown, projectId: string | null) {
+  if (!isId(commentId)) return json({ error: 'not found' }, 404)
+  const { data: c } = await sb.from('roarstudio_comments').select('id, project_id, attach').eq('id', commentId).maybeSingle()
+  if (!c || !c.attach || (projectId && c.project_id !== projectId) || !attOk(c.attach, c.project_id)) return json({ error: 'not found' }, 404)
+  return json({ url: await presign('GET', c.attach, {}, 6 * 3600), project: c.project_id })
+}
+const EMOJI = ['👍', '❤️', '🔥', '😂', '👀', '✅']
+async function reactionsOf(projectId: string, commentId?: string) {
+  let q = sb.from('roarstudio_reactions').select('comment_id, user_id, guest_name, emoji').eq('project_id', projectId)
+  if (commentId) q = q.eq('comment_id', commentId)
+  const { data } = await q
+  return data || []
+}
+async function mentionMail(projectId: string, comment: any, users: unknown, byName: string, skip: string | null) {
+  const ids = (Array.isArray(users) ? users : []).filter((u) => isId(u) && u !== skip).slice(0, 20)
+  if (!ids.length) return 0
+  const { data: people } = await sb.rpc('roarstudio_member_emails', { ps: [projectId] })
+  const to = (people || []).filter((p: any) => ids.includes(p.user_id))
+  if (!to.length) return 0
+  const { data: pr } = await sb.from('roarstudio_projects').select('title').eq('id', projectId).maybeSingle()
+  const { data: v } = await sb.from('roarstudio_versions').select('track_id, n').eq('id', comment.version_id).maybeSingle()
+  const { data: t } = v ? await sb.from('roarstudio_tracks').select('title').eq('id', v.track_id).maybeSingle() : { data: null }
+  const link = v ? `${PAGE}#t/${v.track_id}` : `${PAGE}#p/${projectId}`
+  const what = `${byName} mentioned you on ${t?.title || 'a file'}${v ? ' v' + v.n : ''}`
+  let sent = 0
+  for (const p of to) {
+    const r = await sendMail(p.email, what, mailHtml(p.name, [{ what, pt: pr?.title || '', body: comment.body, link }]), `${what} (${pr?.title || ''})\n"${comment.body}"\n${link}`)
+    if (r === true) sent++
+  }
+  return sent
+}
+async function watchSave(v: any, viewer: string, name: string | null, userId: string | null, b: Record<string, any>) {
+  const sec = Math.max(0, Math.min(24 * 3600, Number(b.sec) || 0)), seen = Math.max(0, Math.min(24 * 3600, Math.round(Number(b.seen) || 0)))
+  const dur = Number(b.dur) > 0 ? Math.min(24 * 3600, Number(b.dur)) : (v.duration || null)
+  const { data: had } = await sb.from('roarstudio_watch').select('furthest, seen, plays').eq('version_id', v.id).eq('viewer', viewer).maybeSingle()
+  const now = new Date().toISOString()
+  if (had) await sb.from('roarstudio_watch').update({ furthest: Math.max(had.furthest, sec), seen: Math.max(had.seen, seen), plays: had.plays + (b.start ? 1 : 0), duration: dur, name, updated_at: now }).eq('version_id', v.id).eq('viewer', viewer)
+  else await sb.from('roarstudio_watch').insert({ version_id: v.id, project_id: v.project_id, viewer, name, user_id: userId, furthest: sec, seen, duration: dur, plays: 1 })
+  return json({ ok: true })
 }
 
 // a point on a picture, both numbers between 0 and 1
@@ -189,13 +248,25 @@ async function togglePick(projectId: string, trackId: string, userId: string | n
   return json({ picked: !had, picks: await picksOf(projectId) })
 }
 
-async function deleteKeys(keys: string[]) {
-  for (const k of keys) if (k && k.startsWith('studio/')) { try { await r2.fetch(at(k), { method: 'DELETE' }) } catch (e) { console.error('delete', k, e) } }
+async function guestBusy(projectId: string) {
+  const { count } = await sb.from('roarstudio_comments').select('id', { count: 'exact', head: true }).eq('project_id', projectId).not('guest_name', 'is', null).gte('created_at', new Date(Date.now() - 36e5).toISOString())
+  return (count || 0) >= 60
+}
+// a picture with a note is at most 25 MB; a bigger one is deleted and left off the note
+async function attSmall(key: string, projectId: string) {
+  const h = await r2.fetch(at(key), { method: 'HEAD' })
+  if (!h.ok) return false
+  if (Number(h.headers.get('content-length')) > 25 * 1024 * 1024) { await deleteKeys([key], projectId); return false }
+  return true
+}
+async function deleteKeys(keys: string[], project: string) {
+  for (const k of keys) if (k && isId(project) && k.startsWith(`studio/${project}/`) && !k.includes('..')) { try { await r2.fetch(at(k), { method: 'DELETE' }) } catch (e) { console.error('delete', k, e) } }
 }
 
 async function handle(req: Request): Promise<Response> {
   let b: Record<string, any> = {}
   try { b = await req.json() } catch { return json({ error: 'bad request' }, 400) }
+  b._ip = (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 64)
   const jwt = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
   let uid: string | null = null
   if (jwt && jwt.split('.').length === 3) {
@@ -217,7 +288,9 @@ async function handle(req: Request): Promise<Response> {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json({ error: 'bad email' }, 400)
     const plan = b.plan === 'transfer-pro' ? 'transfer-pro' : 'studio-pro'
     const billing = b.billing === 'year' ? 'year' : b.billing === 'month' ? 'month' : null
-    const { error } = await sb.from('roarstudio_waitlist').upsert({ email, plan, billing, lang: b.lang === 'el' ? 'el' : 'en' }, { onConflict: 'email,plan' })
+    const { count: lately } = await sb.from('roarstudio_waitlist').select('id', { count: 'exact', head: true }).eq('ip', b._ip || '').gte('created_at', new Date(Date.now() - 36e5).toISOString())
+    if ((lately || 0) >= 5) return json({ ok: true })
+    const { error } = await sb.from('roarstudio_waitlist').upsert({ email, plan, billing, lang: b.lang === 'el' ? 'el' : 'en', ip: b._ip || null }, { onConflict: 'email,plan' })
     if (error) return json({ error: 'Try again in a minute.' }, 500)
     return json({ ok: true })
   }
@@ -265,11 +338,11 @@ async function handle(req: Request): Promise<Response> {
       const { data: versions } = tids.length ? await vq : { data: [] }
       if (finals) { const has = new Set((versions || []).map((v: any) => v.track_id)); tracks = (tracks || []).filter((t: any) => has.has(t.id)) }
       const vids = (versions || []).map((v: any) => v.id)
-      const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec, pos').in('version_id', vids).order('created_at') : { data: [] }
+      const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec, pos, attach').in('version_id', vids).order('created_at') : { data: [] }
       const who = await names([project?.owner, ...(comments || []).map((c: any) => c.author), ...(versions || []).map((v: any) => v.uploaded_by)])
       await logEvent(s.project_id, 'view', null, String(b.name || '').slice(0, 60) || 'Someone with the link')
       return json({ project: { ...project, owner_name: who[project?.owner] || '' }, tracks, versions, comments, names: who,
-        picks: s.kind === 'finals' ? [] : await picksOf(s.project_id), kind: s.kind || 'review', playlist: playlist ? { id: playlist.id, title: playlist.title } : null, studio: await studioOf(project?.owner),
+        picks: s.kind === 'finals' ? [] : await picksOf(s.project_id), reactions: s.kind === 'finals' ? [] : await reactionsOf(s.project_id), kind: s.kind || 'review', playlist: playlist ? { id: playlist.id, title: playlist.title } : null, studio: await studioOf(project?.owner),
         can: finals ? { comment: false, approve: false, download: true } : { comment: s.can_comment, approve: s.can_approve, download: s.can_download }, expires: s.expires_at })
     }
     if (b.action === 'share-url') {
@@ -284,20 +357,27 @@ async function handle(req: Request): Promise<Response> {
       if (!s.can_comment || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
       const v = await inShare(b.version)
       if (!v) return json({ error: 'not found' }, 404)
+      if (await guestBusy(s.project_id)) return json({ error: 'Too many notes from links in the last hour. Try again later.' }, 429)
       const body = String(b.body || '').trim().slice(0, 4000)
       const name = String(b.name || '').trim().slice(0, 60) || 'Guest'
       const voice = voiceOk(b.voice, s.project_id) ? b.voice : null
       if (!body && !voice) return json({ error: 'empty' }, 400)
       const row: Record<string, unknown> = { version_id: v.id, project_id: s.project_id, body, guest_name: name, at_sec: Number.isFinite(Number(b.at_sec)) && b.at_sec !== null ? Number(b.at_sec) : null }
-      if (isId(b.parent)) row.parent_id = b.parent
+      if (isId(b.parent)) { const { data: pc } = await sb.from('roarstudio_comments').select('id').eq('id', b.parent).eq('version_id', v.id).maybeSingle(); if (pc) row.parent_id = pc.id }
       const sk = cleanSketch(b.sketch)
       if (sk) row.sketch = sk
       const ps = cleanPos(b.pos)
       if (ps) row.pos = ps
       if (voice) { row.voice = voice; row.voice_sec = Math.max(0, Math.min(600, Number(b.voice_sec) || 0)) }
+      if (attOk(b.attach, s.project_id) && (await attSmall(b.attach, s.project_id))) row.attach = b.attach
       if (row.at_sec != null && Number.isFinite(Number(b.end_sec)) && b.end_sec !== null && Number(b.end_sec) > Number(row.at_sec)) row.end_sec = Number(b.end_sec)
-      const { data, error } = await sb.from('roarstudio_comments').insert(row).select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec, pos').single()
+      const { data, error } = await sb.from('roarstudio_comments').insert(row).select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec, pos, attach').single()
       if (error) return json({ error: error.message }, 500)
+      if (Array.isArray(b.mentions) && b.mentions.length) {
+        // at most 10 notes with @names from links an hour per project, 5 names a note
+        const { count: lately } = await sb.from('roarstudio_comments').select('id', { count: 'exact', head: true }).eq('project_id', s.project_id).not('mentioned_at', 'is', null).not('guest_name', 'is', null).gte('mentioned_at', new Date(Date.now() - 36e5).toISOString())
+        if ((lately || 0) < 10) { await mentionMail(s.project_id, data, b.mentions.slice(0, 5), `${name} (guest)`, null); await sb.from('roarstudio_comments').update({ mentioned_at: new Date().toISOString() }).eq('id', data.id) }
+      }
       return json({ comment: data })
     }
     if (b.action === 'share-pick') {
@@ -311,9 +391,38 @@ async function handle(req: Request): Promise<Response> {
     }
     if (b.action === 'share-voice-add') {
       if (!s.can_comment || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
+      if (await guestBusy(s.project_id)) return json({ error: 'Too many notes from links in the last hour. Try again later.' }, 429)
       return await voicePut(s.project_id, b.type)
     }
-    if (b.action === 'share-voice-url') return await voiceUrl(b.comment, s.project_id)
+    const inLinkNote = async (cid: unknown) => {
+      if (!isId(cid)) return false
+      const { data: c } = await sb.from('roarstudio_comments').select('version_id').eq('id', cid).eq('project_id', s.project_id).maybeSingle()
+      return !!c && !!(await inShare(c.version_id))
+    }
+    if (b.action === 'share-voice-url') { if (!(await inLinkNote(b.comment))) return json({ error: 'not found' }, 404); return await voiceUrl(b.comment, s.project_id) }
+    if (b.action === 'share-att-add') {
+      if (!s.can_comment || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
+      if (await guestBusy(s.project_id)) return json({ error: 'Too many notes from links in the last hour. Try again later.' }, 429)
+      return await attPut(s.project_id)
+    }
+    if (b.action === 'share-att-url') { if (!(await inLinkNote(b.comment))) return json({ error: 'not found' }, 404); return await attUrl(b.comment, s.project_id) }
+    if (b.action === 'share-react') {
+      if (s.kind === 'finals' || !isId(b.comment) || !EMOJI.includes(b.emoji)) return json({ error: 'not allowed' }, 403)
+      const name = String(b.name || '').trim().slice(0, 60)
+      if (!name) return json({ error: 'name' }, 400)
+      const { data: c } = await sb.from('roarstudio_comments').select('id, project_id').eq('id', b.comment).eq('project_id', s.project_id).maybeSingle()
+      if (!c) return json({ error: 'not found' }, 404)
+      const { data: had } = await sb.from('roarstudio_reactions').select('id').eq('comment_id', c.id).is('user_id', null).ilike('guest_name', name.replace(/[%_\\]/g, (m) => '\\' + m)).eq('emoji', b.emoji).maybeSingle()
+      if (had) await sb.from('roarstudio_reactions').delete().eq('id', had.id)
+      else await sb.from('roarstudio_reactions').insert({ comment_id: c.id, project_id: s.project_id, guest_name: name, emoji: b.emoji })
+      return json({ reactions: await reactionsOf(s.project_id, c.id) })
+    }
+    if (b.action === 'share-watch') {
+      const v = await inShare(b.version)
+      if (!v) return json({ error: 'not found' }, 404)
+      const name = String(b.name || '').trim().slice(0, 60) || 'Someone with the link'
+      return await watchSave(v, 'g:' + name.toLowerCase(), name, null, b)
+    }
     if (b.action === 'share-stems') {
       const v = await inShare(b.version)
       if (!v) return json({ error: 'not found' }, 404)
@@ -328,6 +437,7 @@ async function handle(req: Request): Promise<Response> {
     }
     if (b.action === 'share-still-add') {
       if (!s.can_comment || s.kind === 'finals') return json({ error: 'not allowed' }, 403)
+      if (await guestBusy(s.project_id)) return json({ error: 'Too many notes from links in the last hour. Try again later.' }, 429)
       const v = await inShare(b.version)
       if (!v) return json({ error: 'not found' }, 404)
       return await addStill(v, b, null, String(b.name || '').trim().slice(0, 60) || 'Guest')
@@ -385,14 +495,14 @@ async function handle(req: Request): Promise<Response> {
     if (!r.ok || text.includes('<Error>')) return json({ error: `Could not finish the upload (${tag(text, 'Code') || r.status})` }, 502)
     const head = await r2.fetch(at(b.key), { method: 'HEAD' })
     const size = Number(head.headers.get('content-length')) || Number(b.size) || 0
-    if (size > MAX_FILE) { await deleteKeys([b.key]); return json({ error: 'Files can be up to 20 GB.' }, 400) }
+    if (size > MAX_FILE) { await deleteKeys([b.key], project); return json({ error: 'Files can be up to 20 GB.' }, 400) }
     // a stem of a version (Alex, 8 Nov): kept beside the version, not as a new file
     if (isId(b.stem_of)) {
       const { data: pv } = await sb.from('roarstudio_versions').select('id').eq('id', b.stem_of).eq('project_id', project).maybeSingle()
-      if (!pv) { await deleteKeys([b.key]); return json({ error: 'not found' }, 404) }
+      if (!pv) { await deleteKeys([b.key], project); return json({ error: 'not found' }, 404) }
       const { count: sc } = await sb.from('roarstudio_stems').select('id', { count: 'exact', head: true }).eq('version_id', pv.id)
       const { data: st, error: se } = await sb.from('roarstudio_stems').insert({ version_id: pv.id, project_id: project, name: String(b.title || b.name || 'Stem').replace(/\.[a-z0-9]{2,5}$/i, '').slice(0, 120), file_key: b.key, size, mime: String(b.type || '').slice(0, 100), position: sc || 0, created_by: uid }).select('id, version_id, name, size, mime, created_by').single()
-      if (se) { await deleteKeys([b.key]); return json({ error: se.message }, 500) }
+      if (se) { await deleteKeys([b.key], project); return json({ error: se.message }, 500) }
       return json({ stem: st })
     }
     // the track: the one given (in this project) or a new one
@@ -419,7 +529,7 @@ async function handle(req: Request): Promise<Response> {
       width: num(m.width), height: num(m.height), true_peak: num(m.true_peak),
       thumb: typeof m.thumb === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(m.thumb) && m.thumb.length < 120000 ? m.thumb : null,
     }).select().single()
-    if (error) { await deleteKeys([b.key]); return json({ error: error.message }, 500) }
+    if (error) { await deleteKeys([b.key], project); return json({ error: error.message }, 500) }
     return json({ version: v })
   }
 
@@ -446,6 +556,29 @@ async function handle(req: Request): Promise<Response> {
     if (b.action === 'voice-add') { if (!can(r, 'commenter')) return json({ error: 'not allowed' }, 403); return await voicePut(v.project_id, b.type) }
     return json({ stems: await stemsOf(v.id) })
   }
+  if (b.action === 'att-add' || b.action === 'watch') {
+    if (!isId(b.version)) return json({ error: 'not found' }, 404)
+    const { data: v } = await sb.from('roarstudio_versions').select('id, project_id, duration').eq('id', b.version).maybeSingle()
+    const r = v ? await roleOf(uid, v.project_id) : null
+    if (!v || !can(r, 'listener')) return json({ error: 'not found' }, 404)
+    if (b.action === 'watch') return await watchSave(v, uid, (await names([uid]))[uid] || null, uid, b)
+    if (!can(r, 'commenter')) return json({ error: 'not allowed' }, 403)
+    return await attPut(v.project_id)
+  }
+  if (b.action === 'att-url') {
+    const res = await attUrl(b.comment, null)
+    const d = await res.clone().json()
+    if (!d.project || !can(await roleOf(uid, d.project), 'listener')) return json({ error: 'not found' }, 404)
+    return json({ url: d.url })
+  }
+  if (b.action === 'mention') {
+    if (!isId(b.comment)) return json({ error: 'not found' }, 404)
+    const { data: c } = await sb.from('roarstudio_comments').select('id, project_id, version_id, body, author, mentioned_at').eq('id', b.comment).maybeSingle()
+    if (!c || c.author !== uid) return json({ error: 'not allowed' }, 403)
+    if (c.mentioned_at) return json({ sent: 0 })
+    await sb.from('roarstudio_comments').update({ mentioned_at: new Date().toISOString() }).eq('id', c.id)
+    return json({ sent: await mentionMail(c.project_id, c, b.users, (await names([uid]))[uid] || 'Someone', uid) })
+  }
   if (b.action === 'voice-url') {
     const res = await voiceUrl(b.comment, null)
     const d = await res.clone().json()
@@ -458,7 +591,7 @@ async function handle(req: Request): Promise<Response> {
     if (!st) return json({ ok: true })
     if (!can(await roleOf(uid, st.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
     await sb.from('roarstudio_stems').delete().eq('id', st.id)
-    await deleteKeys([st.file_key])
+    await deleteKeys([st.file_key], st.project_id)
     return json({ ok: true })
   }
 
@@ -477,7 +610,7 @@ async function handle(req: Request): Promise<Response> {
     if (!st) return json({ ok: true })
     if (st.author !== uid && !can(await roleOf(uid, st.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
     await sb.from('roarstudio_stills').delete().eq('id', st.id)
-    await deleteKeys([st.file_key])
+    await deleteKeys([st.file_key], st.project_id)
     return json({ ok: true })
   }
 
@@ -508,7 +641,7 @@ async function handle(req: Request): Promise<Response> {
     if (!v || !can(await roleOf(uid, v.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
     const sk = [...(await stillKeys('version_id', v.id)), ...(await extraKeys('version_id', v.id))]
     await sb.from('roarstudio_versions').delete().eq('id', v.id)
-    await deleteKeys([v.file_key, ...sk])
+    await deleteKeys([v.file_key, ...sk], v.project_id)
     // a track with no version left goes too
     const { count } = await sb.from('roarstudio_versions').select('id', { count: 'exact', head: true }).eq('track_id', v.track_id)
     if (!count) await sb.from('roarstudio_tracks').delete().eq('id', v.track_id)
@@ -523,7 +656,7 @@ async function handle(req: Request): Promise<Response> {
     const sk: string[] = []
     for (const v of vs || []) sk.push(...(await stillKeys('version_id', v.id)), ...(await extraKeys('version_id', v.id)))
     await sb.from('roarstudio_tracks').delete().eq('id', t.id)
-    await deleteKeys([...(vs || []).map((v: any) => v.file_key), ...sk])
+    await deleteKeys([...(vs || []).map((v: any) => v.file_key), ...sk], t.project_id)
     return json({ ok: true })
   }
 
@@ -532,7 +665,7 @@ async function handle(req: Request): Promise<Response> {
     const { data: vs } = await sb.from('roarstudio_versions').select('file_key').eq('project_id', project)
     const sk = [...(await stillKeys('project_id', project)), ...(await extraKeys('project_id', project))]
     await sb.from('roarstudio_projects').delete().eq('id', project)
-    await deleteKeys([...(vs || []).map((v: any) => v.file_key), ...sk])
+    await deleteKeys([...(vs || []).map((v: any) => v.file_key), ...sk], project)
     return json({ ok: true })
   }
 

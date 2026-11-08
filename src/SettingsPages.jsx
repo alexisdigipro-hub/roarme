@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
+import { ACCENTS, CHAT_THEMES, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, inkOn, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { LegalDoc, legalTitle } from './legal.jsx'
@@ -767,8 +767,49 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
+/* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
+function ColorRow({ label, hint, value, fallback, onPick }) {
+  return (
+    <div className="set-row">
+      <span className="set-text">{label}<small>{value ? value.toUpperCase() : hint}</small></span>
+      <span className="color-pick">
+        {value && <button type="button" className="round tiny" onClick={() => onPick('')} aria-label="Theme's own" title="Theme's own">{I.x}</button>}
+        <label className={`color-dot${value ? ' set' : ''}`} style={{ '--c': value || fallback }}><input type="color" value={value || fallback} onChange={(e) => onPick(e.target.value)} /></label>
+      </span>
+    </div>
+  )
+}
+function ChatTheme({ p }) {
+  const own = (patch) => setPrefs({ ...patch, chatTheme: '' })
+  return (
+    <Box title="Chat theme" note="A ready-made theme, or your own colours. The wallpaper is below.">
+      <div className="set-row set-col">
+        <div className="walls chat-themes">
+          <button type="button" className={`wall-tile${!p.chatTheme && !p.myBubble && !p.theirBubble && !p.accentHex ? ' on' : ''}`} data-bg="soft" onClick={() => setPrefs({ chatTheme: '', myBubble: '', theirBubble: '', accentHex: '' })}>
+            <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>Theme's Own</small>
+          </button>
+          {CHAT_THEMES.map(([k, l, t]) => (
+            <button key={k} type="button" className={`wall-tile${p.chatTheme === k ? ' on' : ''}`} data-bg={t.background} onClick={() => setPrefs({ ...t, chatTheme: k })}>
+              <i className="wall-b" style={{ background: t.theirBubble, color: inkOn(t.theirBubble) }}>Hi!</i>
+              <i className="wall-b mine" style={{ background: t.myBubble, color: inkOn(t.myBubble) }}>Hello 👋</i><small>{l}</small>
+            </button>
+          ))}
+        </div>
+      </div>
+      <ColorRow label="Your Messages" hint="The theme's own" value={p.myBubble} fallback="#2a2a2c" onPick={(c) => own({ myBubble: c })} />
+      <ColorRow label="Their Messages" hint="The theme's own" value={p.theirBubble} fallback="#ffffff" onPick={(c) => own({ theirBubble: c })} />
+      <ColorRow label="Accent" hint="Buttons, links, the chosen tab" value={p.accentHex} fallback="#d40000" onPick={(c) => own({ accentHex: c })} />
+      <div className="set-row set-col">
+        <span className="set-text">Message Corners<small>{p.bubbleR ? `${p.bubbleR} px` : "The theme's own"}</small></span>
+        <input type="range" min="0" max="26" step="2" value={p.bubbleR || 0} onChange={(e) => setPrefs({ bubbleR: Number(e.target.value) })} />
+        <span className="range-labels"><small>Theme's own</small><small>Round</small></span>
+      </div>
+    </Box>
+  )
+}
+
 function Appearance({ p, toast, me, setMe }) {
   const look = wallLook(p.background, useWalls(true))
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
@@ -800,11 +841,12 @@ function Appearance({ p, toast, me, setMe }) {
         <div className="set-row set-col">
           <span className="set-text">Accent Colour<small>{p.accent ? ACCENTS.find(([k]) => k === p.accent)?.[1] : "The theme's own colour"}</small></span>
           <div className="accents">
-            <button type="button" className={`acc acc-auto${!p.accent ? ' on' : ''}`} title="Theme colour" onClick={() => setPrefs({ accent: '' })}><small>Theme</small></button>
-            {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}${k === 'white' ? ' acc-white' : k === 'black' ? ' acc-black' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k })}><small>{l}</small></button>)}
+            <button type="button" className={`acc acc-auto${!p.accent ? ' on' : ''}`} title="Theme colour" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Theme</small></button>
+            {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}${k === 'white' ? ' acc-white' : k === 'black' ? ' acc-black' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
           </div>
         </div>
       </Box>
+      <ChatTheme p={p} />
       <Box title="Text">
         <div className="set-row set-col">
           <span className="set-text">Text Size</span>

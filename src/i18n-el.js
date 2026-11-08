@@ -1,5 +1,23 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  // Chat theme (9 Nov)
+  'Chat theme': 'Θέμα συνομιλίας',
+  'A ready-made theme, or your own colours. The wallpaper is below.': 'Ένα έτοιμο θέμα ή τα δικά σου χρώματα. Η ταπετσαρία είναι πιο κάτω.',
+  'Theme\'s Own': 'Του θέματος',
+  'Graphite': 'Γραφίτης',
+  'Ocean': 'Ωκεανός',
+  'Dusk': 'Σούρουπο',
+  'Forest': 'Δάσος',
+  'Ember': 'Ember',
+  'Night': 'Νύχτα',
+  'Your Messages': 'Τα μηνύματά σου',
+  'Their Messages': 'Τα μηνύματα των άλλων',
+  'Accent': 'Χρώμα έμφασης',
+  'Buttons, links, the chosen tab': 'Κουμπιά, links, η επιλεγμένη καρτέλα',
+  'The theme\'s own': 'Του θέματος',
+  'Message Corners': 'Γωνίες μηνυμάτων',
+  'Theme\'s own': 'Του θέματος',
+  'Round': 'Στρογγυλές',
   // Reset Appearance (9 Nov)
   'Reset Appearance': 'Επαναφορά εμφάνισης',
   'Reset the look of RoarMe on this device?': 'Να γυρίσει η εμφάνιση του RoarMe σε αυτή τη συσκευή όπως ήταν στην αρχή;',

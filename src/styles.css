@@ -4090,3 +4090,34 @@ html[data-theme='stone'] .msg:not(.mine) .voice-wave i.on { color: var(--text); 
 .inbox-acts .round.tiny.danger { color: var(--danger); }
 .inbox-editing { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; margin: 0 0 6px; border-radius: 12px; background: var(--glass); border: 1px solid var(--edge); font-size: 13px; }
 .inbox-editing span { display: flex; align-items: center; gap: 8px; }
+
+/* one's own chat theme (Alex, 9 Nov; prefs.js applyLook sets the variables and the data- marks). Over every theme,
+   glass or solid: the message colours, a soft gradient from a lighter tone, the ink chosen to be readable */
+html[data-my-bubble][data-theme][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji),
+html[data-my-bubble][data-theme][data-mode] .peek-msg.mine {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--my-bubble) 82%, #fff), var(--my-bubble) 70%) !important;
+  color: var(--my-bubble-ink) !important; border: 1px solid color-mix(in srgb, var(--my-bubble) 75%, #fff) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent) !important;
+}
+html[data-my-bubble][data-theme][data-mode][data-bubbles] .msg.mine .bubble :is(.meta, .ticks, .voice small, .file-text small),
+html[data-my-bubble][data-theme][data-mode] .peek-msg.mine small { color: color-mix(in srgb, var(--my-bubble-ink) 62%, transparent) !important; }
+html[data-their-bubble][data-theme][data-mode][data-bubbles] .msg:not(.mine) .bubble:not(.pic):not(.big-emoji),
+html[data-their-bubble][data-theme][data-mode] .peek-msg:not(.mine) {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--their-bubble) 82%, #fff), var(--their-bubble) 70%) !important;
+  color: var(--their-bubble-ink) !important; border: 1px solid color-mix(in srgb, var(--their-bubble) 80%, #fff) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 30%, transparent) !important;
+}
+html[data-their-bubble][data-theme][data-mode][data-bubbles] .msg:not(.mine) .bubble :is(.meta, .voice small, .file-text small),
+html[data-their-bubble][data-theme][data-mode] .peek-msg:not(.mine) small { color: color-mix(in srgb, var(--their-bubble-ink) 58%, transparent) !important; }
+html[data-my-bubble] .set-preview .pv.mine { background: var(--my-bubble) !important; color: var(--my-bubble-ink) !important; }
+html[data-their-bubble] .set-preview .pv:not(.mine) { background: var(--their-bubble) !important; color: var(--their-bubble-ink) !important; }
+/* Message Corners */
+html[data-bubble-r] :is(.bubble:not(.big-emoji), .peek-msg, .set-preview .pv) { border-radius: var(--bubble-r) !important; }
+html[data-bubble-r] .msg.first:not(.mine) .bubble:not(.big-emoji) { border-bottom-left-radius: min(6px, var(--bubble-r)) !important; }
+html[data-bubble-r] .msg.first.mine .bubble:not(.big-emoji) { border-bottom-right-radius: min(6px, var(--bubble-r)) !important; }
+/* the colour rows */
+.color-pick { display: flex; align-items: center; gap: 8px; flex: none; }
+.color-dot { position: relative; width: 34px; height: 34px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18), 0 0 0 3px var(--glass); cursor: pointer; overflow: hidden; }
+.color-dot:not(.set) { background: conic-gradient(#3b82f6, #22c55e, #facc15, #f97316, #ef4444, #d946ef, #8b5cf6, #22d3ee, #3b82f6); }
+.color-dot input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.chat-themes .wall-b { box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }

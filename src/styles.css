@@ -4205,3 +4205,14 @@ html[data-skin='halo'][data-my-bubble] .corner-demo .cd-b.mine { background: var
 html[data-theme] .rooms-area.bottom .tabs { background: none !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; padding: 2px 0 !important; }
 html[data-theme] .rooms-area.bottom .tabs button { height: 32px; font-size: 13.5px; }
 @media (max-width: 760px) { .rooms-area.bottom .tabs { width: 100%; } }
+
+/* the folder tabs at the foot as a horizontal wheel (Alex, 9 Nov; Chat.jsx wheelOn): a half-width pad at each end so
+   the first and last folder can sit in the middle, each tab snaps to the middle, and both edges fade away */
+html[data-theme] .rooms-area.bottom .tabs.tabs-wheel {
+  justify-content: flex-start; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 28%, #000 72%, transparent 100%) !important;
+  mask-image: linear-gradient(90deg, transparent 0, #000 28%, #000 72%, transparent 100%) !important;
+}
+.tabs-wheel > .wheel-pad { flex: none; width: 50%; pointer-events: none; }
+.tabs-wheel > button { flex: none !important; scroll-snap-align: center; padding: 0 16px !important; }
+.tabs-wheel > button:not(.on) { opacity: .75; }

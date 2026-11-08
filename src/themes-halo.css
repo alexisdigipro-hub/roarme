@@ -1,0 +1,132 @@
+/* Halo (Alex, 9 Nov, from a design he liked): Stone's build in a brighter dress. A pale grey page with soft lavender
+   clouds, white frosted cards with a bright rim and a soft shadow, a warm orange for what matters (your messages, the
+   chosen tab, Send), and the bar at the foot a floating white capsule whose chosen button is an orange circle.
+   It is worn as data-theme 'stone' + data-skin 'halo' (App.jsx), so every Stone rule holds and only these differ.
+   Loaded only when worn (prefs.js wearTheme). Light and dark. */
+
+html[data-skin='halo'][data-theme='stone'] {
+  --halo: #f47318; --halo-2: #ff9a3c;
+  --accent: #f47318; --accent-2: #ff9a3c; --accent-ink: #ffffff;
+  --rail: #f47318; --rail-2: #ff9a3c; --mint: #f47318;
+}
+html[data-skin='halo'][data-theme='stone'][data-mode='light'] {
+  --bg: #ecedf2; --panel: rgba(255, 255, 255, .42); --panel-2: rgba(255, 255, 255, .6);
+  --glass: rgba(255, 255, 255, .62); --glass-2: rgba(255, 255, 255, .9);
+  --edge: rgba(255, 255, 255, .95); --edge-2: #ffffff;
+  --text: #1d1d24; --muted: #8b8b98;
+  --theirs: rgba(255, 255, 255, .78);
+  --shadow: 0 24px 60px rgba(70, 70, 110, .14), 0 2px 8px rgba(70, 70, 110, .06);
+  --float: rgba(248, 248, 251, .96);
+}
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] {
+  --bg: #15151b; --panel: rgba(40, 40, 52, .6); --panel-2: rgba(52, 52, 66, .7);
+  --glass: rgba(255, 255, 255, .07); --glass-2: rgba(255, 255, 255, .13);
+  --edge: rgba(255, 255, 255, .12); --edge-2: rgba(255, 255, 255, .2);
+  --text: #f1f1f5; --muted: #9b9bab;
+  --theirs: rgba(255, 255, 255, .09);
+  --shadow: 0 24px 60px rgba(0, 0, 0, .45);
+  --float: rgba(34, 34, 44, .96);
+}
+
+/* the page: pale grey with lavender clouds (drawn as soft gradients, no blur filter) */
+html[data-skin='halo'][data-theme='stone'][data-mode='light'] body {
+  background:
+    radial-gradient(300px 260px at 6% 24%, rgba(140, 140, 200, .6), transparent 70%),
+    radial-gradient(340px 300px at 96% 10%, rgba(150, 150, 205, .55), transparent 70%),
+    radial-gradient(380px 320px at 78% 62%, rgba(140, 140, 200, .45), transparent 70%),
+    radial-gradient(300px 260px at 14% 90%, rgba(160, 160, 212, .5), transparent 70%),
+    linear-gradient(180deg, #f1f1f5, #e7e8ee);
+  background-attachment: fixed;
+}
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] body {
+  background:
+    radial-gradient(380px 300px at 8% 22%, rgba(110, 110, 170, .26), transparent 70%),
+    radial-gradient(420px 340px at 92% 8%, rgba(120, 110, 180, .22), transparent 70%),
+    radial-gradient(460px 360px at 70% 92%, rgba(100, 100, 160, .22), transparent 70%),
+    linear-gradient(180deg, #18181f, #111116);
+  background-attachment: fixed;
+}
+
+/* the panels: white frosted cards, bright rim, soft lilac shadow, round corners */
+html[data-skin='halo'][data-theme='stone'] :is(.side, .main) {
+  border-radius: 32px; background: var(--panel); border: 1px solid var(--edge);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+
+/* round buttons and pills: white glass with a bright rim */
+html[data-skin='halo'][data-theme='stone'] .round {
+  border-radius: 50%; background: linear-gradient(180deg, rgba(255, 255, 255, .85), rgba(255, 255, 255, .55));
+  border: 1px solid #fff; color: var(--text); box-shadow: 0 6px 16px rgba(70, 70, 110, .12);
+}
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .round { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
+html[data-skin='halo'][data-theme='stone'] .round.on,
+html[data-skin='halo'][data-theme='stone'] :is(.btn-main, .send.ready, .new-call-ico) {
+  background: linear-gradient(145deg, var(--halo-2), var(--halo)); color: #fff; border-color: transparent;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--halo) 38%, transparent), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+html[data-skin='halo'][data-theme='stone'][data-bubbles] :is(.btn-main, .send.ready, .new-call-ico):not(:disabled) {
+  background: linear-gradient(145deg, var(--halo-2), var(--halo)) !important; color: #fff !important; border-color: transparent !important;
+}
+html[data-skin='halo'][data-theme='stone'] :is(.btn, .pill-btn) { border-radius: 999px; background: rgba(255, 255, 255, .7); border: 1px solid #fff; box-shadow: 0 4px 12px rgba(70, 70, 110, .08); }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.btn, .pill-btn) { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); }
+html[data-skin='halo'][data-theme='stone'] .search { border-radius: 999px; background: rgba(255, 255, 255, .6); border: 1px solid #fff; box-shadow: inset 0 1px 2px rgba(70, 70, 110, .06); }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .search { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .12); }
+html[data-skin='halo'][data-theme='stone'] .compose-box { border-radius: 999px; background: rgba(255, 255, 255, .78); border: 1px solid #fff; box-shadow: 0 8px 22px rgba(70, 70, 110, .1); }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .compose-box { background: rgba(255, 255, 255, .07); border-color: rgba(255, 255, 255, .14); }
+
+/* folder tabs: chips; the chosen one in orange with an orange rim */
+html[data-skin='halo'][data-theme='stone'] .tabs { border: 0; }
+html[data-skin='halo'][data-theme='stone'] .tabs button { border-radius: 999px; color: var(--muted); }
+html[data-skin='halo'][data-theme='stone'] .tabs button.on,
+html[data-skin='halo'][data-theme='stone'] .tabs.lens.lens-on > .on { color: var(--halo); }
+html[data-skin='halo'][data-theme='stone'] .tabs.lens::before { height: auto; top: 0; bottom: 2px; border-radius: 999px; background: color-mix(in srgb, var(--halo) 8%, rgba(255, 255, 255, .85)); border: 1px solid color-mix(in srgb, var(--halo) 55%, transparent); box-shadow: none; }
+html[data-skin='halo'][data-theme='stone'] .tabs button.on small { background: var(--halo); color: #fff; }
+
+/* the bar at the foot: a floating white capsule; the chosen button an orange circle with a white icon */
+html[data-skin='halo'][data-theme='stone'] .foot {
+  border-radius: 999px; background: rgba(255, 255, 255, .82); border: 1px solid #fff;
+  box-shadow: 0 18px 40px rgba(70, 70, 110, .16), inset 0 1px 0 #fff;
+}
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot { background: rgba(36, 36, 46, .9); border-color: rgba(255, 255, 255, .1); box-shadow: 0 18px 40px rgba(0, 0, 0, .45); }
+html[data-skin='halo'][data-theme='stone'] .foot button { border-radius: 999px; color: #5c5c6a; }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot button { color: #a6a6b6; }
+html[data-skin='halo'][data-theme='stone'] .foot button:hover { color: var(--text); }
+html[data-skin='halo'][data-theme='stone'] .foot.lens::before {
+  border-radius: 999px; background: linear-gradient(145deg, var(--halo-2), var(--halo));
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--halo) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+html[data-skin='halo'][data-theme='stone'] .foot.lens.lens-on > .on,
+html[data-skin='halo'][data-theme='stone'] .foot button.on,
+html[data-skin='halo'][data-theme='stone'] .foot button.foot-tasks.open { color: #fff; }
+html[data-skin='halo'][data-theme='stone'] .foot-ico i { background: var(--halo); color: #fff; }
+
+/* messages: theirs white frosted glass, yours a warm orange glow */
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) {
+  background: linear-gradient(135deg, rgba(255, 255, 255, .92), rgba(255, 255, 255, .62)) !important;
+  border: 1px solid #fff !important; color: #1d1d24 !important;
+  box-shadow: 0 6px 16px rgba(70, 70, 110, .08), inset 0 1px 0 #fff !important;
+}
+html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) {
+  background: linear-gradient(135deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .06)) !important;
+  border-color: rgba(255, 255, 255, .12) !important; color: #f1f1f5 !important; box-shadow: none !important;
+}
+html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji) {
+  background: linear-gradient(145deg, var(--halo-2), var(--halo) 70%) !important; color: #fff !important;
+  border: 1px solid color-mix(in srgb, var(--halo-2) 70%, #fff) !important;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--halo) 28%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3) !important;
+}
+html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble :is(.meta, .ticks, .voice small, .file-text small) { color: rgba(255, 255, 255, .78) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble .ticks.seen { color: #fff !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble :is(.msg-link, .mention, .text a) { color: #fff !important; text-decoration-color: rgba(255, 255, 255, .6) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble .quote { background: rgba(255, 255, 255, .18) !important; border-left-color: #fff !important; }
+html[data-skin='halo'] .peek-msg.mine { background: linear-gradient(145deg, var(--halo-2), var(--halo) 70%) !important; color: #fff !important; }
+html[data-skin='halo'] .set-preview .pv.mine, html[data-skin='halo'] .wall-b.mine { background: linear-gradient(145deg, var(--halo-2), var(--halo)); color: #fff; }
+
+/* cards, windows and menus: white frosted, rounder */
+html[data-skin='halo'][data-theme='stone'] .set-box { border-radius: 24px; background: rgba(255, 255, 255, .6); border: 1px solid #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .06); }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .set-box { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .1); }
+html[data-skin='halo'][data-theme='stone'] .modal { border-radius: 32px; }
+html[data-skin='halo'][data-theme='stone'] :is(.menu, .menu-list, .rx-pick) { border-radius: 24px; background: var(--float); border: 1px solid var(--edge-2); box-shadow: var(--shadow); }
+html[data-skin='halo'][data-theme='stone'] .nav-ico { border-radius: 50%; background: rgba(255, 255, 255, .8) !important; color: var(--text) !important; border: 1px solid #fff; box-shadow: 0 3px 8px rgba(70, 70, 110, .1); }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .nav-ico { background: rgba(255, 255, 255, .08) !important; border-color: rgba(255, 255, 255, .12); }
+html[data-skin='halo'][data-theme='stone'] :is(.badge, .unread) { background: var(--halo); color: #fff; }

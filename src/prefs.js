@@ -203,13 +203,21 @@ export function applyMode(mode) {
    accent colour, density, font, corner radius, animations, focus rings */
 /* two themes, each dark and light (Alex, 31 Oct: "only Stone and Simba"): Stone, the main one since 21 Oct, and Simba
    ('ember'). Glass, Aura, Studio, Pumba, Aurum and Lions are gone; anyone left on one of them is on Stone. */
-export const PUBLIC_THEMES = ['stone', 'ember']
+export const PUBLIC_THEMES = ['stone', 'ember', 'halo']
 // Alex's own account: Settings > Admin opens only for him
 const THEME_LAB = ['98f8b6e1-0ce2-4576-805b-cffa25667d22'] // @iamalexkon
 export const inThemeLab = (me) => !!me && THEME_LAB.includes(me.id)
 // Simba's styles (src/themes-simba.css) come only when it is worn (Alex, 31 Oct: RoarMe lighter)
 let simbaCss = null
-export const wearTheme = (t) => { if (!simbaCss && t === 'ember') simbaCss = import('./themes-simba.css') }
+// Halo (Alex, 9 Nov) is Stone's build in another dress: worn as data-theme 'stone' + data-skin 'halo', its CSS loaded when worn
+let haloCss = null
+export const wearTheme = (t) => { if (!simbaCss && t === 'ember') simbaCss = import('./themes-simba.css'); if (!haloCss && t === 'halo') haloCss = import('./themes-halo.css') }
+// what goes on <html>: the theme's build and, for Halo, its skin
+export const dressTheme = (t) => {
+  const r = document.documentElement
+  r.dataset.theme = t === 'halo' ? 'stone' : t
+  if (t === 'halo') r.dataset.skin = 'halo'; else delete r.dataset.skin
+}
 export const themeFor = (theme) => (PUBLIC_THEMES.includes(theme) ? theme : 'stone')
 export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#d40000'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57'], ['white', 'White', '#ffffff'], ['black', 'Black', '#111111']]
 export const FONTS = [

@@ -4085,3 +4085,14 @@ html[data-theme='stone'] .peek-msg.mine :is(a, .msg-link) { color: var(--mint, #
 .voice-wave i.on { opacity: 1; }
 .msg:not(.mine) .voice-wave i.on { color: var(--accent); }
 html[data-theme='stone'] .msg:not(.mine) .voice-wave i.on { color: var(--text); }
+
+/* RoarMe Inbox moderation (Alex, 8 Nov): correct RoarMe's own messages, delete any; the buttons show beside a message on
+   hover (always on a phone), and a line over the box says when a correction is being written */
+.inbox-msg { align-items: center; gap: 6px; }
+.inbox-msg.mine { flex-direction: row-reverse; justify-content: flex-start; }
+.inbox-acts { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.inbox-msg:hover .inbox-acts { opacity: 1; }
+@media (hover: none) { .inbox-acts { opacity: .7; } }
+.inbox-acts .round.tiny.danger { color: var(--danger); }
+.inbox-editing { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; margin: 0 0 6px; border-radius: 12px; background: var(--glass); border: 1px solid var(--edge); font-size: 13px; }
+.inbox-editing span { display: flex; align-items: center; gap: 8px; }

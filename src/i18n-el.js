@@ -1,5 +1,11 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  // admin moderation (8 Nov)
+  'Delete for Everyone (Admin)': 'Διαγραφή για όλους (Admin)',
+  'Delete this message for everyone, as admin?': 'Να διαγραφεί αυτό το μήνυμα για όλους, ως admin;',
+  'Correct (no edited mark)': 'Διόρθωση (χωρίς ένδειξη edited)',
+  'Correcting a RoarMe message': 'Διόρθωση μηνύματος του RoarMe',
+  'Delete for everyone': 'Διαγραφή για όλους',
   // own chat wallpaper (8 Nov)
   'Colour': 'Χρώμα',
   'Your Photo': 'Δική σου φωτογραφία',

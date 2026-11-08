@@ -25,6 +25,7 @@ export function RoarMeInbox({ onClose }) {
   const [room, setRoom] = useState(null)
   const [msgs, setMsgs] = useState([])
   const [text, setText] = useState('')
+  const [editId, setEditId] = useState('') // a RoarMe message being corrected (Alex, 8 Nov): no "edited" mark, they are RoarMe's own words
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const end = useRef(null)
@@ -43,15 +44,25 @@ export function RoarMeInbox({ onClose }) {
     return () => clearInterval(id)
   }, [room, loadList, loadRoom])
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [msgs])
-  const open = async (x) => { setRoom(x); setMsgs([]); setErr(''); await loadRoom(x.room_id); loadList() }
+  const open = async (x) => { setRoom(x); setMsgs([]); setErr(''); setEditId(''); setText(''); await loadRoom(x.room_id); loadList() }
   const send = async () => {
     const body = text.trim()
     if (!body || busy) return
     setBusy(true); setErr('')
-    const { error } = await supabase.rpc('roar_official_send', { r: room.room_id, body })
+    const { error } = editId
+      ? await supabase.rpc('roar_official_edit', { m: editId, body })
+      : await supabase.rpc('roar_official_send', { r: room.room_id, body })
     setBusy(false)
     if (error) { setErr(errText(error)); return }
-    setText('')
+    setText(''); setEditId('')
+    loadRoom(room.room_id); loadList()
+  }
+  // any message in a RoarMe chat can be deleted for everyone (spam, insults)
+  const drop = async (m) => {
+    if (!window.confirm('Delete this message for everyone?')) return
+    const { error } = await supabase.rpc('roar_admin_delete_message', { m: m.id })
+    if (error) { setErr(errText(error)); return }
+    if (editId === m.id) { setEditId(''); setText('') }
     loadRoom(room.room_id); loadList()
   }
   const name = (x) => x.display_name || `@${x.username}`
@@ -92,12 +103,17 @@ export function RoarMeInbox({ onClose }) {
                         {m.kind === 'text' ? formatText(m.body || '') : <i>{m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `File: ${m.file?.name || ''}` : m.body}</i>}
                         <small>{mine ? 'RoarMe · ' : ''}{timeOf(m.created_at)}</small>
                       </span>
+                      <span className="inbox-acts">
+                        {mine && m.kind === 'text' && <button type="button" className="round tiny" onClick={() => { setEditId(m.id); setText(m.body || '') }} aria-label="Correct" title="Correct (no edited mark)">{I.edit}</button>}
+                        <button type="button" className="round tiny danger" onClick={() => drop(m)} aria-label="Delete for everyone" title="Delete for everyone">{I.trash}</button>
+                      </span>
                     </div>
                   )
                 })}
                 <span ref={end} />
               </div>
               {err && <p className="sch-err">{err}</p>}
+              {editId && <div className="inbox-editing"><span>{I.edit}<b>Correcting a RoarMe message</b></span><button type="button" className="round tiny" onClick={() => { setEditId(''); setText('') }} aria-label="Cancel" title="Cancel">{I.x}</button></div>}
               <div className="inbox-compose">
                 <textarea rows={1} value={text} onChange={(e) => setText(e.target.value.slice(0, 8000))} placeholder={`Answer ${nameOf(room)} as RoarMe…`}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} />

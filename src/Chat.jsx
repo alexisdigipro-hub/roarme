@@ -1985,6 +1985,17 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     r.mr.stop()
   }
 
+  // an admin can delete anyone's message for everyone (Alex, 8 Nov: spam, insults); never edit it
+  const [admin, setAdmin] = useState(false)
+  useEffect(() => { amAdmin().then(setAdmin) }, [])
+  const adminRemove = async (m) => {
+    setMenu(null)
+    if (!window.confirm('Delete this message for everyone, as admin?')) return
+    const { error } = await supabase.rpc('roar_admin_delete_message', { m: m.id })
+    if (error) { setErr(errText(error)); return }
+    setMsgs((all) => all.map((x) => (x.id === m.id ? { ...x, deleted_at: new Date().toISOString(), body: '' } : x)))
+    toast('Deleted for everyone')
+  }
   const remove = async (list) => {
     const ids = list.filter((m) => m.user_id === me.id).map((m) => m.id)
     if (!ids.length) return
@@ -2733,6 +2744,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {menu.m.user_id && menu.m.user_id !== me.id && (askedByMe.has(menu.m.id)
                 ? <button type="button" disabled>{I.timer}<span>Waiting for {nameOf(people[menu.m.user_id])}</span></button>
                 : <button type="button" className="danger" onClick={() => askDelete(menu.m)}>{I.trash}<span>Ask to Delete for Everyone</span></button>)}
+              {admin && menu.m.user_id && menu.m.user_id !== me.id && menu.m.kind !== 'system' && <button type="button" className="danger" onClick={() => adminRemove(menu.m)}>{I.trash}<span>Delete for Everyone (Admin)</span></button>}
               {menu.m.user_id === me.id && (
                 <>
                   <hr />

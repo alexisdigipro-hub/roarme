@@ -4077,3 +4077,11 @@ html[data-theme='stone'] .peek-msg.mine {
 }
 html[data-theme='stone'] .peek-msg.mine small { color: rgba(255, 255, 255, .6); }
 html[data-theme='stone'] .peek-msg.mine :is(a, .msg-link) { color: var(--mint, #74dca4); }
+
+/* the voice message's waveform (Alex, 8 Nov): thin rounded bars in the bubble's own text colour; what has played is
+   lit, the rest is faint; a tap or click on it goes there */
+.voice-wave { flex: 1; min-width: 0; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 1.5px; height: 26px; cursor: pointer; color: inherit; }
+.voice-wave i { flex: 1 1 0; max-width: 3px; min-width: 1px; min-height: 3px; border-radius: 3px; background: currentColor; opacity: .3; transition: opacity .15s; }
+.voice-wave i.on { opacity: 1; }
+.msg:not(.mine) .voice-wave i.on { color: var(--accent); }
+html[data-theme='stone'] .msg:not(.mine) .voice-wave i.on { color: var(--text); }

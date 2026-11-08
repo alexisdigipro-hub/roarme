@@ -161,6 +161,57 @@ export function MusicTile({ file, from = '', roomId = '' }) {
 }
 
 /* ---------- a voice message ---------- */
+/* The voice message's waveform (Alex, 8 Nov: "minimal and beautiful"): 40 levels, from the recording itself when it is
+   sent (file.peaks), else worked out once from the sound and kept on the device. If the sound cannot be read here,
+   a calm shape of its own, the same every time for the same file. */
+export const PEAKS = 40
+export async function peaksOf(data, n = PEAKS) {
+  const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext
+  if (!Ctx) return null
+  const ac = new Ctx(1, 1, 44100)
+  const buf = await new Promise((ok, bad) => { const p = ac.decodeAudioData(data, ok, bad); if (p?.then) p.then(ok, bad) })
+  const ch = buf.getChannelData(0)
+  const step = Math.max(1, Math.floor(ch.length / n))
+  const out = []
+  for (let i = 0; i < n; i++) {
+    let sum = 0, cnt = 0
+    for (let j = i * step; j < Math.min(ch.length, (i + 1) * step); j += 16) { sum += ch[j] * ch[j]; cnt++ }
+    out.push(cnt ? Math.sqrt(sum / cnt) : 0)
+  }
+  const top = Math.max(...out, 1e-4)
+  return out.map((v) => Math.round(Math.max(0.1, Math.sqrt(v / top)) * 100) / 100)
+}
+const PEAKS_KEY = 'roarme-peaks'
+const peakCache = (() => { try { return JSON.parse(localStorage.getItem(PEAKS_KEY) || '{}') } catch { return {} } })()
+const keepPeaks = (k, v) => {
+  peakCache[k] = v
+  try {
+    const keys = Object.keys(peakCache)
+    if (keys.length > 300) keys.slice(0, keys.length - 300).forEach((x) => delete peakCache[x])
+    localStorage.setItem(PEAKS_KEY, JSON.stringify(peakCache))
+  } catch { /* full or private */ }
+}
+const calmPeaks = (seed = '') => {
+  let h = 2166136261
+  for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619)
+  return Array.from({ length: PEAKS }, (_, i) => { h = Math.imul(h ^ i, 16777619); const r = ((h >>> 0) % 1000) / 1000; return Math.round((0.25 + 0.55 * Math.abs(Math.sin(i / 3.2)) * (0.6 + 0.4 * r)) * 100) / 100 })
+}
+function usePeaks(file, url) {
+  const key = file?.path || ''
+  const [peaks, setPeaks] = useState(() => (Array.isArray(file?.peaks) && file.peaks.length ? file.peaks : peakCache[key] || null))
+  useEffect(() => {
+    if (peaks || !url) return undefined
+    let alive = true
+    fetch(url).then((r) => r.arrayBuffer()).then((b) => peaksOf(b)).then((p) => {
+      const v = p || calmPeaks(key)
+      if (p) keepPeaks(key, v)
+      if (alive) setPeaks(v)
+    }).catch(() => { if (alive) setPeaks(calmPeaks(key)) })
+    return () => { alive = false }
+  }, [url]) // eslint-disable-line react-hooks/exhaustive-deps
+  return peaks || calmPeaks(key)
+}
+
 export function AudioNote({ file }) {
   const [url, setUrl] = useState('')
   const [playing, setPlaying] = useState(false)
@@ -174,11 +225,12 @@ export function AudioNote({ file }) {
     return () => window.removeEventListener('roarme-play', stop)
   }, [])
   const dur = file?.dur || a.current?.duration || 0
+  const peaks = usePeaks(file, url)
   return (
     <span className="voice">
       <button type="button" className="voice-btn" disabled={!url} onClick={(e) => { e.stopPropagation(); const el = a.current; if (!el) return; if (el.paused) { window.dispatchEvent(new CustomEvent('roarme-play', { detail: el })); el.play() } else el.pause() }}>{playing ? I.pause : I.play}</button>
-      <span className="voice-bar" onClick={(e) => { e.stopPropagation(); const el = a.current; if (!el || !dur) return; const r = e.currentTarget.getBoundingClientRect(); el.currentTime = ((e.clientX - r.left) / r.width) * dur }}>
-        <i style={{ width: `${dur ? Math.min(100, (at / dur) * 100) : 0}%` }} />
+      <span className="voice-wave" role="slider" aria-label="Position" aria-valuemin={0} aria-valuemax={Math.round(dur)} aria-valuenow={Math.round(at)} onClick={(e) => { e.stopPropagation(); const el = a.current; if (!el || !dur) return; const r = e.currentTarget.getBoundingClientRect(); el.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * dur }}>
+        {peaks.map((v, i) => <i key={i} className={dur && (i + 0.5) / peaks.length <= at / dur ? 'on' : ''} style={{ height: `${Math.round(v * 100)}%` }} />)}
       </span>
       <small>{mmss(playing || at ? at : dur)}</small>
       {url && <audio ref={a} src={url} preload="metadata" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setAt(0) }} onTimeUpdate={(e) => setAt(e.currentTarget.currentTime)} />}

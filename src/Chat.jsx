@@ -31,7 +31,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
-import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf } from './extras.jsx'
+import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
 // the moving bars while a voice message records (Alex, 16 Oct): not the real sound, a lively stand-in
 
@@ -1963,7 +1963,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       setOutbox((l) => [...l, tile])
       stick.current = true
       try {
-        const meta = await upload(file, 'voice', { dur }, tile.id)
+        // its waveform rides with it, so nobody has to work it out again (Alex, 8 Nov)
+        const peaks = await file.arrayBuffer().then((b) => peaksOf(b)).catch(() => null)
+        const meta = await upload(file, 'voice', peaks ? { dur, peaks } : { dur }, tile.id)
         stick.current = true
         const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'voice', body: '', file: meta, reply_to: replyTo?.id || null }).select().single()
         if (error) throw error

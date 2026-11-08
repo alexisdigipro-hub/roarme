@@ -825,7 +825,7 @@ function Appearance({ p, toast, me, setMe }) {
             {THEMES.map(([k, l, [a, b]]) => {
               return (
                 <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} title={l}
-                  onClick={(e) => { if (p.theme === k) return; wearTheme(k); revealFrom(e, () => { dressTheme(k); setPrefs({ theme: k }) }); toast(`Theme updated: ${l}`) }}>
+                  onClick={(e) => { const clean = { chatTheme: '', myBubble: '', theirBubble: '', accentHex: '', accent: '' }; if (p.theme === k) { if (p.chatTheme || p.myBubble || p.theirBubble || p.accentHex || p.accent) { setPrefs(clean); toast(`${l} as it is made`) } return } wearTheme(k); revealFrom(e, () => { dressTheme(k); setPrefs({ theme: k, ...clean }) }); toast(`Theme updated: ${l}`) }}>
                   <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : k === 'prism' ? '0 0 10px #ff4b3e' : k === 'aurum' ? '0 0 10px rgba(240, 166, 74, .8)' : k === 'lions' ? '0 0 10px rgba(212, 0, 0, .8)' : 'none' }} />{k === 'prism' && <b className="theme-rim" />}</span>
                   <small>{l}</small>
                 </button>

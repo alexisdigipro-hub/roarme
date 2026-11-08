@@ -130,3 +130,8 @@ html[data-skin='halo'][data-theme='stone'] :is(.menu, .menu-list, .rx-pick) { bo
 html[data-skin='halo'][data-theme='stone'] .nav-ico { border-radius: 50%; background: rgba(255, 255, 255, .8) !important; color: var(--text) !important; border: 1px solid #fff; box-shadow: 0 3px 8px rgba(70, 70, 110, .1); }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .nav-ico { background: rgba(255, 255, 255, .08) !important; border-color: rgba(255, 255, 255, .12); }
 html[data-skin='halo'][data-theme='stone'] :is(.badge, .unread) { background: var(--halo); color: #fff; }
+
+/* on a phone the panel is the whole screen: no rim, no corners, no shadow (Alex, 9 Nov: a line down the left edge) */
+@media (max-width: 760px) {
+  html[data-skin='halo'][data-theme='stone'] .app > :is(.side, .main) { border: 0; border-radius: 0; box-shadow: none; }
+}

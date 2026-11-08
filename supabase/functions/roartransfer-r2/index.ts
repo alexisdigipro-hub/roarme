@@ -45,7 +45,8 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const account = ((Deno.env.get('R2_ACCOUNT_ID') || '').match(/[0-9a-f]{32}/i) || [''])[0]
 const r2 = new AwsClient({ accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID') || '', secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY') || '', service: 's3', region: 'auto' })
 const base = `https://${account}.r2.cloudflarestorage.com/${BUCKET}`
-const at = (key: string) => `${base}/${key.split('/').map(encodeURIComponent).join('/')}`
+// never a path that climbs out of its folder (security check, 8 Nov 2026)
+const at = (key: string) => { if (key.split('/').some((p) => p === '..' || p === '.')) throw new Error('bad key'); return `${base}/${key.split('/').map(encodeURIComponent).join('/')}` }
 const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
 async function presign(method: string, key: string, query: Record<string, string> = {}, expires = 3600) {
@@ -156,6 +157,9 @@ async function handle(req: Request): Promise<Response> {
       if (!r.ok) return json({ error: `Could not read the storage (${r.status})` }, 502)
       for (const c of xml.split('<Contents>').slice(1)) {
         const key = tag(c, 'Key'), size = Number(tag(c, 'Size')) || 0
+        // RoarTransfer Studio's files (studio/<project>/…) live as long as their project, never by link (Alex, 8 Nov 2026:
+        // this sweep was deleting them six hours after they went up); studio.ts deletes them with their version or project
+        if (key.startsWith('studio/')) { out.kept++; continue }
         if (keep.has(key) || new Date(tag(c, 'LastModified')).getTime() > old) { out.kept++; continue }
         const d = await r2.fetch(at(key), { method: 'DELETE' })
         if (d.ok || d.status === 404) { out.removed++; out.bytes += size }
@@ -440,7 +444,10 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
   if (b.action === 'delete') {
     const key = String(b.key || '')
     const { data: admin } = await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
-    if (!(key.startsWith(`free/${uid}/`) || key.startsWith(`week/${uid}/`) || key.startsWith(`pro/${uid}/`) || (admin && /^(free|week|pro)\//.test(key)))) return json({ error: 'not allowed' }, 403)
+    // one's own file (free|week|pro/<id>/<file>, a Pro's inbox/<file>) or, for an admin, any of these and the guests' ones; never with ..
+    const own = /^(free|week|pro)\/[0-9a-f-]{36}\/(inbox\/)?[^/]+$/.test(key) && key.split('/')[1] === uid
+    const any = /^((free|week|pro)\/[0-9a-f-]{36}\/(inbox\/)?[^/]+|free\/guest\/[0-9a-f-]{36}\/[^/]+)$/.test(key)
+    if (key.includes('..') || !(own || (admin && any))) return json({ error: 'not allowed' }, 403)
     await sb.from('roar_transfer_links').update({ stopped_at: new Date().toISOString(), expires_at: new Date().toISOString() }).eq('path', key)
     await r2.fetch(at(key), { method: 'DELETE' })
     return json({ ok: true })

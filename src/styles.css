@@ -4206,13 +4206,25 @@ html[data-theme] .rooms-area.bottom .tabs { background: none !important; border:
 html[data-theme] .rooms-area.bottom .tabs button { height: 32px; font-size: 13.5px; }
 @media (max-width: 760px) { .rooms-area.bottom .tabs { width: 100%; } }
 
-/* the folder tabs at the foot as a horizontal wheel (Alex, 9 Nov; Chat.jsx wheelOn): a half-width pad at each end so
-   the first and last folder can sit in the middle, each tab snaps to the middle, and both edges fade away */
-html[data-theme] .rooms-area.bottom .tabs.tabs-wheel {
-  justify-content: flex-start; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+/* the folder tabs at the foot as a horizontal wheel (Alex, 9 Nov; Chat.jsx wheeling): the chosen pill never moves, it stands
+   in the middle of the bar (.wheel-pill, its own lens, so every theme draws it as it draws the chosen tab) and only takes
+   the width of the word over it; the words turn under it and go round (copies of the folders in a row); each tab snaps to
+   the middle; both edges fade away */
+.wheel-box { display: contents; }
+.rooms-area.bottom .wheel-box.on { display: block; position: relative; order: 1; flex: none; align-self: center; width: 86%; max-width: 100%; }
+@media (max-width: 760px) { .rooms-area.bottom .wheel-box.on { width: 100%; } }
+html[data-theme] .rooms-area.bottom .wheel-box.on > .tabs.tabs-wheel {
+  width: 100%; justify-content: flex-start; scroll-snap-type: x mandatory; scroll-behavior: auto; scroll-padding: 0;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 28%, #000 72%, transparent 100%) !important;
   mask-image: linear-gradient(90deg, transparent 0, #000 28%, #000 72%, transparent 100%) !important;
 }
-.tabs-wheel > .wheel-pad { flex: none; width: 50%; pointer-events: none; }
-.tabs-wheel > button { flex: none !important; scroll-snap-align: center; padding: 0 16px !important; }
+html[data-theme] .rooms-area.bottom .tabs.tabs-wheel.lens::before { display: none !important; }
+html[data-theme] .rooms-area.bottom .wheel-box > .wheel-pill {
+  position: absolute !important; left: 50% !important; top: 50% !important; width: 0 !important; height: 0 !important;
+  min-width: 0 !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; pointer-events: none;
+  z-index: 0; --lx: calc(var(--lw, 0px) * -.5); --ly: calc(var(--lh, 0px) * -.5);
+}
+html[data-theme] .rooms-area.bottom .wheel-box > .wheel-pill::before { transition: width .28s ease, height .28s ease, transform .28s ease, opacity .2s; }
+.wheel-box > .tabs-wheel { z-index: 1; }
+.tabs-wheel > button { flex: none !important; scroll-snap-align: center; padding: 0 16px !important; transition: color .15s, opacity .15s !important; }
 .tabs-wheel > button:not(.on) { opacity: .75; }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib.js'
-import { applyLook, applyMode, setPrefs, themeFor, usePrefs, wearTheme } from './prefs.js'
+import { applyLook, applyMode, setPrefs, themeFor, usePrefs, wearTheme, dressTheme } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
@@ -64,7 +64,7 @@ export default function App() {
   useEffect(() => {
     const t = themeFor(theme)
     wearTheme(t)
-    document.documentElement.dataset.theme = t
+    dressTheme(t)
     // once signed in, someone left on a lab theme moves to Stone for good
     if (profile && t !== (theme || 'stone')) setPrefs({ theme: t })
   }, [theme, profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps

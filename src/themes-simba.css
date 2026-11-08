@@ -231,7 +231,7 @@ html[data-theme='ember'] {
   --accent: #ff6b57; --accent-2: #ff8a78; --accent-ink: #ffffff;
   --theirs: rgba(255, 255, 255, .075);
   --danger: #ff5a5a; --ok: #4ade80;
-  --blur: blur(26px) saturate(140%);
+  --blur: blur(10px);
   --shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 30px 70px rgba(0, 0, 0, .45);
   --float: rgba(40, 45, 53, .88);
   color-scheme: dark;

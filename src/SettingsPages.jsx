@@ -766,6 +766,9 @@ function Sessions({ me, setMe, toast }) {
   )
 }
 
+// what Reset Appearance puts back
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 function Appearance({ p, toast, me, setMe }) {
   const look = wallLook(p.background, useWalls(true))
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
@@ -847,6 +850,16 @@ function Appearance({ p, toast, me, setMe }) {
             {NAME_COLORS.map((c) => <button key={c} type="button" className={`acc${me.name_color === c ? ' on' : ''}`} style={{ '--c': c }} onClick={() => pickName(c)}><small>{c}</small></button>)}
           </div>
         </div>
+      </Box>
+      {/* the look back to how RoarMe starts (Alex, 9 Nov): theme, day and night, accent, text, wallpaper, layout and
+          effects; every chat's own wallpaper goes too. Nothing else: chats, folders, sounds and the rest stay */}
+      <Box note="Theme, day and night, accent, text, wallpaper, layout and effects go back to how RoarMe starts. Each chat's own wallpaper goes too.">
+        <button type="button" className="set-row set-pick danger" disabled={LOOK_KEYS.every((k) => JSON.stringify(p[k]) === JSON.stringify(DEFAULTS[k])) && !hasChatWalls()} onClick={() => {
+          if (!window.confirm('Reset the look of RoarMe on this device?')) return
+          setPrefs(Object.fromEntries(LOOK_KEYS.map((k) => [k, DEFAULTS[k]])))
+          try { localStorage.removeItem('roarme-walls') } catch { /* private window */ }
+          toast('The look is back to how RoarMe starts')
+        }}><span className="set-text">Reset Appearance</span></button>
       </Box>
     </>
   )

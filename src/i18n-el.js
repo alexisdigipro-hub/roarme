@@ -1,5 +1,10 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  // Reset Appearance (9 Nov)
+  'Reset Appearance': 'Επαναφορά εμφάνισης',
+  'Reset the look of RoarMe on this device?': 'Να γυρίσει η εμφάνιση του RoarMe σε αυτή τη συσκευή όπως ήταν στην αρχή;',
+  'The look is back to how RoarMe starts': 'Η εμφάνιση γύρισε όπως ξεκινά το RoarMe',
+  'Theme, day and night, accent, text, wallpaper, layout and effects go back to how RoarMe starts. Each chat\'s own wallpaper goes too.': 'Θέμα, μέρα και νύχτα, χρώμα, κείμενο, ταπετσαρία, διάταξη και εφέ γυρίζουν όπως ξεκινά το RoarMe. Φεύγει και η ταπετσαρία κάθε συνομιλίας.',
   'Copy Link': 'Αντιγραφή link',
   // admin moderation (8 Nov)
   'Delete for Everyone (Admin)': 'Διαγραφή για όλους (Admin)',

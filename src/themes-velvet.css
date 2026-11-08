@@ -1,0 +1,148 @@
+/* Velvet (Alex, 9 Nov: "a theme like qubi.gr, its buttons, colours and background"): a cinema at night. A deep smoky
+   green-black page with soft green glows, panels and buttons of dark frosted glass with a soft diagonal sheen, a warm
+   gold that runs from honey to amber for what is chosen (the wordmark, the chosen tab with its gold underline, your
+   messages' rim, Send). Worn as data-theme 'stone' + data-skin 'velvet' (prefs.js dressTheme), so every Stone rule
+   holds and only these differ. Loaded only when worn. Dark first; its light side is warm ivory with the same gold. */
+
+html[data-skin='velvet'][data-theme='stone'] {
+  --gold: #e9a94a; --gold-2: #f6c978; --gold-3: #c97a2c;
+  --gold-grad: linear-gradient(135deg, #f8cf82 0%, #e9a94a 45%, #c97a2c 100%);
+  --accent: #e9a94a; --accent-2: #f6c978; --accent-ink: #1a140c;
+  --rail: #e9a94a; --rail-2: #f6c978; --mint: #e9a94a;
+}
+html[data-skin='velvet'][data-theme='stone'][data-mode='dark'] {
+  --bg: #0c1210; --panel: rgba(20, 28, 25, .38); --panel-2: rgba(28, 38, 34, .55);
+  --glass: rgba(255, 255, 255, .06); --glass-2: rgba(255, 255, 255, .11);
+  --edge: rgba(255, 255, 255, .09); --edge-2: rgba(255, 255, 255, .16);
+  --text: #f1ebe1; --muted: #9aa49e;
+  --theirs: rgba(255, 255, 255, .08);
+  --shadow: 0 24px 60px rgba(0, 0, 0, .5);
+  --float: rgba(22, 30, 27, .95);
+  color-scheme: dark;
+}
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] {
+  --bg: #f3efe7; --panel: rgba(255, 252, 246, .62); --panel-2: rgba(255, 252, 246, .8);
+  --glass: rgba(255, 255, 255, .55); --glass-2: rgba(255, 255, 255, .85);
+  --edge: rgba(120, 96, 60, .14); --edge-2: rgba(120, 96, 60, .24);
+  --text: #1e2420; --muted: #7b7f78;
+  --theirs: rgba(255, 255, 255, .8);
+  --shadow: 0 24px 60px rgba(70, 55, 30, .14);
+  --float: rgba(252, 249, 243, .97);
+  --accent-ink: #1a140c;
+}
+
+/* the page: a dark, smoky green with soft glows, like a film still behind glass */
+html[data-skin='velvet'][data-theme='stone'][data-mode='dark'] body {
+  background:
+    radial-gradient(520px 420px at 18% 12%, rgba(52, 84, 66, .55), transparent 70%),
+    radial-gradient(560px 460px at 88% 28%, rgba(38, 64, 52, .5), transparent 72%),
+    radial-gradient(620px 520px at 50% 105%, rgba(20, 30, 27, .9), transparent 70%),
+    linear-gradient(180deg, #121a17 0%, #0b100e 60%, #070a09 100%);
+  background-attachment: fixed;
+}
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] body {
+  background:
+    radial-gradient(520px 420px at 18% 12%, rgba(205, 220, 205, .7), transparent 70%),
+    radial-gradient(560px 460px at 88% 28%, rgba(240, 214, 170, .45), transparent 72%),
+    linear-gradient(180deg, #f6f2ea, #ece6db);
+  background-attachment: fixed;
+}
+
+/* panels: dark frosted glass with a soft diagonal sheen */
+html[data-skin='velvet'][data-theme='stone'] :is(.side, .main) {
+  border-radius: 26px; border: 1px solid var(--edge);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--panel) 70%, rgba(255, 255, 255, .06)), var(--panel) 55%);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+@media (max-width: 760px) {
+  html[data-skin='velvet'][data-theme='stone'] .app > :is(.side, .main) { border: 0; border-radius: 0; box-shadow: none; }
+}
+
+/* the wordmark in gold, as a marquee */
+html[data-skin='velvet'][data-theme='stone'] .wordmark b.wm,
+html[data-skin='velvet'][data-theme='stone'] .wordmark b.wm span,
+html[data-skin='velvet'][data-theme='stone'] .wm :is(.wm-a, .wm-b) {
+  background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent !important;
+}
+
+/* round buttons, pills, search and the writing box: dark glass with a sheen from the top left (as the site's search bar) */
+html[data-skin='velvet'][data-theme='stone'] :is(.round, .btn, .pill-btn, .search, .compose-box) {
+  background: linear-gradient(115deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .05) 45%, rgba(255, 255, 255, .02));
+  border: 1px solid var(--edge-2); color: var(--text); box-shadow: 0 8px 22px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] :is(.round, .btn, .pill-btn, .search, .compose-box) {
+  background: linear-gradient(115deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .6)); box-shadow: 0 6px 16px rgba(70, 55, 30, .1);
+}
+html[data-skin='velvet'][data-theme='stone'] :is(.search, .compose-box) { border-radius: 999px; }
+html[data-skin='velvet'][data-theme='stone'] .round.on,
+html[data-skin='velvet'][data-theme='stone'] :is(.btn-main, .send.ready, .new-call-ico) {
+  background: var(--gold-grad); color: #1a140c; border-color: transparent;
+  box-shadow: 0 10px 26px rgba(233, 169, 74, .3), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+html[data-skin='velvet'][data-theme='stone'][data-bubbles] :is(.btn-main, .send.ready, .new-call-ico):not(:disabled) {
+  background: var(--gold-grad) !important; color: #1a140c !important; border-color: transparent !important;
+}
+
+/* tabs as the site's menu: capitals, gold for the chosen one, a short gold bar under it */
+html[data-skin='velvet'][data-theme='stone'] .tabs { border: 0; }
+html[data-skin='velvet'][data-theme='stone'] .tabs button { text-transform: uppercase; letter-spacing: .06em; font-size: 12.5px; font-weight: 600; color: color-mix(in srgb, var(--gold) 70%, var(--muted)); background: none; }
+html[data-skin='velvet'][data-theme='stone'] .tabs button.on,
+html[data-skin='velvet'][data-theme='stone'] .tabs.lens.lens-on > .on { color: var(--gold-2); }
+html[data-skin='velvet'][data-theme='stone'] .tabs.lens::before {
+  height: 3px; border-radius: 3px; border: 0; background: var(--gold-grad); box-shadow: 0 0 12px rgba(233, 169, 74, .45);
+  width: calc(var(--lw, 0px) * .4); transform: translate(calc(var(--lx, 0px) + var(--lw, 0px) * .3), calc(var(--ly, 0px) + var(--lh, 0px) - 3px));
+}
+html[data-skin='velvet'][data-theme='stone'] .tabs small { background: var(--gold); color: #1a140c; }
+
+/* the bar at the foot: a dark glass slab; the chosen button lit in gold with a gold bar beneath */
+html[data-skin='velvet'][data-theme='stone'] .foot {
+  border-radius: 24px; border: 1px solid var(--edge-2);
+  background: linear-gradient(115deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .03) 50%), rgba(14, 20, 18, .82);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] .foot { background: linear-gradient(115deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .78)); box-shadow: 0 16px 36px rgba(70, 55, 30, .14); }
+html[data-skin='velvet'][data-theme='stone'] .foot button { border-radius: 16px; color: color-mix(in srgb, var(--gold) 55%, var(--muted)); }
+html[data-skin='velvet'][data-theme='stone'] .foot.lens::before {
+  border-radius: 16px; background: linear-gradient(180deg, rgba(233, 169, 74, .16), rgba(233, 169, 74, .04));
+  border: 0; box-shadow: inset 0 -3px 0 var(--gold), 0 0 18px rgba(233, 169, 74, .18);
+}
+html[data-skin='velvet'][data-theme='stone'] .foot.lens.lens-on > .on,
+html[data-skin='velvet'][data-theme='stone'] .foot button.on,
+html[data-skin='velvet'][data-theme='stone'] .foot button.foot-tasks.open { color: var(--gold-2); }
+html[data-skin='velvet'][data-theme='stone'] .foot-ico i { background: var(--gold); color: #1a140c; }
+
+/* messages: theirs dark glass with a sheen; yours a warm gold glass with a gold rim */
+html[data-skin='velvet'][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) {
+  background: linear-gradient(120deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .05) 55%, rgba(255, 255, 255, .03)) !important;
+  border: 1px solid rgba(255, 255, 255, .1) !important; color: var(--text) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07) !important;
+}
+html[data-skin='velvet'][data-mode='light'][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) {
+  background: linear-gradient(120deg, rgba(255, 255, 255, .98), rgba(255, 255, 255, .72)) !important; border-color: rgba(120, 96, 60, .14) !important;
+}
+html[data-skin='velvet'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji) {
+  background: linear-gradient(130deg, rgba(246, 201, 120, .34), rgba(233, 169, 74, .2) 50%, rgba(201, 122, 44, .14)) !important;
+  border: 1px solid rgba(246, 201, 120, .5) !important; color: var(--text) !important;
+  box-shadow: 0 8px 22px rgba(233, 169, 74, .12), inset 0 1px 0 rgba(255, 230, 180, .25) !important;
+}
+html[data-skin='velvet'][data-mode='light'][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji) {
+  background: linear-gradient(130deg, #f8d590, #eab057 60%, #d88e3a) !important; color: #1a140c !important; border-color: rgba(201, 122, 44, .5) !important;
+}
+html[data-skin='velvet'][data-mode][data-bubbles] .msg.mine .bubble :is(.meta, .ticks, .voice small, .file-text small) { color: color-mix(in srgb, var(--gold-2) 70%, var(--text)) !important; }
+html[data-skin='velvet'][data-mode][data-bubbles] .msg.mine .bubble .ticks.seen { color: var(--gold-2) !important; }
+html[data-skin='velvet'][data-mode='light'][data-bubbles] .msg.mine .bubble :is(.meta, .ticks, .ticks.seen, .voice small, .file-text small) { color: rgba(26, 20, 12, .6) !important; }
+html[data-skin='velvet'][data-mode][data-bubbles] .msg .bubble :is(.msg-link, .mention, .text a) { color: var(--gold-2) !important; }
+html[data-skin='velvet'][data-mode='light'][data-bubbles] .msg .bubble :is(.msg-link, .mention, .text a) { color: #a3601f !important; }
+html[data-skin='velvet'] .peek-msg.mine, html[data-skin='velvet'] .set-preview .pv.mine, html[data-skin='velvet'] .wall-b.mine,
+html[data-skin='velvet'] .corner-demo .cd-b.mine { background: linear-gradient(130deg, rgba(246, 201, 120, .5), rgba(201, 122, 44, .35)); color: var(--text); border: 1px solid rgba(246, 201, 120, .5); }
+html[data-skin='velvet'][data-my-bubble] .corner-demo .cd-b.mine { background: var(--my-bubble); color: var(--my-bubble-ink); }
+
+/* cards, windows and menus */
+html[data-skin='velvet'][data-theme='stone'] .set-box { border-radius: 22px; background: linear-gradient(135deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02)); border: 1px solid var(--edge); }
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] .set-box { background: rgba(255, 255, 255, .6); }
+html[data-skin='velvet'][data-theme='stone'] :is(.modal, .menu, .menu-list, .rx-pick) { background: var(--float); border: 1px solid var(--edge-2); box-shadow: var(--shadow); color: var(--text); }
+html[data-skin='velvet'][data-theme='stone'] .nav-ico { background: linear-gradient(135deg, rgba(246, 201, 120, .22), rgba(201, 122, 44, .1)) !important; color: var(--gold-2) !important; border: 1px solid rgba(246, 201, 120, .28); }
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] .nav-ico { color: #a3601f !important; }
+html[data-skin='velvet'][data-theme='stone'] :is(.badge, .unread) { background: var(--gold-grad); color: #1a140c; }
+html[data-skin='velvet'][data-theme='stone'] .day span { text-transform: uppercase; letter-spacing: .08em; color: var(--gold-2); background: rgba(14, 20, 18, .6); border: 1px solid rgba(246, 201, 120, .25); }
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] .day span { color: #a3601f; background: rgba(255, 255, 255, .7); }

@@ -4165,3 +4165,4 @@ html[data-their-bubble] .corner-demo .cd-b:not(.mine) { background: var(--their-
 html[data-my-bubble] .corner-demo .cd-b.mine { background: var(--my-bubble); color: var(--my-bubble-ink); }
 html[data-skin='halo'] .corner-demo .cd-b.mine { background: linear-gradient(145deg, var(--halo-2), var(--halo)); color: #fff; }
 html[data-skin='halo'][data-my-bubble] .corner-demo .cd-b.mine { background: var(--my-bubble); color: var(--my-bubble-ink); }
+.size-demo .cd-b { font-size: var(--demo-fs, 14.5px); transition: font-size .15s ease, border-radius .15s ease; }

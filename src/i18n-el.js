@@ -1,11 +1,12 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  'Velvet': 'Velvet',
   'Are we shooting at 10?': 'Γυρίζουμε στις 10;',
   'Yes, on set at 10 👍': 'Ναι, στο πλατό στις 10 👍',
   'Bring the lights': 'Φέρε τα φώτα',
   // Halo theme (9 Nov)
   'Halo': 'Halo',
-  'Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Halo: white frosted glass on soft lilac clouds, with a warm orange. Each has dark and light.': 'Stone: απαλή γκρι πέτρα με κουμπιά γραφίτη. Simba: γυαλί γραφίτη με φωτεινό χρώμα. Halo: λευκό θολό γυαλί πάνω σε απαλά λιλά σύννεφα, με ζεστό πορτοκαλί. Το καθένα έχει σκοτεινή και φωτεινή εκδοχή.',
+  'Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Halo: white frosted glass on soft lilac clouds, with a warm orange. Velvet: dark smoky glass with a warm gold, a cinema at night. Each has dark and light.': 'Stone: απαλή γκρι πέτρα με κουμπιά γραφίτη. Simba: γυαλί γραφίτη με φωτεινό χρώμα. Halo: λευκό θολό γυαλί πάνω σε απαλά λιλά σύννεφα, με ζεστό πορτοκαλί. Velvet: σκούρο καπνιστό γυαλί με ζεστό χρυσό, σαν σινεμά τη νύχτα. Το καθένα έχει σκοτεινή και φωτεινή εκδοχή.',
   // theme editor (9 Nov)
   'Edit Your Theme': 'Επεξεργασία θέματος',
   'Background, accent and the colour of the messages': 'Φόντο, χρώμα έμφασης και χρώμα μηνυμάτων',

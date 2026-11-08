@@ -135,3 +135,13 @@ html[data-skin='halo'][data-theme='stone'] :is(.badge, .unread) { background: va
 @media (max-width: 760px) {
   html[data-skin='halo'][data-theme='stone'] .app > :is(.side, .main) { border: 0; border-radius: 0; box-shadow: none; }
 }
+
+/* Settings: one corner for every card (Alex, 9 Nov: three different corners). Stone's menu runs its boxes together
+   with square corners and gives each row its own small radius; here every box, the profile card and the RoarMe card
+   share 24px, and a row's highlight follows its box's corners */
+html[data-skin='halo'][data-theme='stone'] .set-menu .set-box + .set-box { border-radius: 24px; border-top: 1px solid var(--edge); padding-top: 4px; }
+html[data-skin='halo'][data-theme='stone'] :is(.set-me, .set-box) { border-radius: 24px; }
+html[data-skin='halo'][data-theme='stone'] .set-menu .set-nav { border-radius: 0 !important; margin: 0; }
+html[data-skin='halo'][data-theme='stone'] .set-box > .set-row:first-child { border-radius: 20px 20px 0 0 !important; }
+html[data-skin='halo'][data-theme='stone'] .set-box > .set-row:last-child { border-radius: 0 0 20px 20px !important; }
+html[data-skin='halo'][data-theme='stone'] .set-box > .set-row:only-child { border-radius: 20px !important; }

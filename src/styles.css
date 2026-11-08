@@ -4175,3 +4175,25 @@ html[data-skin='halo'][data-my-bubble] .corner-demo .cd-b.mine { background: var
   .main .room-view > .room-head { padding-top: calc(env(safe-area-inset-top, 0px) + 10px); }
   html:not(.kb) .main .room-view .compose-wrap { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
 }
+
+/* Layout's example (Alex, 9 Nov): a little chat list whose rows follow Spacing, and a little chat whose messages follow
+   Compact Messages */
+.layout-demo { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 10px; width: 100%; }
+.ld-list { display: flex; flex-direction: column; padding: 4px; border-radius: 16px; background: color-mix(in srgb, var(--bg) 70%, transparent); border: 1px solid var(--edge); }
+.ld-row { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 12px; transition: padding .15s ease; }
+.ld-row + .ld-row { border-top: 1px solid var(--edge); }
+.ld-row i { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--glass-2); font-style: normal; font-size: 11px; font-weight: 700; transition: width .15s, height .15s; }
+.ld-row span { display: flex; flex-direction: column; min-width: 0; }
+.ld-row b { font-size: 13px; }
+.ld-row small { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.layout-demo.d-relaxed .ld-row { padding: 12px 8px; }
+.layout-demo.d-relaxed .ld-row i { width: 36px; height: 36px; }
+.layout-demo.d-tight .ld-row { padding: 4px 8px; }
+.layout-demo.d-tight .ld-row i { width: 24px; height: 24px; font-size: 9.5px; }
+.ld-chat { margin: 0; gap: 6px; justify-content: flex-end; }
+.ld-chat .cd-b { font-size: 12.5px; padding: 6px 10px; transition: margin .15s ease; }
+.ld-chat .cd-b.mine + .cd-b:not(.mine), .ld-chat .cd-b:not(.mine) + .cd-b.mine { margin-top: 8px; }
+.layout-demo.compact .ld-chat { gap: 2px; }
+.layout-demo.compact .ld-chat .cd-b { padding: 4px 9px; }
+.layout-demo.compact .ld-chat .cd-b.mine + .cd-b:not(.mine), .layout-demo.compact .ld-chat .cd-b:not(.mine) + .cd-b.mine { margin-top: 4px; }
+@media (max-width: 420px) { .layout-demo { grid-template-columns: 1fr; } }

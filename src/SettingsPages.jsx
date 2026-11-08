@@ -869,6 +869,22 @@ function Appearance({ p, toast, me, setMe }) {
         <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
       </Box>
       <Box title="Layout">
+        {/* what Spacing and Compact Messages do, at once (Alex, 9 Nov): a little chat list and a little chat */}
+        <div className="set-row set-col">
+          <div className={`layout-demo d-${p.density || 'standard'}${p.compact ? ' compact' : ''}`} style={p.bubbleR ? { '--demo-r': `${p.bubbleR}px` } : undefined}>
+            <div className="ld-list">
+              {[['GK', 'Giorgos', 'See you on set'], ['DG', 'Dimitris', 'Sent a photo'], ['KL', 'Kyriakos', 'Thanks!']].map(([i, n, t]) => (
+                <span key={i} className="ld-row"><i>{i}</i><span><b>{n}</b><small>{t}</small></span></span>
+              ))}
+            </div>
+            <div className="ld-chat corner-demo">
+              <span className="cd-b">At 10?<small>09:41</small></span>
+              <span className="cd-b">With lights<small>09:41</small></span>
+              <span className="cd-b mine">Yes 👍<small>09:42</small></span>
+              <span className="cd-b mine">On it<small>09:42</small></span>
+            </div>
+          </div>
+        </div>
         <div className="set-row set-col">
           <span className="set-text">Spacing<small>How much room the chat list, menus and settings get</small></span>
           <Lens className="seg" dep={p.density || 'standard'}>{[['relaxed', 'Relaxed'], ['standard', 'Standard'], ['tight', 'Tight']].map(([k, l]) => <button key={k} type="button" className={(p.density || 'standard') === k ? 'on' : ''} onClick={() => setPrefs({ density: k })}>{l}</button>)}</Lens>

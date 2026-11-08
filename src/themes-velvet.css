@@ -156,3 +156,18 @@ html[data-skin='velvet'][data-theme='stone'] .set-menu .set-nav { border-radius:
 html[data-skin='velvet'][data-theme='stone'] .set-box > .set-row:first-child { border-radius: 20px 20px 0 0 !important; }
 html[data-skin='velvet'][data-theme='stone'] .set-box > .set-row:last-child { border-radius: 0 0 20px 20px !important; }
 html[data-skin='velvet'][data-theme='stone'] .set-box > .set-row:only-child { border-radius: 20px !important; }
+
+/* the folder tabs as a bar at the foot (Alex, 9 Nov: a gold block caught the edge of a word): Stone's filled pill does
+   not belong here; as at the top, the chosen folder's words turn gold with a short glowing gold bar under them */
+html[data-skin='velvet'][data-theme='stone'] :is(.rooms-area.bottom .tabs, .tasks-tabs.at-bottom).lens::before {
+  height: 3px; width: calc(var(--lw, 0px) * .4); border-radius: 3px; border: 0;
+  background: var(--gold-grad); box-shadow: 0 0 12px rgba(233, 169, 74, .45);
+  transform: translate(calc(var(--lx, 0px) + var(--lw, 0px) * .3), calc(var(--ly, 0px) + var(--lh, 0px) - 6px));
+}
+html[data-skin='velvet'][data-theme='stone'] :is(.rooms-area.bottom .tabs, .tasks-tabs.at-bottom).lens.lens-on > .on,
+html[data-skin='velvet'][data-theme='stone'] :is(.rooms-area.bottom .tabs, .tasks-tabs.at-bottom) button.on { color: var(--gold-2); }
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] :is(.rooms-area.bottom .tabs, .tasks-tabs.at-bottom).lens.lens-on > .on,
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] :is(.rooms-area.bottom .tabs, .tasks-tabs.at-bottom) button.on,
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] .tabs.lens.lens-on > .on { color: #a3601f; }
+html[data-skin='velvet'][data-theme='stone'][data-mode='light'] .tabs button { color: color-mix(in srgb, #a3601f 60%, var(--muted)); }
+html[data-skin='velvet'][data-theme='stone'] :is(.rooms-area.bottom .tabs, .tasks-tabs.at-bottom) button.on small { background: var(--gold); color: #1a140c; }

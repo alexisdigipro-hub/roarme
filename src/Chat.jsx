@@ -102,29 +102,6 @@ export default function Chat({ me, setMe }) {
   const editFolder = (id, seed = []) => { folderBack.current = tab === 'settings' ? '' : tab; setModal(''); setFolderSeed(seed); setTab('settings'); setSetPage(`folder:${id}`) }
   const doneFolder = () => { document.activeElement?.blur?.(); const back = folderBack.current; folderBack.current = ''; if (back) { setSetPage(''); setTab(back) } else setSetPage('folders') }
   const tabsLens = useLens(`${tab}|${folder}|${prefs.folderTabs}|${myFolders.length}|${!q.trim()}`)
-  // the folder tabs at the foot as a wheel (Alex, 9 Nov): the chosen folder always sits in the middle; slide the row and
-  // the folder that settles in the middle is chosen; both edges fade (styles.css .tabs-wheel)
-  const wheelOn = prefs.folderTabs === 'bottom' && !q.trim()
-  const centreTab = (smooth = true) => {
-    const nav = tabsLens.current, b = nav?.querySelector(':scope > button.on')
-    if (!nav || !b) return
-    nav.scrollTo({ left: b.offsetLeft + b.offsetWidth / 2 - nav.clientWidth / 2, behavior: smooth ? 'smooth' : 'auto' })
-  }
-  useEffect(() => { if (wheelOn && tab === 'chats') requestAnimationFrame(() => centreTab(true)) }, [folder, wheelOn, tab, myFolders.length]) // eslint-disable-line react-hooks/exhaustive-deps
-  const wheelTimer = useRef(0)
-  const onWheelScroll = (e) => {
-    if (!wheelOn || editTabs) return
-    const nav = e.currentTarget
-    clearTimeout(wheelTimer.current)
-    wheelTimer.current = setTimeout(() => {
-      const mid = nav.scrollLeft + nav.clientWidth / 2
-      let best = null, gap = Infinity
-      for (const b of nav.querySelectorAll(':scope > button[data-tab]')) { const d = Math.abs(b.offsetLeft + b.offsetWidth / 2 - mid); if (d < gap) { gap = d; best = b } }
-      const id = best?.dataset.tab
-      if (id && id !== folder) { haptic(8); setFolder(id) }
-      else if (gap > 2) centreTab(true)
-    }, 140)
-  }
   // the folder tabs fade at the right edge only while more tabs wait past it (Alex, 21 Oct: the last tab looked shaded)
   useEffect(() => {
     const el = tabsLens.current
@@ -545,6 +522,61 @@ export default function Chat({ me, setMe }) {
     .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
   const tabsShown = tabDrag?.order ? tabDrag.order.map((id) => allFolders.find((f) => f.id === id)).filter(Boolean) : allFolders
   const editTabs = tabsEdit || picking
+  // the folder tabs at the foot as a wheel (Alex, 9 Nov): the chosen folder's pill never moves, it sits in the middle and only
+  // takes the width of the word over it while the words turn under it; the row goes round (WHEEL_COPIES copies of the
+  // folders, the middle one is the real one, and a settled wheel jumps back to it unseen); the folder that settles in the
+  // middle is chosen; both edges fade (styles.css .wheel-box, .tabs-wheel, .wheel-pill)
+  const wheelOn = prefs.folderTabs === 'bottom' && !q.trim()
+  const wheeling = wheelOn && !editTabs
+  const pillRef = useRef(null)
+  const wheelBtns = (nav) => [...nav.querySelectorAll(':scope > button[data-tab]')]
+  const nearMid = (nav) => {
+    const mid = nav.scrollLeft + nav.clientWidth / 2
+    let best = null, gap = Infinity
+    for (const b of wheelBtns(nav)) { const d = Math.abs(b.offsetLeft + b.offsetWidth / 2 - mid); if (d < gap) { gap = d; best = b } }
+    return { best, gap }
+  }
+  // the word over the pill is the lit one, and the pill takes its width
+  const lightMid = (nav, b) => {
+    if (!b) return
+    for (const x of nav.querySelectorAll(':scope > button.on')) if (x !== b) x.classList.remove('on')
+    b.classList.add('on')
+    const p = pillRef.current
+    if (p) { p.style.setProperty('--lw', `${b.offsetWidth}px`); p.style.setProperty('--lh', `${b.offsetHeight}px`) }
+  }
+  const twinOf = (nav, b) => nav.querySelector(`:scope > button[data-copy="${WHEEL_MID}"][data-tab="${CSS.escape(b.dataset.tab)}"]`) || b
+  // move the row by whole copies so that b's twin in the middle copy stands where b stood: nothing is seen to move
+  const toMiddleCopy = (nav, b) => {
+    const t = twinOf(nav, b)
+    if (t !== b) nav.scrollTo({ left: nav.scrollLeft + t.offsetLeft - b.offsetLeft, behavior: 'instant' })
+    return t
+  }
+  const centreTab = (smooth = true) => {
+    const nav = tabsLens.current
+    const b = nav?.querySelector(`:scope > button[data-copy="${WHEEL_MID}"][data-tab="${CSS.escape(folder)}"]`) || nav?.querySelector(':scope > button.on')
+    if (!nav || !b) return
+    const left = b.offsetLeft + b.offsetWidth / 2 - nav.clientWidth / 2
+    nav.scrollTo({ left, behavior: smooth && Math.abs(left - nav.scrollLeft) < nav.clientWidth ? 'smooth' : 'instant' })
+    if (wheeling) lightMid(nav, b)
+  }
+  useLayoutEffect(() => { if (wheeling && tab === 'chats') centreTab(false) }, [wheeling, tab]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (wheelOn && tab === 'chats') requestAnimationFrame(() => centreTab(true)) }, [folder, wheelOn, tab, myFolders.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  const wheelTimer = useRef(0)
+  const wheelFrame = useRef(0)
+  const onWheelScroll = (e) => {
+    if (!wheeling) return
+    const nav = e.currentTarget
+    if (!wheelFrame.current) wheelFrame.current = requestAnimationFrame(() => { wheelFrame.current = 0; lightMid(nav, nearMid(nav).best) })
+    clearTimeout(wheelTimer.current)
+    wheelTimer.current = setTimeout(() => {
+      const { best, gap } = nearMid(nav)
+      if (!best) return
+      if (gap > 2) { nav.scrollTo({ left: best.offsetLeft + best.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }); return }
+      const t = toMiddleCopy(nav, best)
+      lightMid(nav, t)
+      if (t.dataset.tab !== folder) { haptic(8); setFolder(t.dataset.tab) }
+    }, 140)
+  }
   // a tab dragged sideways in the bar: it follows the finger and swaps places as it passes a neighbour's middle
   const tabDown = (e, f) => {
     if (!editTabs || (e.button != null && e.button !== 0)) return
@@ -808,7 +840,7 @@ export default function Chat({ me, setMe }) {
         setSwipedTo(id)
         setFolder(id)
         setPageDrag(null)
-        setTimeout(() => document.querySelector('.tabs-scroll > button.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: document.querySelector('.tabs-wheel') ? 'center' : 'nearest' }), 30)
+        setTimeout(() => { if (!document.querySelector('.tabs-wheel')) document.querySelector('.tabs-scroll > button.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }, 30)
       })
     }
     el.addEventListener('touchstart', start, { passive: true })
@@ -1176,16 +1208,18 @@ export default function Chat({ me, setMe }) {
             </div></div>
             <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
             {!q.trim() && (
-              <nav ref={tabsLens} className={`tabs lens tabs-scroll${editTabs ? ' editing' : ''}${wheelOn && !editTabs ? ' tabs-wheel' : ''}`} onScroll={onWheelScroll} onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
-                {wheelOn && !editTabs && <i className="wheel-pad" aria-hidden="true" />}
-                {tabsShown.map((f) => {
+              <div className={`wheel-box${wheeling ? ' on' : ''}`}>
+              {wheeling && <i ref={pillRef} className="tabs lens lens-on wheel-pill" aria-hidden="true" />}
+              <nav ref={tabsLens} className={`tabs lens tabs-scroll${editTabs ? ' editing' : ''}${wheeling ? ' tabs-wheel' : ''}`} onScroll={onWheelScroll} onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
+                {(wheeling ? Array.from({ length: WHEEL_COPIES }, (_, k) => k) : [WHEEL_MID]).flatMap((k) => tabsShown.map((f) => {
+                  const twin = k !== WHEEL_MID
                   const n = folderUnread(f)
                   const dragged = tabDrag?.id === f.id
-                  return <button key={f.id} type="button" data-tab={f.id} title={f.name} className={`${folder === f.id ? 'on' : ''}${dragged ? ' tab-dragging' : ''}`} style={dragged ? { transform: `translateX(${tabDrag.dx}px)` } : undefined}
-                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: wheelOn ? 'center' : 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{editTabs ? (f.id !== 'all' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
-                })}
-                {wheelOn && !editTabs && <i className="wheel-pad" aria-hidden="true" />}
+                  return <button key={`${k}:${f.id}`} type="button" data-tab={f.id} data-copy={k} title={f.name} aria-hidden={twin || undefined} tabIndex={twin ? -1 : undefined} className={`${folder === f.id && !twin ? 'on' : ''}${dragged ? ' tab-dragging' : ''}`} style={dragged ? { transform: `translateX(${tabDrag.dx}px)` } : undefined}
+                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{editTabs ? (f.id !== 'all' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                }))}
               </nav>
+              </div>
             )}
             {pull > 0 && <div className={`ptr${pull >= 1 ? ' ready' : ''}${pull === 2 ? ' spin' : ''}`} style={{ '--p': Math.min(pull, 1) }} aria-hidden="true">{svg(<><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></>, 20)}</div>}
             <div className="rooms-pager" ref={pagerRef}>
@@ -1552,6 +1586,7 @@ const amAdmin = () => (adminAsk ||= supabase.rpc('roar_is_admin').then(({ data }
 /* ---------- one conversation ---------- */
 // the official RoarMe account's mark beside its name (Alex, 19 Oct)
 const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />, 15)
+const WHEEL_COPIES = 5, WHEEL_MID = 2 // the folder wheel at the foot: copies of the folders in a row, the middle one the real one
 const EDGE = 64 // px from either side of the screen where a slide on a chat opens its buttons
 const ROW_W = 156 // how far a chat slides open to show its two buttons
 const REORDER = svg(<><rect x="3" y="4" width="18" height="6" rx="2" /><path d="M5 15v4M12 15v4M19 15v4M3.5 15h17" /></>, 16)

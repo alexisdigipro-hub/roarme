@@ -2081,15 +2081,30 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const y = Math.max(70, Math.min(e.clientY, window.innerHeight - h - 12))
     setMenu({ m, x, y })
   }
-  // the menu always fits on the screen (Alex, 8 Nov: on a phone it ran off the bottom and could not be reached): once it
-  // is drawn it is measured and moved up as far as it needs; taller than the screen, its list scrolls (styles.css)
+  // the menu always fits on the screen (Alex, 8 Nov: "always inside the edges of the screen"): once it is drawn it is
+  // measured, the reactions above the list too, without its opening zoom, and moved in from every edge, clear of the
+  // clock and the home bar; taller than the screen, its list scrolls (styles.css)
   const menuRef = useRef(null)
   useLayoutEffect(() => {
     const el = menuRef.current
     if (!menu || !el) return
-    const floor = window.innerHeight - 12
-    const r = el.getBoundingClientRect()
-    if (r.bottom > floor) el.style.top = `${Math.max(12, floor - r.height)}px`
+    const safe = (() => {
+      const p = document.createElement('div')
+      p.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)'
+      document.body.appendChild(p)
+      const c = getComputedStyle(p)
+      const v = { t: parseFloat(c.paddingTop) || 0, r: parseFloat(c.paddingRight) || 0, b: parseFloat(c.paddingBottom) || 0, l: parseFloat(c.paddingLeft) || 0 }
+      p.remove()
+      return v
+    })()
+    const vw = window.visualViewport?.width || window.innerWidth
+    const vh = window.visualViewport?.height || window.innerHeight
+    const w = Math.max(el.offsetWidth, el.scrollWidth, ...[...el.children].map((c) => c.offsetWidth))
+    const h = el.offsetHeight
+    const left = Math.max(8 + safe.l, Math.min(menu.x, vw - w - 8 - safe.r))
+    const top = Math.max(8 + safe.t, Math.min(menu.y, vh - h - 8 - safe.b))
+    el.style.left = `${left}px`
+    el.style.top = `${top}px`
   }, [menu])
   // The menu opens only on a message itself (Alex, 16 Oct): a right click on it with a mouse, a tap on it on a
   // touch screen; a click on the empty space beside it does nothing. A double click is the quick reaction;

@@ -796,6 +796,12 @@ function ChatTheme({ p }) {
       {editing && <ThemeEditor p={p} onClose={() => setEditing(false)} />}
       <div className="set-row set-col">
         <span className="set-text">Message Corners<small>{p.bubbleR ? `${p.bubbleR} px` : "The theme's own"}</small></span>
+        {/* a little chat that follows the slider (Alex, 9 Nov: "to see an example") */}
+        <div className="corner-demo" style={p.bubbleR ? { '--demo-r': `${p.bubbleR}px` } : undefined}>
+          <span className="cd-b">Are we shooting at 10?<small>09:41</small></span>
+          <span className="cd-b mine">Yes, on set at 10 👍<small>09:42</small></span>
+          <span className="cd-b mine">Bring the lights<small>09:42</small></span>
+        </div>
         <input type="range" min="0" max="26" step="2" value={p.bubbleR || 0} onChange={(e) => setPrefs({ bubbleR: Number(e.target.value) })} />
         <span className="range-labels"><small>Theme's own</small><small>Round</small></span>
       </div>

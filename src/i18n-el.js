@@ -1,5 +1,8 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  'Are we shooting at 10?': 'Γυρίζουμε στις 10;',
+  'Yes, on set at 10 👍': 'Ναι, στο πλατό στις 10 👍',
+  'Bring the lights': 'Φέρε τα φώτα',
   // Halo theme (9 Nov)
   'Halo': 'Halo',
   'Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Halo: white frosted glass on soft lilac clouds, with a warm orange. Each has dark and light.': 'Stone: απαλή γκρι πέτρα με κουμπιά γραφίτη. Simba: γυαλί γραφίτη με φωτεινό χρώμα. Halo: λευκό θολό γυαλί πάνω σε απαλά λιλά σύννεφα, με ζεστό πορτοκαλί. Το καθένα έχει σκοτεινή και φωτεινή εκδοχή.',

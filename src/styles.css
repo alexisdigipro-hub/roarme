@@ -4155,3 +4155,13 @@ html[data-bubble-r] .msg.first.mine .bubble:not(.big-emoji) { border-bottom-righ
 .te-preview[data-bg='forest'] { background-image: linear-gradient(160deg, rgba(40, 150, 110, .28), rgba(20, 60, 50, .12)); }
 .te-preview[data-bg='ember'] { background-image: radial-gradient(circle at 85% 0%, rgba(235, 95, 60, .32), transparent 60%), radial-gradient(circle at 0% 100%, rgba(200, 60, 90, .2), transparent 55%); }
 .te-preview[data-bg='night'] { background-image: linear-gradient(165deg, rgba(48, 70, 150, .38), rgba(14, 18, 40, .15) 70%); }
+
+/* Message Corners' example (Alex, 9 Nov): the theme's own bubbles, their corners following the slider at once */
+.corner-demo { display: flex; flex-direction: column; gap: 5px; padding: 14px 12px; margin: 4px 0 6px; border-radius: 18px; background: color-mix(in srgb, var(--bg) 70%, transparent); border: 1px solid var(--edge); }
+.corner-demo .cd-b { align-self: flex-start; display: flex; align-items: flex-end; gap: 8px; max-width: 80%; padding: 7px 12px; border-radius: var(--demo-r, 18px); background: var(--theirs, #fff); color: var(--text); border: 1px solid var(--edge); font-size: 14px; transition: border-radius .15s ease; }
+.corner-demo .cd-b.mine { align-self: flex-end; background: var(--rail, var(--accent)); color: #fff; border-color: transparent; }
+.corner-demo .cd-b small { font-size: 10.5px; opacity: .6; }
+html[data-their-bubble] .corner-demo .cd-b:not(.mine) { background: var(--their-bubble); color: var(--their-bubble-ink); }
+html[data-my-bubble] .corner-demo .cd-b.mine { background: var(--my-bubble); color: var(--my-bubble-ink); }
+html[data-skin='halo'] .corner-demo .cd-b.mine { background: linear-gradient(145deg, var(--halo-2), var(--halo)); color: #fff; }
+html[data-skin='halo'][data-my-bubble] .corner-demo .cd-b.mine { background: var(--my-bubble); color: var(--my-bubble-ink); }

@@ -4038,7 +4038,8 @@ html[data-mode] :is(.room-view[data-img][data-own] .scroll, .set-preview[data-im
 
 /* the message menu never runs off the screen (Alex, 8 Nov): Chat.jsx moves it up to fit; if it is still taller than the
    screen, the reactions stay and the list under them scrolls */
-.msg-menu { max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+.msg-menu { max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); max-width: calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); }
+.msg-menu .rx-pick { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 .msg-menu .menu-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .msg-menu .rx-pick { flex: none; }
 

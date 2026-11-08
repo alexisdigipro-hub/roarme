@@ -49,6 +49,9 @@ Deno.serve(async (req) => {
   }
 })
 
+const live = (until: string | null) => !until || new Date(until).getTime() > Date.now()
+const sameTime = (a: string | null, b: string | null) => (a === null && b === null) || (!!a && !!b && new Date(a).getTime() === new Date(b).getTime())
+
 async function roleOf(uid: string | null, project: string): Promise<string | null> {
   if (!uid || !isId(project)) return null
   const { data: p } = await sb.from('roarstudio_projects').select('owner').eq('id', project).maybeSingle()
@@ -206,6 +209,25 @@ async function handle(req: Request): Promise<Response> {
     const { data: conf } = await sb.from('roarstudio_conf').select('hook_token').eq('id', 1).maybeSingle()
     if (!conf || req.headers.get('x-roarstudio-hook') !== conf.hook_token) return json({ error: 'not allowed' }, 403)
     return json(await notifySweep())
+  }
+
+  // the waiting list from the pricing pages (Alex, 8 Nov 2026: "pre-order, leave your name, next to Coming soon"); no account needed
+  if (b.action === 'waitlist') {
+    const email = String(b.email || '').trim().toLowerCase().slice(0, 200)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json({ error: 'bad email' }, 400)
+    const plan = b.plan === 'transfer-pro' ? 'transfer-pro' : 'studio-pro'
+    const billing = b.billing === 'year' ? 'year' : b.billing === 'month' ? 'month' : null
+    const { error } = await sb.from('roarstudio_waitlist').upsert({ email, plan, billing, lang: b.lang === 'el' ? 'el' : 'en' }, { onConflict: 'email,plan' })
+    if (error) return json({ error: 'Try again in a minute.' }, 500)
+    return json({ ok: true })
+  }
+
+  // Studio Pro of the caller (Alex, 8 Nov 2026): the admins always, else a row whose `until` is empty or ahead
+  if (b.action === 'pro-me') {
+    if (!uid) return json({ pro: false })
+    const { data: adm } = await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
+    const { data: me } = await sb.from('roarstudio_pro').select('until').eq('user_id', uid).maybeSingle()
+    return json({ pro: !!adm || (!!me && live(me.until)), admin: !!adm, until: adm ? null : me?.until || null })
   }
 
   // ---------- people without an account, through a share link ----------
@@ -544,6 +566,74 @@ async function handle(req: Request): Promise<Response> {
     }
     if (error) return json({ error: error.message }, 500)
     return json({ token })
+  }
+
+  // ---------- Admin > Studio Pro (Alex, 8 Nov 2026: "let me make people Pro in the Studio, as in RoarTransfer") ----------
+  // Studio Pro includes RoarTransfer Pro: giving it also gives roar_transfer_pro up to the same date, unless they already have
+  // a longer one; taking it away ends only the RoarTransfer Pro this gave (supabase/studio-pro.sql)
+  if (['pro-list', 'pro-grant', 'pro-revoke', 'waitlist-list'].includes(b.action)) {
+    if (!uid) return json({ error: 'not allowed' }, 403)
+    const { data: adm } = await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
+    if (!adm) return json({ error: 'not allowed' }, 403)
+    if (b.action === 'waitlist-list') {
+      const { data } = await sb.from('roarstudio_waitlist').select('email, plan, billing, lang, created_at').order('created_at', { ascending: false }).limit(2000)
+      return json({ rows: data || [] })
+    }
+    if (b.action === 'pro-list') {
+      const { data: rows } = await sb.from('roarstudio_pro').select('user_id, until, created_at, updated_at')
+      const { data: admins } = await sb.from('roar_admins').select('user_id')
+      const ids = [...new Set([...(rows || []).map((r: any) => r.user_id), ...(admins || []).map((a: any) => a.user_id)])]
+      const nm = await names(ids)
+      const people = await Promise.all(ids.map(async (id: string) => {
+        const { data: u } = await sb.auth.admin.getUserById(id)
+        const r = (rows || []).find((x: any) => x.user_id === id)
+        const isAdmin = (admins || []).some((a: any) => a.user_id === id)
+        return { id, email: u?.user?.email || '', name: nm[id] || u?.user?.user_metadata?.name || '', admin: isAdmin, until: r?.until || null, since: r?.created_at || null, given: !!r, pro: isAdmin || (!!r && live(r.until)) }
+      }))
+      people.sort((a, z) => Number(z.admin) - Number(a.admin) || Number(z.pro) - Number(a.pro) || (a.name || a.email).localeCompare(z.name || z.email))
+      return json({ people })
+    }
+    if (b.action === 'pro-grant') {
+      let id = String(b.id || '')
+      const email = String(b.email || '').trim().toLowerCase()
+      if (!id && email) {
+        const { data: found } = await sb.rpc('roarstudio_user_by_email', { e: email })
+        id = found || ''
+        if (!id) return json({ error: 'There is no Roar account with this email. They need to sign up first.' }, 404)
+      }
+      if (!isId(id)) return json({ error: 'bad request' }, 400)
+      const months = Number(b.months) || 0
+      const until = months > 0 ? new Date(Date.now() + months * 30 * 864e5).toISOString() : null
+      const { data: had } = await sb.from('roarstudio_pro').select('transfer_until, gave_transfer').eq('user_id', id).maybeSingle()
+      const { data: tp } = await sb.from('roar_transfer_pro').select('until').eq('user_id', id).maybeSingle()
+      // the RoarTransfer Pro this grant gave before counts as ours; a longer one of their own stays as it is
+      const ours = !!had?.gave_transfer && !!tp && sameTime(tp.until, had.transfer_until)
+      const longer = !!tp && !ours && live(tp.until) && (tp.until === null || (until !== null && new Date(tp.until).getTime() >= new Date(until).getTime()))
+      let gave = false
+      if (!longer) {
+        const { error: te } = tp ? await sb.from('roar_transfer_pro').update({ until }).eq('user_id', id) : await sb.from('roar_transfer_pro').insert({ user_id: id, until })
+        if (te) return json({ error: te.message }, 500)
+        gave = true
+      }
+      const row = { user_id: id, until, transfer_until: gave ? until : null, gave_transfer: gave, granted_by: uid, updated_at: new Date().toISOString() }
+      const { error } = await sb.from('roarstudio_pro').upsert(row, { onConflict: 'user_id' })
+      if (error) return json({ error: error.message }, 500)
+      return json({ ok: true, id, until, transfer: gave ? 'given' : 'kept' })
+    }
+    if (b.action === 'pro-revoke') {
+      const id = String(b.id || '')
+      if (!isId(id)) return json({ error: 'bad request' }, 400)
+      const now = new Date().toISOString()
+      const { data: had } = await sb.from('roarstudio_pro').select('transfer_until, gave_transfer').eq('user_id', id).maybeSingle()
+      if (!had) return json({ ok: true })
+      if (had.gave_transfer) {
+        const { data: tp } = await sb.from('roar_transfer_pro').select('until').eq('user_id', id).maybeSingle()
+        if (tp && sameTime(tp.until, had.transfer_until)) await sb.from('roar_transfer_pro').update({ until: now }).eq('user_id', id)
+      }
+      const { error } = await sb.from('roarstudio_pro').update({ until: now, gave_transfer: false, transfer_until: null, updated_at: now }).eq('user_id', id)
+      if (error) return json({ error: error.message }, 500)
+      return json({ ok: true })
+    }
   }
 
   // ---------- Admin (Alex, 7 Nov: "who made accounts, what they use and how, for every account") ----------

@@ -1,5 +1,12 @@
 /* RoarMe in Greek (Alex, 16 Oct): English interface text -> Greek. Exact matches of whole texts. */
 export const EL = {
+  'At 10?': 'Στις 10;',
+  'With lights': 'Με φώτα',
+  'Yes 👍': 'Ναι 👍',
+  'See you on set': 'Τα λέμε στο πλατό',
+  'Sent a photo': 'Έστειλε φωτογραφία',
+  'Thanks!': 'Ευχαριστώ!',
+  'On it': 'Το κανονίζω',
   'Velvet': 'Velvet',
   'Are we shooting at 10?': 'Γυρίζουμε στις 10;',
   'Yes, on set at 10 👍': 'Ναι, στο πλατό στις 10 👍',

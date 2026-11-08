@@ -102,6 +102,29 @@ export default function Chat({ me, setMe }) {
   const editFolder = (id, seed = []) => { folderBack.current = tab === 'settings' ? '' : tab; setModal(''); setFolderSeed(seed); setTab('settings'); setSetPage(`folder:${id}`) }
   const doneFolder = () => { document.activeElement?.blur?.(); const back = folderBack.current; folderBack.current = ''; if (back) { setSetPage(''); setTab(back) } else setSetPage('folders') }
   const tabsLens = useLens(`${tab}|${folder}|${prefs.folderTabs}|${myFolders.length}|${!q.trim()}`)
+  // the folder tabs at the foot as a wheel (Alex, 9 Nov): the chosen folder always sits in the middle; slide the row and
+  // the folder that settles in the middle is chosen; both edges fade (styles.css .tabs-wheel)
+  const wheelOn = prefs.folderTabs === 'bottom' && !q.trim()
+  const centreTab = (smooth = true) => {
+    const nav = tabsLens.current, b = nav?.querySelector(':scope > button.on')
+    if (!nav || !b) return
+    nav.scrollTo({ left: b.offsetLeft + b.offsetWidth / 2 - nav.clientWidth / 2, behavior: smooth ? 'smooth' : 'auto' })
+  }
+  useEffect(() => { if (wheelOn && tab === 'chats') requestAnimationFrame(() => centreTab(true)) }, [folder, wheelOn, tab, myFolders.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  const wheelTimer = useRef(0)
+  const onWheelScroll = (e) => {
+    if (!wheelOn || editTabs) return
+    const nav = e.currentTarget
+    clearTimeout(wheelTimer.current)
+    wheelTimer.current = setTimeout(() => {
+      const mid = nav.scrollLeft + nav.clientWidth / 2
+      let best = null, gap = Infinity
+      for (const b of nav.querySelectorAll(':scope > button[data-tab]')) { const d = Math.abs(b.offsetLeft + b.offsetWidth / 2 - mid); if (d < gap) { gap = d; best = b } }
+      const id = best?.dataset.tab
+      if (id && id !== folder) { haptic(8); setFolder(id) }
+      else if (gap > 2) centreTab(true)
+    }, 140)
+  }
   // the folder tabs fade at the right edge only while more tabs wait past it (Alex, 21 Oct: the last tab looked shaded)
   useEffect(() => {
     const el = tabsLens.current
@@ -785,7 +808,7 @@ export default function Chat({ me, setMe }) {
         setSwipedTo(id)
         setFolder(id)
         setPageDrag(null)
-        setTimeout(() => document.querySelector('.tabs-scroll > button.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }), 30)
+        setTimeout(() => document.querySelector('.tabs-scroll > button.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: document.querySelector('.tabs-wheel') ? 'center' : 'nearest' }), 30)
       })
     }
     el.addEventListener('touchstart', start, { passive: true })
@@ -1153,13 +1176,15 @@ export default function Chat({ me, setMe }) {
             </div></div>
             <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
             {!q.trim() && (
-              <nav ref={tabsLens} className={`tabs lens tabs-scroll${editTabs ? ' editing' : ''}`} onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
+              <nav ref={tabsLens} className={`tabs lens tabs-scroll${editTabs ? ' editing' : ''}${wheelOn && !editTabs ? ' tabs-wheel' : ''}`} onScroll={onWheelScroll} onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
+                {wheelOn && !editTabs && <i className="wheel-pad" aria-hidden="true" />}
                 {tabsShown.map((f) => {
                   const n = folderUnread(f)
                   const dragged = tabDrag?.id === f.id
                   return <button key={f.id} type="button" data-tab={f.id} title={f.name} className={`${folder === f.id ? 'on' : ''}${dragged ? ' tab-dragging' : ''}`} style={dragged ? { transform: `translateX(${tabDrag.dx}px)` } : undefined}
-                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{editTabs ? (f.id !== 'all' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: wheelOn ? 'center' : 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{editTabs ? (f.id !== 'all' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
                 })}
+                {wheelOn && !editTabs && <i className="wheel-pad" aria-hidden="true" />}
               </nav>
             )}
             {pull > 0 && <div className={`ptr${pull >= 1 ? ' ready' : ''}${pull === 2 ? ' spin' : ''}`} style={{ '--p': Math.min(pull, 1) }} aria-hidden="true">{svg(<><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></>, 20)}</div>}

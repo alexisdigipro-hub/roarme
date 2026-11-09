@@ -308,6 +308,8 @@ async function handle(req: Request): Promise<Response> {
     const o = await openShare(b)
     if (!o.share) return json({ error: o.error, locked: o.locked }, o.status)
     const s = o.share
+    // a member of the project on its own link (signed in): their visits and plays are not counted as the link's (Alex, 9 Nov)
+    const mine = !!uid && !!(await roleOf(uid, s.project_id))
     const inShare = async (versionId: string) => {
       if (!isId(versionId)) return null
       const { data: v } = await sb.from('roarstudio_versions').select('*').eq('id', versionId).eq('project_id', s.project_id).maybeSingle()
@@ -340,7 +342,7 @@ async function handle(req: Request): Promise<Response> {
       const vids = (versions || []).map((v: any) => v.id)
       const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec, pos, attach').in('version_id', vids).order('created_at') : { data: [] }
       const who = await names([project?.owner, ...(comments || []).map((c: any) => c.author), ...(versions || []).map((v: any) => v.uploaded_by)])
-      await logEvent(s.project_id, 'view', null, String(b.name || '').slice(0, 60) || 'Someone with the link')
+      if (!mine) await logEvent(s.project_id, 'view', null, String(b.name || '').slice(0, 60) || 'Someone with the link')
       return json({ project: { ...project, owner_name: who[project?.owner] || '' }, tracks, versions, comments, names: who,
         picks: s.kind === 'finals' ? [] : await picksOf(s.project_id), reactions: s.kind === 'finals' ? [] : await reactionsOf(s.project_id), kind: s.kind || 'review', playlist: playlist ? { id: playlist.id, title: playlist.title } : null, studio: await studioOf(project?.owner),
         can: finals ? { comment: false, approve: false, download: true } : { comment: s.can_comment, approve: s.can_approve, download: s.can_download }, expires: s.expires_at })
@@ -349,7 +351,7 @@ async function handle(req: Request): Promise<Response> {
       const v = await inShare(b.version)
       if (!v) return json({ error: 'not found' }, 404)
       if (b.download && !s.can_download && s.kind !== 'finals') return json({ error: 'not allowed' }, 403)
-      await logEvent(s.project_id, b.download ? 'download' : 'stream', v, String(b.name || '').slice(0, 60) || 'Someone with the link')
+      if (!mine) await logEvent(s.project_id, b.download ? 'download' : 'stream', v, String(b.name || '').slice(0, 60) || 'Someone with the link')
       const q: Record<string, string> = b.download ? { 'response-content-disposition': `attachment; filename="${safeName(v.file_name)}"` } : {}
       return json({ url: await presign('GET', v.file_key, q, 6 * 3600) })
     }
@@ -420,6 +422,7 @@ async function handle(req: Request): Promise<Response> {
     if (b.action === 'share-watch') {
       const v = await inShare(b.version)
       if (!v) return json({ error: 'not found' }, 404)
+      if (mine) return await watchSave(v, uid, (await names([uid]))[uid] || null, uid, b)
       const name = String(b.name || '').trim().slice(0, 60) || 'Someone with the link'
       return await watchSave(v, 'g:' + name.toLowerCase(), name, null, b)
     }

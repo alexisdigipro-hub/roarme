@@ -2,6 +2,8 @@
 // download and upload"). Suno does not let anyone take the audio file itself (its address answers "forbidden"), so the
 // song is not copied: the Studio keeps a link item (a version with mime application/x-suno;id=<song id>) and plays it in
 // Suno's own embedded player, with notes, versions and approvals beside it as for any file. The song must be public on Suno.
+// Spotify too (Alex, 9 Nov): a track, album, playlist or episode link becomes a link item (application/x-spotify;type=…;id=…)
+// played in Spotify's embedded player.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
@@ -46,11 +48,48 @@ Deno.serve(async (req) => {
     const uid = who?.user?.id
     if (!uid) return json({ error: 'signed-out' }, 401)
 
-    if (b.action === 'suno') {
+    // Spotify: open.spotify.com/<type>/<id> (or /intl-xx/…), spotify:<type>:<id>, or a spotify.link short link
+    const spot = async (link: string) => {
+      let u = String(link || '').trim()
+      if (/^https:\/\/(spotify\.link|spoti\.fi)\//.test(u)) { const r = await fetch(u, { redirect: 'manual', headers: UA }); u = r.headers.get('location') || u; await r.body?.cancel() }
+      const m = u.match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|playlist|episode|show)\/([A-Za-z0-9]{22})/) || u.match(/^spotify:(track|album|playlist|episode|show):([A-Za-z0-9]{22})$/)
+      return m ? { type: m[1], id: m[2] } : null
+    }
+    if ((b.action === 'link' || b.action === 'spotify') && /spotify/i.test(String(b.url || ''))) {
+      const project = String(b.project || '')
+      if (!can(await roleOf(uid, project), 'editor')) return json({ error: 'not allowed' }, 403)
+      const sp = await spot(b.url)
+      if (!sp) return json({ error: 'That is not a Spotify link. On Spotify press Share, Copy link (a song, an album or a playlist), and paste it here.' }, 400)
+      let title = '', thumb = ''
+      try {
+        const o = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/${sp.type}/${sp.id}`)}`, { headers: UA })
+        if (o.ok) { const j = await o.json(); title = String(j.title || '').trim().slice(0, 200); thumb = String(j.thumbnail_url || '') }
+        else { await o.body?.cancel(); if (o.status === 404) return json({ error: 'Spotify does not know this link. Check it.' }, 404) }
+      } catch (_) { /* the title is a nicety */ }
+      title = title || 'Spotify ' + sp.type
+      let track = isId(b.track) ? b.track : null
+      if (track) { const { data: t } = await sb.from('roarstudio_tracks').select('id').eq('id', track).eq('project_id', project).maybeSingle(); track = t?.id || null }
+      if (!track) {
+        let folder: string | null = null
+        if (isId(b.folder)) { const { data: f } = await sb.from('roarstudio_folders').select('id').eq('id', b.folder).eq('project_id', project).maybeSingle(); folder = f?.id || null }
+        const { count } = await sb.from('roarstudio_tracks').select('id', { count: 'exact', head: true }).eq('project_id', project)
+        const { data: t, error } = await sb.from('roarstudio_tracks').insert({ project_id: project, folder_id: folder, title, position: count || 0, created_by: uid }).select('id').single()
+        if (error) return json({ error: error.message }, 500)
+        track = t.id
+      }
+      const { data: v, error } = await sb.from('roarstudio_versions').insert({
+        track_id: track, project_id: project, file_key: `spotify:${sp.type}:${sp.id}`, file_name: title, size: 0, mime: `application/x-spotify;type=${sp.type};id=${sp.id}`,
+        label: 'Spotify', uploaded_by: uid,
+      }).select().single()
+      if (error) return json({ error: error.message }, 500)
+      return json({ version: v, track, title, thumb })
+    }
+
+    if (b.action === 'suno' || b.action === 'link') {
       const project = String(b.project || '')
       if (!can(await roleOf(uid, project), 'editor')) return json({ error: 'not allowed' }, 403)
       const id = await sunoId(b.url)
-      if (!id) return json({ error: 'That is not a Suno song link. Open the song on Suno, press Share, Copy link, and paste it here.' }, 400)
+      if (!id) return json({ error: 'That is not a Suno or Spotify link. Press Share, Copy link there, and paste it here.' }, 400)
       const r = await fetch(`https://studio-api.prod.suno.com/api/clip/${id}`, { headers: UA })
       if (!r.ok) { await r.body?.cancel(); return json({ error: 'Suno does not know this song. Check the link.' }, 404) }
       const c = await r.json()

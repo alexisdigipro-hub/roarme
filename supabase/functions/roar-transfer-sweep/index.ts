@@ -22,6 +22,8 @@ Deno.serve(async () => {
     })
     r2 = await r.json()
   } catch (e) { r2 = { error: String(e) } }
-  await sb.from('roar_transfer_links').delete().lt('expires_at', new Date().toISOString())
+  // an ended link's row stays 30 days, so My transfers > Expired shows it (Alex, 10 Nov: "where are the expired ones?");
+  // its file is gone already (above), only the name, size and counts stay
+  await sb.from('roar_transfer_links').delete().lt('expires_at', new Date(Date.now() - 30 * 864e5).toISOString())
   return new Response(JSON.stringify({ removed: names.length, r2 }), { headers: { 'Content-Type': 'application/json' } })
 })

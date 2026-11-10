@@ -3,6 +3,9 @@
    Add the new version here, at the top, whenever desktop/package.json goes up: the release's text is made from it too
    (.github/workflows/desktop.yml). */
 export const CHANGES = {
+  '1.5.1': [
+    'New app icon',
+  ],
   '1.4.11': [
     'Messages, sounds and notifications arrive with the window closed',
     'Send Test in Settings > Notifications',

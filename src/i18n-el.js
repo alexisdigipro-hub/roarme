@@ -1061,6 +1061,7 @@ export const EL = {
   'Sign in first': 'Συνδέσου πρώτα',
   'Messages, sounds and notifications arrive with the window closed': 'Μηνύματα, ήχοι και ειδοποιήσεις έρχονται και με κλειστό παράθυρο',
   'Send Test in Settings > Notifications': 'Δοκιμαστική ειδοποίηση στα Settings > Notifications',
+  'New app icon': 'Νέο εικονίδιο εφαρμογής',
   'Version and Check for Updates in the menu bar': 'Έκδοση και έλεγχος ενημερώσεων στη γραμμή μενού',
   'RoarMe updates itself: Restart to update': 'Το RoarMe ενημερώνεται μόνο του: Restart to update',
   'AllMedia': 'AllMedia',

@@ -417,7 +417,7 @@ html[data-theme='ember'] .bubble.pic { border-radius: calc(var(--r, 12px) * 1.4 
 
 html[data-theme='ember'] .msg.mine .bubble.pic { box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 18%, transparent); }
 
-html[data-theme='ember'] .compose-box { border-radius: calc(var(--r, 12px) * 1.4); background: rgba(0, 0, 0, .2); border-color: var(--edge); }
+html[data-theme='ember'] .compose-box { border-radius: var(--r, 12px); background: rgba(0, 0, 0, .2); border-color: var(--edge); }
 
 html[data-theme='ember'][data-mode='light'] .compose-box { background: rgba(255, 255, 255, .8); }
 

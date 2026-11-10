@@ -4244,3 +4244,6 @@ html[data-theme] .rooms-area.bottom .wheel-box > .wheel-pill::before { transitio
 }
 /* the faint profile picture behind the name sits higher in the head (Alex, 10 Nov) */
 .head-bg { top: calc(50% - 14px); }
+/* one corner too (Alex, 10 Nov: "half round, half squarer: all the same, the squarer one"): the name's frame and the
+   message box take the round buttons' 15px corner, in Stone and Velvet (Halo keeps its circles and pills) */
+html[data-theme='stone']:not([data-skin='halo']) :is(.room-head .head-card, .compose-box, .compose.rec) { border-radius: 15px; }

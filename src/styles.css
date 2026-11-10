@@ -4228,3 +4228,19 @@ html[data-theme] .rooms-area.bottom .wheel-box > .wheel-pill::before { transitio
 .wheel-box > .tabs-wheel { z-index: 1; }
 .tabs-wheel > button { flex: none !important; scroll-snap-align: center; padding: 0 16px !important; transition: color .15s, opacity .15s !important; }
 .tabs-wheel > button:not(.on) { opacity: .75; }
+
+/* one height for the chat's head and for the message bar (Alex, 10 Nov: "the buttons one height, the frames another"): the
+   round buttons stand exactly as tall as the frame beside them: 48 in the head and 44 at the foot on a computer, 44 in
+   both on a phone, 40 in the head of the smallest phones */
+.compose-box textarea { min-height: 42px; padding-top: 10px; padding-bottom: 10px; line-height: 22px; } /* + the box's 1px edges = 44 */
+.compose > .round { width: 44px; height: 44px; }
+@media (max-width: 760px) {
+  html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { width: 44px; height: 44px; }
+  .compose > .round { width: 44px; height: 44px; }
+}
+@media (max-width: 380px) {
+  html:not([data-theme='aura']):not([data-theme='studio']) .room-head .round { width: 40px; height: 40px; }
+  html:not([data-theme='aura']):not([data-theme='studio']) .room-head .head-card { height: 40px; }
+}
+/* the faint profile picture behind the name sits higher in the head (Alex, 10 Nov) */
+.head-bg { top: calc(50% - 14px); }

@@ -121,6 +121,8 @@ once signed in (App.jsx, `themeFor`). A first start opens Simba with the **red**
 White joined the accents.
 
 ## The RoarMe mark (17 Oct)
+**Desktop 1.5.1: new icon (the Lab's one family of icons, 10 Nov 2026)**: an off-black rounded square (#0e0e10) with a white speech bubble, in the tab (public/icon.svg), on the phone (public/apple-touch-icon.png, icon-512.png) and as the Mac and Windows app (desktop/build/icon.png, with the Mac's margin). The five bars stay as the mark inside the app (`Mark`) and in the Mac menu bar.
+
 Alex's logo, five bars leaning; the app icon in Rosso Corsa #D40000 (the site's Ferrari red) on #202020, redrawn as a vector (`Mark` in src/ui.jsx, checked by laying
 it over his picture). It is the icon everywhere: the tab (public/icon.svg), the phone's home screen
 (public/apple-touch-icon.png, icon-512.png), the Mac and Windows app (desktop/build/icon.png, a rounded tile)

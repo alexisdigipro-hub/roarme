@@ -1,0 +1,93 @@
+/* Air (Alex, 12 Nov, from two screens he sent): Stone's build in a clean white dress. A plain white page, hairlines between
+   the chats, one clear blue for what matters (your messages, links, the chosen tab's sign, Send), their messages a flat
+   light grey, round white buttons with a thin rim, the name and the message box as white capsules, the bar at the foot
+   a white capsule whose chosen button is a soft grey pill with a blue sign. No gradients, no glow.
+   Worn as data-theme 'stone' + data-skin 'air' (prefs.js dressTheme), so every Stone rule holds and only these differ.
+   Loaded only when worn (prefs.js wearTheme). Light and dark. */
+
+html[data-skin='air'][data-theme='stone'] {
+  --air: #2f7cf6; --air-2: #2f7cf6;
+  --accent: #2f7cf6; --accent-2: #2f7cf6; --accent-ink: #ffffff;
+  --rail: #2f7cf6; --rail-2: #2f7cf6; --mint: #2f7cf6;
+}
+html[data-skin='air'][data-theme='stone'][data-mode='light'] {
+  --bg: #ffffff; --panel: #ffffff; --panel-2: #f6f6f8;
+  --glass: rgba(255, 255, 255, .86); --glass-2: #efeff2;
+  --edge: rgba(0, 0, 0, .09); --edge-2: rgba(0, 0, 0, .13);
+  --text: #000000; --muted: #8a8a8e;
+  --theirs: #e9e9eb;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .1), 0 1px 3px rgba(0, 0, 0, .06);
+  --float: rgba(255, 255, 255, .97);
+}
+html[data-skin='air'][data-theme='stone'][data-mode='dark'] {
+  --bg: #000000; --panel: #000000; --panel-2: #1c1c1e;
+  --glass: rgba(255, 255, 255, .08); --glass-2: rgba(255, 255, 255, .14);
+  --edge: rgba(255, 255, 255, .12); --edge-2: rgba(255, 255, 255, .18);
+  --text: #ffffff; --muted: #8d8d93;
+  --theirs: #262628;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .6);
+  --float: rgba(28, 28, 30, .97);
+}
+
+/* the page and the panels: plain, flat */
+html[data-skin='air'][data-theme='stone'] body { background: var(--bg); }
+html[data-skin='air'][data-theme='stone'] :is(.side, .main) { border-radius: 22px; background: var(--panel); border: 1px solid var(--edge); box-shadow: none; }
+@media (max-width: 760px) {
+  html[data-skin='air'][data-theme='stone'] .app > :is(.side, .main) { border: 0; border-radius: 0; }
+}
+
+/* round buttons: white circles with a thin rim; the main action solid blue */
+html[data-skin='air'][data-theme='stone'] .round { border-radius: 50%; background: var(--glass); border: 1px solid var(--edge); color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
+html[data-skin='air'][data-theme='stone'] .round.on,
+html[data-skin='air'][data-theme='stone'] :is(.btn-main, .send.ready, .new-call-ico) { background: var(--air); color: #fff; border-color: transparent; box-shadow: none; }
+html[data-skin='air'][data-theme='stone'][data-bubbles] :is(.btn-main, .send.ready, .new-call-ico):not(:disabled) { background: var(--air) !important; color: #fff !important; border-color: transparent !important; box-shadow: none !important; }
+html[data-skin='air'][data-theme='stone'] :is(.btn, .pill-btn) { border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); box-shadow: none; }
+html[data-skin='air'][data-theme='stone'] .search { border-radius: 999px; background: var(--glass-2); border: 1px solid transparent; box-shadow: none; }
+html[data-skin='air'][data-theme='stone'] .head-card { border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
+html[data-skin='air'][data-theme='stone'] .compose-box { background: var(--glass); border: 1px solid var(--edge); box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
+
+/* folder tabs: plain words, the chosen one on a soft grey pill */
+html[data-skin='air'][data-theme='stone'] .tabs { border: 0; }
+html[data-skin='air'][data-theme='stone'] .tabs button { border-radius: 999px; color: var(--text); }
+html[data-skin='air'][data-theme='stone'] .tabs button.on,
+html[data-skin='air'][data-theme='stone'] .tabs.lens.lens-on > .on { color: var(--text); }
+html[data-skin='air'][data-theme='stone'] .tabs.lens::before { height: var(--lh, 0); transform: translate(var(--lx, 0), var(--ly, 0)); border-radius: 999px; background: var(--glass-2); border: 0; box-shadow: none; }
+html[data-skin='air'][data-theme='stone'] .tabs button.on small { background: var(--air); color: #fff; }
+
+/* the bar at the foot: a white capsule; the chosen button a soft grey pill, its sign and word blue */
+html[data-skin='air'][data-theme='stone'] .foot { border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); box-shadow: 0 6px 20px rgba(0, 0, 0, .08); }
+html[data-skin='air'][data-theme='stone'][data-mode='dark'] .foot { background: rgba(28, 28, 30, .92); box-shadow: 0 6px 20px rgba(0, 0, 0, .5); }
+html[data-skin='air'][data-theme='stone'] .foot button { border-radius: 999px; color: var(--text); }
+html[data-skin='air'][data-theme='stone'] .foot.lens::before { border-radius: 999px; background: var(--glass-2); box-shadow: none; }
+html[data-skin='air'][data-theme='stone'] .foot.lens.lens-on > .on,
+html[data-skin='air'][data-theme='stone'] .foot button.on,
+html[data-skin='air'][data-theme='stone'] .foot button.foot-tasks.open { color: var(--air); }
+html[data-skin='air'][data-theme='stone'] .foot-ico i { background: var(--air); color: #fff; }
+
+/* the list of chats: flat rows with a hairline between them, from the name to the edge */
+html[data-skin='air'][data-theme='stone'] .rooms { gap: 0; }
+html[data-skin='air'][data-theme='stone'] .rooms .room { border-radius: 0; background-image: linear-gradient(var(--edge), var(--edge)); background-size: calc(100% - 70px) 1px; background-position: right bottom; background-repeat: no-repeat; }
+html[data-skin='air'][data-theme='stone'] .rooms .room:is(.on, :hover) { background-color: var(--glass-2); }
+html[data-skin='air'][data-theme='stone'] :is(.badge, .unread) { background: var(--air); color: #fff; }
+
+/* messages: theirs flat light grey, yours solid blue, no rim and no shadow */
+html[data-skin='air'][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) { background: #e9e9eb !important; border: 0 !important; color: #000 !important; box-shadow: none !important; }
+html[data-skin='air'][data-mode='dark'][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) { background: #262628 !important; color: #fff !important; }
+html[data-skin='air'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji) { background: var(--air) !important; color: #fff !important; border: 0 !important; box-shadow: none !important; }
+html[data-skin='air'][data-mode][data-bubbles] .msg.mine .bubble :is(.meta, .ticks, .voice small, .file-text small) { color: rgba(255, 255, 255, .8) !important; }
+html[data-skin='air'][data-mode][data-bubbles] .msg.mine .bubble .ticks.seen { color: #fff !important; }
+html[data-skin='air'][data-mode][data-bubbles] .msg.mine .bubble :is(.msg-link, .mention, .text a) { color: #fff !important; text-decoration-color: rgba(255, 255, 255, .6) !important; }
+html[data-skin='air'][data-mode][data-bubbles] .msg.mine .bubble .quote { background: rgba(255, 255, 255, .18) !important; border-left-color: #fff !important; }
+html[data-skin='air'] .peek-msg.mine { background: var(--air) !important; color: #fff !important; }
+html[data-skin='air'] .set-preview .pv.mine, html[data-skin='air'] .wall-b.mine, html[data-skin='air'] .corner-demo .cd-b.mine { background: var(--air); color: #fff; }
+html[data-skin='air'][data-my-bubble] .corner-demo .cd-b.mine { background: var(--my-bubble); color: var(--my-bubble-ink); }
+html[data-skin='air'][data-theme='stone'] .day span { background: rgba(0, 0, 0, .18); color: #fff; text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 12px; }
+html[data-skin='air'][data-theme='stone'][data-mode='dark'] .day span { background: rgba(255, 255, 255, .16); }
+
+/* cards, windows and menus: white, a thin rim, round */
+html[data-skin='air'][data-theme='stone'] .set-box { border-radius: 18px; background: var(--panel-2); border: 0; box-shadow: none; }
+html[data-skin='air'][data-theme='stone'] .modal { border-radius: 26px; }
+html[data-skin='air'][data-theme='stone'] :is(.menu, .menu-list, .rx-pick) { border-radius: 20px; background: var(--float); border: 1px solid var(--edge); box-shadow: var(--shadow); }
+html[data-skin='air'][data-theme='stone'] .nav-ico { border-radius: 50%; }
+html[data-skin='air'][data-theme='stone'] .set-menu .set-box + .set-box { border-radius: 18px; }
+html[data-skin='air'][data-theme='stone'] :is(.set-me, .set-box) { border-radius: 18px; }

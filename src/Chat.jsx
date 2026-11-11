@@ -526,7 +526,8 @@ export default function Chat({ me, setMe }) {
   // takes the width of the word over it while the words turn under it; the row goes round (WHEEL_COPIES copies of the
   // folders, the middle one is the real one, and a settled wheel jumps back to it unseen); the folder that settles in the
   // middle is chosen; both edges fade (styles.css .wheel-box, .tabs-wheel, .wheel-pill)
-  const wheelOn = prefs.folderTabs === 'bottom' && !q.trim()
+  // Halo keeps its folders at the foot as a plain bar of words, not the wheel (Alex, 12 Nov)
+  const wheelOn = prefs.folderTabs === 'bottom' && !q.trim() && prefs.theme !== 'halo'
   const wheeling = wheelOn && !editTabs
   const pillRef = useRef(null)
   const wheelBtns = (nav) => [...nav.querySelectorAll(':scope > button[data-tab]')]

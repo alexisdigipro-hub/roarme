@@ -149,3 +149,6 @@ html[data-skin='halo'][data-theme='stone'] .foot { padding-left: 22px; padding-r
 @media (max-width: 760px) {
   html[data-skin='halo'][data-theme='stone'] .app > .side .foot { margin-bottom: calc(env(safe-area-inset-bottom, 0px) * -.6); }
 }
+/* as wide as the list (Alex, 12 Nov: "up to where the profile pictures begin"): the rail runs from the pictures' left edge to
+   the same distance on the right, the signs spread evenly along it, each chip its own size */
+html[data-skin='halo'][data-theme='stone'] .foot { align-self: stretch; margin-left: 5px; margin-right: 5px; justify-content: space-around; padding-left: 10px; padding-right: 10px; }

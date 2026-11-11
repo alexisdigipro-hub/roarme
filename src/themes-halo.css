@@ -212,3 +212,8 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom 
 /* the folders' names always in capitals (Alex, 12 Nov), at the foot or at the top */
 html[data-skin='halo'][data-theme='stone'] .rooms-area > .tabs button .tab-name { text-transform: uppercase; letter-spacing: .04em; }
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom > .tabs button { font-size: 12px; font-weight: 600; }
+/* one bar cut in two (Alex, 12 Nov): the folder bar 42px with its top corners round and its bottom square, the rail with
+   its top square and its bottom corners round, the same 15px, the same width, 5px apart (the column's 12px gap less 7) */
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { padding: 4px !important; margin: 0 5px -7px; border-radius: 15px 15px 0 0; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 32px; }
+html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 0 0 15px 15px; }

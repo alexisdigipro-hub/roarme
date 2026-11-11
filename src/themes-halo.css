@@ -200,3 +200,12 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom 
 }
 /* on the light page the smoke is thicker, so both bars still read black */
 html[data-skin='halo'][data-theme='stone'][data-mode='light'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(16, 16, 20, .84) !important; }
+/* one corner for both bars (Alex, 12 Nov): 15px outside, the chips inside a little less; the folder bar 2px in from the
+   rail's ends on each side */
+html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 15px; }
+html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 11px; }
+html[data-skin='halo'][data-theme='stone'] .foot button { border-radius: 11px; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs { border-radius: 15px; margin-left: 7px; margin-right: 7px; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button,
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before,
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs.lens::before { border-radius: 11px; }

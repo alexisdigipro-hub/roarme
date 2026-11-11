@@ -209,3 +209,6 @@ html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs { border-rad
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button,
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before,
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs.lens::before { border-radius: 11px; }
+/* the folders' names always in capitals (Alex, 12 Nov), at the foot or at the top */
+html[data-skin='halo'][data-theme='stone'] .rooms-area > .tabs button .tab-name { text-transform: uppercase; letter-spacing: .04em; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom > .tabs button { font-size: 12px; font-weight: 600; }

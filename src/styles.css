@@ -4268,3 +4268,10 @@ html[data-theme][data-mode='light'] .msg-menu :is(.menu-list, .rx-pick) {
 /* as light as it can be (Alex, 11 Nov: "it has grown heavy"): the veil behind the menu already blurs the chat, so the menu
    blurs nothing itself (two blurs one over the other were the weight), its shadow is small, and the reactions do not pop in one by one */
 .msg-menu .rx-pick button { animation: none; }
+
+/* the message box in Halo and Velvet (Alex, 11 Nov: a reply turned it into a big oval with the quoted card's corner
+   sticking out): its corner is 22px, which is the same full pill on one line and stays a tidy round box when a reply or
+   more lines make it taller; the quoted card sits inside with a corner that follows the box's */
+html[data-theme='stone'][data-skin] .compose-box, html[data-theme='stone'][data-skin] .compose-box.has-ref { border-radius: 22px; }
+.compose-ref { margin: 6px 6px 0; border-radius: 16px 16px 12px 12px; }
+html[data-theme='stone']:not([data-skin]) .compose-ref { border-radius: 9px; }

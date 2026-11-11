@@ -43,7 +43,7 @@ const Hero = ({ id }) => {
   return <div className="set-hero"><span className="set-hero-ico" style={{ '--c': pg[2] }}>{pg[3]}</span><p>{pg[4]}</p></div>
 }
 
-const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['velvet', 'Velvet', ['linear-gradient(135deg, #f8cf82, #e9a94a 45%, #c97a2c)', 'radial-gradient(70px 60px at 25% 20%, rgba(52, 84, 66, .8), transparent 70%), linear-gradient(180deg, #121a17, #070a09)']]]
+const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['velvet', 'Velvet', ['linear-gradient(135deg, #f8cf82, #e9a94a 45%, #c97a2c)', 'radial-gradient(70px 60px at 25% 20%, rgba(52, 84, 66, .8), transparent 70%), linear-gradient(180deg, #121a17, #070a09)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -825,7 +825,7 @@ function Appearance({ p, toast, me, setMe }) {
             {THEMES.map(([k, l, [a, b]]) => {
               return (
                 <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} title={l}
-                  onClick={(e) => { const clean = { chatTheme: '', myBubble: '', theirBubble: '', accentHex: '', accent: '' }; if (p.theme === k) { if (p.chatTheme || p.myBubble || p.theirBubble || p.accentHex || p.accent) { setPrefs(clean); toast(`${l} as it is made`) } return } wearTheme(k); revealFrom(e, () => { dressTheme(k); setPrefs({ theme: k, ...clean, ...(k === 'velvet' ? { mode: 'dark' } : {}) }) }); toast(`Theme updated: ${l}`) }}>
+                  onClick={(e) => { const clean = { chatTheme: '', myBubble: '', theirBubble: '', accentHex: '', accent: '' }; if (p.theme === k) { if (p.chatTheme || p.myBubble || p.theirBubble || p.accentHex || p.accent) { setPrefs(clean); toast(`${l} as it is made`) } return } wearTheme(k); revealFrom(e, () => { dressTheme(k); setPrefs({ theme: k, ...clean, ...(k === 'velvet' ? { mode: 'dark' } : k === 'air' ? { mode: 'light' } : {}) }) }); toast(`Theme updated: ${l}`) }}>
                   <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : k === 'prism' ? '0 0 10px #ff4b3e' : k === 'aurum' ? '0 0 10px rgba(240, 166, 74, .8)' : k === 'lions' ? '0 0 10px rgba(212, 0, 0, .8)' : 'none' }} />{k === 'prism' && <b className="theme-rim" />}</span>
                   <small>{l}</small>
                 </button>

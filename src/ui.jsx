@@ -198,7 +198,7 @@ export function Paw({ size = 22 }) {
   )
 }
 // the name as THE MAD LIONS writes its own (Alex, 17 Oct): capitals in Jost, ROAR hairline-thin, ME heavy, in white;
-// a small "beta" tag beside it while RoarMe is in beta (Alex, 18 Oct)
+// (the "beta" tag beside it is gone: Alex, 12 Nov)
 // "by THEMADLIONS", the studio's name as its own logo writes it: THE and LIONS thin, MAD heavy (Alex, 17 Oct)
 /* the RoarMe mark (Alex, 17 Oct): five bars, leaning, drawn from his logo; white in the app like the wordmark (the
    app icon outside keeps it red) */
@@ -212,7 +212,7 @@ export const ByTML = () => <span className="by-tml" data-raw="1">by <b>THE<stron
 export const Wordmark = ({ by = false }) => (
   <span className={`wordmark${by ? ' with-by' : ''}`}>
     {by && <Mark size={72} />}
-    <b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span><em className="wm-beta" data-raw="1">beta</em></b>
+    <b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b>
     {by && <ByTML />}
   </span>
 )

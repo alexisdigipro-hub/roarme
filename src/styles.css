@@ -3190,10 +3190,8 @@ html[data-theme] .side-brand .wordmark b.wm { font-size: 17.46px; }
 }
 
 /* "beta" beside the name while RoarMe is in beta (Alex, 18 Oct): a small red-edged tag at the top right of ME */
-.wordmark b.wm .wm-beta { display: inline-block; margin-left: .45em; padding: .18em .55em .2em; border-radius: 999px; font-style: normal; font-size: max(9px, .3em);
   font-weight: 600; letter-spacing: .12em; line-height: 1; text-transform: uppercase; vertical-align: .95em; color: #fff;
   background: color-mix(in srgb, var(--accent) 22%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent); }
-html[data-mode='light'] .wordmark b.wm .wm-beta { color: var(--text); }
 
 @media (max-width: 820px) { .rdino-frame { height: calc(100dvh - 150px); border-radius: 14px; } }
 
@@ -3625,7 +3623,6 @@ html[data-mode='light'] .rmd-card { background: rgba(255, 255, 255, .96); box-sh
 /* Stone, last word (21 Oct): the name at the top and the glass ink in the text colour, as the reference's dark type
    on stone (these come after the shared wordmark and Glass Look rules, so they must sit at the end) */
 html[data-theme='stone'] .wordmark b.wm, html[data-theme='stone'] .wordmark b.wm span { color: var(--text); }
-html[data-theme='stone'] .wordmark b.wm .wm-beta { color: var(--text); border-color: rgba(0, 0, 0, .3); background: rgba(255, 255, 255, .25); }
 html[data-bubbles='glass'][data-theme='stone'] { --gl-ink: var(--text); }
 html[data-theme='stone'] .ask-bar .btn { border-radius: 12px; }
 html[data-theme='stone'] .set-nav.on, html[data-theme='stone'] .set-nav.on :is(.set-chev, .set-val, .nav-ico) { color: var(--text); }

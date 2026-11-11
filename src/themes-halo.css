@@ -152,3 +152,26 @@ html[data-skin='halo'][data-theme='stone'] .foot { padding-left: 22px; padding-r
 /* as wide as the list (Alex, 12 Nov: "up to where the profile pictures begin"): the rail runs from the pictures' left edge to
    the same distance on the right, the signs spread evenly along it, each chip its own size */
 html[data-skin='halo'][data-theme='stone'] .foot { align-self: stretch; margin-left: 5px; margin-right: 5px; justify-content: space-around; padding-left: 10px; padding-right: 10px; }
+
+/* the folders at the foot (Alex, 12 Nov, from a picture he sent): a plain bar of words with a thin rim, the rail's
+   very shape (the same height, the same 20px corners, the same 14px chip inside), as wide as the rail, just above it; the chosen folder a soft grey pill; it scrolls when the words run past it.
+   Halo does not use the wheel (Chat.jsx wheelOn). The rail itself sits 15px higher. */
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs {
+  align-self: stretch; width: auto; margin: 0 5px 8px; padding: 6px !important; border-radius: 20px;
+  background: rgba(255, 255, 255, .86) !important; border: 1px solid rgba(20, 20, 30, .08) !important;
+  box-shadow: 0 6px 18px rgba(70, 70, 110, .08) !important; -webkit-mask-image: none !important; mask-image: none !important;
+}
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs {
+  background: rgba(255, 255, 255, .06) !important; border-color: rgba(255, 255, 255, .12) !important; box-shadow: none !important;
+}
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { flex: none; height: 42px; padding: 0 18px; border-radius: 14px; font-size: 15px; font-weight: 500; color: var(--text); }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens.lens-on > .on,
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button.on { color: var(--text); }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before {
+  height: var(--lh, 0); transform: translate(var(--lx, 0), var(--ly, 0)); border-radius: 14px;
+  background: rgba(20, 20, 30, .07); border: 0; box-shadow: none;
+}
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs.lens::before { background: rgba(255, 255, 255, .14); }
+@media (max-width: 760px) {
+  html[data-skin='halo'][data-theme='stone'] .app > .side .foot { margin-bottom: calc(env(safe-area-inset-bottom, 0px) * -.6 + 15px); }
+}

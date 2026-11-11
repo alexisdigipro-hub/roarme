@@ -158,3 +158,10 @@ html[data-skin='mango'][data-theme='stone'] .nav-ico { border-radius: 10px; }
 @keyframes mg-in-mine { from { opacity: 0; transform: translate(8px, 10px) scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes mg-send { from { transform: scale(.7); opacity: .3; } to { transform: none; opacity: 1; } }
 @keyframes mg-menu { from { opacity: 0; transform: scale(.96) translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* the rail at the foot (Alex, 12 Nov): room at both ends, the signs as they are in the middle; on a phone it sits lower,
+   into the space kept for the home bar */
+html[data-skin='mango'][data-theme='stone'] .foot { padding-left: 22px; padding-right: 22px; }
+@media (max-width: 760px) {
+  html[data-skin='mango'][data-theme='stone'] .app > .side .foot { margin-bottom: calc(env(safe-area-inset-bottom, 0px) * -.6); }
+}

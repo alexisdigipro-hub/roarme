@@ -217,3 +217,5 @@ html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom > .tabs button { f
 html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { padding: 4px !important; margin: 0 5px -7px; border-radius: 15px 15px 0 0; }
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 32px; }
 html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 0 0 15px 15px; }
+/* the folders' words 6px further in from each end of their bar (Alex, 12 Nov) */
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { padding: 4px 10px !important; scroll-padding: 0 10px; }

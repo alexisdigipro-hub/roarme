@@ -142,3 +142,10 @@ html[data-skin='halo'][data-theme='stone'] .set-menu .set-nav { border-radius: 0
 html[data-skin='halo'][data-theme='stone'] .set-box > .set-row:first-child { border-radius: 20px 20px 0 0 !important; }
 html[data-skin='halo'][data-theme='stone'] .set-box > .set-row:last-child { border-radius: 0 0 20px 20px !important; }
 html[data-skin='halo'][data-theme='stone'] .set-box > .set-row:only-child { border-radius: 20px !important; }
+
+/* the rail at the foot (Alex, 12 Nov): room at both ends, the signs as they are in the middle; on a phone it sits lower,
+   into the space kept for the home bar */
+html[data-skin='halo'][data-theme='stone'] .foot { padding-left: 22px; padding-right: 22px; }
+@media (max-width: 760px) {
+  html[data-skin='halo'][data-theme='stone'] .app > .side .foot { margin-bottom: calc(env(safe-area-inset-bottom, 0px) * -.6); }
+}

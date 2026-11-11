@@ -43,7 +43,7 @@ const Hero = ({ id }) => {
   return <div className="set-hero"><span className="set-hero-ico" style={{ '--c': pg[2] }}>{pg[3]}</span><p>{pg[4]}</p></div>
 }
 
-const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['velvet', 'Velvet', ['linear-gradient(135deg, #f8cf82, #e9a94a 45%, #c97a2c)', 'radial-gradient(70px 60px at 25% 20%, rgba(52, 84, 66, .8), transparent 70%), linear-gradient(180deg, #121a17, #070a09)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']]]
+const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['velvet', 'Velvet', ['linear-gradient(135deg, #f8cf82, #e9a94a 45%, #c97a2c)', 'radial-gradient(70px 60px at 25% 20%, rgba(52, 84, 66, .8), transparent 70%), linear-gradient(180deg, #121a17, #070a09)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']], ['mango', 'Mango', ['#ff9a1f', 'linear-gradient(180deg, #2a251f, #15120e)']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">

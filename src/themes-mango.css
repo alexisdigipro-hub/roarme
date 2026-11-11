@@ -1,0 +1,144 @@
+/* Mango (Alex, 12 Nov: "the most advanced and freshest there is, with mango orange as a detail on few things"): Stone's
+   build as ink on paper with one spark. Warm paper white and a deep warm black, each tinted a little toward the mango;
+   what is chosen or yours is INK (black on paper, paper on black), never colour; the mango (#ff9a1f) is kept for five
+   small things only: the unread count, Send, the dot under the chosen button at the foot, the seen ticks and links.
+   Soft squares (14px) instead of circles, tight letters, small tracked capitals for dates, hairlines instead of shadows.
+   Motion: one soft spring (linear()), the dot at the foot slides and the chosen sign lifts, a new message of yours lands
+   with a mango ring that fades, Send turns in, the unread count rings once. All of it stops under Power Saving and
+   reduced motion. Worn as data-theme 'stone' + data-skin 'mango' (prefs.js dressTheme); loaded only when worn. */
+
+html[data-skin='mango'][data-theme='stone'] {
+  --mango: #ff9a1f; --mango-ink: #1c1203;
+  --accent: #ff9a1f; --accent-2: #ffb347; --accent-ink: #1c1203;
+  --mint: #ff9a1f;
+  --mg-ease: cubic-bezier(.2, .8, .2, 1);
+  --mg-spring: linear(0, .11 4%, .38 9%, .66 15%, .86 22%, .97 29%, 1.02 37%, 1.03 45%, 1.02 55%, 1.005 70%, 1);
+}
+html[data-skin='mango'][data-theme='stone'][data-mode='light'] {
+  --bg: #f6f3ee; --panel: #fdfcfa; --panel-2: #f3efe9;
+  --ink: #15120e; --ink-2: #2a251f; --on-ink: #fbf8f3;
+  --rail: #15120e; --rail-2: #2a251f;
+  --glass: #fdfcfa; --glass-2: #efeae2;
+  --edge: rgba(21, 18, 14, .09); --edge-2: rgba(21, 18, 14, .16);
+  --text: #15120e; --muted: #8b8479;
+  --theirs: #ece7df;
+  --shadow: 0 18px 44px rgba(40, 28, 10, .12), 0 1px 2px rgba(40, 28, 10, .06);
+  --float: rgba(253, 252, 250, .98);
+}
+html[data-skin='mango'][data-theme='stone'][data-mode='dark'] {
+  --bg: #0c0b09; --panel: #131210; --panel-2: #1b1916;
+  --ink: #f4f0e9; --ink-2: #ddd7cd; --on-ink: #15120e;
+  --rail: #1d1b18; --rail-2: #2b2824;
+  --glass: #1a1815; --glass-2: #26231f;
+  --edge: rgba(244, 240, 233, .09); --edge-2: rgba(244, 240, 233, .17);
+  --text: #f4f0e9; --muted: #8f887c;
+  --theirs: #211f1b;
+  --shadow: 0 18px 44px rgba(0, 0, 0, .6);
+  --float: rgba(27, 25, 22, .98);
+}
+
+/* the page and the panels: flat paper, a hairline, no glow */
+html[data-skin='mango'][data-theme='stone'] body { background: var(--bg); }
+html[data-skin='mango'][data-theme='stone'] :is(.side, .main) { border-radius: 24px; background: var(--panel); border: 1px solid var(--edge); box-shadow: none; }
+@media (max-width: 760px) {
+  html[data-skin='mango'][data-theme='stone'] .app > :is(.side, .main) { border: 0; border-radius: 0; }
+}
+html[data-skin='mango'][data-theme='stone'] :is(.room-top strong, .head-text strong, .side-brand, .set-title) { letter-spacing: -.015em; }
+
+/* buttons: soft squares with a hairline; the main action is ink; Send is the mango */
+html[data-skin='mango'][data-theme='stone'] .round { border-radius: 14px; background: var(--glass); border: 1px solid var(--edge); color: var(--text); box-shadow: none; transition: transform .25s var(--mg-spring), background .2s, border-color .2s; }
+html[data-skin='mango'][data-theme='stone'] .round:hover { border-color: var(--edge-2); }
+html[data-skin='mango'][data-theme='stone'] .round:active { transform: scale(.9); }
+html[data-skin='mango'][data-theme='stone'] .round.on,
+html[data-skin='mango'][data-theme='stone'] :is(.btn-main, .new-call-ico) { background: var(--ink); color: var(--on-ink); border-color: transparent; box-shadow: none; }
+html[data-skin='mango'][data-theme='stone'][data-bubbles] :is(.btn-main, .new-call-ico):not(:disabled) { background: var(--ink) !important; color: var(--on-ink) !important; border-color: transparent !important; box-shadow: none !important; }
+html[data-skin='mango'][data-theme='stone'] .send.ready, html[data-skin='mango'][data-theme='stone'][data-bubbles] .send.ready:not(:disabled) { background: var(--mango) !important; color: var(--mango-ink) !important; border-color: transparent !important; border-radius: 14px; box-shadow: 0 6px 18px color-mix(in srgb, var(--mango) 35%, transparent) !important; }
+html[data-skin='mango'][data-theme='stone'] :is(.btn, .pill-btn) { border-radius: 12px; background: var(--glass); border: 1px solid var(--edge); box-shadow: none; }
+html[data-skin='mango'][data-theme='stone'] .search { border-radius: 14px; background: var(--glass-2); border: 1px solid transparent; box-shadow: none; }
+html[data-skin='mango'][data-theme='stone'] .room-head .head-card { border-radius: 14px; background: var(--glass); border: 1px solid var(--edge); box-shadow: none; }
+html[data-skin='mango'][data-theme='stone'] .compose-box, html[data-skin='mango'][data-theme='stone'] .compose-box.has-ref { border-radius: 16px; background: var(--glass); border: 1px solid var(--edge); box-shadow: none; transition: border-color .25s, box-shadow .25s; }
+html[data-skin='mango'][data-theme='stone'] .compose-box:focus-within { border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 8%, transparent); }
+html[data-skin='mango'][data-theme='stone'] :is(textarea, input) { caret-color: var(--mango); }
+html[data-skin='mango'][data-theme='stone'] .compose-ref { border-radius: 11px; }
+
+/* folder tabs: words; the chosen one in an ink pill */
+html[data-skin='mango'][data-theme='stone'] .tabs { border: 0; }
+html[data-skin='mango'][data-theme='stone'] .tabs button { border-radius: 11px; color: var(--muted); font-weight: 600; letter-spacing: -.005em; }
+html[data-skin='mango'][data-theme='stone'] .tabs button.on,
+html[data-skin='mango'][data-theme='stone'] .tabs.lens.lens-on > .on { color: var(--on-ink); }
+html[data-skin='mango'][data-theme='stone'] .tabs.lens::before { height: var(--lh, 0); transform: translate(var(--lx, 0), var(--ly, 0)); border-radius: 11px; background: var(--ink); border: 0; box-shadow: none; transition: transform .45s var(--mg-spring), width .45s var(--mg-spring), opacity .2s; }
+html[data-skin='mango'][data-theme='stone'] .tabs button.on small { background: var(--mango); color: var(--mango-ink); }
+
+/* the bar at the foot: a floating ink capsule; the chosen sign is bright and lifts, a mango dot slides under it */
+html[data-skin='mango'][data-theme='stone'] .foot { border-radius: 22px; background: var(--rail); border: 1px solid transparent; box-shadow: 0 16px 34px rgba(20, 14, 4, .28); }
+html[data-skin='mango'][data-theme='stone'][data-mode='dark'] .foot { border-color: var(--edge); box-shadow: 0 16px 34px rgba(0, 0, 0, .6); }
+html[data-skin='mango'][data-theme='stone'] .foot button { border-radius: 16px; color: rgba(251, 248, 243, .5); }
+html[data-skin='mango'][data-theme='stone'] .foot button:hover { color: rgba(251, 248, 243, .85); }
+html[data-skin='mango'][data-theme='stone'] .foot button > svg, html[data-skin='mango'][data-theme='stone'] .foot button > .foot-ico { transition: transform .5s var(--mg-spring); }
+html[data-skin='mango'][data-theme='stone'] .foot.lens.lens-on > .on,
+html[data-skin='mango'][data-theme='stone'] .foot button.on,
+html[data-skin='mango'][data-theme='stone'] .foot button.foot-tasks.open { color: #fbf8f3; }
+html[data-skin='mango'][data-theme='stone'] .foot button.on > svg, html[data-skin='mango'][data-theme='stone'] .foot button.on > .foot-ico { transform: translateY(-2px); animation: none; }
+html[data-skin='mango'][data-theme='stone'] .foot button.on svg { animation: none; }
+html[data-skin='mango'][data-theme='stone'] .foot.lens::before {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--mango); border: 0;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--mango) 70%, transparent);
+  transform: translate(calc(var(--lx, 0px) + var(--lw, 0px) / 2 - 2.5px), calc(var(--ly, 0px) + var(--lh, 0px) - 7px));
+  transition: transform .55s var(--mg-spring), opacity .2s;
+}
+html[data-skin='mango'][data-theme='stone'] .foot-ico i { background: var(--mango); color: var(--mango-ink); }
+
+/* the list of chats: flat rows; the chosen one on paper a shade darker with an ink bar at its left */
+html[data-skin='mango'][data-theme='stone'] .rooms .room { position: relative; border-radius: 14px; transition: background .2s; }
+html[data-skin='mango'][data-theme='stone'] .rooms .room.on { background: var(--glass-2); box-shadow: none; }
+html[data-skin='mango'][data-theme='stone'] .rooms .room::before { content: ''; position: absolute; left: 0; top: 22%; bottom: 22%; width: 3px; border-radius: 3px; background: var(--ink); transform: scaleY(0); transition: transform .4s var(--mg-spring); }
+html[data-skin='mango'][data-theme='stone'] .rooms .room.on::before { transform: scaleY(1); }
+html[data-skin='mango'][data-theme='stone'] :is(.badge, .unread):not(.quiet) { background: var(--mango); color: var(--mango-ink); }
+html[data-skin='mango'][data-theme='stone'] .room-top small { font-variant-numeric: tabular-nums; }
+
+/* messages: theirs a quiet paper tone, yours ink; no rim, no shadow; the corner by the sender tight */
+html[data-skin='mango'][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) { background: var(--theirs) !important; border: 0 !important; color: var(--text) !important; box-shadow: none !important; }
+html[data-skin='mango'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji) { background: var(--ink) !important; color: var(--on-ink) !important; border: 0 !important; box-shadow: none !important; }
+html[data-skin='mango'][data-mode][data-bubbles] .msg.mine .bubble :is(.meta, .ticks, .voice small, .file-text small) { color: color-mix(in srgb, var(--on-ink) 58%, transparent) !important; }
+html[data-skin='mango'][data-mode][data-bubbles] .msg.mine .bubble .ticks.seen { color: var(--mango) !important; }
+html[data-skin='mango'][data-mode][data-bubbles] .msg .bubble :is(.msg-link, .text a) { color: inherit !important; text-decoration: underline; text-decoration-color: var(--mango) !important; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+html[data-skin='mango'][data-mode][data-bubbles] .msg .bubble .mention { color: var(--mango) !important; }
+html[data-skin='mango'][data-mode][data-bubbles] .msg.mine .bubble .quote { background: color-mix(in srgb, var(--on-ink) 12%, transparent) !important; border-left-color: var(--mango) !important; }
+html[data-skin='mango'] .peek-msg.mine { background: var(--ink) !important; color: var(--on-ink) !important; }
+html[data-skin='mango'] .set-preview .pv.mine, html[data-skin='mango'] .wall-b.mine, html[data-skin='mango'] .corner-demo .cd-b.mine { background: var(--ink); color: var(--on-ink); }
+html[data-skin='mango'][data-my-bubble] .corner-demo .cd-b.mine { background: var(--my-bubble); color: var(--my-bubble-ink); }
+
+/* the day between messages: small tracked capitals with a hairline on each side */
+html[data-skin='mango'][data-theme='stone'] .day { align-items: center; gap: 12px; }
+html[data-skin='mango'][data-theme='stone'] .day::before, html[data-skin='mango'][data-theme='stone'] .day::after { content: ''; flex: 1; height: 1px; background: var(--edge); }
+html[data-skin='mango'][data-theme='stone'] .day span { padding: 0; background: none; color: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+
+/* cards, windows and menus: paper, a hairline, soft square corners */
+html[data-skin='mango'][data-theme='stone'] .set-box { border-radius: 18px; background: var(--panel-2); border: 0; box-shadow: none; }
+html[data-skin='mango'][data-theme='stone'] .set-menu .set-box + .set-box, html[data-skin='mango'][data-theme='stone'] :is(.set-me, .set-box) { border-radius: 18px; }
+html[data-skin='mango'][data-theme='stone'] .modal { border-radius: 24px; }
+html[data-skin='mango'][data-theme='stone'] :is(.menu, .menu-list, .rx-pick) { border-radius: 18px; background: var(--float); border: 1px solid var(--edge); box-shadow: var(--shadow); }
+html[data-skin='mango'][data-theme='stone'] :is(.menu, .menu-list) button { border-radius: 11px; }
+html[data-skin='mango'][data-theme='stone'] .rx-pick { border-radius: 16px; }
+html[data-skin='mango'][data-theme='stone'] .nav-ico { border-radius: 10px; }
+html[data-skin='mango'][data-theme='stone'] ::selection { background: color-mix(in srgb, var(--mango) 45%, transparent); }
+
+/* motion (stops under Power Saving, html[data-lite], which turns every animation off, and under reduced motion) */
+@media (prefers-reduced-motion: no-preference) {
+  /* a new message lands from its own corner on the soft spring; yours carries a mango ring that fades */
+  html[data-skin='mango'][data-theme='stone'] .msg.fresh .bubble-col { animation: mg-in .5s var(--mg-spring) both; }
+  html[data-skin='mango'][data-theme='stone'] .msg.mine.fresh .bubble-col { animation-name: mg-in-mine; }
+  html[data-skin='mango'][data-theme='stone'] .msg.mine.fresh .bubble:not(.pic):not(.big-emoji) { animation: mg-ring .9s var(--mg-ease) both; }
+  /* Send turns in when there is something to send */
+  html[data-skin='mango'][data-theme='stone'] .send.ready { animation: mg-send .45s var(--mg-spring) both; }
+  /* the unread count rings once when it changes */
+  html[data-skin='mango'][data-theme='stone'] .rooms .badge:not(.quiet):not(.at) { animation: mg-count .7s var(--mg-ease) both; }
+  /* menus open from their corner */
+  html[data-skin='mango'][data-theme='stone'] :is(.menu, .msg-menu, .room-menu) { animation: mg-menu .32s var(--mg-spring) both; }
+}
+@keyframes mg-in { from { opacity: 0; transform: translate(-10px, 12px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes mg-in-mine { from { opacity: 0; transform: translate(10px, 12px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes mg-ring { from { outline: 2px solid var(--mango); outline-offset: 3px; } to { outline: 2px solid transparent; outline-offset: 9px; } }
+@keyframes mg-send { from { transform: scale(.6) rotate(-35deg); opacity: .4; } to { transform: none; opacity: 1; } }
+@keyframes mg-count { from { transform: scale(.6); box-shadow: 0 0 0 0 color-mix(in srgb, var(--mango) 60%, transparent); } 55% { transform: scale(1.06); } to { transform: none; box-shadow: 0 0 0 9px transparent; } }
+@keyframes mg-menu { from { opacity: 0; transform: scale(.92) translateY(6px); } to { opacity: 1; transform: none; } }

@@ -4246,7 +4246,7 @@ html[data-theme] .rooms-area.bottom .wheel-box > .wheel-pill::before { transitio
 .head-bg { top: calc(50% - 14px); }
 /* one corner too (Alex, 10 Nov: "half round, half squarer: all the same, the squarer one"): the name's frame and the
    message box take the round buttons' 15px corner, in Stone and Velvet (Halo keeps its circles and pills) */
-html[data-theme='stone']:not([data-skin='halo']):not([data-skin='air']) :is(.room-head .head-card, .compose-box, .compose.rec) { border-radius: 15px; }
+html[data-theme='stone']:not([data-skin='halo']):not([data-skin='air']):not([data-skin='mango']) :is(.room-head .head-card, .compose-box, .compose.rec) { border-radius: 15px; }
 
 /* the message menu (Alex, 11 Nov: "a list, only more compact and gathered, and see-through glass"): the same list, in
    short rows close together, on clear glass that lets the chat show through; who has seen it is a slim line */

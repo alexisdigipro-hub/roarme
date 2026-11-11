@@ -82,23 +82,20 @@ html[data-skin='halo'][data-theme='stone'] .tabs.lens.lens-on > .on { color: var
 html[data-skin='halo'][data-theme='stone'] .tabs.lens::before { height: var(--lh, 0); transform: translate(var(--lx, 0), var(--ly, 0)); border-radius: 999px; background: color-mix(in srgb, var(--halo) 8%, rgba(255, 255, 255, .85)); border: 1px solid color-mix(in srgb, var(--halo) 55%, transparent); box-shadow: none; }
 html[data-skin='halo'][data-theme='stone'] .tabs button.on small { background: var(--halo); color: #fff; }
 
-/* the bar at the foot: a floating white capsule; the chosen button an orange circle with a white icon */
-html[data-skin='halo'][data-theme='stone'] .foot {
-  border-radius: 999px; background: rgba(255, 255, 255, .82); border: 1px solid #fff;
-  box-shadow: 0 18px 40px rgba(70, 70, 110, .16), inset 0 1px 0 #fff;
-}
-html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot { background: rgba(36, 36, 46, .9); border-color: rgba(255, 255, 255, .1); box-shadow: 0 18px 40px rgba(0, 0, 0, .45); }
-html[data-skin='halo'][data-theme='stone'] .foot button { border-radius: 999px; color: #5c5c6a; }
-html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot button { color: #a6a6b6; }
-html[data-skin='halo'][data-theme='stone'] .foot button:hover { color: var(--text); }
-html[data-skin='halo'][data-theme='stone'] .foot.lens::before {
-  border-radius: 999px; background: linear-gradient(145deg, var(--halo-2), var(--halo));
-  box-shadow: 0 10px 22px color-mix(in srgb, var(--halo) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, .35);
-}
+/* the bar at the foot (Alex, 12 Nov: "the menu like Mango's, as a design"): a dark rail in the middle of thin outlined
+   signs without words; the chosen one a lit chip that slides; the count stays Halo's orange */
+html[data-skin='halo'][data-theme='stone'] .foot { align-self: center; width: auto; gap: 4px; padding: 6px; border-radius: 20px; background: #1c1d20; border: 1px solid rgba(255, 255, 255, .08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 14px 30px rgba(40, 40, 70, .3); }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot { background: #0f1012; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 14px 30px rgba(0, 0, 0, .45); }
+html[data-skin='halo'][data-theme='stone'] .foot button { flex: none; display: grid; place-items: center; width: 54px; height: 42px; padding: 0; border-radius: 14px; color: rgba(255, 255, 255, .5); }
+html[data-skin='halo'][data-theme='stone'] .foot button.foot-main { flex-grow: 0; }
+html[data-skin='halo'][data-theme='stone'] .foot button > span:last-child { display: none; }
+html[data-skin='halo'][data-theme='stone'] .foot button svg, html[data-skin='halo'][data-theme='stone'] .foot button.foot-main svg { width: 22px; height: 22px; margin: 0; animation: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+html[data-skin='halo'][data-theme='stone'] .foot button:hover { color: rgba(255, 255, 255, .85); }
+html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 14px; background: rgba(255, 255, 255, .13); border: 1px solid rgba(255, 255, 255, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); box-sizing: border-box; }
 html[data-skin='halo'][data-theme='stone'] .foot.lens.lens-on > .on,
 html[data-skin='halo'][data-theme='stone'] .foot button.on,
 html[data-skin='halo'][data-theme='stone'] .foot button.foot-tasks.open { color: #fff; }
-html[data-skin='halo'][data-theme='stone'] .foot-ico i { background: var(--halo); color: #fff; }
+html[data-skin='halo'][data-theme='stone'] .foot-ico i, html[data-skin='halo'][data-theme='stone'] .foot button.foot-main .foot-ico i { top: -7px; right: -13px; min-width: 16px; height: 16px; line-height: 16px; font-size: 10px; background: var(--halo); color: #fff; }
 
 /* messages: theirs white frosted glass, yours a warm orange glow */
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) {

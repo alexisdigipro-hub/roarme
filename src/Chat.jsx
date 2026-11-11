@@ -2206,8 +2206,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     el.style.left = `${left}px`
     el.style.top = `${top}px`
   }, [menu])
-  // The menu opens only on a message itself (Alex, 16 Oct): a right click on it with a mouse, a tap on it on a
-  // touch screen; a click on the empty space beside it does nothing. A double click is the quick reaction;
+  // The menu opens only on a message itself (Alex, 16 Oct): a right click on it with a mouse, a long press on it on a
+  // touch screen (11 Nov: no longer a tap); a click on the empty space beside it does nothing. A double click is the quick reaction;
   // a photo, a link or a button inside it does its own thing.
   const tapTimer = useRef(0)
   const mouse = typeof window !== 'undefined' && window.matchMedia?.('(hover: hover) and (pointer: fine)').matches
@@ -2215,13 +2215,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const heldAt = useRef(0) // a long press just opened the menu: the click of the finger lifting does nothing more
   const liftGuard = useRef(0) // until then a click on the menu or its scrim is the finger lifting, not a choice
   const lifting = () => Date.now() < liftGuard.current
-  const onTap = (e, m) => {
-    if (mouse || !onBubble(e) || Date.now() - heldAt.current < 800) return
-    if (e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx') || window.getSelection()?.toString()) return
-    const at = { preventDefault() {}, clientX: e.clientX, clientY: e.clientY }
-    clearTimeout(tapTimer.current)
-    tapTimer.current = setTimeout(() => { haptic(10); openMenu(at, m) }, 230)
-  }
+  // a simple tap on a message opens nothing (Alex, 11 Nov): on a touch screen the menu comes only with a long press
+  const onTap = () => {}
   const autoDl = room.kind === 'group' ? prefs.dlGroups !== false : prefs.dlPrivate !== false
   const bornAt = useRef(Date.now()) // messages newer than the opening of the chat fly in
   const onDouble = (m, e) => {
@@ -2404,7 +2399,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setArtView, setCinema, byId, picked, setReplyTo }
   // Holding a message on a phone (Alex, 8 Nov: "when I hold it, a small pop-up so I know it took it"): the bubble gives
   // under the finger at once, and after 420 ms it pops, the phone ticks and the menu opens while the finger is still down.
-  // Moving the finger (a scroll, a swipe to reply) lets it go. A short tap still opens the menu as before.
+  // Moving the finger (a scroll, a swipe to reply) lets it go. A short tap opens nothing (11 Nov).
   useEffect(() => {
     const box = scrollRef.current
     if (!box || mouse) return undefined

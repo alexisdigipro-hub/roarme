@@ -2852,36 +2852,34 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           <div ref={menuRef} className="msg-menu" style={{ left: menu.x, top: menu.y }} onClickCapture={(e) => { if (lifting()) { e.stopPropagation(); e.preventDefault() } }}>
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">
-              <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>
-              {menu.m.kind === 'text' && textOf(menu.m) && <button type="button" onClick={() => { setQuotePick(menu.m); setMenu(null) }}>{I.qmark}<span>Quote</span></button>}
-              {menu.m.body && !menu.m.sealed && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
-              {menu.m.body && <button type="button" onClick={() => { const b = textOf(menu.m); copy(prefs.copyFormat === false ? plainText(b) : b, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
+              {/* compact (Alex, 11 Nov): what is used most as a row of small tiles, the rest as short rows, who has seen it as a foot line */}
+              <div className="menu-tiles">
+                <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>
+                {menu.m.kind === 'text' && textOf(menu.m) && <button type="button" onClick={() => { setQuotePick(menu.m); setMenu(null) }}>{I.qmark}<span>Quote</span></button>}
+                {menu.m.body && <button type="button" onClick={() => { const b = textOf(menu.m); copy(prefs.copyFormat === false ? plainText(b) : b, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy</span></button>}
+                {menu.m.body && !menu.m.sealed && <button type="button" onClick={() => { translate(menu.m.body); setMenu(null) }}>{I.translate}<span>Translate</span></button>}
+                {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && !menu.m.file?.roartransfer && <button type="button" onClick={() => { if (menu.m.file?.article) setArtOpen(menu.m); else { setEditing(menu.m); setText(textOf(menu.m)) } setMenu(null) }}>{I.edit}<span>Edit</span></button>}
+                <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
+                {!menu.m.sealed && <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>}
+                <button type="button" onClick={() => { setPicked([menu.m.id]); setMenu(null) }}>{I.select}<span>Select</span></button>
+              </div>
               {urlIn(menu.m) && <button type="button" onClick={() => { copy(urlIn(menu.m), 'Link copied'); setMenu(null) }}>{I.link}<span>Copy Link</span></button>}
               {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
-              <hr />
-              {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && !menu.m.file?.roartransfer && <button type="button" onClick={() => { if (menu.m.file?.article) setArtOpen(menu.m); else { setEditing(menu.m); setText(textOf(menu.m)) } setMenu(null) }}>{I.edit}<span>Edit</span></button>}
-              <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
               <button type="button" onClick={() => { setRemindFor(menu.m); setMenu(null) }}>{I.bell}<span>Remind Me</span></button>
-              {!menu.m.sealed && <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>}
-              <button type="button" onClick={() => { setPicked([menu.m.id]); setMenu(null) }}>{I.select}<span>Select</span></button>
               <hr />
               <button type="button" onClick={() => hideForMe(menu.m)}>{I.trash}<span>Delete for Me</span></button>
               {menu.m.user_id && menu.m.user_id !== me.id && (askedByMe.has(menu.m.id)
                 ? <button type="button" disabled>{I.timer}<span>Waiting for {nameOf(people[menu.m.user_id])}</span></button>
                 : <button type="button" className="danger" onClick={() => askDelete(menu.m)}>{I.trash}<span>Ask to Delete for Everyone</span></button>)}
               {admin && menu.m.user_id && menu.m.user_id !== me.id && menu.m.kind !== 'system' && <button type="button" className="danger" onClick={() => adminRemove(menu.m)}>{I.trash}<span>Delete for Everyone (Admin)</span></button>}
+              {menu.m.user_id === me.id && <button type="button" className="danger" onClick={() => { if (window.confirm('Delete this message for everyone?')) remove([menu.m]); setMenu(null) }}>{I.trash}<span>Delete for Everyone</span></button>}
               {menu.m.user_id === me.id && (
-                <>
-                  <hr />
-                  <div className="menu-seen">
-                    <i className="ticks seen">{I.ticks}</i>
-                    <span>{room.kind === 'direct' ? (seenBy(menu.m).length ? 'Seen' : 'Not seen yet') : `${seenBy(menu.m).length} Seen`}</span>
-                    <span className="menu-faces">{seenBy(menu.m).slice(0, 3).map((u) => <Avatar key={u} src={people[u]?.avatar_url} name={nameOf(people[u])} size={22} />)}</span>
-                  </div>
-                  <hr />
-                  <button type="button" className="danger" onClick={() => { if (window.confirm('Delete this message for everyone?')) remove([menu.m]); setMenu(null) }}>{I.trash}<span>Delete for Everyone</span></button>
-                </>
+                <div className="menu-seen">
+                  <i className="ticks seen">{I.ticks}</i>
+                  <span>{room.kind === 'direct' ? (seenBy(menu.m).length ? 'Seen' : 'Not seen yet') : `${seenBy(menu.m).length} Seen`}</span>
+                  <span className="menu-faces">{seenBy(menu.m).slice(0, 3).map((u) => <Avatar key={u} src={people[u]?.avatar_url} name={nameOf(people[u])} size={22} />)}</span>
+                </div>
               )}
             </div>
           </div>

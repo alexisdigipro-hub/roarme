@@ -4247,3 +4247,20 @@ html[data-theme] .rooms-area.bottom .wheel-box > .wheel-pill::before { transitio
 /* one corner too (Alex, 10 Nov: "half round, half squarer: all the same, the squarer one"): the name's frame and the
    message box take the round buttons' 15px corner, in Stone and Velvet (Halo keeps its circles and pills) */
 html[data-theme='stone']:not([data-skin='halo']) :is(.room-head .head-card, .compose-box, .compose.rec) { border-radius: 15px; }
+
+/* the message menu, compact (Alex, 11 Nov: "more compact, in height for sure, and prettier"): what is used most is a grid of
+   small tiles (the sign over its word, four in a row), the rest short rows, and who has seen it a slim line at the foot */
+.msg-menu .menu-tiles { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.msg-menu .menu-tiles > button {
+  flex: 1 0 calc(25% - 4px); min-width: 0; height: 46px; flex-direction: column; justify-content: center; gap: 3px; padding: 0 2px;
+  font-size: 11px; font-weight: 500; letter-spacing: .01em; text-align: center; background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+.msg-menu .menu-tiles > button > svg { width: 17px; height: 17px; }
+.msg-menu .menu-tiles > button > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-menu .menu-list > button { height: 32px; font-size: 13.5px; gap: 10px; }
+.msg-menu .menu-list { padding: 5px; }
+.msg-menu { gap: 6px; }
+.msg-menu .rx-pick { padding: 4px 8px; }
+.msg-menu .menu-list > hr { margin: 2px 10px; }
+.msg-menu .menu-seen { height: 26px; margin-top: 2px; padding-top: 2px; font-size: 12px; border-top: 1px solid var(--edge); }
+.msg-menu .menu-seen .av { width: 18px !important; height: 18px !important; }

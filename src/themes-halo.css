@@ -175,3 +175,40 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom 
 @media (max-width: 760px) {
   html[data-skin='halo'][data-theme='stone'] .app > .side .foot { margin-bottom: calc(env(safe-area-inset-bottom, 0px) * -.6 + 15px); }
 }
+
+/* both bars at the foot in dark smoked glass (Alex, 12 Nov: "make it black, both menus dark glass, blurred"), in light and
+   dark alike; the folder bar 45% thinner (56 -> 31px) and close above the rail */
+html[data-skin='halo'][data-theme='stone'] .foot,
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot {
+  background: rgba(18, 18, 22, .62) !important; border: 1px solid rgba(255, 255, 255, .1) !important;
+  -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09), 0 12px 28px rgba(20, 20, 40, .22) !important;
+}
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs,
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs {
+  margin-bottom: 5px; padding: 3px !important; border-radius: 12px;
+  background: rgba(18, 18, 22, .62) !important; border: 1px solid rgba(255, 255, 255, .1) !important;
+  -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09), 0 8px 20px rgba(20, 20, 40, .16) !important;
+}
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 23px; padding: 0 14px; border-radius: 9px; font-size: 13px; color: rgba(255, 255, 255, .58); }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens.lens-on > .on,
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button.on { color: #fff; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before,
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs.lens::before {
+  border-radius: 9px; background: rgba(255, 255, 255, .14); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+/* on the light page the smoke is thicker, so both bars still read black */
+html[data-skin='halo'][data-theme='stone'][data-mode='light'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(16, 16, 20, .84) !important; }
+/* one corner for both bars (Alex, 12 Nov): 15px outside, the chips inside a little less; the folder bar 2px in from the
+   rail's ends on each side */
+html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 15px; }
+html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 11px; }
+html[data-skin='halo'][data-theme='stone'] .foot button { border-radius: 11px; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs { border-radius: 15px; margin-left: 7px; margin-right: 7px; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button,
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before,
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs.lens::before { border-radius: 11px; }
+/* the folders' names always in capitals (Alex, 12 Nov), at the foot or at the top */
+html[data-skin='halo'][data-theme='stone'] .rooms-area > .tabs button .tab-name { text-transform: uppercase; letter-spacing: .04em; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom > .tabs button { font-size: 12px; font-weight: 600; }

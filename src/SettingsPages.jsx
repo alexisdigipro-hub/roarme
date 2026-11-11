@@ -148,7 +148,7 @@ export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe, onInbox, inb
       <div className="set-box">
         <button type="button" className="set-row set-pick set-nav danger" onClick={() => { if (window.confirm('Sign out of RoarMe on this device?')) supabase.auth.signOut() }}><span className="nav-ico" style={{ '--c': '#ff453a' }}>{svg(<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />, 16)}</span><span className="set-text">Sign Out</span></button>
       </div>
-      <p className="set-version"><Wordmark by /><span>{`RoarMe ${appVersion() ? `${appVersion()} ` : ''}beta · ${!navigator.userAgent.includes('Electron') ? 'web' : /Windows/.test(navigator.userAgent) ? 'Windows app' : 'Mac app'}`}</span></p>
+      <p className="set-version"><Wordmark by /><span>{`RoarMe ${appVersion() ? `${appVersion()} ` : ''}· ${!navigator.userAgent.includes('Electron') ? 'web' : /Windows/.test(navigator.userAgent) ? 'Windows app' : 'Mac app'}`}</span></p>
     </div>
   )
 }
@@ -255,7 +255,7 @@ function General({ p, onKeys, toast }) {
       <Box title="RoarMe app" note={desk.on ? 'For this computer.' : 'The app keeps RoarMe on for messages and calls with the window closed, and always runs the newest version.'}>
         {desk.on ? (
           <>
-            <div className="set-row"><span className="set-text">Version {upd.installed ? `${upd.installed} beta` : '–'}<small>{upd.ready ? `RoarMe ${upd.latest} is out` : upd.latest ? 'Up to date' : 'The newest version is checked when RoarMe opens'}</small></span>{upd.ready && <button type="button" className="btn btn-main set-upd" onClick={() => get(thisComputer() || 'mac-arm')}>{I.download}<span>Download</span></button>}</div>
+            <div className="set-row"><span className="set-text">Version {upd.installed || '–'}<small>{upd.ready ? `RoarMe ${upd.latest} is out` : upd.latest ? 'Up to date' : 'The newest version is checked when RoarMe opens'}</small></span>{upd.ready && <button type="button" className="btn btn-main set-upd" onClick={() => get(thisComputer() || 'mac-arm')}>{I.download}<span>Download</span></button>}</div>
             <CheckUpdates onDownload={get} />
             <Switch on={desk.s.openAtLogin} set={(v) => desk.set('openAtLogin', v)} hint="Starts quietly in the background">Open When the Computer Starts</Switch>
             <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps RoarMe on for messages and calls">Keep Running When Closed</Switch>

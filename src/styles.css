@@ -4260,8 +4260,11 @@ html[data-theme='stone']:not([data-skin='halo']) :is(.room-head .head-card, .com
 .msg-menu .menu-seen .av { width: 18px !important; height: 18px !important; }
 html[data-theme] .msg-menu :is(.menu-list, .rx-pick) {
   background: rgba(30, 30, 34, .42) !important; border: 1px solid rgba(255, 255, 255, .16) !important;
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: 0 14px 34px rgba(0, 0, 0, .22) !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 6px 16px rgba(0, 0, 0, .16) !important;
 }
 html[data-theme][data-mode='light'] .msg-menu :is(.menu-list, .rx-pick) {
-  background: rgba(255, 255, 255, .42) !important; border-color: rgba(255, 255, 255, .7) !important; box-shadow: 0 14px 34px rgba(40, 40, 70, .14) !important;
+  background: rgba(255, 255, 255, .42) !important; border-color: rgba(255, 255, 255, .7) !important; box-shadow: 0 6px 16px rgba(40, 40, 70, .1) !important;
 }
+/* as light as it can be (Alex, 11 Nov: "it has grown heavy"): the veil behind the menu already blurs the chat, so the menu
+   blurs nothing itself (two blurs one over the other were the weight), its shadow is small, and the reactions do not pop in one by one */
+.msg-menu .rx-pick button { animation: none; }

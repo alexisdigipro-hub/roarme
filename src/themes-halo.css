@@ -219,3 +219,12 @@ html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { hei
 html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 0 0 15px 15px; }
 /* the folders' words 6px further in from each end of their bar (Alex, 12 Nov) */
 html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { padding: 4px 10px !important; scroll-padding: 0 10px; }
+/* (Alex, 12 Nov) the outer corners 18px, the inner ones 5px, the chips 15px; the folder bar 38px (4 less), the rail 48px (8 less) */
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { border-radius: 18px 18px 5px 5px; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 28px; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button,
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before,
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs.lens::before { border-radius: 15px; }
+html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 5px 5px 18px 18px; }
+html[data-skin='halo'][data-theme='stone'] .foot button { height: 34px; border-radius: 15px; }
+html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 15px; }

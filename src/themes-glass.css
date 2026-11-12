@@ -344,3 +344,29 @@ html:root:root[data-glass][data-skin='halo'] .contacts-favs-row::-webkit-scrollb
 html:root:root[data-glass][data-skin='halo'] .contacts-fav { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 68px; padding: 0; border: 0; background: none; color: var(--text); font-size: 11.5px; font-weight: 500; }
 html:root:root[data-glass][data-skin='halo'] .contacts-fav .av { border: 2px solid #fff; box-shadow: 0 4px 12px rgba(40, 40, 70, .18); }
 html:root:root[data-glass][data-skin='halo'] .contacts-fav > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* A screen of ordinary sharpness (a desktop monitor: Alex's PC with a 2K screen, 12 Nov: "a little pixelated, on the
+   phone it is finer and more shiny"). The grain and the split colours are details one pixel wide, made on an iPhone whose
+   pixels are three times as fine; here the same grain reads as coarse dots and the rims as thick lines. So on such a
+   screen (up to 1.5 dots a pixel) the grain is finer and fainter, the split colours thinner and softer, and the glass
+   blurs what is behind it as little as on the phone, so it reads as clear glass and not as milk */
+@media (max-resolution: 1.5dppx) {
+  html:root:root[data-glass] {
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --blur: blur(6px);
+  }
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens.lens-go::before,
+  html:root:root[data-glass][data-skin='halo'][data-mode] .lens[data-travel]:not(.foot).lens-go::before {
+    box-shadow: -1.5px 0 1px -.5px rgba(255, 60, 110, .4), 1.5px 0 1px -.5px rgba(50, 170, 255, .4), 0 -1px 1px -.5px rgba(90, 255, 170, .25), 0 1px 1px -.5px rgba(255, 210, 80, .22),
+      0 10px 24px rgba(60, 60, 100, .2), inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+  }
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens.lens-go.lens-land::before,
+  html:root:root[data-glass][data-skin='halo'][data-mode] .lens[data-travel]:not(.foot).lens-go.lens-land::before {
+    box-shadow: -1px 0 1px -.5px rgba(255, 60, 110, .22), 1px 0 1px -.5px rgba(50, 170, 255, .22), 0 6px 16px rgba(60, 60, 100, .14), inset 0 1px 0 rgba(255, 255, 255, .8) !important;
+  }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) :is(.round, .send, .head-card, .head-ava, .as-tabs button, .pf-tabs button, .pf-acts > button, .new-call-bar, .squick button, .dpick button):active,
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) :is(.msg .bubble, .rooms .room, .note).pressing,
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) :is(.rooms-area .tabs > button, .rec-btn, .contacts-list .room, .person):active {
+    box-shadow: -1.5px 0 1px -.5px rgba(255, 60, 110, .4), 1.5px 0 1px -.5px rgba(50, 170, 255, .4), 0 -1px 1px -.5px rgba(90, 255, 170, .25), 0 1px 1px -.5px rgba(255, 210, 80, .22), 0 6px 16px rgba(60, 60, 100, .14) !important;
+  }
+}

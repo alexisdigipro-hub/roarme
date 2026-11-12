@@ -950,3 +950,13 @@ html[data-skin='halo'] .msg-menu .rx-pick button { animation: none !important; }
   html[data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu { animation: mm-in .2s cubic-bezier(.2, .8, .2, 1) backwards !important; }
   html[data-skin='halo']:not([data-still]):not([data-lite]) .scrim.blur { animation: mm-dim .18s ease backwards !important; }
 }
+
+/* Halo in the dark: Stone's own colour for chosen things is graphite, which is right on a light page but cannot be seen on
+   a dark one (Alex, 12 Nov: "some letters do not show in dark", the chosen theme's name). In the dark, what Stone
+   draws in its colour takes Halo's instead. */
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] { --accent: var(--halo) !important; --accent-2: var(--halo-2) !important; --accent-ink: #ffffff !important; }
+html[data-skin='halo'][data-mode='dark'] .theme-tile.on small { color: #f1f1f5; }
+html[data-skin='halo'][data-mode='dark'] .theme-tile.on .theme-sw { border-color: var(--halo); }
+/* the bars at the foot a little more solid, now that they no longer blur the list under them (its words showed through) */
+html[data-skin='halo'][data-theme='stone'][data-mode='light'] :is(.foot, .rooms-area.bottom .tabs, .foot-bar-empty, .contacts-top, .new-call-bar) { background-color: rgba(16, 16, 20, .93) !important; }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.foot, .rooms-area.bottom .tabs, .foot-bar-empty, .contacts-top, .new-call-bar) { background-color: rgba(14, 14, 18, .92) !important; }

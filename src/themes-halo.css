@@ -548,3 +548,66 @@ html[data-skin='halo'] .pf-tabs button.on { background: color-mix(in srgb, var(-
   html[data-skin='halo'] .modal-back:has(.pf) { padding: 0; }
   html[data-skin='halo'] .modal:has(.pf) { width: 100%; height: 100%; max-height: none; border-radius: 0; border: 0; }
 }
+
+/* RoarTransfer's window in Halo (Alex, 12 Nov: "it has many mistakes"): one clean white sheet; the mark and its title on
+   the left with the close on the right in one row; the place to drop or choose files a light card with an orange sign
+   (no grey gradient, no pulse); the three lengths side by side as chips, the chosen one matte orange; the notes small;
+   Transfer a matte orange pill */
+html[data-skin='halo'] .modal:has(.rt) .modal-head { padding: 16px; }
+html[data-skin='halo'] .modal:has(.rt) .modal-head .round { width: 40px; height: 40px; min-height: 40px; }
+html[data-skin='halo'] .modal:has(.rt) .modal-body { padding: 20px 18px 20px; }
+html[data-skin='halo'] .rt { gap: 14px; }
+html[data-skin='halo'] .rt-top { min-height: 40px; }
+html[data-skin='halo'] .rt .rt-top .rt-mark i { width: 36px; height: 36px; border: 0 !important; box-shadow: none !important; background: var(--halo-mine) !important; color: #fff !important; }
+html[data-skin='halo'] .rt .rt-top .rt-mark i svg { width: 19px; height: 19px; }
+html[data-skin='halo'] .rt .rt-top .rt-mark b { font-size: 20px; font-weight: 700; }
+html[data-skin='halo'] .rt .rt-drop {
+  gap: 10px; padding: 26px 16px 24px; border-radius: 24px; transform: none !important;
+  background: rgba(255, 255, 255, .7) !important; border: 1.5px dashed color-mix(in srgb, var(--halo) 45%, transparent) !important; box-shadow: none !important;
+}
+html[data-skin='halo'][data-mode='dark'] .rt .rt-drop { background: rgba(255, 255, 255, .05) !important; }
+html[data-skin='halo'] .rt .rt-drop:hover, html[data-skin='halo'] .rt .rt-drop.over { background: color-mix(in srgb, var(--halo) 8%, rgba(255, 255, 255, .7)) !important; border-color: var(--halo) !important; }
+html[data-skin='halo'] .rt .rt-drop > i { width: 56px; height: 56px; transform: none !important; border: 0 !important; box-shadow: none !important; background: color-mix(in srgb, var(--halo) 14%, transparent) !important; color: var(--halo) !important; }
+html[data-skin='halo'] .rt .rt-drop > i::after { display: none; }
+html[data-skin='halo'] .rt .rt-drop > i svg { width: 26px; height: 26px; }
+html[data-skin='halo'] .rt .rt-drop-text b { font-size: 17px; font-weight: 600; }
+html[data-skin='halo'] .rt .rt-drop-text small { font-size: 13.5px; }
+html[data-skin='halo'] .rt .rt-drop.has { padding: 10px 14px; border-radius: 999px; border-style: solid !important; border-width: 1px !important; border-color: #fff !important; }
+html[data-skin='halo'] .rt .rt-drop.has > i { width: 34px; height: 34px; }
+html[data-skin='halo'] .rt .rt-drop.has > i svg { width: 18px; height: 18px; }
+html[data-skin='halo'] .rt .rt-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+html[data-skin='halo'] .rt .rt-plan {
+  align-items: center; text-align: center; gap: 1px; padding: 12px 6px; border-radius: 18px;
+  background: rgba(255, 255, 255, .7) !important; border: 1px solid #fff !important; box-shadow: none !important; color: var(--text);
+}
+html[data-skin='halo'][data-mode='dark'] .rt .rt-plan { background: rgba(255, 255, 255, .05) !important; border-color: rgba(255, 255, 255, .1) !important; }
+html[data-skin='halo'] .rt .rt-plan > i { display: none; }
+html[data-skin='halo'] .rt .rt-plan b { font-size: 16px; font-weight: 600; gap: 4px; }
+html[data-skin='halo'] .rt .rt-plan small { display: flex; flex-direction: column; align-items: center; white-space: normal; font-size: 12px; line-height: 1.35; }
+html[data-skin='halo'] .rt .rt-plan small > span + span::before { content: none; }
+html[data-skin='halo'] .rt .rt-plan .rt-leaf svg { width: 13px; height: 13px; }
+html[data-skin='halo'] .rt .rt-plan.on { background: var(--halo-mine) !important; border-color: rgba(255, 255, 255, .28) !important; color: #fff; }
+html[data-skin='halo'] .rt .rt-plan.on small, html[data-skin='halo'] .rt .rt-plan.on .rt-leaf { color: rgba(255, 255, 255, .85); }
+html[data-skin='halo'] .rt .rt-eco { margin: 0 6px; font-size: 12px; line-height: 1.45; opacity: 1; }
+html[data-skin='halo'] .rt .rt-eco.rt-dls { margin-bottom: -6px; }
+html[data-skin='halo'] .rt .rt-eco > svg { width: 13px; height: 13px; color: var(--muted); }
+html[data-skin='halo'] .rt .rt-eco:not(.rt-dls) > svg { color: #4caf74; }
+html[data-skin='halo'] .rt .rt-files li { border-radius: 18px; background: rgba(255, 255, 255, .7); border: 1px solid #fff; }
+html[data-skin='halo'][data-mode='dark'] .rt .rt-files li { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .1); }
+html[data-skin='halo'] .rt .rt-file-ico { background: color-mix(in srgb, var(--halo) 14%, transparent); color: var(--halo); }
+html[data-skin='halo'] .rt .rt-bar i { background: var(--halo); }
+html[data-skin='halo'] .rt .rt-in { border-radius: 16px; background: rgba(255, 255, 255, .7); border: 1px solid #fff; }
+html[data-skin='halo'][data-mode='dark'] .rt .rt-in { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .1); }
+html[data-skin='halo'] .rt .rt-in input { background: none; border: 0; }
+html[data-skin='halo'] .rt .rt-send { height: 50px; font-weight: 600; background: var(--halo-mine) !important; color: #fff !important; border: 1px solid rgba(255, 255, 255, .28) !important; box-shadow: none !important; }
+html[data-skin='halo'] .rt .rt-send:disabled { background: color-mix(in srgb, var(--text) 8%, transparent) !important; color: var(--muted) !important; border: 0 !important; }
+html[data-skin='halo'] .rt .rt-ring-fill { stroke: var(--halo); filter: none; }
+html[data-skin='halo'] .rt .rt-done { background: var(--halo-mine); box-shadow: none; }
+@media (max-width: 760px) {
+  html[data-skin='halo'] .modal-back:has(.rt) { padding: 12px; }
+  html[data-skin='halo'] .modal:has(.rt) { width: 100%; }
+}
+html[data-skin='halo'] .rt .rt-plan small { font-size: 11.5px; }
+html[data-skin='halo'] .rt .rt-plan small > span { white-space: nowrap; }
+html[data-skin='halo'] .rt .rt-top .rt-mark b span { color: var(--halo) !important; }
+html[data-skin='halo'][data-mode='dark'] .rt .rt-drop.has { border-color: rgba(255, 255, 255, .1) !important; }

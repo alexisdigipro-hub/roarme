@@ -205,3 +205,38 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .hea
     box-shadow: -1.5px 0 0 -.5px rgba(255, 60, 110, .35), 1.5px 0 0 -.5px rgba(50, 170, 255, .35), 0 6px 16px rgba(60, 60, 100, .16), inset 0 1px 0 rgba(255, 255, 255, .8) !important;
   }
 }
+
+/* GLASS TRAVEL everywhere a lens moves between choices (Alex, 12 Nov: "keep this animation, we will need it; put the
+   like of it in other places, with the same response"). The same two beats and the same timing as the menu's:
+   .lens-go 150 ms (lift, stretch from the old choice across to the new, the colours split at the rim), then .lens-land
+   300 ms on one soft spring. On the folders' bar, the switches of two or three choices in Settings (Day and Night,
+   Spacing...), AllMedia's and Tasks' tabs: every Lens and every bar with [data-travel] (ui.jsx useLens) */
+@media (prefers-reduced-motion: no-preference) {
+  html:root:root[data-glass][data-skin='halo'][data-mode] .lens[data-travel]:not(.foot).lens-go::before {
+    transform: translate(var(--lx, 0), var(--ly, 0)) scale(1.03, 1.14);
+    box-shadow: -2px 0 0 -.5px rgba(255, 60, 110, .55), 2px 0 0 -.5px rgba(50, 170, 255, .55), 0 -1.5px 0 -.5px rgba(90, 255, 170, .35), 0 1.5px 0 -.5px rgba(255, 210, 80, .3),
+      0 8px 20px rgba(60, 60, 100, .2), inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+    transition: transform .15s cubic-bezier(.3, .7, .4, 1), width .15s cubic-bezier(.3, .7, .4, 1), box-shadow .12s !important;
+  }
+  html:root:root[data-glass][data-skin='halo'][data-mode] .lens[data-travel]:not(.foot).lens-go.lens-land::before {
+    transform: translate(var(--lx, 0), var(--ly, 0)) scale(1.05, 1.08);
+    box-shadow: -1.5px 0 0 -.5px rgba(255, 60, 110, .3), 1.5px 0 0 -.5px rgba(50, 170, 255, .3), 0 5px 14px rgba(60, 60, 100, .14), inset 0 1px 0 rgba(255, 255, 255, .8) !important;
+    transition: transform .3s cubic-bezier(.25, 1.45, .45, 1), width .3s cubic-bezier(.25, 1.45, .45, 1), box-shadow .2s !important;
+  }
+  html:root:root[data-glass][data-skin='halo'][data-mode] .lens[data-travel]:not(.foot)::before { transition: transform .26s cubic-bezier(.3, 1.3, .5, 1), width .26s cubic-bezier(.3, 1.3, .5, 1), height .25s ease, opacity .15s, box-shadow .22s; }
+
+  /* GLASS PRESS, its small sister, with the same response (in at once, out on the same soft spring): what is pressed
+     shows the split colours at its rim while the finger is on it: the round glass buttons, Send, the name's pill, the
+     attach sheet's and the profile's tabs; a switch's knob stretches toward where it is going and lands */
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) :is(.round, .send, .head-card, .head-ava, .as-tabs button, .pf-tabs button, .pf-acts > button, .new-call-bar, .squick button, .dpick button):active {
+    box-shadow: -2px 0 0 -.5px rgba(255, 60, 110, .55), 2px 0 0 -.5px rgba(50, 170, 255, .55), 0 -1.5px 0 -.5px rgba(90, 255, 170, .35), 0 1.5px 0 -.5px rgba(255, 210, 80, .3), 0 6px 16px rgba(60, 60, 100, .16) !important;
+  }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) :is(.as-tabs, .pf-tabs) button.on { animation: gl-land .3s cubic-bezier(.25, 1.45, .45, 1) backwards; }
+  @keyframes gl-land {
+    0% { transform: scale(1.1, 1.14); box-shadow: -2px 0 0 -.5px rgba(255, 60, 110, .55), 2px 0 0 -.5px rgba(50, 170, 255, .55); }
+    100% { transform: none; box-shadow: -2px 0 0 -.5px rgba(255, 60, 110, 0), 2px 0 0 -.5px rgba(50, 170, 255, 0); }
+  }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .switch span::after { transition: transform .3s cubic-bezier(.25, 1.45, .45, 1), width .15s cubic-bezier(.3, .7, .4, 1), box-shadow .15s; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .switch:active span::after { width: 26px; box-shadow: -1.5px 0 0 -.5px rgba(255, 60, 110, .6), 1.5px 0 0 -.5px rgba(50, 170, 255, .6), 0 2px 6px rgba(0, 0, 0, .25); }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .switch:active input:checked + span::after { transform: translateX(12px); }
+}

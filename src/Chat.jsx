@@ -1225,7 +1225,7 @@ export default function Chat({ me, setMe }) {
             {!q.trim() && (
               <div className={`wheel-box${wheeling ? ' on' : ''}`}>
               {wheeling && <i ref={pillRef} className="tabs lens lens-on wheel-pill" aria-hidden="true" />}
-              <nav ref={tabsLens} className={`tabs lens tabs-scroll${editTabs ? ' editing' : ''}${wheeling ? ' tabs-wheel' : ''}`} onScroll={onWheelScroll} onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
+              <nav ref={tabsLens} className={`tabs lens tabs-scroll${editTabs ? ' editing' : ''}${wheeling ? ' tabs-wheel' : ''}`} data-travel="" onScroll={onWheelScroll} onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
                 {(wheeling ? Array.from({ length: WHEEL_COPIES }, (_, k) => k) : [WHEEL_MID]).flatMap((k) => tabsShown.map((f) => {
                   const twin = k !== WHEEL_MID
                   const n = folderUnread(f)

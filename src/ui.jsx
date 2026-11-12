@@ -343,7 +343,8 @@ export function Slide({ value, onChange, min = 0, max = 100, step = 1, ...rest }
 }
 export function Lens({ as: Tag = 'span', className = '', dep, children }) {
   const ref = useLens(dep)
-  return <Tag ref={ref} className={`${className} lens`}>{children}</Tag>
+  // every lens bar moves in Glass Travel (see useLens): the lens lifts, stretches across and lands
+  return <Tag ref={ref} className={`${className} lens`} data-travel="">{children}</Tag>
 }
 
 /* a little burst of the emoji where you reacted */

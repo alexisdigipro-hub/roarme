@@ -890,3 +890,13 @@ html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-seen .ticks.seen {
    - messages say what they are with classes (rt-b, aud-b, file-b, solo) and the rules above no longer ask :has(). */
 html[data-skin='halo'] :is(.modal-back, .as-back, .scrim.blur, .te-back, .vrec) { animation: none !important; }
 html[data-skin='halo'][data-theme='stone'][data-mode] :is(.foot, .rooms-area.bottom .tabs, .foot-bar-empty, .contacts-top, .new-call-bar) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* the profile's More as a window in the middle of the screen (Alex, 12 Nov), over a dimmed profile */
+html[data-skin='halo'] .pf-more .pf-menu {
+  position: fixed; inset: 0; top: 0; bottom: 0; right: 0; margin: auto; width: min(330px, calc(100vw - 44px)); height: fit-content; max-height: min(78vh, 620px);
+  min-width: 0; padding: 8px; border-radius: 26px; transform-origin: 50% 50%; z-index: 60;
+}
+html[data-skin='halo'] .pf-more > .scrim { z-index: 59; background: rgba(12, 12, 20, .38); }
+html[data-skin='halo'] .pf-more .pf-menu > button { height: 48px; padding: 0 14px; }
+html[data-skin='halo'] .pf-more .pf-menu > button span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-skin='halo'] .pf-more .pf-menu > button.pf-m-sub { height: 42px; padding-left: 48px; }

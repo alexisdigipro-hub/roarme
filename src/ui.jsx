@@ -109,16 +109,99 @@ export function Avatar({ src, name, size = 44, online = false, group = false }) 
   )
 }
 
+/* Sliding with a finger (Alex, 12 Nov: "every window slides right and left to get about, wherever it can").
+   useSwipeClose: a window follows a finger that slides it to the right and closes when let go past 90 px or flicked, as a
+   page does (Chat.jsx). It keeps out of the way of anything that itself moves sideways (fields, sliders, maps, rows of
+   tabs, a canvas, anything that scrolls sideways) and of a tab view that is not on its first tab.
+   useTabSwipe: a slide to the left or right inside a tab view goes to the next or the one before. */
+const SIDEWAYS = 'input, textarea, select, [contenteditable="true"], canvas, .map, .seg, .tabs, .pf-tabs, .as-tabs, .walls, .themes, .accents, .attach-grid, .rx-pick, .crop, .te-field, [data-tabs-swipe="mid"]'
+const scrollsSideways = (el, stop) => { for (let n = el; n && n !== stop; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 4 && /(auto|scroll)/.test(getComputedStyle(n).overflowX)) return true } return false }
+export function useSwipeClose(ref, onClose, axis = 'x', dep = 0) {
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    let s = null
+    const start = (e) => {
+      s = null
+      if (e.touches.length !== 1 || e.target.closest(SIDEWAYS) || (axis === 'x' && scrollsSideways(e.target, el))) return
+      if (axis === 'y' && !e.target.closest('[data-grab]')) return
+      s = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), on: false }
+    }
+    const move = (e) => {
+      if (!s) return
+      const dx = e.touches[0].clientX - s.x, dy = e.touches[0].clientY - s.y
+      const a = axis === 'x' ? dx : dy, b = axis === 'x' ? dy : dx
+      if (!s.on) {
+        if (Math.abs(b) > 12 && Math.abs(b) > Math.abs(a)) { s = null; return }
+        if (a < 12 || a < Math.abs(b) * 1.5) return
+        s.on = true
+        el.style.transition = 'none'
+      }
+      const d = Math.max(0, a)
+      el.style.transform = axis === 'x' ? `translate3d(${d}px,0,0)` : `translate3d(0,${d}px,0)`
+      el.style.opacity = String(1 - Math.min(0.4, d / 600))
+    }
+    const end = (e) => {
+      if (!s) return
+      const { x, y, t, on } = s
+      s = null
+      if (!on) return
+      const dx = e.changedTouches[0].clientX - x, dy = e.changedTouches[0].clientY - y
+      const a = axis === 'x' ? dx : dy
+      const go = a > 90 || (a > 40 && Date.now() - t < 280)
+      el.style.transition = 'transform .18s ease-out, opacity .18s'
+      if (!go) { el.style.transform = ''; el.style.opacity = ''; setTimeout(() => { el.style.transition = '' }, 200); return }
+      el.style.transform = axis === 'x' ? 'translate3d(100%,0,0)' : 'translate3d(0,100%,0)'
+      el.style.opacity = '0'
+      setTimeout(() => close.current(), 170)
+    }
+    el.addEventListener('touchstart', start, { passive: true })
+    el.addEventListener('touchmove', move, { passive: true })
+    el.addEventListener('touchend', end)
+    el.addEventListener('touchcancel', end)
+    return () => { el.removeEventListener('touchstart', start); el.removeEventListener('touchmove', move); el.removeEventListener('touchend', end); el.removeEventListener('touchcancel', end) }
+  }, [ref, axis, dep])
+}
+export function useTabSwipe(ref, keys, current, setCurrent, dep = 0) {
+  const st = useRef({})
+  st.current = { keys, current, setCurrent }
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    let s = null
+    const start = (e) => { s = e.touches.length === 1 && !e.target.closest('input, textarea, canvas, .map, .seg, input[type="range"]') && !scrollsSideways(e.target, el) ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null }
+    const end = (e) => {
+      if (!s) return
+      const dx = e.changedTouches[0].clientX - s.x, dy = e.changedTouches[0].clientY - s.y
+      const quick = Date.now() - s.t < 500
+      s = null
+      if (!quick || Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return
+      const { keys: k, current: c, setCurrent: set } = st.current
+      const i = k.indexOf(c)
+      const n = dx < 0 ? i + 1 : i - 1
+      if (i < 0 || n < 0 || n >= k.length) return
+      set(k[n])
+    }
+    el.addEventListener('touchstart', start, { passive: true })
+    el.addEventListener('touchend', end)
+    return () => { el.removeEventListener('touchstart', start); el.removeEventListener('touchend', end) }
+  }, [ref, dep])
+}
+
 export function Modal({ title, onClose, children, foot, wide = false }) {
   useEffect(() => {
     const k = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', k)
     return () => document.removeEventListener('keydown', k)
   }, [onClose])
+  const box = useRef(null)
+  useSwipeClose(box, onClose)
   // on the page itself, not inside a glass panel (a panel's blur would hold it inside the panel)
   return createPortal(
     <div className="modal-back" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className={`modal${wide ? ' modal-wide' : ''}`} role="dialog" aria-label={title}>
+      <div ref={box} className={`modal${wide ? ' modal-wide' : ''}`} role="dialog" aria-label={title}>
         <div className="modal-head"><h2>{title}</h2><button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button></div>
         <div className="modal-body">{children}</div>
         {foot && <div className="modal-foot">{foot}</div>}

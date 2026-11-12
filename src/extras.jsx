@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { errText, fileLink, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
-import { I, Modal, Slide, useSeen } from './ui.jsx'
+import { I, Modal, Slide, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 import { PhotoEdit } from './photoEdit.jsx'
@@ -199,6 +199,11 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const [recent, setRecent] = useState(null)
   const [sending, setSending] = useState('')
   const [edit, setEdit] = useState(-1) // the photo being touched up before it is sent
+  // the sheet is pulled down by its top to close, and a slide left or right goes from Gallery to File to Audio
+  const sheetRef = useRef(null)
+  const bodyRef = useRef(null)
+  useSwipeClose(sheetRef, onClose, 'y', edit)
+  useTabSwipe(bodyRef, ['gallery', 'file', 'audio'], tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
@@ -251,14 +256,14 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   if (edit >= 0 && files[edit]) return <PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} />
   return createPortal(
     <div className="as-back" onClick={onClose}>
-      <div className="as-sheet" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
-        <i className="as-grab" aria-hidden="true" />
-        <div className="as-head">
+      <div ref={sheetRef} className="as-sheet" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <i className="as-grab" data-grab="" aria-hidden="true" />
+        <div className="as-head" data-grab="">
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
           <b>{title}</b>
           <span className="as-head-pad" />
         </div>
-        <div className="as-body">
+        <div className="as-body" ref={bodyRef}>
           {files.length > 0 ? (
             <>
               <div className="attach-grid">

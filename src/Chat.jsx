@@ -132,7 +132,7 @@ export default function Chat({ me, setMe }) {
   // like Back at its top (Alex, 19 Oct): the page's own Back button is pressed, so it always goes where Back goes
   useEffect(() => {
     let s = null
-    const NO = 'input, textarea, [contenteditable="true"], .tabs, .themes, .dpick, .wheel, .walls, .seg, .viewer, .modal-back, .call, .menu, input[type="range"]'
+    const NO = 'input, textarea, [contenteditable="true"], .tabs, .themes, .dpick, .wheel, .walls, .seg, .viewer, .modal-back, .call, .menu, input[type="range"], [data-tabs-swipe="mid"]'
     // the page follows the finger as it slides (Alex, 9 Nov: "with a slide it goes to the menu"), like an iPhone: let go
     // past about 90 px (a quarter of a phone's width), or with a quick flick, and it goes back; let go before, and it
     // springs back into place (Alex, 9 Nov: a third of the screen was too far, a normal slide sprang back)

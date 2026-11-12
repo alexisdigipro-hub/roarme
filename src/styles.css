@@ -4272,3 +4272,6 @@ html[data-theme='stone']:not([data-skin]) .compose-ref { border-radius: 9px; }
 
 /* the empty bar above the rail on Settings: only Halo shows it (themes-halo.css) */
 .foot-bar-empty { display: none; }
+
+/* the settings sign has two drawings: filled (every theme) and in lines (Halo's rail, themes-halo.css) */
+.fi-line { display: none; }

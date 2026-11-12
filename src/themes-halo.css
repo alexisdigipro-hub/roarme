@@ -346,3 +346,11 @@ html[data-skin='halo'][data-theme='stone'] .foot-bar-empty b { font-weight: 800;
 /* Contacts with the search at the foot (Alex, 12 Nov): while a search is typed the people found sit at the foot of the
    list, just above the search bar, so the keyboard does not push them off the top of the screen */
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-list.searching { justify-content: flex-end; }
+
+/* the rail's settings sign in lines (Alex, 12 Nov: a gear like the one he sent) */
+html[data-skin='halo'][data-theme='stone'] .foot .fi-solid { display: none; }
+html[data-skin='halo'][data-theme='stone'] .foot .fi-line { display: inline; stroke-linecap: round; }
+/* the Settings bar is a link to www.themadlions.com (Alex, 12 Nov): the whole bar, no underline */
+html[data-skin='halo'][data-theme='stone'] .foot-bar-empty { text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .18s var(--spring); }
+html[data-skin='halo'][data-theme='stone'] .foot-bar-empty:active { transform: scale(.98); }
+html[data-skin='halo'][data-theme='stone'] .foot-bar-empty:hover span { color: #fff; }

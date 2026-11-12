@@ -253,3 +253,9 @@ html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs.l
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 30px; }
 html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-103px - var(--hfmb) - var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(111px + var(--hfmb) + var(--hpb)); }
+/* the folders' names in capitals on the button itself too (Alex, 12 Nov, again: "always capitals"), and centred in their
+   bar while they fit; once they run past it they start from the left and scroll, as before (auto margins fall to 0) */
+html[data-skin='halo'][data-theme='stone'] .rooms-area > .tabs button { text-transform: uppercase !important; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom > .tabs { justify-content: flex-start; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom > .tabs > button:first-of-type { margin-left: auto; }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom > .tabs > button:last-of-type { margin-right: auto; }

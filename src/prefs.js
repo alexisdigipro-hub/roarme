@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 /* Chat settings, kept on this device (as in the THEMADLIONS chat): how the chat looks and behaves.
    A change is announced with the 'roarme-prefs' event so every open part of the app follows it. */
 export const DEFAULTS = {
-  mode: 'light', // dark | light | auto (follows the computer); a first start opens Stone in light (Alex, 21 Oct)
+  mode: 'light', // dark | light | glass (Halo only) | auto (follows the computer); a first start opens Stone in light (Alex, 21 Oct)
   lang: 'en', // en | el, the interface language (i18n.js)
   theme: 'stone', // Stone is the main theme since 21 Oct (Alex); the rest only for Alex, see THEME_LAB
   accent: '', // the theme's own colour (Stone's graphite) on a first start (Alex, 21 Oct); or one of ACCENTS
@@ -51,7 +51,6 @@ export const DEFAULTS = {
   folderTags: false,
   folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
   background: 'soft', // one of WALLS
-  barStyle: '', // Halo: the shape of the two bars at the foot; '' = ours, 'pill' = capsules (Alex, 12 Nov)
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
   pauseOnRec: true, // a song or a voice message playing stops while a voice or video message is recorded
   callLessData: false, // video calls at 360p and 15 frames, for weak networks
@@ -196,7 +195,7 @@ export const REACTIONS = ['❤️', '🎥', '👍', '🔥', '🏆', '👏', '�
 /* dark or light on the page: 'auto' follows the computer's own setting */
 export function applyMode(mode) {
   const mq = window.matchMedia?.('(prefers-color-scheme: light)')
-  const set = () => { const r = document.documentElement; r.dataset.mode = (mode === 'auto' ? (mq?.matches ? 'light' : 'dark') : mode) }
+  const set = () => { const r = document.documentElement; r.dataset.mode = (mode === 'auto' ? (mq?.matches ? 'light' : 'dark') : mode === 'glass' ? 'light' : mode) } // glass (Alex, 12 Nov): Halo's light with the glass capsule bars, to be made right later
   set()
   if (mode !== 'auto' || !mq) return () => {}
   mq.addEventListener?.('change', set)
@@ -271,7 +270,7 @@ export function applyLook(p) {
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
   r.dataset.density = p.density || 'standard'
-  if (p.theme === 'halo' && p.barStyle === 'pill') r.dataset.bars = 'pill'; else delete r.dataset.bars
+  if (p.theme === 'halo' && p.mode === 'glass') r.dataset.bars = 'pill'; else delete r.dataset.bars
   r.style.setProperty('--r', `${Number(p.radius) || 12}px`)
   if (p.motion === false) r.dataset.still = '1'; else delete r.dataset.still
   if (p.focusRings) r.dataset.focus = 'bold'; else delete r.dataset.focus

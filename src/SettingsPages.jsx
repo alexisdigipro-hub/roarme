@@ -815,7 +815,7 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'appBackground', 'barStyle', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'appBackground', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
 function ChatTheme({ p }) {
@@ -884,7 +884,7 @@ function Appearance({ p, toast, me, setMe }) {
         </div>
         <div className="set-row set-col">
           <span className="set-text">Day and Night<small>Auto follows the device: light by day, dark at night if the device does so</small></span>
-          <Lens className="seg" dep={p.mode}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
+          <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ...(p.theme === 'halo' ? [['glass', 'Glass']] : []), ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={(p.mode === 'glass' && p.theme !== 'halo' ? 'light' : p.mode) === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
         </div>
         <div className="set-row set-col">
           <span className="set-text">Accent Colour<small>{p.accent ? (p.theme === 'halo' ? HALO_ACCENTS : ACCENTS).find(([k]) => k === p.accent)?.[1] || "The theme's own colour" : "The theme's own colour"}</small></span>
@@ -922,14 +922,6 @@ function Appearance({ p, toast, me, setMe }) {
       <Box title="Chat wallpaper" note="Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.">
         <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
       </Box>
-      {p.theme === 'halo' && (
-        <Box title="Menu" note="The shape of the bar at the foot and of the folder bar over it.">
-          <div className="set-row set-col">
-            <span className="set-text">Menu Shape<small>{p.barStyle === 'pill' ? 'Capsules, more see-through' : 'Soft corners'}</small></span>
-            <Lens className="seg" dep={p.barStyle || 'classic'}>{[['', 'Classic'], ['pill', 'Capsule']].map(([k, l]) => <button key={l} type="button" className={(p.barStyle || '') === k ? 'on' : ''} onClick={() => setPrefs({ barStyle: k })}>{l}</button>)}</Lens>
-          </div>
-        </Box>
-      )}
       {p.theme === 'halo' && (
         <Box title="App background" note="What sits behind the chat list, Contacts, Calls and Settings.">
           <Switch on={!p.appBackground} set={(v) => setPrefs({ appBackground: v ? '' : p.background || 'soft' })} hint="The app wears the chat wallpaper above">Same as Chats</Switch>

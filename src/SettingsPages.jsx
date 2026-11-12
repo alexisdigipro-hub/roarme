@@ -188,14 +188,14 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
               ) })}
             </div>
             <Chats p={p} />
-            <Data p={p} />
+            <Data p={p} toast={toast} />
           </>
         )}
         {page === 'keys' && <Keys p={p} />}
         {page === 'notify' && <Notify p={p} toast={toast} />}
         {page === 'autoreply' && <AutoReply toast={toast} />}
         {page === 'privacy' && <><Privacy me={me} setMe={setMe} toast={toast} /><Sessions me={me} setMe={setMe} toast={toast} /></>}
-        {page === 'data' && <Data p={p} />}
+        {page === 'data' && <Data p={p} toast={toast} />}
         {page === 'sessions' && <Sessions me={me} setMe={setMe} toast={toast} />}
         {page === 'appearance' && <Appearance p={p} toast={toast} me={me} setMe={setMe} />}
         {page === 'language' && <Language p={p} />}
@@ -702,9 +702,29 @@ function Privacy({ me, setMe, toast }) {
   )
 }
 
-function Data({ p }) {
+// how much room RoarMe's saved data takes on this device, and a way to empty what can be fetched again
+function Storage({ toast }) {
+  const [use, setUse] = useState(null)
+  const look = () => navigator.storage?.estimate?.().then((e) => setUse(e?.usage ?? null)).catch(() => setUse(null))
+  useEffect(() => { look() }, [])
+  const clear = async () => {
+    try { const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))) } catch { /* no cache storage here */ }
+    try { sessionStorage.clear() } catch { /* private window */ }
+    await look()
+    toast?.('Cache cleared')
+  }
+  const mb = use == null ? '' : use > 1e9 ? `${(use / 1e9).toFixed(1)} GB` : `${Math.max(0.1, use / 1e6).toFixed(1)} MB`
+  return (
+    <Box title="Storage" note="What RoarMe keeps on this device to open faster. Your chats and files stay safe on the server.">
+      <div className="set-row"><span className="set-text">Storage Usage</span><small className="set-val" data-raw="">{mb || '…'}</small></div>
+      <button type="button" className="set-row set-pick" onClick={clear}><span className="set-text">Clear Cache<small>Frees the room; things load again when you open them</small></span></button>
+    </Box>
+  )
+}
+function Data({ p, toast }) {
   return (
     <>
+      <Storage toast={toast} />
       <Box title="Sending">
         <Switch on={p.compress} set={(v) => setPrefs({ compress: v })} hint="Photos go smaller and faster. You can change it each time you send.">Compress Photos</Switch>
         <Switch on={p.largePhotos} set={(v) => setPrefs({ largePhotos: v })} hint="2560 px instead of 1600 px">Send Large Photos</Switch>
@@ -716,6 +736,10 @@ function Data({ p }) {
       <Box title="Auto-play media">
         <Switch on={p.autoplayVideos} set={(v) => setPrefs({ autoplayVideos: v })} hint="Silent, on a loop, as they come into view">Videos</Switch>
         <Switch on={p.autoplayGifs !== false} set={(v) => setPrefs({ autoplayGifs: v })} hint="Off: a GIF moves when you tap it">GIFs</Switch>
+      </Box>
+      <Box title="Other">
+        <Switch on={p.pauseOnRec !== false} set={(v) => setPrefs({ pauseOnRec: v })} hint="A song or a voice message that is playing stops while you record">Pause Music While Recording</Switch>
+        <Switch on={!!p.callLessData} set={(v) => setPrefs({ callLessData: v })} hint="Video calls go out smaller (360p), for weak networks. From your next call">Use Less Data for Calls</Switch>
       </Box>
     </>
   )

@@ -748,3 +748,36 @@ html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile,
 html[data-skin='halo'][data-theme] :is(.room-view, .wall-tile, .set-preview, .te-preview)[data-bg='ember'] { background-image: radial-gradient(circle at 12% 0%, rgba(224, 120, 143, 0.34), transparent 62%), radial-gradient(circle at 92% 100%, rgba(43, 42, 140, 0.34), transparent 64%), linear-gradient(160deg, rgba(224, 120, 143, 0.1), rgba(43, 42, 140, 0.1)) !important; }
 html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile, .set-preview, .te-preview)[data-bg='ember'] { background-image: radial-gradient(circle at 12% 0%, rgba(224, 120, 143, 0.3), transparent 62%), radial-gradient(circle at 92% 100%, rgba(43, 42, 140, 0.26), transparent 64%) !important; }
 html[data-skin='halo'][data-mode='dark'] .wall-tile.on small { color: #f1f1f5; }
+
+/* the two bars at the foot, alive (Alex, 12 Nov: "every animation there is, the best", and WhatsApp's liquid glass):
+   the chosen lens glides with a soft spring and a little stretch; the sign just chosen pops; a pressed tab dips; a finger
+   held on the bar swells the lens into clear glass with a rainbow rim that follows it (ui.jsx useLiquid) and the tab under
+   it lifts. Off with Power Saving and reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.foot, .rooms-area.bottom .tabs).lens::before {
+    transition: transform .55s cubic-bezier(.3, 1.32, .5, 1), width .55s cubic-bezier(.3, 1.32, .5, 1), height .4s ease, opacity .2s, background .25s, border-color .25s, box-shadow .25s;
+  }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.foot, .rooms-area.bottom .tabs) > button { transition: transform .18s ease, color .25s, opacity .25s; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.foot, .rooms-area.bottom .tabs) > button:active { transform: scale(.9); }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.on .foot-ico > svg { animation: halo-pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .rooms-area.bottom .tabs > button.on { animation: halo-word .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+  @keyframes halo-pop { 0% { transform: scale(.72) rotate(-8deg); } 55% { transform: scale(1.18) rotate(3deg); } 100% { transform: none; } }
+  @keyframes halo-word { 0% { transform: scale(.9); } 60% { transform: scale(1.06); } 100% { transform: none; } }
+
+  /* the liquid glass under a held finger */
+  html[data-skin='halo'] :is(.foot, .rooms-area.bottom .tabs).lens.liquid::before {
+    transform: translate(var(--lx, 0), var(--ly, 0)) scale(1.12, 1.16);
+    background: linear-gradient(180deg, rgba(96, 96, 108, .97), rgba(52, 52, 62, .97)) padding-box,
+      conic-gradient(from 210deg, #ff7ad9, #ffd36e, #7dffc4, #6fd0ff, #a98bff, #ff7ad9) border-box !important;
+    border: 2px solid transparent !important;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, .35), 0 0 18px rgba(170, 160, 255, .35), inset 0 1px 0 rgba(255, 255, 255, .35) !important;
+    transition: transform .22s cubic-bezier(.3, 1.4, .5, 1), width .3s ease, height .3s ease, background .2s, box-shadow .2s !important;
+  }
+  html[data-skin='halo'] :is(.foot, .rooms-area.bottom .tabs).lens.liquid-drag::before {
+    transform: translate(calc(var(--fx, 0px) - var(--lw, 0px) / 2), var(--ly, 0)) scale(1.22, 1.24);
+    transition: transform .12s linear, width .3s ease, height .3s ease !important;
+  }
+  html[data-skin='halo'] :is(.foot, .rooms-area.bottom .tabs).liquid-drag > button { opacity: .65; }
+  html[data-skin='halo'] :is(.foot, .rooms-area.bottom .tabs).liquid-drag > button.liquid-at { opacity: 1; color: #fff; transform: scale(1.14); }
+}
+html[data-skin='halo'] :is(.foot, .rooms-area.bottom .tabs).lens { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

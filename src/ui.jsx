@@ -161,6 +161,61 @@ export function useLens(dep) {
   }, [dep])
   return ref
 }
+/* Liquid glass on a bar of tabs (Alex, 12 Nov, from WhatsApp's): a finger pressed on the bar swells the chosen lens into
+   clear glass with a rainbow rim that follows the finger; letting go picks the tab under it. A bar that scrolls sideways
+   keeps its scrolling instead. Only in Halo, and not with Power Saving or reduced motion. */
+export function useLiquid(ref, dep) {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    const on = () => document.documentElement.dataset.skin === 'halo' && !calm()
+    const fits = () => el.scrollWidth <= el.clientWidth + 2
+    const fix = () => { el.style.touchAction = on() && fits() ? 'pan-y' : '' }
+    fix()
+    const ro = new ResizeObserver(fix)
+    ro.observe(el)
+    let g = null
+    const childAt = (x, y) => { const t = document.elementFromPoint(x, y); const c = t && t.closest('button'); return c && c.parentElement === el && !c.disabled ? c : null }
+    const put = (x) => { const r = el.getBoundingClientRect(); el.style.setProperty('--fx', `${Math.max(0, Math.min(r.width, x - r.left))}px`) }
+    const down = (e) => {
+      if (e.button || !on() || !fits() || !el.querySelector(':scope > .on')) return
+      g = { x: e.clientX, moved: false, id: e.pointerId }
+      put(e.clientX)
+      el.classList.add('liquid')
+    }
+    const move = (e) => {
+      if (!g || e.pointerId !== g.id) return
+      if (!g.moved && Math.abs(e.clientX - g.x) > 8) { g.moved = true; el.classList.add('liquid-drag') }
+      if (g.moved) {
+        put(e.clientX)
+        const c = childAt(e.clientX, e.clientY)
+        el.querySelectorAll(':scope > .liquid-at').forEach((b) => { if (b !== c) b.classList.remove('liquid-at') })
+        if (c) c.classList.add('liquid-at')
+      }
+    }
+    const end = (e, pick) => {
+      if (!g || (e.pointerId != null && e.pointerId !== g.id)) return
+      const moved = g.moved
+      g = null
+      el.classList.remove('liquid', 'liquid-drag')
+      el.querySelectorAll(':scope > .liquid-at').forEach((b) => b.classList.remove('liquid-at'))
+      if (!moved || !pick) return
+      const c = childAt(e.clientX, e.clientY)
+      // the finger's own click lands where it began: keep it from choosing that one too
+      const stop = (ev) => { ev.stopPropagation(); ev.preventDefault() }
+      el.addEventListener('click', stop, { capture: true, once: true })
+      setTimeout(() => el.removeEventListener('click', stop, { capture: true }), 400)
+      if (c) setTimeout(() => c.click(), 0)
+    }
+    const up = (e) => end(e, true)
+    const cancel = (e) => end(e, false)
+    el.addEventListener('pointerdown', down)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', cancel)
+    return () => { ro.disconnect(); el.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel) }
+  }, [ref, dep])
+}
 export function Lens({ as: Tag = 'span', className = '', dep, children }) {
   const ref = useLens(dep)
   return <Tag ref={ref} className={`${className} lens`}>{children}</Tag>

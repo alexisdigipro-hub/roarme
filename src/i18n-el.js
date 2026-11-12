@@ -205,6 +205,7 @@ export const EL = {
   'Slide to cancel': 'Σύρε για ακύρωση',
   'Video message': 'Βιντεομήνυμα',
   'Turn the camera': 'Γύρνα την κάμερα',
+  'Flash': 'Φλας',
   'Hold to record a video message · tap for voice': 'Κράτα για βιντεομήνυμα · πάτα για φωνή',
   'Hold to record a voice message · tap for video': 'Κράτα για φωνητικό · πάτα για βίντεο',
   'The camera is not allowed. Allow the camera and the microphone to send video messages.': 'Η κάμερα δεν επιτρέπεται. Επίτρεψε την κάμερα και το μικρόφωνο για να στέλνεις βιντεομηνύματα.',

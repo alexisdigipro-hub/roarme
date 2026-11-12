@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, foldHas, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, CHAT_THEMES, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, inThemeLab, inkOn, setPrefs, usePrefs, wearTheme } from './prefs.js'
+import { ACCENTS, HALO_ACCENTS, CHAT_THEMES, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, inThemeLab, inkOn, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ThemeEditor } from './themeEditor.jsx'
 import { useWalls, wallLook } from './walls.js'
@@ -838,11 +838,21 @@ function Appearance({ p, toast, me, setMe }) {
           <Lens className="seg" dep={p.mode}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
         </div>
         <div className="set-row set-col">
-          <span className="set-text">Accent Colour<small>{p.accent ? ACCENTS.find(([k]) => k === p.accent)?.[1] : "The theme's own colour"}</small></span>
-          <div className="accents">
-            <button type="button" className={`acc acc-auto${!p.accent ? ' on' : ''}`} title="Theme colour" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Theme</small></button>
-            {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}${k === 'white' ? ' acc-white' : k === 'black' ? ' acc-black' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
-          </div>
+          <span className="set-text">Accent Colour<small>{p.accent ? (p.theme === 'halo' ? HALO_ACCENTS : ACCENTS).find(([k]) => k === p.accent)?.[1] || "The theme's own colour" : "The theme's own colour"}</small></span>
+          {p.theme === 'halo'
+            ? (
+              // Halo's own palette (Alex, 12 Nov): the orange it is made with and five colours, each with its gradient
+              <div className="accents halo-accents">
+                <button type="button" className={`acc acc-halo${!HALO_ACCENTS.some(([k]) => k === p.accent) ? ' on' : ''}`} style={{ '--c': '#f47318', background: 'linear-gradient(135deg, #ff9a3c, #f47318)' }} title="Orange" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Orange</small></button>
+                {HALO_ACCENTS.map(([k, l, c, , [a, b]]) => <button key={k} type="button" className={`acc acc-halo${p.accent === k ? ' on' : ''}`} style={{ '--c': c, background: `linear-gradient(135deg, ${a}, ${b})` }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
+              </div>
+            )
+            : (
+              <div className="accents">
+                <button type="button" className={`acc acc-auto${!p.accent ? ' on' : ''}`} title="Theme colour" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Theme</small></button>
+                {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}${k === 'white' ? ' acc-white' : k === 'black' ? ' acc-black' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
+              </div>
+            )}
         </div>
       </Box>
       <ChatTheme p={p} />

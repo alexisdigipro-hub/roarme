@@ -225,6 +225,16 @@ export const dressTheme = (t) => {
   if (skin) r.dataset.skin = skin; else delete r.dataset.skin
 }
 export const themeFor = (theme) => (PUBLIC_THEMES.includes(theme) ? theme : 'stone')
+// Halo's own colours (Alex, 12 Nov, from a palette he sent): the colour, its lighter form for the dark, the gradient your
+// messages and the main buttons wear, and the ink on them
+export const HALO_ACCENTS = [
+  ['h-navy', 'Navy', '#031B88', '#8f9ce8', ['#2a3aa8', '#8f9ce8'], '#ffffff'],
+  ['h-blue', 'Blue', '#6096FD', '#7fa9fd', ['#6f97f6', '#e48aa0'], '#ffffff'],
+  ['h-lilac', 'Lilac', '#AAB6FB', '#AAB6FB', ['#b4befc', '#6f9cfd'], '#ffffff'],
+  ['h-rose', 'Rose', '#FB7B8E', '#FB7B8E', ['#e0788f', '#2b2a8c'], '#ffffff'],
+  ['h-pink', 'Pink', '#FAA7B8', '#FAA7B8', ['#fba9b9', '#fb7f92'], '#3a1824'],
+]
+const hexA = (h, a) => `rgba(${parseInt(h.slice(1, 3), 16)}, ${parseInt(h.slice(3, 5), 16)}, ${parseInt(h.slice(5, 7), 16)}, ${a})`
 export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#d40000'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57'], ['white', 'White', '#ffffff'], ['black', 'Black', '#111111']]
 export const FONTS = [
   ['system', 'SF Pro / System', "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif"],
@@ -243,6 +253,17 @@ export function applyLook(p) {
   const r = document.documentElement
   const hex = (/^#[0-9a-f]{6}$/i.test(p.accentHex || '') && p.accentHex) || ACCENTS.find(([k]) => k === p.accent)?.[2]
   if (hex) { r.style.setProperty('--accent', hex); r.style.setProperty('--accent-2', hex); r.style.setProperty('--accent-ink', inkOn(hex)) } else { ['--accent', '--accent-2', '--accent-ink'].forEach((v) => r.style.removeProperty(v)) }
+  // in Halo one of its own colours stands in for the orange: on your messages, Send, the chosen things
+  const ha = p.theme === 'halo' && HALO_ACCENTS.find(([k]) => k === p.accent)
+  if (ha) {
+    const [, , c, cd, [a, b], ink] = ha
+    r.style.setProperty('--halo-l', c); r.style.setProperty('--halo-d', cd); r.style.setProperty('--halo-2', a)
+    r.style.setProperty('--halo-mine-top', hexA(a, 0.82)); r.style.setProperty('--halo-mine', hexA(b, 0.82)); r.style.setProperty('--halo-ink', ink)
+    r.dataset.haloAccent = '1'
+  } else {
+    ['--halo-l', '--halo-d', '--halo-2', '--halo-mine-top', '--halo-mine', '--halo-ink'].forEach((v) => r.style.removeProperty(v))
+    delete r.dataset.haloAccent
+  }
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
   r.dataset.density = p.density || 'standard'

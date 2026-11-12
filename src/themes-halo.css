@@ -432,3 +432,9 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .room-head .head-av
 html[data-skin='halo'][data-theme='stone'] .room-head .head-ava .av { width: 40px !important; height: 40px !important; border-radius: 50% !important; }
 html[data-skin='halo'][data-theme='stone'] .room-head .head-ava .av img { border-radius: 50% !important; }
 html[data-skin='halo'][data-theme='stone'] .room-head .head-ava:active { transform: scale(.94); }
+/* photos and videos fill their message to the edge (Alex, 12 Nov): no white rim round them, and the picture takes the
+   message's own corner, so nothing shows at the corners */
+html[data-skin='halo'][data-theme] .bubble.pic, html[data-skin='halo'][data-theme] .msg.mine .bubble.pic { border: 0 !important; background: none !important; box-shadow: 0 8px 22px rgba(70, 70, 110, .14); }
+html[data-skin='halo'][data-theme] .bubble.pic > :is(.pic-img, .load-tap, .pic-wait, .vid-box), html[data-skin='halo'][data-theme] .bubble.pic .vid-box > video { border-radius: inherit !important; }
+/* the RoarTransfer message keeps the photos' width now that they have no rim */
+html[data-skin='halo'] .bubble:has(.rt-card) { width: var(--media-w); }

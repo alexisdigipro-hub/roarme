@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
-import { Avatar, CropModal, I, Modal, OnTop, useSeen } from './ui.jsx'
+import { Avatar, CropModal, I, Modal, OnTop, useSeen, useTabSwipe } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { usePrefs } from './prefs.js'
 import { CopyLink } from './transfer.jsx'
@@ -24,6 +24,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const [links, setLinks] = useState([])
   const [tab, setTab] = useState(group ? 'members' : 'media')
   const [more, setMore] = useState(false)
+  const bodyRef = useRef(null)
   const [autoOpen, setAutoOpen] = useState(false)
   const AUTO = [[null, 'Off'], [24, 'After 1 day'], [168, 'After 1 week'], [720, 'After 1 month']]
   // the chat does these itself (Chat.jsx listens for roarme-roomact): the profile closes and hands them over
@@ -216,6 +217,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   )
   const when = (iso) => `${new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })} · ${timeOf(iso)}`
 
+  useTabSwipe(bodyRef, tabs.map(([k]) => k), tab, setTab)
   return (
     <Modal title="" onClose={onClose} wide>
       <div className="pf">
@@ -298,7 +300,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
           {tabs.map(([k, l, n]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}{n > 0 && <small>{n}</small>}</button>)}
         </nav>
 
-        <div className="pf-body">
+        {/* a slide left or right goes to the next tab; on the first one a slide to the right closes the profile */}
+        <div className="pf-body" ref={bodyRef} data-tabs-swipe={tabs.findIndex(([k]) => k === tab) > 0 ? 'mid' : 'first'}>
           {items === null && tab !== 'members' && tab !== 'groups' && <p className="muted pf-empty">Loading…</p>}
 
           {tab === 'members' && (

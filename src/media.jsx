@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { dayLabel, fileLink, thumbOf, fmtBytes, nameOf, supabase } from './lib.js'
-import { I, Lens, useSeen } from './ui.jsx'
+import { I, Lens, useSeen, useTabSwipe } from './ui.jsx'
 import { MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { CopyLink, MyTransfers } from './transfer.jsx'
 
@@ -95,6 +95,8 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
   const [kind, setKind] = useState('media')
   const [q, setQ] = useState('')
   const [viewer, setViewer] = useState(null)
+  const libBody = useRef(null)
+  useTabSwipe(libBody, ['media', 'transfers', 'docs', 'links', 'music'], kind, setKind) // a slide left or right goes to the next tab
   const [trMine, setTrMine] = useState(false) // Transfers: what is in the chats, or everything I sent with RoarTransfer
   const titleById = useMemo(() => Object.fromEntries(rooms.map((r) => [r.room_id, titleOf(r)])), [rooms, titleOf])
   const who = (m) => (m.user_id === me.id ? 'You' : nameOf(people[m.user_id]))
@@ -129,7 +131,7 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
         <label className="search lib-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" /></label>
       </div>
 
-      <div className="lib-body">
+      <div className="lib-body" ref={libBody} data-tabs-swipe={kind === 'media' ? 'first' : 'mid'}>
         {!data && <div className="lib-grid">{Array.from({ length: 12 }, (_, n) => <span key={n} className="pic-wait lib-tile" />)}</div>}
         {data && !list.length && !(kind === 'transfers' && trMine) && <p className="empty lib-empty">{words ? 'Nothing found.' : kind === 'media' ? 'No photos or videos yet.' : kind === 'links' ? 'No links yet.' : kind === 'music' ? 'No songs or sound files yet.' : kind === 'docs' ? 'No files yet.' : 'No transfers yet.'}</p>}
         {data && kind === 'media' && list.length > 0 && (

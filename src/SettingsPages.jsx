@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, foldHas, nameOf, supabase } from './lib.js'
-import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
+import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ThemeEditor } from './themeEditor.jsx'
@@ -790,7 +790,7 @@ function ChatTheme({ p }) {
       <div className="set-row set-col">
         <span className="set-text">Message Corners<small>{p.bubbleR ? (p.bubbleR <= 1 ? 'Square' : `${p.bubbleR} px`) : "The theme's own"}</small></span>
         {/* square at the left end, round at the right (Alex, 12 Nov); the theme's own corners are a button of their own */}
-        <input type="range" min="1" max="25" step="2" value={p.bubbleR || 17} onChange={(e) => setPrefs({ bubbleR: Number(e.target.value) })} />
+        <Slide min={1} max={25} step={1} value={p.bubbleR || 17} onChange={(n) => setPrefs({ bubbleR: n })} aria-label="Message Corners" />
         <span className="range-labels"><small>Square</small><small>Round</small></span>
         {!!p.bubbleR && <button type="button" className="pill-btn corners-own" onClick={() => setPrefs({ bubbleR: 0 })}>Theme's Own</button>}
       </div>
@@ -857,7 +857,7 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="set-text">Text Size<small>{`${TEXT_SIZES[p.textSize] || 14.5} px`}</small></span>
           <div className="set-size">
             <small>A</small>
-            <input type="range" min="0" max={TEXT_SIZES.length - 1} step="1" value={p.textSize} onChange={(e) => setPrefs({ textSize: Number(e.target.value) })} />
+            <Slide min={0} max={TEXT_SIZES.length - 1} step={1} value={p.textSize} onChange={(n) => setPrefs({ textSize: n })} aria-label="Text Size" />
             <b>A</b>
           </div>
         </div>
@@ -878,7 +878,7 @@ function Appearance({ p, toast, me, setMe }) {
         {p.theme === 'ember' && (
           <div className="set-row set-col">
             <span className="set-text">Corner Radius<small>{p.radius || 12} px</small></span>
-            <input type="range" min="4" max="16" step="2" value={p.radius || 12} onChange={(e) => setPrefs({ radius: Number(e.target.value) })} />
+            <Slide min={4} max={16} step={2} value={p.radius || 12} onChange={(n) => setPrefs({ radius: n })} aria-label="Corner Radius" />
             <span className="range-labels"><small>4</small><small>8</small><small>12</small><small>16</small></span>
           </div>
         )}

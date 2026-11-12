@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { errText, fileLink, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
-import { I, Modal, useSeen } from './ui.jsx'
+import { I, Modal, Slide, useSeen } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 
@@ -693,8 +693,8 @@ export function WallTiles({ value, onPick, toast }) {
         <div className="wall-op">
           <span className="set-text">Wallpaper Strength<small>{`${photo ? Math.round(photo.opacity * 100) : strength}%`}</small><small>Lower lets the theme's own colour through</small></span>
           {photo
-            ? <input type="range" min="10" max="100" step="5" value={Math.round(photo.opacity * 100)} onChange={(e) => onPick(photoValue(photo.url, Number(e.target.value) / 100))} />
-            : <input type="range" min="10" max="100" step="5" value={strength} onChange={(e) => setPrefs({ wallStrength: Number(e.target.value) })} />}
+            ? <Slide min={10} max={100} step={1} value={Math.round(photo.opacity * 100)} onChange={(n) => onPick(photoValue(photo.url, n / 100))} aria-label="Wallpaper Strength" />
+            : <Slide min={10} max={100} step={1} value={strength} onChange={(n) => setPrefs({ wallStrength: n })} aria-label="Wallpaper Strength" />}
         </div>
       )}
     </>

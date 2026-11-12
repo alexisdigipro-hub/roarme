@@ -4526,3 +4526,13 @@ html[data-skin='halo'] .ce2-row + .ce2-row { border-top-color: color-mix(in srgb
   html[data-skin='halo'][data-mode='dark'] .modal:has(.ce2) { background: linear-gradient(180deg, #24242b, #1b1b21); }
   html[data-skin='halo'] .modal:has(.ce2) .modal-body { padding-top: calc(env(safe-area-inset-top, 0px) + 12px); }
 }
+
+/* sliders (Alex, 12 Nov: "smoother, easy for the fingers to catch"): a tall place to press (36px) with a fine line in it,
+   the part before the knob filled in the theme's colour, a large round knob that grows a little while held */
+input[type='range'].slide { -webkit-appearance: none; appearance: none; width: 100%; height: 36px; margin: 0; padding: 0; background: none; cursor: pointer; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
+input[type='range'].slide:focus { outline: none; }
+input[type='range'].slide::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--halo, var(--rail, var(--accent))) var(--p, 0%), color-mix(in srgb, var(--text) 12%, transparent) var(--p, 0%)); }
+input[type='range'].slide::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--halo, var(--rail, var(--accent))) var(--p, 0%), color-mix(in srgb, var(--text) 12%, transparent) var(--p, 0%)); }
+input[type='range'].slide::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; margin-top: -12px; border-radius: 50%; border: 0; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .22), 0 0 0 1px rgba(0, 0, 0, .05); transition: transform .18s ease, box-shadow .18s ease; }
+input[type='range'].slide::-moz-range-thumb { width: 30px; height: 30px; border-radius: 50%; border: 0; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .22), 0 0 0 1px rgba(0, 0, 0, .05); }
+input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18); box-shadow: 0 4px 14px rgba(0, 0, 0, .26), 0 0 0 8px color-mix(in srgb, var(--halo, var(--rail, var(--accent))) 18%, transparent); }

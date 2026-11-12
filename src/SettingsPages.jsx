@@ -46,7 +46,6 @@ export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.start
 // a settings page opens with its title alone (Alex, 12 Nov): the large sign and the line under it are gone
 const Hero = () => null
 
-const THEMES = [['glass', 'Glass', ['#f47318', 'linear-gradient(135deg, #dbe6ff, #f3e6ff 55%, #ffe7d9)']], ['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -868,20 +867,7 @@ function Appearance({ p, toast, me, setMe }) {
           </div>
         )}
       </div>
-      <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Halo: white frosted glass on soft lilac clouds, with a warm orange. Glass: Halo in liquid glass, a tall menu with words and the folders at the top. Air: plain white with one blue. Each has dark and light.">
-        <div className="set-row set-col">
-          <div className="themes">
-            {THEMES.map(([k, l, [a, b]]) => {
-              return (
-                <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} title={l}
-                  onClick={(e) => { const clean = { chatTheme: '', myBubble: '', theirBubble: '', accentHex: '', accent: '' }; if (p.theme === k) { if (p.chatTheme || p.myBubble || p.theirBubble || p.accentHex || p.accent) { setPrefs(clean); toast(`${l} as it is made`) } return } wearTheme(k); revealFrom(e, () => { dressTheme(k); setPrefs({ theme: k, ...clean, ...(k === 'air' ? { mode: 'light' } : {}) }) }); toast(`Theme updated: ${l}`) }}>
-                  <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : k === 'prism' ? '0 0 10px #ff4b3e' : k === 'aurum' ? '0 0 10px rgba(240, 166, 74, .8)' : k === 'lions' ? '0 0 10px rgba(212, 0, 0, .8)' : 'none' }} />{k === 'prism' && <b className="theme-rim" />}</span>
-                  <small>{l}</small>
-                </button>
-              )
-            })}
-          </div>
-        </div>
+      <Box>
         <div className="set-row set-col">
           <span className="set-text">Day and Night<small>Auto follows the device: light by day, dark at night if the device does so</small></span>
           <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
@@ -1215,19 +1201,6 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
       )}
       <Box><Switch on={!!p.folderAlone} set={(v) => setPrefs({ folderAlone: v })} hint="An unread chat shows only in Unread, a chat you put in a folder only there, a group only in Groups; All keeps the rest">Each Chat in One Folder</Switch></Box>
       <Box><Switch on={p.folderTags} set={(v) => setPrefs({ folderTags: v })} hint="The folder names of each chat, in the chat list">Show Folder Tags</Switch></Box>
-      {/* Glass keeps its folders at the top, so there is nothing to choose there (Alex, 12 Nov) */}
-      {p.theme !== 'glass' && (
-        <Box title="Tabs view" note="At the bottom, the folders sit right above Contacts, Chats and Settings.">
-          <div className="set-row tabs-view">
-            {[['top', 'Tabs at the top'], ['bottom', 'Tabs at the bottom']].map(([k, l]) => (
-              <button key={k} type="button" className={`tv-tile${p.folderTabs === k ? ' on' : ''}`} onClick={() => setPrefs({ folderTabs: k })}>
-                <span className={`tv-pic ${k}`}><i className="tv-bar" /><i className="tv-tabs"><b /><b /><b /></i><i className="tv-row" /><i className="tv-row" /></span>
-                <small>{l}</small>
-              </button>
-            ))}
-          </div>
-        </Box>
-      )}
     </>
   )
 }

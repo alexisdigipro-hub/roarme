@@ -5,15 +5,17 @@ import { TransferPage } from './transfer.jsx'
 import { InstallPrompt } from './install.jsx'
 import { takeInvite } from './invite.jsx'
 import './styles.css'
+import './themes-halo.css'
+import './themes-glass.css'
 import { startI18n } from './i18n.js'
-import { wearTheme } from './prefs.js'
+import { dressTheme } from './prefs.js'
 
 // the Privacy Policy and the Terms come only when opened, not with every start of RoarMe
 const LegalPage = lazy(() => import('./legal.jsx').then((m) => ({ default: m.LegalPage })))
 
 startI18n()
-// a lab theme left on: its styles start coming now, alongside the sign-in (prefs.js wearTheme)
-try { wearTheme(JSON.parse(localStorage.getItem('roarme-prefs') || '{}').theme || 'glass') } catch { /* no saved look */ }
+// Glass, the one theme, is on <html> before the first paint (prefs.js dressTheme)
+dressTheme()
 
 // Jost for the wordmark, from the site itself (fetched at build time into public/fonts); Futura is the fallback
 try {

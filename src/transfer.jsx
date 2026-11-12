@@ -8,6 +8,9 @@ import { PLANS, planOf, r2Transfer } from './r2upload.js'
    the 3 GB, send. The window shows the upload; "Keep chatting" closes it and the upload goes on in the
    chat. When it is done, each file has a small link anyone can download it from, for 3 days. */
 
+// a phone has nothing to drop files from, so it is asked to tap instead
+const touchOnly = typeof window !== 'undefined' && window.matchMedia?.('(hover: none) and (pointer: coarse)').matches
+
 export const TRANSFER_MAX = 3 * 1024 ** 3
 export const TRANSFER_DAYS = 3
 const untilDate = (ms = Date.now() + TRANSFER_DAYS * 864e5) => new Date(ms).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' })
@@ -117,8 +120,8 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
               onDrop={(e) => { e.preventDefault(); setOver(false); add([...(e.dataTransfer?.files || [])]) }}>
               <i>{files.length ? I.plus : I.transfer}</i>
               <span className="rt-drop-text">
-                <b>{files.length ? 'Add more' : 'Drop your files here'}</b>
-                <small>{files.length ? 'or drop them here' : 'or click to choose them'}</small>
+                <b>{files.length ? 'Add more' : touchOnly ? 'Choose your files' : 'Drop your files here'}</b>
+                <small>{files.length ? (touchOnly ? 'tap to choose more' : 'or drop them here') : (touchOnly ? 'Tap to choose them' : 'or click to choose them')}</small>
               </span>
             </button>
             <input ref={pick} type="file" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
@@ -144,7 +147,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
             <div className="rt-plans" role="radiogroup" aria-label="How long the link lasts">
               {PLANS.map((x) => (
                 <button key={x.days} type="button" role="radio" aria-checked={days === x.days} className={`rt-tile rt-plan${days === x.days ? ' on' : ''}`} onClick={() => setDays(x.days)}>
-                  <i>{I.timer}</i><b>{x.days === 1 ? '1 day' : `${x.days} days`}{x.eco && <span className="rt-leaf" title="Recommended">{LEAF}</span>}</b><small>{`up to ${x.max / 1024 ** 3} GB · until ${untilDate(Date.now() + x.days * 864e5)}`}</small>
+                  <i>{I.timer}</i><b>{x.days === 1 ? '1 day' : `${x.days} days`}{x.eco && <span className="rt-leaf" title="Recommended">{LEAF}</span>}</b><small><span>{`up to ${x.max / 1024 ** 3} GB`}</span><span>{`until ${untilDate(Date.now() + x.days * 864e5)}`}</span></small>
                 </button>
               ))}
             </div>

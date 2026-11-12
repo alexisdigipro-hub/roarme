@@ -4377,3 +4377,5 @@ html[data-theme] .as-sheet .as-recent + .as-recent { background-position: 76px 0
 /* the profile's head as Telegram's is only Halo's (themes-halo.css); elsewhere these pieces stay out of the way */
 .pf-head { display: contents; }
 .pf-hero, .pf-back, .pf-edit, .pf-acts .pf-a-mute, .pf-acts .pf-a-find, .pf-menu .pf-m-opts { display: none; }
+/* the plan's two facts, "up to 5 GB · until Fri 13 Nov" on one line (Halo stacks them) */
+.rt-plan small > span + span::before { content: ' · '; }

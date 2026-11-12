@@ -4554,3 +4554,13 @@ input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18);
 .viewer .vw-bin { color: #ff6b5e; }
 .lib-tr-seg { align-self: center; margin: 2px auto 12px; max-width: 320px; width: 100%; }
 .inbox-seg { margin: 0 6px 10px; }
+
+/* Settings: a page that is gone back to comes in from the left; on a phone the menu itself too (Alex, 12 Nov) */
+@keyframes set-back { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+.set-body.back { animation: set-back .28s var(--ease, ease) backwards !important; }
+@media (max-width: 760px) {
+  .side-scroll.set-menu { animation: set-back .28s var(--ease, ease) backwards; }
+  /* on a phone the menu is a screen of its own: no row is "the open one", and a touched row does not stay grey */
+  .set-menu .set-nav.on, .set-menu .set-me.on { background: none !important; box-shadow: none !important; }
+}
+@media (hover: none) { .set-pick:hover, html[data-mode='light'] .set-pick:hover { background: none; } }

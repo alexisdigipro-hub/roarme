@@ -596,3 +596,20 @@ html[data-skin='halo'] .rt .rt-plan small { font-size: 11.5px; }
 html[data-skin='halo'] .rt .rt-plan small > span { white-space: nowrap; }
 html[data-skin='halo'] .rt .rt-top .rt-mark b span { color: var(--halo) !important; }
 html[data-skin='halo'][data-mode='dark'] .rt .rt-drop.has { border-color: rgba(255, 255, 255, .1) !important; }
+
+/* a song and a voice message the same size (Alex, 12 Nov): both as wide as a photo and 72px tall (a fifth lower than
+   the song was), the play button 40px, the time of the message laid in the corner instead of a row of its own */
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:is(:has(> .voice), :has(> .music)):not(:has(> .text, > .quote, > .who)) {
+  position: relative; height: 72px; box-sizing: border-box; padding: 7px 12px 17px !important; display: flex; align-items: center;
+}
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:is(:has(> .voice), :has(> .music)):not(:has(> .text, > .quote, > .who)) > .meta { position: absolute; right: 12px; bottom: 4px; margin: 0; float: none; font-size: 10.5px; line-height: 1; }
+html[data-skin='halo'] .bubble :is(.voice, .music) { min-width: 0; padding: 0; gap: 10px; }
+html[data-skin='halo'] .bubble :is(.voice-btn, .music-btn) { width: 40px; height: 40px; }
+html[data-skin='halo'] .bubble :is(.voice-btn, .music-btn) svg { width: 16px; height: 16px; }
+html[data-skin='halo'] .bubble .music-main { gap: 4px; }
+html[data-skin='halo'] .bubble .music-top b { font-size: 13.5px; }
+html[data-skin='halo'] .bubble .music-top small, html[data-skin='halo'] .bubble .music-time { font-size: 10.5px; }
+html[data-skin='halo'] .bubble .music-dl { width: 28px; height: 28px; }
+html[data-skin='halo'] .bubble .music-dl svg { width: 18px; height: 18px; }
+html[data-skin='halo'] .bubble .voice-wave { height: 24px; }
+html[data-skin='halo'] .bubble .voice small { font-size: 12.5px; }

@@ -129,7 +129,8 @@ export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe, onInbox, inb
       )}
       {[1, 2, 3, 4].map((g) => (
         <div key={g} className="set-box">
-          {PAGES.filter((x) => x[5] === g).map(([id, label, c, ico]) => (
+          {/* RoarTransfer is not in the menu (Alex, 12 Nov); its page stays, for whoever is sent to it */}
+          {PAGES.filter((x) => x[5] === g && x[0] !== 'transfer').map(([id, label, c, ico]) => (
             <button key={id} type="button" className={`set-row set-pick set-nav${page === id ? ' on' : ''}`} onClick={() => onPage(id)}>
               <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}{id === 'appearance' && <small className="set-val">{THEMES.find(([k]) => k === p.theme)?.[1]}</small>}{id === 'features' && <small className="set-val">{[p.callsTab && 'Calls', p.tasksTab && 'Tasks'].filter(Boolean).flatMap((x, n) => (n ? [' · ', <span key={x}>{x}</span>] : [<span key={x}>{x}</span>]))}{!p.callsTab && !p.tasksTab && <span>Off</span>}</small>}<i className="set-chev">{I.right}</i>
             </button>

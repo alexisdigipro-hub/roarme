@@ -242,6 +242,14 @@ export const HALO_ACCENTS = [
   ['h-sunset', 'Sunset', '#F7805F', '#fb9a7c', ['#ff9a3c', '#fb7b8e'], '#ffffff'],
   ['h-twilight', 'Twilight', '#4F5CC9', '#9aa5f5', ['#aab6fb', '#2a3aa8'], '#ffffff'],
   ['h-candy', 'Candy', '#8E8FE6', '#a9a9f2', ['#f48fa6', '#5a8cf5'], '#ffffff'],
+  // seven more (Alex, 12 Nov: red, green, gold, dark blue, cyan, black, and one of red into gold)
+  ['h-ruby', 'Ruby', '#D92D3A', '#ff6b72', ['#ff5a5f', '#b3122b'], '#ffffff'],
+  ['h-forest', 'Forest', '#1F9D61', '#4fd18f', ['#3ccf86', '#11734a'], '#ffffff'],
+  ['h-gold', 'Gold', '#C9962B', '#e8bf5a', ['#f3d27a', '#b8811a'], '#3a2a05'],
+  ['h-midnight', 'Midnight', '#14245C', '#8fa0e8', ['#2f4aa8', '#0b1640'], '#ffffff'],
+  ['h-cyan', 'Cyan', '#11A9C9', '#4fd3ee', ['#4fd3ee', '#0e86c0'], '#ffffff'],
+  ['h-onyx', 'Onyx', '#1b1b20', '#c9c9d2', ['#4a4a55', '#0e0e12'], '#ffffff'],
+  ['h-fire', 'Fire', '#E2572B', '#ff8a5c', ['#f6b73c', '#d92d3a'], '#ffffff'],
 ]
 const hexA = (h, a) => `rgba(${parseInt(h.slice(1, 3), 16)}, ${parseInt(h.slice(3, 5), 16)}, ${parseInt(h.slice(5, 7), 16)}, ${a})`
 export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#d40000'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57'], ['white', 'White', '#ffffff'], ['black', 'Black', '#111111']]

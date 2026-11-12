@@ -2461,6 +2461,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     return msgs.filter((m) => !m.deleted_at && m.body && fold(m.body).includes(t)).map((m) => m.id)
   }, [find, msgs])
   useEffect(() => { if (found.length) { const id = found[found.length - 1 - Math.min(findAt, found.length - 1)]; if (id) goTo(id) } }, [found, findAt]) // eslint-disable-line react-hooks/exhaustive-deps
+  // the one found now, and the words themselves marked in every found message (Alex, 12 Nov: "show where it is")
+  const nowId = find && found.length ? found[found.length - 1 - Math.min(findAt, found.length - 1)] : ''
+  const findRx = useMemo(() => { const t = (find || '').trim(); try { return t ? new RegExp(`(${foldRx(t)})`, 'giu') : null } catch { return null } }, [find])
 
   const byId = useMemo(() => Object.fromEntries(msgs.map((m) => [m.id, m])), [msgs])
   const replyCount = useMemo(() => { const n = {}; msgs.forEach((m) => { if (m.reply_to && !m.deleted_at) n[m.reply_to] = (n[m.reply_to] || 0) + 1 }); return n }, [msgs])
@@ -2482,6 +2485,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
   // @username in a message, lit up
   // links that open (in the browser, a new tab) and @usernames lit up, inside a message's text
+  const markFound = (s) => withMentions(s).flatMap((part, n) => (typeof part !== 'string' || !findRx ? [part]
+    : part.split(findRx).map((x, j) => (j % 2 ? <mark key={`f${n}-${j}`} className="find-mark">{x}</mark> : x))))
   const withMentions = (s) => {
     const parts = String(s).split(/(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|@[\p{L}\p{N}_]{2,24})/gu)
     return parts.map((p, i) => {
@@ -2703,7 +2708,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       const quoted = m.reply_to ? byId[m.reply_to] : null
       const rx = reactsOf[m.id]
       const key = [m, prev?.user_id, prev?.created_at, quoted, rx ? JSON.stringify(rx) : '', m.user_id === me.id ? seenBy(m).join() : '',
-        !!picked?.includes(m.id), wideIds.has(m.id), !!hits?.has(m.id), flash === m.id, pinnedSet.has(m.id), replyCount[m.id] || 0]
+        !!picked?.includes(m.id), wideIds.has(m.id), hits?.has(m.id) ? `${find}${nowId === m.id ? '*' : ''}` : '', flash === m.id, pinnedSet.has(m.id), replyCount[m.id] || 0]
       const had = c.rows.get(m.id)
       const el = had && key.every((x, j) => x === had.key[j]) ? had.el : drawMsg(m, i)
       rows.set(m.id, { key, el })
@@ -2711,7 +2716,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     })
     c.rows = rows
     return list
-  }, [shownMsgs, peopleLook, picked, prefs, byId, reactsOf, reads, wideIds, find, found, flash, rolesLook, room.kind, room.room_id, title, autoDl, pinnedSet, replyCount, me]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shownMsgs, peopleLook, picked, prefs, byId, reactsOf, reads, wideIds, find, found, nowId, flash, rolesLook, room.kind, room.room_id, title, autoDl, pinnedSet, replyCount, me]) // eslint-disable-line react-hooks/exhaustive-deps
   function drawMsg(m, i) {
           const prev = shownMsgs[i - 1]
           const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
@@ -2742,7 +2747,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           return (
             <div key={m.id} id={`m-${m.id}`}>
               {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
-              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${!mine && !m.deleted_at && mentionsMe(m.body, me, roles) ? ' at-me' : ''}${wide ? ' wide-media' : ''}`}
+              <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${hit && nowId === m.id ? ' hit-now' : ''}${!mine && !m.deleted_at && mentionsMe(m.body, me, roles) ? ' at-me' : ''}${wide ? ' wide-media' : ''}`}
                 onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => hands.current.onTap(e, m)}
                 onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (hands.current.onBubble(e)) hands.current.onDouble(m, e) }}
                 onContextMenu={(e) => { if (hands.current.onBubble(e)) hands.current.openMenu(e, m) }}>
@@ -2765,7 +2770,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
-                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && !m.file?.roartransfer && <span className="text">{formatText(qs ? qs.rest : m.body, withMentions)}</span>}
+                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && !m.file?.roartransfer && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
                     <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>

@@ -4430,3 +4430,12 @@ html[data-theme] .msg .bubble.note-b, html[data-skin='halo'][data-mode][data-bub
 .note-ring { position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px); transform: rotate(-90deg); pointer-events: none; }
 .note-ring circle { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
 .note-dur { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .45); color: #fff; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+/* looking for words in a chat (Alex, 12 Nov: "show where it is"): the words marked in every found message, and the one
+   found now held by a coloured ring with its words filled */
+.msg.hit .text mark.find-mark { padding: 0 2px; margin: 0 -2px; border-radius: 4px; color: inherit; background: color-mix(in srgb, var(--halo, var(--accent)) 26%, transparent); }
+.msg.mine.hit .text mark.find-mark { background: rgba(255, 255, 255, .3); }
+.msg.hit-now .text mark.find-mark { background: var(--halo, #ffd60a); color: #fff; }
+.msg.mine.hit-now .text mark.find-mark { background: #fff; color: #1d1d24; }
+.msg.hit .bubble { outline: 1px solid color-mix(in srgb, var(--halo, var(--accent)) 35%, transparent); outline-offset: 2px; }
+.msg.hit-now .bubble { outline: 2px solid var(--halo, var(--accent)); outline-offset: 3px; }

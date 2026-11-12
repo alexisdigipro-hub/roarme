@@ -861,3 +861,15 @@ html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button:hover,
 html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button.danger { color: #ff6b5e; }
 html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list hr { border-top-color: rgba(255, 255, 255, .12); }
 html[data-skin='halo'][data-theme][data-mode] .msg-menu .rx-pick button.on { background: rgba(255, 255, 255, .2); }
+
+/* the attach sheet in Halo, finer (Alex, 12 Nov): a soft lilac sheet, white cards with a soft drop, the signs in matte
+   circles of Halo's colour */
+html[data-skin='halo'] .as-sheet { background: linear-gradient(180deg, #f6f6fb, #eeeef5); border: 1px solid #fff; box-shadow: 0 -12px 40px rgba(70, 70, 110, .18); }
+html[data-skin='halo'][data-mode='dark'] .as-sheet { background: linear-gradient(180deg, #24242b, #1b1b21); border-color: rgba(255, 255, 255, .08); box-shadow: 0 -12px 40px rgba(0, 0, 0, .45); }
+html[data-skin='halo'] .as-sheet .as-head b { font-size: 18px; font-weight: 600; }
+html[data-skin='halo'] .as-sheet :is(.as-tile, .as-card) { background: #fff; border: 1px solid #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .08); }
+html[data-skin='halo'][data-mode='dark'] .as-sheet :is(.as-tile, .as-card) { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .08); box-shadow: none; }
+html[data-skin='halo'] .as-tile > i { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)); color: var(--halo-ink, #fff); }
+html[data-skin='halo'] .as-tile:nth-child(2) > i { background: color-mix(in srgb, var(--halo) 14%, transparent); color: var(--halo); }
+html[data-skin='halo'] .as-sheet .as-label { margin-top: 6px; letter-spacing: .06em; }
+html[data-skin='halo'] .as-grid { box-shadow: 0 6px 18px rgba(70, 70, 110, .08); }

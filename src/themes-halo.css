@@ -107,10 +107,14 @@ html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:not(.pic):no
   background: linear-gradient(135deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .06)) !important;
   border-color: rgba(255, 255, 255, .12) !important; color: #f1f1f5 !important; box-shadow: none !important;
 }
+/* yours: matte orange glass, see-through and flat (Alex, 12 Nov: "not so 3D, more glass, matte orange"), no gradient,
+   no glow, a fine light rim */
+html[data-skin='halo'] { --halo-mine: rgba(244, 115, 24, .74); }
+html[data-skin='halo'][data-mode='dark'] { --halo-mine: rgba(244, 115, 24, .62); }
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji) {
-  background: linear-gradient(145deg, var(--halo-2), var(--halo) 70%) !important; color: #fff !important;
-  border: 1px solid color-mix(in srgb, var(--halo-2) 70%, #fff) !important;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--halo) 28%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3) !important;
+  background: var(--halo-mine) !important; color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, .28) !important;
+  box-shadow: 0 2px 8px rgba(70, 70, 110, .06) !important;
 }
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble :is(.meta, .ticks, .voice small, .file-text small) { color: rgba(255, 255, 255, .78) !important; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble .ticks.seen { color: #fff !important; }
@@ -477,15 +481,15 @@ html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.pic :is(.pic-img, .
 /* a small tail on the last message of a run, on its own side (Alex, 12 Nov): right on yours, left on theirs; only on
    messages of words (cards and photos keep their round corners) */
 html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img)) { overflow: visible; }
-html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg.mine .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img)) { border-bottom-right-radius: 5px !important; }
-html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img)) { border-bottom-left-radius: 5px !important; }
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg.mine .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img)) { border-bottom-right-radius: 0 !important; }
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img)) { border-bottom-left-radius: 0 !important; }
 html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after {
   content: ''; position: absolute; bottom: -1px; width: 11px; height: 15px; pointer-events: none;
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 15'%3E%3Cpath d='M0 0C0 7.5 3 12 10.4 14.3c.6.2.5.7-.1.7H0z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 15'%3E%3Cpath d='M0 0C0 7.5 3 12 10.4 14.3c.6.2.5.7-.1.7H0z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
 }
-html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg.mine .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after { right: -10px; background: var(--halo); }
-html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after { left: -10px; transform: scaleX(-1); background: rgba(255, 255, 255, .86); }
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg.mine .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after { right: -12px; background: var(--halo-mine); }
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after { left: -12px; transform: scaleX(-1); background: rgba(255, 255, 255, .86); }
 html[data-skin='halo'][data-mode='dark'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after { background: rgba(255, 255, 255, .1); }
 html[data-skin='halo'][data-my-bubble] [id^='m-'] > .msg.mine .bubble::after { background: var(--my-bubble) !important; }
 html[data-skin='halo'][data-their-bubble] [id^='m-'] > .msg:not(.mine) .bubble::after { background: var(--their-bubble) !important; }

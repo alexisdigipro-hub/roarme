@@ -4441,3 +4441,7 @@ html[data-theme] .msg .bubble.note-b, html[data-skin='halo'][data-mode][data-bub
 .msg.hit-now .bubble { outline: 2px solid var(--halo, var(--accent)); outline-offset: 3px; }
 .rec-btn, .rec-btn * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .rec-over, .vrec { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+/* the microphone / camera easier to hold (Alex, 12 Nov): an unseen wider place to press around it, so a thumb near it
+   counts */
+.rec-btn { position: relative; overflow: visible; }
+.rec-btn::before { content: ''; position: absolute; inset: -18px -16px -22px -8px; border-radius: 28px; }

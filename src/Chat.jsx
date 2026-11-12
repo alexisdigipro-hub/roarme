@@ -2245,7 +2245,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', cancel)
-    h.t = setTimeout(() => { h.on = true; h.p = mode === 'video' ? startVideo(false) : startVoice(false) }, 260)
+    h.t = setTimeout(() => { h.on = true; h.p = mode === 'video' ? startVideo(false) : startVoice(false) }, 200)
   }
 
   // an admin can delete anyone's message for everyone (Alex, 8 Nov: spam, insults); never edit it

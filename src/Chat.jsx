@@ -1722,7 +1722,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [walls, setWalls] = useLocal('roarme-walls', {}) // a wallpaper of its own, per chat
   const wall = walls[room.room_id] || prefs.background
   const wallList = useWalls(true)
-  const look = wallLook(wall, wallList) // a built-in, one's own colour or one's own photo (Alex, 8 Nov)
+  const look = wallLook(wall, wallList, prefs.wallStrength) // a built-in, one's own colour or one's own photo (Alex, 8 Nov)
   const [wallPick, setWallPick] = useState(false)
   const [rec, setRec] = useState(null) // { started }
   const [outbox, setOutbox] = useState([]) // { id, name, preview, p, stage, holder }
@@ -2812,7 +2812,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
 
   return (
-    <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
+    <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
       <header className="room-head">
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>

@@ -636,7 +636,9 @@ const HALO_HIDE = ['dots', 'grid'] // Pattern and Grid are not offered in Halo (
 // Halo's own orange as a wallpaper too (Alex, 12 Nov), before the other colours; drawn by themes-halo.css, plain elsewhere
 const withOrange = (walls) => { const i = walls.findIndex((w) => HALO_WALLS[w.key]); const o = { key: 'halo-orange', name: 'Orange', path: null }; return i < 0 ? [...walls, o] : [...walls.slice(0, i), o, ...walls.slice(i)] }
 export function WallTiles({ value, onPick, toast }) {
-  const halo = usePrefs().theme === 'halo'
+  const prefsNow = usePrefs()
+  const halo = prefsNow.theme === 'halo'
+  const strength = Math.min(100, Math.max(10, Number(prefsNow.wallStrength) || 100))
   const walls = useWalls()
   const color = ownColor(value)
   const photo = ownPhoto(value)
@@ -677,10 +679,13 @@ export function WallTiles({ value, onPick, toast }) {
         </button>
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { upload(e.target.files?.[0]); e.target.value = '' }} />
       </div>
-      {photo && (
+      {/* one strength for every wallpaper (Alex, 12 Nov): a photo of one's own keeps it in its value, the rest in prefs */}
+      {(photo || (value && value !== 'soft')) && (
         <div className="wall-op">
-          <span className="set-text">Photo Strength<small>{`${Math.round(photo.opacity * 100)}%`}</small><small>Lower lets the theme's own colour through</small></span>
-          <input type="range" min="10" max="100" step="5" value={Math.round(photo.opacity * 100)} onChange={(e) => onPick(photoValue(photo.url, Number(e.target.value) / 100))} />
+          <span className="set-text">Wallpaper Strength<small>{`${photo ? Math.round(photo.opacity * 100) : strength}%`}</small><small>Lower lets the theme's own colour through</small></span>
+          {photo
+            ? <input type="range" min="10" max="100" step="5" value={Math.round(photo.opacity * 100)} onChange={(e) => onPick(photoValue(photo.url, Number(e.target.value) / 100))} />
+            : <input type="range" min="10" max="100" step="5" value={strength} onChange={(e) => setPrefs({ wallStrength: Number(e.target.value) })} />}
         </div>
       )}
     </>

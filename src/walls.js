@@ -55,13 +55,18 @@ export const ownPhoto = (v) => {
 }
 export const photoValue = (url, opacity) => `img:${url}|${Math.round(opacity * 100) / 100}`
 // what a chat or a preview wears: the attributes and the style, for a built-in, a colour or a photo
-export function wallLook(v, l) {
+// strength (Alex, 12 Nov: "opacity on all of them"): 10 to 100 for RoarMe's own wallpapers and a colour, kept in
+// prefs.wallStrength; under 100 the page's own colour is laid over the wallpaper (data-wop, --wop). One's own photo
+// carries its strength in its value.
+export function wallLook(v, l, strength = 100) {
+  const s = Math.min(100, Math.max(10, Number(strength) || 100))
+  const veil = s < 100 && v && v !== 'soft' ? { 'data-wop': '', style: { '--wop': s / 100 } } : { style: {} }
   const c = ownColor(v)
-  if (c) return { 'data-bg': 'color', style: { '--wall-color': c } }
+  if (c) return { 'data-bg': 'color', 'data-wop': veil['data-wop'], style: { '--wall-color': c, ...veil.style } }
   const ph = ownPhoto(v)
   if (ph) return { 'data-bg': 'own', 'data-img': '', 'data-own': '', style: { '--wall': `url("${ph.url}")`, '--wall-op': ph.opacity } }
   const st = wallStyle(v, l)
-  return { 'data-bg': v, 'data-img': st ? '' : undefined, style: st || {} }
+  return { 'data-bg': v, 'data-img': st ? '' : undefined, 'data-wop': veil['data-wop'], style: { ...(st || {}), ...veil.style } }
 }
 
 export const WALL_BUCKET = BUCKET

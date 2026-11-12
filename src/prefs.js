@@ -52,6 +52,7 @@ export const DEFAULTS = {
   folderTags: false,
   folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
   background: 'soft', // one of WALLS
+  wallStrength: 100, // 10 to 100: how strong RoarMe's wallpapers and a colour show (one's own photo keeps its own)
   // one's own chat theme (Alex, 9 Nov, "as a feature in Settings"): '' each = the theme's own
   chatTheme: '', // one of CHAT_THEMES, or '' when built by hand
   accentHex: '', // any accent colour, over the ready-made ones

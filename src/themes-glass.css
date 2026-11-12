@@ -79,3 +79,13 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='ligh
 /* every picture of a person or a group is a circle in Glass (Alex, 12 Nov: "wherever there are contacts, the icon
    round"): the chat list, Contacts, Calls, groups' members, windows, everywhere an Avatar stands */
 html:root:root[data-glass][data-skin='halo'] .av, html:root:root[data-glass][data-skin='halo'] .av img { border-radius: 50% !important; }
+
+/* the menu in Appearance's preview (Alex, 12 Nov: "put the menu it has now"): the glass capsule in small, our icons
+   in line over their words, the chosen one in the theme's colour on its grey capsule */
+html:root:root[data-glass][data-skin='halo'] .pv-menu { display: flex; gap: 2px; margin-top: 6px; padding: 4px; border-radius: 999px; background: var(--lg); border: 1px solid var(--lg-rim); box-shadow: var(--lg-shadow); color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'] .pv-menu > span { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 40px; border-radius: 999px; }
+html:root:root[data-glass][data-skin='halo'] .pv-menu > span.on { background: var(--lg-chip); color: var(--halo); }
+html:root:root[data-glass][data-skin='halo'] .pv-menu svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+html:root:root[data-glass][data-skin='halo'] .pv-menu .fi-solid { display: none; }
+html:root:root[data-glass][data-skin='halo'] .pv-menu .fi-line { display: inline; }
+html:root:root[data-glass][data-skin='halo'] .pv-menu b { font-size: 9px; font-weight: 600; line-height: 1.1; }

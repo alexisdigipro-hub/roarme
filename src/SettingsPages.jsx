@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, foldHas, nameOf, supabase } from './lib.js'
-import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
+import { Avatar, FOOT_I, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, haloish, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ThemeEditor } from './themeEditor.jsx'
@@ -859,6 +859,10 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="pv mine"><i>Are we shooting at 10?</i>Yes, on set at 10 👍</span>
           <span className="pv mine">Bring the lights 💡</span>
           <span className="pv-compose"><span>Write a message…</span><i /></span>
+        </div>
+        {/* the menu as it is now, in small, so a colour picked above shows on it too (Alex, 12 Nov) */}
+        <div className="pv-menu" aria-hidden="true">
+          <span>{FOOT_I.contacts}<b>Contacts</b></span><span>{FOOT_I.calls}<b>Calls</b></span><span className="on">{FOOT_I.messages}<b>Messages</b></span><span>{FOOT_I.settings}<b>Settings</b></span>
         </div>
       </div>
       <Box>

@@ -83,3 +83,7 @@ html:root:root[data-glass][data-skin='halo'] .pv-rail { height: 42px; }
 html:root:root[data-glass][data-skin='halo'] .pv-rail i { height: 34px; }
 html:root:root[data-glass][data-skin='halo'] .pv-bar .on { background: var(--lg-chip); color: var(--lg-ink); }
 html:root:root[data-glass][data-skin='halo'] .pv-rail .on { color: var(--halo); }
+
+/* every picture of a person or a group is a circle in Glass (Alex, 12 Nov: "wherever there are contacts, the icon
+   round"): the chat list, Contacts, Calls, groups' members, windows, everywhere an Avatar stands */
+html:root:root[data-glass][data-skin='halo'] .av, html:root:root[data-glass][data-skin='halo'] .av img { border-radius: 50% !important; }

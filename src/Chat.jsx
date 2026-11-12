@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx } from './lib.js'
-import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
+import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
@@ -1600,6 +1600,16 @@ const ROW_W = 156 // how far a chat slides open to show its two buttons
 const REORDER = svg(<><rect x="3" y="4" width="18" height="6" rx="2" /><path d="M5 15v4M12 15v4M19 15v4M3.5 15h17" /></>, 16)
 const OFFICIAL = <i className="official" title="Official RoarMe account" aria-label="Official">{svg(<><path d="M12 2.5l2.4 1.8 3-.1.9 2.8 2.4 1.8-.9 2.8.9 2.8-2.4 1.8-.9 2.8-3-.1L12 21.5l-2.4-1.8-3 .1-.9-2.8L3.3 15.2l.9-2.8-.9-2.8 2.4-1.8.9-2.8 3 .1z" fill="currentColor" stroke="none" /><path d="M8.5 12.2l2.3 2.3 4.7-4.8" stroke="#fff" strokeWidth="2.2" /></>, 15)}</i>
 
+/* A message that is deleted dissolves and the ones under it close the gap (Alex, 12 Nov), before it leaves the list.
+   back() puts it as it was if the deleting failed. */
+function vanish(ids) {
+  const els = ids.map((id) => document.getElementById(`m-${id}`)).filter(Boolean)
+  const back = () => els.forEach((el) => { el.classList.remove('msg-out', 'msg-out-go'); el.style.height = '' })
+  if (!els.length || calm()) return { done: Promise.resolve(), back }
+  els.forEach((el) => { el.style.height = `${el.offsetHeight}px`; el.classList.add('msg-out') })
+  requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => el.classList.add('msg-out-go'))))
+  return { done: new Promise((r) => setTimeout(r, 430)), back }
+}
 const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [] }) {
   const [rawMsgs, setMsgs] = useState([])
   // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
@@ -1674,9 +1684,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }, [room.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
   const hideForMe = async (m) => {
     setMenu(null)
-    setHidden((h) => new Set([...h, m.id]))
+    const out = vanish([m.id])
     const { error } = await supabase.from('roar_msg_hides').upsert({ user_id: me.id, message_id: m.id, room_id: room.room_id })
-    if (error) { setErr(errText(error)); setHidden((h) => { const n = new Set(h); n.delete(m.id); return n }) }
+    await out.done
+    if (error) { out.back(); setErr(errText(error)) } else setHidden((h) => new Set([...h, m.id]))
   }
   const askDelete = async (m) => {
     setMenu(null)
@@ -2276,6 +2287,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     if (!window.confirm('Delete this message for everyone, as admin?')) return
     const { error } = await supabase.rpc('roar_admin_delete_message', { m: m.id })
     if (error) { setErr(errText(error)); return }
+    await vanish([m.id]).done
     setMsgs((all) => all.map((x) => (x.id === m.id ? { ...x, deleted_at: new Date().toISOString(), body: '' } : x)))
     toast('Deleted for everyone')
   }
@@ -2283,8 +2295,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const ids = list.filter((m) => m.user_id === me.id).map((m) => m.id)
     if (!ids.length) return
     const at = new Date().toISOString()
+    const out = vanish(ids)
     const { error } = await supabase.from('roar_messages').update({ deleted_at: at, body: '' }).in('id', ids)
-    if (error) setErr(errText(error))
+    await out.done
+    if (error) { out.back(); setErr(errText(error)) }
     else setMsgs((all) => all.map((x) => (ids.includes(x.id) ? { ...x, deleted_at: at, body: '' } : x)))
   }
 

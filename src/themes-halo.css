@@ -428,7 +428,7 @@ html[data-skin='halo'][data-theme='stone'] .room-head .head-card { flex: 1 1 aut
 html[data-skin='halo'][data-theme='stone'] .room-head .head-bg { display: none; }
 html[data-skin='halo'][data-theme='stone'] .room-head .head-card > .av { display: none; }
 html[data-skin='halo'][data-theme='stone'] .room-head .head-text { align-items: center; min-width: 0; }
-html[data-skin='halo'][data-theme='stone'] .room-head .head-text strong { font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
+html[data-skin='halo'][data-theme='stone'] .room-head .head-text strong { font-size: 16px; font-weight: 600; letter-spacing: 0; } /* 600, not 650: Safari on the iPhone drew 650 blurred (Alex, 12 Nov) */
 html[data-skin='halo'][data-theme='stone'] .room-head .head-text small { font-size: 12px; color: var(--muted); }
 html[data-skin='halo'][data-theme='stone'] .room-head .head-ava { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: none; box-shadow: 0 6px 16px rgba(70, 70, 110, .14); cursor: pointer; overflow: hidden; }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .room-head .head-ava { border-color: rgba(255, 255, 255, .18); box-shadow: 0 6px 16px rgba(0, 0, 0, .35); }
@@ -489,3 +489,58 @@ html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .
 html[data-skin='halo'][data-mode='dark'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after { background: rgba(255, 255, 255, .1); }
 html[data-skin='halo'][data-my-bubble] [id^='m-'] > .msg.mine .bubble::after { background: var(--my-bubble) !important; }
 html[data-skin='halo'][data-their-bubble] [id^='m-'] > .msg:not(.mine) .bubble::after { background: var(--their-bubble) !important; }
+
+/* the profile as Telegram's (Alex, 12 Nov, from his picture): the picture large across the top, back and Edit floating
+   on it, the name and last seen over its foot, then call / video / mute / search / more as smoked glass tiles; under it
+   a white card with the details and the tabs as a pill. Full screen on a phone. */
+html[data-skin='halo'] .modal:has(.pf) { overflow: hidden; }
+html[data-skin='halo'] .modal:has(.pf) .modal-head { display: none; }
+html[data-skin='halo'] .modal:has(.pf) .modal-body { padding: 0 14px 18px; }
+html[data-skin='halo'] .pf { gap: 14px; }
+html[data-skin='halo'] .pf-head {
+  position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 16px; margin: 0 -14px;
+  min-height: min(112vw, 470px); padding: 70px 14px 16px; box-sizing: border-box; overflow: hidden; isolation: isolate;
+  background: linear-gradient(160deg, #3a3a46, #141419); color: #fff;
+}
+html[data-skin='halo'] .pf-head::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(0, 0, 0, .35) 0, transparent 22%, transparent 52%, rgba(0, 0, 0, .78) 100%); pointer-events: none; }
+html[data-skin='halo'] .pf-hero { display: block; position: absolute; inset: 0; z-index: -2; background: center 30% / cover no-repeat; }
+html[data-skin='halo'] .pf-head :is(.pf-back, .pf-edit) {
+  position: absolute; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 2; display: grid; place-items: center; height: 44px; border: 0; cursor: pointer;
+  background: rgba(60, 60, 66, .55); color: #fff; -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+}
+html[data-skin='halo'] .pf-back { left: 14px; width: 44px; border-radius: 50%; }
+html[data-skin='halo'] .pf-edit { right: 14px; padding: 0 18px; border-radius: 22px; font: inherit; font-size: 16px; font-weight: 500; }
+html[data-skin='halo'] .pf-head .pf-top { align-items: flex-start; text-align: left; gap: 2px; padding: 0 6px; }
+html[data-skin='halo'] .pf-head.has-photo .pf-top > :is(.av, .pf-pic) { display: none; }
+html[data-skin='halo'] .pf-head:not(.has-photo) .pf-top > :is(.av, .pf-pic) { align-self: center; margin-bottom: 18px; }
+html[data-skin='halo'] .pf-head .pf-name, html[data-skin='halo'] .pf-head .pf-name-edit { margin: 0; color: #fff; font-size: 26px; font-weight: 600; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+html[data-skin='halo'] .pf-head .pf-name-edit { padding: 2px 6px; margin-left: -6px; }
+html[data-skin='halo'] .pf-head .pf-sub { margin: 0; color: rgba(255, 255, 255, .78); font-size: 15px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+html[data-skin='halo'] .pf-acts { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+html[data-skin='halo'] .pf-acts .pf-a-msg { display: none; }
+html[data-skin='halo'] .pf-acts :is(.pf-a-mute, .pf-a-find) { display: flex; }
+html[data-skin='halo'] .pf-acts button, html[data-skin='halo'] .pf-more > button {
+  gap: 4px; padding: 11px 2px 9px; border: 0; border-radius: 16px; color: #fff;
+  background: rgba(255, 255, 255, .14); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+}
+html[data-skin='halo'] .pf-acts button svg { width: 24px; height: 24px; }
+html[data-skin='halo'] .pf-acts button span { color: #fff; font-size: 12.5px; text-transform: lowercase; }
+html[data-skin='halo'] .pf-acts button:hover, html[data-skin='halo'] .pf-more > button.on { background: rgba(255, 255, 255, .24); }
+html[data-skin='halo'] .pf-menu .pf-m-opts { display: flex; }
+html[data-skin='halo'] .pf-menu { top: auto; bottom: calc(100% + 8px); }
+html[data-skin='halo'] .pf-card { border-radius: 26px; background: rgba(255, 255, 255, .92); border: 1px solid #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .06); }
+html[data-skin='halo'][data-mode='dark'] .pf-card { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .1); box-shadow: none; }
+html[data-skin='halo'] .pf-field { gap: 3px; padding: 13px 54px 13px 18px; }
+html[data-skin='halo'] .pf-field + .pf-field { border-top: 0; background: linear-gradient(color-mix(in srgb, var(--text) 10%, transparent), color-mix(in srgb, var(--text) 10%, transparent)) 18px 0 / calc(100% - 36px) 1px no-repeat; }
+html[data-skin='halo'] .pf-field small { color: var(--text); font-size: 14px; }
+html[data-skin='halo'] .pf-field span { color: var(--halo); font-size: 17px; }
+html[data-skin='halo'] .pf-field span.pf-note { color: var(--text); }
+html[data-skin='halo'] .pf-field i { color: var(--halo); }
+html[data-skin='halo'] .pf-tabs { padding: 4px; border-radius: 24px; background: rgba(255, 255, 255, .85); border: 1px solid #fff; }
+html[data-skin='halo'][data-mode='dark'] .pf-tabs { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .1); }
+html[data-skin='halo'] .pf-tabs button { height: 38px; padding: 0 14px; border-radius: 19px; font-size: 15px; font-weight: 500; color: var(--text); }
+html[data-skin='halo'] .pf-tabs button.on { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
+@media (max-width: 760px) {
+  html[data-skin='halo'] .modal-back:has(.pf) { padding: 0; }
+  html[data-skin='halo'] .modal:has(.pf) { width: 100%; height: 100%; max-height: none; border-radius: 0; border: 0; }
+}

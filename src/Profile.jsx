@@ -209,6 +209,12 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   return (
     <Modal title="" onClose={onClose} wide>
       <div className="pf">
+        {/* Halo shows the head as Telegram's (Alex, 12 Nov): the picture large, the name over it, the buttons under it;
+            elsewhere pf-head is display: contents and the hero, back and Edit are hidden */}
+        <div className={`pf-head${(group ? room.avatar_url : other?.avatar_url) ? ' has-photo' : ''}`}>
+        {(group ? room.avatar_url : other?.avatar_url) && <i className="pf-hero" aria-hidden="true" style={{ backgroundImage: `url("${(group ? room.avatar_url : other?.avatar_url)}")` }} />}
+        <button type="button" className="pf-back" onClick={onClose} aria-label="Back"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg></button>
+        {(!group ? !!other : canPic) && <button type="button" className="pf-edit" onClick={() => (!group ? setEditing(true) : picRef.current?.click())}>Edit</button>}
         <div className="pf-top">
           {canPic
             ? (
@@ -229,15 +235,18 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
         </div>
 
         <div className="pf-acts">
-          <button type="button" onClick={onMessage}>{I.chats}<span>Message</span></button>
+          <button type="button" className="pf-a-msg" onClick={onMessage}>{I.chats}<span>Message</span></button>
           <button type="button" onClick={() => (onCall ? onCall(false) : toast('Calls are for chats between two people'))}>{I.phone}<span>Call</span></button>
           <button type="button" onClick={() => (onCall ? onCall(true) : toast('Calls are for chats between two people'))}>{I.video}<span>Video</span></button>
+          <button type="button" className="pf-a-mute" onClick={() => setMine({ muted: !room.muted }, room.muted ? 'Sounds on' : 'Muted')}>{I.bell}<span>{room.muted ? 'Unmute' : 'Mute'}</span></button>
+          <button type="button" className="pf-a-find" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('roarme-find')) }}>{I.search}<span>Search</span></button>
           <span className="pf-more">
             <button type="button" className={more ? 'on' : ''} onClick={() => setMore((v) => !v)}>{I.more}<span>More</span></button>
             {more && (
               <>
                 <button type="button" className="scrim" aria-label="Close" onClick={() => setMore(false)} />
                 <div className="menu pf-menu">
+                  <button type="button" className="pf-m-opts" onClick={() => { setMore(false); onClose(); setTimeout(() => window.dispatchEvent(new CustomEvent('roarme-headmenu')), 60) }}>{I.more}<span>Chat Options</span></button>
                   <button type="button" onClick={() => setMine({ muted: !room.muted }, room.muted ? 'Sounds on' : 'Muted')}>{I.bell}<span>{room.muted ? 'Unmute' : 'Mute'}</span></button>
                   <button type="button" onClick={() => setMine({ archived: !room.archived }, room.archived ? 'Unarchived' : 'Archived')}>{I.archive}<span>{room.archived ? 'Unarchive' : 'Archive'}</span></button>
                   {!group && other && <button type="button" onClick={() => { setMore(false); copy(`@${other.username}`, 'Username copied') }}>{I.copy}<span>Copy username</span></button>}
@@ -253,6 +262,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
               </>
             )}
           </span>
+        </div>
         </div>
 
         {!group && other && (

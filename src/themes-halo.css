@@ -354,3 +354,6 @@ html[data-skin='halo'][data-theme='stone'] .foot .fi-line { display: inline; str
 html[data-skin='halo'][data-theme='stone'] .foot-bar-empty { text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .18s var(--spring); }
 html[data-skin='halo'][data-theme='stone'] .foot-bar-empty:active { transform: scale(.98); }
 html[data-skin='halo'][data-theme='stone'] .foot-bar-empty:hover span { color: #fff; }
+/* the two buttons at the top of the lists, Edit and + (Alex, 12 Nov): both 40px tall with a 20px corner */
+html[data-skin='halo'][data-theme='stone'] .side-head :is(.pill-btn, .round) { height: 40px; min-height: 40px; border-radius: 20px; }
+html[data-skin='halo'][data-theme='stone'] .side-head .round { width: 40px; }

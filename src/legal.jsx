@@ -39,7 +39,6 @@ const DOCS = {
           'A download link works for anyone who has it until it ends. Share it only with people you want to have the file. RoarTransfer has its own Privacy Policy at roartransfer.com/privacy.',
         ]],
         ['When you use other services', [
-          'The Translate button opens Google Translate with the text you chose, only when you tap it.',
           'The map in Location is OpenStreetMap\'s, and place names and search come from OpenStreetMap\'s Nominatim service. It receives the area of the map being shown (and what you search for) with your IP address, never your name or account.',
           'A video link (YouTube, Vimeo) plays in that service\'s own player, which then receives your IP address under its own policy.',
         ]],
@@ -95,7 +94,6 @@ const DOCS = {
           'Ένα link λήψης λειτουργεί για όποιον το έχει μέχρι να λήξει. Δώσ\' το μόνο σε όσους θέλεις να έχουν το αρχείο. Το RoarTransfer έχει δική του Πολιτική Απορρήτου στο roartransfer.com/privacy.',
         ]],
         ['Όταν χρησιμοποιείς άλλες υπηρεσίες', [
-          'Το κουμπί Μετάφραση ανοίγει το Google Translate με το κείμενο που διάλεξες, μόνο όταν το πατήσεις.',
           'Ο χάρτης στην Τοποθεσία είναι του OpenStreetMap, και τα ονόματα και η αναζήτηση τόπων έρχονται από την υπηρεσία Nominatim του OpenStreetMap. Λαμβάνει την περιοχή του χάρτη που βλέπεις (και ό,τι ψάχνεις) μαζί με τη διεύθυνση IP σου, ποτέ το όνομα ή τον λογαριασμό σου.',
           'Ένα link βίντεο (YouTube, Vimeo) παίζει στο δικό τους player, που τότε λαμβάνει τη διεύθυνση IP σου σύμφωνα με τη δική του πολιτική.',
         ]],

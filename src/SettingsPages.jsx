@@ -970,14 +970,10 @@ function Appearance({ p, toast, me, setMe }) {
 function Language({ p }) {
   const ui = p.lang === 'el' ? 'el' : 'en'
   const setUi = (k) => { if (k === ui) return; setPrefs({ lang: k }); setTimeout(() => window.location.reload(), 150) }
-  const to = p.translateTo === 'el' || p.translateTo === 'en' ? p.translateTo : 'auto'
   return (
     <>
       <Box title="Interface language" note="RoarMe restarts in the language you pick.">
         {UI_LANGS.map(([k, a, b]) => <Check key={k} on={ui === k} onClick={() => setUi(k)}><span data-raw="">{b}</span><small data-raw="">{a}</small></Check>)}
-      </Box>
-      <Box title="Translate messages" note="Translate opens the message in Google Translate.">
-        {[['auto', 'Greek ↔ English'], ['el', 'Into Greek'], ['en', 'Into English']].map(([k, l]) => <Check key={k} on={to === k} onClick={() => setPrefs({ translateTo: k })}>{l}</Check>)}
       </Box>
     </>
   )

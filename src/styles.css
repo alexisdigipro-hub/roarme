@@ -4472,3 +4472,4 @@ html[data-skin='halo'] .set-preview.live .pv.mine i { border-left-color: #fff; b
 .vrec.flash { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .vrec.flash .vrec-circle { box-shadow: 0 0 0 14px #fff, 0 0 80px 30px #fff; }
 .vrec-tools .round.on { color: var(--halo, var(--accent)); }
+.corners-own { align-self: flex-start; height: 34px; padding: 0 14px; font-size: 13px; }

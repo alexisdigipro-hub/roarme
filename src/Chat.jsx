@@ -1927,7 +1927,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const at = el ? el.selectionStart : text.length
     const next = text.slice(0, at) + e + text.slice(at)
     setText(next)
-    requestAnimationFrame(() => { if (el) { el.focus(); el.selectionStart = el.selectionEnd = at + e.length; setCaret(at + e.length) } })
+    // on a phone the box is not given the focus when the keyboard is down: the keyboard would not come up from here, and
+    // the page would still make room as if it had (Alex, 12 Nov: "the bar goes down when I tap an emoji")
+    const touch = window.matchMedia?.('(pointer: coarse)').matches
+    const had = el && document.activeElement === el
+    requestAnimationFrame(() => { if (el) { if (!touch || had) el.focus(); el.selectionStart = el.selectionEnd = at + e.length; setCaret(at + e.length) } })
   }
 
   const send = async () => {

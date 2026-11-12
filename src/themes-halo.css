@@ -259,3 +259,9 @@ html[data-skin='halo'][data-theme='stone'] .rooms-area .tabs button { text-trans
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs { justify-content: flex-start; }
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs > button:first-of-type { margin-left: auto; }
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs > button:last-of-type { margin-right: auto; }
+/* (Alex, 12 Nov) the folder bar's top corners 14, its chip 8; the rail's chip 10 */
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { border-radius: 14px 14px 5px 5px; }
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs button,
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs.lens::before { border-radius: 8px; }
+html[data-skin='halo'][data-theme='stone'] .foot button,
+html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 10px; }

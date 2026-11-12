@@ -46,7 +46,7 @@ export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.start
 // a settings page opens with its title alone (Alex, 12 Nov): the large sign and the line under it are gone
 const Hero = () => null
 
-const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['velvet', 'Velvet', ['linear-gradient(135deg, #f8cf82, #e9a94a 45%, #c97a2c)', 'radial-gradient(70px 60px at 25% 20%, rgba(52, 84, 66, .8), transparent 70%), linear-gradient(180deg, #121a17, #070a09)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']], ['mango', 'Mango', ['#ff9a1f', 'radial-gradient(70px 50px at 20% 0%, #56575d, transparent 70%), linear-gradient(180deg, #2c2d31, #1a1b1e)']]]
+const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -862,13 +862,13 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="pv-compose"><span>Write a message…</span><i /></span>
         </div>
       </div>
-      <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Halo: white frosted glass on soft lilac clouds, with a warm orange. Velvet: dark smoky glass with a warm gold, a cinema at night. Each has dark and light.">
+      <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Halo: white frosted glass on soft lilac clouds, with a warm orange. Air: plain white with one blue. Each has dark and light.">
         <div className="set-row set-col">
           <div className="themes">
             {THEMES.map(([k, l, [a, b]]) => {
               return (
                 <button key={k} type="button" className={`theme-tile t-${k}${p.theme === k ? ' on' : ''}`} title={l}
-                  onClick={(e) => { const clean = { chatTheme: '', myBubble: '', theirBubble: '', accentHex: '', accent: '' }; if (p.theme === k) { if (p.chatTheme || p.myBubble || p.theirBubble || p.accentHex || p.accent) { setPrefs(clean); toast(`${l} as it is made`) } return } wearTheme(k); revealFrom(e, () => { dressTheme(k); setPrefs({ theme: k, ...clean, ...(k === 'velvet' ? { mode: 'dark' } : k === 'air' ? { mode: 'light' } : {}) }) }); toast(`Theme updated: ${l}`) }}>
+                  onClick={(e) => { const clean = { chatTheme: '', myBubble: '', theirBubble: '', accentHex: '', accent: '' }; if (p.theme === k) { if (p.chatTheme || p.myBubble || p.theirBubble || p.accentHex || p.accent) { setPrefs(clean); toast(`${l} as it is made`) } return } wearTheme(k); revealFrom(e, () => { dressTheme(k); setPrefs({ theme: k, ...clean, ...(k === 'air' ? { mode: 'light' } : {}) }) }); toast(`Theme updated: ${l}`) }}>
                   <span className="theme-sw" style={{ background: b }}><i style={{ background: k === 'glass' ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.3)' }} /><i style={{ background: k === 'aura' ? 'linear-gradient(135deg, #1fb6e8, #3b6ff5)' : a, boxShadow: k === 'ember' ? '0 0 10px #ff6b57' : k === 'prism' ? '0 0 10px #ff4b3e' : k === 'aurum' ? '0 0 10px rgba(240, 166, 74, .8)' : k === 'lions' ? '0 0 10px rgba(212, 0, 0, .8)' : 'none' }} />{k === 'prism' && <b className="theme-rim" />}</span>
                   <small>{l}</small>
                 </button>
@@ -922,13 +922,6 @@ function Appearance({ p, toast, me, setMe }) {
           <Lens className="seg" dep={p.density || 'standard'}>{[['relaxed', 'Relaxed'], ['standard', 'Standard'], ['tight', 'Tight']].map(([k, l]) => <button key={k} type="button" className={(p.density || 'standard') === k ? 'on' : ''} onClick={() => setPrefs({ density: k })}>{l}</button>)}</Lens>
         </div>
         <Switch on={p.compact} set={(v) => setPrefs({ compact: v })} hint="Messages in a chat sit closer together">Compact Messages</Switch>
-        {p.theme === 'ember' && (
-          <div className="set-row set-col">
-            <span className="set-text">Corner Radius<small>{p.radius || 12} px</small></span>
-            <Slide min={4} max={16} step={2} value={p.radius || 12} onChange={(n) => setPrefs({ radius: n })} aria-label="Corner Radius" />
-            <span className="range-labels"><small>4</small><small>8</small><small>12</small><small>16</small></span>
-          </div>
-        )}
       </Box>
       <Box title="Effects">
         <Switch on={p.glassBubbles !== false} set={(v) => setPrefs({ glassBubbles: v })} hint="Your messages and the buttons see-through, with a thin edge in your colour. Off: filled with your colour">Glass Look</Switch>

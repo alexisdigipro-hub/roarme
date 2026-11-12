@@ -240,3 +240,15 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .hea
   html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .switch:active span::after { width: 26px; box-shadow: -1.5px 0 0 -.5px rgba(255, 60, 110, .6), 1.5px 0 0 -.5px rgba(50, 170, 255, .6), 0 2px 6px rgba(0, 0, 0, .25); }
   html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .switch:active input:checked + span::after { transform: translateX(12px); }
 }
+
+/* GLASS PRESS wherever a held finger does something (Alex, 12 Nov: "Glass Press wherever there is a long press"): a
+   message, a photo or a round video (the menu), a chat in the list (its menu), a folder's tab (to move or edit it), the
+   microphone / camera (to record). While the finger rests (.pressing, which Chat.jsx puts on at the touch and takes
+   off the moment the finger moves to scroll) the colours come up at the rim over 150 ms, and go as the menu opens */
+@media (prefers-reduced-motion: no-preference) {
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) :is(.msg .bubble, .rooms .room, .note).pressing,
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) :is(.rooms-area .tabs > button, .rec-btn, .contacts-list .room, .person):active {
+    box-shadow: -2.5px 0 0 -.5px rgba(255, 60, 110, .6), 2.5px 0 0 -.5px rgba(50, 170, 255, .6), 0 -1.5px 0 -.5px rgba(90, 255, 170, .4), 0 1.5px 0 -.5px rgba(255, 210, 80, .35), 0 8px 20px rgba(60, 60, 100, .18) !important;
+    transition: transform .15s cubic-bezier(.3, .7, .4, 1), box-shadow .15s cubic-bezier(.3, .7, .4, 1) !important;
+  }
+}

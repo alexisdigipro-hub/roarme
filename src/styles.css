@@ -4590,3 +4590,6 @@ input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18);
 .attach-item img { cursor: pointer; }
 .attach-edit { position: absolute; left: 6px; top: 6px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(0, 0, 0, .5); color: #fff; cursor: pointer; }
 .attach-edit svg { width: 14px; height: 14px; }
+
+/* the words on a button are never picked up as text by a held finger (Alex, 12 Nov: CREATE NEW CALL got selected) */
+button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

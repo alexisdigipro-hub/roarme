@@ -100,9 +100,13 @@ const ownColors = {}
 export const setNameColor = (id, c) => { if (c) ownColors[id] = c; else delete ownColors[id] }
 export const colorOf = (id) => ownColors[id] || NAME_COLORS[[...String(id || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % NAME_COLORS.length]
 
+// a picture made of initials wears one of these pairs, always the same for the same name (Alex, 12 Nov: the contacts in
+// glass, each with a colour of its own); Glass draws them with its grain, themes-glass.css .av-init
+const INIT_PAIRS = [['#3ccf86', '#11734a'], ['#ff9a3c', '#fb7b8e'], ['#aab6fb', '#2a3aa8'], ['#f48fa6', '#5a8cf5'], ['#4fd3ee', '#0e86c0'], ['#f3d27a', '#b8811a'], ['#ff5a5f', '#b3122b'], ['#b4befc', '#6f9cfd']]
+const inkOf = (name) => { const [a, b] = INIT_PAIRS[[...String(name || '')].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7) % INIT_PAIRS.length]; return { '--ia': a, '--ib': b } }
 export function Avatar({ src, name, size = 44, online = false, group = false }) {
   return (
-    <span className={`av${group ? ' av-group' : ''}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}>
+    <span className={`av${group ? ' av-group' : ''}${src ? '' : ' av-init'}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.36), ...(src ? null : inkOf(name)) }}>
       {src ? <img src={src} alt="" loading="lazy" decoding="async" /> : <span>{initialsOf(name)}</span>}
       {online && <i className="av-on" />}
     </span>

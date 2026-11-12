@@ -1301,13 +1301,24 @@ export default function Chat({ me, setMe }) {
               <button type="button" className="round" onClick={() => setModal('newchat')} title="Find people" aria-label="Find people">{I.addPerson}</button>
             </div>
             {/* the same rows as the chat list (Alex, 21 Oct): its sizes, gaps and lines between them */}
+            {/* the favourites in a row of their own on top, to be slid sideways (Alex, 12 Nov, the third of the looks he was shown) */}
+            {!cq.trim() && contacts.some((p) => favs.includes(p.id)) && (
+              <div className="contacts-favs">
+                <span className="contacts-favs-title">Favourites</span>
+                <div className="contacts-favs-row">
+                  {contacts.filter((p) => favs.includes(p.id)).map((p) => (
+                    <button key={p.id} type="button" className="contacts-fav" onClick={() => setCard(p.id)}><Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} size={62} /><span>{nameOf(p).split(' ')[0]}</span></button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className={`rooms contacts-list${cq.trim() ? ' searching' : ''}`}>
             {[...contacts].sort((a, b) => favs.includes(b.id) - favs.includes(a.id)).filter((p) => !cq.trim() || foldHas(`${nameOf(p)} ${p.username}`, cq.trim().replace(/^@/, ''))).map((p) => (
               <div key={p.id} className="room contact" role="button" tabIndex={0} onClick={() => setCard(p.id)} onKeyDown={(e) => { if (e.key === 'Enter') setCard(p.id) }}>
                 <Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} size={prefs.listPreview ? 54 : 48} />
                 <span className="room-main">
                   <span className="room-top"><strong>{nameOf(p)}</strong></span>
-                  <span className="room-bottom"><span className={`room-prev${onlineNow(p) ? ' is-online' : ''}`}>{lastSeenText(p)}</span></span>
+                  <span className="room-bottom"><span className={`room-prev${onlineNow(p) ? ' is-online' : ''}`} data-raw="">{[p.username ? `@${p.username}` : '', lastSeenText(p)].filter(Boolean).join(' · ')}</span></span>
                 </span>
                 {favs.includes(p.id) && <span className="contact-fav" title="Favourite">{FAV_STAR}</span>}
               </div>

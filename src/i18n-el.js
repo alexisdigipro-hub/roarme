@@ -202,6 +202,7 @@ export const EL = {
   'Camera off': 'Κάμερα κλειστή',
   'Camera on': 'Κάμερα ανοιχτή',
   'Cancel': 'Ακύρωση',
+  'Share Contact': 'Κοινοποίηση επαφής',
   'Add Notes': 'Πρόσθεσε σημειώσεις',
   'Notes are only visible to you.': 'Τις σημειώσεις τις βλέπεις μόνο εσύ.',
   'Use Their Own Photo': 'Χρήση της δικής τους φωτογραφίας',

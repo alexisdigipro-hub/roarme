@@ -4545,3 +4545,9 @@ input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18);
   -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 calc(var(--dust) - 40%), transparent var(--dust)); mask-image: radial-gradient(ellipse at 50% 50%, #000 calc(var(--dust) - 40%), transparent var(--dust)); }
 .msg-out .day, .msg-out .rx { opacity: 0; transition: opacity .15s; }
 @keyframes msg-dust { 0% { --dust: 120%; opacity: 1; transform: none; } 100% { --dust: 0%; opacity: 0; transform: translateY(-8px) scale(.9); } }
+.pf-menu { max-height: min(70vh, 560px); overflow-y: auto; }
+.pf-menu hr { width: calc(100% - 20px); margin: 4px 10px; border: 0; border-top: 1px solid var(--edge); }
+.pf-menu .pf-m-val { margin-left: auto; padding-left: 10px; color: var(--muted); font-size: 12.5px; }
+.pf-menu .pf-m-sub { padding-left: 46px; }
+.pf-menu .pf-m-sub i { margin-left: auto; color: var(--halo, var(--accent)); }
+.pf-menu .pf-m-sub i svg { width: 16px; height: 16px; }

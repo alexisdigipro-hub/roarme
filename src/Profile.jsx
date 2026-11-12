@@ -24,6 +24,16 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const [links, setLinks] = useState([])
   const [tab, setTab] = useState(group ? 'members' : 'media')
   const [more, setMore] = useState(false)
+  const [autoOpen, setAutoOpen] = useState(false)
+  const AUTO = [[null, 'Off'], [24, 'After 1 day'], [168, 'After 1 week'], [720, 'After 1 month']]
+  // the chat does these itself (Chat.jsx listens for roarme-roomact): the profile closes and hands them over
+  const toChat = (what, arg) => { setMore(false); onClose(); setTimeout(() => window.dispatchEvent(new CustomEvent('roarme-roomact', { detail: { what, arg } })), 80) }
+  const shareContact = async () => {
+    setMore(false)
+    const text = `${title} is on RoarMe: @${other.username}`
+    try { if (navigator.share) { await navigator.share({ text }); return } } catch { return }
+    try { await navigator.clipboard.writeText(`@${other.username}`); toast('Username copied') } catch { /* nothing to do */ }
+  }
   const [viewer, setViewer] = useState(null)
   const [name, setName] = useState(room.title)
   const [adding, setAdding] = useState(false)
@@ -246,16 +256,22 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
               <>
                 <button type="button" className="scrim" aria-label="Close" onClick={() => setMore(false)} />
                 <div className="menu pf-menu">
-                  <button type="button" className="pf-m-opts" onClick={() => { setMore(false); onClose(); setTimeout(() => window.dispatchEvent(new CustomEvent('roarme-headmenu')), 60) }}>{I.more}<span>Chat Options</span></button>
-                  <button type="button" onClick={() => setMine({ muted: !room.muted }, room.muted ? 'Sounds on' : 'Muted')}>{I.bell}<span>{room.muted ? 'Unmute' : 'Mute'}</span></button>
-                  <button type="button" onClick={() => setMine({ archived: !room.archived }, room.archived ? 'Unarchived' : 'Archived')}>{I.archive}<span>{room.archived ? 'Unarchive' : 'Archive'}</span></button>
-                  {!group && other && <button type="button" onClick={() => { setMore(false); copy(`@${other.username}`, 'Username copied') }}>{I.copy}<span>Copy username</span></button>}
+                  {/* what can be done with the chat (Alex, 12 Nov, after Telegram's): nothing here repeats Edit (the name,
+                      the note and the photo are there) or the buttons beside it (mute, search) */}
+                  <button type="button" onClick={() => toChat('wallpaper')}>{I.brush}<span>Change Wallpaper</span></button>
+                  <button type="button" onClick={() => toChat('seal')}>{I.lock}<span>Encrypted Chat</span></button>
+                  {!group && other && <button type="button" onClick={shareContact}>{I.forward}<span>Share Contact</span></button>}
+                  {!group && other && <button type="button" onClick={() => toChat('group')}>{I.people}<span>Create Group</span></button>}
+                  {!group && <button type="button" onClick={() => toChat('schedule')}>{I.timer}<span>Schedule Call</span></button>}
                   {group && admin && <button type="button" onClick={() => { setMore(false); setTab('members'); setAdding(true) }}>{I.people}<span>Add people</span></button>}
-                  {group && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave group</span></button>}
-                  {!group && other && <button type="button" onClick={() => { setMore(false); setEditing(true) }}>{I.edit}<span>Edit Contact</span></button>}
-                  {canPic && <button type="button" onClick={() => { setMore(false); picRef.current?.click() }}>{I.camera}<span>{group ? 'Change group photo' : 'Set a photo for them'}</span></button>}
-                  {!group && other?.my_photo && <button type="button" onClick={dropMyPhoto}>{I.x}<span>Remove my photo for them</span></button>}
+                  <button type="button" onClick={() => toChat('export')}>{I.file}<span>Export Chat History…</span></button>
+                  <hr />
+                  <button type="button" onClick={() => setAutoOpen((v) => !v)}>{I.timer}<span>Auto-Delete Messages</span><small className="pf-m-val">{AUTO.find(([h]) => h === (room.auto_delete_hours || null))?.[1] || 'Off'}</small></button>
+                  {autoOpen && AUTO.map(([h, l]) => <button key={l} type="button" className="pf-m-sub" onClick={() => toChat('auto', h)}><span>{l}</span>{(room.auto_delete_hours || null) === h && <i>{I.check}</i>}</button>)}
+                  <button type="button" onClick={() => setMine({ archived: !room.archived }, room.archived ? 'Unarchived' : 'Archived')}>{I.archive}<span>{room.archived ? 'Unarchive' : 'Archive'}</span></button>
+                  <button type="button" onClick={() => toChat('clear')}>{I.clear}<span>Clear Chat History</span></button>
                   {group && room.avatar_url && <button type="button" onClick={dropGroupPhoto}>{I.x}<span>Remove group photo</span></button>}
+                  {group && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave group</span></button>}
                   {group && admin && <button type="button" className="danger" onClick={deleteGroup}>{I.trash}<span>Delete group</span></button>}
                   {!group && other && <button type="button" className="danger" onClick={block}>{I.x}<span>{blocked ? 'Unblock' : 'Block'}</span></button>}
                 </div>

@@ -1724,11 +1724,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [media, setMedia] = useState(false)
   const [headSub, setHeadSub] = useState('') // Mute › or Auto-Delete › open in the ⋯ menu
   // the profile's Search and Chat Options (Halo, whose head has no ⋯) reach this chat's search and menu
+  const roomActs = useRef({}) // what the profile's More menu asks of this chat, filled before it is drawn
   useEffect(() => {
     const f = () => { setFind(''); setFindAt(0) }
     const m = () => { setHeadSub(''); setHeadMenu(true) }
-    window.addEventListener('roarme-find', f); window.addEventListener('roarme-headmenu', m)
-    return () => { window.removeEventListener('roarme-find', f); window.removeEventListener('roarme-headmenu', m) }
+    const a = (e) => roomActs.current[e.detail?.what]?.(e.detail?.arg)
+    window.addEventListener('roarme-find', f); window.addEventListener('roarme-headmenu', m); window.addEventListener('roarme-roomact', a)
+    return () => { window.removeEventListener('roarme-find', f); window.removeEventListener('roarme-headmenu', m); window.removeEventListener('roarme-roomact', a) }
   }, [])
   const [walls, setWalls] = useLocal('roarme-walls', {}) // a wallpaper of its own, per chat
   const wall = walls[room.room_id] || prefs.background
@@ -2829,6 +2831,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           )
   }
 
+  roomActs.current = {
+    wallpaper: () => setWallPick(true), seal: () => (sealOn ? turnOff() : askSeal()), group: () => other && onNewGroup(other), schedule: () => setSchedOpen(true),
+    export: () => exportChat(), auto: (h) => setAutoDelete(h ?? null), clear: () => act('clear'),
+  }
   return (
     <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>

@@ -900,3 +900,39 @@ html[data-skin='halo'] .pf-more > .scrim { z-index: 59; background: rgba(12, 12,
 html[data-skin='halo'] .pf-more .pf-menu > button { height: 48px; padding: 0 14px; }
 html[data-skin='halo'] .pf-more .pf-menu > button span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html[data-skin='halo'] .pf-more .pf-menu > button.pf-m-sub { height: 42px; padding-left: 48px; }
+
+/* One look for everything that pops up in Halo (Alex, 12 Nov: "glass and transparent, the same everywhere, they are all
+   different"). Two families, each the same wherever it appears:
+   - menus (any menu, the reactions row, the emoji and mention pickers, a toast): dark smoked glass with grain, a quarter
+     see-through, white words, 24px corners;
+   - windows and sheets (a window, the attach sheet, the theme editor): light frosted glass, a little see-through over the
+     blurred page behind, a bright rim, 30px corners. A window that fills the phone's screen stays solid. */
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .rx-pick, .emoji-pick, .mention-pick, .toast, .vw-menu) {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(18, 18, 23, .75) !important;
+  border: 1px solid rgba(255, 255, 255, .1) !important; border-radius: 24px; box-shadow: 0 18px 44px rgba(0, 0, 0, .34) !important; color: #f4f4f8 !important;
+  -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important;
+}
+html[data-skin='halo'][data-theme][data-mode] .menu :is(.menu-list, .sub-menu) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(button, a, b, strong, .ctx-head b) { color: #f4f4f8; }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(button, a) > span { color: inherit; }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(small, .sub-note, .sub-arrow, .pf-m-val, .ctx-head small) { color: rgba(255, 255, 255, .6); }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu, .rx-pick, .emoji-pick) :is(button, a):hover { background: rgba(255, 255, 255, .12); }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .rx-pick) button.on { background: rgba(255, 255, 255, .2); }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .vw-menu) :is(button, a).danger { color: #ff6b5e; }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list) hr { border-top-color: rgba(255, 255, 255, .12); }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list) :is(.sub-check, .pf-m-sub i) { color: var(--halo); }
+html[data-skin='halo'][data-theme][data-mode] .menu .mention-at { color: #f4f4f8; }
+
+html[data-skin='halo'] :is(.modal, .as-sheet, .te-sheet) {
+  background: linear-gradient(180deg, rgba(248, 248, 252, .88), rgba(238, 238, 245, .88)) !important;
+  border: 1px solid rgba(255, 255, 255, .9) !important; box-shadow: 0 24px 60px rgba(40, 40, 80, .22) !important;
+}
+html[data-skin='halo'] .modal { border-radius: 30px; }
+html[data-skin='halo'][data-mode='dark'] :is(.modal, .as-sheet, .te-sheet) {
+  background: linear-gradient(180deg, rgba(38, 38, 45, .88), rgba(27, 27, 33, .88)) !important;
+  border-color: rgba(255, 255, 255, .08) !important; box-shadow: 0 24px 60px rgba(0, 0, 0, .5) !important;
+}
+@media (max-width: 760px) {
+  html[data-skin='halo'] .modal:is(:has(.pf), :has(.ce2)) { background: linear-gradient(180deg, #f6f6fb, #eeeef5) !important; border: 0 !important; box-shadow: none !important; }
+  html[data-skin='halo'][data-mode='dark'] .modal:is(:has(.pf), :has(.ce2)) { background: linear-gradient(180deg, #24242b, #1b1b21) !important; }
+}

@@ -755,12 +755,12 @@ html[data-skin='halo'][data-mode='dark'] .wall-tile.on small { color: #f1f1f5; }
    it lifts. Off with Power Saving and reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.foot, .rooms-area.bottom .tabs).lens::before {
-    transition: transform .55s cubic-bezier(.3, 1.32, .5, 1), width .55s cubic-bezier(.3, 1.32, .5, 1), height .4s ease, opacity .2s, background .25s, border-color .25s, box-shadow .25s;
+    transition: transform .34s cubic-bezier(.25, 1.3, .45, 1), width .34s cubic-bezier(.25, 1.3, .45, 1), height .25s ease, opacity .15s;
   }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.foot, .rooms-area.bottom .tabs) > button { transition: transform .18s ease, color .25s, opacity .25s; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.foot, .rooms-area.bottom .tabs) > button { transition: transform .16s ease, color .18s, opacity .18s; }
   html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.foot, .rooms-area.bottom .tabs) > button:active { transform: scale(.9); }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.on .foot-ico > svg { animation: halo-pop .5s cubic-bezier(.3, 1.6, .5, 1) both; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .rooms-area.bottom .tabs > button.on { animation: halo-word .45s cubic-bezier(.3, 1.5, .5, 1) backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.on .foot-ico > svg { animation: halo-pop .32s cubic-bezier(.3, 1.5, .5, 1) backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .rooms-area.bottom .tabs > button.on { animation: halo-word .28s cubic-bezier(.3, 1.4, .5, 1) backwards; }
   @keyframes halo-pop { 0% { transform: scale(.72) rotate(-8deg); } 55% { transform: scale(1.18) rotate(3deg); } 100% { transform: none; } }
   @keyframes halo-word { 0% { transform: scale(.9); } 60% { transform: scale(1.06); } 100% { transform: none; } }
 
@@ -786,67 +786,59 @@ html[data-skin='halo'] :is(.foot, .rooms-area.bottom .tabs).lens { -webkit-user-
 html[data-skin='halo'][data-theme] :is(.room-view, .wall-tile, .set-preview, .te-preview)[data-bg='halo-orange'] { background-image: radial-gradient(circle at 12% 0%, rgba(255, 154, 60, 0.3), transparent 62%), radial-gradient(circle at 92% 100%, rgba(244, 115, 24, 0.24), transparent 64%), linear-gradient(160deg, rgba(255, 154, 60, 0.1), rgba(244, 115, 24, 0.08)) !important; }
 html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile, .set-preview, .te-preview)[data-bg='halo-orange'] { background-image: radial-gradient(circle at 12% 0%, rgba(255, 154, 60, 0.24), transparent 62%), radial-gradient(circle at 92% 100%, rgba(244, 115, 24, 0.2), transparent 64%) !important; }
 
-/* Halo in jelly (Alex, 12 Nov: "all the animations more jelly, add many, in many places"). Halo alone leaves the calm
-   rule of 9 Nov: its spring overshoots, and what appears, is pressed or is chosen squashes and stretches like jelly.
-   All of it is off with Power Saving, Motion off and the phone's reduced motion. */
+/* Halo in jelly, tuned (Alex, 12 Nov: first "more jelly, in many places", then "more immediate and smoother, it is a
+   little choppy, as quick as Telegram"). Rules kept here so it stays light:
+   - only transform and opacity move, never a shadow, a blur or a size;
+   - short: a press answers in 70 ms, things come in within .22 to .34 s, one small overshoot, no row after row;
+   - nothing that mounts all the time is animated (badges, dates, the chat's head, the writing row);
+   - what slides or pops has no blur behind it while it moves.
+   Off with Power Saving, Motion off and the phone's reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
-  html[data-skin='halo']:not([data-still]):not([data-lite]) { --spring: cubic-bezier(.3, 1.45, .45, 1); --pop: cubic-bezier(.3, 1.9, .5, 1); --jelly: cubic-bezier(.3, 1.6, .45, 1); }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) { --spring: cubic-bezier(.25, 1.25, .45, 1); --pop: cubic-bezier(.3, 1.7, .5, 1); --jelly: cubic-bezier(.25, 1.35, .45, 1); }
 
-  @keyframes jl-in { 0% { opacity: 0; transform: scale(.6); } 45% { opacity: 1; transform: scale(1.08, .94); } 65% { transform: scale(.97, 1.04); } 82% { transform: scale(1.02, .99); } 100% { opacity: 1; transform: none; } }
-  @keyframes jl-msg { 0% { opacity: 0; transform: translateY(14px) scale(.7, .6); } 45% { opacity: 1; transform: translateY(-2px) scale(1.06, .94); } 68% { transform: scale(.98, 1.04); } 85% { transform: scale(1.01, .99); } 100% { opacity: 1; transform: none; } }
-  @keyframes jl-up { 0% { opacity: 0; transform: translateY(46px) scale(.96, 1.04); } 55% { opacity: 1; transform: translateY(-7px) scale(1.01, .99); } 78% { transform: translateY(2px); } 100% { opacity: 1; transform: none; } }
-  @keyframes jl-sheet { 0% { transform: translateY(100%); } 58% { transform: translateY(-10px) scaleY(1.012); } 80% { transform: translateY(3px); } 100% { transform: none; } }
-  @keyframes jl-wob { 0% { transform: scale(1); } 30% { transform: scale(1.14, .88); } 50% { transform: scale(.92, 1.1); } 70% { transform: scale(1.05, .96); } 100% { transform: none; } }
-  @keyframes jl-side { 0% { opacity: 0; transform: translateX(26px) scale(.98); } 60% { opacity: 1; transform: translateX(-5px); } 82% { transform: translateX(2px); } 100% { opacity: 1; transform: none; } }
-  @keyframes jl-row { 0% { opacity: 0; transform: translateY(10px) scale(.97); } 60% { opacity: 1; transform: translateY(-2px) scale(1.005); } 100% { opacity: 1; transform: none; } }
-  @keyframes jl-drop { 0% { opacity: 0; transform: translate(-50%, 26px) scale(.8, .7); } 55% { opacity: 1; transform: translate(-50%, -5px) scale(1.05, .96); } 78% { transform: translate(-50%, 2px) scale(.99, 1.02); } 100% { opacity: 1; transform: translate(-50%, 0); } }
+  @keyframes jl-in { 0% { opacity: 0; transform: scale(.82); } 60% { opacity: 1; transform: scale(1.03, .985); } 100% { opacity: 1; transform: none; } }
+  @keyframes jl-msg { 0% { opacity: 0; transform: translateY(10px) scale(.86, .8); } 60% { opacity: 1; transform: translateY(-1px) scale(1.025, .985); } 100% { opacity: 1; transform: none; } }
+  @keyframes jl-up { 0% { opacity: 0; transform: translateY(28px); } 62% { opacity: 1; transform: translateY(-4px); } 100% { opacity: 1; transform: none; } }
+  @keyframes jl-sheet { 0% { transform: translateY(100%); } 64% { transform: translateY(-6px); } 100% { transform: none; } }
+  @keyframes jl-wob { 0% { transform: scale(1); } 35% { transform: scale(1.07, .94); } 68% { transform: scale(.98, 1.03); } 100% { transform: none; } }
+  @keyframes jl-side { 0% { opacity: 0; transform: translateX(22px); } 64% { opacity: 1; transform: translateX(-3px); } 100% { opacity: 1; transform: none; } }
+  @keyframes jl-drop { 0% { opacity: 0; transform: translate(-50%, 18px) scale(.9); } 62% { opacity: 1; transform: translate(-50%, -3px) scale(1.02); } 100% { opacity: 1; transform: translate(-50%, 0); } }
 
   /* what comes in */
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .msg.fresh .bubble-col { animation: jl-msg .55s both; transform-origin: 0 100%; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .msg.fresh .bubble-col { animation: jl-msg .32s backwards; transform-origin: 0 100%; }
   html[data-skin='halo']:not([data-still]):not([data-lite]) .msg.mine.fresh .bubble-col { transform-origin: 100% 100%; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.menu, .msg-menu, .room-menu, .emoji-pick, .rx-pick, .mention-pick) { animation: jl-in .42s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .head-menu { transform-origin: 100% 0; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .pf-menu { transform-origin: 100% 0; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.menu, .msg-menu, .room-menu, .emoji-pick, .mention-pick) { animation: jl-in .24s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.head-menu, .pf-menu) { transform-origin: 100% 0; }
   html[data-skin='halo']:not([data-still]):not([data-lite]) .emoji-pick { transform-origin: 100% 100%; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .modal { animation: jl-up .5s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .as-sheet { animation: jl-sheet .55s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .toast { animation: jl-drop .5s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .set-body { animation: jl-side .45s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .set-body > :is(.set-sec, .set-live) { animation: jl-row .5s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .set-body > :nth-child(2) { animation-delay: .04s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .set-body > :nth-child(3) { animation-delay: .08s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .set-body > :nth-child(4) { animation-delay: .12s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .set-body > :nth-child(n+5) { animation-delay: .16s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .room-view > .room-head > * { animation: jl-in .45s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .room-view > .room-head > :nth-child(2) { animation-delay: .05s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .room-view > .room-head > :nth-child(n+3) { animation-delay: .1s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .compose > :is(.round, .compose-box) { animation: jl-in .45s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .compose > .round.send { animation: jl-wob .45s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.pf-head .pf-top .av, .pf-acts > *) { animation: jl-in .5s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .pf-acts > :nth-child(3) { animation-delay: .04s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .pf-acts > :nth-child(4) { animation-delay: .08s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .pf-acts > :nth-child(5) { animation-delay: .12s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .pf-acts > :nth-child(6) { animation-delay: .16s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.badge, .foot-ico > i, .rx button, .day span, .compose-ref, .pinbar, .findbar) { animation: jl-in .45s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.as-card, .as-label) { animation: jl-row .45s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .loc.view .loc-info { animation: jl-sheet .55s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .map-pin { animation: jl-msg .6s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .modal { animation: jl-up .3s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .as-sheet { animation: jl-sheet .34s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .loc.view .loc-info { animation: jl-sheet .34s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .toast { animation: jl-drop .3s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .set-body { animation: jl-side .28s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .room-view { animation: jl-side .28s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .compose > .round.send { animation: jl-in .22s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .map-pin { animation: jl-msg .34s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.modal-back, .as-back, .scrim) { animation-duration: .18s; }
 
   /* what is chosen wobbles once */
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.wall-tile.on, .acc.on, .theme-tile.on, .rt-plan.on, .as-tabs button.on, .pf-tabs button.on, .seg button.on, .rx button.on) { animation: jl-wob .5s backwards; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .switch span::after { transition: transform .45s var(--jelly), width .2s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .switch:active span::after { width: 26px; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .lens::before { transition: transform .55s var(--jelly), width .55s var(--jelly), height .4s ease, opacity .2s; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.wall-tile.on, .acc.on, .theme-tile.on, .rt-plan.on, .as-tabs button.on, .pf-tabs button.on, .rx button.on) { animation: jl-wob .3s backwards; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .switch span::after { transition: transform .26s var(--jelly); }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .lens::before { transition: transform .32s var(--jelly), width .32s var(--jelly), height .25s ease, opacity .15s; }
 
-  /* what is pressed squashes and springs back */
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.round, .btn, .pill-btn, .trx-get, .as-row, .wall-tile, .acc, .theme-tile, .rt-plan, .rt-drop, .rt-send, .as-tabs button, .pf-tabs button, .pf-acts > button, .head-card, .head-ava, .room, .person, .pf-row, .set-pick, .set-nav, .menu > button, .rx button, .note, .voice-btn, .music-btn, .loc-round, .seg button) {
-    transition: transform .45s var(--jelly), background .2s, color .2s, box-shadow .2s, opacity .2s;
+  /* what is pressed gives at once and springs back */
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.round, .btn, .pill-btn, .trx-get, .as-row, .as-tile, .wall-tile, .acc, .theme-tile, .rt-plan, .rt-drop, .rt-send, .as-tabs button, .pf-tabs button, .pf-acts > button, .head-card, .head-ava, .room, .person, .pf-row, .set-pick, .set-nav, .menu > button, .menu-list > button, .rx button, .note, .voice-btn, .music-btn, .loc-round, .ce2-row, .as-thumb) {
+    transition: transform .28s var(--jelly);
   }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.round, .btn, .pill-btn, .trx-get, .acc, .theme-tile, .rt-plan, .rt-send, .as-tabs button, .pf-tabs button, .pf-acts > button, .head-ava, .rx button, .voice-btn, .music-btn, .loc-round, .wall-tile):active { transform: scale(.86, .9); transition-duration: .09s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.as-row, .head-card, .room, .person, .pf-row, .set-pick, .set-nav, .menu > button, .rt-drop, .note, .seg button):active { transform: scale(.97, .95); transition-duration: .09s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble { transition: transform .5s var(--jelly); }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble:active { transform: scale(.97, .95); transition-duration: .1s; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.round, .btn, .pill-btn, .trx-get, .acc, .theme-tile, .rt-plan, .rt-send, .as-tabs button, .pf-tabs button, .pf-acts > button, .head-ava, .rx button, .voice-btn, .music-btn, .loc-round, .wall-tile, .as-tile, .as-thumb):active { transform: scale(.9); transition-duration: .07s; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.as-row, .head-card, .room, .person, .pf-row, .set-pick, .set-nav, .menu > button, .menu-list > button, .rt-drop, .note, .ce2-row):active { transform: scale(.975); transition-duration: .07s; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble { transition: transform .28s var(--jelly); }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble.pressing, html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble:active { transform: scale(.97); transition-duration: .07s; }
 }
+/* nothing blurs what is behind it while it pops or slides in Halo: these are close to solid anyway, and a blurred layer
+   that moves is what made the motion stutter on the phone */
+html[data-skin='halo'] :is(.as-sheet, .as-tabs, .msg-menu .rx-pick, .msg-menu .menu-list, .toast, .pf-menu, .rec-over, .vrec-bar) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-skin='halo'] .as-sheet .as-tabs { background: linear-gradient(180deg, rgba(255, 255, 255, .94), rgba(255, 255, 255, .86)) !important; }
+html[data-skin='halo'][data-mode='dark'] .as-sheet .as-tabs { background: linear-gradient(180deg, rgba(58, 58, 66, .96), rgba(44, 44, 52, .96)) !important; }
 
 /* the menu that pops on a held message (Alex, 12 Nov: "more opaque, darker, with the grain"): the same dark smoked glass
    with grain as the bars at the foot, white words, fine light lines */

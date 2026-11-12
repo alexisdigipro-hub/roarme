@@ -4536,3 +4536,12 @@ input[type='range'].slide::-moz-range-track { height: 6px; border-radius: 3px; b
 input[type='range'].slide::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; margin-top: -12px; border-radius: 50%; border: 0; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .22), 0 0 0 1px rgba(0, 0, 0, .05); transition: transform .18s ease, box-shadow .18s ease; }
 input[type='range'].slide::-moz-range-thumb { width: 30px; height: 30px; border-radius: 50%; border: 0; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .22), 0 0 0 1px rgba(0, 0, 0, .05); }
 input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18); box-shadow: 0 4px 14px rgba(0, 0, 0, .26), 0 0 0 8px color-mix(in srgb, var(--halo, var(--rail, var(--accent))) 18%, transparent); }
+
+/* a deleted message dissolves from its edges inward, lifts a little, and the ones under it close the gap (Alex, 12 Nov) */
+@property --dust { syntax: '<percentage>'; inherits: false; initial-value: 120%; }
+.msg-out { overflow: hidden; pointer-events: none; transition: height .22s cubic-bezier(.3, 0, .2, 1) .2s; }
+.msg-out.msg-out-go { height: 0 !important; }
+.msg-out .bubble-col { animation: msg-dust .3s cubic-bezier(.4, 0, .6, 1) forwards; transform-origin: 50% 60%;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 calc(var(--dust) - 40%), transparent var(--dust)); mask-image: radial-gradient(ellipse at 50% 50%, #000 calc(var(--dust) - 40%), transparent var(--dust)); }
+.msg-out .day, .msg-out .rx { opacity: 0; transition: opacity .15s; }
+@keyframes msg-dust { 0% { --dust: 120%; opacity: 1; transform: none; } 100% { --dust: 0%; opacity: 0; transform: translateY(-8px) scale(.9); } }

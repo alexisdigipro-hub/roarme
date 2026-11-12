@@ -4565,3 +4565,28 @@ input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18);
 }
 @media (hover: none) { .set-pick:hover, html[data-mode='light'] .set-pick:hover { background: none; } }
 .bubble.pic .pic-img { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* touching up a photo before it is sent (photoEdit.jsx): the picture on black, the tools at the foot */
+.pe { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; background: #0c0c0f; color: #fff; touch-action: none; }
+.pe-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px 8px; }
+.pe-top b { font-size: 16px; font-weight: 600; }
+.pe-top .round { width: 44px; height: 44px; }
+.pe-top .round:not(.send) { background: rgba(255, 255, 255, .14) !important; border: 0 !important; color: #fff !important; box-shadow: none !important; }
+.pe-stage { flex: 1; min-height: 0; display: grid; place-items: center; padding: 6px 10px; }
+.pe-stage canvas { max-width: 100%; max-height: 100%; border-radius: 10px; }
+.pe-stage canvas.drawing { cursor: crosshair; }
+.pe-opts { flex: none; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 8px 14px; }
+.pe-opts .pill-btn { height: 36px; padding: 0 16px; background: rgba(255, 255, 255, .14) !important; border: 0 !important; color: #fff !important; box-shadow: none !important; }
+.pe-opts .round { width: 38px; height: 38px; background: rgba(255, 255, 255, .14) !important; border: 0 !important; color: #fff !important; box-shadow: none !important; }
+.pe-ink { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .5); background: var(--c); cursor: pointer; }
+.pe-ink.on { box-shadow: 0 0 0 3px #0c0c0f, 0 0 0 5px #fff; }
+.pe-adj { flex-direction: column; align-items: stretch; gap: 2px; }
+.pe-adj label { display: flex; align-items: center; gap: 12px; }
+.pe-adj small { width: 70px; color: rgba(255, 255, 255, .7); font-size: 12.5px; }
+.pe-tools { flex: none; display: flex; justify-content: space-around; padding: 6px 10px calc(env(safe-area-inset-bottom, 0px) + 10px); }
+.pe-tools button { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 64px; padding: 8px 6px; border: 0; border-radius: 16px; background: none; color: rgba(255, 255, 255, .75); font: inherit; cursor: pointer; }
+.pe-tools button.on { background: rgba(255, 255, 255, .16); color: #fff; }
+.pe-tools small { font-size: 11.5px; }
+.attach-item img { cursor: pointer; }
+.attach-edit { position: absolute; left: 6px; top: 6px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(0, 0, 0, .5); color: #fff; cursor: pointer; }
+.attach-edit svg { width: 14px; height: 14px; }

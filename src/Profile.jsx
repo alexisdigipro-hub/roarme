@@ -236,7 +236,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
             : <Avatar src={group ? room.avatar_url : other?.avatar_url} name={title} size={112} group={group} />}
           <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { setCropFile(e.target.files?.[0] || null); e.target.value = '' }} />
           {cropFile && <CropModal file={cropFile} title={group ? 'Group photo' : `Your photo for ${title}`} onDone={pickPic} onClose={() => setCropFile(null)} />}
-          {editing && other && <ContactEdit me={me} other={other} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); loadPeople([other.id]); toast('Saved, only you see it') }} onPhoto={() => { setEditing(false); picRef.current?.click() }} onDropPhoto={dropMyPhoto} />}
+          {editing && other && <ContactEdit me={me} other={other} blocked={blocked} onBlock={() => { setEditing(false); block() }} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); loadPeople([other.id]); toast('Saved, only you see it') }} onPhoto={() => { setEditing(false); picRef.current?.click() }} onDropPhoto={dropMyPhoto} />}
           {canName
             ? <input className="pf-name-edit" value={name} onChange={(e) => setName(e.target.value)} onBlur={rename} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} title="Rename the group" />
             : <h2 className="pf-name">{title}</h2>}
@@ -273,7 +273,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   {group && room.avatar_url && <button type="button" onClick={dropGroupPhoto}>{I.x}<span>Remove group photo</span></button>}
                   {group && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave group</span></button>}
                   {group && admin && <button type="button" className="danger" onClick={deleteGroup}>{I.trash}<span>Delete group</span></button>}
-                  {!group && other && <button type="button" className="danger" onClick={block}>{I.x}<span>{blocked ? 'Unblock' : 'Block'}</span></button>}
+                  {group && <button type="button" onClick={() => toChat('roles')}>{I.people}<span>Roles for @mentions</span></button>}
+                  {!group && <button type="button" className="danger" onClick={() => toChat('delete')}>{I.trash}<span>Delete Chat</span></button>}
                 </div>
               </>
             )}

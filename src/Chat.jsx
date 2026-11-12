@@ -2839,7 +2839,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
   roomActs.current = {
     wallpaper: () => setWallPick(true), seal: () => (sealOn ? turnOff() : askSeal()), group: () => other && onNewGroup(other), schedule: () => setSchedOpen(true),
-    export: () => exportChat(), auto: (h) => setAutoDelete(h ?? null), clear: () => act('clear'),
+    export: () => exportChat(), auto: (h) => setAutoDelete(h ?? null), clear: () => act('clear'), roles: () => setRolesOpen(true), delete: () => act('delete'),
   }
   return (
     <div className={`room-view${prefs.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}

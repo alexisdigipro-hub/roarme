@@ -821,7 +821,7 @@ function ChatTheme({ p }) {
         </button>
       )}
       <button type="button" className="set-row set-pick set-nav" onClick={() => setEditing(true)}>
-        <span className="set-text">Edit Your Theme<small>Background, accent and the colour of the messages</small></span>
+        <span className="set-text">{p.theme === 'halo' ? 'Message Colours' : 'Edit Your Theme'}<small>{p.theme === 'halo' ? 'Your own colours for your messages and theirs' : 'Background, accent and the colour of the messages'}</small></span>
         <span className="te-dots"><i style={{ background: p.myBubble || '#2a2a2c' }} /><i style={{ background: p.theirBubble || '#ffffff' }} /><i style={{ background: p.accentHex || 'var(--accent)' }} /></span>
         <i className="set-chev">{I.right}</i>
       </button>

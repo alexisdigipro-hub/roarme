@@ -136,7 +136,6 @@ export function MediaViewer({ items, index, onClose, onDelete }) {
           {menu && (
             <div className="vw-menu">
               <a href={it.url} download={it.name || true} target="_blank" rel="noreferrer" onClick={() => setMenu(false)}>{I.download}<span>Save</span></a>
-              <button type="button" onClick={share}>{I.forward}<span>Share</span></button>
               <a href={it.url} target="_blank" rel="noreferrer" onClick={() => setMenu(false)}>{I.link}<span>Open in a New Tab</span></a>
             </div>
           )}

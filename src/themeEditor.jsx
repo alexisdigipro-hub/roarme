@@ -84,7 +84,8 @@ export function ThemeEditor({ p, onClose }) {
       <div className="te-sheet">
         <div className="te-preview" style={bg ? { background: bg } : undefined} data-bg={bg ? undefined : d.background}>
           <div className="te-tabs seg">
-            {[['background', 'Background'], ['accent', 'Accent'], ['messages', 'Messages']].map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+            {/* in Halo the wallpaper and the colour are chosen on the Appearance page itself, with its own palette: here only the messages */}
+            {[['background', 'Background'], ['accent', 'Accent'], ['messages', 'Messages']].filter(([k]) => p.theme !== 'halo' || k === 'messages').map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
           </div>
           <span className="te-b" style={b(their)}>He wants you to look into the camera. Okay?<small>20:20</small></span>
           <span className="te-b mine" style={b(my)}>That is all he said?<small>20:20 <b style={{ color: tab === 'accent' ? accent : 'inherit' }}>✓✓</b></small></span>

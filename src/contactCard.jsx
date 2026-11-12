@@ -128,7 +128,7 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
 }
 
 /* Edit Contact (Alex, 19 Oct): my own name, photo and note for someone, which only I see; they never know */
-export function ContactEdit({ me, other, onClose, onSaved, onPhoto, onDropPhoto }) {
+export function ContactEdit({ me, other, onClose, onSaved, onPhoto, onDropPhoto, blocked, onBlock }) {
   const [name, setName] = useState(other.nickname || '')
   const [note, setNote] = useState(other.my_note || '')
   const [busy, setBusy] = useState(false)
@@ -172,6 +172,12 @@ export function ContactEdit({ me, other, onClose, onSaved, onPhoto, onDropPhoto 
         {(other.nickname || other.my_note) && (
           <div className="ce2-card">
             <button type="button" className="ce2-row danger" disabled={busy} onClick={clear}><span>Remove My Name and Note</span></button>
+          </div>
+        )}
+        {/* Block is about the person, so it lives here and not in the chat's More (Alex, 12 Nov) */}
+        {onBlock && (
+          <div className="ce2-card">
+            <button type="button" className="ce2-row danger" onClick={onBlock}><span>{blocked ? 'Unblock' : 'Block'}</span></button>
           </div>
         )}
         {err && <p className="auth-err">{err}</p>}

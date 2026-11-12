@@ -4288,3 +4288,33 @@ html[data-theme='stone']:not([data-skin]) .compose-ref { border-radius: 9px; }
 .bubble .rt-card .rt-mark i svg { width: 16px; height: 16px; }
 .bubble .rt-card .rt-mark b { font-size: 16px; }
 .bubble .rt-card-acts .btn { white-space: nowrap; height: 38px; border-radius: 12px; }
+
+/* the photo and video viewer as the iPhone's Photos (Alex, 12 Nov; extras.jsx MediaViewer): the whole screen in black, the
+   picture as large as it fits, the bars over it in dark glass, hidden and shown by a tap; every theme */
+html[data-theme] .viewer.v2 { display: block; padding: 0; background: rgba(0, 0, 0, var(--vw-fade, 1)); -webkit-backdrop-filter: none; backdrop-filter: none; cursor: default; overflow: hidden; }
+.viewer.v2 .vw-stage { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; touch-action: none; }
+.viewer.v2 .vw-stage :is(img, video) { max-width: 100vw; max-height: 100dvh; width: auto; height: auto; border-radius: 0; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; transition: transform .28s var(--ease); will-change: transform; cursor: zoom-in; }
+.viewer.v2 .vw-stage img.zoomed { cursor: grab; }
+.viewer.v2 :is(.vw-top, .vw-foot) { position: absolute; left: 0; right: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px; transition: opacity .2s; }
+.viewer.v2 .vw-top { top: 0; padding-top: calc(env(safe-area-inset-top, 0px) + 10px); }
+.viewer.v2 .vw-foot { bottom: 0; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+.viewer.v2.bare :is(.vw-top, .vw-foot, .vw-prev, .vw-next) { opacity: 0; pointer-events: none; }
+html[data-theme] .viewer.v2 .round { flex: none; width: 44px; height: 44px; border-radius: 50% !important; background: rgba(38, 38, 42, .62) !important; border: 1px solid rgba(255, 255, 255, .12) !important; color: #fff !important; box-shadow: none !important; -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); text-decoration: none; }
+html[data-theme] .viewer.v2 .round svg { width: 22px; height: 22px; }
+.viewer.v2 .vw-title { min-width: 0; max-width: calc(100% - 120px); display: flex; flex-direction: column; align-items: center; padding: 6px 20px; border-radius: 22px; background: rgba(38, 38, 42, .62); border: 1px solid rgba(255, 255, 255, .12); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); color: #fff; }
+.viewer.v2 .vw-title:empty { visibility: hidden; }
+.viewer.v2 .vw-title b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; }
+.viewer.v2 .vw-title small { font-size: 11.5px; color: rgba(255, 255, 255, .62); font-variant-numeric: tabular-nums; }
+.viewer.v2 .vw-count { padding: 6px 14px; border-radius: 999px; background: rgba(38, 38, 42, .62); border: 1px solid rgba(255, 255, 255, .12); color: #fff; font-size: 13px; font-variant-numeric: tabular-nums; }
+.viewer.v2 .vw-more { position: relative; }
+.viewer.v2 .vw-menu { position: absolute; right: 0; top: 52px; min-width: 210px; display: flex; flex-direction: column; padding: 6px; border-radius: 16px; background: rgba(38, 38, 42, .94); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 16px 40px rgba(0, 0, 0, .5); animation: menu-in .22s var(--spring) both; transform-origin: top right; }
+.viewer.v2 .vw-menu :is(a, button) { display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border: 0; border-radius: 11px; background: none; color: #fff; font: inherit; font-size: 15px; text-decoration: none; text-align: left; cursor: pointer; }
+.viewer.v2 .vw-menu :is(a, button):hover { background: rgba(255, 255, 255, .1); }
+.viewer.v2 :is(.vw-prev, .vw-next) { position: absolute; top: 50%; margin-top: -22px; z-index: 2; transition: opacity .2s; }
+.viewer.v2 .vw-prev { left: 14px; }
+.viewer.v2 .vw-next { right: 14px; }
+@media (pointer: coarse) { .viewer.v2 :is(.vw-prev, .vw-next) { display: none; } }
+/* the opening animation of the old viewer moved the picture with transform and kept it (fill both), which would lock the
+   zoom: here the picture only fades in */
+html[data-theme] .viewer.v2 .vw-stage :is(img, video) { animation: vw-in .25s ease both; }
+@keyframes vw-in { from { opacity: 0; } to { opacity: 1; } }

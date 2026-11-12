@@ -210,7 +210,7 @@ export const EL = {
   'Contrast': 'Αντίθεση',
   'Undo': 'Αναίρεση',
   'Original': 'Αρχικό',
-  'Stone: soft grey stone with graphite buttons. Halo: white frosted glass on soft lilac clouds, with a warm orange. Air: plain white with one blue. Each has dark and light.': 'Stone: απαλή γκρι πέτρα με γραφίτινα κουμπιά. Halo: λευκό παγωμένο γυαλί πάνω σε απαλά λιλά σύννεφα, με ζεστό πορτοκαλί. Air: σκέτο λευκό με ένα μπλε. Το καθένα έχει σκούρο και ανοιχτό.',
+  'Stone: soft grey stone with graphite buttons. Halo: white frosted glass on soft lilac clouds, with a warm orange. Glass: Halo in liquid glass, a tall menu with words and the folders at the top. Air: plain white with one blue. Each has dark and light.': 'Stone: απαλή γκρι πέτρα με γραφίτινα κουμπιά. Halo: λευκό παγωμένο γυαλί πάνω σε απαλά λιλά σύννεφα, με ζεστό πορτοκαλί. Glass: το Halo σε υγρό γυαλί, με ψηλό μενού με λέξεις και τους φακέλους πάνω. Air: σκέτο λευκό με ένα μπλε. Το καθένα έχει σκούρο και ανοιχτό.',
   'Message Colours': 'Χρώματα μηνυμάτων',
   'Your own colours for your messages and theirs': 'Δικά σου χρώματα για τα μηνύματά σου και τα δικά τους',
   'Nobody is waiting for an answer.': 'Κανείς δεν περιμένει απάντηση.',

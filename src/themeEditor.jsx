@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { inkOn, setPrefs } from './prefs.js'
+import { haloish, inkOn, setPrefs } from './prefs.js'
 import { ownColor } from './walls.js'
 
 /* Edit Your Theme (Alex, 9 Nov, after the screens he sent): the chat on top, as it will look, and under it the part being
@@ -85,7 +85,7 @@ export function ThemeEditor({ p, onClose }) {
         <div className="te-preview" style={bg ? { background: bg } : undefined} data-bg={bg ? undefined : d.background}>
           <div className="te-tabs seg">
             {/* in Halo the wallpaper and the colour are chosen on the Appearance page itself, with its own palette: here only the messages */}
-            {[['background', 'Background'], ['accent', 'Accent'], ['messages', 'Messages']].filter(([k]) => p.theme !== 'halo' || k === 'messages').map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+            {[['background', 'Background'], ['accent', 'Accent'], ['messages', 'Messages']].filter(([k]) => !haloish(p.theme) || k === 'messages').map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
           </div>
           <span className="te-b" style={b(their)}>He wants you to look into the camera. Okay?<small>20:20</small></span>
           <span className="te-b mine" style={b(my)}>That is all he said?<small>20:20 <b style={{ color: tab === 'accent' ? accent : 'inherit' }}>✓✓</b></small></span>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, foldHas, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
+import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, haloish, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ThemeEditor } from './themeEditor.jsx'
 import { useWalls, wallLook } from './walls.js'
@@ -46,7 +46,7 @@ export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.start
 // a settings page opens with its title alone (Alex, 12 Nov): the large sign and the line under it are gone
 const Hero = () => null
 
-const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']]]
+const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['glass', 'Glass', ['#f47318', 'linear-gradient(135deg, #dbe6ff, #f3e6ff 55%, #ffe7d9)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
@@ -829,7 +829,7 @@ function ChatTheme({ p }) {
         </button>
       )}
       <button type="button" className="set-row set-pick set-nav" onClick={() => setEditing(true)}>
-        <span className="set-text">{p.theme === 'halo' ? 'Message Colours' : 'Edit Your Theme'}<small>{p.theme === 'halo' ? 'Your own colours for your messages and theirs' : 'Background, accent and the colour of the messages'}</small></span>
+        <span className="set-text">{haloish(p.theme) ? 'Message Colours' : 'Edit Your Theme'}<small>{haloish(p.theme) ? 'Your own colours for your messages and theirs' : 'Background, accent and the colour of the messages'}</small></span>
         <span className="te-dots"><i style={{ background: p.myBubble || '#2a2a2c' }} /><i style={{ background: p.theirBubble || '#ffffff' }} /><i style={{ background: p.accentHex || 'var(--accent)' }} /></span>
         <i className="set-chev">{I.right}</i>
       </button>
@@ -861,14 +861,14 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="pv mine">Bring the lights 💡</span>
           <span className="pv-compose"><span>Write a message…</span><i /></span>
         </div>
-        {p.theme === 'halo' && (
+        {haloish(p.theme) && (
           <div className="pv-bars" aria-hidden="true">
             <span className="pv-bar pv-folders"><b className="on">All</b><b>Unread</b><b>Groups</b><b>Personal</b></span>
             <span className="pv-bar pv-rail"><i>{I.contacts}</i><i>{I.calls}</i><i className="on">{I.messages}</i><i>{I.settings}</i></span>
           </div>
         )}
       </div>
-      <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Halo: white frosted glass on soft lilac clouds, with a warm orange. Air: plain white with one blue. Each has dark and light.">
+      <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Halo: white frosted glass on soft lilac clouds, with a warm orange. Glass: Halo in liquid glass, a tall menu with words and the folders at the top. Air: plain white with one blue. Each has dark and light.">
         <div className="set-row set-col">
           <div className="themes">
             {THEMES.map(([k, l, [a, b]]) => {
@@ -884,11 +884,11 @@ function Appearance({ p, toast, me, setMe }) {
         </div>
         <div className="set-row set-col">
           <span className="set-text">Day and Night<small>Auto follows the device: light by day, dark at night if the device does so</small></span>
-          <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ...(p.theme === 'halo' ? [['glass', 'Glass']] : []), ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={(p.mode === 'glass' && p.theme !== 'halo' ? 'light' : p.mode) === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
+          <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
         </div>
         <div className="set-row set-col">
-          <span className="set-text">Accent Colour<small>{p.accent ? (p.theme === 'halo' ? HALO_ACCENTS : ACCENTS).find(([k]) => k === p.accent)?.[1] || "The theme's own colour" : "The theme's own colour"}</small></span>
-          {p.theme === 'halo'
+          <span className="set-text">Accent Colour<small>{p.accent ? (haloish(p.theme) ? HALO_ACCENTS : ACCENTS).find(([k]) => k === p.accent)?.[1] || "The theme's own colour" : "The theme's own colour"}</small></span>
+          {haloish(p.theme)
             ? (
               // Halo's own palette (Alex, 12 Nov): the orange it is made with and five colours, each with its gradient
               <div className="accents halo-accents">
@@ -922,7 +922,7 @@ function Appearance({ p, toast, me, setMe }) {
       <Box title="Chat wallpaper" note="Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.">
         <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
       </Box>
-      {p.theme === 'halo' && (
+      {haloish(p.theme) && (
         <Box title="App background" note="What sits behind the chat list, Contacts, Calls and Settings.">
           <Switch on={!p.appBackground} set={(v) => setPrefs({ appBackground: v ? '' : p.background || 'soft' })} hint="The app wears the chat wallpaper above">Same as Chats</Switch>
           {!!p.appBackground && <div className="set-row set-col"><WallTiles value={p.appBackground} toast={toast} onPick={(k) => setPrefs({ appBackground: k })} /></div>}

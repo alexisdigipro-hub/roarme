@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { errText, fileLink, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
-import { EMOJIS, setPrefs, usePrefs } from './prefs.js'
+import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { I, Modal, Slide, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
@@ -657,7 +657,7 @@ const withOrange = (walls) => {
 }
 export function WallTiles({ value, onPick, toast }) {
   const prefsNow = usePrefs()
-  const halo = prefsNow.theme === 'halo'
+  const halo = haloish(prefsNow.theme)
   const strength = Math.min(100, Math.max(10, Number(prefsNow.wallStrength) || 100))
   const walls = useWalls()
   const color = ownColor(value)

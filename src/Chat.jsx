@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
-import { REACTIONS, TEXT_SIZES, chime, getPrefs, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
+import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
@@ -102,7 +102,7 @@ export default function Chat({ me, setMe }) {
   const folderBack = useRef('') // the screen a folder was opened for editing from: its tick goes back there
   const editFolder = (id, seed = []) => { folderBack.current = tab === 'settings' ? '' : tab; setModal(''); setFolderSeed(seed); setTab('settings'); setSetPage(`folder:${id}`) }
   const doneFolder = () => { document.activeElement?.blur?.(); const back = folderBack.current; folderBack.current = ''; if (back) { setSetPage(''); setTab(back) } else setSetPage('folders') }
-  const tabsLens = useLens(`${tab}|${folder}|${prefs.folderTabs}|${myFolders.length}|${!q.trim()}`)
+  const tabsLens = useLens(`${tab}|${folder}|${prefs.folderTabs}|${prefs.theme}|${myFolders.length}|${!q.trim()}`)
   // the folder tabs fade at the right edge only while more tabs wait past it (Alex, 21 Oct: the last tab looked shaded)
   useEffect(() => {
     const el = tabsLens.current
@@ -117,7 +117,7 @@ export default function Chat({ me, setMe }) {
   const [tasksOpen, setTasksOpen] = useState(() => { try { return localStorage.getItem('roarme-tasks') === '1' } catch { return false } })
   const footLens = useLens(`${tab}|${prefs.callsTab}|${prefs.tasksTab}|${picking}|${tasksOpen}`) // the Settings page open on the right
   useLiquid(footLens, `${tab}|${picking}`)
-  useLiquid(tabsLens, `${tab}|${prefs.folderTabs}|${myFolders.length}|${!q.trim()}`)
+  useLiquid(tabsLens, `${tab}|${prefs.folderTabs}|${prefs.theme}|${myFolders.length}|${!q.trim()}`)
   const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
   const searchRef = useRef(null)
   // the search box hides and comes out when the list is pulled down at its top (Alex, 17 Oct), as on the iPhone
@@ -530,7 +530,8 @@ export default function Chat({ me, setMe }) {
   // folders, the middle one is the real one, and a settled wheel jumps back to it unseen); the folder that settles in the
   // middle is chosen; both edges fade (styles.css .wheel-box, .tabs-wheel, .wheel-pill)
   // Halo keeps its folders at the foot as a plain bar of words, not the wheel (Alex, 12 Nov)
-  const wheelOn = prefs.folderTabs === 'bottom' && !q.trim() && prefs.theme !== 'halo'
+  const tabsDown = prefs.folderTabs === 'bottom' && prefs.theme !== 'glass' // Glass keeps its folders at the top (Alex, 12 Nov)
+  const wheelOn = tabsDown && !q.trim() && !haloish(prefs.theme)
   const wheeling = wheelOn && !editTabs
   const pillRef = useRef(null)
   const wheelBtns = (nav) => [...nav.querySelectorAll(':scope > button[data-tab]')]
@@ -1210,7 +1211,7 @@ export default function Chat({ me, setMe }) {
                 onBlur={() => { if (!q.trim()) setTimeout(() => setSearchOpen(false), 1200) }}
                 onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur(); setSearchOpen(false) } }} /></label>
             </div></div>
-            <div className={`rooms-area${prefs.folderTabs === 'bottom' && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
+            <div className={`rooms-area${tabsDown && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
             {!q.trim() && (
               <div className={`wheel-box${wheeling ? ' on' : ''}`}>
               {wheeling && <i ref={pillRef} className="tabs lens lens-on wheel-pill" aria-hidden="true" />}

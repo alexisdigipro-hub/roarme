@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib.js'
-import { applyLook, applyMode, setPrefs, themeFor, usePrefs, wearTheme, dressTheme } from './prefs.js'
+import { applyLook, applyMode, haloish, setPrefs, themeFor, usePrefs, wearTheme, dressTheme } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
 import { LockScreen, clearLock, useAutoLock } from './lock.jsx'
@@ -21,7 +21,7 @@ export default function App() {
   const walls = useWalls(true)
   useEffect(() => {
     const b = document.body
-    const look = theme === 'halo' ? wallLook(prefs.appBackground || prefs.background, walls, prefs.wallStrength) : null
+    const look = haloish(theme) ? wallLook(prefs.appBackground || prefs.background, walls, prefs.wallStrength) : null
     b.classList.toggle('app-wall', !!look)
     ;['bg', 'img', 'own', 'wop'].forEach((k) => { delete b.dataset[k] })
     ;['--wall', '--wall-op', '--wall-color', '--wop'].forEach((v) => b.style.removeProperty(v))

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 /* Chat settings, kept on this device (as in the THEMADLIONS chat): how the chat looks and behaves.
    A change is announced with the 'roarme-prefs' event so every open part of the app follows it. */
 export const DEFAULTS = {
-  mode: 'light', // dark | light | glass (Halo only) | auto (follows the computer); a first start opens Stone in light (Alex, 21 Oct)
+  mode: 'light', // dark | light | auto (follows the computer); a first start opens Stone in light (Alex, 21 Oct)
   lang: 'en', // en | el, the interface language (i18n.js)
   theme: 'stone', // Stone is the main theme since 21 Oct (Alex); the rest only for Alex, see THEME_LAB
   accent: '', // the theme's own colour (Stone's graphite) on a first start (Alex, 21 Oct); or one of ACCENTS
@@ -81,6 +81,8 @@ export function getPrefs() {
     const p = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY)) || {}) }
     // the folder tabs on the left became tabs at the bottom (Alex, 16 Oct)
     if (p.folderTabs === 'left') p.folderTabs = 'bottom'
+    // Glass was for a few hours a mode beside Light; it is a theme of its own (Alex, 12 Nov)
+    if (p.mode === 'glass') { p.mode = 'light'; p.theme = 'glass' }
     // the double click reacts with the red heart, no longer the camera (Alex, 16 Oct); a later pick of the camera stays
     if (!p.quickHeart) { if (p.quick === '🎥') p.quick = '❤️'; p.quickHeart = true }
     // the new Glass sound for everyone still on the old default, Chime (Alex, 3 Nov); a later pick of Chime stays
@@ -207,7 +209,9 @@ export function applyMode(mode) {
 /* two themes, each dark and light (Alex, 31 Oct: "only Stone and Simba"): Stone, the main one since 21 Oct, and Simba
    ('ember'). Glass, Aura, Studio, Pumba, Aurum and Lions are gone; anyone left on one of them is on Stone. */
 // Simba ('ember'), Velvet and Mango were removed on 12 Nov (Alex); whoever wore one is on Stone, as with the older ones
-export const PUBLIC_THEMES = ['stone', 'halo', 'air']
+export const PUBLIC_THEMES = ['stone', 'halo', 'glass', 'air']
+// Glass (Alex, 12 Nov) is Halo in liquid glass: everything that asks "is this Halo?" asks this
+export const haloish = (t) => t === 'halo' || t === 'glass'
 // Alex's own account: Settings > Admin opens only for him
 const THEME_LAB = ['98f8b6e1-0ce2-4576-805b-cffa25667d22'] // @iamalexkon
 export const inThemeLab = (me) => !!me && THEME_LAB.includes(me.id)
@@ -215,12 +219,15 @@ export const inThemeLab = (me) => !!me && THEME_LAB.includes(me.id)
 let haloCss = null
 // Air (Alex, 12 Nov): Stone in a clean white dress with one blue, a skin like Halo (src/themes-air.css)
 let airCss = null
-export const wearTheme = (t) => { if (!haloCss && t === 'halo') haloCss = import('./themes-halo.css'); if (!airCss && t === 'air') airCss = import('./themes-air.css') }
+// Glass (Alex, 12 Nov): Halo's build in liquid glass (src/themes-glass.css), loaded after Halo's so its rules win
+let glassCss = null
+export const wearTheme = (t) => { if (!haloCss && haloish(t)) haloCss = import('./themes-halo.css'); if (!glassCss && t === 'glass') glassCss = haloCss.then(() => import('./themes-glass.css')); if (!airCss && t === 'air') airCss = import('./themes-air.css') }
 // what goes on <html>: the theme's build and, for Halo, its skin
 export const dressTheme = (t) => {
   const r = document.documentElement
-  const skin = t === 'halo' || t === 'air' ? t : ''
+  const skin = haloish(t) ? 'halo' : t === 'air' ? t : ''
   r.dataset.theme = 'stone'
+  if (t === 'glass') r.dataset.glass = '1'; else delete r.dataset.glass
   if (skin) r.dataset.skin = skin; else delete r.dataset.skin
 }
 export const themeFor = (theme) => (PUBLIC_THEMES.includes(theme) ? theme : 'stone')
@@ -257,7 +264,7 @@ export function applyLook(p) {
   const hex = (/^#[0-9a-f]{6}$/i.test(p.accentHex || '') && p.accentHex) || ACCENTS.find(([k]) => k === p.accent)?.[2]
   if (hex) { r.style.setProperty('--accent', hex); r.style.setProperty('--accent-2', hex); r.style.setProperty('--accent-ink', inkOn(hex)) } else { ['--accent', '--accent-2', '--accent-ink'].forEach((v) => r.style.removeProperty(v)) }
   // in Halo one of its own colours stands in for the orange: on your messages, Send, the chosen things
-  const ha = p.theme === 'halo' && HALO_ACCENTS.find(([k]) => k === p.accent)
+  const ha = haloish(p.theme) && HALO_ACCENTS.find(([k]) => k === p.accent)
   if (ha) {
     const [, , c, cd, [a, b], ink] = ha
     r.style.setProperty('--halo-l', c); r.style.setProperty('--halo-d', cd); r.style.setProperty('--halo-2', a)
@@ -270,7 +277,6 @@ export function applyLook(p) {
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
   r.dataset.density = p.density || 'standard'
-  if (p.theme === 'halo' && p.mode === 'glass') r.dataset.bars = 'pill'; else delete r.dataset.bars
   r.style.setProperty('--r', `${Number(p.radius) || 12}px`)
   if (p.motion === false) r.dataset.still = '1'; else delete r.dataset.still
   if (p.focusRings) r.dataset.focus = 'bold'; else delete r.dataset.focus

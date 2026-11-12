@@ -1,0 +1,85 @@
+/* Glass (Alex, 12 Nov: "take Halo and make a theme that is all liquid glass, the menu thick and with words but with our
+   own icons, the folders at the top; on Calls Create New Call stands where the folders do, on Contacts the search").
+   It is Halo's build (data-theme 'stone' + data-skin 'halo') with data-glass on <html>, loaded after themes-halo.css
+   (prefs.js wearTheme), so every Halo rule holds and only these differ. The shapes came from Telegram's bar; the icons,
+   words, colours and sizes are ours. First pass: the two bars, the round buttons, the pills and the cards. */
+
+/* the glass itself: see-through, a bright rim on top, a faint one below, a soft shadow, the app's own blur behind */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] {
+  --lg: rgba(255, 255, 255, .5);
+  --lg-rim: rgba(255, 255, 255, .9);
+  --lg-shadow: 0 10px 30px rgba(60, 60, 100, .16), inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(255, 255, 255, .4);
+  --lg-chip: rgba(20, 20, 40, .08);
+  --lg-ink: var(--text);
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'] {
+  --lg: rgba(70, 70, 86, .42);
+  --lg-rim: rgba(255, 255, 255, .16);
+  --lg-shadow: 0 10px 30px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .2), inset 0 -1px 0 rgba(255, 255, 255, .05);
+  --lg-chip: rgba(255, 255, 255, .15);
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='light'] {
+  --panel: rgba(255, 255, 255, .3); --panel-2: rgba(255, 255, 255, .48);
+  --glass: rgba(255, 255, 255, .48); --glass-2: rgba(255, 255, 255, .74);
+}
+
+/* the menu at the foot: a thick capsule of glass, our icon over its word, the chosen one in the theme's colour on a
+   soft grey capsule */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot {
+  align-self: stretch; gap: 2px; margin-left: 8px; margin-right: 8px; padding: 5px; justify-content: stretch;
+  border-radius: 999px !important; background: var(--lg) !important; border: 1px solid var(--lg-rim); box-shadow: var(--lg-shadow);
+  -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important;
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot button {
+  flex: 1 1 0; min-width: 0; width: auto; height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 0 2px; border-radius: 999px !important; color: var(--lg-ink);
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot button > span:last-child { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10.5px; font-weight: 600; letter-spacing: 0; line-height: 1.1; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot button svg,
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot button.foot-main svg { width: 24px; height: 24px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot button:hover { color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens::before { border: 0; border-radius: 999px !important; background: var(--lg-chip); box-shadow: none; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens.lens-on > .on,
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot button.on,
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot button.foot-tasks.open { color: var(--halo); }
+html:root:root[data-glass][data-skin='halo'] :is(.foot, .rooms-area .tabs).liquid-drag > button.liquid-at { color: var(--halo); }
+
+/* the bar over the list: the folders on Chats, Create New Call on Calls, the search on Contacts, all one glass capsule
+   at the top, its chosen chip a soft grey capsule */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] :is(.rooms-area .tabs, .contacts-top, .new-call.new-call-bar) {
+  box-sizing: border-box; height: 44px; min-height: 44px; margin: 0 5px 8px; padding: 4px; gap: 2px;
+  border-radius: 999px !important; background: var(--lg) !important; border: 1px solid var(--lg-rim); box-shadow: var(--lg-shadow);
+  -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important;
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs { position: relative; z-index: 4; flex: none; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs button { height: 34px; padding: 0 15px; border-radius: 999px !important; color: var(--lg-ink); font-size: 12px; font-weight: 600; letter-spacing: .03em; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs button.on,
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs.lens.lens-on > .on { color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs.lens::before { border: 0; border-radius: 999px !important; background: var(--lg-chip) !important; box-shadow: none; }
+/* Calls: the bar goes up, over the list (the list and the menu follow it in that order) */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side > .new-call.new-call-bar { order: 1; align-self: stretch; width: auto; margin: 0 5px 8px; color: var(--lg-ink); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side > .new-call.new-call-bar:hover { color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side > .side-scroll.calls { order: 2; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side > .foot { order: 3; }
+/* Contacts: the search at the top of its list, staying there as the list moves */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-top { order: -1; position: sticky; top: 0; bottom: auto; z-index: 4; padding: 4px 6px 4px 12px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-top .search { height: 34px; color: var(--muted); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-top .search input { color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-top .search input::placeholder { color: var(--muted); }
+/* Settings has nothing to put there */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .foot-bar-empty { display: none !important; }
+
+/* round buttons, the name's pill and the writing box: clearer glass with the same rim */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='light'] .round {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(255, 255, 255, .36)); border: 1px solid var(--lg-rim);
+  box-shadow: 0 6px 18px rgba(60, 60, 100, .14), inset 0 1px 0 #fff, inset 0 -1px 0 rgba(255, 255, 255, .4);
+}
+
+/* the menu in Appearance's preview: glass capsules, the folders over the menu's place */
+html:root:root[data-glass][data-skin='halo'] .pv-bars { gap: 5px; }
+html:root:root[data-glass][data-skin='halo'][data-mode] .pv-bar { border-radius: 999px; background: var(--lg); border: 1px solid var(--lg-rim); box-shadow: var(--lg-shadow); color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'] .pv-bar :is(b, i) { border-radius: 999px; }
+html:root:root[data-glass][data-skin='halo'] .pv-rail { height: 42px; }
+html:root:root[data-glass][data-skin='halo'] .pv-rail i { height: 34px; }
+html:root:root[data-glass][data-skin='halo'] .pv-bar .on { background: var(--lg-chip); color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'] .pv-rail .on { color: var(--halo); }

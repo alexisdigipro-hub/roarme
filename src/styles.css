@@ -4330,3 +4330,46 @@ html[data-theme] .viewer.v2 .vw-stage :is(img, video) { animation: vw-in .25s ea
   html.kb .modal:has(.art) { width: 100%; height: 100%; max-height: none; }
   html.kb .modal:has(.art) .art-count { display: none; }
 }
+
+/* the attach sheet (Alex, 12 Nov, after Telegram's; extras.jsx AttachSheet): a sheet from the foot, a grab line, close and
+   the tab's name, cards of actions and of what was sent before, and a capsule of tabs at its foot. Every theme. */
+.as-back { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center; background: rgba(5, 8, 14, .35); -webkit-backdrop-filter: var(--blur-veil); backdrop-filter: var(--blur-veil); animation: fade .22s ease both; }
+.as-sheet { position: relative; width: min(560px, 100%); height: min(78dvh, 720px); display: flex; flex-direction: column; box-sizing: border-box; padding: 6px 14px 0; border-radius: 30px 30px 0 0; background: var(--float, var(--panel)); border: 1px solid var(--edge); border-bottom: 0; box-shadow: 0 -18px 50px rgba(0, 0, 0, .22); color: var(--text); animation: as-up .32s var(--spring) both; }
+@keyframes as-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (min-width: 761px) { .as-back { align-items: center; } .as-sheet { border-radius: 30px; border-bottom: 1px solid var(--edge); height: min(640px, 86vh); } }
+.as-grab { align-self: center; flex: none; width: 38px; height: 5px; margin: 2px 0 6px; border-radius: 3px; background: color-mix(in srgb, var(--text) 18%, transparent); }
+.as-head { flex: none; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; margin-bottom: 10px; }
+.as-head > b { text-align: center; font-size: 17px; font-weight: 650; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.as-head .round { width: 44px; height: 44px; border-radius: 50%; }
+.as-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; padding: 2px 2px 96px; margin: 0 -2px; }
+.as-card { display: flex; flex-direction: column; border-radius: 22px; background: color-mix(in srgb, var(--text) 4.5%, transparent); overflow: hidden; flex: none; }
+.as-row { display: flex; align-items: center; gap: 14px; min-height: 52px; padding: 8px 16px; border: 0; background: none; color: var(--text); font: inherit; font-size: 16px; text-align: left; cursor: pointer; }
+.as-row + .as-row { background: linear-gradient(color-mix(in srgb, var(--text) 10%, transparent), color-mix(in srgb, var(--text) 10%, transparent)) 54px 0 / calc(100% - 54px) 1px no-repeat; }
+.as-row:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.as-act { color: var(--accent); }
+.as-act svg { width: 24px; height: 24px; flex: none; }
+.as-wait { color: var(--muted); font-size: 14px; cursor: default; }
+.as-label { margin: 14px 18px 2px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.as-ext { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--tint); color: #fff; font-style: normal; }
+.as-ext b { font-size: 12.5px; font-weight: 800; letter-spacing: .02em; }
+.as-ext svg { width: 20px; height: 20px; }
+.as-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.as-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15.5px; font-weight: 600; }
+.as-text small { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.as-tabs { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); display: flex; gap: 2px; padding: 5px; overflow-x: auto; scrollbar-width: none; border-radius: 26px; background: color-mix(in srgb, var(--float, var(--panel)) 86%, transparent); border: 1px solid var(--edge); box-shadow: 0 10px 30px rgba(0, 0, 0, .16); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.as-tabs::-webkit-scrollbar { display: none; }
+.as-tabs button { flex: 1 0 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 56px; padding: 0 6px; border: 0; border-radius: 20px; background: none; color: var(--muted); font: inherit; font-size: 11.5px; font-weight: 500; cursor: pointer; transition: background .2s, color .2s; }
+.as-tabs button svg { width: 24px; height: 24px; }
+.as-tabs button.on { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--accent); }
+.as-send { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); display: flex; align-items: center; gap: 8px; }
+.as-send .attach-caption { flex: 1; min-width: 0; height: 48px; margin: 0; border-radius: 24px; }
+.as-send .attach-send { flex: none; width: 48px; height: 48px; border-radius: 50%; }
+.as-sheet .attach-grid { margin: 0; }
+.attach-more { display: grid; place-items: center; aspect-ratio: 1; border: 1px dashed color-mix(in srgb, var(--text) 25%, transparent); border-radius: 14px; background: none; color: var(--muted); cursor: pointer; }
+.attach-more svg { width: 26px; height: 26px; }
+/* the theme's own button colours must not win inside the sheet */
+html[data-theme] .as-sheet :is(.as-row, .as-tabs button) { color: var(--text); }
+html[data-theme] .as-sheet .as-row.as-act { color: var(--halo, var(--text)); }
+html[data-theme] .as-sheet .as-tabs button { color: var(--muted); }
+html[data-theme] .as-sheet .as-tabs button.on { color: var(--halo, var(--text)); background: color-mix(in srgb, var(--text) 8%, transparent); }
+html[data-theme] .as-sheet .as-recent + .as-recent { background-position: 76px 0; background-size: calc(100% - 76px) 1px; }

@@ -2141,6 +2141,15 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     loadPins()
   }
 
+  // a file sent before, sent again into this chat from the attach sheet's recent files (Alex, 12 Nov)
+  const resend = async (m) => {
+    if (sealOn) { setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return false }
+    const { data, error } = await copyMessageTo(m, room.room_id, me.id)
+    if (error) { setErr(errText(error)); return false }
+    stick.current = true
+    setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+    return true
+  }
   // a message that shows as a card (a scheduled call, a place, an article): its text in body, the card's details in file
   const sendCard = async (body, file, done, close) => {
     if (sealOn) { close?.(); setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return false }
@@ -2919,7 +2928,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={() => { setAttach(null); setLocOpen(true) }} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
+      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={() => { setAttach(null); setLocOpen(true) }} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
       {transferOpen && (
         <TransferWindow title={title} hidden={transferHidden} onHide={() => setTransferHidden(true)} onProgress={setTransferPct}
           onClose={() => { setTransferOpen(false); setTransferHidden(false); setTransferPct(0) }}
@@ -2993,6 +3002,24 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 })
 
 /* Forward: pick a chat, the messages go there as copies (a photo or file is copied into that chat) */
+// a sent message copied into another chat (or the same one): its file is copied in storage under that chat, a transfer
+// gets a new 3 days, a photo's small copy goes along. Used by Forward and by the attach sheet's recent files (Alex, 12 Nov)
+async function copyMessageTo(m, roomId, meId) {
+  let file = m.file || null
+  if (file?.path) {
+    const to = `${roomId}/${crypto.randomUUID()}-${file.path.split('/').pop().replace(/^[0-9a-f-]{36}-/, '')}`
+    const { error } = await supabase.storage.from(file.bucket || 'roar-files').copy(file.path, to)
+    if (error) return { error }
+    file = { ...file, path: to, ...(file.bucket ? { expires: new Date(Date.now() + TRANSFER_DAYS * 864e5).toISOString() } : {}) }
+    if (file.thumb) {
+      const tTo = `${roomId}/${crypto.randomUUID()}-thumb.jpg`
+      const { error: tErr } = await supabase.storage.from(file.bucket || 'roar-files').copy(file.thumb, tTo)
+      file = { ...file, thumb: tErr ? undefined : tTo }
+    }
+  }
+  return supabase.from('roar_messages').insert({ room_id: roomId, user_id: meId, kind: m.kind === 'system' ? 'text' : m.kind, body: m.body, file }).select().single()
+}
+
 function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)

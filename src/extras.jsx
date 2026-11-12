@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { errText, fileLink, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
@@ -152,15 +153,35 @@ export function MediaViewer({ items, index, onClose }) {
   )
 }
 
-/* ---------- photos, videos and files before they are sent: gallery, camera, file, caption ---------- */
-export function AttachSheet({ initial = [], onClose, onSend, onTransfer, onLocation, onArticle }) {
+/* ---------- the attach sheet (Alex, 12 Nov, after Telegram's): a sheet from the foot with a bar of tabs at its foot (Gallery,
+   File, Location, Audio, Article, Transfer). Gallery and File open the phone's own pickers (a web app cannot list the
+   phone's photos itself); File and Audio also list what was sent before, to send again with a tap. Once files are picked
+   they show as tiles with the quality, a caption and Send in place of the tabs. ---------- */
+const extOf = (name = '') => (/\.([a-z0-9]{1,5})$/i.exec(name)?.[1] || '').toLowerCase()
+const EXT_TINT = { pdf: '#ff3b30', doc: '#2f7cf6', docx: '#2f7cf6', xls: '#34c759', xlsx: '#34c759', csv: '#34c759', ppt: '#ff9500', pptx: '#ff9500', zip: '#8e8e93', mov: '#5856d6', mp4: '#5856d6', png: '#af52de', jpg: '#af52de', jpeg: '#af52de', heic: '#af52de', mp3: '#ff2d55', wav: '#ff2d55', m4a: '#ff2d55', drp: '#00a1e4' }
+const whenSent = (at) => { const d = new Date(at); return `${d.toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })} · ${d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}` }
+function RecentRow({ m, onPick }) {
+  const f = m.file || {}
+  const ext = extOf(f.name) || (m.kind === 'image' ? 'jpg' : '')
+  return (
+    <button type="button" className="as-row as-recent" onClick={() => onPick(m)}>
+      <i className="as-ext" style={{ '--tint': EXT_TINT[ext] || '#8e8e93' }}>{isAudioFile(f) ? I.play : ext ? <b>{ext.slice(0, 4)}</b> : I.file}</i>
+      <span className="as-text"><b>{f.name || (m.kind === 'image' ? 'Photo' : 'File')}</b><small>{fmtBytes(f.size)} · {whenSent(m.created_at)}</small></span>
+    </button>
+  )
+}
+export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onArticle }) {
   const prefs = usePrefs()
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
   const [compress, setCompress] = useState(prefs.compress)
+  const [tab, setTab] = useState('gallery')
+  const [recent, setRecent] = useState(null)
+  const [sending, setSending] = useState('')
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
+  const aud = useRef(null)
   const touchOnly = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches
   const add = (list) => setFiles((f) => [...f, ...list])
   const urls = useRef(new Map())
@@ -170,55 +191,116 @@ export function AttachSheet({ initial = [], onClose, onSend, onTransfer, onLocat
     return urls.current.get(f)
   }
   useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), [])
-  return (
-    <Modal title={files.length ? `${files.length} selected` : 'Send'} onClose={onClose}
-      foot={files.length > 0 && <button type="button" className="btn btn-main attach-send" onClick={() => { setPrefs({ compress }); onSend(files, caption.trim(), compress) }}>{I.send}<span>Send</span></button>}>
-      {/* a fresher send window (Alex, 16 Oct): soft tiles with a tinted icon each, all on one row; once files
-          are picked the tiles shrink to a row of small pills and the caption and Send come in */}
-      <div className={`attach-pick${files.length ? ' small' : ''}`}>
-        <button type="button" className="attach-tile" style={{ '--tint': '#4da3ff' }} onClick={() => gal.current?.click()} title="Photos and videos"><i>{I.image}</i><b>Gallery</b></button>
-        {/* on a computer the camera button only opened the same file picker as Gallery (Alex, 16 Oct): phones only */}
-        {touchOnly && <button type="button" className="attach-tile" style={{ '--tint': '#34c759' }} onClick={() => cam.current?.click()} title="Take one now"><i>{I.camera}</i><b>Camera</b></button>}
-        <button type="button" className="attach-tile" style={{ '--tint': '#ff9f0a' }} onClick={() => doc.current?.click()} title="Any document"><i>{I.file}</i><b>File</b></button>
-        {/* RoarTransfer has its own button beside the clip (Alex, 17 Oct: out of here, the rest small, all on one row) */}
-        {/* on a phone the RoarTransfer button beside the clip makes way for the text, so it is here instead */}
-        {!files.length && onTransfer && <button type="button" className="attach-tile only-phone" style={{ '--tint': 'var(--accent)' }} onClick={onTransfer} title="Up to 3 GB, kept 3 days"><i>{I.transfer}</i><b>Transfer</b></button>}
-        {!files.length && onLocation && <button type="button" className="attach-tile" style={{ '--tint': '#30b0c7' }} onClick={onLocation} title="A place on the map"><i>{I.place}</i><b>Location</b></button>}
-        {!files.length && onArticle && <button type="button" className="attach-tile" style={{ '--tint': '#af52de' }} onClick={onArticle} title="A long post with a title"><i>{I.article}</i><b>Article</b></button>}
-      </div>
-      <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
-      <input ref={cam} type="file" accept="image/*,video/*" capture="environment" hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
-      <input ref={doc} type="file" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
-      {files.length > 0 && (
-        <div className="attach-grid">
-          {files.map((f, n) => (
-            <span key={n} className="attach-item">
-              {/^image\//.test(f.type) ? <img src={thumb(f)} alt="" /> : /^video\//.test(f.type) ? <video src={thumb(f)} muted /> : <span className="attach-doc">{I.file}<small>{f.name}</small></span>}
-              {/^video\//.test(f.type) && <i className="attach-play">{I.play}</i>}
-              <small className="attach-size">{fmtBytes(f.size)}</small>
-              <button type="button" onClick={() => setFiles((l) => l.filter((_, k) => k !== n))} aria-label="Remove">{I.x}</button>
-            </span>
-          ))}
+  useEffect(() => { const k = (e) => { if (e.key === 'Escape') onClose() }; document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k) }, [onClose])
+  // what was sent before, in the chats one is in (the database gives only those): one's own files, and every sound file
+  useEffect(() => {
+    if ((tab !== 'file' && tab !== 'audio') || recent) return
+    supabase.from('roar_messages').select('id, room_id, user_id, kind, body, file, created_at').in('kind', ['file', 'image']).is('deleted_at', null)
+      .order('created_at', { ascending: false }).limit(300)
+      .then(({ data }) => {
+        const live = (data || []).filter((m) => m.file?.path && !(m.file?.expires && new Date(m.file.expires) < new Date()))
+        const seen = new Set()
+        const once = (m) => { const k = `${m.file.name}|${m.file.size}`; if (seen.has(k)) return false; seen.add(k); return true }
+        const audio = live.filter((m) => isAudioFile(m.file)).filter(once)
+        seen.clear()
+        const mine = live.filter((m) => m.user_id === meId && !isAudioFile(m.file)).filter(once).slice(0, 40)
+        setRecent({ mine, audio: audio.slice(0, 40) })
+      })
+  }, [tab, recent, meId])
+  const pick = async (m) => { if (!onResend || sending) return; setSending(m.id); const ok = await onResend(m); setSending(''); if (ok !== false) onClose() }
+  const TABS = [
+    ['gallery', 'Gallery', I.image],
+    ['file', 'File', I.file],
+    onLocation && ['location', 'Location', I.place],
+    ['audio', 'Audio', I.play],
+    onArticle && ['article', 'Article', I.article],
+    onTransfer && ['transfer', 'Transfer', I.transfer],
+  ].filter(Boolean)
+  const go = (k) => {
+    if (k === 'location') return onLocation()
+    if (k === 'article') return onArticle()
+    if (k === 'transfer') return onTransfer()
+    setTab(k)
+  }
+  const title = files.length ? `${files.length} selected` : TABS.find(([k]) => k === tab)?.[1] || 'Send'
+  const media = files.some((f) => /^(image|video)\//.test(f.type))
+  const big = files.filter((f) => f.size > 50e6 && !(compress && /^video\//.test(f.type)))
+  const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
+  return createPortal(
+    <div className="as-back" onClick={onClose}>
+      <div className="as-sheet" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <i className="as-grab" aria-hidden="true" />
+        <div className="as-head">
+          <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
+          <b>{title}</b>
+          <span className="as-head-pad" />
         </div>
-      )}
-      {/* the quality, as on WhatsApp (Alex, 16 Oct): Standard shrinks photos and videos (videos to 720p); HD sends
-          them as they are. Anything over 50 MB goes by RoarTransfer: up to 3 GB, kept 3 days */}
-      {files.some((f) => /^(image|video)\//.test(f.type)) && (() => {
-        const big = files.filter((f) => f.size > 50e6 && !(compress && /^video\//.test(f.type)))
-        return (
-          <div className="attach-quality">
-            <div className="seg">
-              <button type="button" className={compress ? 'on' : ''} onClick={() => setCompress(true)}>Standard</button>
-              <button type="button" className={!compress ? 'on' : ''} onClick={() => setCompress(false)}>HD</button>
+        <div className="as-body">
+          {files.length > 0 ? (
+            <>
+              <div className="attach-grid">
+                {files.map((f, n) => (
+                  <span key={n} className="attach-item">
+                    {/^image\//.test(f.type) ? <img src={thumb(f)} alt="" /> : /^video\//.test(f.type) ? <video src={thumb(f)} muted /> : <span className="attach-doc">{I.file}<small>{f.name}</small></span>}
+                    {/^video\//.test(f.type) && <i className="attach-play">{I.play}</i>}
+                    <small className="attach-size">{fmtBytes(f.size)}</small>
+                    <button type="button" onClick={() => setFiles((l) => l.filter((_, k) => k !== n))} aria-label="Remove">{I.x}</button>
+                  </span>
+                ))}
+                <button type="button" className="attach-more" onClick={() => (media ? gal : doc).current?.click()} aria-label="Add more">{I.plus}</button>
+              </div>
+              {media && (
+                <div className="attach-quality">
+                  <div className="seg">
+                    <button type="button" className={compress ? 'on' : ''} onClick={() => setCompress(true)}>Standard</button>
+                    <button type="button" className={!compress ? 'on' : ''} onClick={() => setCompress(false)}>HD</button>
+                  </div>
+                  <small className="muted">{compress ? 'Smaller and faster: photos resized, videos to 720p.' : 'Full quality, as they are.'}</small>
+                </div>
+              )}
+              {big.length > 0 && <small className="attach-transfer">{big.length === 1 ? 'Over 50 MB: it goes by RoarTransfer, up to 3 GB, kept 3 days.' : `${big.length} files over 50 MB go by RoarTransfer, kept 3 days.`}</small>}
+            </>
+          ) : tab === 'gallery' ? (
+            <div className="as-card">
+              <button type="button" className="as-row as-act" onClick={() => gal.current?.click()}>{I.image}<span>Choose Photos or Videos</span></button>
+              {touchOnly && <button type="button" className="as-row as-act" onClick={() => cam.current?.click()}>{I.camera}<span>Take a Photo or Video</span></button>}
             </div>
-            <small className="muted">{compress ? 'Smaller and faster: photos resized, videos to 720p.' : 'Full quality, as they are.'}</small>
-            {big.length > 0 && <small className="attach-transfer">{big.length === 1 ? 'Over 50 MB: it goes by RoarTransfer, kept 3 days.' : `${big.length} files over 50 MB go by RoarTransfer, kept 3 days.`}</small>}
+          ) : (
+            <>
+              <div className="as-card">
+                {tab === 'audio'
+                  ? <button type="button" className="as-row as-act" onClick={() => aud.current?.click()}>{I.transfer}<span>Select from Files</span></button>
+                  : <>
+                    <button type="button" className="as-row as-act" onClick={() => gal.current?.click()}>{I.image}<span>Select from Gallery</span></button>
+                    <button type="button" className="as-row as-act" onClick={() => doc.current?.click()}>{I.transfer}<span>Select from Files</span></button>
+                  </>}
+              </div>
+              <small className="as-label">{tab === 'audio' ? 'Sound in your chats' : 'Recently sent files'}</small>
+              <div className="as-card">
+                {!list && <span className="as-row as-wait">Loading…</span>}
+                {list && !list.length && <span className="as-row as-wait">{tab === 'audio' ? 'No sound files in your chats yet.' : 'Nothing sent yet.'}</span>}
+                {list?.map((m) => <RecentRow key={m.id} m={m} onPick={pick} />)}
+              </div>
+            </>
+          )}
+        </div>
+        {files.length > 0 ? (
+          <div className="as-send">
+            <input className="input attach-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" />
+            <button type="button" className="round send ready attach-send" onClick={() => { setPrefs({ compress }); onSend(files, caption.trim(), compress) }} aria-label="Send" title="Send">{I.send}</button>
           </div>
-        )
-      })()}
-      {!files.some((f) => /^(image|video)\//.test(f.type)) && files.some((f) => f.size > 50e6) && <small className="attach-transfer">Over 50 MB goes by RoarTransfer: up to 3 GB, kept 3 days.</small>}
-      {files.length > 0 && <input className="input attach-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" autoFocus />}
-    </Modal>
+        ) : (
+          <nav className="as-tabs">
+            {TABS.map(([k, label, ico]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => go(k)}>{ico}<span>{label}</span></button>)}
+          </nav>
+        )}
+        <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
+        <input ref={cam} type="file" accept="image/*,video/*" capture="environment" hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
+        <input ref={doc} type="file" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
+        <input ref={aud} type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.aif,.aiff,.ogg,.opus" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
+      </div>
+    </div>,
+    document.body,
   )
 }
 

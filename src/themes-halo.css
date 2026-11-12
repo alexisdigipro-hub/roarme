@@ -319,3 +319,12 @@ html[data-skin='halo'][data-theme='stone'] .contacts-top .search input::placehol
 html[data-skin='halo'][data-theme='stone'] .contacts-top .round { width: 30px; height: 30px; border: 0; border-radius: 8px; background: none; box-shadow: none; color: rgba(255, 255, 255, .58); }
 html[data-skin='halo'][data-theme='stone'] .contacts-top .round:hover { background: rgba(255, 255, 255, .14); color: #fff; }
 html[data-skin='halo'][data-theme='stone'] .contacts-top .round svg { width: 17px; height: 17px; }
+/* 2px between the two bars, on Chats, Contacts and Calls (Alex, 12 Nov) */
+html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom .tabs { margin-bottom: calc(50px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-100px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(108px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .new-call.new-call-bar { margin-bottom: -10px; }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls { margin-bottom: calc(-102px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls::after { height: calc(100px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-top { bottom: calc(50px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts::after { height: calc(42px + var(--hfmb) + var(--hpb)); }

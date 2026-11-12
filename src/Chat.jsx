@@ -8,10 +8,20 @@ import { RecentCalls, useCalls } from './calls.jsx'
 import { tr } from './i18n.js'
 import { E2E_OFF, E2E_ON, endEncrypted, hasStretchKey, isSealed, myDevice, openText, previewText, sealText, startEncrypted, systemText, useEncrypted, useOpened, withoutDevice } from './e2e.js'
 // Settings and a profile load only when opened (Alex, 21 Oct: RoarMe lighter at start)
-const Profile = lazy(() => import('./Profile.jsx'))
-const TasksPanel = lazy(() => import('./tasks.jsx').then((m) => ({ default: m.TasksPanel })))
-const SettingsMenu = lazy(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsMenu })))
-const SettingsPage = lazy(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsPage })))
+// a part that comes only when opened (Settings, the profile, Tasks) is a file of the version the app started with; once a
+// newer version is out that file is gone, and the part opened to nothing (Alex, 12 Nov: "where did the settings go?").
+// So a part that cannot be fetched starts RoarMe again on the new version, once, instead of leaving a hole
+const part = (load) => lazy(() => load().catch((e) => {
+  try {
+    const last = Number(sessionStorage.getItem('roarme-fresh') || 0)
+    if (Date.now() - last > 20000) { sessionStorage.setItem('roarme-fresh', String(Date.now())); window.location.reload(); return new Promise(() => {}) }
+  } catch { /* private window */ }
+  throw e
+}))
+const Profile = part(() => import('./Profile.jsx'))
+const TasksPanel = part(() => import('./tasks.jsx').then((m) => ({ default: m.TasksPanel })))
+const SettingsMenu = part(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsMenu })))
+const SettingsPage = part(() => import('./SettingsPages.jsx').then((m) => ({ default: m.SettingsPage })))
 // fetched quietly a moment after RoarMe opens, so opening Settings never waits on it (Alex, 21 Oct: the foot bar
 // jumped to the top for a second while Settings loaded)
 if (typeof window !== 'undefined') setTimeout(() => { import('./SettingsPages.jsx'); import('./Profile.jsx') }, 2500)

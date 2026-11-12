@@ -936,3 +936,17 @@ html[data-skin='halo'][data-mode='dark'] :is(.modal, .as-sheet, .te-sheet) {
   html[data-skin='halo'] .modal:is(:has(.pf), :has(.ce2)) { background: linear-gradient(180deg, #f6f6fb, #eeeef5) !important; border: 0 !important; box-shadow: none !important; }
   html[data-skin='halo'][data-mode='dark'] .modal:is(:has(.pf), :has(.ce2)) { background: linear-gradient(180deg, #24242b, #1b1b21) !important; }
 }
+
+/* the menu on a held message, opened cleanly (Alex, 12 Nov: "very choppy, make it right and beautiful"). What made it
+   stutter: seven emoji popping one after another with an overshoot, the list zooming with a blur behind it, and the whole
+   screen blurred in the same frame. Now the page only dims (no blur over the whole screen), and the menu comes as one
+   piece, a short rise and fade with no bounce; the emoji do not move on their own. */
+html[data-skin='halo'] .scrim.blur { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background: rgba(14, 14, 22, .34); }
+html[data-skin='halo'] .msg-menu { transform-origin: 50% 0; will-change: transform, opacity; }
+html[data-skin='halo'] .msg-menu .rx-pick button { animation: none !important; }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes mm-in { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes mm-dim { from { opacity: 0; } to { opacity: 1; } }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu { animation: mm-in .2s cubic-bezier(.2, .8, .2, 1) backwards !important; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .scrim.blur { animation: mm-dim .18s ease backwards !important; }
+}

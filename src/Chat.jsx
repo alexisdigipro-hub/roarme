@@ -2523,7 +2523,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }, [reacts, me.id])
   const photos = useMemo(() => msgs.filter((m) => m.kind === 'image' && !m.deleted_at), [msgs])
   const openPhoto = async (m) => {
-    const items = await Promise.all(photos.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name, who: x.user_id === me.id ? 'You' : nameOf(people[x.user_id]), at: x.created_at })))
+    const items = await Promise.all(photos.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name, who: x.user_id === me.id ? 'You' : nameOf(people[x.user_id]), at: x.created_at, m: x })))
     setViewer({ items, index: Math.max(0, photos.findIndex((x) => x.id === m.id)) })
   }
   // @username in a message, lit up
@@ -3218,7 +3218,16 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         </Modal>
       )}
       {forward && <Forward msgs={forward} me={me} rooms={rooms} titleOf={titleOf} fromRoom={room.room_id} onClose={() => setForward(null)} onDone={(n) => { setForward(null); setPicked(null); toast(n > 1 ? `${n} messages forwarded` : 'Forwarded') }} />}
-      {viewer && <OnTop><MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)} /></OnTop>}
+      {viewer && <OnTop><MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)}
+        onDelete={(it) => {
+          // the bin in the photo viewer (Alex, 12 Nov): one's own photo goes for everyone, someone else's only for oneself
+          const m = it.m
+          if (!m) return
+          const mine = m.user_id === me.id
+          if (!window.confirm(mine ? 'Delete this photo for everyone?' : 'Delete this photo for you?')) return
+          setViewer(null)
+          if (mine) remove([m]); else hideForMe(m)
+        }} /></OnTop>}
       {cinema && <OnTop><Cinema item={cinema} onClose={() => setCinema(null)} /></OnTop>}
     </div>
   )

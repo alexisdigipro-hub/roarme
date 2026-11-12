@@ -4551,3 +4551,4 @@ input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18);
 .pf-menu .pf-m-sub { padding-left: 46px; }
 .pf-menu .pf-m-sub i { margin-left: auto; color: var(--halo, var(--accent)); }
 .pf-menu .pf-m-sub i svg { width: 16px; height: 16px; }
+.viewer .vw-bin { color: #ff6b5e; }

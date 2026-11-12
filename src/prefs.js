@@ -231,7 +231,7 @@ export const themeFor = (theme) => (PUBLIC_THEMES.includes(theme) ? theme : 'sto
 export const HALO_ACCENTS = [
   ['h-navy', 'Navy', '#031B88', '#8f9ce8', ['#2a3aa8', '#8f9ce8'], '#ffffff'],
   ['h-blue', 'Blue', '#6096FD', '#7fa9fd', ['#6f97f6', '#e48aa0'], '#ffffff'],
-  ['h-lilac', 'Lilac', '#AAB6FB', '#AAB6FB', ['#b4befc', '#6f9cfd'], '#ffffff'],
+  ['h-lilac', 'Lilac', '#AAB6FB', '#AAB6FB', ['#b4befc', '#6f9cfd'], '#1b2152'], // dark words, as on Pink (Alex, 12 Nov)
   ['h-rose', 'Rose', '#FB7B8E', '#FB7B8E', ['#e0788f', '#2b2a8c'], '#ffffff'],
   ['h-pink', 'Pink', '#FAA7B8', '#FAA7B8', ['#fba9b9', '#fb7f92'], '#3a1824'],
 ]

@@ -27,7 +27,7 @@ export function EmojiPicker({ onPick, onClose }) {
 /* ---------- a photo or video full screen (Alex, 12 Nov: "as the iPhone's Photos"): the whole screen, black; on top
    back, who sent it and when, ⋯ (Save, Share, Open); at the foot Share, the count, Save. Pinch or double tap to zoom,
    drag to move it when zoomed; slide sideways for the next, down to close; a tap hides and shows the bars. ---------- */
-export function MediaViewer({ items, index, onClose }) {
+export function MediaViewer({ items, index, onClose, onDelete }) {
   const [i, setI] = useState(index)
   const [bars, setBars] = useState(true)
   const [menu, setMenu] = useState(false)
@@ -145,7 +145,10 @@ export function MediaViewer({ items, index, onClose }) {
       <div className="vw-foot">
         <button type="button" className="round" onClick={share} aria-label="Share" title="Share">{I.forward}</button>
         {items.length > 1 ? <span className="vw-count">{i + 1} / {items.length}</span> : <span />}
-        <a className="round" href={it.url} download={it.name || true} target="_blank" rel="noreferrer" aria-label="Save" title="Save">{I.download}</a>
+        {/* the bin where Save was (Alex, 12 Nov); Save is in ⋯. Where nothing can be deleted (the profile's grid), Save stays */}
+        {onDelete && it.m
+          ? <button type="button" className="round vw-bin" onClick={() => onDelete(it)} aria-label="Delete" title="Delete">{I.trash}</button>
+          : <a className="round" href={it.url} download={it.name || true} target="_blank" rel="noreferrer" aria-label="Save" title="Save">{I.download}</a>}
       </div>
       {i > 0 && <button type="button" className="round vw-prev" onClick={() => go(i - 1)} aria-label="Previous">{I.left}</button>}
       {i < items.length - 1 && <button type="button" className="round vw-next" onClick={() => go(i + 1)} aria-label="Next">{I.right}</button>}

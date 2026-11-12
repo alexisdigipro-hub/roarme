@@ -4439,3 +4439,5 @@ html[data-theme] .msg .bubble.note-b, html[data-skin='halo'][data-mode][data-bub
 .msg.mine.hit-now .text mark.find-mark { background: #fff; color: #1d1d24; }
 .msg.hit .bubble { outline: 1px solid color-mix(in srgb, var(--halo, var(--accent)) 35%, transparent); outline-offset: 2px; }
 .msg.hit-now .bubble { outline: 2px solid var(--halo, var(--accent)); outline-offset: 3px; }
+.rec-btn, .rec-btn * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.rec-over, .vrec { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

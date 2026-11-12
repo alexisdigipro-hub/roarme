@@ -57,10 +57,10 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .roo
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs.lens.lens-on > .on { color: var(--lg-ink); }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs.lens::before { border: 0; border-radius: 999px !important; background: var(--lg-chip) !important; box-shadow: none; }
 /* Calls: the bar goes up, over the list (the list and the menu follow it in that order) */
-html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side > .new-call.new-call-bar { order: 1; align-self: stretch; width: auto; margin: 0 5px 8px; color: var(--lg-ink); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
-html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side > .new-call.new-call-bar:hover { color: var(--lg-ink); }
-html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side > .side-scroll.calls { order: 2; }
-html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side > .foot { order: 3; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .side-col > .new-call.new-call-bar { order: 1; align-self: stretch; width: auto; margin: 0 5px 8px; color: var(--lg-ink); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .side-col > .new-call.new-call-bar:hover { color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .side-col > .side-scroll.calls { order: 2; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .side-col > .foot { order: 3; }
 /* Contacts: the search at the top of its list, staying there as the list moves */
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-top { order: -1; position: sticky; top: 0; bottom: auto; z-index: 4; padding: 4px 6px 4px 12px; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-top .search { height: 34px; color: var(--muted); }

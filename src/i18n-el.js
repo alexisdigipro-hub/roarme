@@ -202,6 +202,8 @@ export const EL = {
   'Camera off': 'Κάμερα κλειστή',
   'Camera on': 'Κάμερα ανοιχτή',
   'Cancel': 'Ακύρωση',
+  'Delete this photo for everyone?': 'Να σβηστεί αυτή η φωτογραφία για όλους;',
+  'Delete this photo for you?': 'Να σβηστεί αυτή η φωτογραφία για σένα;',
   'Share Contact': 'Κοινοποίηση επαφής',
   'Add Notes': 'Πρόσθεσε σημειώσεις',
   'Notes are only visible to you.': 'Τις σημειώσεις τις βλέπεις μόνο εσύ.',

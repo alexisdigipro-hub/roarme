@@ -34,7 +34,7 @@ export default function App() {
   useEffect(() => {
     const m = document.querySelector('meta[name="theme-color"]')
     // Stone is grey stone in either mode (21 Oct)
-    const set = () => { const d = document.documentElement.dataset; m?.setAttribute('content', d.theme === 'stone' ? (d.mode === 'light' ? '#e2e2e3' : '#ababac') : d.mode === 'light' ? '#eef2f7' : '#383d46') }
+    const set = () => { const d = document.documentElement.dataset; m?.setAttribute('content', d.mode === 'light' ? '#ecedf2' : '#15151b') }
     set()
     const mq = window.matchMedia?.('(prefers-color-scheme: light)')
     mq?.addEventListener?.('change', set)

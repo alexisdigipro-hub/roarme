@@ -83,6 +83,12 @@ export function getPrefs() {
     if (p.folderTabs === 'left') p.folderTabs = 'bottom'
     // Glass was for a few hours a mode beside Light; it is a theme of its own (Alex, 12 Nov)
     if (p.mode === 'glass') { p.mode = 'light'; p.theme = 'glass' }
+    // Stone, Halo and Air are gone (Alex, 12 Nov): everyone is on Glass. Halo's own look carries over as it is; a colour or
+    // bubbles picked for Stone or Air were made for another palette, so they are let go
+    if (p.theme !== 'glass') {
+      if (p.theme !== 'halo') Object.assign(p, { chatTheme: '', myBubble: '', theirBubble: '', accentHex: '', accent: '' })
+      p.theme = 'glass'
+    }
     // the double click reacts with the red heart, no longer the camera (Alex, 16 Oct); a later pick of the camera stays
     if (!p.quickHeart) { if (p.quick === '🎥') p.quick = '❤️'; p.quickHeart = true }
     // the new Glass sound for everyone still on the old default, Chime (Alex, 3 Nov); a later pick of Chime stays
@@ -209,28 +215,21 @@ export function applyMode(mode) {
 /* two themes, each dark and light (Alex, 31 Oct: "only Stone and Simba"): Stone, the main one since 21 Oct, and Simba
    ('ember'). Glass, Aura, Studio, Pumba, Aurum and Lions are gone; anyone left on one of them is on Stone. */
 // Simba ('ember'), Velvet and Mango were removed on 12 Nov (Alex); whoever wore one is on Stone, as with the older ones
-export const PUBLIC_THEMES = ['stone', 'halo', 'glass', 'air']
-// Glass (Alex, 12 Nov) is Halo in liquid glass: everything that asks "is this Halo?" asks this
-export const haloish = (t) => t === 'halo' || t === 'glass'
+// one theme (Alex, 12 Nov: "delete Air, Stone and Halo"): Glass, which is Halo's build in liquid glass on Stone's base
+export const PUBLIC_THEMES = ['glass']
+// kept for the code that asked "is this Halo's build?": it always is now
+export const haloish = () => true
 // Alex's own account: Settings > Admin opens only for him
 const THEME_LAB = ['98f8b6e1-0ce2-4576-805b-cffa25667d22'] // @iamalexkon
 export const inThemeLab = (me) => !!me && THEME_LAB.includes(me.id)
-// Halo (Alex, 9 Nov) is Stone's build in another dress: worn as data-theme 'stone' + data-skin 'halo', its CSS loaded when worn
-let haloCss = null
-// Air (Alex, 12 Nov): Stone in a clean white dress with one blue, a skin like Halo (src/themes-air.css)
-let airCss = null
-// Glass (Alex, 12 Nov): Halo's build in liquid glass (src/themes-glass.css), loaded after Halo's so its rules win
-let glassCss = null
-export const wearTheme = (t) => { if (!haloCss && haloish(t)) haloCss = import('./themes-halo.css'); if (!glassCss && t === 'glass') glassCss = haloCss.then(() => import('./themes-glass.css')); if (!airCss && t === 'air') airCss = import('./themes-air.css') }
-// what goes on <html>: the theme's build and, for Halo, its skin
-export const dressTheme = (t) => {
+// Glass is worn as data-theme 'stone' + data-skin 'halo' + data-glass: every Stone and Halo rule holds and themes-glass.css
+// differs on top. Its styles come with the app (main.jsx imports them after styles.css), so there is nothing to load.
+export const wearTheme = () => {}
+export const dressTheme = () => {
   const r = document.documentElement
-  const skin = haloish(t) ? 'halo' : t === 'air' ? t : ''
-  r.dataset.theme = 'stone'
-  if (t === 'glass') r.dataset.glass = '1'; else delete r.dataset.glass
-  if (skin) r.dataset.skin = skin; else delete r.dataset.skin
+  r.dataset.theme = 'stone'; r.dataset.skin = 'halo'; r.dataset.glass = '1'
 }
-export const themeFor = (theme) => (PUBLIC_THEMES.includes(theme) ? theme : 'stone')
+export const themeFor = () => 'glass'
 // Halo's own colours (Alex, 12 Nov, from a palette he sent): the colour, its lighter form for the dark, the gradient your
 // messages and the main buttons wear, and the ink on them
 export const HALO_ACCENTS = [

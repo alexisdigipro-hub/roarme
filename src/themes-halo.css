@@ -357,3 +357,14 @@ html[data-skin='halo'][data-theme='stone'] .foot-bar-empty:hover span { color: #
 /* the two buttons at the top of the lists, Edit and + (Alex, 12 Nov): both 40px tall with a 20px corner */
 html[data-skin='halo'][data-theme='stone'] .side-head :is(.pill-btn, .round) { height: 40px; min-height: 40px; border-radius: 20px; }
 html[data-skin='halo'][data-theme='stone'] .side-head .round { width: 40px; }
+/* the top bar 4px taller on every page, 44px (Alex, 12 Nov); still 2px above the rail, it grows upwards; the lists follow */
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 34px; }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-104px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(112px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] :is(.contacts-top, .new-call.new-call-bar, .foot-bar-empty) { height: 44px; min-height: 44px; }
+html[data-skin='halo'][data-theme='stone'] .contacts-top :is(.search, .round) { height: 34px; }
+html[data-skin='halo'][data-theme='stone'] .contacts-top .round { width: 34px; }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls { margin-bottom: calc(-106px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls::after { height: calc(104px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu { margin-bottom: calc(-106px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu::after { height: calc(104px + var(--hfmb) + var(--hpb)); }

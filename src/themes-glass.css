@@ -252,3 +252,67 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .hea
     transition: transform .15s cubic-bezier(.3, .7, .4, 1), box-shadow .15s cubic-bezier(.3, .7, .4, 1) !important;
   }
 }
+
+/* Three more of the family, with Glass Travel's response (in over 150 ms, landing over 300 ms on cubic-bezier(.25, 1.45,
+   .45, 1)), each where it fits (Alex, 12 Nov: "put Morph, Merge and Drop somewhere, where they suit"). Only transform,
+   opacity and a thin shadow move. Off with Power Saving, Motion off and reduced motion.
+   GLASS MORPH: what opens grows out of the place that was pressed, as a small round drop of glass that becomes the
+   menu, the colours split at its rim while it grows: the menus of + and of the chat's picture (from their corner),
+   the message's menu (from the message), the emoji picker and the attach sheet (from their buttons at the foot).
+   GLASS MERGE: Send buds out of the writing box as a drop leaving a larger one, and the microphone comes back the
+   same way: the two are one piece of glass that parts.
+   GLASS DROP: what arrives falls in as a drop and settles: a message that has just come (theirs from above, yours
+   rises from the writing box), the count of unread on a chat and on the menu, a notice at the foot */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes gl-morph {
+    0% { opacity: 0; transform: scale(.28, .2); box-shadow: -3px 0 0 -.5px rgba(255, 60, 110, .6), 3px 0 0 -.5px rgba(50, 170, 255, .6), 0 -2px 0 -.5px rgba(90, 255, 170, .4); }
+    45% { opacity: 1; transform: scale(1.03, 1.04); box-shadow: -2px 0 0 -.5px rgba(255, 60, 110, .4), 2px 0 0 -.5px rgba(50, 170, 255, .4), 0 -1.5px 0 -.5px rgba(90, 255, 170, .25); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes gl-morph-sheet {
+    0% { opacity: 0; transform: translateY(40%) scale(.5, .3); }
+    50% { opacity: 1; transform: translateY(-1%) scale(1.01, 1.02); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes gl-bud {
+    0% { opacity: 0; transform: translateX(-16px) scale(.35, .8); box-shadow: -2px 0 0 -.5px rgba(255, 60, 110, .55), 2px 0 0 -.5px rgba(50, 170, 255, .55); }
+    50% { opacity: 1; transform: translateX(2px) scale(1.12, .94); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes gl-drop {
+    0% { opacity: 0; transform: translateY(-12px) scale(.84, 1.14); }
+    50% { opacity: 1; transform: translateY(2px) scale(1.05, .93); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes gl-rise {
+    0% { opacity: 0; transform: translateY(14px) scale(.84, 1.14); }
+    50% { opacity: 1; transform: translateY(-2px) scale(1.05, .93); }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes gl-bead {
+    0% { opacity: 0; transform: translateY(-7px) scale(.5, 1.3); }
+    55% { opacity: 1; transform: translateY(1px) scale(1.18, .86); }
+    100% { opacity: 1; transform: none; }
+  }
+  /* Morph */
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) :is(.menu, .emoji-pick, .mention-pick) { animation: gl-morph .3s cubic-bezier(.25, 1.45, .45, 1) backwards; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .menu { transform-origin: 100% 0; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .emoji-pick { transform-origin: 92% 100%; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .mention-pick { transform-origin: 10% 100%; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu { animation: gl-morph .3s cubic-bezier(.25, 1.45, .45, 1) backwards !important; transform-origin: 50% 0; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .as-sheet { animation: gl-morph-sheet .32s cubic-bezier(.25, 1.3, .45, 1) backwards; transform-origin: 8% 100%; }
+  /* Merge */
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .compose > .round.send { animation: gl-bud .3s cubic-bezier(.25, 1.45, .45, 1) backwards; transform-origin: 0 50%; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .compose > .round.rec-btn:not(.holding) { animation: gl-bud .3s cubic-bezier(.25, 1.45, .45, 1) backwards; transform-origin: 0 50%; }
+  /* Drop */
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg.fresh .bubble-col { animation: gl-drop .3s cubic-bezier(.25, 1.45, .45, 1) backwards; transform-origin: 0 0; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg.mine.fresh .bubble-col { animation-name: gl-rise; transform-origin: 100% 100%; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) :is(.badge, .foot-ico i) { animation: gl-bead .3s cubic-bezier(.25, 1.45, .45, 1) backwards; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .toast { animation: gl-toast .3s cubic-bezier(.25, 1.45, .45, 1) backwards; }
+  /* the notice is centred by its own transform, so its drop carries that along */
+  @keyframes gl-toast {
+    0% { opacity: 0; transform: translate(-50%, 14px) scale(.84, 1.14); }
+    50% { opacity: 1; transform: translate(-50%, -2px) scale(1.05, .93); }
+    100% { opacity: 1; transform: translate(-50%, 0); }
+  }
+}

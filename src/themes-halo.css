@@ -467,3 +467,10 @@ html[data-skin='halo'][data-bubbles] .bubble .artc .trx-get { height: 38px; bord
 html[data-skin='halo'][data-bubbles] .bubble .artc .artc-min { height: 38px; border: 0 !important; background: rgba(20, 20, 40, .06) !important; color: var(--muted) !important; }
 html[data-skin='halo'][data-mode='dark'][data-bubbles] .bubble .artc .artc-min { background: rgba(255, 255, 255, .1) !important; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji):is(:has(.artc), :has(.rt-card)) :is(.meta, .ticks:not(.seen)) { color: var(--muted) !important; }
+/* every message that is a thing, not words, the same width to the pixel (Alex, 12 Nov): photo, video, place, article,
+   sound, file, RoarTransfer, event all var(--media-w) from edge to edge */
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:is(.pic, .loc-b, .art-b, .event-b, :has(.rt-card), :has(.artc), :has(.locc), :has(.voice), :has(.music), :has(.file), :has(.vid-box)):not(.big-emoji) {
+  width: var(--media-w) !important; max-width: 100%; box-sizing: border-box;
+}
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble :is(.voice, .music, .file) { width: 100%; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.pic :is(.pic-img, .load-tap, .pic-wait, .vid-box) { width: 100%; }

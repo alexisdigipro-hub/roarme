@@ -221,17 +221,42 @@ export const calm = () => !!document.documentElement.dataset.lite || !!document.
 /* the glass lens that slides to the chosen tab (tabs, the foot bar, segmented choices) */
 export function useLens(dep) {
   const ref = useRef(null)
+  const was = useRef({})
+  const go = useRef([0, 0, false])
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return undefined
     const put = () => {
       const on = el.querySelector(':scope > .on')
       if (!on) { el.classList.remove('lens-on'); return }
-      el.style.setProperty('--lx', `${on.offsetLeft}px`)
+      const to = { x: on.offsetLeft, w: on.offsetWidth }
+      const from = was.current
+      const moved = from.el && from.el !== on && from.el.isConnected
+      was.current = { el: on, ...to }
       el.style.setProperty('--ly', `${on.offsetTop}px`)
-      el.style.setProperty('--lw', `${on.offsetWidth}px`)
       el.style.setProperty('--lh', `${on.offsetHeight}px`)
       el.classList.add('lens-on')
+      // a bar that asks for it ([data-travel], the menu at the foot: Alex, 12 Nov, as the glass bar of iOS): the lens
+      // lifts and stretches from the old tab over to the new one, then draws in onto it and settles. While it travels,
+      // a call that changes nothing (a resize, an unread count) leaves it alone; it lands on where the tab is by then
+      if (moved && el.dataset.travel !== undefined && !calm()) {
+        clearTimeout(go.current[0]); clearTimeout(go.current[1])
+        const x0 = Math.min(from.x, to.x)
+        const x1 = Math.max(from.x + from.w, to.x + to.w)
+        go.current[2] = true
+        el.classList.remove('lens-land')
+        el.classList.add('lens-go')
+        el.style.setProperty('--lx', `${x0}px`)
+        el.style.setProperty('--lw', `${x1 - x0}px`)
+        const land = () => { el.style.setProperty('--lx', `${was.current.x}px`); el.style.setProperty('--lw', `${was.current.w}px`) }
+        go.current[0] = setTimeout(() => { land(); el.classList.add('lens-land') }, 150)
+        go.current[1] = setTimeout(() => { go.current[2] = false; land(); el.classList.remove('lens-go', 'lens-land') }, 470)
+        return
+      }
+      if (go.current[2]) return
+      el.classList.remove('lens-go', 'lens-land')
+      el.style.setProperty('--lx', `${to.x}px`)
+      el.style.setProperty('--lw', `${to.w}px`)
     }
     put()
     // follow size changes of the bar and of each tab, and a change of theme or text size

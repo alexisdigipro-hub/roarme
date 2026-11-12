@@ -965,3 +965,15 @@ html[data-skin='halo'][data-mode='light'] body.app-wall[data-wop] { box-shadow: 
 html[data-skin='halo'][data-mode='dark'] body.app-wall[data-wop] { box-shadow: inset 0 0 0 200vmax color-mix(in srgb, #15151b calc((1 - var(--wop, 1)) * 100%), transparent); }
 /* a chat does not lay the same wash a second time over the page's: its own shows only when it differs from the app's */
 html[data-skin='halo'] body.app-wall .room-view.same-wall { background-image: none !important; background-color: transparent !important; box-shadow: none !important; }
+
+/* the menu as capsules (Alex, 12 Nov, from Telegram's bar: "only the shape, not the fonts, colours or sizes"; Settings >
+   Appearance > Menu, prefs.barStyle 'pill' -> data-bars): both bars at the foot fully round, their chosen chip a capsule,
+   the smoke more see-through with the app's own blur behind it, a little more air between the two */
+html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] :is(.foot, .rooms-area.bottom .tabs) { border-radius: 999px !important; -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important; }
+html[data-skin='halo'][data-theme='stone'][data-mode='light'][data-bars='pill'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(24, 24, 30, .7) !important; }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'][data-bars='pill'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(14, 14, 18, .62) !important; }
+html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] :is(.foot, .rooms-area.bottom .tabs) button,
+html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] :is(.foot, .rooms-area.bottom .tabs).lens::before { border-radius: 999px !important; }
+html[data-skin='halo'][data-theme='stone'][data-bars='pill'] .foot { padding-left: 5px; padding-right: 5px; }
+html[data-skin='halo'][data-theme='stone'][data-bars='pill'] .rooms-area.bottom .tabs { padding-left: 5px; padding-right: 5px; scroll-padding-inline: 5px; }
+html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] .app > .side .rooms-area.bottom .tabs { margin-bottom: calc(54px + var(--hfmb) + var(--hpb)); }

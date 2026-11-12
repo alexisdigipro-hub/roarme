@@ -52,6 +52,7 @@ export const DEFAULTS = {
   folderTags: false,
   folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
   background: 'soft', // one of WALLS
+  barStyle: '', // Halo: the shape of the two bars at the foot; '' = ours, 'pill' = capsules (Alex, 12 Nov)
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
   pauseOnRec: true, // a song or a voice message playing stops while a voice or video message is recorded
   callLessData: false, // video calls at 360p and 15 frames, for weak networks
@@ -271,6 +272,7 @@ export function applyLook(p) {
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
   r.dataset.density = p.density || 'standard'
+  if (p.theme === 'halo' && p.barStyle === 'pill') r.dataset.bars = 'pill'; else delete r.dataset.bars
   r.style.setProperty('--r', `${Number(p.radius) || 12}px`)
   if (p.motion === false) r.dataset.still = '1'; else delete r.dataset.still
   if (p.focusRings) r.dataset.focus = 'bold'; else delete r.dataset.focus

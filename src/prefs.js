@@ -233,6 +233,10 @@ export const HALO_ACCENTS = [
   ['h-lilac', 'Lilac', '#AAB6FB', '#AAB6FB', ['#b4befc', '#6f9cfd'], '#1b2152'], // dark words, as on Pink (Alex, 12 Nov)
   ['h-rose', 'Rose', '#FB7B8E', '#FB7B8E', ['#e0788f', '#2b2a8c'], '#ffffff'],
   ['h-pink', 'Pink', '#FAA7B8', '#FAA7B8', ['#fba9b9', '#fb7f92'], '#3a1824'],
+  // three more pairs from the same palette (Alex, 12 Nov)
+  ['h-sunset', 'Sunset', '#F7805F', '#fb9a7c', ['#ff9a3c', '#fb7b8e'], '#ffffff'],
+  ['h-twilight', 'Twilight', '#4F5CC9', '#9aa5f5', ['#aab6fb', '#2a3aa8'], '#ffffff'],
+  ['h-candy', 'Candy', '#8E8FE6', '#a9a9f2', ['#f48fa6', '#5a8cf5'], '#ffffff'],
 ]
 const hexA = (h, a) => `rgba(${parseInt(h.slice(1, 3), 16)}, ${parseInt(h.slice(3, 5), 16)}, ${parseInt(h.slice(5, 7), 16)}, ${a})`
 export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#d40000'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57'], ['white', 'White', '#ffffff'], ['black', 'Black', '#111111']]

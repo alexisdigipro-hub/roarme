@@ -475,6 +475,7 @@ export function NoteTile({ file }) {
   }, [url])
   const tap = (e) => {
     e.stopPropagation()
+    if (Date.now() - (window.roarHeldAt || 0) < 800) return // the finger lifting from a long press, which opened the menu
     const v = ref.current
     if (!v) return
     if (!sound) { v.muted = false; v.loop = false; v.currentTime = 0; v.play().catch(() => {}); setSound(true); setP(0) }

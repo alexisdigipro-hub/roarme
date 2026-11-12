@@ -13,7 +13,7 @@ export default function App() {
   const prefs = usePrefs()
   const { lite, theme } = prefs
   const mode = prefs.mode
-  useEffect(() => applyLook(prefs), [prefs.accent, prefs.accentHex, prefs.myBubble, prefs.theirBubble, prefs.bubbleR, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => applyLook(prefs), [prefs.theme, prefs.accent, prefs.accentHex, prefs.myBubble, prefs.theirBubble, prefs.bubbleR, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => applyMode(mode), [mode])
   // the colour of the band under the clock on a phone follows day and night (Alex, 19 Oct: no black at the top)
   useEffect(() => {

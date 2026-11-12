@@ -1341,7 +1341,7 @@ export default function Chat({ me, setMe }) {
             <button type="button" className="danger" disabled={!picked.length} onClick={bulkDelete}>{I.trash}<span>Delete</span></button>
           </nav>
         ) : (
-          <nav ref={footLens} className="foot lens" onClickCapture={(e) => { if (tasksOpen && !e.target.closest('.foot-tasks') && window.matchMedia('(max-width: 760px)').matches) showTasks(false) }}>
+          <nav ref={footLens} className="foot lens" data-travel="" onClickCapture={(e) => { if (tasksOpen && !e.target.closest('.foot-tasks') && window.matchMedia('(max-width: 760px)').matches) showTasks(false) }}>
             {/* Contacts · Calls · Messages in the middle, a little bigger · Tasks · Settings (Alex, 19 Oct); AllMedia lives in Settings */}
             <button type="button" className={tab === 'contacts' && !tasksOpen ? 'on' : ''} onClick={() => setTab('contacts')}>{FOOT_I.contacts}<span>Contacts</span></button>
             {prefs.callsTab && <button type="button" className={tab === 'calls' && !tasksOpen ? 'on' : ''} onClick={() => setTab('calls')}>{FOOT_I.calls}<span>Calls</span></button>}

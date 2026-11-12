@@ -165,3 +165,26 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .hea
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .head-text { flex: 1 1 auto; width: 100%; min-width: 0; align-items: stretch; text-align: center; transform: none; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .head-text strong { display: block; width: 100%; height: 20px; line-height: 20px; text-align: center; transform: none; -webkit-font-smoothing: antialiased; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .head-text small { display: block; width: 100%; height: 14px; line-height: 14px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the menu's lens travels as the glass bar of iOS does (Alex, 12 Nov: "the animation the bar at the foot of Claude has"):
+   on a tap it lifts into clearer glass and stretches from the old tab across to the new one (ui.jsx useLens,
+   [data-travel]: .lens-go), then draws in onto the new tab and settles with one soft spring (.lens-land). Only transform
+   and width move. Off with Power Saving, Motion off and reduced motion (calm()) */
+@media (prefers-reduced-motion: no-preference) {
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens.lens-go::before {
+    transform: translate(var(--lx, 0), var(--ly, 0)) scale(1.03, 1.16);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .42)) !important; border: 1px solid rgba(255, 255, 255, .95) !important;
+    box-shadow: 0 10px 24px rgba(60, 60, 100, .22), inset 0 1px 0 #fff, inset 0 -1px 0 rgba(255, 255, 255, .5) !important;
+    transition: transform .15s cubic-bezier(.3, .7, .4, 1), width .15s cubic-bezier(.3, .7, .4, 1), background .12s, box-shadow .12s !important;
+  }
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot.lens.lens-go::before {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .14)) !important; border-color: rgba(255, 255, 255, .34) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .4) !important;
+  }
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens.lens-go.lens-land::before {
+    transform: translate(var(--lx, 0), var(--ly, 0)) scale(1.06, 1.1);
+    transition: transform .3s cubic-bezier(.25, 1.45, .45, 1), width .3s cubic-bezier(.25, 1.45, .45, 1), background .2s, box-shadow .2s !important;
+  }
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens::before { transition: transform .26s cubic-bezier(.3, 1.3, .5, 1), width .26s cubic-bezier(.3, 1.3, .5, 1), height .25s ease, opacity .15s, background .22s, box-shadow .22s; }
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .foot.lens.lens-go > button { transition: color .12s; }
+}

@@ -402,24 +402,24 @@ html[data-skin='halo'][data-theme='stone'] .room-head .round { width: 44px; }
 
 /* Halo: a RoarTransfer card is a white frosted card whoever sent it (an orange bubble made its words unreadable), with
    the orange only on Open and on the word Transfer */
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji):has(.rt-card) {
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b:not(.pic):not(.big-emoji) {
   background: linear-gradient(135deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .78)) !important; border: 1px solid #fff !important; color: #1d1d24 !important;
   box-shadow: 0 8px 22px rgba(70, 70, 110, .1), inset 0 1px 0 #fff !important;
 }
-html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji):has(.rt-card) {
+html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble.rt-b:not(.pic):not(.big-emoji) {
   background: linear-gradient(135deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .06)) !important; border-color: rgba(255, 255, 255, .14) !important; color: #f1f1f5 !important; box-shadow: none !important;
 }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) :is(.meta, .ticks, .rt-card-head small, .rt-card-until, .rt-card-files li small) { color: var(--muted) !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .ticks.seen { color: var(--halo) !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark b { color: inherit !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark b span { color: var(--halo) !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark i { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)); color: #fff; box-shadow: none; border: 0; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-files li { background: rgba(20, 20, 40, .05); color: inherit; }
-html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-files li { background: rgba(255, 255, 255, .07); }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-files li b { color: inherit !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn { border: 0; box-shadow: none; background: rgba(20, 20, 40, .06) !important; color: inherit !important; }
-html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn { background: rgba(255, 255, 255, .1) !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn.btn-main { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b :is(.meta, .ticks, .rt-card-head small, .rt-card-until, .rt-card-files li small) { color: var(--muted) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b .ticks.seen { color: var(--halo) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b .rt-mark b { color: inherit !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b .rt-mark b span { color: var(--halo) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b .rt-mark i { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)); color: #fff; box-shadow: none; border: 0; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b .rt-card-files li { background: rgba(20, 20, 40, .05); color: inherit; }
+html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble.rt-b .rt-card-files li { background: rgba(255, 255, 255, .07); }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b .rt-card-files li b { color: inherit !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b .rt-card-acts .btn { border: 0; box-shadow: none; background: rgba(20, 20, 40, .06) !important; color: inherit !important; }
+html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble.rt-b .rt-card-acts .btn { background: rgba(255, 255, 255, .1) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.rt-b .rt-card-acts .btn.btn-main { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; }
 
 /* the chat's head as in the picture Alex sent (12 Nov): back on the left, the name and the last seen in a pill in the
    middle (no picture in it), the round picture on the right, which opens the chat's menu (Search, Info, Mute and the
@@ -445,20 +445,20 @@ html[data-skin='halo'][data-theme='stone'] .room-head .head-ava:active { transfo
 html[data-skin='halo'][data-theme] .bubble.pic, html[data-skin='halo'][data-theme] .msg.mine .bubble.pic { border: 0 !important; background: none !important; box-shadow: 0 8px 22px rgba(70, 70, 110, .14); }
 html[data-skin='halo'][data-theme] .bubble.pic > :is(.pic-img, .load-tap, .pic-wait, .vid-box), html[data-skin='halo'][data-theme] .bubble.pic .vid-box > video { border-radius: inherit !important; }
 /* the RoarTransfer message keeps the photos' width now that they have no rim */
-html[data-skin='halo'] .bubble:has(.rt-card) { width: var(--media-w); }
+html[data-skin='halo'] .bubble.rt-b { width: var(--media-w); }
 
 /* Halo: an article in a chat is a white frosted card whoever sent it, as wide as a photo; the title dark and large, its
    first lines grey; the orange only on Read and on the word Article */
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji):has(.artc) {
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.art-b:not(.pic):not(.big-emoji) {
   width: var(--media-w); max-width: 100%; box-sizing: border-box;
   background: linear-gradient(135deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .78)) !important; border: 1px solid #fff !important; color: #1d1d24 !important;
   box-shadow: 0 8px 22px rgba(70, 70, 110, .1), inset 0 1px 0 #fff !important;
 }
-html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji):has(.artc) {
+html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble.art-b:not(.pic):not(.big-emoji) {
   background: linear-gradient(135deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .06)) !important; border-color: rgba(255, 255, 255, .14) !important; color: #f1f1f5 !important; box-shadow: none !important;
 }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.artc) :is(.meta, .ticks) { color: var(--muted) !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.artc) .ticks.seen { color: var(--halo) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.art-b :is(.meta, .ticks) { color: var(--muted) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.art-b .ticks.seen { color: var(--halo) !important; }
 html[data-skin='halo'] .bubble .artc { gap: 10px; padding: 4px 2px 2px; }
 html[data-skin='halo'] .bubble .artc .trx-head { justify-content: flex-start; }
 html[data-skin='halo'] .bubble .artc .rt-mark i { width: 30px; height: 30px; background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; border: 0 !important; box-shadow: none !important; }
@@ -471,10 +471,10 @@ html[data-skin='halo'] .bubble .artc .artc-hero span { color: var(--muted) !impo
 html[data-skin='halo'][data-bubbles] .bubble .artc .trx-get { height: 38px; border: 0 !important; border-radius: 999px; background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; box-shadow: none !important; }
 html[data-skin='halo'][data-bubbles] .bubble .artc .artc-min { height: 38px; border: 0 !important; background: rgba(20, 20, 40, .06) !important; color: var(--muted) !important; }
 html[data-skin='halo'][data-mode='dark'][data-bubbles] .bubble .artc .artc-min { background: rgba(255, 255, 255, .1) !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji):is(:has(.artc), :has(.rt-card)) :is(.meta, .ticks:not(.seen)) { color: var(--muted) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji):is(.art-b, .rt-b) :is(.meta, .ticks:not(.seen)) { color: var(--muted) !important; }
 /* every message that is a thing, not words, the same width to the pixel (Alex, 12 Nov): photo, video, place, article,
    sound, file, RoarTransfer, event all var(--media-w) from edge to edge */
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:is(.pic, .loc-b, .art-b, .event-b, :has(.rt-card), :has(.artc), :has(.locc), :has(.voice), :has(.music), :has(.file), :has(.vid-box)):not(.big-emoji) {
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:is(.pic, .loc-b, .art-b, .event-b, .rt-b, .aud-b, .file-b):not(.big-emoji) {
   width: var(--media-w) !important; max-width: 100%; box-sizing: border-box;
 }
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble :is(.voice, .music, .file) { width: 100%; }
@@ -600,10 +600,10 @@ html[data-skin='halo'][data-mode='dark'] .rt .rt-drop.has { border-color: rgba(2
 
 /* a song and a voice message the same size (Alex, 12 Nov): both as wide as a photo and 72px tall (a fifth lower than
    the song was), the play button 40px, the time of the message laid in the corner instead of a row of its own */
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:is(:has(> .voice), :has(> .music)):not(:has(> .text, > .quote, > .who)) {
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.aud-b.solo {
   position: relative; height: 72px; box-sizing: border-box; padding: 7px 12px 17px !important; display: flex; align-items: center;
 }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:is(:has(> .voice), :has(> .music)):not(:has(> .text, > .quote, > .who)) > .meta { position: absolute; right: 12px; bottom: 4px; margin: 0; float: none; font-size: 10.5px; line-height: 1; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.aud-b.solo > .meta { position: absolute; right: 12px; bottom: 4px; margin: 0; float: none; font-size: 10.5px; line-height: 1; }
 html[data-skin='halo'] .bubble :is(.voice, .music) { min-width: 0; padding: 0; gap: 10px; }
 html[data-skin='halo'] .bubble :is(.voice-btn, .music-btn) { width: 40px; height: 40px; }
 html[data-skin='halo'] .bubble :is(.voice-btn, .music-btn) svg { width: 16px; height: 16px; }
@@ -881,3 +881,12 @@ html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile,
 html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-seen, html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-seen > span:nth-child(2) { color: #f4f4f8; }
 html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-seen :is(small, .ticks) { color: rgba(255, 255, 255, .65); }
 html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-seen .ticks.seen { color: var(--halo); }
+
+/* lighter, second pass (Alex, 12 Nov: "check well, perfect response"):
+   - the veils over the whole screen (behind a menu, a window, a sheet) no longer fade in: a blurred layer whose opacity
+     moves is blurred again on every frame, and that was under every pop and slide;
+   - the two bars at the foot do not blur the list that scrolls under them: they are close to solid and dark, the blur
+     could not be seen, and it was worked out again on every frame of a scroll;
+   - messages say what they are with classes (rt-b, aud-b, file-b, solo) and the rules above no longer ask :has(). */
+html[data-skin='halo'] :is(.modal-back, .as-back, .scrim.blur, .te-back, .vrec) { animation: none !important; }
+html[data-skin='halo'][data-theme='stone'][data-mode] :is(.foot, .rooms-area.bottom .tabs, .foot-bar-empty, .contacts-top, .new-call-bar) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }

@@ -2774,6 +2774,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           const isPicked = picked?.includes(m.id)
           const big = prefs.bigEmoji && m.kind === 'text' && !m.deleted_at && !quoted && isEmojiOnly(m.body)
           const isTransfer = m.kind === 'file' && m.file?.bucket === TRANSFER_BUCKET
+          // what the message is, as classes on its bubble, so the themes need no :has() to find it out (Alex, 12 Nov: lighter):
+          // rt-b a RoarTransfer card, aud-b a voice message or a song, file-b a file, solo with no words, quote or name over it
+          const isAud = m.kind === 'voice' || (m.kind === 'file' && !isTransfer && !m.file?.roartransfer && isAudioFile(m.file))
+          const kindCls = `${m.file?.roartransfer ? ' rt-b' : ''}${isAud ? ' aud-b' : ''}${m.kind === 'file' && !isAud && !m.file?.roartransfer && !m.file?.event && !m.file?.location && !m.file?.article && !/^(image|video)\//.test(m.file?.type || '') ? ' file-b' : ''}${!m.body && !(m.reply_to && byId[m.reply_to] && !byId[m.reply_to].deleted_at) && !(m.user_id !== me.id && room.kind === 'group') ? ' solo' : ''}`
           const isVideo = m.kind === 'file' && !isTransfer && /^video\//.test(m.file?.type || '')
           const isGifFile = m.kind === 'file' && !isTransfer && /gif/.test(m.file?.type || '')
           const vlink = !m.deleted_at && m.kind === 'text' ? videoLinkOf(m.body) : null
@@ -2798,7 +2802,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>

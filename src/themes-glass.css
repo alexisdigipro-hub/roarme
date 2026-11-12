@@ -108,3 +108,50 @@ html:root:root[data-glass][data-skin='halo'] .as-tile > i {
   background: var(--grain), linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important;
 }
 html:root:root[data-glass][data-skin='halo'] .halo-accents .acc::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--grain); pointer-events: none; }
+
+/* Sign in, Sign up, a forgotten password (Alex, 12 Nov: "the Orange background here too, the window as our Glass, a
+   light orange accent"): the page always on Orange, whatever was chosen inside; the card a sheet of light glass with
+   dark words, pill fields, the button the light orange with its grain. It was a deep charcoal card with a white button */
+html:root:root[data-glass][data-theme] .auth {
+  position: fixed; inset: 0; overflow-y: auto; box-sizing: border-box; background-color: #f0f0f5;
+  background-image: radial-gradient(circle at 12% 0%, rgba(255, 154, 60, .3), transparent 62%), radial-gradient(circle at 92% 100%, rgba(244, 115, 24, .24), transparent 64%), linear-gradient(160deg, rgba(255, 154, 60, .1), rgba(244, 115, 24, .08));
+  --halo: #f47318; --halo-mine: rgba(244, 115, 24, .74); --halo-mine-top: rgba(250, 142, 62, .74);
+  --text: #1d1d24; --muted: #7c7c8a;
+}
+html:root:root[data-glass][data-theme][data-mode='dark'] .auth { --text: #f1f1f5; --muted: #a5a5b4; background-color: #15151b; background-image: radial-gradient(circle at 12% 0%, rgba(255, 154, 60, .24), transparent 62%), radial-gradient(circle at 92% 100%, rgba(244, 115, 24, .2), transparent 64%); }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card {
+  border-radius: 32px; background: var(--lg) !important; border: 1px solid var(--lg-rim) !important; box-shadow: var(--lg-shadow) !important; color: var(--text);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+}
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card h1 { color: var(--text); font-weight: 600; }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card :is(.auth-sub, .auth-legal) { color: var(--muted) !important; }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .field > span { color: var(--muted) !important; }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .brand { justify-content: center; }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .rm-mark { color: var(--halo); }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .wordmark b.wm,
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .wordmark b.wm span,
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .by-tml,
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .by-tml b { color: var(--text); }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .input {
+  height: 50px; padding: 0 18px; border-radius: 999px; color: var(--text) !important; background: rgba(255, 255, 255, .72) !important; border: 1px solid #fff !important;
+  box-shadow: inset 0 1px 2px rgba(60, 60, 100, .06) !important;
+}
+html:root:root[data-glass][data-theme][data-mode='dark']:not([data-theme='studio']) .auth .auth-card .input { background: rgba(255, 255, 255, .08) !important; border-color: rgba(255, 255, 255, .16) !important; box-shadow: none !important; }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .input:focus { border-color: var(--halo) !important; background: rgba(255, 255, 255, .9) !important; }
+html:root:root[data-glass][data-theme][data-mode='dark']:not([data-theme='studio']) .auth .auth-card .input:focus { background: rgba(255, 255, 255, .12) !important; }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .input::placeholder { color: var(--muted) !important; }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main,
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main:not(:disabled),
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .btn-main:not(:disabled):hover {
+  height: 52px; border-radius: 999px !important; color: #fff !important; font-weight: 600;
+  background: var(--grain), linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important;
+  border: 1px solid rgba(255, 255, 255, .5) !important; box-shadow: 0 8px 20px rgba(244, 115, 24, .2) !important;
+}
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .auth-links { margin-top: 14px; gap: 8px; }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-card .auth-links button {
+  flex: 1 1 0; min-width: 0; height: 36px; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 999px; background: rgba(255, 255, 255, .5); border: 1px solid var(--lg-rim); color: var(--text) !important; font-size: 12.5px; font-weight: 500;
+}
+html:root:root[data-glass][data-theme][data-mode='dark']:not([data-theme='studio']) .auth .auth-card .auth-links button { background: rgba(255, 255, 255, .08); }
+html:root:root[data-glass][data-theme][data-mode='light']:not([data-theme='studio']) .auth .auth-err { color: #b3261e; }
+html:root:root[data-glass][data-theme][data-mode='light']:not([data-theme='studio']) .auth .auth-note { color: #1c7a45; }
+html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-invite b, html:root:root[data-glass][data-theme] .auth .auth-legal a { color: var(--halo); }

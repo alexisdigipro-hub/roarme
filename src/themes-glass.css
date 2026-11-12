@@ -155,3 +155,13 @@ html:root:root[data-glass][data-theme][data-mode='dark']:not([data-theme='studio
 html:root:root[data-glass][data-theme][data-mode='light']:not([data-theme='studio']) .auth .auth-err { color: #b3261e; }
 html:root:root[data-glass][data-theme][data-mode='light']:not([data-theme='studio']) .auth .auth-note { color: #1c7a45; }
 html:root:root[data-glass][data-theme]:not([data-theme='studio']) .auth .auth-invite b, html:root:root[data-glass][data-theme] .auth .auth-legal a { color: var(--halo); }
+
+/* the name in the chat's head sharp on an iPhone (Alex, 12 Nov, many times: "the letters blur"). The name clips itself
+   (overflow hidden, for the dots of a long name), so Safari draws it on a layer of its own; centred in the pill, that
+   layer began on a fraction of a pixel and was smoothed, while the line under it, which clips nothing, stayed sharp.
+   Now the name is a block as wide as the pill, starting on a whole pixel, with its words centred inside it; the two
+   lines have whole heights so they also sit on whole pixels; and the pill is not kept on a layer by a press spring */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .head-card { transition: none !important; transform: none !important; animation: none !important; will-change: auto; padding-left: 16px; padding-right: 16px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .head-text { flex: 1 1 auto; width: 100%; min-width: 0; align-items: stretch; text-align: center; transform: none; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .head-text strong { display: block; width: 100%; height: 20px; line-height: 20px; text-align: center; transform: none; -webkit-font-smoothing: antialiased; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .head-text small { display: block; width: 100%; height: 14px; line-height: 14px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

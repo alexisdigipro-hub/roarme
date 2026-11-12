@@ -847,3 +847,17 @@ html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile,
   html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble { transition: transform .5s var(--jelly); }
   html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble:active { transform: scale(.97, .95); transition-duration: .1s; }
 }
+
+/* the menu that pops on a held message (Alex, 12 Nov: "more opaque, darker, with the grain"): the same dark smoked glass
+   with grain as the bars at the foot, white words, fine light lines */
+html[data-skin='halo'][data-theme][data-mode] .msg-menu :is(.rx-pick, .menu-list) {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(18, 18, 23, .94) !important;
+  border: 1px solid rgba(255, 255, 255, .1) !important; box-shadow: 0 18px 44px rgba(0, 0, 0, .34) !important; color: #f4f4f8;
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+}
+html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button { color: #f4f4f8; }
+html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button :is(small, i) { color: rgba(255, 255, 255, .6); }
+html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button:hover, html[data-skin='halo'][data-theme][data-mode] .msg-menu .rx-pick button:hover { background: rgba(255, 255, 255, .12); }
+html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button.danger { color: #ff6b5e; }
+html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list hr { border-top-color: rgba(255, 255, 255, .12); }
+html[data-skin='halo'][data-theme][data-mode] .msg-menu .rx-pick button.on { background: rgba(255, 255, 255, .2); }

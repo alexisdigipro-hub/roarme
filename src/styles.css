@@ -4321,3 +4321,12 @@ html[data-theme] .viewer.v2 .vw-stage :is(img, video) { animation: vw-in .25s ea
 
 /* the round picture at the end of a chat's head: only Halo shows it (themes-halo.css) */
 .head-ava { display: none; }
+
+/* the article editor with the keyboard up on a phone (Alex, 12 Nov: "when you write you see nothing"): the window takes
+   exactly the part of the screen above the keyboard (main.jsx --vvh / --vvt), so the title, the tools and the line being
+   written stay in sight */
+@media (max-width: 760px) {
+  html.kb .modal-back:has(.art) { inset: auto 0 auto 0; top: var(--vvt, 0px); height: var(--vvh, 100dvh); padding: 8px; place-items: stretch; }
+  html.kb .modal:has(.art) { width: 100%; height: 100%; max-height: none; }
+  html.kb .modal:has(.art) .art-count { display: none; }
+}

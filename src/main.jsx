@@ -61,6 +61,15 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
   // a field taken off the page while it had the keyboard (closing a chat) never says focusout: the keyboard going
   // down still shrinks or grows the visible area, and that is checked too (Alex, 21 Oct: the bar at the foot hung low)
   window.visualViewport?.addEventListener('resize', () => setTimeout(down, 60))
+  // the part of the screen the keyboard leaves free, for windows that must fit above it (the article editor; Alex, 12 Nov:
+  // "when you write you see nothing")
+  const vv = window.visualViewport
+  if (vv) {
+    const fit = () => { const r = document.documentElement.style; r.setProperty('--vvh', `${Math.round(vv.height)}px`); r.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`) }
+    vv.addEventListener('resize', fit)
+    vv.addEventListener('scroll', fit)
+    fit()
+  }
 }
 
 // the service worker keeps the app's built files on the device, so RoarMe starts faster (public/sw.js); the desktop

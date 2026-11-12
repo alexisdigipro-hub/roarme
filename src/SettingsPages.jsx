@@ -861,6 +861,12 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="pv mine">Bring the lights 💡</span>
           <span className="pv-compose"><span>Write a message…</span><i /></span>
         </div>
+        {p.theme === 'halo' && (
+          <div className="pv-bars" aria-hidden="true">
+            <span className="pv-bar pv-folders"><b className="on">All</b><b>Unread</b><b>Groups</b><b>Personal</b></span>
+            <span className="pv-bar pv-rail"><i>{I.contacts}</i><i>{I.calls}</i><i className="on">{I.messages}</i><i>{I.settings}</i></span>
+          </div>
+        )}
       </div>
       <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Halo: white frosted glass on soft lilac clouds, with a warm orange. Air: plain white with one blue. Each has dark and light.">
         <div className="set-row set-col">

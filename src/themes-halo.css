@@ -1026,3 +1026,20 @@ html[data-skin='halo'] .smsg .tpick-colon { color: var(--halo); }
 html[data-skin='halo'] .smsg .sch-hint { margin: 0 12px; text-align: center; font-size: 12px; }
 html[data-skin='halo'] .modal:has(.smsg) .modal-foot { padding: 6px 18px 18px; }
 html[data-skin='halo'][data-theme][data-mode] .modal:has(.smsg) .smsg-go { min-height: 48px; border-radius: 999px !important; font-weight: 600; }
+
+/* the menu in Appearance's preview (Alex, 12 Nov: "preview this too, in the same preview"): the two foot bars in small
+   under the chat, in the shape chosen in Menu Shape */
+html[data-skin='halo'] .pv-bars { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+html[data-skin='halo'] .pv-bar { display: flex; align-items: center; padding: 3px; background: rgba(24, 24, 30, .92); color: rgba(255, 255, 255, .58); box-shadow: 0 6px 16px rgba(30, 30, 60, .14); }
+html[data-skin='halo'][data-mode='dark'] .pv-bar { background: rgba(14, 14, 18, .9); box-shadow: none; }
+html[data-skin='halo'] .pv-folders { justify-content: center; gap: 2px; height: 28px; border-radius: 12px 12px 5px 5px; }
+html[data-skin='halo'] .pv-folders b { padding: 0 10px; height: 22px; line-height: 22px; border-radius: 7px; font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+html[data-skin='halo'] .pv-rail { height: 34px; border-radius: 5px 5px 14px 14px; }
+html[data-skin='halo'] .pv-rail i { flex: 1; display: grid; place-items: center; height: 28px; border-radius: 9px; }
+html[data-skin='halo'] .pv-rail i svg { width: 16px; height: 16px; }
+html[data-skin='halo'] .pv-bar .on { background: rgba(255, 255, 255, .14); color: #fff; }
+html[data-skin='halo'][data-bars='pill'] .pv-bars { gap: 5px; }
+html[data-skin='halo'][data-bars='pill'] .pv-bar { border-radius: 999px; background: rgba(24, 24, 30, .7); }
+html[data-skin='halo'][data-bars='pill'][data-mode='dark'] .pv-bar { background: rgba(14, 14, 18, .62); }
+html[data-skin='halo'][data-bars='pill'] .pv-bar :is(b, i) { border-radius: 999px; }
+html[data-skin='halo'] .pv-bar, html[data-skin='halo'] .pv-bar :is(b, i) { transition: border-radius .25s ease; }

@@ -20,10 +20,10 @@ import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, use
 
 // id, title, colour, icon, the line under the icon at the top of the page, the group in the list
 export const PAGES = [
-  ['general', 'General', '#8e8e93', svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></>, 16), 'The RoarMe app, keyboard shortcuts and starting over.', 1],
+  ['general', 'General', '#8e8e93', svg(<><circle cx="12" cy="12" r="3" /><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" /></>, 16), 'The app, what is turned on, the language and the shortcuts.', 1],
   // Features (Alex, 7 Nov: "you have to hunt for Tasks to turn it on"): the parts of RoarMe you can add or take away
   ['features', 'Features', '#ffd60a', svg(<><rect x="4" y="4" width="7" height="7" rx="2" /><rect x="13" y="4" width="7" height="7" rx="2" /><rect x="4" y="13" width="7" height="7" rx="2" /><path d="M16.5 13.5v6M13.5 16.5h6" /></>, 16), 'Turn on the parts of RoarMe you use. Each one you turn on gets its place in the bar at the foot.', 1],
-  ['chats', 'Chats', '#5e5ce6', svg(<path d="M5 18.5V7a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H8.5z" />, 16), 'How you type, send and read messages.', 2],
+  ['chats', 'Chats', '#5e5ce6', svg(<path d="M5 18.5V7a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H8.5z" />, 16), 'Typing and reading, folders, auto-reply, data and storage.', 2],
   ['appearance', 'Appearance', '#40c8e0', svg(<><path d="M14.5 4.5l5 5L11 18l-5-5z" /><path d="M6 13c-2 0-3 1.5-3 3.5S2 20 2 20s3.5.5 5-1 1.5-3 0-4" /></>, 16), 'Theme, colours, text and wallpaper.', 1],
   ['notify', 'Notifications and Sounds', '#ff453a', svg(<><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></>, 16), 'What reaches you, and how it sounds.', 1],
   ['language', 'Language', '#bf5af2', svg(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" /></>, 16), 'The language of RoarMe and of translations.', 1],
@@ -31,9 +31,12 @@ export const PAGES = [
   ['folders', 'Chat Folders', '#a78bfa', I.folder, 'Create folders for different groups of chats and quickly switch between them.', 2],
   ['autoreply', 'Auto-Reply', '#64d2ff', svg(<><path d="M20 12a8 8 0 1 1-3-6.2" /><path d="M20 4v5h-5" /><path d="M8.5 12.5h7M8.5 9.5h4" /></>, 16), 'An answer that goes out by itself while you are busy.', 2],
   ['data', 'Data and Storage', '#30d158', svg(<><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" /></>, 16), 'How photos are sent and what loads by itself.', 2],
-  ['privacy', 'Privacy and Security', '#0a84ff', svg(<><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>, 16), 'Who sees what, and how your account stays safe.', 4],
+  ['privacy', 'Privacy and Security', '#0a84ff', svg(<><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>, 16), 'Who sees what, your devices, and how your account stays safe.', 4],
   ['sessions', 'Active Sessions', '#ff9f0a', svg(<><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M8 20h8" /></>, 16), 'Every device signed in to your account.', 4],
 ]
+// pages that are no longer doors of their own in the menu: they open from inside General, Chats or Privacy and Security
+const SUBS = { general: 'App, Features, Language', chats: 'Folders, Auto-Reply, Data and Storage', privacy: 'Privacy, Active Sessions' }
+const TUCKED = ['features', 'language', 'transfer', 'folders', 'autoreply', 'data', 'sessions']
 export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 // the top of a page: its icon in its colour and what it holds
@@ -127,16 +130,18 @@ export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe, onInbox, inb
           <button type="button" className="set-row set-pick set-nav" onClick={onInbox}><span className="nav-ico" style={{ '--c': '#d40000' }}>{I.chats}</span><span className="set-text">RoarMe<small>Who writes to RoarMe · you answer as RoarMe</small></span>{inboxCount > 0 && <i className="set-count">{inboxCount}</i>}<i className="set-chev">{I.right}</i></button>
         </div>
       )}
-      {[1, 2, 3, 4].map((g) => (
+      {/* the menu, tidied (Alex, 12 Nov: "not so many menus"): six doors. General holds Features and Language, Chats holds
+          Chat Folders, Auto-Reply and Data and Storage, Privacy and Security holds Active Sessions; those pages are still
+          there and are reached from inside. RoarTransfer's list is in AllMedia > Transfers. */}
+      {[1, 2, 4].map((g) => (
         <div key={g} className="set-box">
-          {/* RoarTransfer is not in the menu (Alex, 12 Nov); its page stays, for whoever is sent to it */}
-          {PAGES.filter((x) => x[5] === g && x[0] !== 'transfer').map(([id, label, c, ico]) => (
+          {PAGES.filter((x) => x[5] === g && !TUCKED.includes(x[0])).map(([id, label, c, ico]) => (
             <button key={id} type="button" className={`set-row set-pick set-nav${page === id ? ' on' : ''}`} onClick={() => onPage(id)}>
-              <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}{id === 'appearance' && <small className="set-val">{THEMES.find(([k]) => k === p.theme)?.[1]}</small>}{id === 'features' && <small className="set-val">{[p.callsTab && 'Calls', p.tasksTab && 'Tasks'].filter(Boolean).flatMap((x, n) => (n ? [' · ', <span key={x}>{x}</span>] : [<span key={x}>{x}</span>]))}{!p.callsTab && !p.tasksTab && <span>Off</span>}</small>}<i className="set-chev">{I.right}</i>
+              <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}{SUBS[id] && <small>{SUBS[id]}</small>}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}{id === 'appearance' && <small className="set-val">{THEMES.find(([k]) => k === p.theme)?.[1]}</small>}{id === 'features' && <small className="set-val">{[p.callsTab && 'Calls', p.tasksTab && 'Tasks'].filter(Boolean).flatMap((x, n) => (n ? [' · ', <span key={x}>{x}</span>] : [<span key={x}>{x}</span>]))}{!p.callsTab && !p.tasksTab && <span>Off</span>}</small>}<i className="set-chev">{I.right}</i>
             </button>
           ))}
           {/* everything shared in all chats, out of the bar at the foot and in here (Alex, 19 Oct) */}
-          {g === 3 && onMedia && <button type="button" className="set-row set-pick set-nav" onClick={onMedia}><span className="nav-ico" style={{ '--c': '#ff9f0a' }}>{I.media}</span><span className="set-text">AllMedia<small>Photos, videos, files and links from all chats</small></span><i className="set-chev">{I.right}</i></button>}
+          {g === 2 && onMedia && <button type="button" className="set-row set-pick set-nav" onClick={onMedia}><span className="nav-ico" style={{ '--c': '#ff9f0a' }}>{I.media}</span><span className="set-text">AllMedia<small>Photos, videos, files and links from all chats</small></span><i className="set-chev">{I.right}</i></button>}
         </div>
       ))}
       {/* the RoarMe team's own chat: feedback, ideas, questions (Alex, 19 Oct) */}
@@ -171,13 +176,25 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
       <div className="set-body stagger" key={page}>
         <Hero id={page} />
         {page === 'profile' && profile}
-        {page === 'general' && <General p={p} onKeys={() => onPage('keys')} toast={toast} />}
+        {page === 'general' && <><General p={p} onKeys={() => onPage('keys')} toast={toast} /><Features p={p} /><Language p={p} /></>}
         {page === 'features' && <Features p={p} />}
-        {page === 'chats' && <Chats p={p} />}
+        {page === 'chats' && (
+          <>
+            <div className="set-box">
+              {['folders', 'autoreply'].map((id) => { const pg = PAGES.find(([k]) => k === id); return (
+                <button key={id} type="button" className="set-row set-pick set-nav" onClick={() => onPage(id)}>
+                  <span className="nav-ico" style={{ '--c': pg[2] }}>{pg[3]}</span><span className="set-text">{pg[1]}</span><i className="set-chev">{I.right}</i>
+                </button>
+              ) })}
+            </div>
+            <Chats p={p} />
+            <Data p={p} />
+          </>
+        )}
         {page === 'keys' && <Keys p={p} />}
         {page === 'notify' && <Notify p={p} toast={toast} />}
         {page === 'autoreply' && <AutoReply toast={toast} />}
-        {page === 'privacy' && <Privacy me={me} setMe={setMe} toast={toast} />}
+        {page === 'privacy' && <><Privacy me={me} setMe={setMe} toast={toast} /><Sessions me={me} setMe={setMe} toast={toast} /></>}
         {page === 'data' && <Data p={p} />}
         {page === 'sessions' && <Sessions me={me} setMe={setMe} toast={toast} />}
         {page === 'appearance' && <Appearance p={p} toast={toast} me={me} setMe={setMe} />}

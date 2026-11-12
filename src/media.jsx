@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { dayLabel, fileLink, thumbOf, fmtBytes, nameOf, supabase } from './lib.js'
 import { I, Lens, useSeen } from './ui.jsx'
 import { MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
-import { CopyLink } from './transfer.jsx'
+import { CopyLink, MyTransfers } from './transfer.jsx'
 
 /* Media from all chats (Alex, 17 Oct, after WhatsApp's): one page with every photo and video, link, song and
    document anyone sent in the chats one is in, each with who sent it and where. The list on the left picks one
@@ -91,10 +91,11 @@ function Row({ icon, title, sub, meta, onClick, onChat, children }) {
   )
 }
 
-export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack }) {
+export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack, toast }) {
   const [kind, setKind] = useState('media')
   const [q, setQ] = useState('')
   const [viewer, setViewer] = useState(null)
+  const [trMine, setTrMine] = useState(false) // Transfers: what is in the chats, or everything I sent with RoarTransfer
   const titleById = useMemo(() => Object.fromEntries(rooms.map((r) => [r.room_id, titleOf(r)])), [rooms, titleOf])
   const who = (m) => (m.user_id === me.id ? 'You' : nameOf(people[m.user_id]))
   const where = (m) => titleById[m.room_id] || ''
@@ -130,7 +131,7 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
 
       <div className="lib-body">
         {!data && <div className="lib-grid">{Array.from({ length: 12 }, (_, n) => <span key={n} className="pic-wait lib-tile" />)}</div>}
-        {data && !list.length && <p className="empty lib-empty">{words ? 'Nothing found.' : kind === 'media' ? 'No photos or videos yet.' : kind === 'links' ? 'No links yet.' : kind === 'music' ? 'No songs or sound files yet.' : kind === 'docs' ? 'No files yet.' : 'No transfers yet.'}</p>}
+        {data && !list.length && !(kind === 'transfers' && trMine) && <p className="empty lib-empty">{words ? 'Nothing found.' : kind === 'media' ? 'No photos or videos yet.' : kind === 'links' ? 'No links yet.' : kind === 'music' ? 'No songs or sound files yet.' : kind === 'docs' ? 'No files yet.' : 'No transfers yet.'}</p>}
         {data && kind === 'media' && list.length > 0 && (
           <div className="lib-grid">
             {list.map((m, n) => <Tile key={m.id} m={m} who={who(m)} where={where(m)} onOpen={() => openAt(n)} onChat={() => onChat(m.room_id, m.id)} />)}
@@ -153,7 +154,15 @@ export function Library({ data, room, people, me, rooms, titleOf, onChat, onBack
             ))}
           </div>
         )}
-        {data && kind === 'transfers' && list.length > 0 && (
+        {/* everything sent with RoarTransfer lives here now (Alex, 12 Nov), beside the transfers found in the chats */}
+        {kind === 'transfers' && (
+          <Lens className="seg lib-tr-seg" dep={trMine}>
+            <button type="button" className={!trMine ? 'on' : ''} onClick={() => setTrMine(false)}>In Chats</button>
+            <button type="button" className={trMine ? 'on' : ''} onClick={() => setTrMine(true)}>Sent by Me</button>
+          </Lens>
+        )}
+        {kind === 'transfers' && trMine && <MyTransfers toast={toast || (() => {})} />}
+        {data && kind === 'transfers' && !trMine && list.length > 0 && (
           <div className="lib-rows">
             {lists.transfers.map((m) => {
               const left = new Date(m.file?.expires || 0).getTime() - Date.now()

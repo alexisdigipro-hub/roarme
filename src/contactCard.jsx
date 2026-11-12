@@ -139,17 +139,41 @@ export function ContactEdit({ me, other, onClose, onSaved, onPhoto, onDropPhoto 
     setBusy(false)
     if (error) setErr(errText(error)); else onSaved()
   }
+  const shown = name.trim() || other.real_name || other.username
+  const first = shown.split(/\s+/)[0]
+  const clear = async () => {
+    setBusy(true); setErr('')
+    const { error } = await supabase.from('roar_contacts').upsert({ owner: me.id, person: other.id, nickname: '', note: '', updated_at: new Date().toISOString() })
+    setBusy(false)
+    if (error) setErr(errText(error)); else onSaved()
+  }
+  // laid out as a page of its own (Alex, 12 Nov, from a picture): close and the tick at the top, the picture, the name,
+  // the note, then what can be done with the picture
   return (
-    <Modal title="Edit Contact" onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" disabled={busy} onClick={save}>{busy ? '…' : 'Save'}</button></>}>
-      <div className="ce">
-        <button type="button" className="ce-pic" onClick={onPhoto} title="Set a photo for them">
-          <Avatar src={other.avatar_url} name={name.trim() || other.real_name || other.username} size={88} />
-          <span className="pf-pic-cam">{I.camera}</span>
-        </button>
-        {other.my_photo && <button type="button" className="link" onClick={() => { onDropPhoto(); onClose() }}>Use their own photo</button>}
-        <label className="field"><span>Name</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={other.real_name || `@${other.username}`} maxLength={60} autoFocus /></label>
-        <label className="field"><span>Note</span><textarea className="input ce-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Where you met, what they do, anything" maxLength={500} /></label>
-        <p className="muted ce-hint">Only you see these. They keep their own name and photo for everyone else.</p>
+    <Modal title="Edit Contact" onClose={onClose}>
+      <div className="ce ce2">
+        <div className="ce2-top">
+          <button type="button" className="round" onClick={onClose} aria-label="Cancel">{I.x}</button>
+          <button type="button" className="round send ready ce2-ok" disabled={busy} onClick={save} aria-label="Save">{I.check}</button>
+        </div>
+        <span className="ce2-pic"><Avatar src={other.avatar_url} name={shown} size={104} /></span>
+        <div className="ce2-card">
+          <input className="ce2-in" value={name} onChange={(e) => setName(e.target.value)} placeholder={other.real_name || `@${other.username}`} maxLength={60} aria-label="Name" />
+        </div>
+        <div className="ce2-card">
+          <textarea className="ce2-in" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add Notes" maxLength={500} aria-label="Note" />
+        </div>
+        <p className="ce2-hint">Notes are only visible to you.</p>
+        <div className="ce2-card">
+          <button type="button" className="ce2-row" onClick={onPhoto}>{I.camera}<span>{`Set Photo for ${first}`}</span></button>
+          {other.my_photo && <button type="button" className="ce2-row" onClick={() => { onDropPhoto(); onClose() }}>{I.image}<span>Use Their Own Photo</span></button>}
+        </div>
+        <p className="ce2-hint">{`You can replace ${first}'s photo with another photo that only you will see.`}</p>
+        {(other.nickname || other.my_note) && (
+          <div className="ce2-card">
+            <button type="button" className="ce2-row danger" disabled={busy} onClick={clear}><span>Remove My Name and Note</span></button>
+          </div>
+        )}
         {err && <p className="auth-err">{err}</p>}
       </div>
     </Modal>

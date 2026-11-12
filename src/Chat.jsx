@@ -2078,6 +2078,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const startVoice = async (locked = true) => {
     if (sealOn) { setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
     try {
+      if (prefs.pauseOnRec !== false) window.dispatchEvent(new CustomEvent('roarme-play', { detail: null })) // what is playing stops while recording
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
       const type = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported?.(t)) || ''
       const mr = new MediaRecorder(stream, type ? { mimeType: type } : undefined)
@@ -2131,6 +2132,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     if (sealOn) { setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
     let mic = null
     try {
+      if (prefs.pauseOnRec !== false) window.dispatchEvent(new CustomEvent('roarme-play', { detail: null }))
       // one question for both (Alex, 12 Nov: the iPhone asked twice, every time)
       const both = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } } })
       mic = new MediaStream(both.getAudioTracks())

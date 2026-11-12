@@ -151,10 +151,10 @@ export function useCalls({ me, people, loadPeople, toast }) {
     for (const t of s.getTracks()) await r.localParticipant.publishTrack(t, { source: t.kind === 'audio' ? Track.Source.Microphone : Track.Source.Camera })
   }
   const getMedia = async (video) => {
-    const { micId, camId } = getPrefs() // Settings > General > Call settings
+    const { micId, camId, callLessData } = getPrefs() // Settings > General > Call settings; Data and Storage > Use Less Data for Calls
     const s = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, ...(micId ? { deviceId: { ideal: micId } } : {}) },
-      video: video ? { width: { ideal: 1280 }, height: { ideal: 720 }, ...(camId ? { deviceId: { ideal: camId } } : {}) } : false,
+      video: video ? { ...(callLessData ? { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 15, max: 20 } } : { width: { ideal: 1280 }, height: { ideal: 720 } }), ...(camId ? { deviceId: { ideal: camId } } : {}) } : false,
     })
     local.current = s
     return s

@@ -50,7 +50,7 @@ export const DEFAULTS = {
   speakerId: '',
   folderTags: false,
   folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
-  background: 'soft', // one of WALLS
+  background: 'halo-orange', // a wallpaper's key; a new install starts on Orange (Alex, 12 Nov), 'soft' is Plain
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
   pauseOnRec: true, // a song or a voice message playing stops while a voice or video message is recorded
   callLessData: false, // video calls at 360p and 15 frames, for weak networks

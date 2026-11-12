@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
@@ -31,7 +32,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
-import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
+import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
 // the moving bars while a voice message records (Alex, 16 Oct): not the real sound, a lively stand-in
 
@@ -1574,7 +1575,7 @@ function PeekList({ room, me, people, clearedAt }) {
         {(list || []).map((m) => (
           <div key={m.id} className={`peek-msg${m.user_id === me.id ? ' mine' : ''}`}>
             {room.kind === 'group' && m.user_id !== me.id && <b style={{ color: colorOf(m.user_id) }}>{nameOf(people[m.user_id])}</b>}
-            <span>{m.kind === 'image' ? '📷 Photo' : m.kind === 'voice' ? '🎤 Voice message' : m.kind === 'file' ? `📎 ${m.file?.name || 'File'}` : splitQuote(previewText(m.body, m.kind)).rest}</span>
+            <span>{m.kind === 'image' ? '📷 Photo' : m.kind === 'voice' ? '🎤 Voice message' : m.kind === 'file' ? (m.file?.round ? '📹 Video message' : `📎 ${m.file?.name || 'File'}`) : splitQuote(previewText(m.body, m.kind)).rest}</span>
             <small>{timeOf(m.created_at)}</small>
           </div>
         ))}
@@ -1725,6 +1726,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [outbox, setOutbox] = useState([]) // { id, name, preview, p, stage, holder }
   const [recSecs, setRecSecs] = useState(0)
   const recRef = useRef(null)
+  // Telegram's way (Alex, 12 Nov): a tap on the microphone turns it into the camera and back; holding it records a voice
+  // or a round video message, sliding left throws it away, sliding up locks it so the hand can let go
+  const [recMode, setRecMode] = useLocal('roarme-rec-mode', 'voice')
+  const [vrec, setVrec] = useState(null) // the round video being recorded: { started, cam, facing, locked, canFlip }
+  const vRef = useRef(null)
+  const [holdDx, setHoldDx] = useState(0)
+  const stopRef = useRef({})
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const [transferOpen, setTransferOpen] = useState(false)
@@ -2048,7 +2056,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const id = setInterval(() => setRecSecs(Math.round((Date.now() - rec.started) / 1000)), 250)
     return () => clearInterval(id)
   }, [rec])
-  const startVoice = async () => {
+  const startVoice = async (locked = true) => {
     if (sealOn) { setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
@@ -2056,23 +2064,24 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       const mr = new MediaRecorder(stream, type ? { mimeType: type } : undefined)
       const chunks = []
       mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data) }
-      recRef.current = { mr, stream, chunks, type: mr.mimeType || type || 'audio/webm' }
+      const started = Date.now()
+      recRef.current = { mr, stream, chunks, type: mr.mimeType || type || 'audio/webm', started }
       mr.start(250)
       setRecSecs(0)
-      setRec({ started: Date.now(), stream })
+      setRec({ started, stream, locked })
     } catch {
       setErr('The microphone is not allowed. Allow it in the browser to send voice messages.')
     }
   }
   const stopVoice = (keep) => {
     const r = recRef.current
-    const started = rec?.started || Date.now()
     setRec(null)
     if (!r) return
+    const started = r.started || Date.now()
     r.mr.onstop = async () => {
       r.stream.getTracks().forEach((t) => t.stop())
       recRef.current = null
-      if (!keep) return
+      if (!keep || Date.now() - started < 700) return // a slip of the finger is not a message
       const dur = Math.max(1, Math.round((Date.now() - started) / 1000))
       const ext = /mp4/.test(r.type) ? 'm4a' : 'webm'
       const file = new File(r.chunks, `voice-${Date.now()}.${ext}`, { type: r.type.split(';')[0] })
@@ -2094,6 +2103,146 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       dropOut(tile.id)
     }
     r.mr.stop()
+  }
+
+  // a round video message: the camera drawn square into a canvas (so the camera can be turned while it records), with
+  // the microphone's sound; at most a minute
+  const camOf = (facing) => navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 720 }, height: { ideal: 720 } }, audio: false })
+  const startVideo = async (locked = true) => {
+    if (sealOn) { setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
+    let mic = null
+    try {
+      mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+      const cam = await camOf('user')
+      const video = document.createElement('video')
+      video.muted = true; video.playsInline = true; video.setAttribute('playsinline', '')
+      video.srcObject = cam
+      await video.play().catch(() => {})
+      const S = 480
+      const canvas = document.createElement('canvas')
+      canvas.width = S; canvas.height = S
+      const g = canvas.getContext('2d')
+      const v = { cam, mic, video, canvas, facing: 'user', raf: 0, chunks: [] }
+      const draw = () => {
+        v.raf = requestAnimationFrame(draw)
+        const vw = v.video.videoWidth
+        const vh = v.video.videoHeight
+        if (!vw || !vh) return
+        const side = Math.min(vw, vh)
+        g.save()
+        if (v.facing === 'user') { g.translate(S, 0); g.scale(-1, 1) }
+        g.drawImage(v.video, (vw - side) / 2, (vh - side) / 2, side, side, 0, 0, S, S)
+        g.restore()
+      }
+      draw()
+      v.canFlip = !!canvas.captureStream
+      const out = new MediaStream([...(v.canFlip ? canvas.captureStream(30) : cam).getVideoTracks(), ...mic.getAudioTracks()])
+      const type = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((t) => MediaRecorder.isTypeSupported?.(t)) || ''
+      const mr = new MediaRecorder(out, { ...(type ? { mimeType: type } : {}), videoBitsPerSecond: 1200000 })
+      v.mr = mr
+      v.type = mr.mimeType || type || 'video/webm'
+      mr.ondataavailable = (e) => { if (e.data.size) v.chunks.push(e.data) }
+      mr.start(250)
+      v.started = Date.now()
+      vRef.current = v
+      setVrec({ started: v.started, cam, facing: 'user', locked, canFlip: v.canFlip })
+    } catch {
+      mic?.getTracks().forEach((t) => t.stop())
+      setErr('The camera is not allowed. Allow the camera and the microphone to send video messages.')
+    }
+  }
+  const flipCam = async () => {
+    const v = vRef.current
+    if (!v?.canFlip) return
+    const facing = v.facing === 'user' ? 'environment' : 'user'
+    try {
+      const cam = await camOf(facing)
+      v.cam.getTracks().forEach((t) => t.stop())
+      v.cam = cam
+      v.facing = facing
+      v.video.srcObject = cam
+      await v.video.play().catch(() => {})
+      setVrec((x) => x && { ...x, cam, facing })
+    } catch { /* the other camera is not there */ }
+  }
+  const stopVideo = (keep) => {
+    const v = vRef.current
+    setVrec(null)
+    if (!v) return
+    vRef.current = null
+    v.mr.onstop = async () => {
+      cancelAnimationFrame(v.raf)
+      v.cam.getTracks().forEach((t) => t.stop())
+      v.mic.getTracks().forEach((t) => t.stop())
+      const secs = (Date.now() - v.started) / 1000
+      if (!keep || secs < 0.7) return
+      const dur = Math.max(1, Math.round(secs))
+      const ext = /mp4/.test(v.type) ? 'mp4' : 'webm'
+      const file = new File(v.chunks, `Video message.${ext}`, { type: v.type.split(';')[0] })
+      const tile = { id: crypto.randomUUID(), name: 'Video message', size: file.size, preview: '', p: 0, stage: 'prep', voice: true }
+      setOutbox((l) => [...l, tile])
+      stick.current = true
+      try {
+        const meta = await upload(file, 'file', { dur, round: true }, tile.id)
+        stick.current = true
+        const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'file', body: '', file: meta, reply_to: replyTo?.id || null }).select().single()
+        if (error) throw error
+        setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+        setReplyTo(null)
+      } catch (e) {
+        if (!e?.cancelled) setErr(errText(e))
+      }
+      dropOut(tile.id)
+    }
+    v.mr.stop()
+  }
+  stopRef.current = { voice: stopVoice, video: stopVideo }
+  useEffect(() => {
+    if (!vrec) return undefined
+    const id = setTimeout(() => stopRef.current.video(true), Math.max(0, 60000 - (Date.now() - vrec.started)))
+    return () => clearTimeout(id)
+  }, [vrec?.started]) // eslint-disable-line react-hooks/exhaustive-deps
+  // leaving the chat throws away what is being recorded
+  useEffect(() => () => { if (vRef.current) stopRef.current.video(false); if (recRef.current) stopRef.current.voice(false) }, [])
+
+  // the microphone / camera button: a tap swaps them, a hold records, left throws away, up locks
+  const holdStart = (e) => {
+    if (e.button) return
+    if (!canVoice) { setErr('This browser cannot record voice messages.'); return }
+    const mode = recMode
+    const h = { x: e.clientX, y: e.clientY, on: false, end: false, locked: false, p: null }
+    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* fine */ }
+    const off = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel) }
+    const finish = (keep) => {
+      if (h.end) return
+      h.end = true
+      off()
+      setHoldDx(0)
+      Promise.resolve(h.p).then(() => stopRef.current[mode](keep))
+    }
+    const lock = () => {
+      h.locked = true
+      off()
+      setHoldDx(0)
+      Promise.resolve(h.p).then(() => { if (mode === 'video') setVrec((x) => x && { ...x, locked: true }); else setRec((x) => x && { ...x, locked: true }) })
+    }
+    const move = (ev) => {
+      if (!h.on) return
+      const dx = ev.clientX - h.x
+      const dy = ev.clientY - h.y
+      if (dx < -110) finish(false)
+      else if (dy < -80) lock()
+      else setHoldDx(Math.min(0, dx))
+    }
+    const up = () => {
+      if (!h.on) { clearTimeout(h.t); off(); setRecMode(mode === 'video' ? 'voice' : 'video'); return }
+      finish(true)
+    }
+    const cancel = () => { clearTimeout(h.t); if (h.on) finish(false); else off() }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', cancel)
+    h.t = setTimeout(() => { h.on = true; h.p = mode === 'video' ? startVideo(false) : startVoice(false) }, 260)
   }
 
   // an admin can delete anyone's message for everyone (Alex, 8 Nov: spam, insults); never edit it
@@ -2185,7 +2334,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     try { await endEncrypted(room.room_id); toast('Encrypted Chat is off') } catch (e) { setErr(errText(e)) }
     reloadSeal()
   }
-  const textOf = (m) => (m.kind === 'system' ? previewText(m.body, 'system') : m.sealed && !m.body ? 'Encrypted message' : m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}` : m.reply_to ? splitQuote(m.body).rest : m.body)
+  const textOf = (m) => (m.kind === 'system' ? previewText(m.body, 'system') : m.sealed && !m.body ? 'Encrypted message' : m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? (m.file?.round ? 'Video message' : `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}`) : m.reply_to ? splitQuote(m.body).rest : m.body)
   const copy = async (s, what = 'Copied') => { try { await navigator.clipboard.writeText(s); toast(what) } catch { toast('Copy did not work here') } }
   // the first web address written in a message (Alex, 9 Nov: Copy Link only when the message has one, and it copies that)
   const urlIn = (m) => { const t = textOf(m); return typeof t === 'string' ? (t.match(/\bhttps?:\/\/[^\s<>"')\]]+/i)?.[0] || '').replace(/[.,;:!?]+$/, '') : '' }
@@ -2600,7 +2749,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
@@ -2611,6 +2760,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : hands.current.openPhoto(m))} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
                       : isTransfer ? <TransferTile file={m.file} onCinema={hands.current.setCinema} />
+                      : isVideo && m.file?.round ? <NoteTile file={m.file} />
                       : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
@@ -2795,16 +2945,26 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             {mentionHits.map((h) => <button key={h.key} type="button" onMouseDown={(e) => { e.preventDefault(); pickMention(h) }}>{h.special ? <span className="mention-at">@</span> : <Avatar src={h.p.avatar_url} name={h.label} size={28} />}<b>{h.label}</b><small>{h.sub}</small></button>)}
           </div>
         )}
-        {rec ? (
+        {vrec && <VideoRec vrec={vrec} holdDx={holdDx} onFlip={vrec.canFlip ? flipCam : null} onCancel={() => stopVideo(false)} onSend={() => stopVideo(true)} />}
+        {rec?.locked ? (
           <div className="compose rec">
             <span className="rec-dot" />
-            <b>{Math.floor(recSecs / 60)}:{String(recSecs % 60).padStart(2, '0')}</b>
+            <RecClock started={rec.started} />
             <LiveWave stream={rec.stream} />
             <button type="button" className="round danger" onClick={() => stopVoice(false)} aria-label="Throw away" title="Throw away">{I.trash}</button>
             <button type="button" className="round send ready" onClick={() => stopVoice(true)} aria-label="Send" title="Send">{I.send}</button>
           </div>
         ) : (
           <div className="compose">
+            {rec && !rec.locked && (
+              <div className="rec-over" aria-live="polite">
+                <span className="rec-dot" />
+                <RecClock started={rec.started} />
+                <span className="rec-slide" style={{ transform: `translateX(${holdDx}px)`, opacity: 1 + holdDx / 140 }}>{CHEV_L}<span>Slide to cancel</span></span>
+                <span className="rec-hold">{I.mic}</span>
+                <span className="rec-lock">{I.lock}{CHEV_U}</span>
+              </div>
+            )}
             {!editing && !sealOn && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.clip}</button>}
             {!editing && !sealOn && <button type="button" className={`round compose-transfer${transferHidden ? ' busy' : ''}`} onClick={() => { setTransferOpen(true); setTransferHidden(false) }} aria-label="RoarTransfer" title={transferHidden ? `RoarTransfer: uploading, ${Math.round(transferPct * 100)}%` : 'RoarTransfer: big files as they are, one link for all, 1 day up to 5 GB or 3 days up to 3 GB'}>{I.transfer}{transferHidden && <i className="rt-pct">{Math.round(transferPct * 100)}%</i>}</button>}
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
@@ -2842,7 +3002,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                   onPointerDown={() => { held.current = false; clearTimeout(holdT.current); if (canSched) holdT.current = setTimeout(() => { held.current = true; setSchedNew(true) }, 450) }}
                   onPointerUp={() => clearTimeout(holdT.current)} onPointerLeave={() => clearTimeout(holdT.current)}
                   aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter) · hold to schedule'}>{editing ? I.check : I.send}</button>
-              : <button type="button" className="round" onClick={() => (canVoice ? startVoice() : setErr('This browser cannot record voice messages.'))} aria-label="Voice message" title="Voice message">{I.mic}</button>}
+              : <button type="button" className={`round rec-btn${recMode === 'video' ? ' vmode' : ''}${rec || vrec ? ' holding' : ''}`} onPointerDown={holdStart} onContextMenu={(e) => e.preventDefault()}
+                  onClick={(e) => { if (e.detail === 0) (recMode === 'video' ? startVideo(true) : startVoice(true)) }}
+                  aria-label={recMode === 'video' ? 'Video message: hold to record, tap for voice' : 'Voice message: hold to record, tap for video'}
+                  title={recMode === 'video' ? 'Hold to record a video message · tap for voice' : 'Hold to record a voice message · tap for video'}>{recMode === 'video' ? VNOTE_I : I.mic}</button>}
           </div>
         )}
       </footer>
@@ -3093,6 +3256,49 @@ function FileTile({ file }) {
 
 /* the format bar's buttons: the mark, its name, what the button shows, its keys */
 const MOD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || '') ? '⌘' : 'Ctrl+'
+/* recording by holding (Alex, 12 Nov, from Telegram): the signs, the clock to the hundredth and the round video's window */
+const CHEV_L = <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+const CHEV_U = <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 15l7-7 7 7" /></svg>
+const VNOTE_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" /><circle cx="12" cy="12" r="4" /></svg>
+const FLIP_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><path d="M9 13a3 3 0 0 1 5.2-2M15 13a3 3 0 0 1-5.2 2M14.5 9.5v1.7h-1.7M9.5 16.5v-1.7h1.7" /></svg>
+function RecClock({ started }) {
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 50); return () => clearInterval(id) }, [])
+  const ms = Math.max(0, now - started)
+  const s = Math.floor(ms / 1000)
+  return <b className="rec-clock">{Math.floor(s / 60)}:{String(s % 60).padStart(2, '0')},{String(Math.floor((ms % 1000) / 10)).padStart(2, '0')}</b>
+}
+function VideoRec({ vrec, holdDx, onFlip, onCancel, onSend }) {
+  const ref = useRef(null)
+  useEffect(() => { const v = ref.current; if (v && vrec.cam) { v.srcObject = vrec.cam; v.play?.().catch(() => {}) } }, [vrec.cam])
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 100); return () => clearInterval(id) }, [])
+  const R = 49
+  const C = 2 * Math.PI * R
+  const p = Math.min(1, (now - vrec.started) / 60000)
+  return createPortal(
+    <div className={`vrec${vrec.locked ? ' locked' : ''}`}>
+      <div className={`vrec-circle${vrec.facing === 'user' ? ' mirror' : ''}`}>
+        <video ref={ref} muted playsInline autoPlay />
+        <svg className="vrec-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - p)} /></svg>
+      </div>
+      <div className="vrec-tools">{onFlip && <button type="button" className="round" onClick={onFlip} aria-label="Turn the camera">{FLIP_I}</button>}</div>
+      <div className="vrec-bar">
+        <span className="rec-dot" />
+        <RecClock started={vrec.started} />
+        {vrec.locked
+          ? <button type="button" className="vrec-cancel" onClick={onCancel}>Cancel</button>
+          : <span className="rec-slide" style={{ transform: `translateX(${holdDx}px)`, opacity: 1 + holdDx / 140 }}>{CHEV_L}<span>Slide to cancel</span></span>}
+      </div>
+      {vrec.locked
+        ? <button type="button" className="vrec-hold vrec-send" onClick={onSend} aria-label="Send">{I.send}</button>
+        : <span className="vrec-hold">{VNOTE_I}</span>}
+      {!vrec.locked && <span className="rec-lock vrec-lock">{I.lock}{CHEV_U}</span>}
+    </div>,
+    document.body,
+  )
+}
+
 /* the line while recording (Alex, 17 Oct: "can it really read the sound? and more minimal"): the microphone's real
    loudness, one thin bar every 80 ms sliding in from the right; silence is a row of dots */
 function LiveWave({ stream }) {

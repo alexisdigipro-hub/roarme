@@ -458,6 +458,43 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
   )
 }
 
+/* a round video message (Alex, 12 Nov, from Telegram): it plays silent and on a loop while in sight; a tap plays it from
+   the start with its sound, a ring going round, and another tap pauses */
+export function NoteTile({ file }) {
+  const [url, setUrl] = useState('')
+  const [sound, setSound] = useState(false)
+  const [p, setP] = useState(0)
+  const ref = useRef(null)
+  useEffect(() => { let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path])
+  useEffect(() => {
+    const v = ref.current
+    if (!v || typeof IntersectionObserver === 'undefined') return undefined
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) v.play?.().catch(() => {}); else v.pause() }, { threshold: 0.4 })
+    io.observe(v)
+    return () => io.disconnect()
+  }, [url])
+  const tap = (e) => {
+    e.stopPropagation()
+    const v = ref.current
+    if (!v) return
+    if (!sound) { v.muted = false; v.loop = false; v.currentTime = 0; v.play().catch(() => {}); setSound(true); setP(0) }
+    else if (v.paused) v.play().catch(() => {})
+    else v.pause()
+  }
+  const ended = () => { const v = ref.current; setSound(false); setP(0); if (v) { v.muted = true; v.loop = true; v.play().catch(() => {}) } }
+  const R = 49
+  const C = 2 * Math.PI * R
+  const d = file?.dur || 0
+  return (
+    <span className={`note${sound ? ' on' : ''}`} onClick={tap} role="button" aria-label="Video message">
+      {url ? <video ref={ref} src={url} muted loop playsInline autoPlay preload="metadata" onEnded={ended}
+        onTimeUpdate={(e) => { if (sound) { const v = e.currentTarget; setP(v.currentTime / (v.duration && isFinite(v.duration) ? v.duration : d || 1)) } }} /> : <span className="pic-wait" />}
+      {sound && <svg className="note-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - p)} /></svg>}
+      <small className="note-dur">{!sound && <svg className="note-mute" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM17 9l4 6M21 9l-4 6" /></svg>}{Math.floor(d / 60)}:{String(d % 60).padStart(2, '0')}</small>
+    </span>
+  )
+}
+
 /* a YouTube or Vimeo link in a message plays right there, from its picture */
 export function videoLinkOf(text) {
   const m = (text || '').match(/https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?\S*?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})|https?:\/\/(?:www\.)?vimeo\.com\/(?:video\/)?(\d+)/)

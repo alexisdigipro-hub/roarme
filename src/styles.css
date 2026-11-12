@@ -4379,3 +4379,54 @@ html[data-theme] .as-sheet .as-recent + .as-recent { background-position: 76px 0
 .pf-hero, .pf-back, .pf-edit, .pf-acts .pf-a-mute, .pf-acts .pf-a-find, .pf-menu .pf-m-opts { display: none; }
 /* the plan's two facts, "up to 5 GB · until Fri 13 Nov" on one line (Halo stacks them) */
 .rt-plan small > span + span::before { content: ' · '; }
+
+/* recording by holding the microphone (Alex, 12 Nov, from Telegram): while held, the writing row turns into the
+   clock and "Slide to cancel", the button swells under the thumb and a lock waits above it */
+.compose { position: relative; }
+.rec-btn { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.rec-over { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 0 70px 0 18px; border-radius: 999px;
+  background: var(--panel, var(--glass)); border: 1px solid var(--edge); color: var(--text); pointer-events: none; animation: fade .18s ease both; }
+html[data-skin='halo'] .rec-over { background: #fff; border-color: #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .08); }
+html[data-skin='halo'][data-mode='dark'] .rec-over { background: #26262c; border-color: rgba(255, 255, 255, .1); }
+.rec-clock { font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; min-width: 64px; }
+.rec-slide { display: inline-flex; align-items: center; gap: 4px; margin: 0 auto; color: var(--muted); font-size: 15px; white-space: nowrap; }
+.rec-hold { position: absolute; right: -14px; top: 50%; display: grid; place-items: center; width: 80px; height: 80px; margin-top: -40px; border-radius: 50%;
+  background: var(--halo, var(--accent)); color: #fff; box-shadow: 0 0 0 8px color-mix(in srgb, var(--halo, var(--accent)) 22%, transparent), 0 0 0 18px color-mix(in srgb, var(--halo, var(--accent)) 10%, transparent);
+  animation: rec-swell .22s ease both; }
+.rec-hold svg { width: 30px; height: 30px; }
+@keyframes rec-swell { from { transform: scale(.55); opacity: 0; } to { transform: none; opacity: 1; } }
+.rec-lock { position: absolute; right: 2px; bottom: calc(100% + 54px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 42px; height: 72px; border-radius: 21px;
+  background: var(--panel, var(--glass)); border: 1px solid var(--edge); color: var(--text); box-shadow: 0 6px 18px rgba(0, 0, 0, .1); animation: fade .2s ease both; }
+html[data-skin='halo'] .rec-lock { background: rgba(255, 255, 255, .92); border-color: #fff; }
+.rec-lock svg { width: 20px; height: 20px; }
+.rec-lock svg + svg { width: 16px; height: 16px; animation: rec-up 1.2s ease-in-out infinite; }
+@keyframes rec-up { 0%, 100% { transform: none; opacity: .5; } 50% { transform: translateY(-4px); opacity: 1; } }
+.rec-btn.holding { opacity: 0; }
+
+/* the round video being recorded: the camera in a circle over the blurred chat, the clock below, the button under the thumb */
+.vrec { position: fixed; inset: 0; z-index: 70; background: color-mix(in srgb, var(--bg, #fff) 55%, transparent); -webkit-backdrop-filter: var(--blur-veil); backdrop-filter: var(--blur-veil); animation: fade .2s ease both; touch-action: none; }
+.vrec-circle { --d: min(84vw, 420px, 52vh); position: absolute; left: calc(50% - var(--d) / 2); top: calc(44% - var(--d) / 2); width: var(--d); height: var(--d); border-radius: 50%; overflow: visible; animation: rec-swell .28s ease both; }
+.vrec-circle video { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #000; }
+.vrec-circle.mirror video { transform: scaleX(-1); }
+.vrec-ring { position: absolute; inset: -7px; width: calc(100% + 14px); height: calc(100% + 14px); transform: rotate(-90deg); pointer-events: none; }
+.vrec-ring circle { fill: none; stroke: var(--halo, var(--accent)); stroke-width: 1.4; stroke-linecap: round; transition: stroke-dashoffset .1s linear; }
+.vrec-tools { position: absolute; left: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); display: flex; gap: 10px; }
+.vrec-tools .round { width: 46px; height: 46px; background: rgba(255, 255, 255, .85); border: 1px solid rgba(0, 0, 0, .08); color: #1d1d24; }
+.vrec-bar { position: absolute; left: 16px; right: 112px; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px); display: flex; align-items: center; gap: 12px; height: 50px; padding: 0 18px; border-radius: 25px;
+  background: rgba(255, 255, 255, .92); border: 1px solid rgba(0, 0, 0, .06); color: #1d1d24; }
+html[data-mode='dark'] .vrec-bar, html[data-mode='dark'] .vrec-tools .round { background: rgba(38, 38, 44, .92); border-color: rgba(255, 255, 255, .1); color: #f1f1f5; }
+.vrec-bar .rec-slide { color: inherit; opacity: .8; }
+.vrec-cancel { margin-left: auto; border: 0; background: none; color: var(--halo, var(--accent)); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; padding: 8px 4px; }
+.vrec-hold { position: absolute; right: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); display: grid; place-items: center; width: 84px; height: 84px; border: 0; border-radius: 50%; padding: 0;
+  background: var(--halo, var(--accent)); color: #fff; box-shadow: 0 0 0 8px color-mix(in srgb, var(--halo, var(--accent)) 22%, transparent), 0 0 0 18px color-mix(in srgb, var(--halo, var(--accent)) 10%, transparent); animation: rec-swell .22s ease both; }
+.vrec-hold svg { width: 30px; height: 30px; }
+.vrec-send { cursor: pointer; }
+.vrec-lock { right: 35px; bottom: calc(env(safe-area-inset-bottom, 0px) + 128px); position: absolute; }
+
+/* a round video message in the chat: a circle, silent and on a loop until tapped */
+html[data-theme] .msg .bubble.note-b, html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.pic.note-b { width: auto !important; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; }
+.note { position: relative; display: block; width: min(240px, 62vw); aspect-ratio: 1; border-radius: 50%; overflow: hidden; cursor: pointer; background: #000; box-shadow: 0 8px 22px rgba(0, 0, 0, .14); }
+.note video, .note .pic-wait { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.note-ring { position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px); transform: rotate(-90deg); pointer-events: none; }
+.note-ring circle { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+.note-dur { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .45); color: #fff; font-size: 11.5px; font-variant-numeric: tabular-nums; }

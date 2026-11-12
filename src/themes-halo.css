@@ -288,3 +288,34 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.foot, .rooms-a
 html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom .tabs { margin-bottom: calc(49px + var(--hfmb) + var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-99px - var(--hfmb) - var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(107px + var(--hfmb) + var(--hpb)); }
+
+/* the same top bar on every page (Alex, 12 Nov): on Contacts it holds the search (and Find People), on Calls the words
+   CREATE NEW CALL; the folder bar's very look (40px, the smoke and grain, 14/5 corners, capitals), 1px above the rail,
+   floating over the list, which runs on under both bars as on Chats */
+html[data-skin='halo'][data-theme='stone'] :is(.contacts-top, .new-call.new-call-bar) {
+  box-sizing: border-box; height: 40px; min-height: 40px; margin: 0 5px; padding: 4px 10px; border-radius: 14px 14px 5px 5px;
+  border: 1px solid rgba(255, 255, 255, .1); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09), 0 8px 20px rgba(20, 20, 40, .16);
+}
+html[data-skin='halo'][data-theme='stone'][data-mode='light'] :is(.contacts-top, .new-call.new-call-bar) { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(16, 16, 20, .93); }
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.contacts-top, .new-call.new-call-bar) { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(14, 14, 18, .9); }
+
+/* Calls: the words only, in capitals, white */
+html[data-skin='halo'][data-theme='stone'] .new-call.new-call-bar { position: relative; z-index: 4; width: auto; align-self: stretch; justify-content: center; gap: 0; margin-top: 0; margin-bottom: -11px; color: rgba(255, 255, 255, .9); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+html[data-skin='halo'][data-theme='stone'] .new-call.new-call-bar:hover { color: #fff; }
+html[data-skin='halo'][data-theme='stone'] .new-call.new-call-bar .new-call-ico { display: none; }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls { margin-bottom: calc(-101px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls::after { content: ''; flex: none; height: calc(99px + var(--hfmb) + var(--hpb)); }
+
+/* Contacts: the search across the bar, Find People a plain sign at its end; it rides at the foot of the list (sticky) */
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts { margin-bottom: calc(-60px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-list { flex: 1 0 auto; }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-top { order: 2; position: sticky; z-index: 4; bottom: calc(49px + var(--hfmb) + var(--hpb)); flex: none; gap: 4px; }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts::after { content: ''; order: 3; flex: none; height: calc(41px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .contacts-top .search { height: 30px; padding: 0 4px; border: 0; border-radius: 8px; background: none; box-shadow: none; color: rgba(255, 255, 255, .58); }
+html[data-skin='halo'][data-theme='stone'] .contacts-top .search svg { width: 15px; height: 15px; }
+html[data-skin='halo'][data-theme='stone'] .contacts-top .search input { color: #fff; font-size: 13px; }
+html[data-skin='halo'][data-theme='stone'] .contacts-top .search input::placeholder { color: rgba(255, 255, 255, .58); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+html[data-skin='halo'][data-theme='stone'] .contacts-top .round { width: 30px; height: 30px; border: 0; border-radius: 8px; background: none; box-shadow: none; color: rgba(255, 255, 255, .58); }
+html[data-skin='halo'][data-theme='stone'] .contacts-top .round:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+html[data-skin='halo'][data-theme='stone'] .contacts-top .round svg { width: 17px; height: 17px; }

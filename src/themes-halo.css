@@ -343,3 +343,6 @@ html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu::a
 html[data-skin='halo'][data-theme='stone'] .foot-bar-empty { display: flex; align-items: center; justify-content: center; }
 html[data-skin='halo'][data-theme='stone'] .foot-bar-empty span { color: rgba(255, 255, 255, .9); font-size: 12px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
 html[data-skin='halo'][data-theme='stone'] .foot-bar-empty b { font-weight: 800; }
+/* Contacts with the search at the foot (Alex, 12 Nov): while a search is typed the people found sit at the foot of the
+   list, just above the search bar, so the keyboard does not push them off the top of the screen */
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-list.searching { justify-content: flex-end; }

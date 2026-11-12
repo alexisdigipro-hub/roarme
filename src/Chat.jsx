@@ -1287,7 +1287,7 @@ export default function Chat({ me, setMe }) {
               <button type="button" className="round" onClick={() => setModal('newchat')} title="Find people" aria-label="Find people">{I.addPerson}</button>
             </div>
             {/* the same rows as the chat list (Alex, 21 Oct): its sizes, gaps and lines between them */}
-            <div className="rooms contacts-list">
+            <div className={`rooms contacts-list${cq.trim() ? ' searching' : ''}`}>
             {[...contacts].sort((a, b) => favs.includes(b.id) - favs.includes(a.id)).filter((p) => !cq.trim() || `${nameOf(p)} ${p.username}`.toLowerCase().includes(cq.trim().toLowerCase().replace(/^@/, ''))).map((p) => (
               <div key={p.id} className="room contact" role="button" tabIndex={0} onClick={() => setCard(p.id)} onKeyDown={(e) => { if (e.key === 'Enter') setCard(p.id) }}>
                 <Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} size={prefs.listPreview ? 54 : 48} />

@@ -206,25 +206,21 @@ export function applyMode(mode) {
    accent colour, density, font, corner radius, animations, focus rings */
 /* two themes, each dark and light (Alex, 31 Oct: "only Stone and Simba"): Stone, the main one since 21 Oct, and Simba
    ('ember'). Glass, Aura, Studio, Pumba, Aurum and Lions are gone; anyone left on one of them is on Stone. */
-export const PUBLIC_THEMES = ['stone', 'ember', 'halo', 'velvet', 'air', 'mango']
+// Simba ('ember'), Velvet and Mango were removed on 12 Nov (Alex); whoever wore one is on Stone, as with the older ones
+export const PUBLIC_THEMES = ['stone', 'halo', 'air']
 // Alex's own account: Settings > Admin opens only for him
 const THEME_LAB = ['98f8b6e1-0ce2-4576-805b-cffa25667d22'] // @iamalexkon
 export const inThemeLab = (me) => !!me && THEME_LAB.includes(me.id)
-// Simba's styles (src/themes-simba.css) come only when it is worn (Alex, 31 Oct: RoarMe lighter)
-let simbaCss = null
 // Halo (Alex, 9 Nov) is Stone's build in another dress: worn as data-theme 'stone' + data-skin 'halo', its CSS loaded when worn
 let haloCss = null
-let velvetCss = null
 // Air (Alex, 12 Nov): Stone in a clean white dress with one blue, a skin like Halo (src/themes-air.css)
 let airCss = null
-// Mango (Alex, 12 Nov): ink on paper with one mango spark, a skin like Halo (src/themes-mango.css)
-let mangoCss = null
-export const wearTheme = (t) => { if (!simbaCss && t === 'ember') simbaCss = import('./themes-simba.css'); if (!haloCss && t === 'halo') haloCss = import('./themes-halo.css'); if (!velvetCss && t === 'velvet') velvetCss = import('./themes-velvet.css'); if (!airCss && t === 'air') airCss = import('./themes-air.css'); if (!mangoCss && t === 'mango') mangoCss = import('./themes-mango.css') }
+export const wearTheme = (t) => { if (!haloCss && t === 'halo') haloCss = import('./themes-halo.css'); if (!airCss && t === 'air') airCss = import('./themes-air.css') }
 // what goes on <html>: the theme's build and, for Halo, its skin
 export const dressTheme = (t) => {
   const r = document.documentElement
-  const skin = t === 'halo' || t === 'velvet' || t === 'air' || t === 'mango' ? t : ''
-  r.dataset.theme = skin ? 'stone' : t
+  const skin = t === 'halo' || t === 'air' ? t : ''
+  r.dataset.theme = 'stone'
   if (skin) r.dataset.skin = skin; else delete r.dataset.skin
 }
 export const themeFor = (theme) => (PUBLIC_THEMES.includes(theme) ? theme : 'stone')

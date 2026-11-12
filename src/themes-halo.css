@@ -245,3 +245,7 @@ html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .ro
 html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { content: ''; flex: none; height: calc(109px + var(--hfmb) + var(--hpb)); }
 /* with the list behind them the dark bars need a little more smoke, so the words behind stay a blur and not text */
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(14, 14, 18, .76) !important; }
+/* the folder bar's top corners 12px, its chip 7px (Alex, 12 Nov) */
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { border-radius: 12px 12px 5px 5px; }
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs button,
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs.lens::before { border-radius: 7px; }

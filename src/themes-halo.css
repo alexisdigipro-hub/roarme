@@ -370,3 +370,14 @@ html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu { 
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu::after { height: calc(104px + var(--hfmb) + var(--hpb)); }
 /* Contacts: the search bar holds only the search (Alex, 12 Nov: Find People is not needed there) */
 html[data-skin='halo'][data-theme='stone'] .contacts-top .round { display: none; }
+
+/* Edit as a round sign, the very size and shape of + (Alex, 12 Nov): 40 x 40, a circle, a pencil (a tick while choosing) */
+html[data-skin='halo'][data-theme='stone'] .side-head .head-edit { display: grid; place-items: center; width: 40px; height: 40px; min-width: 0; padding: 0; border-radius: 50%; }
+html[data-skin='halo'][data-theme='stone'] .side-head .head-edit .he-word { display: none; }
+html[data-skin='halo'][data-theme='stone'] .side-head .head-edit .he-ico { display: grid; place-items: center; }
+html[data-skin='halo'][data-theme='stone'] .side-head .head-edit .he-ico svg { width: 20px; height: 20px; }
+html[data-skin='halo'][data-theme='stone'] .side-head .round { border-radius: 50%; }
+html[data-skin='halo'][data-theme='stone'] .side-head .head-edit {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .85), rgba(255, 255, 255, .55)); border: 1px solid #fff; color: var(--text); box-shadow: 0 6px 16px rgba(70, 70, 110, .12);
+}
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .side-head .head-edit { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }

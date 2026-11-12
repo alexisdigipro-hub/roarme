@@ -1173,7 +1173,7 @@ export default function Chat({ me, setMe }) {
       <aside className="side">
         <div className="side-col" {...onStopTouch}>
         <div className="side-head">
-          <button type="button" className="pill-btn" onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}>{picking || tabsEdit ? 'Done' : 'Edit'}</button>
+          <button type="button" className="pill-btn head-edit" aria-label={picking || tabsEdit ? 'Done' : 'Edit'} title={picking || tabsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}><span className="he-word">{picking || tabsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{picking || tabsEdit ? I.check : I.edit}</span></button>
           <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <Wordmark />}</span>
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>

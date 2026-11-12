@@ -2608,6 +2608,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const show = (x) => {
       haptic(12)
       heldAt.current = Date.now()
+      window.roarHeldAt = heldAt.current // a round video under the finger does not also start playing
       clearTimeout(tapTimer.current)
       hands.current.openMenu({ preventDefault() {}, clientX: x.x, clientY: x.y }, x.m)
       window.getSelection?.()?.removeAllRanges()
@@ -2622,7 +2623,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       drop()
       if (e.touches.length !== 1 || hands.current.picked) return
       const bubble = e.target.closest?.('.bubble')
-      if (!bubble || e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx')) return
+      if (!bubble || (e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx') && !e.target.closest('.note'))) return // a round video message is held like words (Alex, 12 Nov)
       const row = bubble.closest('[id^="m-"]')
       const m = row && hands.current.byId[row.id.slice(2)]
       if (!m || m.deleted_at) return

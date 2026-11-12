@@ -4269,3 +4269,6 @@ html[data-theme][data-mode='light'] .msg-menu :is(.menu-list, .rx-pick) {
 html[data-theme='stone'][data-skin] .compose-box, html[data-theme='stone'][data-skin] .compose-box.has-ref { border-radius: 22px; }
 .compose-ref { margin: 6px 6px 0; border-radius: 16px 16px 12px 12px; }
 html[data-theme='stone']:not([data-skin]) .compose-ref { border-radius: 9px; }
+
+/* the empty bar above the rail on Settings: only Halo shows it (themes-halo.css) */
+.foot-bar-empty { display: none; }

@@ -1314,6 +1314,8 @@ export default function Chat({ me, setMe }) {
         )}
         {tab === 'settings' && <Suspense fallback={<div className="side-scroll" />}><SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
           onInbox={isAdmin && officialIds.length ? () => setInboxOpen(true) : null} inboxCount={inboxCount} /></Suspense>}
+        {/* the bar above the rail, empty on Settings so every page has the same two bars (Alex, 12 Nov; shown by Halo only) */}
+        {tab === 'settings' && <div className="foot-bar-empty" aria-hidden="true" />}
         {tab === 'media' && <LibrarySide data={lib} rooms={visible} titleOf={titleOf} room={libRoom} onRoom={setLibRoom}
           face={(r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />} />}
         </div>

@@ -700,7 +700,7 @@ export default function Chat({ me, setMe }) {
       const acts = o.el.parentElement?.querySelector('.row-acts')
       if (acts) { acts.style.transition = 'width .28s cubic-bezier(.22,1,.36,1)'; acts.style.width = '0px' }
     }
-    setTimeout(() => { if (!rowNow.current) setRowActs(null) }, 280)
+    setTimeout(() => { o?.el?.classList.remove('slid'); if (!rowNow.current) setRowActs(null) }, 280)
   }
   useLayoutEffect(() => {
     const t = trackRef.current
@@ -739,10 +739,9 @@ export default function Chat({ me, setMe }) {
       const phone = window.matchMedia('(max-width: 760px)').matches
       g = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, t: Date.now(), lx: e.touches[0].clientX, lt: Date.now(), v: 0,
         side: !n.busy && phone, top: (el.querySelector('.rooms')?.scrollTop || 0) <= 0, open: n.searchOpen, phone, pull: 0,
-        // the middle of the screen turns the folder; a slide that starts at either edge of a chat opens its buttons
-        // (Alex, 21 Oct): from the right edge to the left Mute and Delete, from the left edge to the right Unread and Pin
-        rowEl: phone && !n.picking && (e.touches[0].clientX < EDGE || e.touches[0].clientX > window.innerWidth - EDGE) ? e.target.closest?.('.rooms:not(.rooms-ghost) .room[data-rid]') : null,
-        fromLeft: e.touches[0].clientX < EDGE }
+        // a sideways slide on a chat opens its buttons wherever on the chat it starts (Alex, 12 Nov, as iOS: to the left
+        // Mute, Delete and Archive, to the right Unread and Pin); a long or a fast one still turns the folder, see end()
+        rowEl: phone && !n.picking ? e.target.closest?.('.rooms:not(.rooms-ghost) .room[data-rid]') : null }
     }
     const touchMove = (e) => {
       if (!g) return
@@ -750,9 +749,11 @@ export default function Chat({ me, setMe }) {
       if (!g.lock) {
         if (Math.abs(dx) < 7 && Math.abs(dy) < 7) return
         g.lock = Math.abs(dx) > Math.abs(dy) * 1.1 ? (g.side ? 'x' : 'none') : 'y'
-        if (g.lock === 'x' && g.rowEl && (g.fromLeft ? dx > 0 : dx < 0)) {
+        if (g.lock === 'x' && g.rowEl) {
           g.lock = 'row'
           g.rs = dx < 0 ? 'right' : 'left'
+          g.w = el.clientWidth || 1
+          g.rowEl.classList.add('slid')
           g.rowEl.style.transition = 'none'
           g.rowEl.style.animation = 'none' // the list's fade-in animation holds transform and would keep the chat from moving
           // the buttons lie under the chat, in its own place in the list: the chat slides off them
@@ -791,9 +792,14 @@ export default function Chat({ me, setMe }) {
         if (e.cancelable) e.preventDefault()
         const rs = dx < 0 ? 'right' : 'left'
         if (rs !== g.rs) { g.rs = rs; setRowActs((a) => (a ? { ...a, side: rs } : a)) }
-        const a = Math.abs(dx), m = a > ROW_W ? ROW_W + (a - ROW_W) * 0.25 : a
+        const W = rowW(rs)
+        const a = Math.abs(dx), m = a > W ? W + (a - W) * 0.25 : a
+        const now = Date.now()
+        g.v = (x - g.lx) / Math.max(1, now - g.lt)
+        g.lx = x; g.lt = now
         g.dx = dx
         g.rowEl.style.transform = `translate3d(${Math.sign(dx) * m}px,0,0)`
+        g.rowEl.style.opacity = a > g.w * ROW_FAR ? '.5' : '' // dimmed past the point where letting go turns the folder
         const acts = g.rowEl.parentElement?.querySelector('.row-acts')
         if (acts) { acts.style.transition = 'none'; acts.style.width = `${m}px` }
         return
@@ -811,14 +817,28 @@ export default function Chat({ me, setMe }) {
     }
     const end = () => {
       if (g?.lock === 'row') {
-        const { rowEl, dx } = g
+        const { rowEl, dx, w, v } = g
         g = null
         rowSkip.current = Date.now()
+        rowEl.style.opacity = ''
+        // both in one slide, by how far and how fast (Alex, 12 Nov): a short one opens the buttons; past half the width, or
+        // a quick flick, the chat goes back and the folder turns as it did before (or the next screen in the bar at the foot)
+        if (Math.abs(dx) > w * ROW_FAR || (Math.abs(v) > 0.9 && Math.abs(dx) > 70 && Math.sign(v) === Math.sign(dx))) {
+          rowNow.current = { el: rowEl }; shutRow()
+          const n = pagerNow.current
+          if (n.busy) return
+          const dir = dx < 0 ? 1 : -1
+          const id = n.allFolders[n.allFolders.findIndex((f) => f.id === n.folder) + dir]?.id
+          if (id) { setSwipedTo(id); setFolder(id) } else n.goStop(dir)
+          return
+        }
         if (Math.abs(dx) > 56) {
-          rowEl.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)'
-          rowEl.style.transform = `translate3d(${Math.sign(dx) * ROW_W}px,0,0)`
+          // open: the chat and its buttons land on Glass Travel's spring
+          const W = rowW(dx < 0 ? 'right' : 'left')
+          rowEl.style.transition = 'transform .3s cubic-bezier(.25,1.45,.45,1)'
+          rowEl.style.transform = `translate3d(${Math.sign(dx) * W}px,0,0)`
           const acts = rowEl.parentElement?.querySelector('.row-acts')
-          if (acts) { acts.style.transition = 'width .28s cubic-bezier(.22,1,.36,1)'; acts.style.width = `${ROW_W}px` }
+          if (acts) { acts.style.transition = 'width .3s cubic-bezier(.25,1.45,.45,1)'; acts.style.width = `${W}px` }
           rowNow.current = { el: rowEl, id: rowEl.dataset.rid }
         } else { rowNow.current = { el: rowEl }; shutRow() }
         return
@@ -1260,7 +1280,8 @@ export default function Chat({ me, setMe }) {
                       ? <><button type="button" className="ra-unread" onClick={() => go('unread')}><i>{I.unread}</i><span>{unread ? 'Read' : 'Unread'}</span></button>
                           <button type="button" className="ra-pin" onClick={() => go('pin')}><i>{I.pin}</i><span>{pins.includes(r.room_id) ? 'Unpin' : 'Pin'}</span></button></>
                       : <><button type="button" className="ra-mute" onClick={() => go('mute')}><i>{r.muted ? I.bell : I.bellOff}</i><span>{r.muted ? 'Unmute' : 'Mute'}</span></button>
-                          <button type="button" className="ra-del" onClick={() => go('delete')}><i>{I.trash}</i><span>Delete</span></button></>}
+                          <button type="button" className="ra-del" onClick={() => go('delete')}><i>{I.trash}</i><span>Delete</span></button>
+                          <button type="button" className="ra-arch" onClick={() => go('archive')}><i>{I.archive}</i><span>{r.archived ? 'Unarchive' : 'Archive'}</span></button></>}
                     </div>
                   </div>
                 )
@@ -1617,8 +1638,9 @@ const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.
 // three full dots for Edit as a round sign in Halo (Alex, 12 Nov, from a picture he sent)
 const DOTS3 = <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.8" /><circle cx="12" cy="12" r="2.8" /><circle cx="19" cy="12" r="2.8" /></svg>
 const WHEEL_COPIES = 5, WHEEL_MID = 2 // the folder wheel at the foot: copies of the folders in a row, the middle one the real one
-const EDGE = 64 // px from either side of the screen where a slide on a chat opens its buttons
-const ROW_W = 156 // how far a chat slides open to show its two buttons
+// how far a chat slides open: two buttons on the left (Unread, Pin), three on the right (Mute, Delete, Archive)
+const rowW = (side) => (side === 'right' ? 228 : 156)
+const ROW_FAR = 0.52 // of the list's width: a slide on a chat longer than this turns the folder instead of opening the buttons
 const REORDER = svg(<><rect x="3" y="4" width="18" height="6" rx="2" /><path d="M5 15v4M12 15v4M19 15v4M3.5 15h17" /></>, 16)
 const OFFICIAL = <i className="official" title="Official RoarMe account" aria-label="Official">{svg(<><path d="M12 2.5l2.4 1.8 3-.1.9 2.8 2.4 1.8-.9 2.8.9 2.8-2.4 1.8-.9 2.8-3-.1L12 21.5l-2.4-1.8-3 .1-.9-2.8L3.3 15.2l.9-2.8-.9-2.8 2.4-1.8.9-2.8 3 .1z" fill="currentColor" stroke="none" /><path d="M8.5 12.2l2.3 2.3 4.7-4.8" stroke="#fff" strokeWidth="2.2" /></>, 15)}</i>
 

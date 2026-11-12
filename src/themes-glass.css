@@ -370,3 +370,30 @@ html:root:root[data-glass][data-skin='halo'] .contacts-fav > span:last-child { m
     box-shadow: -1.5px 0 1px -.5px rgba(255, 60, 110, .4), 1.5px 0 1px -.5px rgba(50, 170, 255, .4), 0 -1px 1px -.5px rgba(90, 255, 170, .25), 0 1px 1px -.5px rgba(255, 210, 80, .22), 0 6px 16px rgba(60, 60, 100, .14) !important;
   }
 }
+
+/* A chat slid sideways in the list (Alex, 12 Nov, from the swipe of iOS): the chat draws in as a grey capsule and its
+   buttons grow out of the edge as capsules of colour with their word under them: Unread and Pin on the left, Mute,
+   Delete and Archive on the right. They grow with the finger (the row of buttons is as wide as the slide), land on
+   Glass Travel's spring when let go (Chat.jsx), and show Glass Press under a finger. A long or fast slide turns the
+   folder instead, and the chat dims past that point */
+html:root:root[data-glass][data-skin='halo'] .rooms .room.slid { border-radius: 28px; background: var(--lg-chip) !important; box-shadow: none; }
+html:root:root[data-glass][data-skin='halo'] .rooms .room.slid::before, html:root:root[data-glass][data-skin='halo'] .rooms .room.slid + .room::before { opacity: 0; }
+html:root:root[data-glass][data-skin='halo'] .row-acts .ra-in { width: 100%; min-width: 0; gap: 8px; padding: 0 8px; align-items: center; }
+html:root:root[data-glass][data-skin='halo'] .row-acts button {
+  flex: 1 1 0; min-width: 0; height: auto; gap: 4px; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  color: var(--muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0; overflow: visible;
+}
+html:root:root[data-glass][data-skin='halo'] .row-acts button i {
+  width: 100%; height: 42px; border-radius: 999px; color: #fff;
+  background: var(--grain), linear-gradient(170deg, rgba(var(--c), .92), rgba(var(--c), .76));
+  border: 1px solid rgba(255, 255, 255, .45); box-shadow: 0 6px 16px rgba(var(--c), .25), inset 0 1px 0 rgba(255, 255, 255, .5);
+  transition: transform .28s cubic-bezier(.25, 1.45, .45, 1), box-shadow .15s cubic-bezier(.3, .7, .4, 1);
+}
+html:root:root[data-glass][data-skin='halo'] .row-acts button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:root:root[data-glass][data-skin='halo'] .row-acts button:active { transform: none; }
+html:root:root[data-glass][data-skin='halo'] .row-acts button:active i {
+  transform: scale(.94); transition-duration: .07s, .15s;
+  box-shadow: -2px 0 0 -.5px rgba(255, 60, 110, .6), 2px 0 0 -.5px rgba(50, 170, 255, .6), 0 -1.5px 0 -.5px rgba(90, 255, 170, .4), 0 1.5px 0 -.5px rgba(255, 210, 80, .35), 0 6px 16px rgba(var(--c), .25);
+}
+html:root:root[data-glass][data-skin='halo'] .row-acts .ra-arch { --c: 142, 142, 152; }
+html:root:root[data-glass][data-skin='halo'] .row-acts .ra-mute { --c: 232, 160, 70; }

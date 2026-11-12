@@ -982,3 +982,13 @@ html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] :is(.con
 html[data-skin='halo'][data-theme='stone'][data-mode='light'][data-bars='pill'] :is(.contacts-top, .new-call.new-call-bar, .foot-bar-empty) { background: rgba(24, 24, 30, .7) !important; }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'][data-bars='pill'] :is(.contacts-top, .new-call.new-call-bar, .foot-bar-empty) { background: rgba(14, 14, 18, .62) !important; }
 html[data-skin='halo'][data-theme='stone'][data-bars='pill'] .contacts-top { padding-left: 10px; padding-right: 10px; }
+
+/* the message menu holds its longest line on one row (Alex, 12 Nov: "Ask to Delete for Everyone" and "Delete for
+   Everyone (Admin)" broke in two and ran into each other): as wide as Chat.jsx openMenu reckons (250px), no wrapping, a
+   line too long for a narrow screen ends in dots; and denser, since without a blur the chat's words showed through */
+html[data-skin='halo'] .msg-menu { width: 250px; }
+html[data-skin='halo'] .msg-menu .menu-list > button { height: 34px; flex: none; white-space: nowrap; min-width: 0; }
+html[data-skin='halo'] .msg-menu .menu-list > button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-skin='halo'] .msg-menu .menu-list > button > svg { flex: none; }
+html[data-skin='halo'][data-theme][data-mode='light'] .msg-menu :is(.menu-list, .rx-pick) { background: rgba(255, 255, 255, .93) !important; }
+html[data-skin='halo'][data-theme][data-mode='dark'] .msg-menu :is(.menu-list, .rx-pick) { background: rgba(44, 44, 50, .93) !important; }

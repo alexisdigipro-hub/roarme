@@ -634,7 +634,16 @@ function MediaThumb({ m, onClick }) {
 const HALO_WALLS = { night: 'Navy', ocean: 'Blue', dusk: 'Lilac', forest: 'Pink', ember: 'Rose' }
 const HALO_HIDE = ['dots', 'grid'] // Pattern and Grid are not offered in Halo (Alex, 12 Nov)
 // Halo's own orange as a wallpaper too (Alex, 12 Nov), before the other colours; drawn by themes-halo.css, plain elsewhere
-const withOrange = (walls) => { const i = walls.findIndex((w) => HALO_WALLS[w.key]); const o = { key: 'halo-orange', name: 'Orange', path: null }; return i < 0 ? [...walls, o] : [...walls.slice(0, i), o, ...walls.slice(i)] }
+// three more blends of the palette (Alex, 12 Nov) go after its colours
+const HALO_MORE = [{ key: 'halo-sunset', name: 'Sunset', path: null }, { key: 'halo-twilight', name: 'Twilight', path: null }, { key: 'halo-candy', name: 'Candy', path: null }]
+const withOrange = (walls) => {
+  const i = walls.findIndex((w) => HALO_WALLS[w.key])
+  const o = { key: 'halo-orange', name: 'Orange', path: null }
+  if (i < 0) return [...walls, o, ...HALO_MORE]
+  let j = i
+  while (j < walls.length && HALO_WALLS[walls[j].key]) j += 1
+  return [...walls.slice(0, i), o, ...walls.slice(i, j), ...HALO_MORE, ...walls.slice(j)]
+}
 export function WallTiles({ value, onPick, toast }) {
   const prefsNow = usePrefs()
   const halo = prefsNow.theme === 'halo'

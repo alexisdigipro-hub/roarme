@@ -2645,7 +2645,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       drop()
       if (e.touches.length !== 1 || hands.current.picked) return
       const bubble = e.target.closest?.('.bubble')
-      if (!bubble || (e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx') && !e.target.closest('.note'))) return // a round video message is held like words (Alex, 12 Nov)
+      if (!bubble || (e.target.closest('a, button, img, video, audio, input, textarea, .quote, .rx') && !e.target.closest('.note, img.pic-img'))) return // a round video message and a photo are held like words (Alex, 12 Nov)
       const row = bubble.closest('[id^="m-"]')
       const m = row && hands.current.byId[row.id.slice(2)]
       if (!m || m.deleted_at) return
@@ -3309,7 +3309,7 @@ function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
   const [ready, setReady] = useState(false)
   useEffect(() => { if (!go) return undefined; let alive = true; fileLink(thumbOf(file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>
-  return url ? <img className={`pic-img${ready ? ' ready' : ''}`} src={url} alt={file?.name || ''} loading="lazy" decoding="async" onLoad={() => setReady(true)} onClick={(e) => { e.stopPropagation(); onOpen(url) }} /> : <span className="pic-wait" />
+  return url ? <img className={`pic-img${ready ? ' ready' : ''}`} src={url} alt={file?.name || ''} loading="lazy" decoding="async" onLoad={() => setReady(true)} draggable={false} onClick={(e) => { e.stopPropagation(); if (Date.now() - (window.roarHeldAt || 0) < 800) return; onOpen(url) }} /> : <span className="pic-wait" />
 }
 
 function FileTile({ file }) {

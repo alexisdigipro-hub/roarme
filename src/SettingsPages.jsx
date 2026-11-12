@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, foldHas, nameOf, supabase } from './lib.js'
-import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
+import { Avatar, FOOT_I, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, haloish, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ThemeEditor } from './themeEditor.jsx'
@@ -136,7 +136,7 @@ export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe, onInbox, inb
         <div key={g} className="set-box">
           {PAGES.filter((x) => x[5] === g && !TUCKED.includes(x[0])).map(([id, label, c, ico]) => (
             <button key={id} type="button" className={`set-row set-pick set-nav${page === id ? ' on' : ''}`} onClick={() => onPage(id)}>
-              <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}{SUBS[id] && <small>{SUBS[id]}</small>}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}{id === 'appearance' && <small className="set-val">{THEMES.find(([k]) => k === p.theme)?.[1]}</small>}{id === 'features' && <small className="set-val">{[p.callsTab && 'Calls', p.tasksTab && 'Tasks'].filter(Boolean).flatMap((x, n) => (n ? [' · ', <span key={x}>{x}</span>] : [<span key={x}>{x}</span>]))}{!p.callsTab && !p.tasksTab && <span>Off</span>}</small>}<i className="set-chev">{I.right}</i>
+              <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}{SUBS[id] && <small>{SUBS[id]}</small>}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}{id === 'features' && <small className="set-val">{[p.callsTab && 'Calls', p.tasksTab && 'Tasks'].filter(Boolean).flatMap((x, n) => (n ? [' · ', <span key={x}>{x}</span>] : [<span key={x}>{x}</span>]))}{!p.callsTab && !p.tasksTab && <span>Off</span>}</small>}<i className="set-chev">{I.right}</i>
             </button>
           ))}
           {/* everything shared in all chats, out of the bar at the foot and in here (Alex, 19 Oct) */}
@@ -860,12 +860,10 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="pv mine">Bring the lights 💡</span>
           <span className="pv-compose"><span>Write a message…</span><i /></span>
         </div>
-        {haloish(p.theme) && (
-          <div className="pv-bars" aria-hidden="true">
-            <span className="pv-bar pv-folders"><b className="on">All</b><b>Unread</b><b>Groups</b><b>Personal</b></span>
-            <span className="pv-bar pv-rail"><i>{I.contacts}</i><i>{I.calls}</i><i className="on">{I.messages}</i><i>{I.settings}</i></span>
-          </div>
-        )}
+        {/* the menu as it is now, in small, so a colour picked above shows on it too (Alex, 12 Nov) */}
+        <div className="pv-menu" aria-hidden="true">
+          <span>{FOOT_I.contacts}<b>Contacts</b></span><span>{FOOT_I.calls}<b>Calls</b></span><span className="on">{FOOT_I.messages}<b>Messages</b></span><span>{FOOT_I.settings}<b>Settings</b></span>
+        </div>
       </div>
       <Box>
         <div className="set-row set-col">

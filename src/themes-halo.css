@@ -368,3 +368,5 @@ html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls { mar
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls::after { height: calc(104px + var(--hfmb) + var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu { margin-bottom: calc(-106px - var(--hfmb) - var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu::after { height: calc(104px + var(--hfmb) + var(--hpb)); }
+/* Contacts: the search bar holds only the search (Alex, 12 Nov: Find People is not needed there) */
+html[data-skin='halo'][data-theme='stone'] .contacts-top .round { display: none; }

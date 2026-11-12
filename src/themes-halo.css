@@ -173,7 +173,7 @@ html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before
 }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs.lens::before { background: rgba(255, 255, 255, .14); }
 @media (max-width: 760px) {
-  html[data-skin='halo'][data-theme='stone'] .app > .side .foot { margin-bottom: calc(env(safe-area-inset-bottom, 0px) * -.6 + 15px); }
+  html[data-skin='halo'][data-theme='stone'] .app > .side .foot { margin-bottom: var(--hfmb); }
 }
 
 /* both bars at the foot in dark smoked glass (Alex, 12 Nov: "make it black, both menus dark glass, blurred"), in light and
@@ -228,3 +228,28 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom 
 html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 5px 5px 18px 18px; }
 html[data-skin='halo'][data-theme='stone'] .foot button { height: 34px; border-radius: 15px; }
 html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 15px; }
+
+/* the two bars float over the list (Alex, 12 Nov: "in the air", option 1): the list runs on under both of them, to the
+   foot of the panel, and shows blurred through their glass; it keeps room at its end so its last chat can scroll up
+   above them. Flow layout with negative margins (no absolute positions):
+   --hfmb the rail's own bottom margin, --hpb the panel's bottom padding; 48 the rail, 38 the folder bar, 5 between them,
+   12 the column's gap, 10 the gap inside the list area */
+html[data-skin='halo'][data-theme='stone'] .app > .side { --hfmb: 0px; --hpb: 12px; }
+@media (max-width: 760px) {
+  html[data-skin='halo'][data-theme='stone'] .app > .side { --hfmb: calc(env(safe-area-inset-bottom, 0px) * -.6 + 15px); --hpb: calc(env(safe-area-inset-bottom, 0px) + 6px); }
+}
+html[data-skin='halo'][data-theme='stone'] .app > .side .foot { position: relative; z-index: 4; }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom { margin-bottom: calc(-60px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom > .tabs { position: relative; z-index: 4; margin-bottom: calc(53px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-101px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { content: ''; flex: none; height: calc(109px + var(--hfmb) + var(--hpb)); }
+/* with the list behind them the dark bars need a little more smoke, so the words behind stay a blur and not text */
+html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(14, 14, 18, .76) !important; }
+/* the folder bar's top corners 12px, its chip 7px (Alex, 12 Nov) */
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { border-radius: 12px 12px 5px 5px; }
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs button,
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs.lens::before { border-radius: 7px; }
+/* the folder bar 2px taller, 40px (Alex, 12 Nov); the list under it follows */
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 30px; }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-103px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(111px + var(--hfmb) + var(--hpb)); }

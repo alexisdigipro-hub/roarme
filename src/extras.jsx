@@ -603,6 +603,8 @@ function MediaThumb({ m, onClick }) {
    Navy, Blue, Lilac, Pink and Rose by themes-halo.css and named so here */
 const HALO_WALLS = { night: 'Navy', ocean: 'Blue', dusk: 'Lilac', forest: 'Pink', ember: 'Rose' }
 const HALO_HIDE = []
+// Halo's own orange as a wallpaper too (Alex, 12 Nov), before the other colours; drawn by themes-halo.css, plain elsewhere
+const withOrange = (walls) => { const i = walls.findIndex((w) => HALO_WALLS[w.key]); const o = { key: 'halo-orange', name: 'Orange', path: null }; return i < 0 ? [...walls, o] : [...walls.slice(0, i), o, ...walls.slice(i)] }
 export function WallTiles({ value, onPick, toast }) {
   const halo = usePrefs().theme === 'halo'
   const walls = useWalls()
@@ -628,7 +630,7 @@ export function WallTiles({ value, onPick, toast }) {
   return (
     <>
       <div className="walls">
-        {walls.filter(({ key: k }) => !halo || !HALO_HIDE.includes(k)).map(({ key: k, name: l, path }) => (
+        {(halo ? withOrange(walls) : walls).filter(({ key: k }) => !halo || !HALO_HIDE.includes(k)).map(({ key: k, name: l, path }) => (
           <button key={k} type="button" className={`wall-tile${value === k ? ' on' : ''}${path ? ' img' : ''}`} data-bg={k} style={path ? { backgroundImage: `url("${wallUrl(path)}")` } : undefined} onClick={() => onPick(k)}>
             <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>{(halo && HALO_WALLS[k]) || l}</small>
           </button>

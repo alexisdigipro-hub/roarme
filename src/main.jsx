@@ -13,7 +13,7 @@ const LegalPage = lazy(() => import('./legal.jsx').then((m) => ({ default: m.Leg
 
 startI18n()
 // a lab theme left on: its styles start coming now, alongside the sign-in (prefs.js wearTheme)
-try { wearTheme(JSON.parse(localStorage.getItem('roarme-prefs') || '{}').theme) } catch { /* no saved look */ }
+try { wearTheme(JSON.parse(localStorage.getItem('roarme-prefs') || '{}').theme || 'glass') } catch { /* no saved look */ }
 
 // Jost for the wordmark, from the site itself (fetched at build time into public/fonts); Futura is the fallback
 try {

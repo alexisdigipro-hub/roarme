@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 export const DEFAULTS = {
   mode: 'light', // dark | light | auto (follows the computer); a first start opens Stone in light (Alex, 21 Oct)
   lang: 'en', // en | el, the interface language (i18n.js)
-  theme: 'stone', // Stone is the main theme since 21 Oct (Alex); the rest only for Alex, see THEME_LAB
+  theme: 'glass', // Glass is the main theme since 12 Nov (Alex: "this will be the app's main theme"); Stone was since 21 Oct. Whoever chose a theme keeps it
   accent: '', // the theme's own colour (Stone's graphite) on a first start (Alex, 21 Oct); or one of ACCENTS
   density: 'standard', // relaxed | standard | tight
   font: 'system', // one of FONTS

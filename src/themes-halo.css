@@ -685,3 +685,25 @@ html[data-skin='halo'] .loc.view .loc-apps .trx-get.soft { background: color-mix
 html[data-skin='halo'] .loc.view .loc-apps .trx-get svg { width: 17px; height: 17px; }
 html[data-skin='halo'] .loc.view .loc-ctrl { bottom: 40px; }
 html[data-skin='halo'] .loc.view .map-credit { left: 10px; right: auto; bottom: 34px; }
+
+/* the attach sheet's bar at the foot, glassier (Alex, 12 Nov): a see-through frosted strip with a bright rim and a
+   light from above, the chosen one a raised glass chip */
+html[data-skin='halo'] .as-sheet .as-tabs {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .62), rgba(255, 255, 255, .38)) !important;
+  border: 1px solid rgba(255, 255, 255, .85) !important;
+  box-shadow: 0 10px 30px rgba(70, 70, 110, .14), inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -1px 0 rgba(255, 255, 255, .3) !important;
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+}
+html[data-skin='halo'] .as-sheet .as-tabs button.on {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .55)) !important;
+  box-shadow: 0 4px 12px rgba(70, 70, 110, .12), inset 0 1px 0 #fff, inset 0 0 0 1px rgba(255, 255, 255, .9) !important;
+}
+html[data-skin='halo'][data-mode='dark'] .as-sheet .as-tabs {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .05)) !important;
+  border-color: rgba(255, 255, 255, .14) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .14) !important;
+}
+html[data-skin='halo'][data-mode='dark'] .as-sheet .as-tabs button.on {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .08)) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .1) !important;
+}

@@ -202,6 +202,8 @@ export const EL = {
   'Camera off': 'Κάμερα κλειστή',
   'Camera on': 'Κάμερα ανοιχτή',
   'Cancel': 'Ακύρωση',
+  'Message Colours': 'Χρώματα μηνυμάτων',
+  'Your own colours for your messages and theirs': 'Δικά σου χρώματα για τα μηνύματά σου και τα δικά τους',
   'Nobody is waiting for an answer.': 'Κανείς δεν περιμένει απάντηση.',
   'Storage': 'Αποθήκευση',
   'Storage Usage': 'Χρήση αποθήκευσης',

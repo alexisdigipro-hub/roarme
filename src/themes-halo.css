@@ -474,3 +474,18 @@ html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:is(.pic, .loc-b, .a
 }
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble :is(.voice, .music, .file) { width: 100%; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.pic :is(.pic-img, .load-tap, .pic-wait, .vid-box) { width: 100%; }
+/* a small tail on the last message of a run, on its own side (Alex, 12 Nov): right on yours, left on theirs; only on
+   messages of words (cards and photos keep their round corners) */
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img)) { overflow: visible; }
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg.mine .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img)) { border-bottom-right-radius: 5px !important; }
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img)) { border-bottom-left-radius: 5px !important; }
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after {
+  content: ''; position: absolute; bottom: -1px; width: 11px; height: 15px; pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 15'%3E%3Cpath d='M0 0C0 7.5 3 12 10.4 14.3c.6.2.5.7-.1.7H0z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 15'%3E%3Cpath d='M0 0C0 7.5 3 12 10.4 14.3c.6.2.5.7-.1.7H0z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg.mine .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after { right: -10px; background: var(--halo); }
+html[data-skin='halo'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after { left: -10px; transform: scaleX(-1); background: rgba(255, 255, 255, .86); }
+html[data-skin='halo'][data-mode='dark'] [id^='m-']:not(:has(+ [id^='m-'] > .msg:not(.first))) > .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(:has(.artc, .rt-card, .locc, .vid-box, .pic-img))::after { background: rgba(255, 255, 255, .1); }
+html[data-skin='halo'][data-my-bubble] [id^='m-'] > .msg.mine .bubble::after { background: var(--my-bubble) !important; }
+html[data-skin='halo'][data-their-bubble] [id^='m-'] > .msg:not(.mine) .bubble::after { background: var(--their-bubble) !important; }

@@ -894,7 +894,8 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="set-text">Name Colour<small>How your name shows to others in groups</small></span>
           <div className="accents">
             <button type="button" className={`acc acc-auto${!me.name_color ? ' on' : ''}`} title="Automatic" onClick={() => pickName('')}><small>Auto</small></button>
-            {NAME_COLORS.map((c) => <button key={c} type="button" className={`acc${me.name_color === c ? ' on' : ''}`} style={{ '--c': c }} onClick={() => pickName(c)}><small>{c}</small></button>)}
+            {/* the second, lighter green is not offered (Alex, 12 Nov); names still take it by themselves */}
+            {NAME_COLORS.filter((c) => c !== '#aed581').map((c) => <button key={c} type="button" className={`acc${me.name_color === c ? ' on' : ''}`} style={{ '--c': c }} onClick={() => pickName(c)}><small>{c}</small></button>)}
           </div>
         </div>
       </Box>

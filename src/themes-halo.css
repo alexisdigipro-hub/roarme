@@ -873,3 +873,6 @@ html[data-skin='halo'] .as-tile > i { background: linear-gradient(170deg, var(--
 html[data-skin='halo'] .as-tile:nth-child(2) > i { background: color-mix(in srgb, var(--halo) 14%, transparent); color: var(--halo); }
 html[data-skin='halo'] .as-sheet .as-label { margin-top: 6px; letter-spacing: .06em; }
 html[data-skin='halo'] .as-grid { box-shadow: 0 6px 18px rgba(70, 70, 110, .08); }
+
+/* Send is a circle in Halo, as the paperclip and the microphone beside it (Alex, 12 Nov; Stone's is a rounded square) */
+html[data-skin='halo'][data-theme='stone'] :is(.send.ready, .round.send, .new-call-ico, .vrec-send, .attach-send, .as-send .round) { border-radius: 50% !important; }

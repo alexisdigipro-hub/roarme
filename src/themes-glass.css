@@ -75,14 +75,6 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='ligh
   box-shadow: 0 6px 18px rgba(60, 60, 100, .14), inset 0 1px 0 #fff, inset 0 -1px 0 rgba(255, 255, 255, .4);
 }
 
-/* the menu in Appearance's preview: glass capsules, the folders over the menu's place */
-html:root:root[data-glass][data-skin='halo'] .pv-bars { gap: 5px; }
-html:root:root[data-glass][data-skin='halo'][data-mode] .pv-bar { border-radius: 999px; background: var(--lg); border: 1px solid var(--lg-rim); box-shadow: var(--lg-shadow); color: var(--lg-ink); }
-html:root:root[data-glass][data-skin='halo'] .pv-bar :is(b, i) { border-radius: 999px; }
-html:root:root[data-glass][data-skin='halo'] .pv-rail { height: 42px; }
-html:root:root[data-glass][data-skin='halo'] .pv-rail i { height: 34px; }
-html:root:root[data-glass][data-skin='halo'] .pv-bar .on { background: var(--lg-chip); color: var(--lg-ink); }
-html:root:root[data-glass][data-skin='halo'] .pv-rail .on { color: var(--halo); }
 
 /* every picture of a person or a group is a circle in Glass (Alex, 12 Nov: "wherever there are contacts, the icon
    round"): the chat list, Contacts, Calls, groups' members, windows, everywhere an Avatar stands */

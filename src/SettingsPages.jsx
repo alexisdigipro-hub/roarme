@@ -860,12 +860,6 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="pv mine">Bring the lights 💡</span>
           <span className="pv-compose"><span>Write a message…</span><i /></span>
         </div>
-        {haloish(p.theme) && (
-          <div className="pv-bars" aria-hidden="true">
-            <span className="pv-bar pv-folders"><b className="on">All</b><b>Unread</b><b>Groups</b><b>Personal</b></span>
-            <span className="pv-bar pv-rail"><i>{I.contacts}</i><i>{I.calls}</i><i className="on">{I.messages}</i><i>{I.settings}</i></span>
-          </div>
-        )}
       </div>
       <Box>
         <div className="set-row set-col">

@@ -1042,3 +1042,8 @@ html[data-skin='halo'][data-bars='pill'] .pv-bar { border-radius: 999px; backgro
 html[data-skin='halo'][data-bars='pill'][data-mode='dark'] .pv-bar { background: rgba(14, 14, 18, .62); }
 html[data-skin='halo'][data-bars='pill'] .pv-bar :is(b, i) { border-radius: 999px; }
 html[data-skin='halo'] .pv-bar, html[data-skin='halo'] .pv-bar :is(b, i) { transition: border-radius .25s ease; }
+
+/* a settings page reached from inside another (Chat Folders, Auto-Reply, Language, a folder) keeps its Back and its Done:
+   the rule that clears the chat head's extra round buttons took them away too, so there was no way back and nothing for
+   the slide to press (Alex, 12 Nov) */
+html[data-skin='halo'][data-theme='stone'] .room-head.set-head > .round:not(.back) { display: grid !important; }

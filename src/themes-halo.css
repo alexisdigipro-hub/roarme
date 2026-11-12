@@ -1050,4 +1050,4 @@ html[data-skin='halo'][data-theme='stone'] .room-head.set-head > .round:not(.bac
 
 /* words never run wider than the pictures and the other things (Alex, 12 Nov): a text message stops at the same
    --media-w edge, so every message's widest edge falls on one line */
-html[data-skin='halo'] .msg:not(.wide-media) .bubble-col > .bubble { max-width: min(100%, var(--media-w)); box-sizing: border-box; }
+html[data-skin='halo'] .msg:not(.wide-media) .bubble-col .bubble { max-width: min(100%, var(--media-w)); box-sizing: border-box; }

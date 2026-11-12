@@ -98,21 +98,22 @@ html[data-skin='halo'][data-theme='stone'] .foot button.foot-tasks.open { color:
 html[data-skin='halo'][data-theme='stone'] .foot-ico i, html[data-skin='halo'][data-theme='stone'] .foot button.foot-main .foot-ico i { top: -7px; right: -13px; min-width: 16px; height: 16px; line-height: 16px; font-size: 10px; background: var(--halo); color: #fff; }
 
 /* messages: theirs white frosted glass, yours a warm orange glow */
+/* theirs: matte white, the same fine rim and soft drop as yours, a light fall from top to bottom (Alex, 12 Nov) */
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) {
-  background: linear-gradient(135deg, rgba(255, 255, 255, .92), rgba(255, 255, 255, .62)) !important;
-  border: 1px solid #fff !important; color: #1d1d24 !important;
-  box-shadow: 0 6px 16px rgba(70, 70, 110, .08), inset 0 1px 0 #fff !important;
+  background: linear-gradient(170deg, rgba(255, 255, 255, .88), rgba(255, 255, 255, .7)) !important;
+  border: 1px solid rgba(255, 255, 255, .28) !important; color: #1d1d24 !important;
+  box-shadow: 0 2px 8px rgba(70, 70, 110, .06) !important;
 }
 html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji) {
-  background: linear-gradient(135deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .06)) !important;
-  border-color: rgba(255, 255, 255, .12) !important; color: #f1f1f5 !important; box-shadow: none !important;
+  background: linear-gradient(170deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .07)) !important;
+  border-color: rgba(255, 255, 255, .08) !important; color: #f1f1f5 !important; box-shadow: none !important;
 }
 /* yours: matte orange glass, see-through and flat (Alex, 12 Nov: "not so 3D, more glass, matte orange"), no gradient,
    no glow, a fine light rim */
-html[data-skin='halo'] { --halo-mine: rgba(244, 115, 24, .74); }
-html[data-skin='halo'][data-mode='dark'] { --halo-mine: rgba(244, 115, 24, .62); }
+html[data-skin='halo'] { --halo-mine: rgba(244, 115, 24, .74); --halo-mine-top: rgba(250, 142, 62, .74); }
+html[data-skin='halo'][data-mode='dark'] { --halo-mine: rgba(244, 115, 24, .62); --halo-mine-top: rgba(250, 142, 62, .62); }
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji) {
-  background: var(--halo-mine) !important; color: #fff !important;
+  background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important;
   border: 1px solid rgba(255, 255, 255, .28) !important;
   box-shadow: 0 2px 8px rgba(70, 70, 110, .06) !important;
 }

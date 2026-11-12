@@ -81,7 +81,7 @@ export default function App() {
     wearTheme(t)
     dressTheme(t)
     // once signed in, someone left on a lab theme moves to Stone for good
-    if (profile && t !== (theme || 'stone')) setPrefs({ theme: t })
+    if (profile && t !== (theme || 'glass')) setPrefs({ theme: t })
   }, [theme, profile?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (session === undefined || (uid && profile === undefined)) return <div className="splash"><img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" /></div>

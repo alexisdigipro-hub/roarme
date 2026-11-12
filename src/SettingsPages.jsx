@@ -46,7 +46,7 @@ export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.start
 // a settings page opens with its title alone (Alex, 12 Nov): the large sign and the line under it are gone
 const Hero = () => null
 
-const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['glass', 'Glass', ['#f47318', 'linear-gradient(135deg, #dbe6ff, #f3e6ff 55%, #ffe7d9)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']]]
+const THEMES = [['glass', 'Glass', ['#f47318', 'linear-gradient(135deg, #dbe6ff, #f3e6ff 55%, #ffe7d9)']], ['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']]]
 
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">

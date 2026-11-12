@@ -840,20 +840,6 @@ html[data-skin='halo'] :is(.as-sheet, .as-tabs, .msg-menu .rx-pick, .msg-menu .m
 html[data-skin='halo'] .as-sheet .as-tabs { background: linear-gradient(180deg, rgba(255, 255, 255, .94), rgba(255, 255, 255, .86)) !important; }
 html[data-skin='halo'][data-mode='dark'] .as-sheet .as-tabs { background: linear-gradient(180deg, rgba(58, 58, 66, .96), rgba(44, 44, 52, .96)) !important; }
 
-/* the menu that pops on a held message (Alex, 12 Nov: "more opaque, darker, with the grain"): the same dark smoked glass
-   with grain as the bars at the foot, white words, fine light lines */
-html[data-skin='halo'][data-theme][data-mode] .msg-menu :is(.rx-pick, .menu-list) {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(18, 18, 23, .75) !important;
-  border: 1px solid rgba(255, 255, 255, .1) !important; box-shadow: 0 18px 44px rgba(0, 0, 0, .34) !important; color: #f4f4f8;
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-}
-html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button { color: #f4f4f8; }
-html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button :is(small, i) { color: rgba(255, 255, 255, .6); }
-html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button:hover, html[data-skin='halo'][data-theme][data-mode] .msg-menu .rx-pick button:hover { background: rgba(255, 255, 255, .12); }
-html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list button.danger { color: #ff6b5e; }
-html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-list hr { border-top-color: rgba(255, 255, 255, .12); }
-html[data-skin='halo'][data-theme][data-mode] .msg-menu .rx-pick button.on { background: rgba(255, 255, 255, .2); }
-
 /* the attach sheet in Halo, finer (Alex, 12 Nov): a soft lilac sheet, white cards with a soft drop, the signs in matte
    circles of Halo's colour */
 html[data-skin='halo'] .as-sheet { background: linear-gradient(180deg, #f6f6fb, #eeeef5); border: 1px solid #fff; box-shadow: 0 -12px 40px rgba(70, 70, 110, .18); }
@@ -877,10 +863,6 @@ html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile,
 html[data-skin='halo'][data-theme] :is(.room-view, .wall-tile, .set-preview, .te-preview)[data-bg='halo-candy'] { background-image: radial-gradient(circle at 12% 0%, rgba(170, 182, 251, 0.34), transparent 62%), radial-gradient(circle at 92% 100%, rgba(250, 167, 184, 0.36), transparent 64%), linear-gradient(160deg, rgba(170, 182, 251, 0.1), rgba(250, 167, 184, 0.12)) !important; }
 html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile, .set-preview, .te-preview)[data-bg='halo-candy'] { background-image: radial-gradient(circle at 12% 0%, rgba(170, 182, 251, 0.3), transparent 62%), radial-gradient(circle at 92% 100%, rgba(250, 167, 184, 0.26), transparent 64%) !important; }
 
-/* the dark message menu a fifth more see-through (Alex, 12 Nov: "too solid"), and the Seen row readable on it */
-html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-seen, html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-seen > span:nth-child(2) { color: #f4f4f8; }
-html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-seen :is(small, .ticks) { color: rgba(255, 255, 255, .65); }
-html[data-skin='halo'][data-theme][data-mode] .msg-menu .menu-seen .ticks.seen { color: var(--halo); }
 
 /* lighter, second pass (Alex, 12 Nov: "check well, perfect response"):
    - the veils over the whole screen (behind a menu, a window, a sheet) no longer fade in: a blurred layer whose opacity
@@ -903,25 +885,34 @@ html[data-skin='halo'] .pf-more .pf-menu > button.pf-m-sub { height: 42px; paddi
 
 /* One look for everything that pops up in Halo (Alex, 12 Nov: "glass and transparent, the same everywhere, they are all
    different"). Two families, each the same wherever it appears:
-   - menus (any menu, the reactions row, the emoji and mention pickers, a toast): dark smoked glass with grain, a quarter
-     see-through, white words, 24px corners;
+   - menus (any menu, the reactions row, the emoji and mention pickers, a toast): white frosted glass, a little
+     see-through, dark words, 24px corners (dark grey glass in the dark);
    - windows and sheets (a window, the attach sheet, the theme editor): light frosted glass, a little see-through over the
      blurred page behind, a bright rim, 30px corners. A window that fills the phone's screen stays solid. */
+/* menus are white frosted glass, a little see-through (Alex, 12 Nov, his last word: "white, not dark, a little
+   transparent, and every menu like it"); in the dark they are the same glass in dark grey */
 html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .rx-pick, .emoji-pick, .mention-pick, .toast, .vw-menu) {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(18, 18, 23, .75) !important;
-  border: 1px solid rgba(255, 255, 255, .1) !important; border-radius: 24px; box-shadow: 0 18px 44px rgba(0, 0, 0, .34) !important; color: #f4f4f8 !important;
+  background: rgba(255, 255, 255, .8) !important; border: 1px solid rgba(255, 255, 255, .95) !important; border-radius: 24px;
+  box-shadow: 0 18px 44px rgba(40, 40, 80, .2) !important; color: #1d1d24 !important;
   -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important;
 }
+html[data-skin='halo'][data-theme][data-mode='dark'] :is(.menu, .menu-list, .rx-pick, .emoji-pick, .mention-pick, .toast, .vw-menu) { background: rgba(44, 44, 52, .8) !important; border-color: rgba(255, 255, 255, .1) !important; box-shadow: 0 18px 44px rgba(0, 0, 0, .4) !important; color: #f4f4f8 !important; }
 html[data-skin='halo'][data-theme][data-mode] .menu :is(.menu-list, .sub-menu) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(button, a, b, strong, .ctx-head b) { color: #f4f4f8; }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(button, a, b, strong, .ctx-head b, .menu-seen, .menu-seen > span) { color: #1d1d24; }
+html[data-skin='halo'][data-theme][data-mode='dark'] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(button, a, b, strong, .ctx-head b, .menu-seen, .menu-seen > span) { color: #f4f4f8; }
 html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(button, a) > span { color: inherit; }
-html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(small, .sub-note, .sub-arrow, .pf-m-val, .ctx-head small) { color: rgba(255, 255, 255, .6); }
-html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu, .rx-pick, .emoji-pick) :is(button, a):hover { background: rgba(255, 255, 255, .12); }
-html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .rx-pick) button.on { background: rgba(255, 255, 255, .2); }
-html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .vw-menu) :is(button, a).danger { color: #ff6b5e; }
-html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list) hr { border-top-color: rgba(255, 255, 255, .12); }
-html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list) :is(.sub-check, .pf-m-sub i) { color: var(--halo); }
-html[data-skin='halo'][data-theme][data-mode] .menu .mention-at { color: #f4f4f8; }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(small, .sub-note, .sub-arrow, .pf-m-val, .ctx-head small, .menu-seen small, .menu-seen .ticks) { color: #8b8b98; }
+html[data-skin='halo'][data-theme][data-mode='dark'] :is(.menu, .menu-list, .mention-pick, .vw-menu) :is(small, .sub-note, .sub-arrow, .pf-m-val, .ctx-head small, .menu-seen small, .menu-seen .ticks) { color: rgba(255, 255, 255, .6); }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .mention-pick, .vw-menu, .rx-pick, .emoji-pick) :is(button, a):hover { background: rgba(20, 20, 40, .06); }
+html[data-skin='halo'][data-theme][data-mode='dark'] :is(.menu, .menu-list, .mention-pick, .vw-menu, .rx-pick, .emoji-pick) :is(button, a):hover { background: rgba(255, 255, 255, .12); }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .rx-pick) button.on { background: rgba(20, 20, 40, .1); }
+html[data-skin='halo'][data-theme][data-mode='dark'] :is(.menu, .menu-list, .rx-pick) button.on { background: rgba(255, 255, 255, .2); }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list, .vw-menu) :is(button, a).danger { color: #e0352b; }
+html[data-skin='halo'][data-theme][data-mode='dark'] :is(.menu, .menu-list, .vw-menu) :is(button, a).danger { color: #ff6b5e; }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list) hr { border-top-color: rgba(20, 20, 40, .1); }
+html[data-skin='halo'][data-theme][data-mode='dark'] :is(.menu, .menu-list) hr { border-top-color: rgba(255, 255, 255, .12); }
+html[data-skin='halo'][data-theme][data-mode] :is(.menu, .menu-list) :is(.sub-check, .pf-m-sub i, .menu-seen .ticks.seen) { color: var(--halo); }
+html[data-skin='halo'][data-theme][data-mode] .msg-menu .rx-pick button:hover { background: none; }
 
 html[data-skin='halo'] :is(.modal, .as-sheet, .te-sheet) {
   background: linear-gradient(180deg, rgba(248, 248, 252, .88), rgba(238, 238, 245, .88)) !important;

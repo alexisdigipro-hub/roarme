@@ -2337,7 +2337,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     })
   }
 
-  const sub = room.kind === 'group' ? `${(room.members || []).length} members` : [other ? `@${other.username}` : '', lastSeenText(other)].filter(Boolean).join(' · ')
+  const sub = room.kind === 'group' ? `${(room.members || []).length} ${(room.members || []).length === 1 ? 'member' : 'members'}` : [other ? `@${other.username}` : '', lastSeenText(other)].filter(Boolean).join(' · ')
   // a scheduled call in this chat: a notice when it starts (while the app is open)
   useEffect(() => {
     const timers = msgs.filter((m) => m.file?.event && !m.deleted_at).map((m) => {
@@ -3056,7 +3056,7 @@ function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
         {list.map((r) => (
           <button key={r.room_id} type="button" className="person" disabled={busy} onClick={() => send(r)}>
             <Avatar src={r.avatar_url} name={titleOf(r)} size={40} group={r.kind === 'group'} />
-            <span className="person-text"><b>{titleOf(r)}</b><small>{r.room_id === fromRoom ? 'This chat' : r.kind === 'group' ? `${(r.members || []).length} members` : 'Chat'}</small></span>
+            <span className="person-text"><b>{titleOf(r)}</b><small>{r.room_id === fromRoom ? 'This chat' : r.kind === 'group' ? `${(r.members || []).length} ${(r.members || []).length === 1 ? 'member' : 'members'}` : 'Chat'}</small></span>
           </button>
         ))}
       </div>

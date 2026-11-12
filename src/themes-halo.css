@@ -422,7 +422,10 @@ html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-c
 html[data-skin='halo'][data-theme='stone'] .room-head { gap: 8px; }
 html[data-skin='halo'][data-theme='stone'] .room-head :is(.head-video, .head-find, .tasks-btn, .head-more) { display: none !important; }
 html[data-skin='halo'][data-theme='stone'] .room-head > .round:not(.back) { display: none !important; }
-html[data-skin='halo'][data-theme='stone'] .room-head .head-card { flex: 0 1 auto; min-width: 0; max-width: calc(100% - 120px); margin: 0 auto; padding: 0 22px; justify-content: center; text-align: center; }
+/* the name's pill fills the room between back and the picture, as the writing box does between its buttons (Alex, 12 Nov) */
+html[data-skin='halo'][data-theme='stone'] .room-head .head-card { flex: 1 1 auto; min-width: 0; max-width: none; margin: 0; padding: 0 18px; justify-content: center; text-align: center; isolation: auto; }
+/* no tilted picture behind the name: Safari drew the name blurred over it (Alex, 12 Nov) */
+html[data-skin='halo'][data-theme='stone'] .room-head .head-bg { display: none; }
 html[data-skin='halo'][data-theme='stone'] .room-head .head-card > .av { display: none; }
 html[data-skin='halo'][data-theme='stone'] .room-head .head-text { align-items: center; min-width: 0; }
 html[data-skin='halo'][data-theme='stone'] .room-head .head-text strong { font-size: 16px; font-weight: 650; letter-spacing: -.01em; }

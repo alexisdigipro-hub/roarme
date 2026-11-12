@@ -768,7 +768,7 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
 function ChatTheme({ p }) {
@@ -799,7 +799,7 @@ function ChatTheme({ p }) {
 }
 
 function Appearance({ p, toast, me, setMe }) {
-  const look = wallLook(p.background, useWalls(true))
+  const look = wallLook(p.background, useWalls(true), p.wallStrength)
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
   return (
     <>
@@ -807,7 +807,7 @@ function Appearance({ p, toast, me, setMe }) {
           while the page scrolls and shows at once the theme, day or night, the colour, the wallpaper, the message
           colours and corners, the text size and font, and Compact Messages */}
       <div className="set-live">
-        <div className={`set-preview live${p.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...look.style }}>
+        <div className={`set-preview live${p.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...look.style }}>
           <span className="pv-head"><i className="pv-ava">GK</i><span><b>Giorgos</b><small>online</small></span></span>
           <span className="pv">Are we shooting at 10?</span>
           <span className="pv mine"><i>Are we shooting at 10?</i>Yes, on set at 10 👍</span>

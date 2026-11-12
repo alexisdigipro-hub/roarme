@@ -202,6 +202,7 @@ export const EL = {
   'Camera off': 'Κάμερα κλειστή',
   'Camera on': 'Κάμερα ανοιχτή',
   'Cancel': 'Ακύρωση',
+  'Wallpaper Strength': 'Ένταση ταπετσαρίας',
   'Photos and Videos': 'Φωτογραφίες και βίντεο',
   'From your library': 'Από τη βιβλιοθήκη σου',
   'From this computer': 'Από αυτόν τον υπολογιστή',

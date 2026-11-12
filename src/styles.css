@@ -4496,3 +4496,8 @@ html[data-skin='halo'] .set-preview.live .pv.mine i { border-left-color: #fff; b
 .as-thumb-play svg { width: 11px; height: 11px; }
 .as-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 26px 24px 0; text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
 .as-empty svg { width: 34px; height: 34px; opacity: .45; }
+
+/* Wallpaper Strength (Alex, 12 Nov): under 100% the page's own colour is laid over the wallpaper, under the messages */
+:is(.room-view, .set-preview)[data-wop] { box-shadow: inset 0 0 0 200vmax color-mix(in srgb, var(--bg, #1c1c1e) calc((1 - var(--wop, 1)) * 100%), transparent); }
+html[data-skin='halo'] .set-preview.live[data-wop] { box-shadow: inset 0 0 0 200vmax color-mix(in srgb, #f1f1f6 calc((1 - var(--wop, 1)) * 100%), transparent), 0 10px 28px rgba(70, 70, 110, .14); }
+html[data-skin='halo'][data-mode='dark'] .set-preview.live[data-wop] { box-shadow: inset 0 0 0 200vmax color-mix(in srgb, #17171d calc((1 - var(--wop, 1)) * 100%), transparent); }

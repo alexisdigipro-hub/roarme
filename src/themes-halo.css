@@ -350,3 +350,7 @@ html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > 
 /* the rail's settings sign in lines (Alex, 12 Nov: a gear like the one he sent) */
 html[data-skin='halo'][data-theme='stone'] .foot .fi-solid { display: none; }
 html[data-skin='halo'][data-theme='stone'] .foot .fi-line { display: inline; stroke-linecap: round; }
+/* the Settings bar is a link to www.themadlions.com (Alex, 12 Nov): the whole bar, no underline */
+html[data-skin='halo'][data-theme='stone'] .foot-bar-empty { text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .18s var(--spring); }
+html[data-skin='halo'][data-theme='stone'] .foot-bar-empty:active { transform: scale(.98); }
+html[data-skin='halo'][data-theme='stone'] .foot-bar-empty:hover span { color: #fff; }

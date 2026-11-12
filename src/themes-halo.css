@@ -647,3 +647,41 @@ html[data-skin='halo'] .pf-field { padding: 11px 50px 11px 16px; }
 html[data-skin='halo'] .pf-field small { font-size: 12px; color: var(--muted); }
 html[data-skin='halo'] .pf-field span { font-size: 15px; }
 html[data-skin='halo'] .pf-row-ico { background: color-mix(in srgb, var(--halo) 14%, transparent); color: var(--halo); }
+
+/* the place on a map, fresher and in Halo's look (Alex, 12 Nov): the OpenStreetMap drawing calmed (less colour, a touch
+   lighter; in the dark turned into a night map), the pin matte orange with a white ring, the round buttons plain white,
+   and the place's name on a white sheet that rises over the map with the two map apps as equal pills */
+html[data-skin='halo'] .map { background: #eceaf1; }
+html[data-skin='halo'] .map-tile { filter: saturate(.5) brightness(1.06) contrast(.92); }
+html[data-skin='halo'][data-mode='dark'] .map { background: #1c1c22; }
+html[data-skin='halo'][data-mode='dark'] .map-tile { filter: invert(.9) hue-rotate(180deg) saturate(.35) brightness(.95) contrast(.9); }
+html[data-skin='halo'] .map-credit { border-radius: 999px; padding: 2px 8px; font-size: 9px; color: #555; background: rgba(255, 255, 255, .8); }
+html[data-skin='halo'] .map-pin { width: 40px; height: 40px; margin: -46px 0 0 -20px; background: var(--halo-mine, var(--halo)); color: #fff; border: 2px solid #fff; box-shadow: 0 6px 16px rgba(70, 70, 110, .22); }
+html[data-skin='halo'] .map-pin svg { width: 18px; height: 18px; }
+html[data-skin='halo'] .map-pin::after { background: rgba(70, 70, 110, .35); left: -6px; bottom: -6px; }
+html[data-skin='halo'] .map-pin.small { width: 30px; height: 30px; margin: -36px 0 0 -15px; }
+html[data-skin='halo'] .map-pin.small svg { width: 14px; height: 14px; }
+html[data-skin='halo'] .loc-round, html[data-skin='halo'] .loc-zoom { background: rgba(255, 255, 255, .94); border: 0; box-shadow: 0 4px 14px rgba(70, 70, 110, .16); color: #1d1d24; }
+html[data-skin='halo'] .loc-round { width: 40px; height: 40px; }
+html[data-skin='halo'] .loc-zoom button { width: 40px; height: 40px; color: #1d1d24; }
+html[data-skin='halo'] .loc-zoom button + button { border-top-color: rgba(20, 20, 40, .07); }
+html[data-skin='halo'] :is(.loc-round, .loc-zoom button):hover { color: var(--halo); }
+html[data-skin='halo'][data-mode='dark'] :is(.loc-round, .loc-zoom) { background: rgba(38, 38, 44, .94); color: #f1f1f5; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+html[data-skin='halo'][data-mode='dark'] .loc-zoom button { color: #f1f1f5; }
+html[data-skin='halo'] .loc.view .loc-info {
+  position: relative; z-index: 4; margin-top: -26px; flex-direction: column; align-items: stretch; gap: 14px;
+  padding: 20px 18px calc(18px + env(safe-area-inset-bottom, 0px)); border: 0; border-radius: 26px 26px 0 0;
+  background: #fff; box-shadow: 0 -8px 24px rgba(70, 70, 110, .1);
+}
+html[data-skin='halo'][data-mode='dark'] .loc.view .loc-info { background: #1f1f25; box-shadow: 0 -8px 24px rgba(0, 0, 0, .35); }
+html[data-skin='halo'] .loc.view .loc-info::before { content: ''; position: absolute; left: 50%; top: 8px; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: color-mix(in srgb, var(--text) 14%, transparent); }
+html[data-skin='halo'] .loc.view .loc-info > span:first-child { flex: none; gap: 3px; }
+html[data-skin='halo'] .loc.view .loc-info b { font-size: 17px; font-weight: 600; }
+html[data-skin='halo'] .loc.view .loc-info small { font-size: 13px; line-height: 1.4; }
+html[data-skin='halo'] .loc.view .loc-apps { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+html[data-skin='halo'] .loc.view .loc-apps .trx-get { height: 44px; justify-content: center; gap: 8px; border-radius: 22px; font-size: 14.5px; font-weight: 600; box-shadow: none !important; }
+html[data-skin='halo'] .loc.view .loc-apps .trx-get:not(.soft) { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; border: 1px solid rgba(255, 255, 255, .28) !important; }
+html[data-skin='halo'] .loc.view .loc-apps .trx-get.soft { background: color-mix(in srgb, var(--text) 6%, transparent) !important; color: var(--text) !important; border: 0 !important; }
+html[data-skin='halo'] .loc.view .loc-apps .trx-get svg { width: 17px; height: 17px; }
+html[data-skin='halo'] .loc.view .loc-ctrl { bottom: 40px; }
+html[data-skin='halo'] .loc.view .map-credit { left: 10px; right: auto; bottom: 34px; }

@@ -273,6 +273,8 @@ export const EL = {
   'Chat menu': 'Μενού συνομιλίας',
   'Chat wallpaper': 'Ταπετσαρία συνομιλίας',
   'App background': 'Φόντο εφαρμογής',
+  'Accent Opacity': 'Διαφάνεια χρώματος',
+  'Lower lets the wallpaper through your messages and the coloured buttons': 'Πιο χαμηλά, το φόντο φαίνεται μέσα από τα μηνύματά σου και τα χρωματιστά κουμπιά',
   'Glass': 'Glass',
   'What sits behind the chat list, Contacts, Calls and Settings.': 'Αυτό που βρίσκεται πίσω από τη λίστα συνομιλιών, τις Επαφές, τις Κλήσεις και τις Ρυθμίσεις.',
   'Same as Chats': 'Ίδιο με τις συνομιλίες',

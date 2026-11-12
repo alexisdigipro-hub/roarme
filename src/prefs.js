@@ -51,6 +51,7 @@ export const DEFAULTS = {
   folderTags: false,
   folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
   background: 'halo-orange', // a wallpaper's key; a new install starts on Orange (Alex, 12 Nov), 'soft' is Plain
+  accentOpacity: 100, // 30 to 100: how solid the accent colour's fill is (your messages, the coloured buttons)
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
   pauseOnRec: true, // a song or a voice message playing stops while a voice or video message is recorded
   callLessData: false, // video calls at 360p and 15 frames, for weak networks
@@ -272,14 +273,18 @@ export function applyLook(p) {
   if (hex) { r.style.setProperty('--accent', hex); r.style.setProperty('--accent-2', hex); r.style.setProperty('--accent-ink', inkOn(hex)) } else { ['--accent', '--accent-2', '--accent-ink'].forEach((v) => r.style.removeProperty(v)) }
   // in Halo one of its own colours stands in for the orange: on your messages, Send, the chosen things
   const ha = haloish(p.theme) && HALO_ACCENTS.find(([k]) => k === p.accent)
+  // Accent Opacity (Alex, 12 Nov): how see-through the accent's fill is on your messages and the coloured buttons
+  const so = Math.min(100, Math.max(30, Number(p.accentOpacity) || 100)) / 100
   if (ha) {
     const [, , c, cd, [a, b], ink] = ha
     r.style.setProperty('--halo-l', c); r.style.setProperty('--halo-d', cd); r.style.setProperty('--halo-2', a)
-    r.style.setProperty('--halo-mine-top', hexA(a, 0.82)); r.style.setProperty('--halo-mine', hexA(b, 0.82)); r.style.setProperty('--halo-ink', ink)
+    r.style.setProperty('--halo-mine-top', hexA(a, 0.82 * so)); r.style.setProperty('--halo-mine', hexA(b, 0.82 * so)); r.style.setProperty('--halo-ink', ink)
     r.dataset.haloAccent = '1'
   } else {
     ['--halo-l', '--halo-d', '--halo-2', '--halo-mine-top', '--halo-mine', '--halo-ink'].forEach((v) => r.style.removeProperty(v))
     delete r.dataset.haloAccent
+    // the theme's own orange, thinned the same way (at full strength the style sheet's own values stand)
+    if (so < 1) { r.style.setProperty('--halo-mine-top', hexA('#fa8e3e', 0.74 * so)); r.style.setProperty('--halo-mine', hexA('#f47318', 0.74 * so)) }
   }
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }

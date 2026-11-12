@@ -815,7 +815,7 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'appBackground', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'appBackground', 'barStyle', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
 function ChatTheme({ p }) {
@@ -916,6 +916,14 @@ function Appearance({ p, toast, me, setMe }) {
       <Box title="Chat wallpaper" note="Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.">
         <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
       </Box>
+      {p.theme === 'halo' && (
+        <Box title="Menu" note="The shape of the bar at the foot and of the folder bar over it.">
+          <div className="set-row set-col">
+            <span className="set-text">Menu Shape<small>{p.barStyle === 'pill' ? 'Capsules, more see-through' : 'Soft corners'}</small></span>
+            <Lens className="seg" dep={p.barStyle || 'classic'}>{[['', 'Classic'], ['pill', 'Capsule']].map(([k, l]) => <button key={l} type="button" className={(p.barStyle || '') === k ? 'on' : ''} onClick={() => setPrefs({ barStyle: k })}>{l}</button>)}</Lens>
+          </div>
+        </Box>
+      )}
       {p.theme === 'halo' && (
         <Box title="App background" note="What sits behind the chat list, Contacts, Calls and Settings.">
           <Switch on={!p.appBackground} set={(v) => setPrefs({ appBackground: v ? '' : p.background || 'soft' })} hint="The app wears the chat wallpaper above">Same as Chats</Switch>

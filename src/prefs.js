@@ -52,6 +52,7 @@ export const DEFAULTS = {
   folderTags: false,
   folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
   background: 'soft', // one of WALLS
+  appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
   pauseOnRec: true, // a song or a voice message playing stops while a voice or video message is recorded
   callLessData: false, // video calls at 360p and 15 frames, for weak networks
   wallStrength: 100, // 10 to 100: how strong RoarMe's wallpapers and a colour show (one's own photo keeps its own)

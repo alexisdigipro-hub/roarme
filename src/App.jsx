@@ -17,11 +17,11 @@ export default function App() {
   useEffect(() => applyLook(prefs), [prefs.theme, prefs.accent, prefs.accentHex, prefs.myBubble, prefs.theirBubble, prefs.bubbleR, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => applyMode(mode), [mode])
   // in Halo the whole app sits on the wallpaper chosen for the chats (Alex, 12 Nov: "the overall background follows the
-  // one we chose"): the body wears what a chat wears (class app-wall, data-bg and the rest), themes-halo.css draws it
+  // one we chose", then: chosen apart in Settings, prefs.appBackground): the body wears what a chat wears (class app-wall, data-bg and the rest), themes-halo.css draws it
   const walls = useWalls(true)
   useEffect(() => {
     const b = document.body
-    const look = theme === 'halo' ? wallLook(prefs.background, walls, prefs.wallStrength) : null
+    const look = theme === 'halo' ? wallLook(prefs.appBackground || prefs.background, walls, prefs.wallStrength) : null
     b.classList.toggle('app-wall', !!look)
     ;['bg', 'img', 'own', 'wop'].forEach((k) => { delete b.dataset[k] })
     ;['--wall', '--wall-op', '--wall-color', '--wop'].forEach((v) => b.style.removeProperty(v))
@@ -29,7 +29,7 @@ export default function App() {
     if (look['data-bg']) b.dataset.bg = look['data-bg']
     ;[['img', 'data-img'], ['own', 'data-own'], ['wop', 'data-wop']].forEach(([k, a]) => { if (look[a] !== undefined) b.dataset[k] = '' })
     Object.entries(look.style || {}).forEach(([k, v]) => b.style.setProperty(k, String(v)))
-  }, [theme, prefs.background, prefs.wallStrength, walls])
+  }, [theme, prefs.background, prefs.appBackground, prefs.wallStrength, walls])
   // the colour of the band under the clock on a phone follows day and night (Alex, 19 Oct: no black at the top)
   useEffect(() => {
     const m = document.querySelector('meta[name="theme-color"]')

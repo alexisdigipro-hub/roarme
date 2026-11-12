@@ -2842,7 +2842,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     export: () => exportChat(), auto: (h) => setAutoDelete(h ?? null), clear: () => act('clear'), roles: () => setRolesOpen(true), delete: () => act('delete'),
   }
   return (
-    <div className={`room-view${prefs.compact ? ' compact' : ''}${wall === prefs.background ? ' same-wall' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
+    <div className={`room-view${prefs.compact ? ' compact' : ''}${wall === (prefs.appBackground || prefs.background) ? ' same-wall' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
       <header className="room-head">
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>

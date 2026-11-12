@@ -614,3 +614,36 @@ html[data-skin='halo'] .bubble .music-dl { width: 28px; height: 28px; }
 html[data-skin='halo'] .bubble .music-dl svg { width: 18px; height: 18px; }
 html[data-skin='halo'] .bubble .voice-wave { height: 24px; }
 html[data-skin='halo'] .bubble .voice small { font-size: 12.5px; }
+
+/* the profile, our own way (Alex, 12 Nov: "smaller, our own layout, not the same as Telegram, our signs, centred,
+   smaller letters"): a shorter smoked head with the round picture in the middle (the photo, if any, dimmed behind it),
+   the name and the line under it centred, the actions as small round glass signs with a word under each */
+html[data-skin='halo'] .pf-head { min-height: 0; justify-content: flex-start; align-items: center; gap: 16px; padding: calc(env(safe-area-inset-top, 0px) + 60px) 16px 18px; }
+html[data-skin='halo'] .pf-head::after { background: linear-gradient(180deg, rgba(10, 10, 14, .55), rgba(10, 10, 14, .78)); }
+html[data-skin='halo'] .pf-head :is(.pf-back, .pf-edit) { height: 38px; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+html[data-skin='halo'] .pf-back { width: 38px; }
+html[data-skin='halo'] .pf-back svg { width: 20px; height: 20px; }
+html[data-skin='halo'] .pf-edit { padding: 0 15px; border-radius: 19px; font-size: 14px; }
+html[data-skin='halo'] .pf-head .pf-top { align-items: center; text-align: center; gap: 2px; padding: 0; }
+html[data-skin='halo'] .pf-head.has-photo .pf-top > :is(.av, .pf-pic), html[data-skin='halo'] .pf-head:not(.has-photo) .pf-top > :is(.av, .pf-pic) { display: grid; align-self: center; margin: 0 0 12px; }
+html[data-skin='halo'] .pf-head .pf-top .av { width: 92px !important; height: 92px !important; border-radius: 50% !important; font-size: 32px !important; box-shadow: 0 0 0 2px rgba(255, 255, 255, .55), 0 10px 26px rgba(0, 0, 0, .35); }
+html[data-skin='halo'] .pf-head .pf-top .av img { border-radius: 50% !important; }
+html[data-skin='halo'] .pf-head .pf-pic { border-radius: 50%; }
+html[data-skin='halo'] .pf-head .pf-pic-cam { width: 28px; height: 28px; right: -2px; bottom: -2px; background: rgba(40, 40, 46, .9); color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .55); }
+html[data-skin='halo'] .pf-head .pf-pic-cam svg { width: 14px; height: 14px; }
+html[data-skin='halo'] .pf-head .pf-name, html[data-skin='halo'] .pf-head .pf-name-edit { font-size: 20px; text-align: center; }
+html[data-skin='halo'] .pf-head .pf-name-edit { margin: 0; }
+html[data-skin='halo'] .pf-head .pf-sub { font-size: 13px; }
+html[data-skin='halo'] .pf-acts { display: flex; justify-content: center; gap: 14px; }
+html[data-skin='halo'] .pf-acts button, html[data-skin='halo'] .pf-more > button { width: 56px; gap: 6px; padding: 0; border-radius: 0; background: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-skin='halo'] .pf-acts button svg { box-sizing: border-box; width: 44px; height: 44px; padding: 12px; border-radius: 50%; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .12); transition: background .15s; }
+html[data-skin='halo'] .pf-acts button:hover svg, html[data-skin='halo'] .pf-more > button.on svg { background: rgba(255, 255, 255, .24); }
+html[data-skin='halo'] .pf-acts button span { font-size: 11px; text-transform: none; color: rgba(255, 255, 255, .85); }
+html[data-skin='halo'] .pf-acts button:active svg { transform: scale(.94); }
+html[data-skin='halo'] .pf-tabs { padding: 3px; border-radius: 20px; }
+html[data-skin='halo'] .pf-tabs button { height: 32px; padding: 0 12px; border-radius: 16px; font-size: 13px; }
+html[data-skin='halo'] .pf-tabs small { font-size: 10px; }
+html[data-skin='halo'] .pf-field { padding: 11px 50px 11px 16px; }
+html[data-skin='halo'] .pf-field small { font-size: 12px; color: var(--muted); }
+html[data-skin='halo'] .pf-field span { font-size: 15px; }
+html[data-skin='halo'] .pf-row-ico { background: color-mix(in srgb, var(--halo) 14%, transparent); color: var(--halo); }

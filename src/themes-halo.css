@@ -968,7 +968,7 @@ html[data-skin='halo'] body.app-wall .room-view.same-wall { background-image: no
 
 /* the menu as capsules (Alex, 12 Nov, from Telegram's bar: "only the shape, not the fonts, colours or sizes"; Settings >
    Appearance > Menu, prefs.barStyle 'pill' -> data-bars): both bars at the foot fully round, their chosen chip a capsule,
-   the smoke more see-through with the app's own blur behind it, a little more air between the two */
+   the smoke more see-through with the app's own blur behind it; the gap between the two as in Classic and as on Calls */
 html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] :is(.foot, .rooms-area.bottom .tabs) { border-radius: 999px !important; -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important; }
 html[data-skin='halo'][data-theme='stone'][data-mode='light'][data-bars='pill'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(24, 24, 30, .7) !important; }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'][data-bars='pill'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(14, 14, 18, .62) !important; }
@@ -976,7 +976,6 @@ html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] :is(.foo
 html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] :is(.foot, .rooms-area.bottom .tabs).lens::before { border-radius: 999px !important; }
 html[data-skin='halo'][data-theme='stone'][data-bars='pill'] .foot { padding-left: 5px; padding-right: 5px; }
 html[data-skin='halo'][data-theme='stone'][data-bars='pill'] .rooms-area.bottom .tabs { padding-left: 5px; padding-right: 5px; scroll-padding-inline: 5px; }
-html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] .app > .side .rooms-area.bottom .tabs { margin-bottom: calc(54px + var(--hfmb) + var(--hpb)); }
 /* the bars that stand in the folder bar's place on Contacts and Calls take the capsule too */
 html[data-skin='halo'][data-theme='stone'][data-mode][data-bars='pill'] :is(.contacts-top, .new-call.new-call-bar, .foot-bar-empty) { border-radius: 999px !important; -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important; }
 html[data-skin='halo'][data-theme='stone'][data-mode='light'][data-bars='pill'] :is(.contacts-top, .new-call.new-call-bar, .foot-bar-empty) { background: rgba(24, 24, 30, .7) !important; }
@@ -1038,7 +1037,7 @@ html[data-skin='halo'] .pv-rail { height: 34px; border-radius: 5px 5px 14px 14px
 html[data-skin='halo'] .pv-rail i { flex: 1; display: grid; place-items: center; height: 28px; border-radius: 9px; }
 html[data-skin='halo'] .pv-rail i svg { width: 16px; height: 16px; }
 html[data-skin='halo'] .pv-bar .on { background: rgba(255, 255, 255, .14); color: #fff; }
-html[data-skin='halo'][data-bars='pill'] .pv-bars { gap: 5px; }
+html[data-skin='halo'][data-bars='pill'] .pv-bars { gap: 3px; }
 html[data-skin='halo'][data-bars='pill'] .pv-bar { border-radius: 999px; background: rgba(24, 24, 30, .7); }
 html[data-skin='halo'][data-bars='pill'][data-mode='dark'] .pv-bar { background: rgba(14, 14, 18, .62); }
 html[data-skin='halo'][data-bars='pill'] .pv-bar :is(b, i) { border-radius: 999px; }

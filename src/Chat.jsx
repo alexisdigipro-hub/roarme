@@ -1927,7 +1927,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const at = el ? el.selectionStart : text.length
     const next = text.slice(0, at) + e + text.slice(at)
     setText(next)
-    requestAnimationFrame(() => { if (el) { el.focus(); el.selectionStart = el.selectionEnd = at + e.length; setCaret(at + e.length) } })
+    // on a phone the box is not given the focus when the keyboard is down: the keyboard would not come up from here, and
+    // the page would still make room as if it had (Alex, 12 Nov: "the bar goes down when I tap an emoji")
+    const touch = window.matchMedia?.('(pointer: coarse)').matches
+    const had = el && document.activeElement === el
+    requestAnimationFrame(() => { if (el) { if (!touch || had) el.focus(); el.selectionStart = el.selectionEnd = at + e.length; setCaret(at + e.length) } })
   }
 
   const send = async () => {
@@ -3039,13 +3043,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {emoji && <EmojiPicker onPick={addEmoji} onClose={() => setEmoji(false)} />}
             </span>
             {text.trim() || editing || sealOn
-              ? <button type="button" className={`round send${text.trim() || editing ? ' ready' : ''}`}
+              ? <button key="send" type="button" className={`round send${text.trim() || editing ? ' ready' : ''}`}
                   onClick={() => { if (held.current) { held.current = false; return } send() }}
                   onContextMenu={(e) => { if (canSched) { e.preventDefault(); clearTimeout(holdT.current); setSchedNew(true) } }}
                   onPointerDown={() => { held.current = false; clearTimeout(holdT.current); if (canSched) holdT.current = setTimeout(() => { held.current = true; setSchedNew(true) }, 450) }}
                   onPointerUp={() => clearTimeout(holdT.current)} onPointerLeave={() => clearTimeout(holdT.current)}
                   aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter) · hold to schedule'}>{editing ? I.check : I.send}</button>
-              : <button type="button" ref={noLoupe} className={`round rec-btn${recMode === 'video' ? ' vmode' : ''}${rec || vrec ? ' holding' : ''}`} onPointerDown={holdStart} onContextMenu={(e) => e.preventDefault()}
+              : <button key="rec" type="button" ref={noLoupe} className={`round rec-btn${recMode === 'video' ? ' vmode' : ''}${rec || vrec ? ' holding' : ''}`} onPointerDown={holdStart} onContextMenu={(e) => e.preventDefault()}
                   onClick={(e) => { if (e.detail === 0) (recMode === 'video' ? startVideo(true) : startVoice(true)) }}
                   aria-label={recMode === 'video' ? 'Video message: hold to record, tap for voice' : 'Voice message: hold to record, tap for video'}
                   title={recMode === 'video' ? 'Hold to record a video message · tap for voice' : 'Hold to record a voice message · tap for video'}>{recMode === 'video' ? VNOTE_I : I.mic}</button>}

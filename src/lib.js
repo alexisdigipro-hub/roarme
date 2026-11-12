@@ -235,6 +235,17 @@ export async function tusUpload(bucket, path, file, type, onProgress, holder = {
 export const isIPhone = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 // Safari ticks only inside a real tap (a click, or the finger lifting): never from a timer while the finger is still down.
 // A fresh hidden switch each time, put in and taken out at once, as Safari expects (Alex, 8 Nov: no tick was felt)
+// text as a search compares it (Alex, 12 Nov: "the search should find it without accents too"): lower case, the accents
+// and the Greek diaeresis taken off (ά -> α, ϊ -> ι, é -> e), and the final ς read as σ
+export const fold = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/ς/g, 'σ')
+export const foldHas = (hay, needle) => fold(hay).includes(fold(needle))
+// the same, letter for letter, keeping the text's length (for marking the words found in it)
+export const foldKeep = (s) => [...String(s || '')].map((c) => { const f = fold(c); return f.length === 1 ? f : c }).join('')
+// a search for the database that does not mind accents (Postgres ~*, case is already ignored): each letter matches itself
+// with or without its accent, everything else matches itself
+const ACC = { α: 'αά', ε: 'εέ', η: 'ηή', ι: 'ιίϊΐ', ο: 'οό', υ: 'υύϋΰ', ω: 'ωώ', σ: 'σς', a: 'aàáâäã', e: 'eèéêë', i: 'iìíîï', o: 'oòóôöõ', u: 'uùúûü', c: 'cç', n: 'nñ' }
+export const foldRx = (t) => [...fold(t)].map((c) => (ACC[c] ? `[${ACC[c]}]` : c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).join('')
+
 export function haptic(ms = 10) {
   try {
     if (navigator.vibrate && navigator.vibrate(ms)) return

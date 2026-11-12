@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { errText, nameOf, supabase } from './lib.js'
+import { errText, foldHas, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, CHAT_THEMES, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, inThemeLab, inkOn, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
@@ -1029,8 +1029,8 @@ function FolderEdit({ id, kit, onDone, toast }) {
       <button type="button" className="fold-x" onClick={() => set({ types: { ...types, [k]: false } })} aria-label="Remove" title="Remove">{I.x}</button>
     </div>
   )
-  const t = q.trim().toLowerCase()
-  const list = kit.rooms.filter((r) => !t || kit.titleOf(r).toLowerCase().includes(t))
+  const t = q.trim()
+  const list = kit.rooms.filter((r) => !t || foldHas(kit.titleOf(r), t))
   return (
     <>
       <Box title="Folder name">

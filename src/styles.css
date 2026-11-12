@@ -4275,3 +4275,6 @@ html[data-theme='stone']:not([data-skin]) .compose-ref { border-radius: 9px; }
 
 /* the settings sign has two drawings: filled (every theme) and in lines (Halo's rail, themes-halo.css) */
 .fi-line { display: none; }
+
+/* Edit at the top of the lists is a word; Halo makes it a round sign like + (themes-halo.css) */
+.head-edit .he-ico { display: none; }

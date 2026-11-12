@@ -1,5 +1,5 @@
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, colorOf, setNameColor, svg, useLens } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -45,7 +45,7 @@ function usePeopleSearch(meId) {
     let alive = true
     const id = setTimeout(async () => {
       const { data } = await supabase.from('roar_people').select('id, username, display_name, avatar_url, bio, last_seen, name_color')
-        .or(`username.ilike.${t.toLowerCase()}%,display_name.ilike.%${t}%`).neq('id', meId).limit(20)
+        .or(`username.ilike.${t.toLowerCase()}%,display_name.imatch.${foldRx(t)}`).neq('id', meId).limit(20)
       if (alive) setHits(data || [])
     }, 220)
     return () => { alive = false; clearTimeout(id) }
@@ -644,8 +644,8 @@ export default function Chat({ me, setMe }) {
     return [...rest.filter((r) => pins.includes(r.room_id)).sort((a, b) => pins.indexOf(a.room_id) - pins.indexOf(b.room_id)), ...rest.filter((r) => !pins.includes(r.room_id))]
   }
   const shown = useMemo(() => {
-    const t = q.trim().toLowerCase()
-    const list = visible.filter((r) => (t ? titleOf(r).toLowerCase().includes(t) || (otherOf(r)?.username || '').includes(t.replace(/^@/, '')) : inFolder(r, folder)))
+    const t = fold(q.trim())
+    const list = visible.filter((r) => (t ? fold(titleOf(r)).includes(t) || fold(otherOf(r)?.username).includes(t.replace(/^@/, '')) : inFolder(r, folder)))
     return pinnedFirst(list)
   }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra, marked, prefs.folderAlone, prefs.folderOrder, hiddenF.join()]) // eslint-disable-line react-hooks/exhaustive-deps
   // the chats of another folder, for the page that slides in beside the list while it is dragged
@@ -862,14 +862,14 @@ export default function Chat({ me, setMe }) {
     if (t.length < 2) { setHits([]); return }
     let alive = true
     const id = setTimeout(async () => {
-      const { data } = await supabase.from('roar_messages').select('id, room_id, user_id, body, created_at').ilike('body', `%${t.replace(/[%_]/g, '')}%`).is('deleted_at', null).order('created_at', { ascending: false }).limit(60)
+      const { data } = await supabase.from('roar_messages').select('id, room_id, user_id, body, created_at').filter('body', 'imatch', foldRx(t)).is('deleted_at', null).order('created_at', { ascending: false }).limit(60)
       if (alive) setHits((data || []).filter((h) => !isSealed(h.body) && h.body !== E2E_ON && h.body !== E2E_OFF))
     }, 260)
     return () => { alive = false; clearTimeout(id) }
   }, [q])
   const mark = (s) => {
     const t = q.trim()
-    const i = s.toLowerCase().indexOf(t.toLowerCase())
+    const i = foldKeep(s).indexOf(foldKeep(t))
     if (i < 0) return s
     const a = Math.max(0, i - 24)
     return <>{a > 0 && '…'}{s.slice(a, i)}<mark>{s.slice(i, i + t.length)}</mark>{s.slice(i + t.length, i + t.length + 60)}</>
@@ -1173,7 +1173,7 @@ export default function Chat({ me, setMe }) {
       <aside className="side">
         <div className="side-col" {...onStopTouch}>
         <div className="side-head">
-          <button type="button" className="pill-btn" onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}>{picking || tabsEdit ? 'Done' : 'Edit'}</button>
+          <button type="button" className="pill-btn head-edit" aria-label={picking || tabsEdit ? 'Done' : 'Edit'} title={picking || tabsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}><span className="he-word">{picking || tabsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{picking || tabsEdit ? I.check : I.edit}</span></button>
           <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <Wordmark />}</span>
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
@@ -1288,7 +1288,7 @@ export default function Chat({ me, setMe }) {
             </div>
             {/* the same rows as the chat list (Alex, 21 Oct): its sizes, gaps and lines between them */}
             <div className={`rooms contacts-list${cq.trim() ? ' searching' : ''}`}>
-            {[...contacts].sort((a, b) => favs.includes(b.id) - favs.includes(a.id)).filter((p) => !cq.trim() || `${nameOf(p)} ${p.username}`.toLowerCase().includes(cq.trim().toLowerCase().replace(/^@/, ''))).map((p) => (
+            {[...contacts].sort((a, b) => favs.includes(b.id) - favs.includes(a.id)).filter((p) => !cq.trim() || foldHas(`${nameOf(p)} ${p.username}`, cq.trim().replace(/^@/, ''))).map((p) => (
               <div key={p.id} className="room contact" role="button" tabIndex={0} onClick={() => setCard(p.id)} onKeyDown={(e) => { if (e.key === 'Enter') setCard(p.id) }}>
                 <Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} size={prefs.listPreview ? 54 : 48} />
                 <span className="room-main">
@@ -1884,7 +1884,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const mentionHits = mentionQ === null || room.kind !== 'group' ? [] : [
     ...[['all', 'Everyone', 'Everyone in this group'], ['here', 'Online now', 'Who is in RoarMe right now']].filter(([n]) => n.startsWith(mentionQ)).map(([n, label, sub]) => ({ key: n, name: n, label, sub: `@${n} · ${sub}`, special: true })),
     ...roles.filter((g) => g.name.includes(mentionQ)).map((g) => ({ key: g.id, name: g.name, label: `@${g.name}`, sub: g.user_ids.length === 1 ? 'Role · 1 person' : `Role · ${g.user_ids.length} people`, special: true })),
-    ...members.filter((p) => nameOf(p).toLowerCase().includes(mentionQ) || p.username.includes(mentionQ)).map((p) => ({ key: p.id, name: p.username, label: nameOf(p), sub: `@${p.username}`, p })),
+    ...members.filter((p) => foldHas(nameOf(p), mentionQ) || foldHas(p.username, mentionQ)).map((p) => ({ key: p.id, name: p.username, label: nameOf(p), sub: `@${p.username}`, p })),
   ].slice(0, 8)
   const pickMention = (p) => {
     const before = text.slice(0, caret).replace(/@([\p{L}\p{N}_.]{0,24})$/u, `@${p.name} `)
@@ -2289,9 +2289,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
   // looking for words in this chat
   const found = useMemo(() => {
-    const t = (find || '').trim().toLowerCase()
+    const t = fold((find || '').trim())
     if (!t) return []
-    return msgs.filter((m) => !m.deleted_at && m.body && m.body.toLowerCase().includes(t)).map((m) => m.id)
+    return msgs.filter((m) => !m.deleted_at && m.body && fold(m.body).includes(t)).map((m) => m.id)
   }, [find, msgs])
   useEffect(() => { if (found.length) { const id = found[found.length - 1 - Math.min(findAt, found.length - 1)]; if (id) goTo(id) } }, [found, findAt]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -2993,7 +2993,7 @@ function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const list = rooms.filter((r) => !q.trim() || titleOf(r).toLowerCase().includes(q.trim().toLowerCase()))
+  const list = rooms.filter((r) => !q.trim() || foldHas(titleOf(r), q.trim()))
   const send = async (r) => {
     setBusy(true); setErr('')
     let n = 0

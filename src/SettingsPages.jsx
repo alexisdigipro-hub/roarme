@@ -814,7 +814,7 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'appBackground', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'density', 'radius', 'compact', 'background', 'appBackground', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
 function ChatTheme({ p }) {
@@ -886,6 +886,10 @@ function Appearance({ p, toast, me, setMe }) {
                 {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}${k === 'white' ? ' acc-white' : k === 'black' ? ' acc-black' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
               </div>
             )}
+        </div>
+        <div className="set-row set-col">
+          <span className="set-text">Accent Opacity<small>{`${Math.min(100, Math.max(30, Number(p.accentOpacity) || 100))}%`}</small><small>Lower lets the wallpaper through your messages and the coloured buttons</small></span>
+          <Slide min={30} max={100} step={1} value={Math.min(100, Math.max(30, Number(p.accentOpacity) || 100))} onChange={(n) => setPrefs({ accentOpacity: n })} aria-label="Accent Opacity" />
         </div>
       </Box>
       <ChatTheme p={p} />

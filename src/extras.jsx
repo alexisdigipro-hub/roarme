@@ -6,6 +6,7 @@ import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { I, Modal, Slide, useSeen } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
+import { PhotoEdit } from './photoEdit.jsx'
 
 /* ---------- emoji grid ---------- */
 export function EmojiPicker({ onPick, onClose }) {
@@ -197,6 +198,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const [tab, setTab] = useState('gallery')
   const [recent, setRecent] = useState(null)
   const [sending, setSending] = useState('')
+  const [edit, setEdit] = useState(-1) // the photo being touched up before it is sent
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
@@ -246,6 +248,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const media = files.some((f) => /^(image|video)\//.test(f.type))
   const big = files.filter((f) => f.size > 50e6 && !(compress && /^video\//.test(f.type)))
   const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
+  if (edit >= 0 && files[edit]) return <PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} />
   return createPortal(
     <div className="as-back" onClick={onClose}>
       <div className="as-sheet" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
@@ -261,9 +264,10 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
               <div className="attach-grid">
                 {files.map((f, n) => (
                   <span key={n} className="attach-item">
-                    {/^image\//.test(f.type) ? <img src={thumb(f)} alt="" /> : /^video\//.test(f.type) ? <video src={thumb(f)} muted /> : <span className="attach-doc">{I.file}<small>{f.name}</small></span>}
+                    {/^image\//.test(f.type) ? <img src={thumb(f)} alt="" onClick={() => !/gif/.test(f.type) && setEdit(n)} /> : /^video\//.test(f.type) ? <video src={thumb(f)} muted /> : <span className="attach-doc">{I.file}<small>{f.name}</small></span>}
                     {/^video\//.test(f.type) && <i className="attach-play">{I.play}</i>}
                     <small className="attach-size">{fmtBytes(f.size)}</small>
+                    {/^image\//.test(f.type) && !/gif/.test(f.type) && <i className="attach-edit" onClick={() => setEdit(n)} role="button" aria-label="Edit Photo">{I.edit}</i>}
                     <button type="button" onClick={() => setFiles((l) => l.filter((_, k) => k !== n))} aria-label="Remove">{I.x}</button>
                   </span>
                 ))}
@@ -272,7 +276,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
               {media && (
                 <div className="attach-quality">
                   <div className="seg">
-                    <button type="button" className={compress ? 'on' : ''} onClick={() => setCompress(true)}>Standard</button>
+                    <button type="button" className={compress ? 'on' : ''} onClick={() => setCompress(true)}>SD</button>
                     <button type="button" className={!compress ? 'on' : ''} onClick={() => setCompress(false)}>HD</button>
                   </div>
                   <small className="muted">{compress ? 'Smaller and faster: photos resized, videos to 720p.' : 'Full quality, as they are.'}</small>

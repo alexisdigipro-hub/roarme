@@ -992,3 +992,37 @@ html[data-skin='halo'] .msg-menu .menu-list > button > span { min-width: 0; over
 html[data-skin='halo'] .msg-menu .menu-list > button > svg { flex: none; }
 html[data-skin='halo'][data-theme][data-mode='light'] .msg-menu :is(.menu-list, .rx-pick) { background: rgba(255, 255, 255, .93) !important; }
 html[data-skin='halo'][data-theme][data-mode='dark'] .msg-menu :is(.menu-list, .rx-pick) { background: rgba(44, 44, 50, .93) !important; }
+
+/* Remind Me and Schedule Message (Alex, 12 Nov: "centre it, fresher, as the others we made"): one window for both
+   (.modal with .smsg). The title in the middle with a small close at the right, everything centred, chips and days as
+   matte white pills without a rim, what is chosen filled with the theme's colour (it was a grey rim: --accent is ink
+   here), the hour's lens a soft tint, the button a full pill */
+html[data-skin='halo'] .modal:has(.smsg) .modal-head { position: relative; justify-content: center; padding: 18px 56px 8px; }
+html[data-skin='halo'] .modal:has(.smsg) .modal-head h2 { font-size: 17px; font-weight: 600; letter-spacing: 0; text-align: center; }
+html[data-skin='halo'] .modal:has(.smsg) .modal-head .round { position: absolute; right: 14px; top: 12px; width: 34px; height: 34px; }
+html[data-skin='halo'] .modal:has(.smsg) .modal-head .round svg { width: 15px; height: 15px; }
+html[data-skin='halo'] .smsg { gap: 14px; }
+html[data-skin='halo'] .smsg .rmd-about { margin: 0; padding: 10px 16px; border-radius: 16px; background: color-mix(in srgb, var(--halo) 9%, transparent); color: var(--text); font-size: 13.5px; line-height: 1.4; text-align: center; -webkit-line-clamp: 2; }
+html[data-skin='halo'] .smsg .squick { justify-content: center; gap: 7px; }
+html[data-skin='halo'][data-mode] .smsg .squick button { height: 34px; padding: 0 14px; border: 0; background: rgba(255, 255, 255, .78); box-shadow: 0 1px 2px rgba(30, 30, 60, .06); font-size: 13px; font-weight: 500; }
+html[data-skin='halo'][data-mode='dark'] .smsg .squick button { background: rgba(255, 255, 255, .09); box-shadow: none; }
+html[data-skin='halo'][data-mode] .smsg .squick button.on,
+html[data-skin='halo'][data-mode] .smsg .dpick button.on { background: var(--halo); border-color: transparent; color: #fff; box-shadow: 0 6px 16px color-mix(in srgb, var(--halo) 30%, transparent); }
+html[data-skin='halo'][data-mode] .smsg .dpick button.on :is(small, b) { color: #fff; }
+html[data-skin='halo'][data-mode] .smsg .sch-box { border: 0; border-radius: 22px; background: rgba(255, 255, 255, .6); box-shadow: none; }
+html[data-skin='halo'][data-mode='dark'] .smsg .sch-box { background: rgba(255, 255, 255, .06); }
+html[data-skin='halo'] .smsg .sch-box > * + * { border-top: 0; }
+html[data-skin='halo'] .smsg .dpick { gap: 7px; padding: 12px 12px 4px; }
+html[data-skin='halo'][data-mode] .smsg .dpick button { width: 58px; border: 0; border-radius: 18px; background: rgba(255, 255, 255, .8); box-shadow: 0 1px 2px rgba(30, 30, 60, .06); }
+html[data-skin='halo'][data-mode='dark'] .smsg .dpick button { background: rgba(255, 255, 255, .08); box-shadow: none; }
+html[data-skin='halo'] .smsg .dpick button small { font-size: 9.5px; font-weight: 600; }
+html[data-skin='halo'] .smsg .dpick button b { font-size: 19px; font-weight: 600; }
+html[data-skin='halo'] .smsg .tpick-lens { width: 176px; height: 42px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--halo) 13%, transparent); box-shadow: none; }
+html[data-skin='halo'] .smsg .wheel { height: 160px; }
+html[data-skin='halo'] .smsg .wheel-pad { height: 60px; }
+html[data-skin='halo'] .smsg .wheel button { font-size: 21px; font-weight: 500; }
+html[data-skin='halo'] .smsg .wheel button.on { font-weight: 700; color: var(--halo); }
+html[data-skin='halo'] .smsg .tpick-colon { color: var(--halo); }
+html[data-skin='halo'] .smsg .sch-hint { margin: 0 12px; text-align: center; font-size: 12px; }
+html[data-skin='halo'] .modal:has(.smsg) .modal-foot { padding: 6px 18px 18px; }
+html[data-skin='halo'][data-theme][data-mode] .modal:has(.smsg) .smsg-go { min-height: 48px; border-radius: 999px !important; font-weight: 600; }

@@ -89,3 +89,9 @@ html:root:root[data-glass][data-skin='halo'] .pv-menu svg { width: 18px; height:
 html:root:root[data-glass][data-skin='halo'] .pv-menu .fi-solid { display: none; }
 html:root:root[data-glass][data-skin='halo'] .pv-menu .fi-line { display: inline; }
 html:root:root[data-glass][data-skin='halo'] .pv-menu b { font-size: 9px; font-weight: 600; line-height: 1.1; }
+
+/* the same air under the top bar on every tab (Alex, 12 Nov: "the gap Contacts has, on Calls and Messages too"):
+   Contacts' search is 16px over its list (8 of its own + the list's 8); the folders and Create New Call stood 20px
+   over theirs (8 + the column's 12), so they give 4 back */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs,
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .side-col > .new-call.new-call-bar { margin-bottom: 4px; }

@@ -202,6 +202,8 @@ export const EL = {
   'Camera off': 'Κάμερα κλειστή',
   'Camera on': 'Κάμερα ανοιχτή',
   'Cancel': 'Ακύρωση',
+  "Theme's Own": 'Του θέματος',
+  'Square': 'Τετράγωνο',
   'Slide to cancel': 'Σύρε για ακύρωση',
   'Video message': 'Βιντεομήνυμα',
   'Turn the camera': 'Γύρνα την κάμερα',

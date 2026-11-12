@@ -788,9 +788,11 @@ function ChatTheme({ p }) {
       </button>
       {editing && <ThemeEditor p={p} onClose={() => setEditing(false)} />}
       <div className="set-row set-col">
-        <span className="set-text">Message Corners<small>{p.bubbleR ? `${p.bubbleR} px` : "The theme's own"}</small></span>
-        <input type="range" min="0" max="26" step="2" value={p.bubbleR || 0} onChange={(e) => setPrefs({ bubbleR: Number(e.target.value) })} />
-        <span className="range-labels"><small>Theme's own</small><small>Round</small></span>
+        <span className="set-text">Message Corners<small>{p.bubbleR ? (p.bubbleR <= 1 ? 'Square' : `${p.bubbleR} px`) : "The theme's own"}</small></span>
+        {/* square at the left end, round at the right (Alex, 12 Nov); the theme's own corners are a button of their own */}
+        <input type="range" min="1" max="25" step="2" value={p.bubbleR || 17} onChange={(e) => setPrefs({ bubbleR: Number(e.target.value) })} />
+        <span className="range-labels"><small>Square</small><small>Round</small></span>
+        {!!p.bubbleR && <button type="button" className="pill-btn corners-own" onClick={() => setPrefs({ bubbleR: 0 })}>Theme's Own</button>}
       </div>
     </Box>
   )

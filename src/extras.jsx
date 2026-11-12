@@ -23,33 +23,131 @@ export function EmojiPicker({ onPick, onClose }) {
   )
 }
 
-/* ---------- a photo or video full screen: arrows, zoom, save ---------- */
+/* ---------- a photo or video full screen (Alex, 12 Nov: "as the iPhone's Photos"): the whole screen, black; on top
+   back, who sent it and when, ⋯ (Save, Share, Open); at the foot Share, the count, Save. Pinch or double tap to zoom,
+   drag to move it when zoomed; slide sideways for the next, down to close; a tap hides and shows the bars. ---------- */
 export function MediaViewer({ items, index, onClose }) {
   const [i, setI] = useState(index)
-  const [zoom, setZoom] = useState(false)
+  const [bars, setBars] = useState(true)
+  const [menu, setMenu] = useState(false)
+  const [t, setT] = useState({ s: 1, x: 0, y: 0 }) // zoom and pan
+  const [d, setD] = useState({ x: 0, y: 0 }) // a slide while not zoomed
+  const [live, setLive] = useState(false) // a finger is moving it: no easing
+  const pts = useRef(new Map())
+  const g = useRef(null)
+  const tap = useRef({ at: 0, timer: 0 })
   const it = items[i]
+  const isVid = /^video\//.test(it?.type || '')
+  const go = (n) => { if (n < 0 || n >= items.length) return; setI(n); setT({ s: 1, x: 0, y: 0 }); setD({ x: 0, y: 0 }) }
   useEffect(() => {
     const k = (e) => {
       if (e.key === 'Escape') onClose()
-      if (e.key === 'ArrowLeft') { setZoom(false); setI((n) => Math.max(0, n - 1)) }
-      if (e.key === 'ArrowRight') { setZoom(false); setI((n) => Math.min(items.length - 1, n + 1)) }
+      if (e.key === 'ArrowLeft') go(i - 1)
+      if (e.key === 'ArrowRight') go(i + 1)
     }
     document.addEventListener('keydown', k)
     return () => document.removeEventListener('keydown', k)
-  }, [items.length, onClose])
+  }, [i, items.length, onClose]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => clearTimeout(tap.current.timer), [])
   if (!it) return null
+  const clampS = (s) => Math.min(5, Math.max(1, s))
+  const mid = () => { const [a, b] = [...pts.current.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) } }
+  const down = (e) => {
+    if (isVid) return
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+    pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    setLive(true)
+    if (pts.current.size === 2) { const m = mid(); g.current = { mode: 'pinch', d0: m.d || 1, s0: t.s, x0: t.x, y0: t.y, mx: m.x, my: m.y }; setD({ x: 0, y: 0 }) }
+    else if (pts.current.size === 1) g.current = { mode: t.s > 1.01 ? 'pan' : 'slide', sx: e.clientX, sy: e.clientY, x0: t.x, y0: t.y, moved: false, axis: '' }
+  }
+  const move = (e) => {
+    if (!pts.current.has(e.pointerId) || !g.current) return
+    pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const G = g.current
+    if (G.mode === 'pinch' && pts.current.size === 2) {
+      const m = mid(); const s = clampS(G.s0 * (m.d / G.d0)); const k = s / G.s0
+      setT({ s, x: G.x0 * k + (m.x - G.mx), y: G.y0 * k + (m.y - G.my) })
+      return
+    }
+    const dx = e.clientX - G.sx, dy = e.clientY - G.sy
+    if (Math.hypot(dx, dy) > 6) G.moved = true
+    if (G.mode === 'pan') setT((v) => ({ ...v, x: G.x0 + dx, y: G.y0 + dy }))
+    else if (G.mode === 'slide' && G.moved) {
+      if (!G.axis) G.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+      setD(G.axis === 'x' ? { x: dx, y: 0 } : { x: 0, y: Math.max(0, dy) })
+    }
+  }
+  const up = (e) => {
+    if (!pts.current.has(e.pointerId)) return
+    pts.current.delete(e.pointerId)
+    const G = g.current
+    if (pts.current.size > 0) { if (G?.mode === 'pinch') { const [p] = [...pts.current.values()]; g.current = { mode: 'pan', sx: p.x, sy: p.y, x0: t.x, y0: t.y, moved: true } } return }
+    g.current = null
+    setLive(false)
+    if (!G) return
+    if (G.mode === 'pinch') { if (t.s < 1.05) setT({ s: 1, x: 0, y: 0 }); return }
+    if (G.mode === 'slide' && G.moved) {
+      if (d.y > 110) { onClose(); return }
+      if (d.x < -70 && i < items.length - 1) go(i + 1)
+      else if (d.x > 70 && i > 0) go(i - 1)
+      setD({ x: 0, y: 0 })
+      return
+    }
+    if (G.moved) return
+    // a tap: a second one soon after zooms in or out where it fell, a single one hides or shows the bars
+    const now = Date.now()
+    if (now - tap.current.at < 300) {
+      clearTimeout(tap.current.timer); tap.current.at = 0
+      if (t.s > 1.01) setT({ s: 1, x: 0, y: 0 })
+      else { const r = e.currentTarget.getBoundingClientRect(); const cx = r.left + r.width / 2, cy = r.top + r.height / 2; setT({ s: 2.5, x: (cx - e.clientX) * 1.5, y: (cy - e.clientY) * 1.5 }) }
+    } else {
+      tap.current.at = now
+      tap.current.timer = setTimeout(() => { setBars((b) => !b); setMenu(false) }, 300)
+    }
+  }
+  const wheel = (e) => { if (isVid) return; const s = clampS(t.s * (1 - e.deltaY * 0.0025)); setT(s <= 1 ? { s: 1, x: 0, y: 0 } : { ...t, s }) }
+  const when = it.at ? new Date(it.at) : null
+  const whenText = when ? `${when.toLocaleDateString(locale(), { day: '2-digit', month: '2-digit', year: '2-digit' })} · ${when.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}` : ''
+  const share = async () => {
+    setMenu(false)
+    try {
+      const blob = await (await fetch(it.url)).blob()
+      const file = new File([blob], it.name || (isVid ? 'video.mp4' : 'photo.jpg'), { type: blob.type || it.type })
+      if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file] }); return }
+    } catch { /* fall back to the link */ }
+    try { if (navigator.share) { await navigator.share({ url: it.url }); return } } catch { return }
+    window.open(it.url, '_blank', 'noopener')
+  }
+  const fade = Math.max(0.25, 1 - d.y / 420)
   return (
-    <div className="viewer" onClick={onClose}>
-      <div className="viewer-top" onClick={(e) => e.stopPropagation()}>
-        <span>{items.length > 1 ? `${i + 1} / ${items.length}` : it.name || ''}</span>
-        <a className="round" href={it.url} download={it.name || true} target="_blank" rel="noreferrer" title="Save">{I.download}</a>
-        <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
+    <div className={`viewer v2${bars ? '' : ' bare'}`} style={{ '--vw-fade': fade }}>
+      <div className="vw-stage" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onWheel={wheel}>
+        {isVid
+          ? <video key={it.url} src={it.url} controls autoPlay playsInline />
+          : <img key={it.url} src={it.url} alt="" draggable={false} className={t.s > 1.01 ? 'zoomed' : ''}
+            style={{ transform: `translate(${t.x + d.x}px, ${t.y + d.y}px) scale(${t.s * (d.y ? 1 - d.y / 1600 : 1)})`, transition: live ? 'none' : undefined }} />}
       </div>
-      {i > 0 && <button type="button" className="round viewer-prev" onClick={(e) => { e.stopPropagation(); setZoom(false); setI(i - 1) }} aria-label="Previous">{I.left}</button>}
-      {/^video\//.test(it.type || '')
-        ? <video src={it.url} controls autoPlay onClick={(e) => e.stopPropagation()} />
-        : <img src={it.url} alt="" className={zoom ? 'zoom' : ''} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => { e.stopPropagation(); setZoom((z) => !z) }} />}
-      {i < items.length - 1 && <button type="button" className="round viewer-next" onClick={(e) => { e.stopPropagation(); setZoom(false); setI(i + 1) }} aria-label="Next">{I.right}</button>}
+      <div className="vw-top">
+        <button type="button" className="round" onClick={onClose} aria-label="Back">{I.left}</button>
+        <div className="vw-title">{(it.who || it.name) && <b>{it.who || it.name}</b>}{whenText && <small>{whenText}</small>}</div>
+        <span className="vw-more">
+          <button type="button" className={`round${menu ? ' on' : ''}`} onClick={() => setMenu((m) => !m)} aria-label="More">{I.more}</button>
+          {menu && (
+            <div className="vw-menu">
+              <a href={it.url} download={it.name || true} target="_blank" rel="noreferrer" onClick={() => setMenu(false)}>{I.download}<span>Save</span></a>
+              <button type="button" onClick={share}>{I.forward}<span>Share</span></button>
+              <a href={it.url} target="_blank" rel="noreferrer" onClick={() => setMenu(false)}>{I.link}<span>Open in a New Tab</span></a>
+            </div>
+          )}
+        </span>
+      </div>
+      <div className="vw-foot">
+        <button type="button" className="round" onClick={share} aria-label="Share" title="Share">{I.forward}</button>
+        {items.length > 1 ? <span className="vw-count">{i + 1} / {items.length}</span> : <span />}
+        <a className="round" href={it.url} download={it.name || true} target="_blank" rel="noreferrer" aria-label="Save" title="Save">{I.download}</a>
+      </div>
+      {i > 0 && <button type="button" className="round vw-prev" onClick={() => go(i - 1)} aria-label="Previous">{I.left}</button>}
+      {i < items.length - 1 && <button type="button" className="round vw-next" onClick={() => go(i + 1)} aria-label="Next">{I.right}</button>}
     </div>
   )
 }

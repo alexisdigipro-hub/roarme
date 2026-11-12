@@ -2312,7 +2312,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }, [reacts, me.id])
   const photos = useMemo(() => msgs.filter((m) => m.kind === 'image' && !m.deleted_at), [msgs])
   const openPhoto = async (m) => {
-    const items = await Promise.all(photos.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name })))
+    const items = await Promise.all(photos.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name, who: x.user_id === me.id ? 'You' : nameOf(people[x.user_id]), at: x.created_at })))
     setViewer({ items, index: Math.max(0, photos.findIndex((x) => x.id === m.id)) })
   }
   // @username in a message, lit up

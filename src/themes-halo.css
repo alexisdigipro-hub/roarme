@@ -381,3 +381,13 @@ html[data-skin='halo'][data-theme='stone'] .side-head .head-edit {
   background: linear-gradient(180deg, rgba(255, 255, 255, .85), rgba(255, 255, 255, .55)); border: 1px solid #fff; color: var(--text); box-shadow: 0 6px 16px rgba(70, 70, 110, .12);
 }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .side-head .head-edit { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
+
+/* Edit and + as the picture Alex sent (12 Nov): both 44px circles, the signs 22px, Edit as three full dots, + a little bolder */
+html[data-skin='halo'][data-theme='stone'] .side-head :is(.head-edit, .round) { width: 44px; height: 44px; min-height: 44px; border-radius: 50%; }
+html[data-skin='halo'][data-theme='stone'] .side-head :is(.head-edit .he-ico svg, .round svg) { width: 22px; height: 22px; }
+html[data-skin='halo'][data-theme='stone'] .side-head .round svg { stroke-width: 2.1; }
+html[data-skin='halo'][data-theme='stone'] .side-head .round svg { width: 26px; height: 26px; stroke-width: 2; }
+/* the signs in proportion to the picture: + about 44% of its circle, the three dots about 37% */
+html[data-skin='halo'][data-theme='stone'] .side-head .plus-wrap > .round > svg,
+html[data-skin='halo'][data-theme='stone'] .side-head .side-acts .round > svg { width: 32px; height: 32px; stroke-width: 1.6; }
+html[data-skin='halo'][data-theme='stone'] .side-head .head-edit .he-ico > svg { width: 22px; height: 22px; }

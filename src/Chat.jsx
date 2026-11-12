@@ -1173,7 +1173,7 @@ export default function Chat({ me, setMe }) {
       <aside className="side">
         <div className="side-col" {...onStopTouch}>
         <div className="side-head">
-          <button type="button" className="pill-btn head-edit" aria-label={picking || tabsEdit ? 'Done' : 'Edit'} title={picking || tabsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}><span className="he-word">{picking || tabsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{picking || tabsEdit ? I.check : I.edit}</span></button>
+          <button type="button" className="pill-btn head-edit" aria-label={picking || tabsEdit ? 'Done' : 'Edit'} title={picking || tabsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}><span className="he-word">{picking || tabsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{picking || tabsEdit ? I.check : DOTS3}</span></button>
           <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <Wordmark />}</span>
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
@@ -1589,6 +1589,8 @@ const amAdmin = () => (adminAsk ||= supabase.rpc('roar_is_admin').then(({ data }
 /* ---------- one conversation ---------- */
 // the official RoarMe account's mark beside its name (Alex, 19 Oct)
 const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />, 15)
+// three full dots for Edit as a round sign in Halo (Alex, 12 Nov, from a picture he sent)
+const DOTS3 = <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.8" /><circle cx="12" cy="12" r="2.8" /><circle cx="19" cy="12" r="2.8" /></svg>
 const WHEEL_COPIES = 5, WHEEL_MID = 2 // the folder wheel at the foot: copies of the folders in a row, the middle one the real one
 const EDGE = 64 // px from either side of the screen where a slide on a chat opens its buttons
 const ROW_W = 156 // how far a chat slides open to show its two buttons

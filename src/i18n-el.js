@@ -24,6 +24,9 @@ export const EL = {
   // Chat theme (9 Nov)
   'Chat theme': 'Θέμα συνομιλίας',
   'A ready-made theme, or your own colours. The wallpaper is below.': 'Ένα έτοιμο θέμα ή τα δικά σου χρώματα. Η ταπετσαρία είναι πιο κάτω.',
+  'Your own colours for the messages. The wallpaper is below.': 'Τα δικά σου χρώματα για τα μηνύματα. Η ταπετσαρία είναι πιο κάτω.',
+  "Back to the Theme's Own": 'Πίσω στα χρώματα του θέματος',
+  "The theme's own colours for the messages": 'Τα χρώματα του θέματος για τα μηνύματα',
   'Theme\'s Own': 'Του θέματος',
   'Graphite': 'Γραφίτης',
   'Ocean': 'Ωκεανός',

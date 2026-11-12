@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { errText, foldHas, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, HALO_ACCENTS, CHAT_THEMES, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, inThemeLab, inkOn, setPrefs, usePrefs, wearTheme } from './prefs.js'
+import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ThemeEditor } from './themeEditor.jsx'
 import { useWalls, wallLook } from './walls.js'
@@ -774,20 +774,13 @@ const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.ge
 function ChatTheme({ p }) {
   const [editing, setEditing] = useState(false)
   return (
-    <Box title="Chat theme" note="A ready-made theme, or your own colours. The wallpaper is below.">
-      <div className="set-row set-col">
-        <div className="walls chat-themes">
-          <button type="button" className={`wall-tile${!p.chatTheme && !p.myBubble && !p.theirBubble && !p.accentHex ? ' on' : ''}`} data-bg="soft" onClick={() => setPrefs({ chatTheme: '', myBubble: '', theirBubble: '', accentHex: '' })}>
-            <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>Theme's Own</small>
-          </button>
-          {CHAT_THEMES.map(([k, l, t]) => (
-            <button key={k} type="button" className={`wall-tile${p.chatTheme === k ? ' on' : ''}`} data-bg={t.background} onClick={() => setPrefs({ ...t, chatTheme: k })}>
-              <i className="wall-b" style={{ background: t.theirBubble, color: inkOn(t.theirBubble) }}>Hi!</i>
-              <i className="wall-b mine" style={{ background: t.myBubble, color: inkOn(t.myBubble) }}>Hello 👋</i><small>{l}</small>
-            </button>
-          ))}
-        </div>
-      </div>
+    <Box title="Chat theme" note="Your own colours for the messages. The wallpaper is below.">
+      {/* the ready-made chat themes are gone (Alex, 12 Nov); one's own colours stay, and one tap goes back to the theme's */}
+      {(p.chatTheme || p.myBubble || p.theirBubble || p.accentHex) && (
+        <button type="button" className="set-row set-pick" onClick={() => setPrefs({ chatTheme: '', myBubble: '', theirBubble: '', accentHex: '' })}>
+          <span className="set-text">Back to the Theme's Own<small>The theme's own colours for the messages</small></span>
+        </button>
+      )}
       <button type="button" className="set-row set-pick set-nav" onClick={() => setEditing(true)}>
         <span className="set-text">Edit Your Theme<small>Background, accent and the colour of the messages</small></span>
         <span className="te-dots"><i style={{ background: p.myBubble || '#2a2a2c' }} /><i style={{ background: p.theirBubble || '#ffffff' }} /><i style={{ background: p.accentHex || 'var(--accent)' }} /></span>

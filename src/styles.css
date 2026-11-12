@@ -4318,3 +4318,6 @@ html[data-theme] .viewer.v2 .round svg { width: 22px; height: 22px; }
    zoom: here the picture only fades in */
 html[data-theme] .viewer.v2 .vw-stage :is(img, video) { animation: vw-in .25s ease both; }
 @keyframes vw-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* the round picture at the end of a chat's head: only Halo shows it (themes-halo.css) */
+.head-ava { display: none; }

@@ -2645,7 +2645,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             {/* on a phone the chat list (with its Tasks button) is another screen, so Tasks is here too */}
             {onTasks && <button type="button" className="round tasks-btn only-phone" onClick={onTasks} aria-label="Tasks" title="Tasks">{I.tasks}{tasksCount > 0 && <i>{tasksCount > 99 ? '99+' : tasksCount}</i>}</button>}
             <span className="plus-wrap">
-              <button type="button" className={`round${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More">{I.more}</button>
+              {/* Halo shows the picture here, round, in place of ⋯ (Alex, 12 Nov, from a picture he sent); it opens the same menu */}
+              <button type="button" className={`head-ava${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More"><Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={44} group={room.kind === 'group'} /></button>
+              <button type="button" className={`round head-more${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More">{I.more}</button>
               {headMenu && (
                 <>
                   <button type="button" className="scrim" aria-label="Close" onClick={() => setHeadMenu(false)} />

@@ -170,6 +170,23 @@ function RecentRow({ m, onPick }) {
     </button>
   )
 }
+// a big choice in the sheet: its sign in a coloured circle, a title and a line under it
+const AsTile = ({ icon, title, sub, onClick, wide = false }) => (
+  <button type="button" className={`as-tile${wide ? ' wide' : ''}`} onClick={onClick}><i>{icon}</i><b>{title}</b><small>{sub}</small></button>
+)
+// a photo or video sent before, as a little square
+function AsThumb({ m, busy, onPick }) {
+  const [ref, seen] = useSeen()
+  const [url, setUrl] = useState('')
+  const vid = /^video\//.test(m.file?.type || '')
+  useEffect(() => { if (!seen) return undefined; let alive = true; fileLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path, seen])
+  return (
+    <button ref={ref} type="button" className={`as-thumb${busy ? ' busy' : ''}`} onClick={() => onPick(m)} aria-label={m.file?.name || 'Photo'}>
+      {url && (vid && !m.file?.thumb ? <video src={url} muted playsInline preload="metadata" /> : <img src={url} alt="" loading="lazy" />)}
+      {vid && <i className="as-thumb-play">{I.play}</i>}
+    </button>
+  )
+}
 export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onArticle }) {
   const prefs = usePrefs()
   const [files, setFiles] = useState(initial)
@@ -194,7 +211,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   useEffect(() => { const k = (e) => { if (e.key === 'Escape') onClose() }; document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k) }, [onClose])
   // what was sent before, in the chats one is in (the database gives only those): one's own files, and every sound file
   useEffect(() => {
-    if ((tab !== 'file' && tab !== 'audio') || recent) return
+    if (recent) return
     supabase.from('roar_messages').select('id, room_id, user_id, kind, body, file, created_at').in('kind', ['file', 'image']).is('deleted_at', null)
       .order('created_at', { ascending: false }).limit(300)
       .then(({ data }) => {
@@ -204,7 +221,8 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
         const audio = live.filter((m) => isAudioFile(m.file)).filter(once)
         seen.clear()
         const mine = live.filter((m) => m.user_id === meId && !isAudioFile(m.file)).filter(once).slice(0, 40)
-        setRecent({ mine, audio: audio.slice(0, 40) })
+        const photos = live.filter((m) => m.user_id === meId && (m.kind === 'image' || /^(image|video)\//.test(m.file?.type || '')) && !m.file?.round).filter(once).slice(0, 30)
+        setRecent({ mine: mine.filter((m) => m.kind !== 'image' && !/^(image|video)\//.test(m.file?.type || '')), audio: audio.slice(0, 40), photos })
       })
   }, [tab, recent, meId])
   const pick = async (m) => { if (!onResend || sending) return; setSending(m.id); const ok = await onResend(m); setSending(''); if (ok !== false) onClose() }
@@ -261,18 +279,29 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
               {big.length > 0 && <small className="attach-transfer">{big.length === 1 ? 'Over 50 MB: it goes by RoarTransfer, up to 3 GB, kept 3 days.' : `${big.length} files over 50 MB go by RoarTransfer, kept 3 days.`}</small>}
             </>
           ) : tab === 'gallery' ? (
-            <div className="as-card">
-              <button type="button" className="as-row as-act" onClick={() => gal.current?.click()}>{I.image}<span>Choose Photos or Videos</span></button>
-              {touchOnly && <button type="button" className="as-row as-act" onClick={() => cam.current?.click()}>{I.camera}<span>Take a Photo or Video</span></button>}
-            </div>
+            <>
+              <div className="as-tiles">
+                <AsTile icon={I.image} title="Photos and Videos" sub="From your library" onClick={() => gal.current?.click()} />
+                {touchOnly
+                  ? <AsTile icon={I.camera} title="Camera" sub="Take one now" onClick={() => cam.current?.click()} />
+                  : <AsTile icon={I.file} title="Files" sub="From this computer" onClick={() => doc.current?.click()} />}
+              </div>
+              {recent?.photos?.length > 0 && (
+                <>
+                  <small className="as-label">Sent lately · tap to send again</small>
+                  <div className="as-grid">{recent.photos.map((m) => <AsThumb key={m.id} m={m} busy={sending === m.id} onPick={pick} />)}</div>
+                </>
+              )}
+              {recent && !recent.photos.length && <p className="as-empty">{I.image}<span>The photos and videos you send will wait here, to send again with a tap.</span></p>}
+            </>
           ) : (
             <>
-              <div className="as-card">
+              <div className="as-tiles">
                 {tab === 'audio'
-                  ? <button type="button" className="as-row as-act" onClick={() => aud.current?.click()}>{I.transfer}<span>Select from Files</span></button>
+                  ? <AsTile wide icon={I.play} title="Choose a Sound File" sub="MP3, WAV, M4A, FLAC and the rest" onClick={() => aud.current?.click()} />
                   : <>
-                    <button type="button" className="as-row as-act" onClick={() => gal.current?.click()}>{I.image}<span>Select from Gallery</span></button>
-                    <button type="button" className="as-row as-act" onClick={() => doc.current?.click()}>{I.transfer}<span>Select from Files</span></button>
+                    <AsTile icon={I.file} title="Files" sub={touchOnly ? 'From this phone' : 'From this computer'} onClick={() => doc.current?.click()} />
+                    <AsTile icon={I.image} title="Gallery" sub="Sent as a file, untouched" onClick={() => gal.current?.click()} />
                   </>}
               </div>
               <small className="as-label">{tab === 'audio' ? 'Sound in your chats' : 'Recently sent files'}</small>

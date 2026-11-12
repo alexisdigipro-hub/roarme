@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, I, Lens, Modal } from './ui.jsx'
-import { errText, nameOf, supabase } from './lib.js'
+import { errText, foldHas, nameOf, supabase } from './lib.js'
 import { usePrefs } from './prefs.js'
 import { locale, tr } from './i18n.js'
 import { TasksCalendar } from './calendar.jsx'
@@ -286,8 +286,8 @@ function TaskForm({ me, contacts, people, initial, onClose, onSaved, toast }) {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const list = useMemo(() => {
-    const s = q.trim().toLowerCase()
-    return contacts.filter((p) => !s || nameOf(p).toLowerCase().includes(s) || (p.username || '').toLowerCase().includes(s))
+    const s = q.trim()
+    return contacts.filter((p) => !s || foldHas(nameOf(p), s) || foldHas(p.username, s))
   }, [contacts, q])
   const picked = who === me.id ? me : people[who] || contacts.find((p) => p.id === who)
   const save = async () => {

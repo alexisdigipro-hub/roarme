@@ -789,12 +789,6 @@ function ChatTheme({ p }) {
       {editing && <ThemeEditor p={p} onClose={() => setEditing(false)} />}
       <div className="set-row set-col">
         <span className="set-text">Message Corners<small>{p.bubbleR ? `${p.bubbleR} px` : "The theme's own"}</small></span>
-        {/* a little chat that follows the slider (Alex, 9 Nov: "to see an example") */}
-        <div className="corner-demo" style={p.bubbleR ? { '--demo-r': `${p.bubbleR}px` } : undefined}>
-          <span className="cd-b">Are we shooting at 10?<small>09:41</small></span>
-          <span className="cd-b mine">Yes, on set at 10 👍<small>09:42</small></span>
-          <span className="cd-b mine">Bring the lights<small>09:42</small></span>
-        </div>
         <input type="range" min="0" max="26" step="2" value={p.bubbleR || 0} onChange={(e) => setPrefs({ bubbleR: Number(e.target.value) })} />
         <span className="range-labels"><small>Theme's own</small><small>Round</small></span>
       </div>
@@ -807,12 +801,19 @@ function Appearance({ p, toast, me, setMe }) {
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
   return (
     <>
-      <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Halo: white frosted glass on soft lilac clouds, with a warm orange. Velvet: dark smoky glass with a warm gold, a cinema at night. Each has dark and light.">
-        <div className={`set-preview${p.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...look.style }}>
-          <span className="pv mine">Good morning! 👋</span>
-          <span className="pv"><i>Good morning! 👋</i>Do you know what time it is?</span>
-          <span className="pv mine">It's morning in Tokyo 😎</span>
+      {/* one preview for the whole page (Alex, 12 Nov: "one preview for everything"): a little chat that stays at the top
+          while the page scrolls and shows at once the theme, day or night, the colour, the wallpaper, the message
+          colours and corners, the text size and font, and Compact Messages */}
+      <div className="set-live">
+        <div className={`set-preview live${p.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...look.style }}>
+          <span className="pv-head"><i className="pv-ava">GK</i><span><b>Giorgos</b><small>online</small></span></span>
+          <span className="pv">Are we shooting at 10?</span>
+          <span className="pv mine"><i>Are we shooting at 10?</i>Yes, on set at 10 👍</span>
+          <span className="pv mine">Bring the lights 💡</span>
+          <span className="pv-compose"><span>Write a message…</span><i /></span>
         </div>
+      </div>
+      <Box title="Theme" note="Stone: soft grey stone with graphite buttons. Simba: graphite glass with a glowing accent. Halo: white frosted glass on soft lilac clouds, with a warm orange. Velvet: dark smoky glass with a warm gold, a cinema at night. Each has dark and light.">
         <div className="set-row set-col">
           <div className="themes">
             {THEMES.map(([k, l, [a, b]]) => {
@@ -852,11 +853,6 @@ function Appearance({ p, toast, me, setMe }) {
       <Box title="Text">
         <div className="set-row set-col">
           <span className="set-text">Text Size<small>{`${TEXT_SIZES[p.textSize] || 14.5} px`}</small></span>
-          {/* what it will look like, at once (Alex, 9 Nov) */}
-          <div className="corner-demo size-demo" style={{ '--demo-fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...(p.bubbleR ? { '--demo-r': `${p.bubbleR}px` } : {}) }}>
-            <span className="cd-b">Are we shooting at 10?<small>09:41</small></span>
-            <span className="cd-b mine">Yes, on set at 10 👍<small>09:42</small></span>
-          </div>
           <div className="set-size">
             <small>A</small>
             <input type="range" min="0" max={TEXT_SIZES.length - 1} step="1" value={p.textSize} onChange={(e) => setPrefs({ textSize: Number(e.target.value) })} />
@@ -872,22 +868,6 @@ function Appearance({ p, toast, me, setMe }) {
         <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
       </Box>
       <Box title="Layout">
-        {/* what Spacing and Compact Messages do, at once (Alex, 9 Nov): a little chat list and a little chat */}
-        <div className="set-row set-col">
-          <div className={`layout-demo d-${p.density || 'standard'}${p.compact ? ' compact' : ''}`} style={p.bubbleR ? { '--demo-r': `${p.bubbleR}px` } : undefined}>
-            <div className="ld-list">
-              {[['GK', 'Giorgos', 'See you on set'], ['DG', 'Dimitris', 'Sent a photo'], ['KL', 'Kyriakos', 'Thanks!']].map(([i, n, t]) => (
-                <span key={i} className="ld-row"><i>{i}</i><span><b>{n}</b><small>{t}</small></span></span>
-              ))}
-            </div>
-            <div className="ld-chat corner-demo">
-              <span className="cd-b">At 10?<small>09:41</small></span>
-              <span className="cd-b">With lights<small>09:41</small></span>
-              <span className="cd-b mine">Yes 👍<small>09:42</small></span>
-              <span className="cd-b mine">On it<small>09:42</small></span>
-            </div>
-          </div>
-        </div>
         <div className="set-row set-col">
           <span className="set-text">Spacing<small>How much room the chat list, menus and settings get</small></span>
           <Lens className="seg" dep={p.density || 'standard'}>{[['relaxed', 'Relaxed'], ['standard', 'Standard'], ['tight', 'Tight']].map(([k, l]) => <button key={k} type="button" className={(p.density || 'standard') === k ? 'on' : ''} onClick={() => setPrefs({ density: k })}>{l}</button>)}</Lens>

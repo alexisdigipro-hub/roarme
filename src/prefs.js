@@ -36,7 +36,6 @@ export const DEFAULTS = {
   peekBadge: false, // a click on the unread badge previews the chat
   peerIds: false,
   notifyPreview: true,
-  translateTo: 'auto', // auto = Greek to English and back
   // top | bottom (left until 16 Oct, now bottom); on a phone they start at the bottom, by the thumb (Alex, 19 Oct)
   folderTabs: 'bottom', // the folder tabs at the bottom from the start, on every device (Alex, 21 Oct)
   folderOrder: [], // folder ids in the order dragged in Settings > Folders

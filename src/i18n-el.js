@@ -202,6 +202,7 @@ export const EL = {
   'Camera off': 'Κάμερα κλειστή',
   'Camera on': 'Κάμερα ανοιχτή',
   'Cancel': 'Ακύρωση',
+  'Nobody is waiting for an answer.': 'Κανείς δεν περιμένει απάντηση.',
   'Storage': 'Αποθήκευση',
   'Storage Usage': 'Χρήση αποθήκευσης',
   'Clear Cache': 'Καθαρισμός προσωρινής μνήμης',

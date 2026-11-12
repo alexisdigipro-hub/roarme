@@ -28,6 +28,7 @@ export function RoarMeInbox({ onClose }) {
   const [editId, setEditId] = useState('') // a RoarMe message being corrected (Alex, 8 Nov): no "edited" mark, they are RoarMe's own words
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [all, setAll] = useState(false) // every chat of RoarMe's, or only the ones where somebody wrote and waits
   const end = useRef(null)
   const loadList = useCallback(async () => {
     const { data, error } = await supabase.rpc('roar_official_inbox')
@@ -68,13 +69,23 @@ export function RoarMeInbox({ onClose }) {
   const name = (x) => x.display_name || `@${x.username}`
   const what = (x) => (x.last_kind === 'image' ? 'Photo' : x.last_kind === 'voice' ? 'Voice message' : x.last_kind === 'file' ? 'File' : x.last_body || '')
 
+  const waiting = (list || []).filter((x) => x.last_from_them || x.unread > 0)
+  const shown = all ? (list || []) : waiting.concat(room && !waiting.some((x) => x.room_id === room.room_id) ? (list || []).filter((x) => x.room_id === room.room_id) : [])
   return (
     <Modal title="RoarMe Inbox" onClose={onClose} wide>
       <div className={`inbox${room ? ' has-room' : ''}`}>
         <div className="inbox-list">
           {list === null && <p className="muted pf-empty">Loading…</p>}
-          {list && !list.length && <p className="muted pf-empty">Nobody has written to RoarMe yet.</p>}
-          {(list || []).map((x) => (
+          {/* only the ones that want an answer (Alex, 12 Nov: "empty it, so that I notice when somebody writes"): a chat
+              whose last word is RoarMe's own (the welcome, an answer already given) is under Everyone; nothing is deleted */}
+          {list && (
+            <span className="seg inbox-seg">
+              <button type="button" className={!all ? 'on' : ''} onClick={() => setAll(false)}>Waiting{waiting.length > 0 ? ` · ${waiting.length}` : ''}</button>
+              <button type="button" className={all ? 'on' : ''} onClick={() => setAll(true)}>Everyone</button>
+            </span>
+          )}
+          {list && !shown.length && <p className="muted pf-empty">{all ? 'Nobody has written to RoarMe yet.' : 'Nobody is waiting for an answer.'}</p>}
+          {shown.map((x) => (
             <button key={x.room_id} type="button" className={`inbox-row${room?.room_id === x.room_id ? ' on' : ''}${x.unread ? ' new' : ''}`} onClick={() => open(x)}>
               <Avatar src={x.avatar_url} name={name(x)} size={40} />
               <span className="inbox-text">

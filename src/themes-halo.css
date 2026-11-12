@@ -509,15 +509,15 @@ html[data-skin='halo'] .pf-head .pf-sub { margin: 0; color: rgba(255, 255, 255, 
 html[data-skin='halo'] .pf-acts { grid-template-columns: repeat(5, 1fr); gap: 8px; }
 html[data-skin='halo'] .pf-acts .pf-a-msg { display: none; }
 html[data-skin='halo'] .pf-acts :is(.pf-a-mute, .pf-a-find) { display: flex; }
-html[data-skin='halo'] .pf-acts button, html[data-skin='halo'] .pf-more > button {
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)), html[data-skin='halo'] .pf-more > button:not(.scrim) {
   gap: 4px; padding: 11px 2px 9px; border: 0; border-radius: 16px; color: #fff;
   background: rgba(255, 255, 255, .14); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
 }
-html[data-skin='halo'] .pf-acts button svg { width: 24px; height: 24px; }
-html[data-skin='halo'] .pf-acts button span { color: #fff; font-size: 12.5px; text-transform: lowercase; }
-html[data-skin='halo'] .pf-acts button:hover, html[data-skin='halo'] .pf-more > button.on { background: rgba(255, 255, 255, .24); }
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)) svg { width: 24px; height: 24px; }
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)) span { color: #fff; font-size: 12.5px; text-transform: lowercase; }
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)):hover, html[data-skin='halo'] .pf-more > button:not(.scrim).on { background: rgba(255, 255, 255, .24); }
 html[data-skin='halo'] .pf-menu .pf-m-opts { display: flex; }
-html[data-skin='halo'] .pf-menu { top: auto; bottom: calc(100% + 8px); }
+html[data-skin='halo'] .pf-menu { top: calc(100% + 8px); bottom: auto; right: 0; z-index: 30; }
 html[data-skin='halo'] .pf-card { border-radius: 26px; background: rgba(255, 255, 255, .92); border: 1px solid #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .06); }
 html[data-skin='halo'][data-mode='dark'] .pf-card { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .1); box-shadow: none; }
 html[data-skin='halo'] .pf-field { gap: 3px; padding: 13px 54px 13px 18px; }
@@ -635,11 +635,11 @@ html[data-skin='halo'] .pf-head .pf-name, html[data-skin='halo'] .pf-head .pf-na
 html[data-skin='halo'] .pf-head .pf-name-edit { margin: 0; }
 html[data-skin='halo'] .pf-head .pf-sub { font-size: 13px; }
 html[data-skin='halo'] .pf-acts { display: flex; justify-content: center; gap: 14px; }
-html[data-skin='halo'] .pf-acts button, html[data-skin='halo'] .pf-more > button { width: 56px; gap: 6px; padding: 0; border-radius: 0; background: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
-html[data-skin='halo'] .pf-acts button svg { box-sizing: border-box; width: 44px; height: 44px; padding: 12px; border-radius: 50%; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .12); transition: background .15s; }
-html[data-skin='halo'] .pf-acts button:hover svg, html[data-skin='halo'] .pf-more > button.on svg { background: rgba(255, 255, 255, .24); }
-html[data-skin='halo'] .pf-acts button span { font-size: 11px; text-transform: none; color: rgba(255, 255, 255, .85); }
-html[data-skin='halo'] .pf-acts button:active svg { transform: scale(.94); }
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)), html[data-skin='halo'] .pf-more > button:not(.scrim) { width: 56px; gap: 6px; padding: 0; border-radius: 0; background: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)) svg { box-sizing: border-box; width: 44px; height: 44px; padding: 12px; border-radius: 50%; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .12); transition: background .15s; }
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)):hover svg, html[data-skin='halo'] .pf-more > button:not(.scrim).on svg { background: rgba(255, 255, 255, .24); }
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)) span { font-size: 11px; text-transform: none; color: rgba(255, 255, 255, .85); }
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)):active svg { transform: scale(.94); }
 html[data-skin='halo'] .pf-tabs { padding: 3px; border-radius: 20px; }
 html[data-skin='halo'] .pf-tabs button { height: 32px; padding: 0 12px; border-radius: 16px; font-size: 13px; }
 html[data-skin='halo'] .pf-tabs small { font-size: 10px; }
@@ -714,3 +714,14 @@ html[data-skin='halo'][data-theme='stone'][data-halo-accent] { --halo: var(--hal
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'][data-halo-accent] { --halo: var(--halo-d); --rail: var(--halo-d); --mint: var(--halo-d); }
 html[data-skin='halo'] .halo-accents .acc { box-shadow: 0 6px 14px color-mix(in srgb, var(--c) 35%, transparent), inset 0 1px 1px rgba(255, 255, 255, .5); }
 html[data-skin='halo'] .halo-accents .acc.on { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--c), 0 6px 16px color-mix(in srgb, var(--c) 40%, transparent); }
+
+/* the profile's More menu (Alex, 12 Nov: it came out white on white and cut): it opens below the button over the page,
+   a plain white menu with dark words */
+html[data-skin='halo'] .pf-head { overflow: visible; z-index: 5; }
+html[data-skin='halo'] .pf-head .pf-hero { border-radius: inherit; }
+html[data-skin='halo'] .pf-more .pf-menu { background: rgba(255, 255, 255, .97); border: 1px solid #fff; box-shadow: 0 16px 40px rgba(20, 20, 40, .22); min-width: 220px; padding: 6px; border-radius: 20px; }
+html[data-skin='halo'][data-mode='dark'] .pf-more .pf-menu { background: rgba(32, 32, 38, .97); border-color: rgba(255, 255, 255, .1); }
+html[data-skin='halo'] .pf-more .pf-menu > button { color: var(--text); text-transform: none; height: 44px; border-radius: 14px; }
+html[data-skin='halo'] .pf-more .pf-menu > button svg { width: 19px; height: 19px; padding: 0; background: none; border: 0; }
+html[data-skin='halo'] .pf-more .pf-menu > button span { color: inherit; font-size: 15px; }
+html[data-skin='halo'] .pf-more .pf-menu > button.danger { color: var(--danger); }

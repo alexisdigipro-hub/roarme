@@ -781,3 +781,7 @@ html[data-skin='halo'][data-mode='dark'] .wall-tile.on small { color: #f1f1f5; }
   html[data-skin='halo'] :is(.foot, .rooms-area.bottom .tabs).liquid-drag > button.liquid-at { opacity: 1; color: #fff; transform: scale(1.14); }
 }
 html[data-skin='halo'] :is(.foot, .rooms-area.bottom .tabs).lens { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Orange, Halo's own colour as a light wallpaper (Alex, 12 Nov) */
+html[data-skin='halo'][data-theme] :is(.room-view, .wall-tile, .set-preview, .te-preview)[data-bg='halo-orange'] { background-image: radial-gradient(circle at 12% 0%, rgba(255, 154, 60, 0.3), transparent 62%), radial-gradient(circle at 92% 100%, rgba(244, 115, 24, 0.24), transparent 64%), linear-gradient(160deg, rgba(255, 154, 60, 0.1), rgba(244, 115, 24, 0.08)) !important; }
+html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile, .set-preview, .te-preview)[data-bg='halo-orange'] { background-image: radial-gradient(circle at 12% 0%, rgba(255, 154, 60, 0.24), transparent 62%), radial-gradient(circle at 92% 100%, rgba(244, 115, 24, 0.2), transparent 64%) !important; }

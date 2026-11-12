@@ -2114,8 +2114,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     if (sealOn) { setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
     let mic = null
     try {
-      mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
-      const cam = await camOf('user')
+      // one question for both (Alex, 12 Nov: the iPhone asked twice, every time)
+      const both = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 720 } } })
+      mic = new MediaStream(both.getAudioTracks())
+      const cam = new MediaStream(both.getVideoTracks())
       const video = document.createElement('video')
       video.muted = true; video.playsInline = true; video.setAttribute('playsinline', '')
       video.srcObject = cam
@@ -2147,7 +2149,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       mr.start(250)
       v.started = Date.now()
       vRef.current = v
-      setVrec({ started: v.started, cam, facing: 'user', locked, canFlip: v.canFlip })
+      setVrec({ started: v.started, cam, facing: 'user', locked, canFlip: v.canFlip, flash: false })
     } catch {
       mic?.getTracks().forEach((t) => t.stop())
       setErr('The camera is not allowed. Allow the camera and the microphone to send video messages.')
@@ -2164,8 +2166,18 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       v.facing = facing
       v.video.srcObject = cam
       await v.video.play().catch(() => {})
+      if (v.flash && facing !== 'user') cam.getVideoTracks()[0]?.applyConstraints?.({ advanced: [{ torch: true }] }).catch(() => {})
       setVrec((x) => x && { ...x, cam, facing })
     } catch { /* the other camera is not there */ }
+  }
+  // the flash: the back camera's light where the phone lets a page turn it on; with the front camera the screen goes white
+  const flashCam = () => {
+    const v = vRef.current
+    if (!v) return
+    const on = !v.flash
+    v.flash = on
+    if (v.facing !== 'user') v.cam.getVideoTracks()[0]?.applyConstraints?.({ advanced: [{ torch: on }] }).catch(() => {})
+    setVrec((x) => x && { ...x, flash: on })
   }
   const stopVideo = (keep) => {
     const v = vRef.current
@@ -2215,7 +2227,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     if (e.button) return
     if (!canVoice) { setErr('This browser cannot record voice messages.'); return }
     const mode = recMode
-    const h = { x: e.clientX, y: e.clientY, on: false, end: false, locked: false, p: null }
+    const h = { x: e.clientX, y: e.clientY, on: false, end: false, locked: false, p: null, d0: Date.now() }
     try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* fine */ }
     const off = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel) }
     const finish = (keep) => {
@@ -2223,7 +2235,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       h.end = true
       off()
       setHoldDx(0)
-      Promise.resolve(h.p).then(() => stopRef.current[mode](keep))
+      // the phone asked for the camera or the microphone meanwhile and the finger had to answer: keep it recording, locked
+      const asked = keep && !h.ready
+      Promise.resolve(h.p).then(() => {
+        if (asked && Date.now() - h.t0 > 900) { if (mode === 'video') setVrec((x) => x && { ...x, locked: true }); else setRec((x) => x && { ...x, locked: true }) } else stopRef.current[mode](keep)
+      })
     }
     const lock = () => {
       h.locked = true
@@ -2241,13 +2257,15 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     }
     const up = () => {
       if (!h.on) { clearTimeout(h.t); off(); setRecMode(mode === 'video' ? 'voice' : 'video'); return }
+      // the recording starts very soon so a hold answers at once; a touch this short was still a tap
+      if (Date.now() - h.d0 < 300) { finish(false); setRecMode(mode === 'video' ? 'voice' : 'video'); return }
       finish(true)
     }
     const cancel = () => { clearTimeout(h.t); if (h.on) finish(false); else off() }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', cancel)
-    h.t = setTimeout(() => { h.on = true; h.p = mode === 'video' ? startVideo(false) : startVoice(false) }, 200)
+    h.t = setTimeout(() => { h.on = true; h.t0 = Date.now(); haptic?.(); h.p = Promise.resolve(mode === 'video' ? startVideo(false) : startVoice(false)).then(() => { h.ready = true }) }, 130)
   }
 
   // an admin can delete anyone's message for everyone (Alex, 8 Nov: spam, insults); never edit it
@@ -2955,7 +2973,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             {mentionHits.map((h) => <button key={h.key} type="button" onMouseDown={(e) => { e.preventDefault(); pickMention(h) }}>{h.special ? <span className="mention-at">@</span> : <Avatar src={h.p.avatar_url} name={h.label} size={28} />}<b>{h.label}</b><small>{h.sub}</small></button>)}
           </div>
         )}
-        {vrec && <VideoRec vrec={vrec} holdDx={holdDx} onFlip={vrec.canFlip ? flipCam : null} onCancel={() => stopVideo(false)} onSend={() => stopVideo(true)} />}
+        {vrec && <VideoRec vrec={vrec} holdDx={holdDx} onFlip={vrec.canFlip ? flipCam : null} onFlash={flashCam} onCancel={() => stopVideo(false)} onSend={() => stopVideo(true)} />}
         {rec?.locked ? (
           <div className="compose rec">
             <span className="rec-dot" />
@@ -3271,6 +3289,8 @@ const CHEV_L = <svg viewBox="0 0 24 24" width="18" height="18" fill="none" strok
 const CHEV_U = <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 15l7-7 7 7" /></svg>
 const VNOTE_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" /><circle cx="12" cy="12" r="4" /></svg>
 const FLIP_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><path d="M9 13a3 3 0 0 1 5.2-2M15 13a3 3 0 0 1-5.2 2M14.5 9.5v1.7h-1.7M9.5 16.5v-1.7h1.7" /></svg>
+const FLASH_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z" /></svg>
+const FLASH_OFF_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z" /><path d="M4 4l16 16" /></svg>
 function RecClock({ started }) {
   const [now, setNow] = useState(Date.now())
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 50); return () => clearInterval(id) }, [])
@@ -3278,7 +3298,7 @@ function RecClock({ started }) {
   const s = Math.floor(ms / 1000)
   return <b className="rec-clock">{Math.floor(s / 60)}:{String(s % 60).padStart(2, '0')},{String(Math.floor((ms % 1000) / 10)).padStart(2, '0')}</b>
 }
-function VideoRec({ vrec, holdDx, onFlip, onCancel, onSend }) {
+function VideoRec({ vrec, holdDx, onFlip, onFlash, onCancel, onSend }) {
   const ref = useRef(null)
   useEffect(() => { const v = ref.current; if (v && vrec.cam) { v.srcObject = vrec.cam; v.play?.().catch(() => {}) } }, [vrec.cam])
   const [now, setNow] = useState(Date.now())
@@ -3287,12 +3307,12 @@ function VideoRec({ vrec, holdDx, onFlip, onCancel, onSend }) {
   const C = 2 * Math.PI * R
   const p = Math.min(1, (now - vrec.started) / 60000)
   return createPortal(
-    <div className={`vrec${vrec.locked ? ' locked' : ''}`}>
+    <div className={`vrec${vrec.locked ? ' locked' : ''}${vrec.flash && vrec.facing === 'user' ? ' flash' : ''}`}>
       <div className={`vrec-circle${vrec.facing === 'user' ? ' mirror' : ''}`}>
         <video ref={ref} muted playsInline autoPlay />
         <svg className="vrec-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - p)} /></svg>
       </div>
-      <div className="vrec-tools">{onFlip && <button type="button" className="round" onClick={onFlip} aria-label="Turn the camera">{FLIP_I}</button>}</div>
+      <div className="vrec-tools">{onFlip && <button type="button" className="round" onClick={onFlip} aria-label="Turn the camera">{FLIP_I}</button>}<button type="button" className={`round${vrec.flash ? ' on' : ''}`} onClick={onFlash} aria-label="Flash">{vrec.flash ? FLASH_I : FLASH_OFF_I}</button></div>
       <div className="vrec-bar">
         <span className="rec-dot" />
         <RecClock started={vrec.started} />

@@ -4564,3 +4564,4 @@ input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18);
   .set-menu .set-nav.on, .set-menu .set-me.on { background: none !important; box-shadow: none !important; }
 }
 @media (hover: none) { .set-pick:hover, html[data-mode='light'] .set-pick:hover { background: none; } }
+.bubble.pic .pic-img { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }

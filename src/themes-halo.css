@@ -394,3 +394,24 @@ html[data-skin='halo'][data-theme='stone'] .side-head .head-edit .he-ico > svg {
 /* the chat's head (Alex, 12 Nov): back, the name, call, video, search, tasks and ⋯ all 44px tall with the same 22px corner */
 html[data-skin='halo'][data-theme='stone'] .room-head :is(.round, .head-card) { height: 44px; min-height: 44px; border-radius: 22px; }
 html[data-skin='halo'][data-theme='stone'] .room-head .round { width: 44px; }
+
+/* Halo: a RoarTransfer card is a white frosted card whoever sent it (an orange bubble made its words unreadable), with
+   the orange only on Open and on the word Transfer */
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji):has(.rt-card) {
+  background: linear-gradient(135deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .78)) !important; border: 1px solid #fff !important; color: #1d1d24 !important;
+  box-shadow: 0 8px 22px rgba(70, 70, 110, .1), inset 0 1px 0 #fff !important;
+}
+html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji):has(.rt-card) {
+  background: linear-gradient(135deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .06)) !important; border-color: rgba(255, 255, 255, .14) !important; color: #f1f1f5 !important; box-shadow: none !important;
+}
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) :is(.meta, .ticks, .rt-card-head small, .rt-card-until, .rt-card-files li small) { color: var(--muted) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .ticks.seen { color: var(--halo) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark b { color: inherit !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark b span { color: var(--halo) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark i { background: linear-gradient(145deg, var(--halo-2), var(--halo)); color: #fff; box-shadow: none; border: 0; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-files li { background: rgba(20, 20, 40, .05); color: inherit; }
+html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-files li { background: rgba(255, 255, 255, .07); }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-files li b { color: inherit !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn { border: 0; box-shadow: none; background: rgba(20, 20, 40, .06) !important; color: inherit !important; }
+html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn { background: rgba(255, 255, 255, .1) !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn.btn-main { background: linear-gradient(145deg, var(--halo-2), var(--halo)) !important; color: #fff !important; }

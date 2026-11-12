@@ -4278,3 +4278,13 @@ html[data-theme='stone']:not([data-skin]) .compose-ref { border-radius: 9px; }
 
 /* Edit at the top of the lists is a word; Halo makes it a round sign like + (themes-halo.css) */
 .head-edit .he-ico { display: none; }
+
+/* a RoarTransfer card in a chat (Alex, 12 Nov: "it looks a disgrace"): the big card of the RoarTransfer page (.rt-card at
+   the top of this file) leaked into the message; inside a bubble the card is flat, and the bubble is as wide as a picture */
+.bubble .rt-card { width: auto; min-width: 0; max-width: none; padding: 4px 2px 2px; gap: 10px; border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; animation: none; }
+.bubble:has(.rt-card) { box-sizing: border-box; width: calc(var(--media-w) + 2px); max-width: 100%; }
+.bubble .rt-card .rt-card-head { gap: 8px; }
+.bubble .rt-card .rt-mark i { width: 30px; height: 30px; }
+.bubble .rt-card .rt-mark i svg { width: 16px; height: 16px; }
+.bubble .rt-card .rt-mark b { font-size: 16px; }
+.bubble .rt-card-acts .btn { white-space: nowrap; height: 38px; border-radius: 12px; }

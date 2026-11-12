@@ -265,3 +265,7 @@ html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs b
 html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs.lens::before { border-radius: 8px; }
 html[data-skin='halo'][data-theme='stone'] .foot button,
 html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 10px; }
+/* 3px between the two bars (Alex, 12 Nov): the folder bar's lift 48 + 3, the list under it follows */
+html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom .tabs { margin-bottom: calc(51px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-101px - var(--hfmb) - var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(109px + var(--hfmb) + var(--hpb)); }

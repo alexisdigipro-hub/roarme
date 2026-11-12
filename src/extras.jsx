@@ -599,7 +599,12 @@ function MediaThumb({ m, onClick }) {
 }
 
 /* the chat wallpapers as small tiles to pick from */
+/* in Halo the built-in washes wear its own palette (Alex, 12 Nov): Night, Ocean, Dusk, Forest and Ember are drawn in
+   Navy, Blue, Lilac, Pink and Rose by themes-halo.css and named so here */
+const HALO_WALLS = { night: 'Navy', ocean: 'Blue', dusk: 'Lilac', forest: 'Pink', ember: 'Rose' }
+const HALO_HIDE = []
 export function WallTiles({ value, onPick, toast }) {
+  const halo = usePrefs().theme === 'halo'
   const walls = useWalls()
   const color = ownColor(value)
   const photo = ownPhoto(value)
@@ -623,9 +628,9 @@ export function WallTiles({ value, onPick, toast }) {
   return (
     <>
       <div className="walls">
-        {walls.map(({ key: k, name: l, path }) => (
+        {walls.filter(({ key: k }) => !halo || !HALO_HIDE.includes(k)).map(({ key: k, name: l, path }) => (
           <button key={k} type="button" className={`wall-tile${value === k ? ' on' : ''}${path ? ' img' : ''}`} data-bg={k} style={path ? { backgroundImage: `url("${wallUrl(path)}")` } : undefined} onClick={() => onPick(k)}>
-            <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>{l}</small>
+            <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>{(halo && HALO_WALLS[k]) || l}</small>
           </button>
         ))}
         {/* any colour: the tile itself opens the colour picker */}

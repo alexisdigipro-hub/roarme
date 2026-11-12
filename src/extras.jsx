@@ -602,7 +602,7 @@ function MediaThumb({ m, onClick }) {
 /* in Halo the built-in washes wear its own palette (Alex, 12 Nov): Night, Ocean, Dusk, Forest and Ember are drawn in
    Navy, Blue, Lilac, Pink and Rose by themes-halo.css and named so here */
 const HALO_WALLS = { night: 'Navy', ocean: 'Blue', dusk: 'Lilac', forest: 'Pink', ember: 'Rose' }
-const HALO_HIDE = []
+const HALO_HIDE = ['dots', 'grid'] // Pattern and Grid are not offered in Halo (Alex, 12 Nov)
 // Halo's own orange as a wallpaper too (Alex, 12 Nov), before the other colours; drawn by themes-halo.css, plain elsewhere
 const withOrange = (walls) => { const i = walls.findIndex((w) => HALO_WALLS[w.key]); const o = { key: 'halo-orange', name: 'Orange', path: null }; return i < 0 ? [...walls, o] : [...walls.slice(0, i), o, ...walls.slice(i)] }
 export function WallTiles({ value, onPick, toast }) {

@@ -4552,3 +4552,4 @@ input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18);
 .pf-menu .pf-m-sub i { margin-left: auto; color: var(--halo, var(--accent)); }
 .pf-menu .pf-m-sub i svg { width: 16px; height: 16px; }
 .viewer .vw-bin { color: #ff6b5e; }
+.lib-tr-seg { align-self: center; margin: 2px auto 12px; max-width: 320px; width: 100%; }

@@ -2205,6 +2205,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // leaving the chat throws away what is being recorded
   useEffect(() => () => { if (vRef.current) stopRef.current.video(false); if (recRef.current) stopRef.current.voice(false) }, [])
 
+  // the iPhone shows its magnifier and starts choosing text when a finger rests on the button (Alex, 12 Nov); a touch
+  // that is not passed on stops it, and the pointer events that do the recording still come
+  const noLoupe = useCallback((el) => { if (el && !el.dataset.noLoupe) { el.dataset.noLoupe = '1'; el.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault() }, { passive: false }) } }, [])
   // the microphone / camera button: a tap swaps them, a hold records, left throws away, up locks
   const holdStart = (e) => {
     if (e.button) return
@@ -2242,7 +2245,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', cancel)
-    h.t = setTimeout(() => { h.on = true; h.p = mode === 'video' ? startVideo(false) : startVoice(false) }, 260)
+    h.t = setTimeout(() => { h.on = true; h.p = mode === 'video' ? startVideo(false) : startVoice(false) }, 200)
   }
 
   // an admin can delete anyone's message for everyone (Alex, 8 Nov: spam, insults); never edit it
@@ -3007,7 +3010,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                   onPointerDown={() => { held.current = false; clearTimeout(holdT.current); if (canSched) holdT.current = setTimeout(() => { held.current = true; setSchedNew(true) }, 450) }}
                   onPointerUp={() => clearTimeout(holdT.current)} onPointerLeave={() => clearTimeout(holdT.current)}
                   aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter) · hold to schedule'}>{editing ? I.check : I.send}</button>
-              : <button type="button" className={`round rec-btn${recMode === 'video' ? ' vmode' : ''}${rec || vrec ? ' holding' : ''}`} onPointerDown={holdStart} onContextMenu={(e) => e.preventDefault()}
+              : <button type="button" ref={noLoupe} className={`round rec-btn${recMode === 'video' ? ' vmode' : ''}${rec || vrec ? ' holding' : ''}`} onPointerDown={holdStart} onContextMenu={(e) => e.preventDefault()}
                   onClick={(e) => { if (e.detail === 0) (recMode === 'video' ? startVideo(true) : startVoice(true)) }}
                   aria-label={recMode === 'video' ? 'Video message: hold to record, tap for voice' : 'Voice message: hold to record, tap for video'}
                   title={recMode === 'video' ? 'Hold to record a video message · tap for voice' : 'Hold to record a voice message · tap for video'}>{recMode === 'video' ? VNOTE_I : I.mic}</button>}

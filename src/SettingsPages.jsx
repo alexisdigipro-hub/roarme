@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, foldHas, nameOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
@@ -34,6 +34,9 @@ export const PAGES = [
   ['privacy', 'Privacy and Security', '#0a84ff', svg(<><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>, 16), 'Who sees what, your devices, and how your account stays safe.', 4],
   ['sessions', 'Active Sessions', '#ff9f0a', svg(<><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M8 20h8" /></>, 16), 'Every device signed in to your account.', 4],
 ]
+// the page a page is reached from, for Back and for the way it slides
+const PARENT = { features: 'general', language: 'general', keys: 'general', folders: 'chats', autoreply: 'chats', data: 'chats', sessions: 'privacy' }
+const parentOf = (id) => (id?.startsWith('folder:') ? 'folders' : PARENT[id] || '')
 // pages that are no longer doors of their own in the menu: they open from inside General, Chats or Privacy and Security
 const SUBS = { general: 'App, Features, Language', chats: 'Folders, Auto-Reply, Data and Storage', privacy: 'Privacy, Active Sessions' }
 const TUCKED = ['features', 'language', 'transfer', 'folders', 'autoreply', 'data', 'sessions']
@@ -160,17 +163,22 @@ export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe, onInbox, inb
 export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profile, folders, onFolders, onFolderMenu, folderKit, toast, me, setMe }) {
   const p = usePrefs()
   const title = pageTitle(page)
+  // going in slides the page from the right, going back up from the left
+  const lastPage = useRef(page)
+  const goingBack = useMemo(() => parentOf(lastPage.current) === page, [page]) // kept while the page stays, so the slide is not started again
+  useEffect(() => { lastPage.current = page }, [page])
   return (
     <div className={`set-page${chosen ? ' chosen' : ''}`}>
       <header className="room-head set-head">
-        {page === 'keys' || page.startsWith('folder:')
-          ? <button type="button" className="round" onClick={() => onPage(page === 'keys' ? 'general' : 'folders')} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
+        {/* back goes one step up: a page reached from inside another returns to that one, not to the menu (Alex, 12 Nov) */}
+        {parentOf(page)
+          ? <button type="button" className="round" onClick={() => onPage(parentOf(page))} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
           : <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>}
         <strong>{title}</strong>
         {/* the folder is kept as it is typed; the tick takes you out (Alex, 21 Oct) */}
         {page.startsWith('folder:') && <button type="button" className="round set-done" onClick={() => (onFolderDone ? onFolderDone() : onPage('folders'))} aria-label="Done" title="Done">{svg(<path d="M5 12.5l4.5 4.5L19 7.5" />)}</button>}
       </header>
-      <div className="set-body stagger" key={page}>
+      <div className={`set-body stagger${goingBack ? ' back' : ''}`} key={page}>
         <Hero id={page} />
         {page === 'profile' && profile}
         {page === 'general' && <><General p={p} onKeys={() => onPage('keys')} toast={toast} /><Features p={p} /><Language p={p} /></>}

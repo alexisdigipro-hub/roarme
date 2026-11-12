@@ -61,11 +61,11 @@ html[data-skin='halo'][data-theme='stone'] .round {
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .round { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
 html[data-skin='halo'][data-theme='stone'] .round.on,
 html[data-skin='halo'][data-theme='stone'] :is(.btn-main, .send.ready, .new-call-ico) {
-  background: linear-gradient(145deg, var(--halo-2), var(--halo)); color: #fff; border-color: transparent;
+  background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)); color: #fff; border-color: transparent;
   box-shadow: 0 10px 24px color-mix(in srgb, var(--halo) 38%, transparent), inset 0 1px 0 rgba(255, 255, 255, .35);
 }
 html[data-skin='halo'][data-theme='stone'][data-bubbles] :is(.btn-main, .send.ready, .new-call-ico):not(:disabled) {
-  background: linear-gradient(145deg, var(--halo-2), var(--halo)) !important; color: #fff !important; border-color: transparent !important;
+  background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; border-color: transparent !important;
 }
 html[data-skin='halo'][data-theme='stone'] :is(.btn, .pill-btn) { border-radius: 999px; background: rgba(255, 255, 255, .7); border: 1px solid #fff; box-shadow: 0 4px 12px rgba(70, 70, 110, .08); }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.btn, .pill-btn) { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); }
@@ -121,8 +121,8 @@ html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble :is(.meta, .ti
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble .ticks.seen { color: var(--halo-ink, #fff) !important; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble :is(.msg-link, .mention, .text a) { color: var(--halo-ink, #fff) !important; text-decoration-color: color-mix(in srgb, var(--halo-ink, #fff) 60%, transparent) !important; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble .quote { background: rgba(255, 255, 255, .18) !important; border-left-color: #fff !important; }
-html[data-skin='halo'] .peek-msg.mine { background: linear-gradient(145deg, var(--halo-2), var(--halo) 70%) !important; color: #fff !important; }
-html[data-skin='halo'] .set-preview .pv.mine, html[data-skin='halo'] .wall-b.mine { background: linear-gradient(145deg, var(--halo-2), var(--halo)); color: #fff; }
+html[data-skin='halo'] .peek-msg.mine { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; }
+html[data-skin='halo'] .set-preview .pv.mine, html[data-skin='halo'] .wall-b.mine { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)); color: #fff; }
 
 /* cards, windows and menus: white frosted, rounder */
 html[data-skin='halo'][data-theme='stone'] .set-box { border-radius: 24px; background: rgba(255, 255, 255, .6); border: 1px solid #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .06); }
@@ -413,13 +413,13 @@ html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) :is(.
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .ticks.seen { color: var(--halo) !important; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark b { color: inherit !important; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark b span { color: var(--halo) !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark i { background: linear-gradient(145deg, var(--halo-2), var(--halo)); color: #fff; box-shadow: none; border: 0; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-mark i { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)); color: #fff; box-shadow: none; border: 0; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-files li { background: rgba(20, 20, 40, .05); color: inherit; }
 html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-files li { background: rgba(255, 255, 255, .07); }
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-files li b { color: inherit !important; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn { border: 0; box-shadow: none; background: rgba(20, 20, 40, .06) !important; color: inherit !important; }
 html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn { background: rgba(255, 255, 255, .1) !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn.btn-main { background: linear-gradient(145deg, var(--halo-2), var(--halo)) !important; color: #fff !important; }
+html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.rt-card) .rt-card-acts .btn.btn-main { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; }
 
 /* the chat's head as in the picture Alex sent (12 Nov): back on the left, the name and the last seen in a pill in the
    middle (no picture in it), the round picture on the right, which opens the chat's menu (Search, Info, Mute and the
@@ -461,14 +461,14 @@ html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.artc) :is(.met
 html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble:has(.artc) .ticks.seen { color: var(--halo) !important; }
 html[data-skin='halo'] .bubble .artc { gap: 10px; padding: 4px 2px 2px; }
 html[data-skin='halo'] .bubble .artc .trx-head { justify-content: flex-start; }
-html[data-skin='halo'] .bubble .artc .rt-mark i { width: 30px; height: 30px; background: linear-gradient(145deg, var(--halo-2), var(--halo)) !important; color: #fff !important; border: 0 !important; box-shadow: none !important; }
+html[data-skin='halo'] .bubble .artc .rt-mark i { width: 30px; height: 30px; background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; border: 0 !important; box-shadow: none !important; }
 html[data-skin='halo'] .bubble .artc .rt-mark i svg { width: 16px; height: 16px; }
 html[data-skin='halo'] .bubble .artc .rt-mark b { font-size: 15px; color: inherit !important; }
 html[data-skin='halo'] .bubble .artc .rt-mark b span { color: var(--halo) !important; }
 html[data-skin='halo'][data-bubbles] .bubble .artc .artc-hero { padding: 2px 2px 0; border: 0 !important; border-radius: 0; background: none !important; box-shadow: none !important; }
 html[data-skin='halo'] .bubble .artc .artc-hero b { font-size: 18px; color: inherit !important; }
 html[data-skin='halo'] .bubble .artc .artc-hero span { color: var(--muted) !important; opacity: 1; }
-html[data-skin='halo'][data-bubbles] .bubble .artc .trx-get { height: 38px; border: 0 !important; border-radius: 999px; background: linear-gradient(145deg, var(--halo-2), var(--halo)) !important; color: #fff !important; box-shadow: none !important; }
+html[data-skin='halo'][data-bubbles] .bubble .artc .trx-get { height: 38px; border: 0 !important; border-radius: 999px; background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; box-shadow: none !important; }
 html[data-skin='halo'][data-bubbles] .bubble .artc .artc-min { height: 38px; border: 0 !important; background: rgba(20, 20, 40, .06) !important; color: var(--muted) !important; }
 html[data-skin='halo'][data-mode='dark'][data-bubbles] .bubble .artc .artc-min { background: rgba(255, 255, 255, .1) !important; }
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji):is(:has(.artc), :has(.rt-card)) :is(.meta, .ticks:not(.seen)) { color: var(--muted) !important; }
@@ -725,3 +725,12 @@ html[data-skin='halo'] .pf-more .pf-menu > button { color: var(--text); text-tra
 html[data-skin='halo'] .pf-more .pf-menu > button svg { width: 19px; height: 19px; padding: 0; background: none; border: 0; }
 html[data-skin='halo'] .pf-more .pf-menu > button span { color: inherit; font-size: 15px; }
 html[data-skin='halo'] .pf-more .pf-menu > button.danger { color: var(--danger); }
+
+/* every coloured button as your messages (Alex, 12 Nov: "all the buttons like the messages, in colour and feel"): matte,
+   see-through, a light fall from top to bottom, a fine light rim, a soft drop instead of the glow */
+html[data-skin='halo'][data-theme][data-bubbles] :is(.round.on, .btn-main, .send.ready, .new-call-ico, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send, .rt-send, .loc-send):not(:disabled),
+html[data-skin='halo'][data-theme][data-bubbles] .bubble :is(.rt-card-acts .btn.btn-main, .artc .trx-get) {
+  background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink, #fff) !important;
+  border: 1px solid rgba(255, 255, 255, .28) !important; box-shadow: 0 2px 8px rgba(70, 70, 110, .08) !important;
+}
+html[data-skin='halo'][data-theme][data-mode='dark'][data-bubbles] :is(.round.on, .btn-main, .send.ready, .new-call-ico, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send, .rt-send, .loc-send):not(:disabled) { box-shadow: none !important; border-color: rgba(255, 255, 255, .14) !important; }

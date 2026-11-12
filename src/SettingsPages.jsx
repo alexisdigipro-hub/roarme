@@ -40,11 +40,8 @@ const TUCKED = ['features', 'language', 'transfer', 'folders', 'autoreply', 'dat
 export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 // the top of a page: its icon in its colour and what it holds
-const Hero = ({ id }) => {
-  const pg = PAGES.find(([k]) => k === id)
-  if (!pg) return null
-  return <div className="set-hero"><span className="set-hero-ico" style={{ '--c': pg[2] }}>{pg[3]}</span><p>{pg[4]}</p></div>
-}
+// a settings page opens with its title alone (Alex, 12 Nov): the large sign and the line under it are gone
+const Hero = () => null
 
 const THEMES = [['stone', 'Stone', ['#2a2a2c', 'linear-gradient(180deg, #bdbdbe, #9c9c9d)']], ['ember', 'Simba', ['#ff6b57', 'linear-gradient(180deg, #3a4049, #1b1e23)']], ['halo', 'Halo', ['#f47318', 'radial-gradient(60px 50px at 20% 30%, rgba(150, 150, 205, .55), transparent 70%), linear-gradient(180deg, #f3f3f7, #e4e5ec)']], ['velvet', 'Velvet', ['linear-gradient(135deg, #f8cf82, #e9a94a 45%, #c97a2c)', 'radial-gradient(70px 60px at 25% 20%, rgba(52, 84, 66, .8), transparent 70%), linear-gradient(180deg, #121a17, #070a09)']], ['air', 'Air', ['#2f7cf6', 'linear-gradient(180deg, #ffffff, #eef0f4)']], ['mango', 'Mango', ['#ff9a1f', 'radial-gradient(70px 50px at 20% 0%, #56575d, transparent 70%), linear-gradient(180deg, #2c2d31, #1a1b1e)']]]
 

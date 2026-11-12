@@ -188,3 +188,20 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .room-head .hea
   html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens::before { transition: transform .26s cubic-bezier(.3, 1.3, .5, 1), width .26s cubic-bezier(.3, 1.3, .5, 1), height .25s ease, opacity .15s, background .22s, box-shadow .22s; }
   html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .foot.lens.lens-go > button { transition: color .12s; }
 }
+
+/* the colours split at the rim of the travelling lens, as light does at the edge of thick glass (Alex, 12 Nov: "it has
+   an RGB glitch"): red on one side, blue on the other, a little green above, strongest while it stretches, fading as it
+   lands. Drawn with thin shadows only, so nothing is repainted but the lens */
+@media (prefers-reduced-motion: no-preference) {
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens.lens-go::before {
+    box-shadow: -2.5px 0 0 -.5px rgba(255, 60, 110, .6), 2.5px 0 0 -.5px rgba(50, 170, 255, .6), 0 -1.5px 0 -.5px rgba(90, 255, 170, .4), 0 1.5px 0 -.5px rgba(255, 210, 80, .35),
+      0 10px 24px rgba(60, 60, 100, .22), inset 0 1px 0 #fff, inset 0 -1px 0 rgba(255, 255, 255, .5) !important;
+  }
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot.lens.lens-go::before {
+    box-shadow: -2.5px 0 0 -.5px rgba(255, 60, 110, .65), 2.5px 0 0 -.5px rgba(50, 170, 255, .65), 0 -1.5px 0 -.5px rgba(90, 255, 170, .4), 0 1.5px 0 -.5px rgba(255, 210, 80, .35),
+      0 10px 24px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .4) !important;
+  }
+  html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens.lens-go.lens-land::before {
+    box-shadow: -1.5px 0 0 -.5px rgba(255, 60, 110, .35), 1.5px 0 0 -.5px rgba(50, 170, 255, .35), 0 6px 16px rgba(60, 60, 100, .16), inset 0 1px 0 rgba(255, 255, 255, .8) !important;
+  }
+}

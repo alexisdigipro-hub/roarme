@@ -1709,6 +1709,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [attach, setAttach] = useState(null) // files waiting in the send window
   const [media, setMedia] = useState(false)
   const [headSub, setHeadSub] = useState('') // Mute › or Auto-Delete › open in the ⋯ menu
+  // the profile's Search and Chat Options (Halo, whose head has no ⋯) reach this chat's search and menu
+  useEffect(() => {
+    const f = () => { setFind(''); setFindAt(0) }
+    const m = () => { setHeadSub(''); setHeadMenu(true) }
+    window.addEventListener('roarme-find', f); window.addEventListener('roarme-headmenu', m)
+    return () => { window.removeEventListener('roarme-find', f); window.removeEventListener('roarme-headmenu', m) }
+  }, [])
   const [walls, setWalls] = useLocal('roarme-walls', {}) // a wallpaper of its own, per chat
   const wall = walls[room.room_id] || prefs.background
   const wallList = useWalls(true)
@@ -2654,8 +2661,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             {/* on a phone the chat list (with its Tasks button) is another screen, so Tasks is here too */}
             {onTasks && <button type="button" className="round tasks-btn only-phone" onClick={onTasks} aria-label="Tasks" title="Tasks">{I.tasks}{tasksCount > 0 && <i>{tasksCount > 99 ? '99+' : tasksCount}</i>}</button>}
             <span className="plus-wrap">
-              {/* Halo shows the picture here, round, in place of ⋯ (Alex, 12 Nov, from a picture he sent); it opens the same menu */}
-              <button type="button" className={`head-ava${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More"><Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={44} group={room.kind === 'group'} /></button>
+              {/* Halo shows the picture here, round, in place of ⋯ (Alex, 12 Nov, from a picture he sent); it opens the profile, as the name does */}
+              <button type="button" className="head-ava" onClick={onInfo} aria-label="More" title="More"><Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={44} group={room.kind === 'group'} /></button>
               <button type="button" className={`round head-more${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More">{I.more}</button>
               {headMenu && (
                 <>

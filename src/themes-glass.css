@@ -89,3 +89,22 @@ html:root:root[data-glass][data-skin='halo'] .pv-menu svg { width: 18px; height:
 html:root:root[data-glass][data-skin='halo'] .pv-menu .fi-solid { display: none; }
 html:root:root[data-glass][data-skin='halo'] .pv-menu .fi-line { display: inline; }
 html:root:root[data-glass][data-skin='halo'] .pv-menu b { font-size: 9px; font-weight: 600; line-height: 1.1; }
+
+/* the same air under the top bar on every tab (Alex, 12 Nov: "the gap Contacts has, on Calls and Messages too"):
+   Contacts' search is 16px over its list (8 of its own + the list's 8); the folders and Create New Call stood 20px
+   over theirs (8 + the column's 12), so they give 4 back */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs,
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .side-col > .new-call.new-call-bar { margin-bottom: 4px; }
+
+/* a fine grain in everything the accent colours (Alex, 12 Nov: "the accent colours with noise in their colour"): your
+   messages, the coloured buttons, the tiles' signs and the colour dots themselves get a light speckle over their
+   gradient. One's own message colour (data-my-bubble) keeps its plain fill */
+html:root:root[data-glass] { --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .3 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+html:root:root[data-glass][data-skin='halo'][data-mode][data-bubbles]:not([data-my-bubble]) .msg.mine .bubble:not(.pic):not(.big-emoji),
+html:root:root[data-glass][data-skin='halo'][data-theme][data-bubbles] :is(.round.on, .btn-main, .send.ready, .new-call-ico, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send, .rt-send, .loc-send):not(:disabled),
+html:root:root[data-glass][data-skin='halo'][data-theme][data-bubbles] .bubble :is(.rt-card-acts .btn.btn-main, .artc .trx-get),
+html:root:root[data-glass][data-skin='halo']:not([data-my-bubble]) :is(.set-preview .pv.mine, .wall-b.mine, .peek-msg.mine),
+html:root:root[data-glass][data-skin='halo'] .as-tile > i {
+  background: var(--grain), linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important;
+}
+html:root:root[data-glass][data-skin='halo'] .halo-accents .acc::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--grain); pointer-events: none; }

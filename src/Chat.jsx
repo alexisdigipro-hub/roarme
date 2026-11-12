@@ -3043,13 +3043,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {emoji && <EmojiPicker onPick={addEmoji} onClose={() => setEmoji(false)} />}
             </span>
             {text.trim() || editing || sealOn
-              ? <button type="button" className={`round send${text.trim() || editing ? ' ready' : ''}`}
+              ? <button key="send" type="button" className={`round send${text.trim() || editing ? ' ready' : ''}`}
                   onClick={() => { if (held.current) { held.current = false; return } send() }}
                   onContextMenu={(e) => { if (canSched) { e.preventDefault(); clearTimeout(holdT.current); setSchedNew(true) } }}
                   onPointerDown={() => { held.current = false; clearTimeout(holdT.current); if (canSched) holdT.current = setTimeout(() => { held.current = true; setSchedNew(true) }, 450) }}
                   onPointerUp={() => clearTimeout(holdT.current)} onPointerLeave={() => clearTimeout(holdT.current)}
                   aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter) · hold to schedule'}>{editing ? I.check : I.send}</button>
-              : <button type="button" ref={noLoupe} className={`round rec-btn${recMode === 'video' ? ' vmode' : ''}${rec || vrec ? ' holding' : ''}`} onPointerDown={holdStart} onContextMenu={(e) => e.preventDefault()}
+              : <button key="rec" type="button" ref={noLoupe} className={`round rec-btn${recMode === 'video' ? ' vmode' : ''}${rec || vrec ? ' holding' : ''}`} onPointerDown={holdStart} onContextMenu={(e) => e.preventDefault()}
                   onClick={(e) => { if (e.detail === 0) (recMode === 'video' ? startVideo(true) : startVoice(true)) }}
                   aria-label={recMode === 'video' ? 'Video message: hold to record, tap for voice' : 'Voice message: hold to record, tap for video'}
                   title={recMode === 'video' ? 'Hold to record a video message · tap for voice' : 'Hold to record a voice message · tap for video'}>{recMode === 'video' ? VNOTE_I : I.mic}</button>}

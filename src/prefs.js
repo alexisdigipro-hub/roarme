@@ -315,8 +315,8 @@ export function applyLook(p) {
     if (lp >= 0.6) { r.dataset.panelInk = '1'; r.style.setProperty('--lp-ink', pf[2]) } else { delete r.dataset.panelInk; r.style.removeProperty('--lp-ink') }
   } else { delete r.dataset.panelFill; delete r.dataset.panelInk; ['--lpa', '--lpb', '--lp-ink'].forEach((v) => r.style.removeProperty(v)) }
   if (p.listPanelGrain) r.dataset.panelGrain = '1'; else delete r.dataset.panelGrain
-  if (p.listShape === 'pill' || p.listShape === 'card') r.dataset.rooms = p.listShape; else delete r.dataset.rooms
-  if (p.contactShape === 'card') r.dataset.contacts = 'card'; else delete r.dataset.contacts
+  if (['pill', 'card', 'inset'].includes(p.listShape)) r.dataset.rooms = p.listShape; else delete r.dataset.rooms
+  if (['card', 'inset'].includes(p.contactShape)) r.dataset.contacts = p.contactShape; else delete r.dataset.contacts
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
   r.dataset.density = p.density || 'standard'

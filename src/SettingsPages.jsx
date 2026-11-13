@@ -963,8 +963,8 @@ function Appearance({ p, toast, me, setMe }) {
         <Switch on={p.listPanel !== false} set={(v) => setPrefs({ listPanel: v })} hint="Off, the chats stand straight on the background">Panel Behind the Chats</Switch>
         {p.listPanel !== false && (
           <div className="set-row set-col">
-            <span className="set-text">Shape<small>One sheet for all the chats, or each chat a capsule or a card of its own</small></span>
-            <Lens className="seg" dep={p.listShape || 'panel'}>{[['panel', 'One Panel'], ['pill', 'Capsules'], ['card', 'Cards']].map(([k, l]) => <button key={k} type="button" className={(p.listShape || 'panel') === k ? 'on' : ''} onClick={() => setPrefs({ listShape: k })}>{l}</button>)}</Lens>
+            <span className="set-text">Shape<small>One sheet for all the chats, or each chat a capsule, a card, or glass pressed into the page</small></span>
+            <Lens className="seg" dep={p.listShape || 'panel'}>{[['panel', 'One Panel'], ['pill', 'Capsules'], ['card', 'Cards'], ['inset', 'Inset']].map(([k, l]) => <button key={k} type="button" className={(p.listShape || 'panel') === k ? 'on' : ''} onClick={() => setPrefs({ listShape: k })}>{l}</button>)}</Lens>
           </div>
         )}
         {p.listPanel !== false && (
@@ -1004,8 +1004,8 @@ function Appearance({ p, toast, me, setMe }) {
           </div></div>
         </div>
         <div className="set-row set-col">
-          <span className="set-text">Shape<small>A capsule, or a card with soft corners like the rows of Settings</small></span>
-          <Lens className="seg" dep={p.contactShape || 'pill'}>{[['pill', 'Capsule'], ['card', 'Card']].map(([k, l]) => <button key={k} type="button" className={(p.contactShape || 'pill') === k ? 'on' : ''} onClick={() => setPrefs({ contactShape: k })}>{l}</button>)}</Lens>
+          <span className="set-text">Shape<small>A capsule, a card with soft corners like the rows of Settings, or glass pressed into the page</small></span>
+          <Lens className="seg" dep={p.contactShape || 'pill'}>{[['pill', 'Capsule'], ['card', 'Card'], ['inset', 'Inset']].map(([k, l]) => <button key={k} type="button" className={(p.contactShape || 'pill') === k ? 'on' : ''} onClick={() => setPrefs({ contactShape: k })}>{l}</button>)}</Lens>
         </div>
       </Box>
       <h3 className="set-group">The Whole App</h3>

@@ -540,3 +540,30 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms='car
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'][data-rooms]:not([data-nopanel]) .rooms-pager .rooms > .room.room:is(.room, :first-of-type, :last-of-type) { box-shadow: 0 4px 12px rgba(0, 0, 0, .24) !important; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms]:not([data-nopanel]) .rooms-pager .rooms > .room + .room::before { display: none; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms]:not([data-nopanel]) .rooms-pager .rooms > .room.room.slid { border: 0 !important; box-shadow: none !important; }
+
+/* Glass pressed inwards (Alex, 13 Nov: "a version where the glass goes inwards"): Shape 'inset' for the contacts
+   (data-contacts) and for the chat list (data-rooms). No lifted rim and no drop shadow: a shade inside the top edge, a
+   line of light inside the bottom one and under it, so each piece reads as sunk into the page */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='inset'] .side-scroll .rooms.contacts-list { gap: 7px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='inset'] .contacts-list .room.contact { border-radius: 26px; padding: 9px 14px 9px 11px; gap: 12px; background: rgba(60, 50, 80, .045); border: 1px solid transparent; box-shadow: inset 0 2px 6px rgba(60, 50, 80, .2), inset 0 1px 1px rgba(60, 50, 80, .14), inset 0 -1px 0 rgba(255, 255, 255, .95), 0 1px 0 rgba(255, 255, 255, .75); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'][data-contacts='inset'] .contacts-list .room.contact { background: rgba(0, 0, 0, .22); box-shadow: inset 0 2px 7px rgba(0, 0, 0, .55), inset 0 1px 1px rgba(0, 0, 0, .4), inset 0 -1px 0 rgba(255, 255, 255, .12), 0 1px 0 rgba(255, 255, 255, .06); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms='inset']:not([data-nopanel]) .rooms-pager .rooms { gap: 7px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms='inset']:not([data-nopanel]) .rooms-pager .rooms > .room.room:is(.room, :first-of-type, :last-of-type) { border-radius: 26px !important; padding: 9px 14px 9px 11px; border-color: transparent !important; box-shadow: inset 0 2px 6px rgba(60, 50, 80, .2), inset 0 1px 1px rgba(60, 50, 80, .14), inset 0 -1px 0 rgba(255, 255, 255, .95), 0 1px 0 rgba(255, 255, 255, .75) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'][data-rooms='inset']:not([data-nopanel]) .rooms-pager .rooms > .room.room:is(.room, :first-of-type, :last-of-type) { box-shadow: inset 0 2px 7px rgba(0, 0, 0, .55), inset 0 1px 1px rgba(0, 0, 0, .4), inset 0 -1px 0 rgba(255, 255, 255, .12), 0 1px 0 rgba(255, 255, 255, .06) !important; }
+
+/* Recent calls set straight (Alex, 13 Nov: the bin sat on top of the date): the bin is a round glass button of its own
+   beside the row, never over it, and Clear all is a glass pill, not a red word */
+html:root:root[data-glass] .calls-list .call-row { display: flex; align-items: center; gap: 8px; padding-right: 6px; }
+html:root:root[data-glass] .calls-list .call-row > .call-log { flex: 1; min-width: 0; width: auto; padding-right: 4px !important; }
+html:root:root[data-glass] .calls-list .call-row > .call-del {
+  position: static; flex: none; transform: none; width: 36px; height: 36px; opacity: 1; color: var(--muted);
+  background: var(--lg); border: 1px solid var(--lg-rim); box-shadow: 0 3px 8px rgba(60, 60, 100, .08);
+}
+html:root:root[data-glass] .calls-list .call-row > .call-del:active { transform: scale(.9); color: var(--danger); }
+html:root:root[data-glass][data-mode='dark'] .calls-list .call-row > .call-del { box-shadow: 0 3px 8px rgba(0, 0, 0, .3); }
+html:root:root[data-glass] .calls-list .call-row > .call-del svg { width: 17px; height: 17px; }
+html:root:root[data-glass] .calls-head { align-items: center; }
+html:root:root[data-glass] .calls-head .calls-clear { padding: 7px 14px; background: var(--lg); border: 1px solid var(--lg-rim); box-shadow: 0 3px 8px rgba(60, 60, 100, .08); font-size: 12px; letter-spacing: .02em; user-select: none; -webkit-user-select: none; }
+/* the contacts' inset lighter (Alex, 13 Nov: "not so deep, light"): a faint shade at the top edge, a soft light at the bottom */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='inset'] .contacts-list .room.contact { background: rgba(60, 50, 80, .025); box-shadow: inset 0 1px 3px rgba(60, 50, 80, .1), inset 0 -1px 0 rgba(255, 255, 255, .7); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'][data-contacts='inset'] .contacts-list .room.contact { background: rgba(0, 0, 0, .14); box-shadow: inset 0 1px 4px rgba(0, 0, 0, .34), inset 0 -1px 0 rgba(255, 255, 255, .08); }

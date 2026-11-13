@@ -519,3 +519,10 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-list 
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-list .room .room-main { gap: 0; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-list .room .room-top strong { font-size: 15.5px; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-list .room .room-prev { font-size: 12px; }
+
+/* Contacts as cards (Alex, 13 Nov, showing a row of Settings: "an option for them to be like this too"): prefs.contactShape
+   'card' -> data-contacts='card' on <html>: soft corners instead of the capsule, a little more room, the same glass.
+   The preview in Settings > Appearance > Contacts wears the same rules */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='card'] .contacts-list .room.contact { border-radius: 24px; padding: 9px 14px 9px 11px; gap: 12px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='card'] .side-scroll .rooms.contacts-list { gap: 6px; }
+html:root:root[data-glass] .set-preview.lp-prev .side-scroll { overflow: visible; padding: 0; margin: 0; flex: none; }

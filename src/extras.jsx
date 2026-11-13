@@ -655,10 +655,11 @@ const withOrange = (walls) => {
   while (j < walls.length && HALO_WALLS[walls[j].key]) j += 1
   return [...walls.slice(0, i), o, ...walls.slice(i, j), ...HALO_MORE, ...walls.slice(j)]
 }
-export function WallTiles({ value, onPick, toast }) {
+// strength / onStrength: the App background keeps a strength of its own (prefs.appWallStrength; Alex, 13 Nov)
+export function WallTiles({ value, onPick, toast, strength: own, onStrength }) {
   const prefsNow = usePrefs()
   const halo = haloish(prefsNow.theme)
-  const strength = Math.min(100, Math.max(10, Number(prefsNow.wallStrength) || 100))
+  const strength = Math.min(100, Math.max(10, Number(own ?? prefsNow.wallStrength) || 100))
   const walls = useWalls()
   const color = ownColor(value)
   const photo = ownPhoto(value)
@@ -705,7 +706,7 @@ export function WallTiles({ value, onPick, toast }) {
           <span className="set-text">Wallpaper Strength<small>{`${photo ? Math.round(photo.opacity * 100) : strength}%`}</small><small>Lower lets the theme's own colour through</small></span>
           {photo
             ? <Slide min={10} max={100} step={1} value={Math.round(photo.opacity * 100)} onChange={(n) => onPick(photoValue(photo.url, n / 100))} aria-label="Wallpaper Strength" />
-            : <Slide min={10} max={100} step={1} value={strength} onChange={(n) => setPrefs({ wallStrength: n })} aria-label="Wallpaper Strength" />}
+            : <Slide min={10} max={100} step={1} value={strength} onChange={(n) => (onStrength ? onStrength(n) : setPrefs({ wallStrength: n }))} aria-label="Wallpaper Strength" />}
         </div>
       )}
     </>

@@ -277,6 +277,7 @@ export const EL = {
   'Chat menu': 'Μενού συνομιλίας',
   'Chat wallpaper': 'Ταπετσαρία συνομιλίας',
   'App background': 'Φόντο εφαρμογής',
+  'What sits behind the chat list, Contacts, Calls and Settings: a wallpaper, any colour or your own photo, with a strength of its own.': 'Αυτό που είναι πίσω από τη λίστα, τις Επαφές, τις Κλήσεις και τις Ρυθμίσεις: ταπετσαρία, όποιο χρώμα ή δική σου φωτογραφία, με δική του ένταση.',
   'Chat List': 'Λίστα συνομιλιών',
   'The sheet of glass the chats stand on in the list.': 'Το φύλλο γυαλιού πάνω στο οποίο στέκονται οι συνομιλίες στη λίστα.',
   'Panel Behind the Chats': 'Πλαίσιο πίσω από τις συνομιλίες',

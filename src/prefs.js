@@ -55,7 +55,7 @@ export const DEFAULTS = {
   listPanelOp: 50, // 0 to 100: how solid that glass is
   listPanelFill: '', // '' plain glass, 'orange' or one of HALO_ACCENTS' keys: the panel in that pair of colours (Alex, 13 Nov)
   listShape: 'panel', // the chat list: one sheet of glass ('panel'), or each chat a capsule ('pill') or a card ('card'); Alex, 13 Nov
-  contactShape: 'pill', // Contacts: each person a capsule ('pill') or a card with soft corners ('card'; Alex, 13 Nov)
+  contactShape: 'plain', // Contacts: each person a capsule ('pill') or a card with soft corners ('card'; Alex, 13 Nov)
   listPanelGrain: false, // a fine grain over the panel
   uiText: 100, // 85 to 130 (%): the size of all of RoarMe's letters (Alex, 13 Nov); the messages' own size is textSize
   accentOpacity: 100, // 30 to 100: how solid the accent colour's fill is (your messages, the coloured buttons)
@@ -316,7 +316,7 @@ export function applyLook(p) {
   } else { delete r.dataset.panelFill; delete r.dataset.panelInk; ['--lpa', '--lpb', '--lp-ink'].forEach((v) => r.style.removeProperty(v)) }
   if (p.listPanelGrain) r.dataset.panelGrain = '1'; else delete r.dataset.panelGrain
   if (['pill', 'card', 'inset'].includes(p.listShape)) r.dataset.rooms = p.listShape; else delete r.dataset.rooms
-  if (['card', 'inset', 'plain'].includes(p.contactShape)) r.dataset.contacts = p.contactShape; else delete r.dataset.contacts
+  if (['card', 'inset', 'plain'].includes(p.contactShape || 'plain')) r.dataset.contacts = p.contactShape; else delete r.dataset.contacts
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
   r.dataset.density = p.density || 'standard'

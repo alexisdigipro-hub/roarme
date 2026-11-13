@@ -814,7 +814,7 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'density', 'radius', 'compact', 'background', 'appBackground', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'density', 'radius', 'compact', 'background', 'appBackground', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
 function ChatTheme({ p }) {
@@ -925,6 +925,15 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="set-text">Font<small>DM Sans and Space Grotesk have no Greek letters; Greek in them is shown in the device's own font</small></span>
           <select className="input set-select" value={p.font || 'system'} onChange={(e) => setPrefs({ font: e.target.value })}>{FONTS.map(([k, l, f]) => <option key={k} value={k} style={{ fontFamily: f }}>{l}</option>)}</select>
         </div>
+      </Box>
+      <Box title="Chat List" note="The sheet of glass the chats stand on in the list.">
+        <Switch on={p.listPanel !== false} set={(v) => setPrefs({ listPanel: v })} hint="Off, the chats stand straight on the background">Panel Behind the Chats</Switch>
+        {p.listPanel !== false && (
+          <div className="set-row set-col">
+            <span className="set-text">Panel Opacity<small>{`${Math.min(100, Math.max(0, Number(p.listPanelOp ?? 50)))}%`}</small></span>
+            <Slide min={0} max={100} step={1} value={Math.min(100, Math.max(0, Number(p.listPanelOp ?? 50)))} onChange={(n) => setPrefs({ listPanelOp: n })} aria-label="Panel Opacity" />
+          </div>
+        )}
       </Box>
       <Box title="Chat wallpaper" note="Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.">
         <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>

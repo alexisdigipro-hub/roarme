@@ -14,7 +14,7 @@ export default function App() {
   const prefs = usePrefs()
   const { lite, theme } = prefs
   const mode = prefs.mode
-  useEffect(() => applyLook(prefs), [prefs.theme, prefs.accent, prefs.accentHex, prefs.myBubble, prefs.theirBubble, prefs.bubbleR, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles, prefs.mode, prefs.accentOpacity, prefs.uiText]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => applyLook(prefs), [prefs.theme, prefs.accent, prefs.accentHex, prefs.myBubble, prefs.theirBubble, prefs.bubbleR, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles, prefs.mode, prefs.accentOpacity, prefs.uiText, prefs.listPanel, prefs.listPanelOp]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => applyMode(mode), [mode])
   // in Halo the whole app sits on the wallpaper chosen for the chats (Alex, 12 Nov: "the overall background follows the
   // one we chose", then: chosen apart in Settings, prefs.appBackground): the body wears what a chat wears (class app-wall, data-bg and the rest), themes-halo.css draws it

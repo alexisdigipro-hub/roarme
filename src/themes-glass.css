@@ -397,3 +397,24 @@ html:root:root[data-glass][data-skin='halo'] .row-acts button:active i {
 }
 html:root:root[data-glass][data-skin='halo'] .row-acts .ra-arch { --c: 142, 142, 152; }
 html:root:root[data-glass][data-skin='halo'] .row-acts .ra-mute { --c: 232, 160, 70; }
+
+/* The chat list as one panel of glass (Alex, 12 Nov, the third of six looks he was shown): the chats stand together in
+   one sheet of glass with a fine line between them, each with its last message, the time and the count of unread. The
+   panel is drawn on the rows themselves (the first rounds the top, the last the bottom), so it is as tall as the chats
+   and no taller, and a chat slid sideways or sliding to the next folder carries its own piece of it */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms { gap: 0; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room {
+  min-height: 0; margin: 0 5px; width: auto; padding: 9px 14px 9px 10px; border-radius: 0 !important; background: var(--lg) !important;
+  border: 0 !important; border-left: 1px solid var(--lg-rim) !important; border-right: 1px solid var(--lg-rim) !important; box-shadow: none !important;
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room:first-of-type { border-top: 1px solid var(--lg-rim) !important; border-top-left-radius: 28px !important; border-top-right-radius: 28px !important; padding-top: 12px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room:last-of-type { border-bottom: 1px solid var(--lg-rim) !important; border-bottom-left-radius: 28px !important; border-bottom-right-radius: 28px !important; padding-bottom: 12px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room + .room::before { top: 0; left: 74px; right: 14px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room .av { width: 46px !important; height: 46px !important; font-size: 15px !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room .room-top { display: flex; align-items: baseline; gap: 8px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room .room-top strong { flex: 1; min-width: 0; font-size: 16px; font-weight: 500; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room .room-top small { flex: none; color: var(--muted); font-size: 12px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room .room-prev { color: var(--muted); font-size: 13px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room.on { background: rgba(255, 255, 255, .8) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-pager .rooms > .room.on { background: rgba(255, 255, 255, .14) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .rooms-pager .rooms > .room.slid { border-radius: 28px !important; border: 0 !important; margin: 0 5px; background: var(--lg-chip) !important; }

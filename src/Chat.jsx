@@ -1375,13 +1375,13 @@ export default function Chat({ me, setMe }) {
         ) : (
           <nav ref={footLens} className="foot lens" data-travel="" onClickCapture={(e) => { if (tasksOpen && !e.target.closest('.foot-tasks') && window.matchMedia('(max-width: 760px)').matches) showTasks(false) }}>
             {/* Contacts · Calls · Messages in the middle, a little bigger · Tasks · Settings (Alex, 19 Oct); AllMedia lives in Settings */}
-            <button type="button" className={tab === 'contacts' && !tasksOpen ? 'on' : ''} onClick={() => setTab('contacts')}>{FOOT_I.contacts}<span>Contacts</span></button>
-            {prefs.callsTab && <button type="button" className={tab === 'calls' && !tasksOpen ? 'on' : ''} onClick={() => setTab('calls')}>{FOOT_I.calls}<span>Calls</span></button>}
+            <button type="button" className={`foot-contacts${tab === 'contacts' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('contacts')}>{FOOT_I.contacts}<span>Contacts</span></button>
+            {prefs.callsTab && <button type="button" className={`foot-calls${tab === 'calls' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('calls')}>{FOOT_I.calls}<span>Calls</span></button>}
             <button type="button" className={`foot-main${tab === 'chats' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('chats')}><span className="foot-ico">{FOOT_I.messages}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Messages</span></button>
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
             {prefs.tasksTab && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}
-            <button type="button" className={(tab === 'settings' || tab === 'media') && !tasksOpen ? 'on' : ''} onClick={() => setTab('settings')}>{FOOT_I.settings}<span>Settings</span></button>
+            <button type="button" className={`foot-settings${(tab === 'settings' || tab === 'media') && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('settings')}>{FOOT_I.settings}<span>Settings</span></button>
           </nav>
         )}
       </aside>

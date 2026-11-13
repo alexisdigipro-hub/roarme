@@ -866,25 +866,53 @@ function Appearance({ p, toast, me, setMe }) {
   const look = wallLook(p.background, useWalls(true), p.wallStrength)
   const listLook = wallLook(p.appBackground || p.background, useWalls(true), p.appBackground ? p.appWallStrength ?? p.wallStrength : p.wallStrength)
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
+  const menuPv = <div className="pv-menu" aria-hidden="true"><span>{FOOT_I.contacts}<b>Contacts</b></span><span>{FOOT_I.calls}<b>Calls</b></span><span className="on">{FOOT_I.messages}<b>Messages</b></span><span>{FOOT_I.settings}<b>Settings</b></span></div>
+  // Colours: one message of yours, the Send button and the menu, the three places the accent shows
+  const colourPv = (
+    <div className="pv-wrap" aria-hidden="true">
+      <div className="set-preview live pv-short" data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={look.style}>
+        <span className="pv mine">Yes, on set at 10 👍</span>
+        <span className="pv-compose"><span>Write a message…</span><i /></span>
+      </div>
+      {menuPv}
+    </div>
+  )
+  // Messages: a little chat with the wallpaper, the message colours and corners, the text size and Compact Messages
+  const chatPv = (
+    <div className={`set-preview live${p.compact ? ' compact' : ''}`} aria-hidden="true" data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...look.style }}>
+      <span className="pv-head"><i className="pv-ava">GK</i><span><b>Giorgos</b><small>online</small></span></span>
+      <span className="pv">Are we shooting at 10?</span>
+      <span className="pv mine"><i>Are we shooting at 10?</i>Yes, on set at 10 👍</span>
+      <span className="pv mine">Bring the lights 💡</span>
+      <span className="pv-compose"><span>Write a message…</span><i /></span>
+    </div>
+  )
+  // the chat list on the app's background, with the real rows' classes so the panel's own rules draw it; with the
+  // menu under it, it is the whole app in small
+  const listPv = (n, menu) => (
+    <div className="set-preview lp-prev" aria-hidden="true" data-bg={listLook['data-bg']} data-img={listLook['data-img']} data-own={listLook['data-own']} data-wop={listLook['data-wop']} style={listLook.style}>
+      <div className="rooms-pager"><div className="rooms">
+        {[['Giorgos Kanellos', '10:42', 'On set at 10, bring the lights', 2], ['Film Crew', '09:15', 'Maria: the call sheet is ready', 0], ['Eleni Marou', 'Tue', 'See you at the edit', 0]].slice(0, n).map(([nm, tm, m, u]) => (
+          <div key={nm} className="room">
+            <Avatar name={nm} size={54} />
+            <span className="room-main">
+              <span className="room-top"><strong>{nm}</strong><small data-raw="">{tm}</small></span>
+              <span className="room-bottom"><span className="room-prev">{m}</span>{u > 0 && <span className="badge">{u}</span>}</span>
+            </span>
+          </div>
+        ))}
+      </div></div>
+      {menu && menuPv}
+    </div>
+  )
   return (
     <>
-      {/* one preview for the whole page (Alex, 12 Nov: "one preview for everything"): a little chat that stays at the top
-          while the page scrolls and shows at once the theme, day or night, the colour, the wallpaper, the message
-          colours and corners, the text size and font, and Compact Messages */}
-      <div className="set-live">
-        <div className={`set-preview live${p.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...look.style }}>
-          <span className="pv-head"><i className="pv-ava">GK</i><span><b>Giorgos</b><small>online</small></span></span>
-          <span className="pv">Are we shooting at 10?</span>
-          <span className="pv mine"><i>Are we shooting at 10?</i>Yes, on set at 10 👍</span>
-          <span className="pv mine">Bring the lights 💡</span>
-          <span className="pv-compose"><span>Write a message…</span><i /></span>
-        </div>
-        {/* the menu as it is now, in small, so a colour picked above shows on it too (Alex, 12 Nov) */}
-        <div className="pv-menu" aria-hidden="true">
-          <span>{FOOT_I.contacts}<b>Contacts</b></span><span>{FOOT_I.calls}<b>Calls</b></span><span className="on">{FOOT_I.messages}<b>Messages</b></span><span>{FOOT_I.settings}<b>Settings</b></span>
-        </div>
-      </div>
+      {/* grouped by what is being changed, each group with its own preview right where the hand is (Alex, 13 Nov:
+          "group everything as it should be, and whatever I change I see a preview at the place I change it"); the one
+          preview stuck to the top of the page (12 Nov) is gone */}
+      <h3 className="set-group">Colours</h3>
       <Box>
+        {colourPv}
         <div className="set-row set-col">
           <span className="set-text">Day and Night<small>Auto follows the device: light by day, dark at night if the device does so</small></span>
           <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
@@ -910,9 +938,12 @@ function Appearance({ p, toast, me, setMe }) {
           <span className="set-text">Accent Opacity<small>{`${Math.min(100, Math.max(30, Number(p.accentOpacity) || 100))}%`}</small><small>Lower lets the wallpaper through your messages and the coloured buttons</small></span>
           <Slide min={30} max={100} step={1} value={Math.min(100, Math.max(30, Number(p.accentOpacity) || 100))} onChange={(n) => setPrefs({ accentOpacity: n })} aria-label="Accent Opacity" />
         </div>
+        <Switch on={p.glassBubbles !== false} set={(v) => setPrefs({ glassBubbles: v })} hint="Your messages and the buttons see-through, with a thin edge in your colour. Off: filled with your colour">Glass Look</Switch>
       </Box>
+      <h3 className="set-group">Messages</h3>
+      {chatPv}
       <ChatTheme p={p} />
-      <Box title="Text">
+      <Box title="Text and spacing">
         <div className="set-row set-col">
           <span className="set-text">Message Text Size<small>{`${TEXT_SIZES[p.textSize] || 14.5} px`}</small></span>
           <div className="set-size">
@@ -921,28 +952,14 @@ function Appearance({ p, toast, me, setMe }) {
             <b>A</b>
           </div>
         </div>
-        <AppTextSize p={p} />
-        <div className="set-row set-col">
-          <span className="set-text">Font<small>DM Sans and Space Grotesk have no Greek letters; Greek in them is shown in the device's own font</small></span>
-          <select className="input set-select" value={p.font || 'system'} onChange={(e) => setPrefs({ font: e.target.value })}>{FONTS.map(([k, l, f]) => <option key={k} value={k} style={{ fontFamily: f }}>{l}</option>)}</select>
-        </div>
+        <Switch on={p.compact} set={(v) => setPrefs({ compact: v })} hint="Messages in a chat sit closer together">Compact Messages</Switch>
       </Box>
-      <Box title="Chat List" note="The sheet of glass the chats stand on in the list.">
-        {/* the list as it will look, on the app's own background (Alex, 13 Nov: "all this should have a preview"): the
-            real rows' classes, so the panel, its opacity, colour and texture are drawn by the very same rules */}
-        <div className="set-preview lp-prev" aria-hidden="true" data-bg={listLook['data-bg']} data-img={listLook['data-img']} data-own={listLook['data-own']} data-wop={listLook['data-wop']} style={listLook.style}>
-          <div className="rooms-pager"><div className="rooms">
-            {[['Giorgos Kanellos', '10:42', 'On set at 10, bring the lights', 2], ['Film Crew', '09:15', 'Maria: the call sheet is ready', 0], ['Eleni Marou', 'Tue', 'See you at the edit', 0]].map(([n, tm, m, u]) => (
-              <div key={n} className="room">
-                <Avatar name={n} size={54} />
-                <span className="room-main">
-                  <span className="room-top"><strong>{n}</strong><small data-raw="">{tm}</small></span>
-                  <span className="room-bottom"><span className="room-prev">{m}</span>{u > 0 && <span className="badge">{u}</span>}</span>
-                </span>
-              </div>
-            ))}
-          </div></div>
-        </div>
+      <Box title="Chat wallpaper" note="Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.">
+        <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
+      </Box>
+      <h3 className="set-group">Chat List</h3>
+      <Box title="Panel" note="The sheet of glass the chats stand on in the list.">
+        {listPv(3, false)}
         <Switch on={p.listPanel !== false} set={(v) => setPrefs({ listPanel: v })} hint="Off, the chats stand straight on the background">Panel Behind the Chats</Switch>
         {p.listPanel !== false && (
           <div className="set-row set-col">
@@ -961,30 +978,36 @@ function Appearance({ p, toast, me, setMe }) {
           </div>
         )}
         {p.listPanel !== false && <Switch on={!!p.listPanelGrain} set={(v) => setPrefs({ listPanelGrain: v })} hint="A fine grain over the panel">Panel Texture</Switch>}
-      </Box>
-      <Box title="Chat wallpaper" note="Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.">
-        <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
-      </Box>
-      {haloish(p.theme) && (
-        <Box title="App background" note="What sits behind the chat list, Contacts, Calls and Settings: a wallpaper, any colour or your own photo, with a strength of its own.">
-          <Switch on={!p.appBackground} set={(v) => setPrefs({ appBackground: v ? '' : p.background || 'soft' })} hint="The app wears the chat wallpaper above">Same as Chats</Switch>
-          {!!p.appBackground && <div className="set-row set-col"><WallTiles value={p.appBackground} toast={toast} onPick={(k) => setPrefs({ appBackground: k })} strength={p.appWallStrength ?? p.wallStrength} onStrength={(n) => setPrefs({ appWallStrength: n })} /></div>}
-        </Box>
-      )}
-      <Box title="Layout">
         <div className="set-row set-col">
           <span className="set-text">Spacing<small>How much room the chat list, menus and settings get</small></span>
           <Lens className="seg" dep={p.density || 'standard'}>{[['relaxed', 'Relaxed'], ['standard', 'Standard'], ['tight', 'Tight']].map(([k, l]) => <button key={k} type="button" className={(p.density || 'standard') === k ? 'on' : ''} onClick={() => setPrefs({ density: k })}>{l}</button>)}</Lens>
         </div>
-        <Switch on={p.compact} set={(v) => setPrefs({ compact: v })} hint="Messages in a chat sit closer together">Compact Messages</Switch>
       </Box>
+      <h3 className="set-group">The Whole App</h3>
+      {haloish(p.theme) && (
+        <Box title="App background" note="What sits behind the chat list, Contacts, Calls and Settings: a wallpaper, any colour or your own photo, with a strength of its own.">
+          {listPv(2, true)}
+          <Switch on={!p.appBackground} set={(v) => setPrefs({ appBackground: v ? '' : p.background || 'soft' })} hint="The app wears the chat wallpaper above">Same as Chats</Switch>
+          {!!p.appBackground && <div className="set-row set-col"><WallTiles value={p.appBackground} toast={toast} onPick={(k) => setPrefs({ appBackground: k })} strength={p.appWallStrength ?? p.wallStrength} onStrength={(n) => setPrefs({ appWallStrength: n })} /></div>}
+        </Box>
+      )}
+      <Box title="Text">
+        <AppTextSize p={p} />
+        <div className="set-row set-col">
+          <span className="set-text">Font<small>DM Sans and Space Grotesk have no Greek letters; Greek in them is shown in the device's own font</small></span>
+          <select className="input set-select" value={p.font || 'system'} onChange={(e) => setPrefs({ font: e.target.value })}>{FONTS.map(([k, l, f]) => <option key={k} value={k} style={{ fontFamily: f }}>{l}</option>)}</select>
+        </div>
+      </Box>
+      <h3 className="set-group">More</h3>
       <Box title="Effects">
-        <Switch on={p.glassBubbles !== false} set={(v) => setPrefs({ glassBubbles: v })} hint="Your messages and the buttons see-through, with a thin edge in your colour. Off: filled with your colour">Glass Look</Switch>
         <Switch on={p.motion !== false} set={(v) => setPrefs({ motion: v })} hint={p.lite ? 'Off while Power Saving Mode is on' : 'Fluid transitions for messages, menus and windows'}>Smooth Animations</Switch>
         <Switch on={p.focusRings} set={(v) => setPrefs({ focusRings: v })} hint="A clear ring around whatever the keyboard is on">Bold Focus Rings</Switch>
         <Switch on={p.lite} set={(v) => setPrefs({ lite: v })} hint="No animations and no glass blur, easier on the battery">Power Saving Mode</Switch>
       </Box>
       <Box title="Your name in groups">
+        <div className="set-preview live pv-short pv-nocompose" aria-hidden="true" data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={look.style}>
+          <span className="pv"><b className="pv-name" data-raw="" style={{ color: me.name_color || colorOf(me.id) }}>{nameOf(me)}</b>Are we shooting at 10?</span>
+        </div>
         <div className="set-row set-col">
           <span className="set-text">Name Colour<small>How your name shows to others in groups</small></span>
           <div className="accents">

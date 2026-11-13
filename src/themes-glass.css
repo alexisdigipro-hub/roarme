@@ -471,3 +471,13 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-panel-fill
 html:root:root[data-glass] .set-preview.lp-prev { display: block; margin: 0 0 6px; padding: 12px 6px; border-radius: 22px; font-size: inherit; pointer-events: none; user-select: none; -webkit-user-select: none; background-color: color-mix(in srgb, var(--halo) 16%, transparent); overflow: hidden; }
 html:root:root[data-glass] .set-preview.lp-prev .rooms-pager { flex: none; margin: 0; padding: 0; overflow: visible; }
 html:root:root[data-glass] .set-preview.lp-prev .rooms { flex: none; margin: 0; padding: 0; overflow: visible; }
+
+/* Appearance in groups, each with its own preview where the hand is (Alex, 13 Nov): the group's name, the short
+   previews (Colours: one message, Send and the menu; a name in a group), and the menu inside the app's preview */
+html:root:root[data-glass] .set-group { margin: 22px 8px 8px; font-size: 21px; font-weight: 700; letter-spacing: -.01em; color: var(--text); }
+html:root:root[data-glass] .set-group:first-child { margin-top: 4px; }
+html:root:root[data-glass] .set-preview.live.pv-short { height: auto; min-height: 0; padding: 14px 14px 58px; }
+html:root:root[data-glass] .set-preview.live.pv-short.pv-nocompose { padding-bottom: 14px; margin-bottom: 6px; }
+html:root:root[data-glass] .pv-wrap { margin: 0 0 6px; }
+html:root:root[data-glass] .pv .pv-name { display: block; margin-bottom: 1px; font-size: .86em; font-weight: 600; }
+html:root:root[data-glass] .set-preview.lp-prev > .pv-menu { margin: 10px 6px 0; }

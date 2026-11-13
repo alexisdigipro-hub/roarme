@@ -814,7 +814,7 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'density', 'radius', 'compact', 'background', 'appBackground', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'listPanelFill', 'listPanelGrain', 'density', 'radius', 'compact', 'background', 'appBackground', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
 function ChatTheme({ p }) {
@@ -934,6 +934,17 @@ function Appearance({ p, toast, me, setMe }) {
             <Slide min={0} max={100} step={1} value={Math.min(100, Math.max(0, Number(p.listPanelOp ?? 50)))} onChange={(n) => setPrefs({ listPanelOp: n })} aria-label="Panel Opacity" />
           </div>
         )}
+        {p.listPanel !== false && (
+          <div className="set-row set-col">
+            <span className="set-text">Panel Colour<small>{p.listPanelFill === 'orange' ? 'Orange' : HALO_ACCENTS.find(([k]) => k === p.listPanelFill)?.[1] || 'Plain glass'}</small></span>
+            <div className="accents halo-accents">
+              <button type="button" className={`acc acc-halo acc-plain${!p.listPanelFill ? ' on' : ''}`} style={{ '--c': '#b9b9c6', background: 'linear-gradient(135deg, #ffffff, #d9d9e2)' }} title="Plain glass" onClick={() => setPrefs({ listPanelFill: '' })}><small>Plain glass</small></button>
+              <button type="button" className={`acc acc-halo${p.listPanelFill === 'orange' ? ' on' : ''}`} style={{ '--c': '#f47318', background: 'linear-gradient(135deg, #ff9a3c, #f47318)' }} title="Orange" onClick={() => setPrefs({ listPanelFill: 'orange' })}><small>Orange</small></button>
+              {HALO_ACCENTS.map(([k, l, c, , [a, b]]) => <button key={k} type="button" className={`acc acc-halo${p.listPanelFill === k ? ' on' : ''}`} style={{ '--c': c, background: `linear-gradient(135deg, ${a}, ${b})` }} title={l} onClick={() => setPrefs({ listPanelFill: k })}><small>{l}</small></button>)}
+            </div>
+          </div>
+        )}
+        {p.listPanel !== false && <Switch on={!!p.listPanelGrain} set={(v) => setPrefs({ listPanelGrain: v })} hint="A fine grain over the panel">Panel Texture</Switch>}
       </Box>
       <Box title="Chat wallpaper" note="Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.">
         <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>

@@ -53,6 +53,8 @@ export const DEFAULTS = {
   background: 'halo-orange', // a wallpaper's key; a new install starts on Orange (Alex, 12 Nov), 'soft' is Plain
   listPanel: true, // the sheet of glass behind the chats in the list (Alex, 13 Nov: to put on and take off)
   listPanelOp: 50, // 0 to 100: how solid that glass is
+  listPanelFill: '', // '' plain glass, 'orange' or one of HALO_ACCENTS' keys: the panel in that pair of colours (Alex, 13 Nov)
+  listPanelGrain: false, // a fine grain over the panel
   uiText: 100, // 85 to 130 (%): the size of all of RoarMe's letters (Alex, 13 Nov); the messages' own size is textSize
   accentOpacity: 100, // 30 to 100: how solid the accent colour's fill is (your messages, the coloured buttons)
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
@@ -299,7 +301,17 @@ export function applyLook(p) {
   r.style.setProperty('-webkit-text-size-adjust', touch ? `${ut}%` : '100%'); r.style.setProperty('text-size-adjust', touch ? `${ut}%` : '100%')
   r.style.zoom = !touch && ut !== 100 ? String(ut / 100) : ''
   if (p.listPanel === false) r.dataset.nopanel = '1'; else delete r.dataset.nopanel
-  r.style.setProperty('--lp', String(Math.min(100, Math.max(0, Number(p.listPanelOp ?? 50))) / 100))
+  const lp = Math.min(100, Math.max(0, Number(p.listPanelOp ?? 50))) / 100
+  r.style.setProperty('--lp', String(lp))
+  // the panel in one of the accents' pairs of colours, as see-through as Panel Opacity says; once the colour is strong
+  // enough to carry them, the words on it take the pair's own ink
+  const pf = p.listPanelFill === 'orange' ? ['#ff9a3c', '#f47318', '#ffffff'] : (() => { const h = HALO_ACCENTS.find(([k]) => k === p.listPanelFill); return h ? [h[4][0], h[4][1], h[5]] : null })()
+  if (pf) {
+    r.dataset.panelFill = '1'
+    r.style.setProperty('--lpa', hexA(pf[0], lp)); r.style.setProperty('--lpb', hexA(pf[1], lp))
+    if (lp >= 0.6) { r.dataset.panelInk = '1'; r.style.setProperty('--lp-ink', pf[2]) } else { delete r.dataset.panelInk; r.style.removeProperty('--lp-ink') }
+  } else { delete r.dataset.panelFill; delete r.dataset.panelInk; ['--lpa', '--lpb', '--lp-ink'].forEach((v) => r.style.removeProperty(v)) }
+  if (p.listPanelGrain) r.dataset.panelGrain = '1'; else delete r.dataset.panelGrain
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
   r.dataset.density = p.density || 'standard'

@@ -814,7 +814,7 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'listPanelFill', 'listPanelGrain', 'density', 'radius', 'compact', 'background', 'appBackground', 'appWallStrength', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'listPanelFill', 'listPanelGrain', 'contactShape', 'density', 'radius', 'compact', 'background', 'appBackground', 'appWallStrength', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
 function ChatTheme({ p }) {
@@ -981,6 +981,25 @@ function Appearance({ p, toast, me, setMe }) {
         <div className="set-row set-col">
           <span className="set-text">Spacing<small>How much room the chat list, menus and settings get</small></span>
           <Lens className="seg" dep={p.density || 'standard'}>{[['relaxed', 'Relaxed'], ['standard', 'Standard'], ['tight', 'Tight']].map(([k, l]) => <button key={k} type="button" className={(p.density || 'standard') === k ? 'on' : ''} onClick={() => setPrefs({ density: k })}>{l}</button>)}</Lens>
+        </div>
+      </Box>
+      <Box title="Contacts" note="How each person stands in Contacts.">
+        <div className="set-preview lp-prev" aria-hidden="true" data-bg={listLook['data-bg']} data-img={listLook['data-img']} data-own={listLook['data-own']} data-wop={listLook['data-wop']} style={listLook.style}>
+          <div className="side-scroll"><div className="rooms contacts-list">
+            {[['Giorgos Kanellos', '@giorgos · online'], ['Eleni Marou', '@eleni · last seen Tue']].map(([nm, sub]) => (
+              <div key={nm} className="room contact">
+                <Avatar name={nm} size={54} />
+                <span className="room-main">
+                  <span className="room-top"><strong>{nm}</strong></span>
+                  <span className="room-bottom"><span className="room-prev" data-raw="">{sub}</span></span>
+                </span>
+              </div>
+            ))}
+          </div></div>
+        </div>
+        <div className="set-row set-col">
+          <span className="set-text">Shape<small>A capsule, or a card with soft corners like the rows of Settings</small></span>
+          <Lens className="seg" dep={p.contactShape || 'pill'}>{[['pill', 'Capsule'], ['card', 'Card']].map(([k, l]) => <button key={k} type="button" className={(p.contactShape || 'pill') === k ? 'on' : ''} onClick={() => setPrefs({ contactShape: k })}>{l}</button>)}</Lens>
         </div>
       </Box>
       <h3 className="set-group">The Whole App</h3>

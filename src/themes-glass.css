@@ -564,3 +564,6 @@ html:root:root[data-glass][data-mode='dark'] .calls-list .call-row > .call-del {
 html:root:root[data-glass] .calls-list .call-row > .call-del svg { width: 17px; height: 17px; }
 html:root:root[data-glass] .calls-head { align-items: center; }
 html:root:root[data-glass] .calls-head .calls-clear { padding: 7px 14px; background: var(--lg); border: 1px solid var(--lg-rim); box-shadow: 0 3px 8px rgba(60, 60, 100, .08); font-size: 12px; letter-spacing: .02em; user-select: none; -webkit-user-select: none; }
+/* the contacts' inset lighter (Alex, 13 Nov: "not so deep, light"): a faint shade at the top edge, a soft light at the bottom */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='inset'] .contacts-list .room.contact { background: rgba(60, 50, 80, .025); box-shadow: inset 0 1px 3px rgba(60, 50, 80, .1), inset 0 -1px 0 rgba(255, 255, 255, .7); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'][data-contacts='inset'] .contacts-list .room.contact { background: rgba(0, 0, 0, .14); box-shadow: inset 0 1px 4px rgba(0, 0, 0, .34), inset 0 -1px 0 rgba(255, 255, 255, .08); }

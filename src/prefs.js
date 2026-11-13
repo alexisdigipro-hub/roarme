@@ -50,7 +50,7 @@ export const DEFAULTS = {
   speakerId: '',
   folderTags: false,
   folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
-  background: 'halo-orange', // a wallpaper's key; a new install starts on Orange (Alex, 12 Nov), 'soft' is Plain
+  background: 'soft', // a wallpaper's key; 'soft' is Plain, how a new install starts and what Reset goes back to (Alex, 13 Nov; Orange for one day before)
   listPanel: false, // the sheet of glass behind the chats in the list (Alex, 13 Nov: to put on and take off; the same day: off is how RoarMe starts and what Reset goes back to)
   listPanelOp: 50, // 0 to 100: how solid that glass is
   listPanelFill: '', // '' plain glass, 'orange' or one of HALO_ACCENTS' keys: the panel in that pair of colours (Alex, 13 Nov)

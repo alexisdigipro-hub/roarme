@@ -449,3 +449,19 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foo
   html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.foot-settings.on > svg { animation: gi-turn .6s cubic-bezier(.25, 1.3, .45, 1) backwards; }
   html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.foot-contacts.on > svg { animation: gi-nod .46s cubic-bezier(.25, 1.45, .45, 1) backwards; }
 }
+
+/* the panel behind the chats in colour and with a grain (Alex, 13 Nov: "a wallpaper or a texture on it, the palettes
+   we have for the accents"; Settings > Appearance > Chat List). The colour runs from left to right, so every chat's
+   piece of the panel is the same and the sheet reads as one; --lpa / --lpb come from applyLook already as see-through as
+   Panel Opacity says. The grain is dark on plain light glass (white would not show) and light on colour and in the dark */
+html:root:root[data-glass] { --grain-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='light'][data-panel-grain]:not([data-nopanel]) .rooms-pager .rooms > .room:not(.on):not(.slid) { background: var(--grain-dark), rgba(255, 255, 255, var(--lp, .5)) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'][data-panel-grain]:not([data-nopanel]) .rooms-pager .rooms > .room:not(.on):not(.slid) { background: var(--grain), rgba(70, 70, 86, var(--lp, .5)) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode][data-panel-fill]:not([data-nopanel]) .rooms-pager .rooms > .room:not(.on):not(.slid) { background: linear-gradient(90deg, var(--lpa), var(--lpb)) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode][data-panel-fill][data-panel-grain]:not([data-nopanel]) .rooms-pager .rooms > .room:not(.on):not(.slid) { background: var(--grain), linear-gradient(90deg, var(--lpa), var(--lpb)) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-panel-ink]:not([data-nopanel]) .rooms-pager .rooms > .room:not(.on):not(.slid) :is(.room-top strong, .room-top small, .room-prev) { color: var(--lp-ink) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-panel-ink]:not([data-nopanel]) .rooms-pager .rooms > .room:not(.on):not(.slid) :is(.room-top small, .room-prev) { opacity: .78; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-panel-ink]:not([data-nopanel]) .rooms-pager .rooms > .room + .room::before { background: color-mix(in srgb, var(--lp-ink) 22%, transparent); }
+/* on a coloured panel still too faint for the pair's own ink, the time and the last message are the text's colour made
+   lighter, not the grey that sinks into the darker end of the colour */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-panel-fill]:not([data-panel-ink]):not([data-nopanel]) .rooms-pager .rooms > .room:not(.on):not(.slid) :is(.room-top small, .room-prev) { color: var(--text) !important; opacity: .64; }

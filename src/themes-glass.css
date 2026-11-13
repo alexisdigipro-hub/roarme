@@ -471,3 +471,35 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-panel-fill
 html:root:root[data-glass] .set-preview.lp-prev { display: block; margin: 0 0 6px; padding: 12px 6px; border-radius: 22px; font-size: inherit; pointer-events: none; user-select: none; -webkit-user-select: none; background-color: color-mix(in srgb, var(--halo) 16%, transparent); overflow: hidden; }
 html:root:root[data-glass] .set-preview.lp-prev .rooms-pager { flex: none; margin: 0; padding: 0; overflow: visible; }
 html:root:root[data-glass] .set-preview.lp-prev .rooms { flex: none; margin: 0; padding: 0; overflow: visible; }
+
+/* Appearance in groups, each with its own preview where the hand is (Alex, 13 Nov): the group's name, the short
+   previews (Colours: one message, Send and the menu; a name in a group), and the menu inside the app's preview */
+html:root:root[data-glass] .set-group { margin: 22px 8px 8px; font-size: 21px; font-weight: 700; letter-spacing: -.01em; color: var(--text); }
+html:root:root[data-glass] .set-group:first-child { margin-top: 4px; }
+html:root:root[data-glass] .set-preview.live.pv-short { height: auto; min-height: 0; padding: 14px 14px 58px; }
+html:root:root[data-glass] .set-preview.live.pv-short.pv-nocompose { padding-bottom: 14px; margin-bottom: 6px; }
+html:root:root[data-glass] .pv-wrap { margin: 0 0 6px; }
+html:root:root[data-glass] .pv .pv-name { display: block; margin-bottom: 1px; font-size: .86em; font-weight: 600; }
+html:root:root[data-glass] .set-preview.lp-prev > .pv-menu { margin: 10px 6px 0; }
+
+/* The wallpapers as drops of glass (Alex, 13 Nov: "this way of showing them is Telegram's, make one of our own"): no
+   little chat in a tile; each wallpaper is a round lens with a bright rim and a shine, its name under it, and the
+   chosen one sits inside a ring of the accent. The same wherever WallTiles stands (Settings, a chat's Change Wallpaper) */
+html:root:root[data-glass] .walls { grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 14px 6px; padding: 6px 0 2px; }
+html:root:root[data-glass] .walls .wall-tile {
+  justify-self: center; width: 60px; height: 60px; margin-bottom: 24px; padding: 0; border: 0 !important; border-radius: 50% !important; overflow: visible;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .85), inset 0 -8px 12px rgba(40, 40, 80, .1), 0 5px 12px rgba(60, 60, 100, .18);
+  outline: 2.5px solid transparent; outline-offset: 3px; transition: transform .3s cubic-bezier(.25, 1.45, .45, 1), outline-color .2s;
+}
+html:root:root[data-glass][data-mode='dark'] .walls .wall-tile { box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .28), inset 0 -8px 12px rgba(0, 0, 0, .25), 0 5px 12px rgba(0, 0, 0, .4); }
+html:root:root[data-glass] .walls .wall-tile::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .6), transparent 44%); }
+html:root:root[data-glass] .walls .wall-tile .wall-b { display: none; }
+html:root:root[data-glass] .walls .wall-tile small { left: -12px; right: -12px; bottom: -23px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; color: var(--muted); }
+html:root:root[data-glass] .walls .wall-tile.on { outline-color: var(--halo); transform: scale(1.06); }
+html:root:root[data-glass] .walls .wall-tile.on small { color: var(--text); font-weight: 700; }
+html:root:root[data-glass] .walls .wall-own-ico { width: 100%; height: 100%; margin: 0; border: 0; background: none; }
+html:root:root[data-glass] .walls .wall-own.on .wall-own-ico { display: none; }
+@media (max-resolution: 1.5dppx) {
+  html:root:root[data-glass] .walls .wall-tile { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8), 0 4px 10px rgba(60, 60, 100, .14); outline-width: 2px; }
+}
+html:root:root[data-glass][data-mode='dark'] .walls .wall-tile::after { background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .24), transparent 44%); }

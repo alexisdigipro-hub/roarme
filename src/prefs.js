@@ -51,6 +51,7 @@ export const DEFAULTS = {
   folderTags: false,
   folderAlone: false, // each chat in one folder only (Alex, 21 Oct)
   background: 'halo-orange', // a wallpaper's key; a new install starts on Orange (Alex, 12 Nov), 'soft' is Plain
+  uiText: 100, // 85 to 130 (%): the size of all of RoarMe's letters (Alex, 13 Nov); the messages' own size is textSize
   accentOpacity: 100, // 30 to 100: how solid the accent colour's fill is (your messages, the coloured buttons)
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
   pauseOnRec: true, // a song or a voice message playing stops while a voice or video message is recorded
@@ -68,14 +69,6 @@ export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], 
 export const TEXT_SIZES = [12.5, 13.5, 14.5, 16, 17.5]
 const KEY = 'roarme-prefs'
 
-// Ember became the main theme (Alex, 16 Oct): a device that still has the old default moves to it once
-try {
-  if (!localStorage.getItem('roarme-ember-main')) {
-    const saved = JSON.parse(localStorage.getItem('roarme-prefs') || 'null')
-    if (saved && (!saved.theme || saved.theme === 'glass')) localStorage.setItem('roarme-prefs', JSON.stringify({ ...saved, theme: 'ember' }))
-    localStorage.setItem('roarme-ember-main', '1')
-  }
-} catch { /* private window */ }
 
 export function getPrefs() {
   try {
@@ -262,6 +255,15 @@ export const FONTS = [
   ['manrope', 'Manrope', "'Manrope', -apple-system, sans-serif"],
   ['dm', 'DM Sans', "'DM Sans', -apple-system, sans-serif"],
   ['grotesk', 'Space Grotesk', "'Space Grotesk', -apple-system, sans-serif"],
+  // more faces (Alex, 13 Nov), all with Greek letters; DM Sans and Space Grotesk above have none, so Greek in them is the system's
+  ['roboto', 'Roboto', "'Roboto', -apple-system, sans-serif"],
+  ['opensans', 'Open Sans', "'Open Sans', -apple-system, sans-serif"],
+  ['fira', 'Fira Sans', "'Fira Sans', -apple-system, sans-serif"],
+  ['plex', 'IBM Plex Sans', "'IBM Plex Sans', -apple-system, sans-serif"],
+  ['ubuntu', 'Ubuntu', "'Ubuntu', -apple-system, sans-serif"],
+  ['commissioner', 'Commissioner', "'Commissioner', -apple-system, sans-serif"],
+  ['comfortaa', 'Comfortaa', "'Comfortaa', -apple-system, sans-serif"],
+  ['notoserif', 'Noto Serif', "'Noto Serif', Georgia, serif"],
   ['serif', 'Serif', "Georgia, 'Times New Roman', serif"],
   ['mono', 'Mono', "'JetBrains Mono', ui-monospace, Menlo, monospace"],
 ]
@@ -288,6 +290,12 @@ export function applyLook(p) {
     // the theme's own orange, thinned the same way (at full strength the style sheet's own values stand)
     if (so < 1) { r.style.setProperty('--halo-mine-top', hexA('#fa8e3e', 0.74 * so)); r.style.setProperty('--halo-mine', hexA('#f47318', 0.74 * so)) }
   }
+  // the size of all the letters (Alex, 13 Nov). On a phone the browser's own text scaling does it, so only the letters
+  // grow and the layout stays; a computer's browser ignores that, so there the whole page is zoomed, as its own zoom does
+  const ut = Math.min(130, Math.max(85, Number(p.uiText) || 100))
+  const touch = !!window.matchMedia?.('(pointer: coarse)').matches
+  r.style.setProperty('-webkit-text-size-adjust', touch ? `${ut}%` : '100%'); r.style.setProperty('text-size-adjust', touch ? `${ut}%` : '100%')
+  r.style.zoom = !touch && ut !== 100 ? String(ut / 100) : ''
   const f = FONTS.find(([k]) => k === p.font)
   if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
   r.dataset.density = p.density || 'standard'

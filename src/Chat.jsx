@@ -1179,7 +1179,7 @@ export default function Chat({ me, setMe }) {
         {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
         <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 54 : 48} />
         <span className="room-main">
-          <span className="room-top"><strong>{titleOf(r)}{r.kind === 'direct' && officialIds.includes(otherOf(r)?.id) && OFFICIAL}</strong></span>
+          <span className="room-top"><strong>{titleOf(r)}{r.kind === 'direct' && officialIds.includes(otherOf(r)?.id) && OFFICIAL}</strong>{prefs.listPreview && r.last_message_at && <small data-raw="">{listTime(r.last_message_at)}</small>}</span>
           <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.mentions > 0 && <span className="badge at" title="You were mentioned">@</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
           {prefs.folderTags && tagsOf(r).length > 0 && <span className="room-tags">{tagsOf(r).map((t) => <span key={t}>{t}</span>)}</span>}
         </span>

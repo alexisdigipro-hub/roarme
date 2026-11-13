@@ -15,7 +15,7 @@ export const DEFAULTS = {
   textSize: 2, // 0..4
   bigEmoji: true,
   glassBubbles: true, // your own messages see-through with an accent edge, like a RoarTransfer (Alex, 17 Oct)
-  listPreview: false, // the last message under each chat's name in the list (Alex, 17 Oct: off unless one wants it)
+  listPreview: true, // the last message and its time in the chat list; on since 12 Nov, when Alex picked the list as a glass panel that shows them (it was off since 17 Oct)
   compact: false,
   enterSends: true,
   spell: true,
@@ -94,6 +94,8 @@ export function getPrefs() {
     if (!p.quickHeart) { if (p.quick === '🎥') p.quick = '❤️'; p.quickHeart = true }
     // the new Glass sound for everyone still on the old default, Chime (Alex, 3 Nov); a later pick of Chime stays
     if (!p.glassSound) { if (p.soundKind === 'chime') p.soundKind = 'glass'; p.glassSound = true }
+    // the chat list shows the last message and its time, once, for everyone (Alex, 12 Nov); turning it off later stays
+    if (!p.prevOn) { p.listPreview = true; p.prevOn = true }
     return p
   } catch { return { ...DEFAULTS } }
 }

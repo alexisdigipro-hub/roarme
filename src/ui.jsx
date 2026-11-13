@@ -9,8 +9,15 @@ export const svg = (d, w = 20) => <svg viewBox="0 0 24 24" width={w} height={w} 
 const solid = (d) => <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" fillRule="evenodd" aria-hidden="true"><path d={d} /></svg>
 export const FOOT_I = {
   contacts: solid('M12 3a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zM3 21a9 9 0 0 1 18 0z'),
-  // a handset (Alex, 12 Nov), filled; Halo draws its outline
-  calls: solid('M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z'),
+  // a handset with two waves of sound coming off it (Alex, 13 Nov: "another icon for the phone"); the handset and the waves
+  // are parts of their own so they can move apart when Calls is chosen (themes-glass.css fi-hand / fi-wave)
+  calls: (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+      <path className="fi-hand" d="M20.5 16.6v2.6a1.8 1.8 0 0 1-2 1.8 17.6 17.6 0 0 1-7.7-2.7 17.3 17.3 0 0 1-5.3-5.3A17.6 17.6 0 0 1 2.8 5.2 1.8 1.8 0 0 1 4.6 3.2h2.6a1.8 1.8 0 0 1 1.8 1.5c.1.9.3 1.7.6 2.5a1.8 1.8 0 0 1-.4 1.9L8.1 10.2a14.2 14.2 0 0 0 5.3 5.3l1.1-1.1a1.8 1.8 0 0 1 1.9-.4c.8.3 1.6.5 2.5.6a1.8 1.8 0 0 1 1.6 2z" />
+      <path className="fi-wave w1" d="M14.2 6.3a4 4 0 0 1 3.4 3.4" />
+      <path className="fi-wave w2" d="M14.2 2.8a7.6 7.6 0 0 1 6.9 6.9" />
+    </svg>
+  ),
   messages: solid('M12 3c5 0 9 3.6 9 8s-4 8-9 8c-1.6 0-3.1-.3-4.3-1L3 21l1.6-4.6C3.6 15 3 13.1 3 11c0-4.4 4-8 9-8z'),
   tasks: solid('M4 4h16v16H4zM6.8 12.3l2.1-2.1 2 2 4.9-4.9 2.1 2.1-7 7z'),
   // a toothed gear with three spokes (Alex, 12 Nov): filled in every theme (.fi-solid), drawn in lines in Halo's rail (.fi-line)

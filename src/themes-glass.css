@@ -424,3 +424,28 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone']:not([data-nopan
    prefs.listPanelOp is --lp, how solid the glass is (in the dark the same number on dark glass) */
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark']:not([data-nopanel]) .rooms-pager .rooms > .room { background: rgba(70, 70, 86, var(--lp, .5)) !important; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone']:not([data-nopanel]) .rooms-pager .rooms > .room.slid { background: var(--lg-chip) !important; }
+
+/* The menu's signs move as what they are when chosen (Alex, 13 Nov: "a small movement, each in its own way"): the handset
+   rings and its two waves go out, the speech bubble hops, the gear turns, the person nods. Once, on arriving, about half
+   a second, on Glass Travel's landing spring; only transform and opacity. Off with Power Saving, Motion off and reduced
+   motion. The waves of the handset show only on Calls' own tab being chosen, faint otherwise */
+html:root:root[data-glass][data-skin='halo'] .foot .fi-wave { fill: none; opacity: .45; }
+html:root:root[data-glass][data-skin='halo'] .foot button.on .fi-wave { opacity: 1; }
+html:root:root[data-glass][data-skin='halo'] .foot button svg { overflow: visible; }
+html:root:root[data-glass][data-skin='halo'] .foot button svg :is(.fi-hand, .fi-wave, .fi-line, .fi-solid) { transform-box: fill-box; transform-origin: 50% 50%; }
+/* the words under the signs keep their tails (g, y, p were cut at the foot) */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot button > span:last-child { line-height: 1.4; overflow: visible; padding-bottom: 1px; }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes gi-ring { 0% { transform: rotate(0); } 12% { transform: rotate(-16deg); } 28% { transform: rotate(14deg); } 44% { transform: rotate(-11deg); } 60% { transform: rotate(8deg); } 78% { transform: rotate(-3deg); } 100% { transform: none; } }
+  @keyframes gi-wave { 0% { opacity: 0; transform: scale(.4); } 55% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: none; } }
+  @keyframes gi-hop { 0% { transform: translateY(0) scale(1); } 30% { transform: translateY(-5px) scale(1.14, .9) rotate(-8deg); } 62% { transform: translateY(1px) scale(.94, 1.08) rotate(3deg); } 100% { transform: none; } }
+  @keyframes gi-turn { 0% { transform: rotate(-150deg) scale(.86); } 70% { transform: rotate(12deg) scale(1.06); } 100% { transform: none; } }
+  @keyframes gi-nod { 0% { transform: translateY(0) scale(1); } 32% { transform: translateY(2px) scale(1.08, .9); } 64% { transform: translateY(-3px) scale(.96, 1.1); } 100% { transform: none; } }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.foot-calls.on .fi-hand { animation: gi-ring .56s cubic-bezier(.3, .7, .4, 1) backwards; transform-origin: 30% 70%; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.foot-calls.on .fi-wave { animation: gi-wave .34s cubic-bezier(.25, 1.45, .45, 1) backwards; transform-origin: 0% 100%; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.foot-calls.on .fi-wave.w1 { animation-delay: .1s; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.foot-calls.on .fi-wave.w2 { animation-delay: .22s; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.foot-main.on .foot-ico > svg { animation: gi-hop .46s cubic-bezier(.25, 1.45, .45, 1) backwards; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.foot-settings.on > svg { animation: gi-turn .6s cubic-bezier(.25, 1.3, .45, 1) backwards; }
+  html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .foot > button.foot-contacts.on > svg { animation: gi-nod .46s cubic-bezier(.25, 1.45, .45, 1) backwards; }
+}

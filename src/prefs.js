@@ -60,6 +60,7 @@ export const DEFAULTS = {
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
   pauseOnRec: true, // a song or a voice message playing stops while a voice or video message is recorded
   callLessData: false, // video calls at 360p and 15 frames, for weak networks
+  appWallStrength: null, // 10 to 100: the App background's own strength (Alex, 13 Nov); null = the chats' wallStrength
   wallStrength: 100, // 10 to 100: how strong RoarMe's wallpapers and a colour show (one's own photo keeps its own)
   // one's own chat theme (Alex, 9 Nov, "as a feature in Settings"): '' each = the theme's own
   chatTheme: '', // one of CHAT_THEMES, or '' when built by hand

@@ -814,7 +814,7 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'listPanelFill', 'listPanelGrain', 'density', 'radius', 'compact', 'background', 'appBackground', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'listPanelFill', 'listPanelGrain', 'density', 'radius', 'compact', 'background', 'appBackground', 'appWallStrength', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
 function ChatTheme({ p }) {
@@ -864,6 +864,7 @@ function AppTextSize({ p }) {
 
 function Appearance({ p, toast, me, setMe }) {
   const look = wallLook(p.background, useWalls(true), p.wallStrength)
+  const listLook = wallLook(p.appBackground || p.background, useWalls(true), p.appBackground ? p.appWallStrength ?? p.wallStrength : p.wallStrength)
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
   return (
     <>
@@ -927,6 +928,21 @@ function Appearance({ p, toast, me, setMe }) {
         </div>
       </Box>
       <Box title="Chat List" note="The sheet of glass the chats stand on in the list.">
+        {/* the list as it will look, on the app's own background (Alex, 13 Nov: "all this should have a preview"): the
+            real rows' classes, so the panel, its opacity, colour and texture are drawn by the very same rules */}
+        <div className="set-preview lp-prev" aria-hidden="true" data-bg={listLook['data-bg']} data-img={listLook['data-img']} data-own={listLook['data-own']} data-wop={listLook['data-wop']} style={listLook.style}>
+          <div className="rooms-pager"><div className="rooms">
+            {[['Giorgos Kanellos', '10:42', 'On set at 10, bring the lights', 2], ['Film Crew', '09:15', 'Maria: the call sheet is ready', 0], ['Eleni Marou', 'Tue', 'See you at the edit', 0]].map(([n, tm, m, u]) => (
+              <div key={n} className="room">
+                <Avatar name={n} size={54} />
+                <span className="room-main">
+                  <span className="room-top"><strong>{n}</strong><small data-raw="">{tm}</small></span>
+                  <span className="room-bottom"><span className="room-prev">{m}</span>{u > 0 && <span className="badge">{u}</span>}</span>
+                </span>
+              </div>
+            ))}
+          </div></div>
+        </div>
         <Switch on={p.listPanel !== false} set={(v) => setPrefs({ listPanel: v })} hint="Off, the chats stand straight on the background">Panel Behind the Chats</Switch>
         {p.listPanel !== false && (
           <div className="set-row set-col">
@@ -950,9 +966,9 @@ function Appearance({ p, toast, me, setMe }) {
         <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
       </Box>
       {haloish(p.theme) && (
-        <Box title="App background" note="What sits behind the chat list, Contacts, Calls and Settings.">
+        <Box title="App background" note="What sits behind the chat list, Contacts, Calls and Settings: a wallpaper, any colour or your own photo, with a strength of its own.">
           <Switch on={!p.appBackground} set={(v) => setPrefs({ appBackground: v ? '' : p.background || 'soft' })} hint="The app wears the chat wallpaper above">Same as Chats</Switch>
-          {!!p.appBackground && <div className="set-row set-col"><WallTiles value={p.appBackground} toast={toast} onPick={(k) => setPrefs({ appBackground: k })} /></div>}
+          {!!p.appBackground && <div className="set-row set-col"><WallTiles value={p.appBackground} toast={toast} onPick={(k) => setPrefs({ appBackground: k })} strength={p.appWallStrength ?? p.wallStrength} onStrength={(n) => setPrefs({ appWallStrength: n })} /></div>}
         </Box>
       )}
       <Box title="Layout">

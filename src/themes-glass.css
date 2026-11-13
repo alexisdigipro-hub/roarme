@@ -526,3 +526,6 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-list 
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='card'] .contacts-list .room.contact { border-radius: 24px; padding: 9px 14px 9px 11px; gap: 12px; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='card'] .side-scroll .rooms.contacts-list { gap: 6px; }
 html:root:root[data-glass] .set-preview.lp-prev .side-scroll { overflow: visible; padding: 0; margin: 0; flex: none; }
+/* the card wears exactly the frame of a Settings row (Alex: "I mean with such a frame"): its fill, white rim and soft shadow */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='card'] .contacts-list .room.contact { border-radius: 26px; background: rgba(255, 255, 255, .6); border: 1px solid #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .06); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'][data-contacts='card'] .contacts-list .room.contact { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .1); box-shadow: none; }

@@ -1004,8 +1004,8 @@ function Appearance({ p, toast, me, setMe }) {
           </div></div>
         </div>
         <div className="set-row set-col">
-          <span className="set-text">Shape<small>A capsule, a card with soft corners like the rows of Settings, or glass pressed into the page</small></span>
-          <Lens className="seg" dep={p.contactShape || 'pill'}>{[['pill', 'Capsule'], ['card', 'Card'], ['inset', 'Inset']].map(([k, l]) => <button key={k} type="button" className={(p.contactShape || 'pill') === k ? 'on' : ''} onClick={() => setPrefs({ contactShape: k })}>{l}</button>)}</Lens>
+          <span className="set-text">Shape<small>A capsule, a card like the rows of Settings, glass pressed into the page, or nothing at all, as in Calls</small></span>
+          <Lens className="seg" dep={p.contactShape || 'pill'}>{[['pill', 'Capsule'], ['card', 'Card'], ['inset', 'Inset'], ['plain', 'Plain']].map(([k, l]) => <button key={k} type="button" className={(p.contactShape || 'pill') === k ? 'on' : ''} onClick={() => setPrefs({ contactShape: k })}>{l}</button>)}</Lens>
         </div>
       </Box>
       <h3 className="set-group">The Whole App</h3>

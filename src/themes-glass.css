@@ -529,3 +529,14 @@ html:root:root[data-glass] .set-preview.lp-prev .side-scroll { overflow: visible
 /* the card wears exactly the frame of a Settings row (Alex: "I mean with such a frame"): its fill, white rim and soft shadow */
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='card'] .contacts-list .room.contact { border-radius: 26px; background: rgba(255, 255, 255, .6); border: 1px solid #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .06); }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'][data-contacts='card'] .contacts-list .room.contact { background: rgba(255, 255, 255, .05); border-color: rgba(255, 255, 255, .1); box-shadow: none; }
+
+/* The chat list in pieces (Alex, 13 Nov: "something like that in the messages too, with different cards, not only the
+   panel"): prefs.listShape 'pill' or 'card' -> data-rooms on <html>. The panel's rules stay on, so its opacity, colour,
+   texture and ink still work; here each row only gets its own rim, its own corners and a little room from the next */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms]:not([data-nopanel]) .rooms-pager .rooms { gap: 4px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms]:not([data-nopanel]) .rooms-pager .rooms > .room.room:is(.room, :first-of-type, :last-of-type) { border: 1px solid var(--lg-rim) !important; flex: none; overflow: hidden; border-radius: 999px !important; padding: 6px 16px 6px 6px; box-shadow: 0 4px 12px rgba(60, 60, 100, .07) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms='card']:not([data-nopanel]) .rooms-pager .rooms { gap: 6px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms='card']:not([data-nopanel]) .rooms-pager .rooms > .room.room:is(.room, :first-of-type, :last-of-type) { border-radius: 26px !important; padding: 9px 14px 9px 11px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'][data-rooms]:not([data-nopanel]) .rooms-pager .rooms > .room.room:is(.room, :first-of-type, :last-of-type) { box-shadow: 0 4px 12px rgba(0, 0, 0, .24) !important; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms]:not([data-nopanel]) .rooms-pager .rooms > .room + .room::before { display: none; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-rooms]:not([data-nopanel]) .rooms-pager .rooms > .room.room.slid { border: 0 !important; box-shadow: none !important; }

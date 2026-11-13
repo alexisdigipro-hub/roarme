@@ -814,7 +814,7 @@ function Sessions({ me, setMe, toast }) {
 }
 
 // what Reset Appearance puts back
-const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'listPanelFill', 'listPanelGrain', 'contactShape', 'density', 'radius', 'compact', 'background', 'appBackground', 'appWallStrength', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
+const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'listPanelFill', 'listPanelGrain', 'contactShape', 'listShape', 'density', 'radius', 'compact', 'background', 'appBackground', 'appWallStrength', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
 /* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
 function ChatTheme({ p }) {
@@ -961,6 +961,12 @@ function Appearance({ p, toast, me, setMe }) {
       <Box title="Panel" note="The sheet of glass the chats stand on in the list.">
         {listPv(3, false)}
         <Switch on={p.listPanel !== false} set={(v) => setPrefs({ listPanel: v })} hint="Off, the chats stand straight on the background">Panel Behind the Chats</Switch>
+        {p.listPanel !== false && (
+          <div className="set-row set-col">
+            <span className="set-text">Shape<small>One sheet for all the chats, or each chat a capsule or a card of its own</small></span>
+            <Lens className="seg" dep={p.listShape || 'panel'}>{[['panel', 'One Panel'], ['pill', 'Capsules'], ['card', 'Cards']].map(([k, l]) => <button key={k} type="button" className={(p.listShape || 'panel') === k ? 'on' : ''} onClick={() => setPrefs({ listShape: k })}>{l}</button>)}</Lens>
+          </div>
+        )}
         {p.listPanel !== false && (
           <div className="set-row set-col">
             <span className="set-text">Panel Opacity<small>{`${Math.min(100, Math.max(0, Number(p.listPanelOp ?? 50)))}%`}</small></span>

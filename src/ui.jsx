@@ -330,15 +330,16 @@ export function useLiquid(ref, dep) {
 }
 /* A slider that follows the finger at once (Alex, 12 Nov: "smoother, a better answer, easy to catch"): the knob moves on
    its own state, what it changes is told at most once a frame, and the filled part of the line is drawn from --p */
-export function Slide({ value, onChange, min = 0, max = 100, step = 1, ...rest }) {
+// onDone, when given, is told the value once, as the hand lets go (for a change too heavy to make on every step)
+export function Slide({ value, onChange, onDone, min = 0, max = 100, step = 1, ...rest }) {
   const [v, setV] = useState(value)
   const live = useRef(false)
   const raf = useRef(0)
   const last = useRef(value)
   useEffect(() => { if (!live.current) setV(value) }, [value])
   useEffect(() => () => cancelAnimationFrame(raf.current), [])
-  const tell = (n) => { last.current = n; if (!raf.current) raf.current = requestAnimationFrame(() => { raf.current = 0; onChange(last.current) }) }
-  const done = () => { live.current = false }
+  const tell = (n) => { last.current = n; if (!raf.current) raf.current = requestAnimationFrame(() => { raf.current = 0; onChange?.(last.current) }) }
+  const done = () => { if (live.current && onDone) onDone(last.current); live.current = false }
   return (
     <input type="range" className="slide" min={min} max={max} step={step} value={v} style={{ '--p': `${((v - min) / (max - min || 1)) * 100}%` }}
       onChange={(e) => { const n = Number(e.target.value); live.current = true; setV(n); tell(n) }}

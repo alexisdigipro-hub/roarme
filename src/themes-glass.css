@@ -465,3 +465,9 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-panel-ink]
 /* on a coloured panel still too faint for the pair's own ink, the time and the last message are the text's colour made
    lighter, not the grey that sinks into the darker end of the colour */
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-panel-fill]:not([data-panel-ink]):not([data-nopanel]) .rooms-pager .rooms > .room:not(.on):not(.slid) :is(.room-top small, .room-prev) { color: var(--text) !important; opacity: .64; }
+
+/* The Chat List box in Settings shows the list itself (Alex, 13 Nov: "all this should have a preview"): three rows with
+   the real rows' classes on the app's background, so what the switches and sliders beside it do is seen at once */
+html:root:root[data-glass] .set-preview.lp-prev { display: block; margin: 0 0 6px; padding: 12px 6px; border-radius: 22px; font-size: inherit; pointer-events: none; user-select: none; -webkit-user-select: none; background-color: color-mix(in srgb, var(--halo) 16%, transparent); overflow: hidden; }
+html:root:root[data-glass] .set-preview.lp-prev .rooms-pager { flex: none; margin: 0; padding: 0; overflow: visible; }
+html:root:root[data-glass] .set-preview.lp-prev .rooms { flex: none; margin: 0; padding: 0; overflow: visible; }

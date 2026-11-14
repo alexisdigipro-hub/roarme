@@ -30,7 +30,7 @@ import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { NowPlaying } from './player.jsx'
-import { pushFirstTap, pushSync, setBadge } from './push.js'
+import { onNotificationTap, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
@@ -520,6 +520,7 @@ export default function Chat({ me, setMe }) {
     sw.addEventListener('message', on)
     return () => sw.removeEventListener('message', on)
   }, [])
+  useEffect(() => onNotificationTap((room) => { setTab('chats'); setActiveId(room) }), [])
   // no paw in the menu bar any more (Alex, 18 Oct: "I don't need it"); an app that still shows it puts it away
   useEffect(() => {
     const d = window.roarDesktop

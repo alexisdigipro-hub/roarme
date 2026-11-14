@@ -11,7 +11,7 @@ import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { MyTransfers } from './transfer.jsx'
 import { PhoneField, showPhone, toE164, usePhoneAuth } from './phone.jsx'
-import { badgeSupported, inApp, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest } from './push.js'
+import { badgeSupported, inApp, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest, syncPushSound } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
@@ -413,11 +413,11 @@ function Notify({ p, toast }) {
           : <PushSwitch p={p} toast={toast} />}
       </Box>
       <Box title="Sounds">
-        <Switch on={p.sound} set={(v) => { setPrefs({ sound: v }); if (v) chime() }} hint="While RoarMe is open">Sound When a Message Arrives</Switch>
+        <Switch on={p.sound} set={(v) => { setPrefs({ sound: v }); syncPushSound(); if (v) chime() }} hint="While RoarMe is open">Sound When a Message Arrives</Switch>
         {p.sound && (
           <div className="set-row set-col">
             <span className="set-text">Sound<small>Tap one to hear it</small></span>
-            <Lens className="seg seg-wrap" dep={p.soundKind}>{SOUNDS.map(([k, l]) => <button key={k} type="button" className={p.soundKind === k ? 'on' : ''} onClick={() => { setPrefs({ soundKind: k }); chime(k) }}>{l}</button>)}</Lens>
+            <Lens className="seg seg-wrap" dep={p.soundKind}>{SOUNDS.map(([k, l]) => <button key={k} type="button" className={p.soundKind === k ? 'on' : ''} onClick={() => { setPrefs({ soundKind: k }); syncPushSound(); chime(k) }}>{l}</button>)}</Lens>
           </div>
         )}
       </Box>

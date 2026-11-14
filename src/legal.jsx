@@ -141,6 +141,7 @@ const DOCS = {
         ['What is not allowed', [
           'Anything illegal; harassment, threats or hate; spam; malware or attempts to break into accounts or the service; content you have no right to share; and any content that sexualises minors, which we report to the authorities.',
           'We may remove content or close accounts that break these rules.',
+          'There is no tolerance for objectionable content or abusive people. Anyone can report a message or a person (hold a message > Report, or a contact > Report) and block a person. We look at every report within 24 hours, remove what breaks these rules and close the account of whoever sent it.',
         ]],
         ['The service', [
           'RoarMe is provided "as is". We work to keep it running and safe, but we cannot promise it will never be interrupted or that nothing will ever be lost. Keep your own copies of anything important.',

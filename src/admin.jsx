@@ -35,10 +35,12 @@ export function Admin() {
   const [working, setWorking] = useState('') // the account a Block or Delete is running on
   const [meId, setMeId] = useState('')
   const [official, setOfficial] = useState([]) // the RoarMe account: never blocked or deleted
+  const [openReports, setOpenReports] = useState(0)
 
   useEffect(() => {
     supabase.rpc('roar_admin_users').then(({ data, error }) => { if (error) setErr(errText(error)); else setUsers(data || []) })
     supabase.rpc('roar_admin_blocked').then(({ data }) => setBlocked(new Set(data || [])))
+    supabase.rpc('roar_admin_reports', { open_only: true }).then(({ data }) => setOpenReports((data || []).length))
     supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id || ''))
     supabase.from('roar_official').select('user_id').then(({ data }) => setOfficial((data || []).map((x) => x.user_id)))
     supabase.rpc('roar_admin_files', { before: null, lim: PAGE }).then(({ data, error }) => {
@@ -88,11 +90,12 @@ export function Admin() {
       <div className="adm-bar">
         <Lens className="seg" dep={tab}>
           <button type="button" className={tab === 'people' ? 'on' : ''} onClick={() => setTab('people')}>People</button>
+          <button type="button" className={tab === 'reports' ? 'on' : ''} onClick={() => setTab('reports')}>Reports{openReports > 0 && <i className="adm-count">{openReports}</i>}</button>
           <button type="button" className={tab === 'files' ? 'on' : ''} onClick={() => setTab('files')}>Files</button>
           <button type="button" className={tab === 'transfer' ? 'on' : ''} onClick={() => setTab('transfer')}>RoarTransfer</button>
           <button type="button" className={tab === 'walls' ? 'on' : ''} onClick={() => setTab('walls')}>Wallpapers</button>
         </Lens>
-        {tab !== 'walls' && <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : tab === 'transfer' ? 'File or person' : 'File, person or group'} /></label>}
+        {tab !== 'walls' && tab !== 'reports' && <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : tab === 'transfer' ? 'File or person' : 'File, person or group'} /></label>}
       </div>
       {err && <p className="adm-err">{err}</p>}
 
@@ -148,9 +151,76 @@ export function Admin() {
           {more && !s && <button type="button" className="btn adm-more" disabled={busy} onClick={loadMore}>{busy ? 'Loading…' : 'More'}</button>}
         </div>
       )}
+      {tab === 'reports' && <AdminReports onCount={setOpenReports} blockedSet={blocked} onBlock={block} />}
       {tab === 'transfer' && <AdminTransfers q={s} />}
       {tab === 'walls' && <AdminWalls />}
       <p className="adm-note muted">Only you see this page. It shows who is on RoarMe and what files they sent (name, size, type, when), never what the messages or the files say.</p>
+    </div>
+  )
+}
+
+/* Admin > Reports (Alex, 14 Nov, for the App Store): what people reported, newest first, each with who it is about, why,
+   the message's words as they were, and what can be done at once: delete the message for everyone, block the account,
+   or mark it looked at. supabase/reports.sql; only the admins get an answer. */
+const REASON_WORD = { spam: 'Spam or a scam', abuse: 'Harassment or hate', violence: 'Violence or threats', sexual: 'Sexual content', illegal: 'Something illegal', other: 'Something else' }
+function AdminReports({ onCount, blockedSet, onBlock }) {
+  const [list, setList] = useState(null)
+  const [all, setAll] = useState(false)
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState('')
+  const load = () => supabase.rpc('roar_admin_reports', { open_only: !all }).then(({ data, error }) => {
+    if (error) { setErr(errText(error)); return }
+    setList(data || [])
+    if (!all) onCount?.((data || []).length)
+  })
+  useEffect(() => { load() }, [all]) // eslint-disable-line react-hooks/exhaustive-deps
+  const done = async (r, on) => {
+    setBusy(r.id)
+    const { error } = await supabase.rpc('roar_admin_report_done', { r: r.id, done: on })
+    setBusy('')
+    if (error) setErr(errText(error)); else load()
+  }
+  const removeMsg = async (r) => {
+    if (!window.confirm('Delete this message for everyone?')) return
+    setBusy(r.id)
+    const { error } = await supabase.rpc('roar_admin_delete_message', { m: r.message_id })
+    setBusy('')
+    if (error) setErr(errText(error)); else load()
+  }
+  const who = (u, n) => (u ? `@${u}` : n || 'Someone')
+  return (
+    <div className="adm-list">
+      <div className="adm-rep-top">
+        <Lens className="seg" dep={all ? 'all' : 'open'}>
+          <button type="button" className={!all ? 'on' : ''} onClick={() => setAll(false)}>Open</button>
+          <button type="button" className={all ? 'on' : ''} onClick={() => setAll(true)}>All</button>
+        </Lens>
+      </div>
+      {err && <p className="adm-err">{err}</p>}
+      {!list && !err && <p className="muted">Loading…</p>}
+      {list && !list.length && <p className="muted">{all ? 'No reports yet.' : 'Nothing waiting. Every report has been looked at.'}</p>}
+      {(list || []).map((r) => (
+        <div key={r.id} className={`adm-row adm-rep${r.handled_at ? ' gone' : ''}`}>
+          <Avatar src={r.reported_avatar} name={r.reported_name || r.reported_username || '?'} size={44} />
+          <span className="adm-main">
+            <b data-raw="">{r.reported_name || 'Account deleted'}{r.reported_username && <small> @{r.reported_username}</small>}{r.reported && blockedSet.has(r.reported) && <em className="adm-tag">Blocked</em>}</b>
+            <small>{REASON_WORD[r.reason] || r.reason} · reported by <span data-raw="">{who(r.reporter_username, r.reporter_name)}</span> · {day(r.created_at)}</small>
+          </span>
+          {r.message_id && <p className="adm-rep-words" data-raw="">{r.body || (r.kind === 'text' ? 'Encrypted message: its words are locked' : r.kind === 'image' ? 'Photo' : r.kind === 'voice' ? 'Voice message' : 'File')}</p>}
+          {r.note && <p className="adm-rep-note" data-raw="">“{r.note}”</p>}
+          <span className="adm-chips">
+            <i>{r.message_id ? 'A message' : 'The person'}</i>
+            {Number(r.others) > 0 && <i className="gone">{many(r.others, 'other report')} about them</i>}
+            {r.message_id && r.message_gone && <i className="gone">Message deleted</i>}
+            {r.handled_at && <i>Looked at {day(r.handled_at)}</i>}
+          </span>
+          <span className="adm-rep-acts">
+            {r.message_id && !r.message_gone && <button type="button" className="pill-btn danger" disabled={busy === r.id} onClick={() => removeMsg(r)}>Delete Message</button>}
+            {r.reported && !blockedSet.has(r.reported) && <button type="button" className="pill-btn danger" disabled={busy === r.id} onClick={() => onBlock({ id: r.reported, username: r.reported_username }, true)}>Block Account</button>}
+            <button type="button" className="pill-btn" disabled={busy === r.id} onClick={() => done(r, !r.handled_at)}>{r.handled_at ? 'Reopen' : 'Done'}</button>
+          </span>
+        </div>
+      ))}
     </div>
   )
 }

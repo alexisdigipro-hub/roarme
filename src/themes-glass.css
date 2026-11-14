@@ -575,3 +575,28 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='plain'] .side-scroll .rooms.contacts-list { gap: 0; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='plain'] .contacts-list .room.contact { border-radius: 0; padding: 8px 10px 8px 6px; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-contacts='plain'] .contacts-list .room.contact + .room.contact { background: linear-gradient(color-mix(in srgb, var(--text) 13%, transparent), color-mix(in srgb, var(--text) 13%, transparent)) top right / calc(100% - 58px) 1px no-repeat; }
+
+/* Report (Alex, 14 Nov, for the App Store): the window where a message or a person is reported, and Admin > Reports */
+html:root:root[data-glass] .rep { display: flex; flex-direction: column; gap: 12px; }
+html:root:root[data-glass] .rep-about { margin: 0; font-size: 14.5px; }
+html:root:root[data-glass] .rep-words { margin: 0; padding: 10px 14px; border-radius: 18px; background: var(--lg-chip); color: var(--muted); font-size: 13.5px; overflow-wrap: anywhere; }
+html:root:root[data-glass] .rep-reasons { display: flex; flex-direction: column; border-radius: 22px; background: var(--lg); border: 1px solid var(--lg-rim); overflow: hidden; }
+html:root:root[data-glass] .rep-reason { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; padding: 0 16px; border: 0; background: none; font: inherit; font-size: 15px; color: var(--text); text-align: left; cursor: pointer; user-select: none; -webkit-user-select: none; }
+html:root:root[data-glass] .rep-reason + .rep-reason { border-top: 1px solid color-mix(in srgb, var(--text) 9%, transparent); }
+html:root:root[data-glass] .rep-reason.on { background: var(--lg-chip); font-weight: 600; }
+html:root:root[data-glass] .rep-reason i { display: grid; color: var(--halo); }
+html:root:root[data-glass] .rep-note { width: 100%; box-sizing: border-box; min-height: 74px; padding: 12px 14px; border-radius: 18px; resize: vertical; font: inherit; font-size: 14.5px; }
+html:root:root[data-glass] .rep-block { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-radius: 22px; border: 1px solid var(--lg-rim); background: var(--lg); font: inherit; font-size: 15px; color: var(--text); text-align: left; cursor: pointer; user-select: none; -webkit-user-select: none; }
+html:root:root[data-glass] .rep-block span { display: flex; flex-direction: column; }
+html:root:root[data-glass] .rep-block small { color: var(--muted); font-size: 12.5px; }
+html:root:root[data-glass] .rep-box { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--text) 30%, transparent); color: #fff; }
+html:root:root[data-glass] .rep-block.on .rep-box { border-color: transparent; background: var(--danger); }
+html:root:root[data-glass] .rep-box svg { width: 15px; height: 15px; }
+html:root:root[data-glass] .rep-fine { margin: 0; font-size: 12.5px; line-height: 1.4; }
+html:root:root[data-glass] .rep-go { background: var(--danger); color: #fff; }
+html:root:root[data-glass] .adm-count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-left: 6px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: #fff; font-style: normal; font-size: 11px; font-weight: 700; }
+html:root:root[data-glass] .adm-rep-top { display: flex; }
+html:root:root[data-glass] .adm-rep-words, html:root:root[data-glass] .adm-rep-note { flex: 1 1 100%; margin: 0; padding: 10px 14px; border-radius: 16px; background: var(--lg-chip); font-size: 14px; overflow-wrap: anywhere; white-space: pre-wrap; }
+html:root:root[data-glass] .adm-rep-note { background: none; padding: 0 4px; color: var(--muted); font-style: italic; }
+html:root:root[data-glass] .adm-rep-acts { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+html:root:root[data-glass] .adm-rep-acts .pill-btn.danger { color: var(--danger); }

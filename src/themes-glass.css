@@ -642,3 +642,18 @@ html:root:root:root[data-mode] .bubble-col > .rx > button.on { background: color
 html:root:root:root[data-mode='dark'] .bubble-col > .rx > button.on { background: color-mix(in srgb, var(--halo, #f47318) 30%, #3a3a40) !important; }
 html:root:root:root .bubble-col > .rx > button small { font-size: 11px; font-weight: 600; }
 html:root:root:root .bubble-col > .rx > button.rx-replies svg { width: 12px; height: 12px; }
+
+/* Messages flat (Alex, 14 Nov: "take the glass off, make it flat, and the least noise"): one even colour, no gradient,
+   no rim, no shadow, no blur behind; one's own keep only the faintest grain. Over every theme colour, chat theme and
+   one's own bubble colours (Frost keeps its own flat messages). */
+html:root:root:root { --grain-min: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+html:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji):not(.note-b) {
+  border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  background: rgba(255, 255, 255, .86) !important;
+}
+html:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode='dark'][data-bubbles] .msg .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: rgba(255, 255, 255, .1) !important; }
+html:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: var(--grain-min), color-mix(in srgb, var(--halo-mine-top), var(--halo-mine)) !important; }
+html:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles][data-my-bubble] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: var(--my-bubble) !important; }
+html:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles][data-their-bubble] .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: var(--their-bubble) !important; }
+/* the heart reaction is our own heart in the accent (Alex, 14 Nov) */
+.rx .rx-heart { width: 14px; height: 14px; display: block; fill: var(--halo, var(--accent)); }

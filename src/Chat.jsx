@@ -1212,15 +1212,39 @@ export default function Chat({ me, setMe }) {
       <aside className="side">
         <div className="side-col" {...onStopTouch}>
         <div className="side-head">
-          <button type="button" className="pill-btn head-edit" aria-label={picking || tabsEdit ? 'Done' : 'Edit'} title={picking || tabsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}><span className="he-word">{picking || tabsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{picking || tabsEdit ? I.check : DOTS3}</span></button>
+          {tab === 'contacts' && !picking && !tabsEdit ? (
+            // on Contacts the same ⋯ sorts the list (Alex, 14 Nov, from Telegram's Contacts: "on the buttons themselves")
+            <span className="plus-wrap">
+              <button type="button" className={`pill-btn head-edit${contactsMenu === 'sort' ? ' on' : ''}`} aria-label="Sort contacts" title="Sort" onClick={() => { setPlus(false); setContactsMenu((v) => (v === 'sort' ? '' : 'sort')) }}><span className="he-word">Sort</span><span className="he-ico">{DOTS3}</span></button>
+              {contactsMenu === 'sort' && (
+                <>
+                  <button type="button" className="scrim" aria-label="Close" onClick={() => setContactsMenu('')} />
+                  <div className="menu menu-left contacts-sort">
+                    {[['seen', 'by Last Seen'], ['name', 'by Name']].map(([k, l]) => <button key={k} type="button" className={contactSort === k ? 'on' : ''} onClick={() => { setContactSort(k); setContactsMenu('') }}><span className="menu-tick">{contactSort === k ? I.check : null}</span><span>{l}</span></button>)}
+                  </div>
+                </>
+              )}
+            </span>
+          ) : (
+            <button type="button" className="pill-btn head-edit" aria-label={picking || tabsEdit ? 'Done' : 'Edit'} title={picking || tabsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}><span className="he-word">{picking || tabsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{picking || tabsEdit ? I.check : DOTS3}</span></button>
+          )}
           <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <Wordmark />}</span>
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
           ) : (
             <span className="side-acts">
             <span className="plus-wrap">
-              <button type="button" className={`round${plus ? ' on' : ''}`} onClick={() => setPlus((v) => !v)} aria-label="New" title="New chat, group or folder">{I.plus}</button>
-              {plus && (
+              <button type="button" className={`round${plus || contactsMenu === 'add' ? ' on' : ''}`} onClick={() => { if (tab === 'contacts') { setPlus(false); setContactsMenu((v) => (v === 'add' ? '' : 'add')) } else setPlus((v) => !v) }} aria-label="New" title={tab === 'contacts' ? 'New contact or invite' : 'New chat, group or folder'}>{I.plus}</button>
+              {tab === 'contacts' && contactsMenu === 'add' && (
+                <>
+                  <button type="button" className="scrim" aria-label="Close" onClick={() => setContactsMenu('')} />
+                  <div className="menu">
+                    <button type="button" onClick={() => { setContactsMenu(''); setModal('newchat') }}>{I.addPerson}<span>New Contact</span></button>
+                    <button type="button" onClick={() => { setContactsMenu(''); setModal('invite') }}>{I.link}<span>Invite Friends</span></button>
+                  </div>
+                </>
+              )}
+              {plus && tab !== 'contacts' && (
                 <>
                   <button type="button" className="scrim" aria-label="Close" onClick={() => setPlus(false)} />
                   <div className="menu">
@@ -1323,31 +1347,7 @@ export default function Chat({ me, setMe }) {
         {tab === 'contacts' && (
           <div className="side-scroll contacts">
             <div className="contacts-top">
-              {/* ⋯ sorts the contacts, + adds one or invites (Alex, 14 Nov, from Telegram's Contacts) */}
-              <span className="plus-wrap">
-                <button type="button" className={`round${contactsMenu === 'sort' ? ' on' : ''}`} onClick={() => setContactsMenu((v) => (v === 'sort' ? '' : 'sort'))} title="Sort" aria-label="Sort contacts">{I.more}</button>
-                {contactsMenu === 'sort' && (
-                  <>
-                    <button type="button" className="scrim" aria-label="Close" onClick={() => setContactsMenu('')} />
-                    <div className="menu menu-left contacts-sort">
-                      {[['seen', 'by Last Seen'], ['name', 'by Name']].map(([k, l]) => <button key={k} type="button" className={contactSort === k ? 'on' : ''} onClick={() => { setContactSort(k); setContactsMenu('') }}><span className="menu-tick">{contactSort === k ? I.check : null}</span><span>{l}</span></button>)}
-                    </div>
-                  </>
-                )}
-              </span>
               <label className="search">{I.search}<input value={cq} onChange={(e) => setCq(e.target.value)} placeholder="Search" /></label>
-              <span className="plus-wrap">
-                <button type="button" className={`round${contactsMenu === 'add' ? ' on' : ''}`} onClick={() => setContactsMenu((v) => (v === 'add' ? '' : 'add'))} title="Add" aria-label="New contact or invite">{I.plus}</button>
-                {contactsMenu === 'add' && (
-                  <>
-                    <button type="button" className="scrim" aria-label="Close" onClick={() => setContactsMenu('')} />
-                    <div className="menu">
-                      <button type="button" onClick={() => { setContactsMenu(''); setModal('newchat') }}>{I.addPerson}<span>New Contact</span></button>
-                      <button type="button" onClick={() => { setContactsMenu(''); setModal('invite') }}>{I.link}<span>Invite Friends</span></button>
-                    </div>
-                  </>
-                )}
-              </span>
             </div>
             {/* inside the iPhone app: who of the phone's contacts is on RoarMe (Alex, 14 Nov; src/phone.jsx) */}
             {contactsAvailable() && !cq.trim() && <button type="button" className="btn phone-find" onClick={() => setModal('phonefriends')}>{I.addPerson}<span>Find Friends From Your Contacts</span></button>}

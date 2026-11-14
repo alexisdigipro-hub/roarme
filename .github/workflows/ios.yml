@@ -58,6 +58,7 @@ jobs:
           set_key NSCameraUsageDescription "RoarMe uses the camera for video calls, video messages and photos you choose to send."
           set_key NSMicrophoneUsageDescription "RoarMe uses the microphone for calls and for voice and video messages."
           set_key NSPhotoLibraryAddUsageDescription "RoarMe saves the photos and videos you choose to keep."
+          set_key NSContactsUsageDescription "RoarMe checks which of your contacts are on RoarMe. Their numbers are coded on your iPhone and never stored."
           V=$(node -p "require('./package.json').version")
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" "$P"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" "$P"

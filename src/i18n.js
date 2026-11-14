@@ -22,6 +22,8 @@ const ago = (s) => s.replace(/^now$/, 'τώρα').replace(/^(\d+) min ago$/, 'π
 
 // texts with names and numbers in them
 const PATTERNS = [
+  [/^We sent a 6-digit code by SMS to (.+)\.$/, (_, n) => `Στείλαμε έναν 6ψήφιο κωδικό με SMS στο ${n}.`],
+  [/^Send Again in (\d+)s$/, (_, n) => `Στείλε ξανά σε ${n} δευτ.`],
   [/^up to (\d) GB · until (.+)$/, (_, g, d) => `έως ${g} GB · ως ${d}`],
   [/^(\d+) files · (.+) of (\d) GB$/, (_, n, s, g) => `${n} αρχεία · ${s} από ${g} GB`],
   [/^1 file · (.+) of (\d) GB$/, (_, s, g) => `1 αρχείο · ${s} από ${g} GB`],

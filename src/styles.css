@@ -4593,3 +4593,13 @@ input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18);
 
 /* the words on a button are never picked up as text by a held finger (Alex, 12 Nov: CREATE NEW CALL got selected) */
 button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Sign in with a phone number and friends from the phone's contacts (Alex, 14 Nov; src/phone.jsx) */
+.phone-field { display: flex; gap: 8px; }
+.phone-field .phone-cc { flex: 0 0 auto; width: 9.5em; padding-right: 8px; text-overflow: ellipsis; }
+.phone-field .input:last-child { flex: 1; min-width: 0; }
+.btn.phone-find { display: flex; align-items: center; justify-content: center; gap: 8px; width: calc(100% - 16px); margin: 4px 8px 10px; }
+.btn.phone-find svg { width: 18px; height: 18px; flex: none; }
+.phone-sec { margin: 14px 4px 4px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.phone-person { cursor: default; }
+.phone-person .btn { flex: none; text-decoration: none; }

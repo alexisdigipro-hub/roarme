@@ -1511,21 +1511,7 @@ export default function Chat({ me, setMe }) {
       {inboxOpen && <RoarMeInbox onClose={() => setInboxOpen(false)} />}
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'phonefriends' && <PhoneFriends onClose={() => setModal('')} onOpen={openRoom} />}
-      {modal === 'newcall' && (
-        <Modal title="New call" onClose={() => setModal('')}>
-          <p className="muted">Pick who to call. Calls go straight from your computer to theirs.</p>
-          <div className="people">
-            {calls.map((p) => (
-              <div key={p.id} className="person call-row">
-                <Avatar src={p.avatar_url} name={nameOf(p)} size={48} online={onlineNow(p)} />
-                <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
-                <button type="button" className="round" onClick={() => { setModal(''); startCall(p, directWith(p), false) }} aria-label="Voice call">{I.phone}</button>
-                <button type="button" className="round" onClick={() => { setModal(''); startCall(p, directWith(p), true) }} aria-label="Video call">{I.video}</button>
-              </div>
-            ))}
-          </div>
-        </Modal>
-      )}
+      {modal === 'newcall' && <NewCall people={calls} onClose={() => setModal('')} onCall={(p, v) => { setModal(''); startCall(p, directWith(p), v) }} />}
       {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null) }} onOpen={(id) => { setGroupWith(null); openRoom(id) }} />}
       {modal === 'info' && active && <Suspense fallback={null}><Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
@@ -3653,6 +3639,42 @@ function NewChat({ me, onClose, onOpen }) {
       <div className="people">
         {q.trim().length >= 2 && !hits.length && <p className="muted">No one found.</p>}
         {hits.map((p) => <PersonRow key={p.id} p={p} onClick={() => open(p)} />)}
+      </div>
+    </Modal>
+  )
+}
+
+/* New Call (Alex, 14 Nov, from Telegram's): the search on top, the people in letter order under their letters, and the
+   letters down the right side to jump to one; a call or a video call from each row */
+function NewCall({ people, onClose, onCall }) {
+  const [q, setQ] = useState('')
+  const box = useRef(null)
+  const letterOf = (p) => { const c = fold(nameOf(p)).trim().charAt(0).toUpperCase(); return /\p{L}/u.test(c) ? c : '#' }
+  const shown = q.trim() ? people.filter((p) => foldHas(`${nameOf(p)} ${p.username || ''}`, q.trim())) : people
+  const groups = []
+  for (const p of shown) { const l = letterOf(p); const g = groups[groups.length - 1]; if (g && g.l === l) g.list.push(p); else groups.push({ l, list: [p] }) }
+  const jump = (l) => box.current?.querySelector(`[data-letter="${CSS.escape(l)}"]`)?.scrollIntoView({ block: 'start' })
+  return (
+    <Modal title="New Call" onClose={onClose}>
+      <label className="search nc-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" /></label>
+      <div className="nc-wrap">
+        <div className="people nc-list" ref={box}>
+          {!shown.length && <p className="muted">{q.trim() ? 'No one by that name.' : 'No contacts yet.'}</p>}
+          {groups.map((g) => (
+            <div key={g.l} className="nc-group">
+              <div className="nc-letter" data-letter={g.l}>{g.l}</div>
+              {g.list.map((p) => (
+                <div key={p.id} className="person call-row">
+                  <Avatar src={p.avatar_url} name={nameOf(p)} size={48} online={onlineNow(p)} />
+                  <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
+                  <button type="button" className="round" onClick={() => onCall(p, false)} aria-label="Voice call">{I.phone}</button>
+                  <button type="button" className="round" onClick={() => onCall(p, true)} aria-label="Video call">{I.video}</button>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        {!q.trim() && groups.length > 1 && <div className="nc-index">{groups.map((g) => <button key={g.l} type="button" onClick={() => jump(g.l)}>{g.l}</button>)}</div>}
       </div>
     </Modal>
   )

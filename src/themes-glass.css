@@ -694,3 +694,13 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side .s
    "not so see-through, as the menu") */
 html:root:root[data-glass][data-skin='halo'][data-mode='light'] .ctx .ctx-card { background: rgba(255, 255, 255, .93) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html:root:root[data-glass][data-skin='halo'][data-mode='dark'] .ctx .ctx-card { background: rgba(44, 44, 50, .93) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* New Call (Alex, 14 Nov, from Telegram's): the search, the letters as small grey headings over the people, and the
+   letters down the right side in the accent, to jump */
+.nc-search { margin: 0 0 6px; }
+.nc-wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.nc-letter { padding: 12px 6px 2px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.nc-group:first-child .nc-letter { padding-top: 4px; }
+.nc-index { position: sticky; top: 8px; display: flex; flex-direction: column; align-items: center; padding: 2px 0 2px 4px; }
+.nc-index button { width: 20px; height: 17px; padding: 0; border: 0; background: none; color: var(--halo, var(--accent)); font: inherit; font-size: 11px; font-weight: 600; line-height: 17px; cursor: pointer; }
+.nc-index button:active { transform: scale(1.3); }

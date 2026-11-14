@@ -1,0 +1,14 @@
+{
+  "name": "roarme-ios",
+  "private": true,
+  "version": "1.0.0",
+  "description": "RoarMe for iPhone: the same app in a shell of its own (Capacitor), built on GitHub",
+  "author": "THEMADLIONS",
+  "dependencies": {
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}

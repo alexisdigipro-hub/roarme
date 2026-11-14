@@ -1,0 +1,77 @@
+name: RoarMe for iPhone
+
+# Builds RoarMe for iPhone from mobile/ (the website inside a Capacitor shell). The Xcode project is made fresh here
+# each time, nothing of it is kept in the repository.
+#  - A pull request that touches mobile/ or this file, and Run workflow with "check": builds for the simulator with
+#    no signing, to prove the shell still builds. Needs nothing from Apple.
+#  - Run workflow with "testflight": not built yet; it needs the App Store Connect key in the repository's secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: check (no signing) or testflight
+        default: check
+        type: choice
+        options: [check]
+  pull_request:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/ios.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # the website, as it goes online
+      - run: npm install --no-audit --no-fund
+      - run: |
+          mkdir -p public/fonts
+          curl -fsSL "https://cdn.jsdelivr.net/npm/@fontsource-variable/jost@5/files/jost-latin-wght-normal.woff2" -o public/fonts/jost.woff2 || echo "Jost not fetched"
+      - run: npm run build
+      # the shell around it
+      - name: Make the Xcode project
+        working-directory: mobile
+        run: |
+          rm -rf www && cp -R ../dist www
+          npm install --no-audit --no-fund
+          npx cap add ios
+          npx cap sync ios
+      - name: Permission texts, name and version
+        working-directory: mobile
+        run: |
+          P=ios/App/App/Info.plist
+          set_key() { /usr/libexec/PlistBuddy -c "Delete :$1" "$P" 2>/dev/null || true; /usr/libexec/PlistBuddy -c "Add :$1 string $2" "$P"; }
+          set_key NSCameraUsageDescription "RoarMe uses the camera for video calls, video messages and photos you choose to send."
+          set_key NSMicrophoneUsageDescription "RoarMe uses the microphone for calls and for voice and video messages."
+          set_key NSPhotoLibraryAddUsageDescription "RoarMe saves the photos and videos you choose to keep."
+          V=$(node -p "require('./package.json').version")
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" "$P"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" "$P"
+          /usr/libexec/PlistBuddy -c "Print" "$P"
+      - name: Icon
+        working-directory: mobile
+        run: |
+          # the App Store wants one 1024px picture with no see-through parts
+          D=ios/App/App/Assets.xcassets/AppIcon.appiconset
+          ls -la "$D"; cat "$D/Contents.json"
+          sips -z 1024 1024 ../public/icon-512.png --out /tmp/icon.png >/dev/null
+          sips -s format jpeg -s formatOptions 100 /tmp/icon.png --out /tmp/icon.jpg >/dev/null
+          sips -s format png /tmp/icon.jpg --out "$D/AppIcon-512@2x.png" >/dev/null
+          sips -g pixelWidth -g pixelHeight -g hasAlpha "$D/AppIcon-512@2x.png"
+      - name: Build for the simulator, unsigned
+        working-directory: mobile/ios/App
+        run: |
+          xcodebuild -version
+          W=App.xcworkspace; [ -d "$W" ] && T="-workspace $W" || T="-project App.xcodeproj"
+          set -o pipefail
+          xcodebuild $T -scheme App -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -60

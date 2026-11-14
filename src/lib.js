@@ -12,7 +12,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { storageKey: 'roarme-auth-2', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 })
 
-export const appUrl = () => window.location.origin + window.location.pathname
+// the address that goes into emails (confirm, reset) and invitations. Inside the iPhone app the page lives at
+// capacitor://localhost, which no email can open, so there it is the website's own address (Alex, 14 Nov)
+export const SITE_URL = 'https://alexisdigipro-hub.github.io/roarme/'
+export const appUrl = () => (window.Capacitor?.isNativePlatform?.() ? SITE_URL : window.location.origin + window.location.pathname)
 
 export const USERNAME_RE = /^[a-z0-9_]{3,24}$/
 export const cleanUsername = (v) => String(v || '').toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '').slice(0, 24)

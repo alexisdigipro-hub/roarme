@@ -1540,7 +1540,7 @@ export default function Chat({ me, setMe }) {
       {roomMenu && (
         <OnTop>
           <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 450) setRoomMenu(null) }} onPointerDown={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 450)) { e.preventDefault(); closedAt.current = Date.now(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
-          <div className="ctx-stack" onClick={(e) => e.stopPropagation()} onClickCapture={(e) => { if (roomMenu.at && Date.now() - roomMenu.at < 450) { e.stopPropagation(); e.preventDefault() } }}>
+          <div className="ctx-stack" onClick={(e) => { e.stopPropagation(); if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 450)) setRoomMenu(null) }} onClickCapture={(e) => { if (roomMenu.at && Date.now() - roomMenu.at < 450) { e.stopPropagation(); e.preventDefault() } }}>
           {/* the chat's last messages above the menu, on a phone too (Alex, 14 Nov: "the menu we have, plus a preview of
               the messages in it", from Telegram); a tap on them opens the chat */}
           {(

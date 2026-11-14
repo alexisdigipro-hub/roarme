@@ -216,6 +216,33 @@ export default function Chat({ me, setMe }) {
     }
   }, [])
   const [pull, setPull] = useState(0) // how far the list is pulled down for a refresh: 0 to 1 (ready), 2 = reloading
+  // Contacts pulled down at the top reloads RoarMe, as the chat list does (Alex, 14 Nov): only the people move, the
+  // search stays where it is; the arrow fills, let go when it is full
+  const [cPull, setCPull] = useState(0)
+  const cDrag = useRef(null)
+  const cMove = (el, y, ease) => el.querySelectorAll(':scope > :not(.contacts-top)').forEach((c) => { c.style.transition = ease ? 'transform .3s cubic-bezier(.2,.8,.25,1)' : 'none'; c.style.transform = y ? `translate3d(0,${y}px,0)` : '' })
+  const contactsTouch = {
+    onTouchStart: (e) => { const el = e.currentTarget; cDrag.current = el.scrollTop <= 0 && e.touches.length === 1 ? { y: e.touches[0].clientY, x: e.touches[0].clientX, p: 0, felt: false } : null },
+    onTouchMove: (e) => {
+      const g = cDrag.current
+      if (!g) return
+      const dy = e.touches[0].clientY - g.y, dx = e.touches[0].clientX - g.x
+      if (dy <= 0 || Math.abs(dx) > dy) { if (g.p || dy < -6) { cMove(e.currentTarget, 0, true); setCPull(0); cDrag.current = null } return }
+      cMove(e.currentTarget, Math.round(90 * (1 - Math.exp(-dy / 200))), false)
+      const p = Math.max(0, Math.min(1.15, (dy - 60) / 130))
+      if (p >= 1 && !g.felt) { g.felt = true; haptic(8) }
+      g.p = p
+      setCPull(Math.round(p * 20) / 20)
+    },
+    onTouchEnd: (e) => {
+      const g = cDrag.current
+      cDrag.current = null
+      if (!g) return
+      cMove(e.currentTarget, 0, true)
+      if (g.p >= 1) { setCPull(2); setTimeout(() => window.location.reload(), 150); return }
+      setCPull(0)
+    },
+  }
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
   const toast = useCallback((s) => { setNote(s); clearTimeout(noteTimer.current); noteTimer.current = setTimeout(() => setNote(''), 2200) }, [])
@@ -1266,6 +1293,8 @@ export default function Chat({ me, setMe }) {
                   <div className="menu">
                     <button type="button" onClick={() => { setContactsMenu(''); setModal('newchat') }}>{I.addPerson}<span>New Contact</span></button>
                     <button type="button" onClick={() => { setContactsMenu(''); setModal('invite') }}>{I.link}<span>Invite Friends</span></button>
+                    {/* inside the iPhone app: who of the phone's contacts is on RoarMe (Alex, 14 Nov: on the +, not a bar in the list) */}
+                    {contactsAvailable() && <button type="button" onClick={() => { setContactsMenu(''); setModal('phonefriends') }}>{I.addPerson}<span>Find Friends From Contacts</span></button>}
                   </div>
                 </>
               )}
@@ -1370,12 +1399,11 @@ export default function Chat({ me, setMe }) {
           </>
         )}
         {tab === 'contacts' && (
-          <div className="side-scroll contacts">
+          <div className="side-scroll contacts" {...contactsTouch} onTouchCancel={contactsTouch.onTouchEnd}>
             <div className="contacts-top">
               <label className="search">{I.search}<input value={cq} onChange={(e) => setCq(e.target.value)} placeholder="Search" /></label>
+              {cPull > 0 && <div className={`ptr ptr-under${cPull >= 1 ? ' ready' : ''}${cPull === 2 ? ' spin' : ''}`} style={{ '--p': Math.min(cPull, 1) }} aria-hidden="true">{svg(<><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></>, 20)}</div>}
             </div>
-            {/* inside the iPhone app: who of the phone's contacts is on RoarMe (Alex, 14 Nov; src/phone.jsx) */}
-            {contactsAvailable() && !cq.trim() && <button type="button" className="btn phone-find" onClick={() => setModal('phonefriends')}>{I.addPerson}<span>Find Friends From Your Contacts</span></button>}
             {/* the same rows as the chat list (Alex, 21 Oct): its sizes, gaps and lines between them */}
             {/* the favourites in a row of their own on top, to be slid sideways (Alex, 12 Nov, the third of the looks he was shown) */}
             {!cq.trim() && contacts.some((p) => favs.includes(p.id)) && (

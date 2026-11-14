@@ -388,9 +388,7 @@ function CallScreen({ call, local, remote, onAccept, onDecline, onHangup, onMute
 
 /* Recent Calls: one row per call, missed ones (to me) in red; a click calls back the same way. A call can be deleted
    from the list, one by one or all (Alex, 17 Oct): for you only, the other person keeps theirs (roar_call_hides) */
-// filter 'all' | 'missed' and editing come from the bar on top of Calls (Alex, 14 Nov, from the iPhone's Phone app):
-// the bins and Clear All show only while editing
-export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toast, filter = 'all', editing = false }) {
+export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toast }) {
   const [list, setList] = useState(null)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
@@ -422,15 +420,12 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toas
   const clearAll = () => { if (window.confirm(`Delete all ${list.length} calls from your list? The other person keeps theirs.`)) hide(list.map((r) => r.id)) }
   if (list === null) return <p className="muted rooms-none">Loading…</p>
   if (!list.length) return empty
-  const isMissed = (r) => r.caller !== me.id && ['missed', 'cancelled'].includes(r.status)
-  const shown = filter === 'missed' ? list.filter(isMissed) : list
-  if (!shown.length) return <div className="calls-empty"><span className="side-panel-ico">{I.phone}</span><b>No missed calls</b></div>
   return (
-    <div className={`recent-calls${editing ? ' editing' : ''}`}>
-      {editing && <div className="hits-head calls-head"><span>{filter === 'missed' ? 'Missed Calls' : 'Recent Calls'}</span><button type="button" className="btn btn-sm calls-clear" disabled={busy} onClick={clearAll}>Clear All</button></div>}
+    <div className="recent-calls">
+      <div className="hits-head calls-head"><span>Recent Calls</span><button type="button" className="calls-clear" disabled={busy} onClick={clearAll}>Clear all</button></div>
       {/* the chat list's rows (Alex, 21 Oct): its picture size, gaps and lines */}
       <div className="rooms contacts-list calls-list">
-      {shown.map((r) => {
+      {list.map((r) => {
         const out = r.caller === me.id
         const other = people[out ? r.callee : r.caller] || { id: out ? r.callee : r.caller, display_name: '…' }
         const missed = !out && ['missed', 'cancelled'].includes(r.status)
@@ -445,7 +440,7 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toas
               <span className="room-bottom"><span className="room-prev"><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}{dur && ` (${dur})`}</span></span>
             </span>
           </button>
-          {editing && <button type="button" className="call-del" disabled={busy} onClick={() => hide([r.id])} aria-label="Delete this call" title="Delete this call">{I.trash}</button>}
+          <button type="button" className="call-del" disabled={busy} onClick={() => hide([r.id])} aria-label="Delete this call" title="Delete this call">{I.trash}</button>
           </div>
         )
       })}

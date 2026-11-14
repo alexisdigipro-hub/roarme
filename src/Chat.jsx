@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx } from './lib.js'
-import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
+import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
@@ -85,8 +85,6 @@ export default function Chat({ me, setMe }) {
   const [modal, setModal] = useState('') // '' | newchat | newgroup | info | folders | newfolder | pickfolder
   const [plus, setPlus] = useState(false)
   const [tab, setTab] = useState('chats') // the bar at the foot: contacts | calls | chats | settings
-  const [callsFilter, setCallsFilter] = useState('all') // Calls: all | missed
-  const [callsEdit, setCallsEdit] = useState(false) // Calls: the bins and Clear All showing
   const [cq, setCq] = useState('') // search in Contacts
   const [picking, setPicking] = useState(false)
   const [tabsEdit, setTabsEdit] = useState(false) // the folder tabs being reordered in place, like Telegram (Alex, 21 Oct)
@@ -1357,16 +1355,12 @@ export default function Chat({ me, setMe }) {
         )}
         {tab === 'calls' && prefs.callsTab && (
           <>
-          {/* on top, as the iPhone's Phone app (Alex, 14 Nov): Edit · All | Missed · a new call */}
-          <div className="calls-top">
-            <button type="button" className={`btn calls-edit${callsEdit ? ' on' : ''}`} onClick={() => setCallsEdit((v) => !v)}>{callsEdit ? 'Done' : 'Edit'}</button>
-            <Lens className="seg calls-seg" dep={callsFilter}>{[['all', 'All'], ['missed', 'Missed']].map(([k, l]) => <button key={k} type="button" className={callsFilter === k ? 'on' : ''} onClick={() => setCallsFilter(k)}>{l}</button>)}</Lens>
-            <button type="button" className="round calls-new" onClick={() => setModal('newcall')} title="New call" aria-label="New call">{svg(<><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /><path d="M18 3v6M15 6h6" /></>, 20)}</button>
-          </div>
           <div className="side-scroll calls">
-            <RecentCalls me={me} people={people} loadPeople={loadPeople} toast={toast} filter={callsFilter} editing={callsEdit} onCall={(p, roomId, video) => startCall(p, roomId || directWith(p), video)}
-              empty={<div className="calls-empty"><span className="side-panel-ico">{I.calls}</span><b>No calls yet</b><p>Call someone with the button on top, or from the phone and camera buttons in a chat.</p></div>} />
+            <RecentCalls me={me} people={people} loadPeople={loadPeople} toast={toast} onCall={(p, roomId, video) => startCall(p, roomId || directWith(p), video)}
+              empty={<div className="calls-empty"><span className="side-panel-ico">{I.calls}</span><b>No calls yet</b><p>Call someone from Create New Call, or from the phone and camera buttons in a chat.</p></div>} />
           </div>
+          {/* at the foot, as wide as the bar under it (Alex, 21 Oct) */}
+          <button type="button" className="new-call new-call-bar" onClick={() => setModal('newcall')}><span className="new-call-ico">{svg(<><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /><path d="M18 3v6M15 6h6" /></>, 20)}</span><span>Create New Call</span></button>
           </>
         )}
         {tab === 'settings' && <Suspense fallback={<div className="side-scroll" />}><SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}

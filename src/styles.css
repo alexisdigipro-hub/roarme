@@ -4623,11 +4623,3 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 .ob-hint.bad { color: #ff453a; opacity: 1; }
 .ob-hint.good { color: #30d158; opacity: 1; }
 .ob-links { display: flex; justify-content: center; margin-top: 28px; }
-
-/* Calls, on top (Alex, 14 Nov, from the iPhone's Phone app): Edit · All | Missed · a new call */
-.calls-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 8px 10px; }
-.calls-top .btn.calls-edit { flex: none; min-width: 66px; height: 42px; padding: 0 18px; border-radius: 999px; font-size: 16px; font-weight: 500; }
-.calls-top .calls-seg { flex: 0 1 auto; }
-.calls-top .calls-seg button { min-width: 74px; font-size: 16px; }
-.calls-top .round.calls-new { flex: none; width: 42px; height: 42px; }
-.recent-calls .calls-head .calls-clear { height: 30px; }

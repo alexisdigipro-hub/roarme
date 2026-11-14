@@ -161,41 +161,70 @@ export function NewPassword({ onDone }) {
   )
 }
 
-/* The first time: the @username people find you by, and the name they see. */
+/* The first time (Alex, 14 Nov, after Wire's): two quiet steps, one field each, the arrow inside the field.
+   First the @username people find you by (checked as you type), then the name they see. */
+const GO = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+
 export function Onboarding({ user, onDone }) {
+  const [step, setStep] = useState('user') // user | name
   const [username, setUsername] = useState(() => cleanUsername((user.email || '').split('@')[0]))
+  const [free, setFree] = useState(null) // null not checked · true · false (taken)
   const [name, setName] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
-  const submit = async (e) => {
+  const okShape = USERNAME_RE.test(username)
+  // is it free? asked a moment after typing stops
+  useEffect(() => {
+    setFree(null)
+    if (!okShape) return undefined
+    const t = setTimeout(async () => {
+      const { data } = await supabase.from('roar_people').select('id').eq('username', username).maybeSingle()
+      setFree(!data)
+    }, 350)
+    return () => clearTimeout(t)
+  }, [username, okShape])
+  const next = (e) => {
     e.preventDefault()
     setErr('')
-    if (!USERNAME_RE.test(username)) { setErr('3 to 24 characters: small letters, numbers and _.'); return }
-    setBusy(true)
+    if (!okShape) { setErr('3 to 24 characters: small letters, numbers and _.'); return }
+    if (free === false) { setErr('That username is taken. Try another.'); return }
+    setStep('name')
+  }
+  const finish = async (e) => {
+    e.preventDefault()
+    setErr(''); setBusy(true)
     const { error } = await supabase.from('roar_profiles').insert({ id: user.id, username, display_name: name.trim() })
     const { data } = error ? {} : await supabase.from('roar_people').select('*').eq('id', user.id).single()
     setBusy(false)
-    if (error) setErr(errText(error))
+    if (error) { setErr(/duplicate|unique/i.test(error.message || '') ? 'That username was just taken. Pick another.' : errText(error)); if (/duplicate|unique/i.test(error.message || '')) setStep('user') }
     else onDone(data)
   }
   return (
-    <div className="auth">
-      <form className="auth-card" onSubmit={submit}>
-        <Brand />
-        <h1>Pick your username</h1>
-        <p className="auth-sub">People find you by it. You can change your name later.</p>
-        <label className="field">
-          <span>Username</span>
-          <div className="input-at"><i>@</i><input className="input" value={username} onChange={(e) => setUsername(cleanUsername(e.target.value))} autoFocus /></div>
-        </label>
-        <label className="field">
-          <span>Your name</span>
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Shown on your messages" />
-        </label>
-        {err && <p className="auth-err">{err}</p>}
-        <button className="btn btn-main" disabled={busy}>{busy ? '…' : 'Continue'}</button>
-        <div className="auth-links"><button type="button" onClick={() => supabase.auth.signOut()}>Sign out</button></div>
-      </form>
+    <div className="auth ob">
+      {step === 'user' ? (
+        <form className="ob-step" onSubmit={next}>
+          <h1>Your username</h1>
+          <p className="ob-sub">Pick your username. It helps others find you on RoarMe and start a chat with you.</p>
+          <div className={`ob-field${free === false ? ' bad' : ''}`}>
+            <i>@</i>
+            <input value={username} onChange={(e) => setUsername(cleanUsername(e.target.value))} placeholder="username" autoFocus autoCapitalize="none" autoCorrect="off" spellCheck="false" aria-label="Username" />
+            <button type="submit" className={`ob-go${okShape && free !== false ? ' on' : ''}`} aria-label="Continue">{GO}</button>
+          </div>
+          <p className={`ob-hint${free === false || err ? ' bad' : free ? ' good' : ''}`}>{err || (free === false ? 'That username is taken. Try another.' : free && okShape ? 'Free ✓' : '3 to 24 characters. a to z, 0 to 9 and _ only.')}</p>
+          <div className="ob-links"><button type="button" className="btn btn-sm" onClick={() => supabase.auth.signOut()}>Sign out</button></div>
+        </form>
+      ) : (
+        <form className="ob-step" onSubmit={finish}>
+          <h1>Your name</h1>
+          <p className="ob-sub">Shown on your messages, next to <b>@{username}</b>. You can change it later.</p>
+          <div className="ob-field">
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" autoFocus aria-label="Your name" />
+            <button type="submit" className="ob-go on" disabled={busy} aria-label="Continue">{busy ? '…' : GO}</button>
+          </div>
+          <p className={`ob-hint${err ? ' bad' : ''}`}>{err || 'You can leave it empty and your @username shows instead.'}</p>
+          <div className="ob-links"><button type="button" className="btn btn-sm" onClick={() => { setErr(''); setStep('user') }}>Back</button></div>
+        </form>
+      )}
     </div>
   )
 }

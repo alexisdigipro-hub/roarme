@@ -1327,4 +1327,14 @@ export const EL = {
   'Invite to RoarMe': 'Πρόσκληση στο RoarMe',
   'Invite': 'Πρόσκληση',
   'By continuing you accept the': 'Συνεχίζοντας αποδέχεσαι τους',
+  // the first time, after Wire's (14 Nov)
+  'Your username': 'Το username σου',
+  'Pick your username. It helps others find you on RoarMe and start a chat with you.': 'Διάλεξε το username σου. Με αυτό σε βρίσκουν οι άλλοι στο RoarMe και σου γράφουν.',
+  'That username is taken. Try another.': 'Αυτό το username το έχει ήδη κάποιος. Δοκίμασε άλλο.',
+  'That username was just taken. Pick another.': 'Αυτό το username μόλις πιάστηκε. Διάλεξε άλλο.',
+  'Free ✓': 'Ελεύθερο ✓',
+  '3 to 24 characters. a to z, 0 to 9 and _ only.': '3 έως 24 χαρακτήρες. Μόνο a έως z, 0 έως 9 και _.',
+  'You can leave it empty and your @username shows instead.': 'Μπορείς να το αφήσεις κενό και θα φαίνεται το @username σου.',
+  'Shown on your messages, next to': 'Φαίνεται στα μηνύματά σου, δίπλα στο',
+  '. You can change it later.': '. Μπορείς να το αλλάξεις αργότερα.',
 }

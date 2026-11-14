@@ -1357,9 +1357,9 @@ export default function Chat({ me, setMe }) {
         )}
         {tab === 'calls' && prefs.callsTab && (
           <>
-          {/* on top, as the iPhone's Phone app (Alex, 14 Nov): ⋯ (edit; a tick while editing) · All | Missed · a new call */}
+          {/* on top, as the iPhone's Phone app (Alex, 14 Nov): Edit · All | Missed · a new call */}
           <div className="calls-top">
-            <button type="button" className={`round calls-edit${callsEdit ? ' on' : ''}`} onClick={() => setCallsEdit((v) => !v)} title={callsEdit ? 'Done' : 'Edit'} aria-label={callsEdit ? 'Done' : 'Edit'}>{callsEdit ? I.check : I.more}</button>
+            <button type="button" className={`btn calls-edit${callsEdit ? ' on' : ''}`} onClick={() => setCallsEdit((v) => !v)}>{callsEdit ? 'Done' : 'Edit'}</button>
             <Lens className="seg calls-seg" dep={callsFilter}>{[['all', 'All'], ['missed', 'Missed']].map(([k, l]) => <button key={k} type="button" className={callsFilter === k ? 'on' : ''} onClick={() => setCallsFilter(k)}>{l}</button>)}</Lens>
             <button type="button" className="round calls-new" onClick={() => setModal('newcall')} title="New call" aria-label="New call">{svg(<><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /><path d="M18 3v6M15 6h6" /></>, 20)}</button>
           </div>

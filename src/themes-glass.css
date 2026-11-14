@@ -721,3 +721,12 @@ html:root:root[data-glass][data-skin='halo'][data-mode='dark'] .ctx .ctx-card { 
   html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .ctx .ctx-card { animation: gl-morph-card .34s cubic-bezier(.25, 1.35, .45, 1) backwards; transform-origin: 50% 100%; }
   html:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .ctx .ctx-menu { animation: gl-morph .32s cubic-bezier(.25, 1.45, .45, 1) .05s backwards !important; transform-origin: 50% 0; }
 }
+
+/* the profile's Mute when the chat is muted (Alex, 14 Nov: "a little red, not the same sign"): the bell crossed out in a
+   red-tinted circle, with a small shake as it turns on */
+html[data-skin='halo'] .pf-acts > button.pf-a-mute.on svg { background: rgba(255, 59, 48, .78) !important; border-color: rgba(255, 140, 130, .55) !important; color: #fff; }
+html[data-skin='halo'] .pf-acts > button.pf-a-mute.on span { color: #ff8a80 !important; }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes pf-mute-on { 0% { transform: scale(.85) rotate(0); } 35% { transform: scale(1.08) rotate(-12deg); } 65% { transform: scale(1) rotate(8deg); } 100% { transform: none; } }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .pf-acts > button.pf-a-mute.on svg { animation: pf-mute-on .42s cubic-bezier(.25, 1.35, .45, 1); }
+}

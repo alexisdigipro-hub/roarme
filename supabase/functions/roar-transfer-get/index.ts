@@ -76,6 +76,13 @@ async function payLocked(sb: any, table: string, tokens: string[]): Promise<Set<
 }
 // attachment with the real name: a plain ASCII one for old browsers, the UTF-8 one for the rest
 const disposition = (name: string) => `attachment; filename="${name.replace(/[^\x20-\x7e]|["\\]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(name)}`
+// R2's answer for a download; ?o=1 (the page on an iPhone or iPad, Alex 14 Nov) also says it is plain bytes, since Safari
+// opens a video in its player even with "attachment"; plain bytes it can only save, to Files, under the file's own name
+const dlHead = (q: URLSearchParams, name: string) => {
+  const h: Record<string, string> = { 'response-content-disposition': disposition(name) }
+  if (q.get('o') === '1') h['response-content-type'] = 'application/octet-stream'
+  return h
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -102,7 +109,7 @@ Deno.serve(async (req) => {
     const c = q.get('c') || ''
     // an admin's download: any live link, past its limit, not counted
     if (f && f.store === 'r2' && c && !f.stopped_at && new Date(f.expires_at).getTime() > Date.now() && await isTicket(t, c)) {
-      const to = await r2Url(f.path, { 'response-content-disposition': disposition(f.name || 'file') }, 6 * 3600)
+      const to = await r2Url(f.path, dlHead(q, f.name || 'file'), 6 * 3600)
       return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
     }
     // awaiting payment: no file, back to the link's page (which says so)
@@ -111,13 +118,13 @@ Deno.serve(async (req) => {
     if (f && c && inGrace(f) && /^[0-9a-f-]{36}$/.test(c)) {
       const { data: cl } = await sb.from('roar_transfer_claims').update({ used_at: new Date().toISOString() }).eq('id', c).eq('token', t).is('used_at', null).select('id').maybeSingle()
       if (!cl) return Response.redirect(page, 302)
-      const to = await r2Url(f.path, { 'response-content-disposition': disposition(f.name || 'file') }, 6 * 3600)
+      const to = await r2Url(f.path, dlHead(q, f.name || 'file'), 6 * 3600)
       return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
     }
     if (!f || f.store !== 'r2' || new Date(f.expires_at).getTime() <= Date.now() || used(f)) return Response.redirect(page, 302)
     // counted with the country and device of whoever downloads (Cloudflare's header in front of Supabase)
     if (req.method === 'GET') await sb.rpc('roar_transfer_hit', { t, dl: true, country: req.headers.get('cf-ipcountry'), agent: req.headers.get('user-agent') })
-    const to = await r2Url(f.path, { 'response-content-disposition': disposition(f.name || 'file') }, 6 * 3600)
+    const to = await r2Url(f.path, dlHead(q, f.name || 'file'), 6 * 3600)
     return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
   }
   // who is asking (signed in on the download page), for the one last download

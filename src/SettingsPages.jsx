@@ -10,7 +10,7 @@ import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } fro
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { MyTransfers } from './transfer.jsx'
-import { badgeSupported, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest } from './push.js'
+import { badgeSupported, inApp, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
 /* Settings as in Telegram (Alex, 16 Oct): a list on the left, the chosen page on the right.
@@ -269,7 +269,7 @@ function General({ p, onKeys, toast }) {
     <>
       {guide && <InstallGuide kind={guide} update={desk.on} onClose={() => setGuide('')} />}
       {/* on a phone the downloads for Mac and Windows have no place; it says how RoarMe becomes an app here (Alex, 18 Oct) */}
-      {!desk.on && onPhone() ? (
+      {inApp() ? null : !desk.on && onPhone() ? (
         <Box title="RoarMe app" note={isStandalone() ? '' : isIOS() ? 'In Safari: Share > Add to Home Screen, then open RoarMe from the Home Screen.' : 'In the browser menu: Add to Home Screen or Install app.'}>
           <div className="set-row"><span className="set-text">{isStandalone() ? 'On your Home Screen' : 'Add RoarMe to the Home Screen'}<small>{isStandalone() ? 'RoarMe opens as an app of its own' : 'An app of its own, with notifications when it is closed'}</small></span>{isStandalone() && <i className="set-tick">{I.check}</i>}</div>
         </Box>

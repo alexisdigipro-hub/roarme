@@ -10,7 +10,10 @@ const unb64u = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/
 
 export const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 export const onPhone = () => isIOS() || /Android/i.test(navigator.userAgent)
-export const isStandalone = () => window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true
+// inside the iPhone app from the App Store (the shell built with Capacitor; Alex, 14 Nov): there is nothing to add to
+// a Home Screen and nothing to download, so whatever asks isStandalone() already sees an app of its own
+export const inApp = () => typeof window !== 'undefined' && !!window.Capacitor?.isNativePlatform?.()
+export const isStandalone = () => inApp() || window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true
 export const pushSupported = () => typeof window !== 'undefined' && !window.roarDesktop && 'serviceWorker' in navigator && 'PushManager' in window && typeof Notification !== 'undefined'
 export const badgeSupported = () => typeof navigator !== 'undefined' && 'setAppBadge' in navigator && !window.roarDesktop
 

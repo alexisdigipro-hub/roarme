@@ -1677,6 +1677,8 @@ const amAdmin = () => (adminAsk ||= supabase.rpc('roar_is_admin').then(({ data }
 // the official RoarMe account's mark beside its name (Alex, 19 Oct)
 const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />, 15)
 // three full dots for Edit as a round sign in Halo (Alex, 12 Nov, from a picture he sent)
+// the heart reaction drawn as ours, in the accent (Alex, 14 Nov: "this heart, in the chosen accent")
+const RX_HEART = <svg className="rx-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9C.9 8.6 3 4.6 6.9 4.5c2.1 0 3.6 1.1 5.1 2.9 1.5-1.8 3-2.9 5.1-2.9 3.9.1 6 4.1 4.5 7.5C19.5 16.4 12 21 12 21z" /></svg>
 const LOCK_OPEN = svg(<><rect x="5" y="10.5" width="14" height="10" rx="2.6" /><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 6.9-.8" /></>, 16) // Encrypted Chat off
 const DOTS3 = <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.8" /><circle cx="12" cy="12" r="2.8" /><circle cx="19" cy="12" r="2.8" /></svg>
 const WHEEL_COPIES = 5, WHEEL_MID = 2 // the folder wheel at the foot: copies of the folders in a row, the middle one the real one
@@ -2913,7 +2915,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                   </div>
                   {(rx || replyCount[m.id]) && (
                     <span className="rx">
-                      {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); hands.current.react(m, e) }}>{e}{v.n > 1 && <small>{v.n}</small>}</button>)}
+                      {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); hands.current.react(m, e) }}>{e === '❤️' ? RX_HEART : e}{v.n > 1 && <small>{v.n}</small>}</button>)}
                       {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); hands.current.setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
                     </span>
                   )}

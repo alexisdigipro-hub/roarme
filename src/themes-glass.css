@@ -600,3 +600,34 @@ html:root:root[data-glass] .adm-rep-words, html:root:root[data-glass] .adm-rep-n
 html:root:root[data-glass] .adm-rep-note { background: none; padding: 0 4px; color: var(--muted); font-style: italic; }
 html:root:root[data-glass] .adm-rep-acts { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; }
 html:root:root[data-glass] .adm-rep-acts .pill-btn.danger { color: var(--danger); }
+
+/* GLASS GLOW (Alex, 14 Nov, from a picture of a glowing on/off switch: "make the glass of the main menu like this"; a
+   name kept since 12 Nov). The menu at the foot: in dark a near-black capsule of glass; the chosen one a disc of dark
+   glass whose rim catches the light, bright at the top left and the bottom right, with a soft glow round it and its
+   icon lit in the same light. Only background, border and box-shadow: Glass Travel still moves the lens. */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] { --gl-glow: #4f8dff; --gl-glow-soft: rgba(79, 141, 255, .35); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'] { --gl-glow: #8ec5ff; --gl-glow-soft: rgba(142, 197, 255, .45); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot {
+  background: linear-gradient(180deg, rgba(24, 26, 32, .86), rgba(7, 8, 11, .92)) !important; border-color: rgba(255, 255, 255, .07);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .07), inset 0 -10px 20px rgba(0, 0, 0, .55);
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens::before {
+  box-sizing: border-box; border: 1.5px solid transparent;
+  background:
+    radial-gradient(120% 130% at 50% 25%, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0) 70%) padding-box,
+    linear-gradient(rgba(236, 241, 252, .97), rgba(236, 241, 252, .97)) padding-box,
+    conic-gradient(from 210deg, transparent 0deg, var(--gl-glow) 35deg, #fff 52deg, var(--gl-glow) 70deg, transparent 115deg, transparent 180deg, var(--gl-glow) 215deg, #fff 232deg, var(--gl-glow) 250deg, transparent 295deg) border-box;
+  box-shadow: 0 0 16px -3px var(--gl-glow-soft), inset 0 0 10px rgba(79, 141, 255, .12), inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot.lens::before {
+  background:
+    radial-gradient(120% 130% at 50% 25%, rgba(255, 255, 255, .09), rgba(255, 255, 255, 0) 65%) padding-box,
+    linear-gradient(rgba(13, 15, 20, .97), rgba(13, 15, 20, .97)) padding-box,
+    conic-gradient(from 210deg, transparent 0deg, var(--gl-glow) 35deg, #fff 52deg, var(--gl-glow) 70deg, transparent 115deg, transparent 180deg, var(--gl-glow) 215deg, #fff 232deg, var(--gl-glow) 250deg, transparent 295deg) border-box;
+  border-width: 2px;
+  box-shadow: 0 0 26px -2px var(--gl-glow-soft), 0 0 6px -1px var(--gl-glow-soft), inset 0 0 16px rgba(142, 197, 255, .16), inset 0 1px 0 rgba(255, 255, 255, .1);
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot.lens.lens-on > .on,
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .foot button.on { color: var(--gl-glow); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot button.on svg { filter: drop-shadow(0 0 5px var(--gl-glow-soft)); }
+html:root:root[data-glass][data-skin='halo'][data-lite] .foot button.on svg { filter: none; }

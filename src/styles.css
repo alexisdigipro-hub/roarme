@@ -4623,3 +4623,10 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 .ob-hint.bad { color: #ff453a; opacity: 1; }
 .ob-hint.good { color: #30d158; opacity: 1; }
 .ob-links { display: flex; justify-content: center; margin-top: 28px; }
+
+/* Contacts' ⋯ and + (Alex, 14 Nov, from Telegram's Contacts): the sort menu opens to the right of the dots, a tick on
+   the chosen order; the @username and last seen under each name are fainter */
+.menu.menu-left { left: 0; right: auto; transform-origin: top left; }
+.menu .menu-tick { width: 20px; flex: none; display: grid; place-items: center; }
+.menu .menu-tick svg { width: 18px; height: 18px; }
+.contacts-list .contact .room-prev { opacity: .62; }

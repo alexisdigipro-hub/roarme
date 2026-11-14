@@ -600,3 +600,9 @@ html:root:root[data-glass] .adm-rep-words, html:root:root[data-glass] .adm-rep-n
 html:root:root[data-glass] .adm-rep-note { background: none; padding: 0 4px; color: var(--muted); font-style: italic; }
 html:root:root[data-glass] .adm-rep-acts { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; }
 html:root:root[data-glass] .adm-rep-acts .pill-btn.danger { color: var(--danger); }
+/* Contacts' bar now starts with the round ⋯ (Alex, 14 Nov), so no extra room on its left */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-top { padding-left: 4px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-top .round { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--lg-chip); box-shadow: none; color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-top .round.on { background: var(--lg-rim); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-top .round svg { width: 18px; height: 18px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .contacts-top .menu { top: 44px; }

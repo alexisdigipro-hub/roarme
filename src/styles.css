@@ -4657,3 +4657,11 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 /* the long press on a chat: one size every time (Alex, 14 Nov: "a standard size, so the menu and the preview always fit"):
    the preview a fixed 38% of the screen, the menu under it as tall as its rows */
 @media (max-width: 760px) { .ctx .ctx-card { height: 38vh; max-height: 38vh; min-height: 0; } }
+/* the long press on a chat as Telegram's (Alex, 14 Nov, from its screenshot): a bigger preview, the menu under it on the
+   right, and everything behind wholly blurred */
+@media (max-width: 760px) {
+  .ctx { -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); background: rgba(0, 0, 0, .3); }
+  html[data-mode='light'] .ctx { background: rgba(235, 235, 242, .35); }
+  .ctx .ctx-card { height: 48vh; max-height: 48vh; }
+  .ctx .ctx-menu { align-self: flex-end; width: min(290px, 66%); max-height: 38vh; transform-origin: 100% 0; }
+}

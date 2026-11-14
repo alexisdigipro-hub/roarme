@@ -1555,7 +1555,7 @@ export default function Chat({ me, setMe }) {
           )}
           <div className="room-menu menu-list ctx-menu">
             {!window.matchMedia('(max-width: 760px)').matches && <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>}
-            {window.matchMedia('(max-width: 760px)').matches && <button type="button" onClick={() => roomAct('preview')}>{I.eye}<span>Preview Messages</span></button>}
+            {/* no Preview Messages: the messages are shown above the menu (Alex, 14 Nov) */}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>

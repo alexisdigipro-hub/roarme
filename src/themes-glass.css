@@ -657,3 +657,10 @@ html:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mo
 html:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles][data-their-bubble] .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: var(--their-bubble) !important; }
 /* the heart reaction is our own heart in the accent (Alex, 14 Nov) */
 .rx .rx-heart { width: 14px; height: 14px; display: block; fill: var(--halo, var(--accent)); }
+
+/* A chat slid open, its buttons inside the row (Alex, 14 Nov: "the icons spill out, right and left"): the capsule and its
+   word sit together in the middle of the row's height, with room above, below and at the sides for the glow */
+html:root:root:root[data-glass][data-skin='halo'] .row-acts .ra-in { padding: 6px 12px; gap: 10px; }
+html:root:root:root[data-glass][data-skin='halo'] .row-acts button { justify-content: center; gap: 3px; font-size: 10px; }
+html:root:root:root[data-glass][data-skin='halo'] .row-acts button i { height: 30px; flex: none; box-shadow: 0 3px 8px rgba(var(--c), .22), inset 0 1px 0 rgba(255, 255, 255, .5); }
+html:root:root:root[data-glass][data-skin='halo'] .row-acts button i svg { width: 16px; height: 16px; }

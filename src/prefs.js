@@ -59,7 +59,6 @@ export const DEFAULTS = {
   listPanelGrain: false, // a fine grain over the panel
   frost: false, // the Frost theme (Alex, 14 Nov): frosted slab glass on a taupe wall, its own palette; only Day and Night, its shape and its list are chosen
   frostShape: 'slab', // Frost: 'slab' (soft-cornered slabs) or 'capsule'
-  frostList: 'panel', // Frost: the chats in one 'panel' of glass or each in its own slab ('cards')
   uiText: 100, // 85 to 130 (%): the size of all of RoarMe's letters (Alex, 13 Nov); the messages' own size is textSize
   accentOpacity: 100, // 30 to 100: how solid the accent colour's fill is (your messages, the coloured buttons)
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
@@ -289,7 +288,7 @@ export function applyLook(p0) {
   // built from the defaults plus Frost's own three choices; one's own colours, wallpaper and the rest stay saved for Glass
   const frost = !!p0.frost
   const p = frost
-    ? { ...DEFAULTS, mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite, listPanel: true, listPanelOp: 22, listShape: p0.frostList === 'cards' ? 'card' : 'panel', contactShape: 'pill' }
+    ? { ...DEFAULTS, mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite } // no frame round the chats or the contacts (Alex, 14 Nov)
     : p0
   if (frost) { r.dataset.frost = '1'; r.dataset.frostShape = p0.frostShape === 'capsule' ? 'capsule' : 'slab' } else { delete r.dataset.frost; delete r.dataset.frostShape }
   const hex = (/^#[0-9a-f]{6}$/i.test(p.accentHex || '') && p.accentHex) || ACCENTS.find(([k]) => k === p.accent)?.[2]

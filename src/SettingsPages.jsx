@@ -996,10 +996,6 @@ function Appearance({ p, toast, me, setMe }) {
             <span className="set-text">Shape<small>Slabs with soft corners, or round capsules</small></span>
             <Lens className="seg" dep={p.frostShape}>{[['slab', 'Slab'], ['capsule', 'Capsule']].map(([k, l]) => <button key={k} type="button" className={(p.frostShape || 'slab') === k ? 'on' : ''} onClick={() => setPrefs({ frostShape: k })}>{l}</button>)}</Lens>
           </div>
-          <div className="set-row set-col">
-            <span className="set-text">Chats<small>All in one panel of glass, or each chat its own slab</small></span>
-            <Lens className="seg" dep={p.frostList}>{[['panel', 'One Panel'], ['cards', 'Cards']].map(([k, l]) => <button key={k} type="button" className={(p.frostList || 'panel') === k ? 'on' : ''} onClick={() => setPrefs({ frostList: k })}>{l}</button>)}</Lens>
-          </div>
         </Box>
       </>
     )

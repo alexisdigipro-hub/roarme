@@ -6,7 +6,7 @@ export const DEFAULTS = {
   mode: 'light', // dark | light | auto (follows the computer); a first start opens Stone in light (Alex, 21 Oct)
   lang: 'en', // en | el, the interface language (i18n.js)
   theme: 'glass', // Glass is the main theme since 12 Nov (Alex: "this will be the app's main theme"); Stone was since 21 Oct. Whoever chose a theme keeps it
-  accent: '', // the theme's own colour (Stone's graphite) on a first start (Alex, 21 Oct); or one of ACCENTS
+  accent: 'h-onyx', // Onyx on a first start and after Reset Appearance (Alex, 14 Nov); '' is the orange, or one of ACCENTS / HALO_ACCENTS
   density: 'standard', // relaxed | standard | tight
   font: 'system', // one of FONTS
   radius: 12, // corners of the Ember theme, 4 to 16
@@ -290,7 +290,7 @@ export function applyLook(p0) {
   // built from the defaults plus Frost's own three choices; one's own colours, wallpaper and the rest stay saved for Glass
   const frost = !!p0.frost
   const p = frost
-    ? { ...DEFAULTS, mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite } // no frame round the chats or the contacts (Alex, 14 Nov)
+    ? { ...DEFAULTS, accent: '', mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite } // no frame round the chats or the contacts (Alex, 14 Nov)
     : p0
   // Frost is round capsules only (Alex, 14 Nov: "only capsule")
   if (frost) r.dataset.frost = '1'; else delete r.dataset.frost

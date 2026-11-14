@@ -4,7 +4,10 @@ name: RoarMe for iPhone
 # each time, nothing of it is kept in the repository.
 #  - A pull request that touches mobile/ or this file, and Run workflow with "check": builds for the simulator with
 #    no signing, to prove the shell still builds. Needs nothing from Apple.
-#  - Run workflow with "testflight": not built yet; it needs the App Store Connect key in the repository's secrets.
+#  - Run workflow with "testflight": builds for a real iPhone, signs it and sends it to App Store Connect, where it
+#    shows under TestFlight after Apple's processing (10 to 30 minutes). Reads four repository secrets:
+#    ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the .p8 file's whole text) and APPLE_TEAM_ID. The key needs the Admin
+#    role, so Xcode can make the certificate and the profile in Apple's cloud by itself.
 on:
   workflow_dispatch:
     inputs:
@@ -12,7 +15,7 @@ on:
         description: check (no signing) or testflight
         default: check
         type: choice
-        options: [check]
+        options: [check, testflight]
   pull_request:
     branches: [main]
     paths: ['mobile/**', '.github/workflows/ios.yml']
@@ -26,6 +29,7 @@ concurrency:
 
 jobs:
   check:
+    name: ${{ inputs.mode == 'testflight' && 'testflight' || 'check' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,9 +73,45 @@ jobs:
           sips -s format png /tmp/icon.jpg --out "$D/AppIcon-512@2x.png" >/dev/null
           sips -g pixelWidth -g pixelHeight -g hasAlpha "$D/AppIcon-512@2x.png"
       - name: Build for the simulator, unsigned
+        if: inputs.mode != 'testflight'
         working-directory: mobile/ios/App
         run: |
           xcodebuild -version
           W=App.xcworkspace; [ -d "$W" ] && T="-workspace $W" || T="-project App.xcodeproj"
           set -o pipefail
           xcodebuild $T -scheme App -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -60
+      - name: Sign and send to TestFlight
+        if: inputs.mode == 'testflight'
+        working-directory: mobile/ios/App
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID; do
+            [ -n "${!v}" ] || { echo "::error::The repository secret $v is missing"; exit 1; }
+          done
+          K="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          printf '%s\n' "$ASC_KEY_P8" > "$K"
+          trap 'rm -f "$K"' EXIT
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$K" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          W=App.xcworkspace; [ -d "$W" ] && T=(-workspace "$W") || T=(-project App.xcodeproj)
+          set -o pipefail
+          xcodebuild "${T[@]}" -scheme App -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/RoarMe.xcarchive" DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            "${AUTH[@]}" archive 2>&1 | tail -80
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/RoarMe.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" 2>&1 | tail -60
+          echo "Sent. Build ${{ github.run_number }} shows in App Store Connect > RoarMe > TestFlight once Apple has processed it."

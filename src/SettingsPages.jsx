@@ -10,6 +10,7 @@ import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } fro
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { MyTransfers } from './transfer.jsx'
+import { PhoneField, showPhone, toE164, usePhoneAuth } from './phone.jsx'
 import { badgeSupported, inApp, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
@@ -614,6 +615,67 @@ export async function saveMe(me, setMe, patch) {
   return ''
 }
 
+/* Your phone number (Alex, 14 Nov): add or change it with an SMS code, and whether people who have it in their
+   contacts find you on RoarMe (supabase/contacts-find.sql). The number is shown while phone sign-in is on, or to whoever
+   already has one; Let People Find Me always (by email too). */
+function PhoneNumber({ toast }) {
+  const phoneOn = usePhoneAuth()
+  const [phone, setPhone] = useState(null) // null loading · '' none · the number
+  const [findable, setFindable] = useState(true)
+  const [edit, setEdit] = useState({ open: false, cc: '30', num: '', sent: '', code: '', busy: false, err: '' })
+  const load = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    setPhone(user?.phone_confirmed_at ? user.phone || '' : '')
+    const { data, error } = await supabase.rpc('roar_findable')
+    if (!error && typeof data === 'boolean') setFindable(data)
+  }
+  useEffect(() => { load() }, [])
+  if (phone === null) return null
+  const showNumber = phoneOn || !!phone
+  const up = (patch) => setEdit((s) => ({ ...s, ...patch }))
+  const send = async () => {
+    const p = toE164(edit.cc, edit.num)
+    if (p.replace(/\D/g, '').length < 8) { up({ err: 'Type your mobile number.' }); return }
+    up({ busy: true, err: '' })
+    const { error } = await supabase.auth.updateUser({ phone: p })
+    up(error ? { busy: false, err: errText(error) } : { busy: false, sent: p, code: '' })
+  }
+  const verify = async () => {
+    up({ busy: true, err: '' })
+    const { error } = await supabase.auth.verifyOtp({ phone: edit.sent, token: edit.code, type: 'phone_change' })
+    if (error) { up({ busy: false, err: errText(error), code: '' }); return }
+    setEdit({ open: false, cc: '30', num: '', sent: '', code: '', busy: false, err: '' })
+    toast('Phone number saved')
+    load()
+  }
+  const setFind = async (v) => {
+    setFindable(v)
+    const { error } = await supabase.rpc('roar_set_findable', { on_: v })
+    toast(error ? errText(error) : 'Saved')
+  }
+  const findSwitch = <Switch on={findable} set={setFind} hint="People who have your email or number in their phone's contacts see you are on RoarMe">Let People Find Me</Switch>
+  if (!showNumber) return <Box title="Finding Friends" note="Only a coded form of your email is kept for this; nobody sees the address itself.">{findSwitch}</Box>
+  return (
+    <Box title="Phone Number" note="Only a coded form of your email and number is kept for finding friends; nobody sees them.">
+      {phone && !edit.open && <div className="set-row"><span className="set-text">Your Number<small data-raw="">{showPhone(phone)}</small></span><button type="button" className="btn btn-sm" onClick={() => up({ open: true })}>Change</button></div>}
+      {!phone && !edit.open && <Nav onClick={() => up({ open: true })}>Add Phone Number</Nav>}
+      {edit.open && (
+        <div className="set-row set-col">
+          {!edit.sent
+            ? <><span className="set-text">New number<small>We send a 6-digit code by SMS</small></span><PhoneField cc={edit.cc} setCc={(cc) => up({ cc })} num={edit.num} setNum={(num) => up({ num })} autoFocus /></>
+            : <><span className="set-text">Code<small data-raw="">{showPhone(edit.sent)}</small></span><input className="input mfa-code" inputMode="numeric" autoComplete="one-time-code" autoFocus value={edit.code} onChange={(e) => up({ code: e.target.value.replace(/\D/g, '').slice(0, 6) })} placeholder="123456" /></>}
+          {edit.err && <p className="auth-err">{edit.err}</p>}
+          <span className="set-acts">
+            <button type="button" className="btn" onClick={() => setEdit({ open: false, cc: '30', num: '', sent: '', code: '', busy: false, err: '' })}>Cancel</button>
+            <button type="button" className="btn btn-main" disabled={edit.busy || (edit.sent && edit.code.length !== 6)} onClick={edit.sent ? verify : send}>{edit.busy ? '…' : edit.sent ? 'Save' : 'Send the Code'}</button>
+          </span>
+        </div>
+      )}
+      {findSwitch}
+    </Box>
+  )
+}
+
 function Privacy({ me, setMe, toast }) {
   const [pw, setPw] = useState({ a: '', b: '', open: false, busy: false, err: '' })
   const priv = me.privacy || {}
@@ -671,6 +733,7 @@ function Privacy({ me, setMe, toast }) {
         ))}
         {!blocks.length && <div className="set-row"><span className="set-text muted">Nobody is blocked</span></div>}
       </Box>
+      <PhoneNumber toast={toast} />
       <Box title="Password">
         {!pw.open
           ? <Nav onClick={() => setPw((s) => ({ ...s, open: true }))}>Change Password</Nav>

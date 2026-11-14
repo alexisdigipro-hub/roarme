@@ -4593,3 +4593,33 @@ input[type='range'].slide:active::-webkit-slider-thumb { transform: scale(1.18);
 
 /* the words on a button are never picked up as text by a held finger (Alex, 12 Nov: CREATE NEW CALL got selected) */
 button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Sign in with a phone number and friends from the phone's contacts (Alex, 14 Nov; src/phone.jsx) */
+.phone-field { display: flex; gap: 8px; }
+.phone-field .phone-cc { flex: 0 0 auto; width: 9.5em; padding-right: 8px; text-overflow: ellipsis; }
+.phone-field .input:last-child { flex: 1; min-width: 0; }
+.btn.phone-find { display: flex; align-items: center; justify-content: center; gap: 8px; width: calc(100% - 16px); margin: 4px 8px 10px; }
+.btn.phone-find svg { width: 18px; height: 18px; flex: none; }
+.phone-sec { margin: 14px 4px 4px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.phone-person { cursor: default; }
+.phone-person .btn { flex: none; text-decoration: none; }
+
+/* The first time, after Wire's (Alex, 14 Nov; Auth.jsx Onboarding): no card, a big light title in the middle of the
+   screen, one field with the round arrow inside it, a quiet hint under it */
+.auth.ob { align-items: center; grid-template-columns: minmax(0, 1fr); justify-items: center; }
+.ob-step { box-sizing: border-box; width: 100%; max-width: 440px; padding: 0 20px; text-align: center; animation: ob-in .3s cubic-bezier(.2, .8, .3, 1); }
+@keyframes ob-in { from { opacity: 0; transform: translateY(10px); } }
+.ob-step h1 { margin: 0 0 14px; font-size: clamp(30px, 8vw, 40px); font-weight: 400; letter-spacing: -.01em; }
+.ob-sub { margin: 0 auto 28px; max-width: 34ch; font-size: 16px; line-height: 1.45; opacity: .85; }
+.ob-field { box-sizing: border-box; position: relative; display: flex; align-items: center; height: 60px; padding: 0 8px 0 22px; border-radius: 20px;
+  background: var(--glass, rgba(255, 255, 255, .7)); border: 1px solid rgba(127, 127, 127, .22); backdrop-filter: blur(var(--blur, 10px)); -webkit-backdrop-filter: blur(var(--blur, 10px)); }
+.ob-field.bad { border-color: rgba(255, 69, 58, .6); }
+.ob-field i { font-style: normal; opacity: .5; margin-right: 2px; font-size: 17px; }
+.ob-field input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; outline: none; font: inherit; font-size: 17px; color: inherit; }
+.ob-go { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; display: grid; place-items: center; background: rgba(127, 127, 127, .18); color: #fff; transition: background .2s, transform .12s; }
+.ob-go.on { background: var(--halo, var(--accent, #ff6a00)); }
+.ob-go:active { transform: scale(.92); }
+.ob-hint { margin: 14px 0 0; font-size: 13px; opacity: .6; }
+.ob-hint.bad { color: #ff453a; opacity: 1; }
+.ob-hint.good { color: #30d158; opacity: 1; }
+.ob-links { display: flex; justify-content: center; margin-top: 28px; }

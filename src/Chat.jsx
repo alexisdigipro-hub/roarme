@@ -35,6 +35,7 @@ import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
 import { ContactCard } from './contactCard.jsx'
+import { PhoneFriends, contactsAvailable } from './phone.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { taskNotice, useTasks } from './taskCore.js'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
@@ -1323,6 +1324,8 @@ export default function Chat({ me, setMe }) {
               <label className="search">{I.search}<input value={cq} onChange={(e) => setCq(e.target.value)} placeholder="Search" /></label>
               <button type="button" className="round" onClick={() => setModal('newchat')} title="Find people" aria-label="Find people">{I.addPerson}</button>
             </div>
+            {/* inside the iPhone app: who of the phone's contacts is on RoarMe (Alex, 14 Nov; src/phone.jsx) */}
+            {contactsAvailable() && !cq.trim() && <button type="button" className="btn phone-find" onClick={() => setModal('phonefriends')}>{I.addPerson}<span>Find Friends From Your Contacts</span></button>}
             {/* the same rows as the chat list (Alex, 21 Oct): its sizes, gaps and lines between them */}
             {/* the favourites in a row of their own on top, to be slid sideways (Alex, 12 Nov, the third of the looks he was shown) */}
             {!cq.trim() && contacts.some((p) => favs.includes(p.id)) && (
@@ -1431,6 +1434,7 @@ export default function Chat({ me, setMe }) {
       {modal === 'invite' && <InviteModal me={me} toast={toast} onClose={() => setModal('')} />}
       {inboxOpen && <RoarMeInbox onClose={() => setInboxOpen(false)} />}
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
+      {modal === 'phonefriends' && <PhoneFriends onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'newcall' && (
         <Modal title="New call" onClose={() => setModal('')}>
           <p className="muted">Pick who to call. Calls go straight from your computer to theirs.</p>

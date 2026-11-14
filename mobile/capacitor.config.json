@@ -1,0 +1,10 @@
+{
+  "appId": "com.themadlions.roarme",
+  "appName": "RoarMe",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#f1f1f6",
+    "allowsLinkPreview": false
+  }
+}

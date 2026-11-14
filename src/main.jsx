@@ -7,6 +7,7 @@ import { takeInvite } from './invite.jsx'
 import './styles.css'
 import './themes-halo.css'
 import './themes-glass.css'
+import './themes-frost.css' // Frost, worn only with data-frost on <html> (Alex, 14 Nov)
 import { startI18n } from './i18n.js'
 import { dressTheme } from './prefs.js'
 

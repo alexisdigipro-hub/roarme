@@ -968,18 +968,53 @@ function Appearance({ p, toast, me, setMe }) {
       {menu && menuPv}
     </div>
   )
+  const modeRow = (
+    <div className="set-row set-col">
+      <span className="set-text">Day and Night<small>Auto follows the device: light by day, dark at night if the device does so</small></span>
+      <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
+    </div>
+  )
+  // Glass or Frost (Alex, 14 Nov). Frost brings its own palette and wall; while it is on, only its three choices show,
+  // and every other look setting waits, saved, for Glass
+  const themeBox = (
+    <Box note={p.frost ? 'Frost has its own colours and wall. Your colours, wallpapers and the rest come back when you choose Glass.' : ''}>
+      <div className="set-row set-col">
+        <span className="set-text">Theme<small>{p.frost ? 'Frosted glass on a warm stone wall' : 'Liquid glass with your own colours'}</small></span>
+        <Lens className="seg" dep={p.frost ? 'frost' : 'glass'}>{[[false, 'Glass'], [true, 'Frost']].map(([v, l]) => <button key={l} type="button" className={!!p.frost === v ? 'on' : ''} onClick={(e) => revealFrom(e, () => setPrefs({ frost: v }))}>{l}</button>)}</Lens>
+      </div>
+    </Box>
+  )
+  if (p.frost) {
+    return (
+      <>
+        <h3 className="set-group">Theme</h3>
+        {themeBox}
+        <h3 className="set-group">Frost</h3>
+        <Box>
+          {modeRow}
+          <div className="set-row set-col">
+            <span className="set-text">Shape<small>Slabs with soft corners, or round capsules</small></span>
+            <Lens className="seg" dep={p.frostShape}>{[['slab', 'Slab'], ['capsule', 'Capsule']].map(([k, l]) => <button key={k} type="button" className={(p.frostShape || 'slab') === k ? 'on' : ''} onClick={() => setPrefs({ frostShape: k })}>{l}</button>)}</Lens>
+          </div>
+          <div className="set-row set-col">
+            <span className="set-text">Chats<small>All in one panel of glass, or each chat its own slab</small></span>
+            <Lens className="seg" dep={p.frostList}>{[['panel', 'One Panel'], ['cards', 'Cards']].map(([k, l]) => <button key={k} type="button" className={(p.frostList || 'panel') === k ? 'on' : ''} onClick={() => setPrefs({ frostList: k })}>{l}</button>)}</Lens>
+          </div>
+        </Box>
+      </>
+    )
+  }
   return (
     <>
       {/* grouped by what is being changed, each group with its own preview right where the hand is (Alex, 13 Nov:
           "group everything as it should be, and whatever I change I see a preview at the place I change it"); the one
           preview stuck to the top of the page (12 Nov) is gone */}
+      <h3 className="set-group">Theme</h3>
+      {themeBox}
       <h3 className="set-group">Colours</h3>
       <Box>
         {colourPv}
-        <div className="set-row set-col">
-          <span className="set-text">Day and Night<small>Auto follows the device: light by day, dark at night if the device does so</small></span>
-          <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
-        </div>
+        {modeRow}
         <div className="set-row set-col">
           <span className="set-text">Accent Colour<small>{p.accent ? (haloish(p.theme) ? HALO_ACCENTS : ACCENTS).find(([k]) => k === p.accent)?.[1] || "The theme's own colour" : "The theme's own colour"}</small></span>
           {haloish(p.theme)

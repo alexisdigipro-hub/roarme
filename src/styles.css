@@ -4630,3 +4630,11 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 .menu .menu-tick { width: 20px; flex: none; display: grid; place-items: center; }
 .menu .menu-tick svg { width: 18px; height: 18px; }
 .contacts-list .contact .room-prev { opacity: .62; }
+
+/* Calls in the head (Alex, 14 Nov, from the iPhone's Phone app): All | Missed in place of the name, soft; while editing
+   a red minus before every call and Delete All where + was */
+.side-brand .calls-seg { display: inline-flex; margin: 0 auto; }
+.side-brand .calls-seg button { flex: none; min-width: 64px; height: 30px; padding: 0 14px; font-size: 14px; font-weight: 500; }
+.pill-btn.calls-del-all { flex: none; white-space: nowrap; padding: 0 14px; font-weight: 500; }
+.call-minus { flex: none; align-self: center; width: 26px; height: 26px; margin: 0 2px 0 4px; padding: 0; border: 0; border-radius: 50%; background: #ff3b30; display: grid; place-items: center; cursor: pointer; animation: pop .22s cubic-bezier(.25, .8, .3, 1) both; }
+.call-minus i { display: block; width: 12px; height: 2.5px; border-radius: 2px; background: #fff; }

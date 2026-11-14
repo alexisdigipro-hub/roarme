@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx } from './lib.js'
-import { Avatar, CropModal, FOOT_I, I, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
+import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls } from './calls.jsx'
@@ -85,6 +85,10 @@ export default function Chat({ me, setMe }) {
   const [modal, setModal] = useState('') // '' | newchat | newgroup | info | folders | newfolder | pickfolder
   const [plus, setPlus] = useState(false)
   const [tab, setTab] = useState('chats') // the bar at the foot: contacts | calls | chats | settings
+  const [callsFilter, setCallsFilter] = useState('all') // Calls: all | missed (the switch in the head, Alex, 14 Nov)
+  const [callsEdit, setCallsEdit] = useState(false) // Calls: the head's ⋯ shows a red minus on every call and + becomes Delete All
+  const [callsClear, setCallsClear] = useState(0) // Calls: Delete All asks RecentCalls to clear the list
+  useEffect(() => { if (tab !== 'calls') setCallsEdit(false) }, [tab])
   const [cq, setCq] = useState('') // search in Contacts
   const [picking, setPicking] = useState(false)
   const [tabsEdit, setTabsEdit] = useState(false) // the folder tabs being reordered in place, like Telegram (Alex, 21 Oct)
@@ -1212,7 +1216,9 @@ export default function Chat({ me, setMe }) {
       <aside className="side">
         <div className="side-col" {...onStopTouch}>
         <div className="side-head">
-          {tab === 'contacts' && !picking && !tabsEdit ? (
+          {tab === 'calls' && !picking && !tabsEdit ? (
+            <button type="button" className={`pill-btn head-edit${callsEdit ? ' on' : ''}`} aria-label={callsEdit ? 'Done' : 'Edit calls'} title={callsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); setCallsEdit((v) => !v) }}><span className="he-word">{callsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{callsEdit ? I.check : DOTS3}</span></button>
+          ) : tab === 'contacts' && !picking && !tabsEdit ? (
             // on Contacts the same ⋯ sorts the list (Alex, 14 Nov, from Telegram's Contacts: "on the buttons themselves")
             <span className="plus-wrap">
               <button type="button" className={`pill-btn head-edit${contactsMenu === 'sort' ? ' on' : ''}`} aria-label="Sort contacts" title="Sort" onClick={() => { setPlus(false); setContactsMenu((v) => (v === 'sort' ? '' : 'sort')) }}><span className="he-word">Sort</span><span className="he-ico">{DOTS3}</span></button>
@@ -1228,13 +1234,18 @@ export default function Chat({ me, setMe }) {
           ) : (
             <button type="button" className="pill-btn head-edit" aria-label={picking || tabsEdit ? 'Done' : 'Edit'} title={picking || tabsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); if (picking || tabsEdit) { endPick(); setTabsEdit(false) } else { setTab('chats'); setPicking(true) } }}><span className="he-word">{picking || tabsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{picking || tabsEdit ? I.check : DOTS3}</span></button>
           )}
-          <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : <Wordmark />}</span>
+          <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : tab === 'calls' ? (
+            // on Calls the head holds All | Missed in place of the name (Alex, 14 Nov, from the iPhone's Phone app)
+            <Lens className="seg calls-seg" dep={callsFilter}>{[['all', 'All'], ['missed', 'Missed']].map(([k, l]) => <button key={k} type="button" className={callsFilter === k ? 'on' : ''} onClick={() => setCallsFilter(k)}>{l}</button>)}</Lens>
+          ) : <Wordmark />}</span>
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
           ) : (
             <span className="side-acts">
             <span className="plus-wrap">
-              <button type="button" className={`round${plus || contactsMenu === 'add' ? ' on' : ''}`} onClick={() => { if (tab === 'contacts') { setPlus(false); setContactsMenu((v) => (v === 'add' ? '' : 'add')) } else setPlus((v) => !v) }} aria-label="New" title={tab === 'contacts' ? 'New contact or invite' : 'New chat, group or folder'}>{I.plus}</button>
+              {tab === 'calls' && callsEdit ? <button type="button" className="pill-btn calls-del-all" onClick={() => setCallsClear((n) => n + 1)}>Delete All</button> : (
+              <button type="button" className={`round${plus || contactsMenu === 'add' ? ' on' : ''}`} onClick={() => { if (tab === 'calls') { setPlus(false); setModal('newcall'); return } if (tab === 'contacts') { setPlus(false); setContactsMenu((v) => (v === 'add' ? '' : 'add')) } else setPlus((v) => !v) }} aria-label="New" title={tab === 'contacts' ? 'New contact or invite' : 'New chat, group or folder'}>{I.plus}</button>
+              )}
               {tab === 'contacts' && contactsMenu === 'add' && (
                 <>
                   <button type="button" className="scrim" aria-label="Close" onClick={() => setContactsMenu('')} />
@@ -1381,11 +1392,9 @@ export default function Chat({ me, setMe }) {
         {tab === 'calls' && prefs.callsTab && (
           <>
           <div className="side-scroll calls">
-            <RecentCalls me={me} people={people} loadPeople={loadPeople} toast={toast} onCall={(p, roomId, video) => startCall(p, roomId || directWith(p), video)}
-              empty={<div className="calls-empty"><span className="side-panel-ico">{I.calls}</span><b>No calls yet</b><p>Call someone from Create New Call, or from the phone and camera buttons in a chat.</p></div>} />
+            <RecentCalls me={me} people={people} loadPeople={loadPeople} toast={toast} filter={callsFilter} editing={callsEdit} clearTick={callsClear} onCall={(p, roomId, video) => startCall(p, roomId || directWith(p), video)}
+              empty={<div className="calls-empty"><span className="side-panel-ico">{I.calls}</span><b>No calls yet</b><p>Call someone with + at the top, or from the phone and camera buttons in a chat.</p></div>} />
           </div>
-          {/* at the foot, as wide as the bar under it (Alex, 21 Oct) */}
-          <button type="button" className="new-call new-call-bar" onClick={() => setModal('newcall')}><span className="new-call-ico">{svg(<><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /><path d="M18 3v6M15 6h6" /></>, 20)}</span><span>Create New Call</span></button>
           </>
         )}
         {tab === 'settings' && <Suspense fallback={<div className="side-scroll" />}><SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}

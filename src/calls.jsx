@@ -389,10 +389,13 @@ function CallScreen({ call, local, remote, onAccept, onDecline, onHangup, onMute
 /* Recent Calls: one row per call, missed ones (to me) in red; a click calls back the same way. A call can be deleted
    from the list, one by one or all (Alex, 17 Oct): for you only, the other person keeps theirs (roar_call_hides) */
 // filter ('all' | 'missed'), editing and clearTick come from the head of Calls (Alex, 14 Nov, from the iPhone's Phone app):
-// while editing a round glass bin stands beside every call (Alex: bins, not red minuses); Delete All in the head bumps clearTick
+// while editing a red minus stands left of every call; a tap on it uncovers a red Delete at the row's right, as the
+// Phone app does (Alex, 14 Nov evening: "the red minus left of the name, not the bin on the right"); Delete All bumps clearTick
 export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toast, filter = 'all', editing = false, clearTick = 0 }) {
   const [list, setList] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [armed, setArmed] = useState(null) // the call whose Delete is showing
+  useEffect(() => { if (!editing) setArmed(null) }, [editing])
   useEffect(() => {
     let alive = true
     const load = async () => {
@@ -439,15 +442,16 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toas
         const dur = r.answered_at && r.ended_at ? mmss(new Date(r.ended_at) - new Date(r.answered_at)) : ''
         const label = missed ? 'Missed' : out ? (r.status === 'answered' ? 'Outgoing' : r.status === 'declined' ? 'Declined' : r.status === 'busy' ? 'Busy' : 'No answer') : r.status === 'declined' ? 'Declined' : 'Incoming'
         return (
-          <div key={r.id} className="call-row">
-          <button type="button" className="room call-log" onClick={() => onCall(other, r.room_id, r.video)} title={r.video ? 'Video call back' : 'Call back'}>
+          <div key={r.id} className={`call-row${editing ? ' editing' : ''}${armed === r.id ? ' armed' : ''}`}>
+          {editing && <button type="button" className="call-minus" onClick={() => setArmed((a) => (a === r.id ? null : r.id))} aria-label="Delete this call" title="Delete this call"><i /></button>}
+          <button type="button" className="room call-log" onClick={() => (editing ? setArmed(null) : onCall(other, r.room_id, r.video))} title={r.video ? 'Video call back' : 'Call back'}>
             <Avatar src={other.avatar_url} name={nameOf(other)} size={48} />
             <span className="room-main">
               <span className="room-top"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong><small>{new Date(r.started_at).toLocaleDateString(locale(), { day: 'numeric', month: 'numeric', year: '2-digit' })}</small></span>
               <span className="room-bottom"><span className="room-prev"><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}{dur && ` (${dur})`}</span></span>
             </span>
           </button>
-          {editing && <button type="button" className="call-del" disabled={busy} onClick={() => hide([r.id])} aria-label="Delete this call" title="Delete this call">{I.trash}</button>}
+          {armed === r.id && <button type="button" className="call-del-go" disabled={busy} onClick={() => { setArmed(null); hide([r.id]) }}>Delete</button>}
           </div>
         )
       })}

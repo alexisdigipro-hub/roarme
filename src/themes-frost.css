@@ -9,31 +9,37 @@
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] {
   --fr-wall-a: #b9ada0; --fr-wall-b: #8a7f73; --fr-wall-c: #dcd3c8;
   --fr-ink-dark: #3f3329;
+  /* the words: warm dark brown by Day (Alex, 14 Nov: "in light the letters do not show, too white"), white by Night */
+  --fr-ink: #3a2f26; --fr-ink-soft: rgba(58, 47, 38, .64); --fr-tshadow: 0 1px 0 rgba(255, 255, 255, .35); --fr-danger: #b0402a;
   --fr-leak: rgba(255, 255, 255, .95); --fr-leak-glow: rgba(255, 255, 255, .5);
   --fr-shadow: rgba(52, 40, 28, .42);
   --bg: #a89c8f !important; --panel: rgba(255, 255, 255, .16) !important; --panel-2: rgba(255, 255, 255, .26) !important;
   --glass: rgba(255, 255, 255, .2) !important; --glass-2: rgba(255, 255, 255, .34) !important;
   --edge: rgba(255, 255, 255, .55) !important; --edge-2: rgba(255, 255, 255, .75) !important;
-  --text: #ffffff !important; --muted: rgba(255, 255, 255, .74) !important;
+  --text: var(--fr-ink) !important; --muted: var(--fr-ink-soft) !important;
   --theirs: rgba(255, 255, 255, .2) !important;
-  --float: rgba(146, 134, 122, .95) !important;
+  --float: rgba(238, 231, 223, .95) !important;
   --shadow: 0 20px 40px -14px rgba(52, 40, 28, .45) !important;
-  --halo: #fffaf4 !important; --halo-2: #ffffff !important; --halo-l: #fffaf4 !important; --halo-d: #fffaf4 !important;
+  --halo: #3a2f26 !important; --halo-2: #5a4a3c !important; --halo-l: #3a2f26 !important; --halo-d: #3a2f26 !important;
   --halo-mine-top: rgba(255, 255, 255, .62) !important; --halo-mine: rgba(255, 255, 255, .44) !important; --halo-ink: #3f3329 !important;
-  --accent: #fffaf4 !important; --accent-2: #ffffff !important; --accent-ink: #3f3329 !important;
+  --accent: #3a2f26 !important; --accent-2: #5a4a3c !important; --accent-ink: #fffaf4 !important;
   --rail: rgba(255, 255, 255, .3) !important; --rail-2: rgba(255, 255, 255, .4) !important; --mint: #fffaf4 !important;
   --lg: rgba(255, 255, 255, .2) !important; --lg-rim: rgba(255, 255, 255, .6) !important;
   --lg-shadow: 14px 18px 26px -12px rgba(52, 40, 28, .42), 3px 5px 9px -6px rgba(52, 40, 28, .42), inset 0 1px 0 rgba(255, 255, 255, .7), inset 0 -1px 0 rgba(255, 255, 255, .16) !important;
-  --lg-chip: rgba(255, 255, 255, .32) !important; --lg-ink: #ffffff !important;
+  --lg-chip: rgba(255, 255, 255, .32) !important; --lg-ink: var(--fr-ink) !important;
 }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-mode='dark'] {
   --fr-wall-a: #3b342e; --fr-wall-b: #1c1916; --fr-wall-c: #5b5046;
   --fr-leak: rgba(255, 238, 220, .85); --fr-leak-glow: rgba(255, 228, 200, .3);
   --fr-shadow: rgba(0, 0, 0, .62);
+  --fr-ink: #ffffff; --fr-ink-soft: rgba(255, 255, 255, .64); --fr-tshadow: 0 1px 2px rgba(0, 0, 0, .12); --fr-danger: #ffc2b5;
+  --text: #ffffff !important;
+  --halo: #fffaf4 !important; --halo-2: #ffffff !important; --halo-l: #fffaf4 !important; --halo-d: #fffaf4 !important;
+  --accent: #fffaf4 !important; --accent-2: #ffffff !important; --accent-ink: #3f3329 !important;
   --bg: #26211d !important; --panel: rgba(255, 255, 255, .07) !important; --panel-2: rgba(255, 255, 255, .12) !important;
   --glass: rgba(255, 255, 255, .08) !important; --glass-2: rgba(255, 255, 255, .15) !important;
   --edge: rgba(255, 255, 255, .2) !important; --edge-2: rgba(255, 255, 255, .3) !important;
-  --muted: rgba(255, 255, 255, .62) !important;
+  --muted: var(--fr-ink-soft) !important;
   --theirs: rgba(255, 255, 255, .09) !important;
   --float: rgba(48, 42, 37, .96) !important;
   --shadow: 0 20px 40px -14px rgba(0, 0, 0, .6) !important;
@@ -51,12 +57,12 @@ html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] body[dat
     radial-gradient(60% 40% at 90% 55%, rgba(255, 255, 255, .14), transparent 70%),
     radial-gradient(80% 50% at 30% 100%, rgba(0, 0, 0, .16), transparent 70%),
     linear-gradient(165deg, var(--fr-wall-a), var(--fr-wall-b)) !important;
-  background-attachment: fixed !important; color: #fff;
+  background-attachment: fixed !important; color: var(--fr-ink);
 }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .room-view[data-bg='frost'] { background: none !important; box-shadow: none !important; }
 
 /* the glass bars and buttons take the frosted look (Glass already draws them with --lg; here the light leak and the text) */
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.foot, .rooms-area .tabs, .contacts-top, .new-call.new-call-bar) { text-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.foot, .rooms-area .tabs, .contacts-top, .new-call.new-call-bar) { text-shadow: var(--fr-tshadow); }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .foot::after {
   content: ''; position: absolute; left: 26%; right: 26%; bottom: -1px; height: 2px; border-radius: 2px; pointer-events: none; z-index: 2;
   background: radial-gradient(closest-side, var(--fr-leak), transparent); box-shadow: 0 2px 14px 3px var(--fr-leak-glow);
@@ -65,10 +71,10 @@ html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .foot.le
   background: linear-gradient(180deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, .14)) !important; border: 1px solid var(--lg-rim) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 6px 14px -6px var(--fr-shadow) !important;
 }
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.foot button.on, .foot.lens.lens-on > .on, .rooms-area .tabs button.on) { color: #fff !important; }
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.foot button.on, .foot.lens.lens-on > .on, .rooms-area .tabs button.on) { color: var(--fr-ink) !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .round {
   background: linear-gradient(180deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .1)) !important; border: 1px solid var(--lg-rim) !important;
-  box-shadow: var(--lg-shadow) !important; color: #fff !important;
+  box-shadow: var(--lg-shadow) !important; color: var(--fr-ink) !important;
 }
 /* counts and "yours": bright white with the warm dark ink */
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.badge, .foot-ico i) { background: #fff !important; color: var(--fr-ink-dark) !important; box-shadow: 0 0 10px rgba(255, 255, 255, .55) !important; }
@@ -80,19 +86,19 @@ html:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-mod
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room:last-of-type { box-shadow: 14px 18px 26px -14px var(--fr-shadow) !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-rooms='card'] .rooms-pager .rooms > .room { border: 1px solid var(--lg-rim) !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 12px 16px 24px -14px var(--fr-shadow) !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room.on { background: rgba(255, 255, 255, .36) !important; }
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room :is(.room-top strong) { color: #fff; }
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room :is(.room-top strong) { color: var(--fr-ink); }
 
 /* messages: theirs a darker frosted glass with white words, yours bright frosted white with the warm dark ink */
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: linear-gradient(180deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .12)) !important; border: 1px solid rgba(255, 255, 255, .45) !important; color: #fff !important; box-shadow: 10px 14px 22px -14px var(--fr-shadow) !important; }
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: linear-gradient(180deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .12)) !important; border: 1px solid rgba(255, 255, 255, .45) !important; color: var(--fr-ink) !important; box-shadow: 10px 14px 22px -14px var(--fr-shadow) !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: linear-gradient(180deg, var(--halo-mine-top), var(--halo-mine)) !important; border: 1px solid rgba(255, 255, 255, .8) !important; color: var(--fr-ink-dark) !important; box-shadow: 10px 14px 22px -14px var(--fr-shadow) !important; }
 
 /* menus, windows and sheets: one frosted stone glass with white words */
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.menu, .menu-list, .rx-pick, .emoji-pick, .mention-pick, .toast, .vw-menu, .msg-menu, .modal, .as-sheet, .te-sheet) {
-  background: var(--float) !important; color: #fff !important; border: 1px solid var(--lg-rim) !important;
+  background: var(--float) !important; color: var(--fr-ink) !important; border: 1px solid var(--lg-rim) !important;
   box-shadow: 0 24px 50px -16px var(--fr-shadow), inset 0 1px 0 rgba(255, 255, 255, .35) !important;
 }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.menu, .menu-list, .rx-pick, .mention-pick, .toast, .vw-menu, .msg-menu, .modal, .as-sheet, .te-sheet) :where(button, a, span, b, strong, small, p, label, h2, h3) { color: inherit !important; }
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.menu, .menu-list, .msg-menu, .modal, .as-sheet) .danger { color: #ffc2b5 !important; }
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.menu, .menu-list, .msg-menu, .modal, .as-sheet) .danger { color: var(--fr-danger) !important; }
 
 /* Slab: soft-cornered slabs instead of capsules (Frost's Shape; Capsule keeps Glass's round shapes) */
 html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] :is(.foot, .rooms-area .tabs, .contacts-top, .new-call.new-call-bar, .seg, .search, .btn, .input, .composer, .compose) { border-radius: 14px !important; }

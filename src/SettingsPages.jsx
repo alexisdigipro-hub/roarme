@@ -992,10 +992,6 @@ function Appearance({ p, toast, me, setMe }) {
         <h3 className="set-group">Frost</h3>
         <Box>
           {modeRow}
-          <div className="set-row set-col">
-            <span className="set-text">Shape<small>Slabs with soft corners, or round capsules</small></span>
-            <Lens className="seg" dep={p.frostShape}>{[['slab', 'Slab'], ['capsule', 'Capsule']].map(([k, l]) => <button key={k} type="button" className={(p.frostShape || 'slab') === k ? 'on' : ''} onClick={() => setPrefs({ frostShape: k })}>{l}</button>)}</Lens>
-          </div>
         </Box>
       </>
     )

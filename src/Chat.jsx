@@ -108,6 +108,11 @@ export default function Chat({ me, setMe }) {
   const [myFolders, setMyFolders] = useLocal('roarme-folders', [])
   useFolderSync(me.id) // the same folders on every device (supabase/folders.sql)
   const [hidden, setHidden] = useLocal('roarme-hidden', {})
+  // the long-press preview shows a chat on its own wallpaper, as the chat itself does (Alex, 14 Nov: "not white, the
+  // background the messages normally have")
+  const [chatWalls] = useLocal('roarme-walls', {})
+  const allWalls = useWalls(true)
+  const lookOf = (rid) => (prefs.frost ? { 'data-bg': 'frost', style: {} } : wallLook(chatWalls[rid] || prefs.background, allWalls, prefs.wallStrength))
   // per device: chats pinned to the top, history cleared, chats marked unread, a mute that ends, drafts
   const [pins, setPins] = useLocal('roarme-pins', [])
   const [cleared, setCleared] = useLocal('roarme-cleared', {})
@@ -1535,13 +1540,17 @@ export default function Chat({ me, setMe }) {
       {roomMenu && (
         <OnTop>
           <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 450) setRoomMenu(null) }} onPointerDown={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 450)) { e.preventDefault(); closedAt.current = Date.now(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
-          <div className="ctx-stack" onClick={(e) => e.stopPropagation()} onClickCapture={(e) => { if (roomMenu.at && Date.now() - roomMenu.at < 450) { e.stopPropagation(); e.preventDefault() } }}>
+          <div className="ctx-stack" onClick={(e) => { e.stopPropagation(); if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 450)) setRoomMenu(null) }} onClickCapture={(e) => { if (roomMenu.at && Date.now() - roomMenu.at < 450) { e.stopPropagation(); e.preventDefault() } }}>
           {/* the chat's last messages above the menu, on a phone too (Alex, 14 Nov: "the menu we have, plus a preview of
               the messages in it", from Telegram); a tap on them opens the chat */}
           {(
           <div className="ctx-card" role="button" tabIndex={0} onClick={() => { const r = roomMenu.r; setRoomMenu(null); setActiveId(r.room_id) }}>
             <span className="ctx-head"><b>{titleOf(roomMenu.r)}</b><small>{roomMenu.r.kind === 'group' ? 'Group' : otherOf(roomMenu.r) ? lastSeenText(otherOf(roomMenu.r)) : ''}</small></span>
-            <PeekList room={roomMenu.r} me={me} people={people} clearedAt={cleared[roomMenu.r.room_id]} />
+            {(() => { const lk = lookOf(roomMenu.r.room_id); return (
+              <div className="room-view ctx-wall" data-bg={lk['data-bg']} data-img={lk['data-img']} data-own={lk['data-own']} data-wop={lk['data-wop']} style={lk.style}>
+                <PeekList room={roomMenu.r} me={me} people={people} clearedAt={cleared[roomMenu.r.room_id]} />
+              </div>
+            ) })()}
           </div>
           )}
           <div className="room-menu menu-list ctx-menu">

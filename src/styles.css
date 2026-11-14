@@ -4654,3 +4654,6 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
   html.kb .modal-back { inset: auto 0 auto 0; top: var(--vvt, 0px); height: var(--vvh, 100dvh); padding-top: max(10px, env(safe-area-inset-top, 0px)); padding-bottom: 10px; }
   html.kb .modal-back > .modal { max-height: 100%; }
 }
+/* the long press on a chat: one size every time (Alex, 14 Nov: "a standard size, so the menu and the preview always fit"):
+   the preview a fixed 38% of the screen, the menu under it as tall as its rows */
+@media (max-width: 760px) { .ctx .ctx-card { height: 38vh; max-height: 38vh; min-height: 0; } }

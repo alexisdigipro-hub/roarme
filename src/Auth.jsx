@@ -52,11 +52,12 @@ export function Auth() {
       <form className="auth-card" onSubmit={submit}>
         <Brand />
         {invitedBy && mode !== 'forgot' && <p className="auth-invite"><b>@{invitedBy}</b> invited you to RoarMe. {mode === 'up' ? 'Create your account and your chat opens.' : 'Sign in and your chat opens.'}</p>}
-        <h1>{mode === 'in' ? 'Welcome back' : mode === 'up' ? 'Create your account' : 'Forgot your password?'}</h1>
-        <p className="auth-sub">{mode === 'forgot' ? 'Type your email and we will send you a link.' : 'Chats, groups, photos and files, between the people you choose.'}</p>
+        {/* the sign-in screen is only the fields and the buttons (Alex, 14 Nov: "take out Welcome back and the words under it") */}
+        {mode !== 'in' && <h1>{mode === 'up' ? 'Create your account' : 'Forgot your password?'}</h1>}
+        {mode === 'forgot' && <p className="auth-sub">Type your email and we will send you a link.</p>}
         <label className="field">
           <span>Email</span>
-          <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>
         {mode !== 'forgot' && (
           <label className="field">

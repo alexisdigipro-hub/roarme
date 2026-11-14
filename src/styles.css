@@ -4666,6 +4666,17 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
   .ctx .ctx-menu { align-self: flex-end; width: min(290px, 66%); max-height: 38vh; transform-origin: 100% 0; }
 }
 /* Location as a tab of the attach sheet (Alex, 14 Nov): the map fills the sheet's body, the send bar under it */
-.as-body .loc.loc-inline { height: min(60vh, 520px); }
-.as-body .loc.loc-inline .loc-map { border-radius: 20px; }
-.as-body .loc.loc-inline .loc-top { left: 10px; right: 10px; }
+/* as Telegram's (Alex, 14 Nov): the map fills the sheet edge to edge, the sheet's X and title lie over it, the search a
+   round button at the right, the send row under the map above the tabs */
+.as-sheet.as-loc { padding: 0; overflow: hidden; }
+.as-sheet.as-loc .as-grab { position: absolute; top: 6px; left: 50%; z-index: 6; margin: 0 0 0 -19px; }
+.as-sheet.as-loc .as-head { position: absolute; top: 16px; left: 14px; right: 14px; z-index: 6; margin: 0; pointer-events: none; }
+.as-sheet.as-loc .as-head > * { pointer-events: auto; }
+.as-sheet.as-loc .as-head > b { text-shadow: 0 0 6px var(--float, #fff), 0 0 12px var(--float, #fff); }
+.as-sheet.as-loc .as-body { padding: 0; margin: 0; gap: 0; overflow: hidden; }
+.as-body .loc.loc-inline { flex: 1; min-height: 0; }
+.as-body .loc.loc-inline .loc-map { border-radius: 0; min-height: 0; }
+.loc-inline .loc-find { position: absolute; top: 16px; right: 14px; z-index: 7; width: 44px; height: 44px; }
+.loc-inline .loc-top { top: 70px; left: 14px; right: 14px; }
+.loc-inline .loc-found { top: 122px; }
+.loc-inline .loc-send { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); border-top: 0; background: var(--float, var(--panel)); }

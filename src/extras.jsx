@@ -256,7 +256,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   if (edit >= 0 && files[edit]) return <PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} />
   return createPortal(
     <div className="as-back" onClick={onClose}>
-      <div ref={sheetRef} className="as-sheet" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <i className="as-grab" data-grab="" aria-hidden="true" />
         <div className="as-head" data-grab="">
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>

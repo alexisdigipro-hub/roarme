@@ -74,6 +74,7 @@ export const I = {
   down: svg(<path d="M5 9l7 7 7-7" />, 18),
   download: svg(<><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5" /><path d="M5 20h14" /></>, 18),
   check: svg(<path d="m5 12.5 4.5 4.5L19 7.5" />, 18),
+  flag: svg(<><path d="M6 21V4" /><path d="M6 5h11l-2 4 2 4H6" /></>, 18),
   read: svg(<path d="m2 12.5 4.5 4.5L16 7.5M10 16.5l1 .5L21 7.5" />, 22),
   popout: svg(<><path d="M14 4h6v6M20 4l-8 8" /><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" /></>, 16),
   addPerson: svg(<><circle cx="10" cy="8" r="3.5" /><path d="M3.5 20c0-3.6 2.9-6.5 6.5-6.5 1.4 0 2.7.4 3.7 1.2M18 14v6M15 17h6" /></>, 18),

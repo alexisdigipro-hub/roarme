@@ -38,6 +38,7 @@ import { ContactCard } from './contactCard.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { taskNotice, useTasks } from './taskCore.js'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
+import { ReportHost, report } from './report.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
@@ -1413,6 +1414,7 @@ export default function Chat({ me, setMe }) {
         )}
       </main>
 
+      <ReportHost me={me} people={people} blocks={[...blocks]} onBlocks={loadBlocks} toast={toast} />
       <ReminderCards me={me} rooms={rooms} titleOf={titleOf} onOpen={libChat}
         onDue={(r, m) => {
           if (prefsRef.current.sound) chime()
@@ -3152,6 +3154,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {menu.m.user_id && menu.m.user_id !== me.id && (askedByMe.has(menu.m.id)
                 ? <button type="button" disabled>{I.timer}<span>Waiting for {nameOf(people[menu.m.user_id])}</span></button>
                 : <button type="button" className="danger" onClick={() => askDelete(menu.m)}>{I.trash}<span>Ask to Delete for Everyone</span></button>)}
+              {menu.m.user_id && menu.m.user_id !== me.id && menu.m.kind !== 'system' && <button type="button" className="danger" onClick={() => { report({ message: menu.m }); setMenu(null) }}>{I.flag}<span>Report</span></button>}
               {admin && menu.m.user_id && menu.m.user_id !== me.id && menu.m.kind !== 'system' && <button type="button" className="danger" onClick={() => adminRemove(menu.m)}>{I.trash}<span>Delete for Everyone (Admin)</span></button>}
               {menu.m.user_id === me.id && (
                 <>

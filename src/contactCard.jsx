@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { errText, lastSeenText, nameOf, onlineNow, supabase } from './lib.js'
 import { Avatar, CropModal, I, Modal } from './ui.jsx'
 import { inviteLink } from './invite.jsx'
+import { report } from './report.jsx'
 
 /* A contact's card (Alex, 21 Oct, like the iPhone's Contacts): a tap on someone in Contacts opens it. The big
    picture and the name, round Message · Call · Video, then what we know: the username, their bio, my note for them,
@@ -118,6 +119,7 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
 
         <div className="cc-card">
           <button type="button" className="cc-row cc-link danger" onClick={block}>{blocked ? 'Unblock Contact' : 'Block Contact'}</button>
+          <button type="button" className="cc-row cc-link danger" onClick={() => report({ person: p })}>Report Contact</button>
         </div>
         {err && <p className="auth-err">{err}</p>}
       </div>
@@ -178,6 +180,7 @@ export function ContactEdit({ me, other, onClose, onSaved, onPhoto, onDropPhoto,
         {onBlock && (
           <div className="ce2-card">
             <button type="button" className="ce2-row danger" onClick={onBlock}><span>{blocked ? 'Unblock' : 'Block'}</span></button>
+            <button type="button" className="ce2-row danger" onClick={() => { onClose(); report({ person: other }) }}><span>Report</span></button>
           </div>
         )}
         {err && <p className="auth-err">{err}</p>}

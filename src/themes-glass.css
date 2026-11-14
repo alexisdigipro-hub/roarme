@@ -668,3 +668,19 @@ html:root:root:root[data-glass][data-skin='halo'] .row-acts button i svg { width
 /* Contacts' search is at the top in Glass, so the people found sit right under it (Alex, 14 Nov: "it puts them at the
    bottom, behind the keyboard"); Halo's rule from when the search was at the foot no longer applies */
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-list.searching { justify-content: flex-start; }
+
+/* Calls while editing, as the Phone app (Alex, 14 Nov evening: "the red minus left of the name, not the bin on the
+   right"): a red round minus before each call; a tap on it turns it a quarter and uncovers a red Delete pill at the
+   row's right, the row giving way; a tap on Delete deletes */
+.calls-list .call-row { display: flex; align-items: center; }
+.calls-list .call-row > .call-log { flex: 1; min-width: 0; }
+.calls-list .call-minus { flex: none; display: grid; place-items: center; width: 34px; height: 34px; margin-left: 6px; padding: 0; border: 0; background: none; cursor: pointer; }
+.calls-list .call-minus i { position: relative; display: block; width: 22px; height: 22px; border-radius: 50%; background: #ff3b30; transition: transform .25s cubic-bezier(.25, 1.45, .45, 1); }
+.calls-list .call-minus i::after { content: ''; position: absolute; left: 5px; right: 5px; top: 50%; height: 2.4px; margin-top: -1.2px; border-radius: 2px; background: #fff; }
+.calls-list .call-row.armed .call-minus i { transform: rotate(-90deg); }
+.calls-list .call-minus:active i { transform: scale(.88); }
+.calls-list .call-del-go { flex: none; height: 36px; margin: 0 8px 0 4px; padding: 0 16px; border: 0; border-radius: 999px; background: #ff3b30; color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; animation: call-del-in .22s cubic-bezier(.25, 1.45, .45, 1); }
+.calls-list .call-del-go:active { transform: scale(.94); }
+@keyframes call-del-in { from { opacity: 0; transform: translateX(14px); } }
+.calls-list .call-row.editing + .call-row::before { left: 106px; }
+@media (prefers-reduced-motion: reduce) { .calls-list .call-del-go { animation: none; } .calls-list .call-minus i { transition: none; } }

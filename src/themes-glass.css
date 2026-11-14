@@ -689,3 +689,8 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side .s
    the list's own scroller, so the search never moves; the arrow shows just under the search */
 .side-scroll.contacts { overscroll-behavior-y: none; }
 .contacts-top .ptr.ptr-under { position: absolute; left: 50%; top: calc(100% + 10px); margin: 0 0 0 -17px; z-index: 5; }
+
+/* The long press on a chat: its preview card wears the menu's own glass, as solid as the menu under it (Alex, 14 Nov:
+   "not so see-through, as the menu") */
+html:root:root[data-glass][data-skin='halo'][data-mode='light'] .ctx .ctx-card { background: rgba(255, 255, 255, .93) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root[data-glass][data-skin='halo'][data-mode='dark'] .ctx .ctx-card { background: rgba(44, 44, 50, .93) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }

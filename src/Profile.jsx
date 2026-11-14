@@ -250,7 +250,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
           <button type="button" className="pf-a-msg" onClick={onMessage}>{I.chats}<span>Message</span></button>
           <button type="button" onClick={() => (onCall ? onCall(false) : toast('Calls are for chats between two people'))}>{I.phone}<span>Call</span></button>
           <button type="button" onClick={() => (onCall ? onCall(true) : toast('Calls are for chats between two people'))}>{I.video}<span>Video</span></button>
-          <button type="button" className="pf-a-mute" onClick={() => setMine({ muted: !room.muted }, room.muted ? 'Sounds on' : 'Muted')}>{I.bell}<span>{room.muted ? 'Unmute' : 'Mute'}</span></button>
+          {/* muted, it shows so (Alex, 14 Nov: "a little red, and not the same sign"): the bell crossed out on a red tint, Muted */}
+          <button type="button" className={`pf-a-mute${room.muted ? ' on' : ''}`} onClick={() => setMine({ muted: !room.muted }, room.muted ? 'Sounds on' : 'Muted')} aria-pressed={!!room.muted} title={room.muted ? 'Unmute' : 'Mute'}>{room.muted ? I.bellOff : I.bell}<span>{room.muted ? 'Muted' : 'Mute'}</span></button>
           <button type="button" className="pf-a-find" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('roarme-find')) }}>{I.search}<span>Search</span></button>
           <span className="pf-more">
             <button type="button" className={more ? 'on' : ''} onClick={() => setMore((v) => !v)}>{I.more}<span>More</span></button>

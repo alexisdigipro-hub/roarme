@@ -4646,3 +4646,11 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 .emoji-btn.seal-btn svg { width: 17px; height: 17px; }
 /* the long press on a chat shows its messages above the menu on a phone too (Alex, 14 Nov): the two share the screen */
 @media (max-width: 760px) { .ctx .ctx-card { max-height: 44vh; } .ctx .ctx-menu { max-height: 42vh; } }
+
+/* every window with the keyboard up on a phone (Alex, 14 Nov: "this window above the keyboard, with a little gap, the whole
+   frame in sight"): the window's backdrop takes exactly the part of the screen above the keyboard (main.jsx --vvh / --vvt)
+   and the window sits in it whole, 10px clear of the keyboard; it scrolls inside if it is taller */
+@media (max-width: 760px) {
+  html.kb .modal-back { inset: auto 0 auto 0; top: var(--vvt, 0px); height: var(--vvh, 100dvh); padding-top: max(10px, env(safe-area-inset-top, 0px)); padding-bottom: 10px; }
+  html.kb .modal-back > .modal { max-height: 100%; }
+}

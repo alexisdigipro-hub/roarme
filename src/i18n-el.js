@@ -1352,7 +1352,7 @@ export const EL = {
   'Frost': 'Frost',
   'Frosted glass on a warm stone wall': 'Παγωμένο γυαλί σε ζεστό πέτρινο τοίχο',
   'Liquid glass with your own colours': 'Υγρό γυαλί με τα δικά σου χρώματα',
-  'Frost has its own colours and wall. Your colours, wallpapers and the rest come back when you choose Glass.': 'Το Frost έχει δικά του χρώματα και φόντο. Τα χρώματά σου, οι ταπετσαρίες και τα υπόλοιπα επιστρέφουν όταν διαλέξεις Glass.',
+  'Frost has its own colours and wall. Your colours, wallpapers and the rest come back when you choose Roar.': 'Το Frost έχει δικά του χρώματα και φόντο. Τα χρώματά σου, οι ταπετσαρίες και τα υπόλοιπα επιστρέφουν όταν διαλέξεις Roar.',
   'Slabs with soft corners, or round capsules': 'Πλάκες με μαλακές γωνίες ή στρογγυλές κάψουλες',
   'Slab': 'Πλάκα',
   'All in one panel of glass, or each chat its own slab': 'Όλες σε ένα γυάλινο πάνελ ή η καθεμία στη δική της πλάκα',
@@ -1364,4 +1364,5 @@ export const EL = {
   'Sort': 'Ταξινόμηση',
   'Sort contacts': 'Ταξινόμηση επαφών',
   'New contact or invite': 'Νέα επαφή ή πρόσκληση',
+  'Roar': 'Roar',
 }

@@ -977,10 +977,10 @@ function Appearance({ p, toast, me, setMe }) {
   // Glass or Frost (Alex, 14 Nov). Frost brings its own palette and wall; while it is on, only its three choices show,
   // and every other look setting waits, saved, for Glass
   const themeBox = (
-    <Box note={p.frost ? 'Frost has its own colours and wall. Your colours, wallpapers and the rest come back when you choose Glass.' : ''}>
+    <Box note={p.frost ? 'Frost has its own colours and wall. Your colours, wallpapers and the rest come back when you choose Roar.' : ''}>
       <div className="set-row set-col">
         <span className="set-text">Theme<small>{p.frost ? 'Frosted glass on a warm stone wall' : 'Liquid glass with your own colours'}</small></span>
-        <Lens className="seg" dep={p.frost ? 'frost' : 'glass'}>{[[false, 'Glass'], [true, 'Frost']].map(([v, l]) => <button key={l} type="button" className={!!p.frost === v ? 'on' : ''} onClick={(e) => revealFrom(e, () => setPrefs({ frost: v }))}>{l}</button>)}</Lens>
+        <Lens className="seg" dep={p.frost ? 'frost' : 'glass'}>{[[false, 'Roar'], [true, 'Frost']].map(([v, l]) => <button key={l} type="button" className={!!p.frost === v ? 'on' : ''} onClick={(e) => revealFrom(e, () => setPrefs({ frost: v }))}>{l}</button>)}</Lens>
       </div>
     </Box>
   )

@@ -62,6 +62,22 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" "$P"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" "$P"
           /usr/libexec/PlistBuddy -c "Print" "$P"
+      - name: Apple's notifications
+        working-directory: mobile/ios/App
+        run: |
+          # the push entitlement (automatic signing turns it into production for the App Store and adds Push to the App ID)
+          cat > App/App.entitlements <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict><key>aps-environment</key><string>development</string></dict></plist>
+          EOF
+          P=App.xcodeproj/project.pbxproj
+          grep -q CODE_SIGN_ENTITLEMENTS "$P" || perl -0pi -e 's#(INFOPLIST_FILE = App/Info.plist;)#$1\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;#g' "$P"
+          grep -c "CODE_SIGN_ENTITLEMENTS = App/App.entitlements" "$P"
+          # the device's token handed to Capacitor's push plugin (its README's two AppDelegate methods)
+          A=App/AppDelegate.swift
+          grep -q capacitorDidRegisterForRemoteNotifications "$A" || perl -0pi -e 's#\}\s*\z#    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {\n        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)\n    }\n\n    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {\n        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)\n    }\n}\n#' "$A"
+          tail -12 "$A"
       - name: Icon
         working-directory: mobile
         run: |

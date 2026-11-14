@@ -8,6 +8,10 @@
 //   POST {test: true} + the user's sign-in   Settings > Send Test: after 5 seconds (time to close RoarMe) a test
 //                                            notification to each of that person's devices, and what each push service said
 // The private key never leaves the database table roar_push_conf, which only the server can read.
+// Inside the iPhone app (14 Nov) a device is kept as https://api.push.apple.com/3/device/<token>: those go to Apple
+// (APNs, HTTP/2 with a token signed by the APNs key) instead. The key is three Edge Function secrets set by Alex in
+// Supabase: APNS_KEY_ID, APNS_TEAM_ID and APNS_KEY_P8 (the .p8 file's text). Without them iPhone-app devices are
+// skipped with status 503 and Web Push goes on as before.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -84,7 +88,44 @@ function preview(m: { kind: string; body: string; file: Record<string, unknown> 
   return clean(m.body || '')
 }
 
-async function push(t: { endpoint: string; p256dh: string; auth: string }, note: unknown) {
+// Apple's notifications for the iPhone app
+const APNS = 'https://api.push.apple.com/3/device/'
+const TOPIC = 'com.themadlions.roarme'
+let apnsJwt: { token: string; at: number } | null = null
+async function apnsToken() {
+  // Apple wants the same token reused for 20 to 60 minutes; a new one every 45
+  if (apnsJwt && Date.now() - apnsJwt.at < 45 * 60 * 1000) return apnsJwt.token
+  const kid = Deno.env.get('APNS_KEY_ID'), team = Deno.env.get('APNS_TEAM_ID'), p8 = Deno.env.get('APNS_KEY_P8')
+  if (!kid || !team || !p8) return null
+  const der = Uint8Array.from(atob(p8.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '')), (c) => c.charCodeAt(0))
+  const key = await crypto.subtle.importKey('pkcs8', der, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign'])
+  const iat = Math.floor(Date.now() / 1000)
+  const head = b64u(enc.encode(JSON.stringify({ alg: 'ES256', kid })))
+  const body = b64u(enc.encode(JSON.stringify({ iss: team, iat })))
+  const sig = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, enc.encode(`${head}.${body}`)))
+  apnsJwt = { token: `${head}.${body}.${b64u(sig)}`, at: iat * 1000 }
+  return apnsJwt.token
+}
+async function apns(endpoint: string, note: { title: string; body: string; room?: string; tag?: string }) {
+  const jwt = await apnsToken()
+  if (!jwt) return new Response('APNs key not set in Supabase (APNS_KEY_ID, APNS_TEAM_ID, APNS_KEY_P8)', { status: 503 })
+  const r = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      authorization: `bearer ${jwt}`, 'apns-topic': TOPIC, 'apns-push-type': 'alert', 'apns-priority': '10',
+      'apns-expiration': String(Math.floor(Date.now() / 1000) + 86400),
+      ...(note.tag ? { 'apns-collapse-id': note.tag.slice(0, 64) } : {}),
+    },
+    body: JSON.stringify({ aps: { alert: { title: note.title, body: note.body }, sound: 'default', 'thread-id': note.room || 'roarme' }, room: note.room || '' }),
+  })
+  if (r.status === 403) apnsJwt = null // a token Apple no longer takes: a fresh one next time
+  // a token for an app that is gone: treated as gone, like Web Push's 410
+  if (r.status === 400) { const t = await r.text(); return new Response(t, { status: /BadDeviceToken|DeviceTokenNotForTopic/.test(t) ? 410 : 400 }) }
+  return r
+}
+
+async function push(t: { endpoint: string; p256dh: string; auth: string }, note: { title: string; body: string; room?: string; tag?: string }) {
+  if (t.endpoint.startsWith(APNS)) return apns(t.endpoint, note)
   const r = await fetch(t.endpoint, {
     method: 'POST',
     headers: { Authorization: await vapid(t.endpoint), 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '86400', Urgency: 'high' },
@@ -102,7 +143,7 @@ async function test(req: Request) {
   await new Promise((ok) => setTimeout(ok, 5000))
   const results: { device: string; status: number; said: string }[] = []
   for (const t of subs) {
-    const device = /iPhone|iPad/.test(t.ua) ? 'iPhone' : /Android/.test(t.ua) ? 'Android' : /Mac/.test(t.ua) ? 'Mac' : /Windows/.test(t.ua) ? 'Windows' : 'Browser'
+    const device = t.endpoint.startsWith(APNS) ? 'iPhone app' : /iPhone|iPad/.test(t.ua) ? 'iPhone' : /Android/.test(t.ua) ? 'Android' : /Mac/.test(t.ua) ? 'Mac' : /Windows/.test(t.ua) ? 'Windows' : 'Browser'
     try {
       const r = await push(t, { title: 'RoarMe', body: 'Notifications work on this device ✓', room: '', tag: `test-${Date.now()}` })
       results.push({ device, status: r.status, said: r.ok ? 'ok' : (await r.text()).slice(0, 160) })

@@ -4638,3 +4638,9 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 .pill-btn.calls-del-all { flex: none; white-space: nowrap; padding: 0 14px; font-weight: 500; }
 /* Calls' bins show only while editing, and then fully (Alex, 14 Nov) */
 .recent-calls.editing .call-del { opacity: 1; }
+
+/* The lock in the writing box, in place of the emoji button (Alex, 14 Nov): discreet while off, green while on */
+.emoji-btn.seal-btn { color: var(--muted); opacity: .6; }
+.emoji-btn.seal-btn:hover { opacity: 1; }
+.emoji-btn.seal-btn.on { color: #30d158; opacity: 1; }
+.emoji-btn.seal-btn svg { width: 17px; height: 17px; }

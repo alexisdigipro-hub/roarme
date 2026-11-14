@@ -9,6 +9,7 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - **Never a word with an underline as a button** (Alex, 5 Nov, for every site we make): actions are real buttons, a flat matte glass pill or a round glass icon.
 - Data in Supabase: only the `roar_*` tables and the `roar-files` / `roar-avatars` buckets; never touch the
   hub's tables. Every database change goes in supabase/schema.sql, written so it can be run again.
+- **A sample first, then the app** (Alex, 14 Nov: "can you make me the sample here without changing the app", and he chose the live test page): for any change to how something looks, first publish a live test page (an Artifact) built from the app's real stylesheets (src/styles.css, src/themes-halo.css, src/themes-glass.css) with the real classes, light and dark, at phone width, where he can tap and see the motion, with 2 or 3 versions side by side when there is a choice. Touch the app only after he says to put it in ("βάλ' το"). Say plainly that the page is a sample and not the app.
 - Desktop first (Alex, 15 Oct). Email + password sign-in, @username to be found.
 - Pushing to main deploys to GitHub Pages; open a PR, wait for the green build, merge it yourself.
 - Since 1 Nov 2026 RoarMe has no tie to the THEMADLIONS hub (the hub has its own chat); supabase/hub-unlink.sql removed

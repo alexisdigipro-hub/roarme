@@ -972,7 +972,9 @@ export default function Chat({ me, setMe }) {
       }, 450) }
     },
     onTouchMove: (e) => { const h = tabHold.current, t = e.touches[0]; if (h && !h.fired && Math.hypot(t.clientX - h.x, t.clientY - h.y) > 8) clearTimeout(h.timer) },
-    onTouchEnd: (e) => { const h = tabHold.current; if (!h) return; clearTimeout(h.timer); if (h.fired && isIPhone()) haptic(12); if (h.fired && e.cancelable) e.preventDefault() },
+    // the finger lifted after the menu opened: the tap the phone makes of it must not close the menu (Alex, 14 Nov: "it
+    // shows for a moment and goes when I lift my finger"), so the menu's guard time starts again from this moment
+    onTouchEnd: (e) => { const h = tabHold.current; if (!h) return; clearTimeout(h.timer); if (h.fired) setFolderMenu((m) => (m ? { ...m, at: Date.now() } : m)); if (h.fired && isIPhone()) haptic(12); if (h.fired && e.cancelable) e.preventDefault() },
     onTouchCancel: () => clearTimeout(tabHold.current?.timer),
   })
   const deleteFolder = (f) => {
@@ -1568,7 +1570,7 @@ export default function Chat({ me, setMe }) {
         const folderReorder = <><hr /><button type="button" onClick={() => { setFolderMenu(null); setTab('chats'); setTabsEdit(true) }}>{REORDER}<span>Reorder Tabs</span></button></>
         return (
         <OnTop>
-          <button type="button" className="scrim" aria-label="Close" onClick={() => { if (!folderMenu.at || Date.now() - folderMenu.at > 350) setFolderMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu(null) }} />
+          <button type="button" className="scrim" aria-label="Close" onClick={() => { if (!folderMenu.at || Date.now() - folderMenu.at > 500) setFolderMenu(null) }} onContextMenu={(e) => { e.preventDefault(); if (!folderMenu.at || Date.now() - folderMenu.at > 500) setFolderMenu(null) }} />
           <div className="room-menu folder-menu menu-list" style={folderMenu.bottom != null ? { left: folderMenu.x, bottom: folderMenu.bottom, top: 'auto' } : { left: folderMenu.x, top: folderMenu.y }}>
             {folderMenu.f.custom ? (
               <>

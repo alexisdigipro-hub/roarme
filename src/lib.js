@@ -249,8 +249,21 @@ export const foldKeep = (s) => [...String(s || '')].map((c) => { const f = fold(
 const ACC = { α: 'αά', ε: 'εέ', η: 'ηή', ι: 'ιίϊΐ', ο: 'οό', υ: 'υύϋΰ', ω: 'ωώ', σ: 'σς', a: 'aàáâäã', e: 'eèéêë', i: 'iìíîï', o: 'oòóôöõ', u: 'uùúûü', c: 'cç', n: 'nñ' }
 export const foldRx = (t) => [...fold(t)].map((c) => (ACC[c] ? `[${ACC[c]}]` : c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).join('')
 
+// inside the iPhone app the phone's own Taptic Engine answers (Capacitor's Haptics, mobile/package.json; Alex, 14 Nov:
+// "a small click wherever I press"): a light tap for a touch, a firmer one for a long press
+export function nativeTap(style = 'LIGHT') {
+  const C = typeof window !== 'undefined' && window.Capacitor
+  if (!C?.isNativePlatform?.()) return false
+  try {
+    const H = C.Plugins?.Haptics
+    const p = H?.impact ? H.impact({ style }) : C.nativePromise?.('Haptics', 'impact', { style })
+    p?.catch?.(() => {})
+    return true
+  } catch { return false }
+}
 export function haptic(ms = 10) {
   try {
+    if (nativeTap(ms > 10 ? 'MEDIUM' : 'LIGHT')) return
     if (navigator.vibrate && navigator.vibrate(ms)) return
     if (!isIPhone()) return
     const label = document.createElement('label')

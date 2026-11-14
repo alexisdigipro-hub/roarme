@@ -10,6 +10,7 @@ import './themes-glass.css'
 import './themes-frost.css' // Frost, worn only with data-frost on <html> (Alex, 14 Nov)
 import { startI18n } from './i18n.js'
 import { dressTheme } from './prefs.js'
+import { nativeTap } from './lib.js'
 
 // the Privacy Policy and the Terms come only when opened, not with every start of RoarMe
 const LegalPage = lazy(() => import('./legal.jsx').then((m) => ({ default: m.LegalPage })))
@@ -70,6 +71,12 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
   document.addEventListener('focusin', () => setTimeout(noKeys, 700))
   // the iPhone's bar of arrows and Done over the keyboard does not belong in a chat app: off inside the iPhone app
   // (Capacitor's Keyboard plugin, mobile/package.json; reached through the native bridge, as push.js does)
+  // inside the iPhone app a light tap of the Taptic Engine on every button, tab and switch a finger presses (Alex, 14 Nov)
+  if (shell) {
+    // controls only: rows of lists (chats, people, messages) are touched to scroll too, so they tick only on a long press
+    const TAP = '.round, .send, .btn, .switch, .tick, .foot button, .tabs button, .seg button, .lens button, .as-tabs button, .pf-acts > button, .menu > button, .menu-list > button, .head-card, .chip, .call-minus, .call-del-go'
+    document.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse' && e.target.closest?.(TAP) && !e.target.closest('[disabled]')) nativeTap('LIGHT') }, { capture: true, passive: true })
+  }
   if (shell) {
     const C = window.Capacitor
     const K = C.Plugins?.Keyboard

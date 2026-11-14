@@ -616,7 +616,8 @@ export async function saveMe(me, setMe, patch) {
 }
 
 /* Your phone number (Alex, 14 Nov): add or change it with an SMS code, and whether people who have it in their
-   contacts find you on RoarMe (supabase/phone.sql). Shown while phone sign-in is on, or to whoever already has a number. */
+   contacts find you on RoarMe (supabase/contacts-find.sql). The number is shown while phone sign-in is on, or to whoever
+   already has one; Let People Find Me always (by email too). */
 function PhoneNumber({ toast }) {
   const phoneOn = usePhoneAuth()
   const [phone, setPhone] = useState(null) // null loading · '' none · the number
@@ -625,11 +626,12 @@ function PhoneNumber({ toast }) {
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     setPhone(user?.phone_confirmed_at ? user.phone || '' : '')
-    const { data } = await supabase.rpc('roar_my_phone')
-    if (data?.[0]) setFindable(data[0].findable)
+    const { data, error } = await supabase.rpc('roar_findable')
+    if (!error && typeof data === 'boolean') setFindable(data)
   }
   useEffect(() => { load() }, [])
-  if (phone === null || (!phoneOn && !phone)) return null
+  if (phone === null) return null
+  const showNumber = phoneOn || !!phone
   const up = (patch) => setEdit((s) => ({ ...s, ...patch }))
   const send = async () => {
     const p = toE164(edit.cc, edit.num)
@@ -648,11 +650,13 @@ function PhoneNumber({ toast }) {
   }
   const setFind = async (v) => {
     setFindable(v)
-    const { error } = await supabase.rpc('roar_phone_findable', { on_: v })
+    const { error } = await supabase.rpc('roar_set_findable', { on_: v })
     toast(error ? errText(error) : 'Saved')
   }
+  const findSwitch = <Switch on={findable} set={setFind} hint="People who have your email or number in their phone's contacts see you are on RoarMe">Let People Find Me</Switch>
+  if (!showNumber) return <Box title="Finding Friends" note="Only a coded form of your email is kept for this; nobody sees the address itself.">{findSwitch}</Box>
   return (
-    <Box title="Phone Number" note="Only a coded form of your number is kept for finding friends; nobody sees the number itself.">
+    <Box title="Phone Number" note="Only a coded form of your email and number is kept for finding friends; nobody sees them.">
       {phone && !edit.open && <div className="set-row"><span className="set-text">Your Number<small data-raw="">{showPhone(phone)}</small></span><button type="button" className="btn btn-sm" onClick={() => up({ open: true })}>Change</button></div>}
       {!phone && !edit.open && <Nav onClick={() => up({ open: true })}>Add Phone Number</Nav>}
       {edit.open && (
@@ -667,7 +671,7 @@ function PhoneNumber({ toast }) {
           </span>
         </div>
       )}
-      {phone && <Switch on={findable} set={setFind} hint="People who have your number in their contacts see you are on RoarMe">Let People Find Me by My Number</Switch>}
+      {findSwitch}
     </Box>
   )
 }

@@ -3,10 +3,11 @@ import { SUPABASE_KEY, SUPABASE_URL, errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, Modal } from './ui.jsx'
 
 /* Sign in with a phone number and find friends from the phone's contacts (Alex, 14 Nov, before the App Store;
-   supabase/phone.sql). The phone number is the first way in once Supabase's phone sign-in is on (phoneAuthOn reads
+   supabase/contacts-find.sql). The phone number is the first way in once Supabase's phone sign-in is on (phoneAuthOn reads
    Supabase's public auth settings); until then RoarMe stays as it was, email only. The contacts are read only inside
-   the iPhone app (Capacitor's contacts plugin); their numbers never leave the phone: each is turned into a SHA-256 of
-   its digits, country code first, and only those go to roar_find_by_phones. */
+   the iPhone app (Capacitor's contacts plugin); their emails and numbers never leave the phone: each is turned into a
+   SHA-256 (the email in small letters, the number's digits with the country code first) and only those go to
+   roar_find_contacts. */
 
 // the countries offered at sign-up; Greece first
 export const COUNTRIES = [
@@ -88,7 +89,7 @@ const contactsPlugin = () => {
 }
 export const contactsAvailable = () => !!contactsPlugin()
 
-// reads the address book, asks which numbers are on RoarMe; returns who is and who could be invited
+// reads the address book, asks which emails and numbers are on RoarMe; returns who is and who could be invited
 export async function friendsFromContacts() {
   const P = contactsPlugin()
   if (!P) throw new Error('Your contacts can be read only in the RoarMe app for iPhone.')
@@ -96,28 +97,30 @@ export async function friendsFromContacts() {
   if (perm?.contacts !== 'granted' && perm?.contacts !== 'limited') throw new Error('RoarMe may not read your contacts. Allow it in the iPhone\'s Settings > RoarMe > Contacts.')
   const { data: { user } } = await supabase.auth.getUser()
   const cc = user?.phone ? countryOf(user.phone) : '30'
-  const { contacts = [] } = await P.getContacts({ projection: { name: true, phones: true } })
+  const { contacts = [] } = await P.getContacts({ projection: { name: true, phones: true, emails: true } })
   const byHash = new Map()
   const people = []
   for (const c of contacts) {
-    const name = c.name?.display || [c.name?.given, c.name?.family].filter(Boolean).join(' ') || ''
     const nums = [...new Set((c.phones || []).map((p) => contactDigits(p.number, cc)).filter((d) => d.length >= 8 && d.length <= 15))]
-    if (!nums.length) continue
-    const entry = { name: name || `+${nums[0]}`, number: `+${nums[0]}`, hashes: [] }
-    for (const d of nums) { const h = await sha256hex(d); entry.hashes.push(h); byHash.set(h, entry) }
+    const mails = [...new Set((c.emails || []).map((e) => String(e.address || '').trim().toLowerCase()).filter((e) => e.includes('@')))]
+    if (!nums.length && !mails.length) continue
+    const name = c.name?.display || [c.name?.given, c.name?.family].filter(Boolean).join(' ') || (nums[0] ? `+${nums[0]}` : mails[0])
+    const entry = { name, number: nums[0] ? `+${nums[0]}` : '' }
+    for (const k of [...nums, ...mails]) byHash.set(await sha256hex(k), entry)
     people.push(entry)
   }
   const hashes = [...byHash.keys()]
   const found = new Map()
   for (let i = 0; i < hashes.length; i += 5000) {
-    const { data, error } = await supabase.rpc('roar_find_by_phones', { hashes: hashes.slice(i, i + 5000) })
+    const { data, error } = await supabase.rpc('roar_find_contacts', { hashes: hashes.slice(i, i + 5000) })
     if (error) throw error
     for (const r of data || []) if (!found.has(r.id)) found.set(r.id, { ...r, contactName: byHash.get(r.hash)?.name || '' })
   }
   const onRoar = new Set([...found.values()].map((r) => byHash.get(r.hash)))
   return {
     found: [...found.values()].sort((a, b) => (a.contactName || nameOf(a)).localeCompare(b.contactName || nameOf(b))),
-    invite: people.filter((p) => !onRoar.has(p)).sort((a, b) => a.name.localeCompare(b.name)),
+    // the rest who have a number, to invite by SMS
+    invite: people.filter((p) => p.number && !onRoar.has(p)).sort((a, b) => a.name.localeCompare(b.name)),
   }
 }
 

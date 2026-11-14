@@ -1365,4 +1365,13 @@ export const EL = {
   'Sort contacts': 'Ταξινόμηση επαφών',
   'New contact or invite': 'Νέα επαφή ή πρόσκληση',
   'Roar': 'Roar',
+  // Calls in the head (14 Nov)
+  'Missed': 'Αναπάντητες',
+  'No missed calls': 'Καμία αναπάντητη κλήση',
+  'Missed Calls': 'Αναπάντητες κλήσεις',
+  'Delete All': 'Διαγραφή όλων',
+  'Edit calls': 'Επεξεργασία κλήσεων',
+  'Call someone with + at the top, or from the phone and camera buttons in a chat.': 'Κάλεσε κάποιον με το + πάνω ή από τα κουμπιά τηλεφώνου και κάμερας σε μια συνομιλία.',
+  'Stone': 'Πέτρα',
+  'Umber': 'Ώχρα',
 }

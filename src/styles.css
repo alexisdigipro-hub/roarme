@@ -4630,3 +4630,11 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 .menu .menu-tick { width: 20px; flex: none; display: grid; place-items: center; }
 .menu .menu-tick svg { width: 18px; height: 18px; }
 .contacts-list .contact .room-prev { opacity: .62; }
+
+/* Calls in the head (Alex, 14 Nov, from the iPhone's Phone app): All | Missed in place of the name, soft; while editing
+   a round glass bin beside every call and Delete All where + was */
+.side-brand .calls-seg { display: inline-flex; margin: 0 auto; }
+.side-brand .calls-seg button { flex: none; min-width: 64px; height: 30px; padding: 0 14px; font-size: 14px; font-weight: 500; }
+.pill-btn.calls-del-all { flex: none; white-space: nowrap; padding: 0 14px; font-weight: 500; }
+/* Calls' bins show only while editing, and then fully (Alex, 14 Nov) */
+.recent-calls.editing .call-del { opacity: 1; }

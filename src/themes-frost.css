@@ -80,12 +80,9 @@ html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .round {
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.badge, .foot-ico i) { background: #fff !important; color: var(--fr-ink-dark) !important; box-shadow: 0 0 10px rgba(255, 255, 255, .55) !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.btn-main, .send) { background: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .55)) !important; color: var(--fr-ink-dark) !important; border: 1px solid rgba(255, 255, 255, .9) !important; text-shadow: none !important; }
 
-/* the chat list: Frost's One Panel or Cards (prefs.js puts the panel on and data-rooms 'card' for Cards) */
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room { background: rgba(255, 255, 255, .2) !important; }
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-mode='dark'] .rooms-pager .rooms > .room { background: rgba(255, 255, 255, .07) !important; }
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room:last-of-type { box-shadow: 14px 18px 26px -14px var(--fr-shadow) !important; }
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-rooms='card'] .rooms-pager .rooms > .room { border: 1px solid var(--lg-rim) !important; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 12px 16px 24px -14px var(--fr-shadow) !important; }
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room.on { background: rgba(255, 255, 255, .36) !important; }
+/* the chat list and the contacts stand straight on the wall, no frame round them (Alex, 14 Nov); the chosen chat on a
+   computer is a soft lighter glass */
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room.on { background: rgba(255, 255, 255, .3) !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room :is(.room-top strong) { color: var(--fr-ink); }
 
 /* messages: theirs a darker frosted glass with white words, yours bright frosted white with the warm dark ink */
@@ -105,9 +102,6 @@ html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-s
 html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] :is(.foot button, .rooms-area .tabs button, .seg button) { border-radius: 10px !important; }
 html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] .foot.lens::before, html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] .tabs.lens::before, html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] .seg.lens::before { border-radius: 10px !important; }
 html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] .round { border-radius: 13px !important; }
-html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room:first-of-type { border-top-left-radius: 16px !important; border-top-right-radius: 16px !important; }
-html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room:last-of-type { border-bottom-left-radius: 16px !important; border-bottom-right-radius: 16px !important; }
-html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme][data-rooms='card'] .rooms-pager .rooms > .room.room:is(.room, :first-of-type, :last-of-type) { border-radius: 16px !important; }
 html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] :is(.modal, .as-sheet, .te-sheet) { border-radius: 22px !important; }
 html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] :is(.menu, .menu-list, .msg-menu, .vw-menu) { border-radius: 16px !important; }
 html:root:root:root:root[data-frost][data-frost-shape='slab'][data-glass][data-skin][data-theme] .bubble:not(.note-b):not(.big-emoji) { border-radius: 14px !important; }

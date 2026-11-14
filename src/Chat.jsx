@@ -1945,6 +1945,23 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const el = scrollRef.current
     if (el && stick.current) el.scrollTop = el.scrollHeight
   }, [msgs, outbox.length])
+  // a voice message, photo or video takes its full height only once it has loaded: while one is at the bottom, the chat
+  // follows it, so the newest message is never left half under the writing box (Alex, 14 Nov)
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    let last = el.scrollHeight
+    const ro = new ResizeObserver(() => {
+      const h = el.scrollHeight
+      if (h > last && stick.current) el.scrollTop = h
+      last = h
+    })
+    const watch = () => { for (const c of el.children) ro.observe(c) }
+    watch()
+    const mo = new MutationObserver(watch)
+    mo.observe(el, { childList: true })
+    return () => { ro.disconnect(); mo.disconnect() }
+  }, [room.room_id])
   const olderBusy = useRef(false) // one page of older messages at a time, however fast the scroll events come
   const onScroll = async (e) => {
     const el = e.currentTarget
@@ -2631,7 +2648,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     })
   }
 
-  const sub = room.kind === 'group' ? `${(room.members || []).length} ${(room.members || []).length === 1 ? 'member' : 'members'}` : [other ? `@${other.username}` : '', lastSeenText(other)].filter(Boolean).join(' · ')
+  // a chat with one person shows only the name; @username and last seen are in the profile (Alex, 14 Nov). Groups keep their count
+  const sub = room.kind === 'group' ? `${(room.members || []).length} ${(room.members || []).length === 1 ? 'member' : 'members'}` : ''
   // a scheduled call in this chat: a notice when it starts (while the app is open)
   useEffect(() => {
     const timers = msgs.filter((m) => m.file?.event && !m.deleted_at).map((m) => {
@@ -2950,7 +2968,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
               {(room.kind === 'group' ? room.avatar_url : other?.avatar_url) && <i className="head-bg" aria-hidden="true" style={{ backgroundImage: `url("${room.kind === 'group' ? room.avatar_url : other?.avatar_url}")` }} />}
               <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={onlineNow(other)} />
-              <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{title}{official && OFFICIAL}</strong><small>{sub}</small></span>
+              <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{title}{official && OFFICIAL}</strong>{sub && <small>{sub}</small>}</span>
             </button>
             <button type="button" className="round" onClick={() => onCall(false)} aria-label="Voice call" title="Voice call">{I.phone}</button>
             <button type="button" className="round head-video" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>

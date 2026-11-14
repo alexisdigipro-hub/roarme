@@ -62,6 +62,18 @@ async function isTicket(t: string, c: string) {
   const now = Math.floor(Date.now() / SLOT)
   return c === await adminTicket(t, now) || c === await adminTicket(t, now - 1)
 }
+// Awaiting payment (Alex, 10 Nov 2026; supabase/transfer-paylock.sql): a sender locks a link until the client has paid.
+// While pay_lock is on, nobody but an admin gets a file's address or preview: the page gets who sent it, the title and
+// the file names (error 'payment', locked_payment), ?dl=1 goes back to the page, and an ended link gives no last
+// download. Turning it off works at once. Before that SQL has run there is no column, so nothing is locked; any other
+// error counts as locked.
+// deno-lint-ignore no-explicit-any
+async function payLocked(sb: any, table: string, tokens: string[]): Promise<Set<string>> {
+  if (!tokens.length) return new Set()
+  const { data, error } = await sb.from(table).select('token').in('token', tokens).eq('pay_lock', true)
+  if (error) return error.code === '42703' ? new Set() : new Set(tokens)
+  return new Set((data || []).map((r: { token: string }) => r.token))
+}
 // attachment with the real name: a plain ASCII one for old browsers, the UTF-8 one for the rest
 const disposition = (name: string) => `attachment; filename="${name.replace(/[^\x20-\x7e]|["\\]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(name)}`
 
@@ -93,6 +105,8 @@ Deno.serve(async (req) => {
       const to = await r2Url(f.path, { 'response-content-disposition': disposition(f.name || 'file') }, 6 * 3600)
       return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
     }
+    // awaiting payment: no file, back to the link's page (which says so)
+    if (f && (await payLocked(sb, 'roar_transfer_links', [t])).has(t)) return Response.redirect(page, 302)
     // the one last download of an ended link: its claim, once
     if (f && c && inGrace(f) && /^[0-9a-f-]{36}$/.test(c)) {
       const { data: cl } = await sb.from('roar_transfer_claims').update({ used_at: new Date().toISOString() }).eq('id', c).eq('token', t).is('used_at', null).select('id').maybeSingle()
@@ -117,6 +131,11 @@ Deno.serve(async (req) => {
     const { data: lp } = link.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', link.created_by).maybeSingle() : { data: null }
     const lb = await brandOf(sb, link.created_by)
     const info = { name: link.name, size: link.size, type: link.type, expires: link.expires_at, from: lb?.name || lp?.display_name || (lp?.username ? '@' + lp.username : ''), brand: lb }
+    // awaiting payment: what it is, never where it is (an ended one gives no last download either)
+    if (!admin && (await payLocked(sb, 'roar_transfer_links', [t])).has(t)) {
+      if (new Date(link.expires_at).getTime() <= Date.now()) return json({ ...info, error: 'expired', grace: false }, 410)
+      return json({ ...info, error: 'payment', locked_payment: true, files: [{ token: link.token, name: link.name, size: link.size, type: link.type }] }, 423)
+    }
     if (new Date(link.expires_at).getTime() <= Date.now()) {
       const last = await lastOnes(sb, [link], me)
       if (last.files.length) return json({ ...info, ...last.files[0], last: true, expires: new Date(new Date(link.expires_at).getTime() + GRACE).toISOString() })
@@ -152,6 +171,12 @@ Deno.serve(async (req) => {
   const { data: rows } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by, stopped_at').in('token', bundle.tokens)
   const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > Date.now())
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
+  // awaiting payment (the upload's link, or any of its files): the names and sizes, no addresses, no last download
+  if (!admin && ((await payLocked(sb, 'roar_transfer_bundles', [t])).size || (await payLocked(sb, 'roar_transfer_links', bundle.tokens || [])).size)) {
+    if (!live.length) return json({ ...head, expires: bundle.expires_at, error: 'expired', grace: false }, 410)
+    return json({ ...head, expires: bundle.expires_at, error: 'payment', locked_payment: true,
+      files: live.map((r: any) => ({ token: r.token, name: r.name, size: r.size, type: r.type, expires: r.expires_at })) }, 423)
+  }
   if (!live.length) {
     // ended: one last download for someone signed in, within GRACE, if the sender has an account
     const last = await lastOnes(sb, (rows || []).sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token)), me)

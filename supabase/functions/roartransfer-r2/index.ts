@@ -409,6 +409,14 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
       if (!error || error.code !== '23505') break
     }
     if (error) return json({ error: error.message }, 500)
+    // Awaiting payment from the start (Alex, 10 Nov 2026; Pro, supabase/transfer-paylock.sql): the link and its files
+    // open nothing until the sender turns it off in Details (roar-transfer-get)
+    let payLock = false
+    if (b.payLock === true && !guest && (await isPro(uid))) {
+      const { error: e1 } = await sb.from('roar_transfer_links').update({ pay_lock: true }).in('token', tokens).eq('created_by', uid)
+      const { error: e2 } = e1 ? { error: e1 } : await sb.from('roar_transfer_bundles').update({ pay_lock: true }).eq('token', token)
+      payLock = !e1 && !e2
+    }
     // the link's preview picture (Alex, 25 Oct): a frame of the first video or the first picture, made 1200x630 by the
     // page, shown when the link is pasted in WhatsApp, Messenger, iMessage, Slack… (roar-transfer-get ?og=). Never for a
     // transfer with a password: its preview says only who sent it.
@@ -431,7 +439,7 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
         if (r === true) mailed++; else mailErrors.push(`${to}: ${r}`)
       }
     }
-    return json({ token, expires, mailed, mailErrors })
+    return json({ token, expires, mailed, mailErrors, payLock })
   }
 
   if (b.action === 'abort') {

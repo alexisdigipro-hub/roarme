@@ -71,8 +71,10 @@ Deno.serve(async (req) => {
     if (b.action === 'link') {
       const { data: ev } = await sb.from('roar_transfer_events').select('token, kind, at, country, device')
         .in('token', [...tokens, ...(bundles || []).map((x: any) => x.token)]).order('at', { ascending: false }).limit(300)
+      // awaiting payment (supabase/transfer-paylock.sql): null until that SQL has run, so the page offers nothing
+      const { data: pl, error: plErr } = await sb.from('roar_transfer_links').select('token').in('token', tokens).eq('pay_lock', true)
       return json({ expires: (bundles || [])[0]?.expires_at || file.expires_at, locked: (bundles || []).some((x: any) => !!x.password_hash),
-        max: new Date(max).toISOString(), bundle: (bundles || [])[0]?.token || '', events: ev || [] })
+        max: new Date(max).toISOString(), bundle: (bundles || [])[0]?.token || '', events: ev || [], payLock: plErr ? null : (pl || []).length > 0 })
     }
     // edit: a new expiry (never past what the storage keeps) and/or a password (empty takes it off)
     const out: Record<string, unknown> = { ok: true }
@@ -90,6 +92,14 @@ Deno.serve(async (req) => {
       const pw = b.password.slice(0, 100)
       for (const x of bundles || []) await sb.from('roar_transfer_bundles').update({ password_hash: pw ? await sha(`${x.token}:${pw}`) : null }).eq('token', x.token)
       out.locked = !!pw
+    }
+    // Awaiting payment (Alex, 10 Nov 2026; supabase/transfer-paylock.sql): the upload's link and every file of it, locked
+    // or open again at once (roar-transfer-get hands out nothing while it is on)
+    if (typeof b.payLock === 'boolean') {
+      const { error: e1 } = await sb.from('roar_transfer_links').update({ pay_lock: b.payLock }).in('token', tokens).eq('created_by', uid)
+      if (e1) return json({ error: e1.code === '42703' ? 'Awaiting payment is not ready yet (supabase/transfer-paylock.sql).' : e1.message }, 500)
+      for (const x of bundles || []) await sb.from('roar_transfer_bundles').update({ pay_lock: b.payLock }).eq('token', x.token)
+      out.payLock = b.payLock
     }
     return json(out)
   }

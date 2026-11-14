@@ -684,3 +684,8 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .app > .side .s
 @keyframes call-del-in { from { opacity: 0; transform: translateX(14px); } }
 .calls-list .call-row.editing + .call-row::before { left: 106px; }
 @media (prefers-reduced-motion: reduce) { .calls-list .call-del-go { animation: none; } .calls-list .call-minus i { transition: none; } }
+
+/* Contacts pulled down for a refresh (Alex, 14 Nov: "the search stays fixed, only the names move"): no rubber band on
+   the list's own scroller, so the search never moves; the arrow shows just under the search */
+.side-scroll.contacts { overscroll-behavior-y: none; }
+.contacts-top .ptr.ptr-under { position: absolute; left: 50%; top: calc(100% + 10px); margin: 0 0 0 -17px; z-index: 5; }

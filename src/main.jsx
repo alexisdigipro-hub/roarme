@@ -63,8 +63,19 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
   document.addEventListener('focusout', () => setTimeout(down, 60))
   // a field given the focus by the page itself brings no keyboard on an iPhone: if the visible area has not shrunk a
   // moment later, the keyboard is not up and the room for the home bar comes back
-  const noKeys = () => { const vv = window.visualViewport; if (/iPhone|iPad|iPod/.test(navigator.userAgent) && vv && vv.height > window.innerHeight - 120 && document.documentElement.classList.contains('kb')) document.documentElement.classList.remove('kb') }
+  // inside the iPhone app the page itself shrinks above the keyboard, so this test would always say "no keyboard" and
+  // bring back the room for the home bar, a gap over the keyboard (Alex, 14 Nov, TestFlight): there it is skipped
+  const shell = !!window.Capacitor?.isNativePlatform?.()
+  const noKeys = () => { const vv = window.visualViewport; if (!shell && /iPhone|iPad|iPod/.test(navigator.userAgent) && vv && vv.height > window.innerHeight - 120 && document.documentElement.classList.contains('kb')) document.documentElement.classList.remove('kb') }
   document.addEventListener('focusin', () => setTimeout(noKeys, 700))
+  // the iPhone's bar of arrows and Done over the keyboard does not belong in a chat app: off inside the iPhone app
+  // (Capacitor's Keyboard plugin, mobile/package.json; reached through the native bridge, as push.js does)
+  if (shell) {
+    const C = window.Capacitor
+    const K = C.Plugins?.Keyboard
+    const off = { isVisible: false }
+    try { if (K?.setAccessoryBarVisible) K.setAccessoryBarVisible(off).catch(() => {}); else C.nativePromise?.('Keyboard', 'setAccessoryBarVisible', off)?.catch?.(() => {}) } catch { /* an older shell */ }
+  }
   // a field taken off the page while it had the keyboard (closing a chat) never says focusout: the keyboard going
   // down still shrinks or grows the visible area, and that is checked too (Alex, 21 Oct: the bar at the foot hung low)
   window.visualViewport?.addEventListener('resize', () => setTimeout(down, 60))

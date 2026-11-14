@@ -1510,8 +1510,9 @@ export default function Chat({ me, setMe }) {
         <OnTop>
           <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 250) setRoomMenu(null) }} onPointerDown={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 250)) { e.preventDefault(); closedAt.current = Date.now(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
           <div className="ctx-stack" onClick={(e) => e.stopPropagation()}>
-          {/* on a phone the long press shows only the menu; the messages are one tap away in it (Alex, 21 Oct) */}
-          {!window.matchMedia('(max-width: 760px)').matches && (
+          {/* the chat's last messages above the menu, on a phone too (Alex, 14 Nov: "the menu we have, plus a preview of
+              the messages in it", from Telegram); a tap on them opens the chat */}
+          {(
           <div className="ctx-card" role="button" tabIndex={0} onClick={() => { const r = roomMenu.r; setRoomMenu(null); setActiveId(r.room_id) }}>
             <span className="ctx-head"><b>{titleOf(roomMenu.r)}</b><small>{roomMenu.r.kind === 'group' ? 'Group' : otherOf(roomMenu.r) ? lastSeenText(otherOf(roomMenu.r)) : ''}</small></span>
             <PeekList room={roomMenu.r} me={me} people={people} clearedAt={cleared[roomMenu.r.room_id]} />

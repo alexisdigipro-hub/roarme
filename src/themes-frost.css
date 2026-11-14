@@ -104,3 +104,12 @@ html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.set
   background: var(--lg) !important; border: 1px solid var(--lg-rim) !important; box-shadow: var(--lg-shadow) !important;
   -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important;
 }
+
+/* The attach sheet's bar (Gallery, File, Location, Audio, Article, Transfer) with no colour (Alex, 14 Nov): no fill, no
+   rim, no shadow, the words straight on the sheet; only the chosen one sits in a soft flat box */
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .as-sheet .as-tabs {
+  background: none !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .as-sheet .as-tabs button { color: var(--fr-ink-soft) !important; }
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .as-sheet .as-tabs button.on { background: rgba(58, 47, 38, .08) !important; box-shadow: none !important; color: var(--fr-ink) !important; }
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-mode='dark'] .as-sheet .as-tabs button.on { background: rgba(255, 255, 255, .1) !important; }

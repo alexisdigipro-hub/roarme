@@ -106,7 +106,11 @@ async function apnsToken() {
   apnsJwt = { token: `${head}.${body}.${b64u(sig)}`, at: iat * 1000 }
   return apnsJwt.token
 }
-async function apns(endpoint: string, note: { title: string; body: string; room?: string; tag?: string }) {
+// RoarMe's own message sounds, as files inside the iPhone app (mobile/sounds, Alex, 14 Nov): the one each device picked
+// (roar_push_subs.sound, supabase/push-sound.sql), none while its sound is off, Glass when nothing is known yet
+const SOUNDS = ['glass', 'chime', 'pop', 'ping', 'drop', 'bells', 'roar']
+const soundFile = (k?: string | null) => (k === 'off' ? undefined : `${SOUNDS.includes(k || '') ? k : 'glass'}.wav`)
+async function apns(endpoint: string, note: { title: string; body: string; room?: string; tag?: string }, sound?: string | null) {
   const jwt = await apnsToken()
   if (!jwt) return new Response('APNs key not set in Supabase (APNS_KEY_ID, APNS_TEAM_ID, APNS_KEY_P8)', { status: 503 })
   const r = await fetch(endpoint, {
@@ -116,7 +120,7 @@ async function apns(endpoint: string, note: { title: string; body: string; room?
       'apns-expiration': String(Math.floor(Date.now() / 1000) + 86400),
       ...(note.tag ? { 'apns-collapse-id': note.tag.slice(0, 64) } : {}),
     },
-    body: JSON.stringify({ aps: { alert: { title: note.title, body: note.body }, sound: 'default', 'thread-id': note.room || 'roarme' }, room: note.room || '' }),
+    body: JSON.stringify({ aps: { alert: { title: note.title, body: note.body }, sound: soundFile(sound), 'thread-id': note.room || 'roarme' }, room: note.room || '' }),
   })
   if (r.status === 403) apnsJwt = null // a token Apple no longer takes: a fresh one next time
   // a token for an app that is gone: treated as gone, like Web Push's 410
@@ -124,8 +128,8 @@ async function apns(endpoint: string, note: { title: string; body: string; room?
   return r
 }
 
-async function push(t: { endpoint: string; p256dh: string; auth: string }, note: { title: string; body: string; room?: string; tag?: string }) {
-  if (t.endpoint.startsWith(APNS)) return apns(t.endpoint, note)
+async function push(t: { endpoint: string; p256dh: string; auth: string; sound?: string | null }, note: { title: string; body: string; room?: string; tag?: string }) {
+  if (t.endpoint.startsWith(APNS)) return apns(t.endpoint, note, t.sound)
   const r = await fetch(t.endpoint, {
     method: 'POST',
     headers: { Authorization: await vapid(t.endpoint), 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '86400', Urgency: 'high' },
@@ -138,7 +142,7 @@ async function test(req: Request) {
   const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer /, '')
   const { data: { user } } = await sb.auth.getUser(jwt)
   if (!user) return json({ error: 'Sign in first' }, 401)
-  const { data: subs } = await sb.from('roar_push_subs').select('endpoint, p256dh, auth, ua').eq('user_id', user.id)
+  const { data: subs } = await sb.from('roar_push_subs').select('*').eq('user_id', user.id)
   if (!subs?.length) return json({ error: 'No device has notifications on yet' }, 404)
   await new Promise((ok) => setTimeout(ok, 5000))
   const results: { device: string; status: number; said: string }[] = []
@@ -163,6 +167,13 @@ async function notify(id: string) {
     sb.from('roar_rooms').select('kind, title').eq('id', m.room_id).maybeSingle(),
     sb.from('roar_profiles').select('display_name, username').eq('id', m.user_id).maybeSingle(),
   ])
+  // each iPhone's sound (select * keeps working before supabase/push-sound.sql adds the column)
+  const phones = (targets as { endpoint: string }[]).filter((t) => t.endpoint.startsWith(APNS)).map((t) => t.endpoint)
+  const sounds = new Map<string, string | null>()
+  if (phones.length) {
+    const { data: rows } = await sb.from('roar_push_subs').select('*').in('endpoint', phones)
+    for (const x of rows || []) sounds.set(x.endpoint, x.sound ?? null)
+  }
   const name = who?.display_name || (who?.username ? `@${who.username}` : 'Someone')
   const group = room?.kind === 'group'
   const text = preview(m)
@@ -177,7 +188,7 @@ async function notify(id: string) {
       count: t.unread,
     }
     try {
-      const r = await push(t, note)
+      const r = await push({ ...t, sound: sounds.get(t.endpoint) }, note)
       if (r.ok) sent++
       else if (r.status === 404 || r.status === 410) gone.push(t.endpoint)
       else console.log('push', r.status, (await r.text()).slice(0, 200))
@@ -196,7 +207,7 @@ async function remind(id: string) {
     sb.from('roar_messages').select('user_id, kind, body, file, deleted_at').eq('id', r.message_id).maybeSingle(),
     sb.from('roar_rooms').select('kind, title').eq('id', r.room_id).maybeSingle(),
     sb.from('roar_profiles').select('active_until').eq('id', r.user_id).maybeSingle(),
-    sb.from('roar_push_subs').select('endpoint, p256dh, auth, preview').eq('user_id', r.user_id),
+    sb.from('roar_push_subs').select('*').eq('user_id', r.user_id),
   ])
   if (!subs?.length || (me?.active_until && new Date(me.active_until).getTime() > Date.now())) return { sent: 0 }
   let where = room?.title || ''

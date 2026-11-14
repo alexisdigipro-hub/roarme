@@ -1,4 +1,5 @@
 import { SUPABASE_URL, supabase } from './lib.js'
+import { getPrefs } from './prefs.js'
 
 /* Notifications with RoarMe closed (Alex, 18 Oct): Web Push on phones and browsers (supabase/push.sql, the Edge
    Function roar-push). Turning it on asks for permission, signs this browser up with the server's public key and
@@ -63,12 +64,24 @@ const nativeToken = (P) => {
   })
   return tokenWait
 }
+// the sound a notification plays on this iPhone: the one picked in Settings > Notifications and Sounds, or none while
+// Sound When a Message Arrives is off (Alex, 14 Nov); roar-push plays mobile/sounds/<kind>.wav from inside the app
+const pushSound = () => { const p = getPrefs(); return p.sound ? p.soundKind || 'glass' : 'off' }
 const keepNative = async (token, preview) => {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
-  const { error } = await supabase.from('roar_push_subs').upsert({ endpoint: APNS + token, user_id: user.id, p256dh: 'apns', auth: 'apns', preview: !!preview, ua: navigator.userAgent.slice(0, 290) })
+  const row = { endpoint: APNS + token, user_id: user.id, p256dh: 'apns', auth: 'apns', preview: !!preview, ua: navigator.userAgent.slice(0, 290) }
+  let { error } = await supabase.from('roar_push_subs').upsert({ ...row, sound: pushSound() })
+  // before supabase/push-sound.sql has been run there is no sound column: keep the device all the same
+  if (error && /sound/.test(error.message || '')) ({ error } = await supabase.from('roar_push_subs').upsert(row))
   if (error) throw error
   saveToken(token)
+}
+// a new pick in Settings reaches this iPhone's notifications at once
+export async function syncPushSound() {
+  const t = native() && savedToken()
+  if (!t) return
+  try { await supabase.from('roar_push_subs').update({ sound: pushSound() }).eq('endpoint', APNS + t) } catch { /* next time */ }
 }
 // a tapped notification opens its chat: inside the iPhone app the plugin says so (the service worker does it on the web)
 export function onNotificationTap(open) {

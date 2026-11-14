@@ -625,3 +625,20 @@ html:root:root[data-glass][data-skin='halo'] .menu > button > svg { flex: none; 
 html:root:root[data-glass][data-skin='halo'] .menu > hr { margin: 2px 10px; }
 html:root:root[data-glass][data-skin='halo'][data-mode='light'] .menu { background: rgba(255, 255, 255, .93) !important; }
 html:root:root[data-glass][data-skin='halo'][data-mode='dark'] .menu { background: rgba(44, 44, 50, .93) !important; }
+
+/* Reactions as small drops on the message's lower edge (Alex, 14 Nov, from iMessage: "no outline, over the message, that
+   small"): no rim or shadow, about 22px tall, laid over the bubble's bottom by a few pixels, under the start of the bubble
+   (the end for one's own); one's own reaction only a little tinted with the accent. Every theme. */
+html:root:root:root .bubble-col > .rx { position: relative; z-index: 1; margin-top: -9px; padding-inline: 10px; gap: 3px; }
+html:root:root:root .msg.mine .bubble-col > .rx { justify-content: flex-end; }
+html:root:root:root .bubble-col > .rx > button {
+  height: 22px; min-width: 22px; padding: 0 6px; gap: 3px; justify-content: center; font-size: 13px; line-height: 1;
+  border: 0 !important; outline: 0; box-shadow: none !important; background: var(--theirs) !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+html:root:root:root[data-mode='light'] .bubble-col > .rx > button { background: #ececf0 !important; }
+html:root:root:root[data-mode='dark'] .bubble-col > .rx > button { background: #3a3a40 !important; }
+html:root:root:root[data-mode] .bubble-col > .rx > button.on { background: color-mix(in srgb, var(--halo, #f47318) 22%, #ececf0) !important; }
+html:root:root:root[data-mode='dark'] .bubble-col > .rx > button.on { background: color-mix(in srgb, var(--halo, #f47318) 30%, #3a3a40) !important; }
+html:root:root:root .bubble-col > .rx > button small { font-size: 11px; font-weight: 600; }
+html:root:root:root .bubble-col > .rx > button.rx-replies svg { width: 12px; height: 12px; }

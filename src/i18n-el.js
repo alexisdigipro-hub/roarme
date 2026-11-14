@@ -1374,4 +1374,5 @@ export const EL = {
   'Call someone with + at the top, or from the phone and camera buttons in a chat.': 'Κάλεσε κάποιον με το + πάνω ή από τα κουμπιά τηλεφώνου και κάμερας σε μια συνομιλία.',
   'Stone': 'Πέτρα',
   'Umber': 'Ώχρα',
+  'Turn on Encrypted Chat': 'Ενεργοποίηση κρυπτογραφημένης συνομιλίας',
 }

@@ -72,7 +72,7 @@ export const DEFAULTS = {
   theirBubble: '', // the colour of the others' messages
   bubbleR: 0, // Message Corners in px (0 = the theme's own)
 }
-export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], ['night', 'Night'], ['ocean', 'Ocean'], ['dusk', 'Dusk'], ['forest', 'Forest'], ['ember', 'Ember']]
+export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], ['night', 'Night'], ['ocean', 'Ocean'], ['dusk', 'Dusk'], ['forest', 'Forest'], ['ember', 'Ember'], ['stone', 'Frost']]
 // a step smaller (Alex, 8 Nov: "the letters a little smaller"); the middle one, the default, is 14.5
 export const TEXT_SIZES = [12.5, 13.5, 14.5, 16, 17.5]
 const KEY = 'roarme-prefs'
@@ -254,6 +254,9 @@ export const HALO_ACCENTS = [
   ['h-gold', 'Gold', '#C9962B', '#e8bf5a', ['#f3d27a', '#b8811a'], '#3a2a05'],
   ['h-midnight', 'Midnight', '#14245C', '#8fa0e8', ['#2f4aa8', '#0b1640'], '#ffffff'],
   ['h-cyan', 'Cyan', '#11A9C9', '#4fd3ee', ['#4fd3ee', '#0e86c0'], '#ffffff'],
+  // Frost's own two in Roar too (Alex, 14 Nov: "all of Frost's colours in Roar, for anyone to make it")
+  ['h-stone', 'Stone', '#8a7f73', '#d9cfc4', ['#efe8e0', '#cfc3b6'], '#3a2f26'],
+  ['h-umber', 'Umber', '#3a2f26', '#c7b6a6', ['#6b5a4b', '#3a2f26'], '#fffaf4'],
   ['h-onyx', 'Onyx', '#1b1b20', '#c9c9d2', ['#4a4a55', '#0e0e12'], '#ffffff'],
   ['h-fire', 'Fire', '#E2572B', '#ff8a5c', ['#f6b73c', '#d92d3a'], '#ffffff'],
 ]
@@ -356,4 +359,5 @@ export const CHAT_THEMES = [
   ['forest', 'Forest', { background: 'forest', myBubble: '#2f8a5a', theirBubble: '#f2fbf5', accentHex: '#2f8a5a' }],
   ['ember', 'Ember', { background: 'ember', myBubble: '#e2553a', theirBubble: '#fff3ee', accentHex: '#e2553a' }],
   ['night', 'Night', { background: 'night', myBubble: '#4b5fc7', theirBubble: '#262b3d', accentHex: '#6f83ff' }],
+  ['frost', 'Frost', { background: 'stone', myBubble: '#efe8e0', theirBubble: '#a99c8f', accentHex: '#5a4a3c' }], // Frost's wall, bubbles and colour in Roar (Alex, 14 Nov)
 ]

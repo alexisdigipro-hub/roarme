@@ -389,7 +389,7 @@ function CallScreen({ call, local, remote, onAccept, onDecline, onHangup, onMute
 /* Recent Calls: one row per call, missed ones (to me) in red; a click calls back the same way. A call can be deleted
    from the list, one by one or all (Alex, 17 Oct): for you only, the other person keeps theirs (roar_call_hides) */
 // filter ('all' | 'missed'), editing and clearTick come from the head of Calls (Alex, 14 Nov, from the iPhone's Phone app):
-// while editing a red minus stands before every call; Delete All in the head bumps clearTick
+// while editing a round glass bin stands beside every call (Alex: bins, not red minuses); Delete All in the head bumps clearTick
 export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toast, filter = 'all', editing = false, clearTick = 0 }) {
   const [list, setList] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -440,7 +440,6 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toas
         const label = missed ? 'Missed' : out ? (r.status === 'answered' ? 'Outgoing' : r.status === 'declined' ? 'Declined' : r.status === 'busy' ? 'Busy' : 'No answer') : r.status === 'declined' ? 'Declined' : 'Incoming'
         return (
           <div key={r.id} className="call-row">
-          {editing && <button type="button" className="call-minus" disabled={busy} onClick={() => hide([r.id])} aria-label="Delete this call" title="Delete this call"><i /></button>}
           <button type="button" className="room call-log" onClick={() => onCall(other, r.room_id, r.video)} title={r.video ? 'Video call back' : 'Call back'}>
             <Avatar src={other.avatar_url} name={nameOf(other)} size={48} />
             <span className="room-main">
@@ -448,6 +447,7 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toas
               <span className="room-bottom"><span className="room-prev"><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}{dur && ` (${dur})`}</span></span>
             </span>
           </button>
+          {editing && <button type="button" className="call-del" disabled={busy} onClick={() => hide([r.id])} aria-label="Delete this call" title="Delete this call">{I.trash}</button>}
           </div>
         )
       })}

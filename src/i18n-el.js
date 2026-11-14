@@ -1372,4 +1372,6 @@ export const EL = {
   'Delete All': 'Διαγραφή όλων',
   'Edit calls': 'Επεξεργασία κλήσεων',
   'Call someone with + at the top, or from the phone and camera buttons in a chat.': 'Κάλεσε κάποιον με το + πάνω ή από τα κουμπιά τηλεφώνου και κάμερας σε μια συνομιλία.',
+  'Stone': 'Πέτρα',
+  'Umber': 'Ώχρα',
 }

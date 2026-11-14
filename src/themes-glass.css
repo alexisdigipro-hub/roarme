@@ -605,3 +605,14 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .sid
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .side-brand .calls-seg button { color: var(--lg-ink); opacity: .75; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .side-brand .calls-seg button.on { opacity: 1; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .side-brand .calls-seg.lens::before { border: 0; background: var(--lg-chip) !important; box-shadow: none; }
+
+/* Frost's wall in Roar (Alex, 14 Nov: "all of Frost in Roar, for anyone to make it"): the warm stone wallpaper 'stone',
+   lit from the top left, lighter by Day, dark brown by Night; wherever a wallpaper is drawn (chat, app, tiles, previews) */
+html[data-skin='halo'][data-theme] :is(.room-view, .wall-tile, .set-preview, .te-preview, body.app-wall)[data-bg='stone'] {
+  background-color: #a89c8f !important;
+  background-image: radial-gradient(60% 40% at 15% 6%, #dcd3c8, transparent 70%), radial-gradient(60% 40% at 90% 55%, rgba(255, 255, 255, .14), transparent 70%), radial-gradient(80% 50% at 30% 100%, rgba(0, 0, 0, .16), transparent 70%), linear-gradient(165deg, #b9ada0, #8a7f73) !important;
+}
+html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile, .set-preview, .te-preview, body.app-wall)[data-bg='stone'] {
+  background-color: #26211d !important;
+  background-image: radial-gradient(60% 40% at 15% 6%, #5b5046, transparent 70%), radial-gradient(60% 40% at 90% 55%, rgba(255, 255, 255, .06), transparent 70%), radial-gradient(80% 50% at 30% 100%, rgba(0, 0, 0, .3), transparent 70%), linear-gradient(165deg, #3b342e, #1c1916) !important;
+}

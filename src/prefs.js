@@ -57,8 +57,7 @@ export const DEFAULTS = {
   listShape: 'panel', // the chat list: one sheet of glass ('panel'), or each chat a capsule ('pill') or a card ('card'); Alex, 13 Nov
   contactShape: 'plain', // Contacts: each person a capsule ('pill') or a card with soft corners ('card'; Alex, 13 Nov)
   listPanelGrain: false, // a fine grain over the panel
-  frost: false, // the Frost theme (Alex, 14 Nov): frosted slab glass on a taupe wall, its own palette; only Day and Night, its shape and its list are chosen
-  frostShape: 'slab', // Frost: 'slab' (soft-cornered slabs) or 'capsule'
+  frost: false, // the Frost theme (Alex, 14 Nov): frosted glass capsules on a taupe wall, its own palette; only Day and Night is chosen
   uiText: 100, // 85 to 130 (%): the size of all of RoarMe's letters (Alex, 13 Nov); the messages' own size is textSize
   accentOpacity: 100, // 30 to 100: how solid the accent colour's fill is (your messages, the coloured buttons)
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
@@ -290,7 +289,9 @@ export function applyLook(p0) {
   const p = frost
     ? { ...DEFAULTS, mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite } // no frame round the chats or the contacts (Alex, 14 Nov)
     : p0
-  if (frost) { r.dataset.frost = '1'; r.dataset.frostShape = p0.frostShape === 'capsule' ? 'capsule' : 'slab' } else { delete r.dataset.frost; delete r.dataset.frostShape }
+  // Frost is round capsules only (Alex, 14 Nov: "only capsule")
+  if (frost) r.dataset.frost = '1'; else delete r.dataset.frost
+  delete r.dataset.frostShape
   const hex = (/^#[0-9a-f]{6}$/i.test(p.accentHex || '') && p.accentHex) || ACCENTS.find(([k]) => k === p.accent)?.[2]
   if (hex) { r.style.setProperty('--accent', hex); r.style.setProperty('--accent-2', hex); r.style.setProperty('--accent-ink', inkOn(hex)) } else { ['--accent', '--accent-2', '--accent-ink'].forEach((v) => r.style.removeProperty(v)) }
   // in Halo one of its own colours stands in for the orange: on your messages, Send, the chosen things

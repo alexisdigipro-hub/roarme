@@ -600,3 +600,14 @@ html:root:root[data-glass] .adm-rep-words, html:root:root[data-glass] .adm-rep-n
 html:root:root[data-glass] .adm-rep-note { background: none; padding: 0 4px; color: var(--muted); font-style: italic; }
 html:root:root[data-glass] .adm-rep-acts { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; }
 html:root:root[data-glass] .adm-rep-acts .pill-btn.danger { color: var(--danger); }
+
+/* Calls' top bar in Glass (Alex, 14 Nov): over the list, before the menu at the foot */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'] .side-col > .calls-top { order: 1; position: relative; z-index: 4; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .calls-top .calls-seg {
+  box-sizing: border-box; height: 42px; padding: 4px; gap: 0; border-radius: 999px; background: var(--lg); border: 1px solid var(--lg-rim); box-shadow: var(--lg-shadow);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .calls-top .calls-seg button { height: 32px; padding: 0 16px; color: var(--lg-ink); font-weight: 500; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .calls-top .calls-seg button.on { background: var(--lg-chip); color: var(--lg-ink); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .calls-top .calls-seg.lens::before { border: 0; border-radius: 999px; background: var(--lg-chip); box-shadow: none; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .calls-top .calls-seg.lens.lens-on > .on { background: none; }

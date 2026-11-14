@@ -1348,4 +1348,10 @@ export const EL = {
   'People who have your email or number in their phone\'s contacts see you are on RoarMe': 'Όσοι έχουν το email ή τον αριθμό σου στις επαφές του κινητού τους βλέπουν ότι είσαι στο RoarMe',
   'Only a coded form of your email is kept for this; nobody sees the address itself.': 'Γι\' αυτό κρατάμε μόνο μια κωδικοποιημένη μορφή του email σου· τη διεύθυνση δεν τη βλέπει κανείς.',
   'Only a coded form of your email and number is kept for finding friends; nobody sees them.': 'Για την εύρεση φίλων κρατάμε μόνο μια κωδικοποιημένη μορφή του email και του αριθμού σου· δεν τα βλέπει κανείς.',
+  // Calls' top bar (14 Nov)
+  'Missed': 'Αναπάντητες',
+  'No missed calls': 'Καμία αναπάντητη κλήση',
+  'Missed Calls': 'Αναπάντητες κλήσεις',
+  'Clear All': 'Διαγραφή όλων',
+  'Call someone with the button on top, or from the phone and camera buttons in a chat.': 'Κάλεσε κάποιον με το κουμπί πάνω δεξιά ή από τα κουμπιά τηλεφώνου και κάμερας μέσα σε μια συνομιλία.',
 }

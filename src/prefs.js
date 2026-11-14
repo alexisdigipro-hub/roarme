@@ -30,7 +30,7 @@ export const DEFAULTS = {
   dlGroups: true, // and in groups
   autoplayVideos: false,
   autoplayGifs: true,
-  callsTab: true,
+  callsTab: false, // Calls out of the bar at the foot for now (Alex, 14 Nov); Settings > Features > Calls Tab brings it back
   tasksTab: false, // Tasks in the bar at the foot: off until turned on in Settings (Alex, 7 Nov)
   lite: false, // power saving: no animations, no glass blur
   peekBadge: false, // a click on the unread badge previews the chat
@@ -96,6 +96,8 @@ export function getPrefs() {
     if (!p.glassSound) { if (p.soundKind === 'chime') p.soundKind = 'glass'; p.glassSound = true }
     // the chat list shows the last message and its time, once, for everyone (Alex, 12 Nov); turning it off later stays
     if (!p.prevOn) { p.listPreview = true; p.prevOn = true }
+    // Calls out of the bar at the foot for everyone, once (Alex, 14 Nov: "for now, we see later"); turning it on later stays
+    if (!p.callsOff) { p.callsTab = false; p.callsOff = true }
     return p
   } catch { return { ...DEFAULTS } }
 }

@@ -1348,4 +1348,12 @@ export const EL = {
   'People who have your email or number in their phone\'s contacts see you are on RoarMe': 'Όσοι έχουν το email ή τον αριθμό σου στις επαφές του κινητού τους βλέπουν ότι είσαι στο RoarMe',
   'Only a coded form of your email is kept for this; nobody sees the address itself.': 'Γι\' αυτό κρατάμε μόνο μια κωδικοποιημένη μορφή του email σου· τη διεύθυνση δεν τη βλέπει κανείς.',
   'Only a coded form of your email and number is kept for finding friends; nobody sees them.': 'Για την εύρεση φίλων κρατάμε μόνο μια κωδικοποιημένη μορφή του email και του αριθμού σου· δεν τα βλέπει κανείς.',
+  // Frost (14 Nov)
+  'Frost': 'Frost',
+  'Frosted glass on a warm stone wall': 'Παγωμένο γυαλί σε ζεστό πέτρινο τοίχο',
+  'Liquid glass with your own colours': 'Υγρό γυαλί με τα δικά σου χρώματα',
+  'Frost has its own colours and wall. Your colours, wallpapers and the rest come back when you choose Glass.': 'Το Frost έχει δικά του χρώματα και φόντο. Τα χρώματά σου, οι ταπετσαρίες και τα υπόλοιπα επιστρέφουν όταν διαλέξεις Glass.',
+  'Slabs with soft corners, or round capsules': 'Πλάκες με μαλακές γωνίες ή στρογγυλές κάψουλες',
+  'Slab': 'Πλάκα',
+  'All in one panel of glass, or each chat its own slab': 'Όλες σε ένα γυάλινο πάνελ ή η καθεμία στη δική της πλάκα',
 }

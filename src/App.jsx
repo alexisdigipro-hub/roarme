@@ -14,7 +14,7 @@ export default function App() {
   const prefs = usePrefs()
   const { lite, theme } = prefs
   const mode = prefs.mode
-  useEffect(() => applyLook(prefs), [prefs.theme, prefs.accent, prefs.accentHex, prefs.myBubble, prefs.theirBubble, prefs.bubbleR, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles, prefs.mode, prefs.accentOpacity, prefs.uiText, prefs.listPanel, prefs.listPanelOp, prefs.listPanelFill, prefs.listPanelGrain, prefs.contactShape, prefs.listShape]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => applyLook(prefs), [prefs.theme, prefs.accent, prefs.accentHex, prefs.myBubble, prefs.theirBubble, prefs.bubbleR, prefs.font, prefs.density, prefs.radius, prefs.motion, prefs.focusRings, prefs.glassBubbles, prefs.mode, prefs.accentOpacity, prefs.uiText, prefs.listPanel, prefs.listPanelOp, prefs.listPanelFill, prefs.listPanelGrain, prefs.contactShape, prefs.listShape, prefs.frost, prefs.frostShape, prefs.frostList]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => applyMode(mode), [mode])
   // in Halo the whole app sits on the wallpaper chosen for the chats (Alex, 12 Nov: "the overall background follows the
   // one we chose", then: chosen apart in Settings, prefs.appBackground): the body wears what a chat wears (class app-wall, data-bg and the rest), themes-halo.css draws it
@@ -22,7 +22,8 @@ export default function App() {
   const appStrength = prefs.appBackground ? prefs.appWallStrength ?? prefs.wallStrength : prefs.wallStrength
   useEffect(() => {
     const b = document.body
-    const look = haloish(theme) ? wallLook(prefs.appBackground || prefs.background, walls, appStrength) : null
+    // Frost draws its own taupe wall (themes-frost.css, data-bg 'frost'); the chosen wallpapers wait for Glass
+    const look = prefs.frost ? { 'data-bg': 'frost', style: {} } : haloish(theme) ? wallLook(prefs.appBackground || prefs.background, walls, appStrength) : null
     b.classList.toggle('app-wall', !!look)
     ;['bg', 'img', 'own', 'wop'].forEach((k) => { delete b.dataset[k] })
     ;['--wall', '--wall-op', '--wall-color', '--wop'].forEach((v) => b.style.removeProperty(v))
@@ -30,17 +31,17 @@ export default function App() {
     if (look['data-bg']) b.dataset.bg = look['data-bg']
     ;[['img', 'data-img'], ['own', 'data-own'], ['wop', 'data-wop']].forEach(([k, a]) => { if (look[a] !== undefined) b.dataset[k] = '' })
     Object.entries(look.style || {}).forEach(([k, v]) => b.style.setProperty(k, String(v)))
-  }, [theme, prefs.background, prefs.appBackground, appStrength, walls])
+  }, [theme, prefs.background, prefs.appBackground, appStrength, walls, prefs.frost])
   // the colour of the band under the clock on a phone follows day and night (Alex, 19 Oct: no black at the top)
   useEffect(() => {
     const m = document.querySelector('meta[name="theme-color"]')
     // Stone is grey stone in either mode (21 Oct)
-    const set = () => { const d = document.documentElement.dataset; m?.setAttribute('content', d.mode === 'light' ? '#ecedf2' : '#15151b') }
+    const set = () => { const d = document.documentElement.dataset; m?.setAttribute('content', d.frost ? (d.mode === 'light' ? '#b3a79a' : '#2a2521') : d.mode === 'light' ? '#ecedf2' : '#15151b') }
     set()
     const mq = window.matchMedia?.('(prefers-color-scheme: light)')
     mq?.addEventListener?.('change', set)
     return () => mq?.removeEventListener?.('change', set)
-  }, [mode, theme])
+  }, [mode, theme, prefs.frost])
   useEffect(() => { if (lite) document.documentElement.dataset.lite = '1'; else delete document.documentElement.dataset.lite }, [lite])
 
   useEffect(() => {

@@ -57,6 +57,9 @@ export const DEFAULTS = {
   listShape: 'panel', // the chat list: one sheet of glass ('panel'), or each chat a capsule ('pill') or a card ('card'); Alex, 13 Nov
   contactShape: 'plain', // Contacts: each person a capsule ('pill') or a card with soft corners ('card'; Alex, 13 Nov)
   listPanelGrain: false, // a fine grain over the panel
+  frost: false, // the Frost theme (Alex, 14 Nov): frosted slab glass on a taupe wall, its own palette; only Day and Night, its shape and its list are chosen
+  frostShape: 'slab', // Frost: 'slab' (soft-cornered slabs) or 'capsule'
+  frostList: 'panel', // Frost: the chats in one 'panel' of glass or each in its own slab ('cards')
   uiText: 100, // 85 to 130 (%): the size of all of RoarMe's letters (Alex, 13 Nov); the messages' own size is textSize
   accentOpacity: 100, // 30 to 100: how solid the accent colour's fill is (your messages, the coloured buttons)
   appBackground: '', // Halo: the wallpaper behind the whole app, chosen apart from the chats' (Alex, 12 Nov); '' = the same as the chats
@@ -280,8 +283,15 @@ export const inkOn = (hex) => {
   const n = parseInt(hex.slice(1), 16)
   return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 160 ? '#111111' : '#ffffff'
 }
-export function applyLook(p) {
+export function applyLook(p0) {
   const r = document.documentElement
+  // Frost (Alex, 14 Nov: "none of the colours and settings we made, only what you made here"): while it is on, the look is
+  // built from the defaults plus Frost's own three choices; one's own colours, wallpaper and the rest stay saved for Glass
+  const frost = !!p0.frost
+  const p = frost
+    ? { ...DEFAULTS, mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite, listPanel: true, listPanelOp: 22, listShape: p0.frostList === 'cards' ? 'card' : 'panel', contactShape: 'pill' }
+    : p0
+  if (frost) { r.dataset.frost = '1'; r.dataset.frostShape = p0.frostShape === 'capsule' ? 'capsule' : 'slab' } else { delete r.dataset.frost; delete r.dataset.frostShape }
   const hex = (/^#[0-9a-f]{6}$/i.test(p.accentHex || '') && p.accentHex) || ACCENTS.find(([k]) => k === p.accent)?.[2]
   if (hex) { r.style.setProperty('--accent', hex); r.style.setProperty('--accent-2', hex); r.style.setProperty('--accent-ink', inkOn(hex)) } else { ['--accent', '--accent-2', '--accent-ink'].forEach((v) => r.style.removeProperty(v)) }
   // in Halo one of its own colours stands in for the orange: on your messages, Send, the chosen things

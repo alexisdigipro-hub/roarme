@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
 import { Wordmark } from './ui.jsx'
 import { pendingInvite } from './invite.jsx'
-import { PhoneField, showPhone, toE164, usePhoneAuth } from './phone.jsx'
 
 function Brand() {
   return (
@@ -14,110 +13,8 @@ function Brand() {
 
 /* Sign in with a phone number (Alex, 14 Nov: "the main way, with email only an option for some"): the number, then the
    6-digit code from the SMS; the same two steps sign in and sign up. Shown first only while Supabase's phone sign-in is on. */
-function PhoneSignIn({ invitedBy, onEmail }) {
-  const [cc, setCc] = useState('30')
-  const [num, setNum] = useState('')
-  const [sent, setSent] = useState('') // the number the code went to
-  const [code, setCode] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState('')
-  const [wait, setWait] = useState(0) // seconds before Send Again
-  useEffect(() => { if (wait <= 0) return undefined; const t = setTimeout(() => setWait((w) => w - 1), 1000); return () => clearTimeout(t) }, [wait])
-  const send = async (e) => {
-    e?.preventDefault()
-    const phone = toE164(cc, num)
-    if (phone.replace(/\D/g, '').length < 8) { setErr('Type your mobile number.'); return }
-    setErr(''); setBusy(true)
-    const { error } = await supabase.auth.signInWithOtp({ phone })
-    setBusy(false)
-    if (error) { setErr(errText(error)); return }
-    setSent(phone); setCode(''); setWait(30)
-  }
-  const verify = async (e) => {
-    e.preventDefault()
-    setErr(''); setBusy(true)
-    const { error } = await supabase.auth.verifyOtp({ phone: sent, token: code, type: 'sms' })
-    setBusy(false)
-    if (error) { setErr(errText(error)); setCode('') }
-  }
-  return (
-    <div className="auth">
-      <form className="auth-card" onSubmit={sent ? verify : send}>
-        <Brand />
-        {invitedBy && <p className="auth-invite"><b>@{invitedBy}</b> invited you to RoarMe. Sign in and your chat opens.</p>}
-        <h1>{sent ? 'Type the code' : 'Your phone number'}</h1>
-        <p className="auth-sub">{sent ? `We sent a 6-digit code by SMS to ${showPhone(sent)}.` : 'We send you a code by SMS. Your friends who have your number find you on RoarMe.'}</p>
-        {!sent
-          ? <label className="field"><span>Mobile</span><PhoneField cc={cc} setCc={setCc} num={num} setNum={setNum} autoFocus /></label>
-          : <label className="field"><span>Code</span><input className="input mfa-code" inputMode="numeric" autoComplete="one-time-code" autoFocus value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" /></label>}
-        {err && <p className="auth-err">{err}</p>}
-        <button className="btn btn-main" disabled={busy || (sent && code.length !== 6)}>{busy ? '…' : sent ? 'Continue' : 'Send the Code'}</button>
-        {!sent && <p className="auth-legal">By continuing you accept the <a href="?legal=terms" target="_blank" rel="noreferrer">Terms of Service</a> and the <a href="?legal=privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</p>}
-        <div className="auth-links">
-          {sent
-            ? <><button type="button" onClick={() => { setSent(''); setErr('') }}>Change Number</button><button type="button" disabled={wait > 0 || busy} onClick={() => send()}>{wait > 0 ? `Send Again in ${wait}s` : 'Send Again'}</button></>
-            : <button type="button" onClick={onEmail}>Use Email Instead</button>}
-        </div>
-      </form>
-    </div>
-  )
-}
-
-/* Sign in with an email and a 6-digit code, no password (Alex, 14 Nov, as Wire does): the same two steps sign in and
-   sign up. The code is the {{ .Token }} in Supabase's Magic Link and Confirm signup emails; the link in them works too. */
-function EmailCode({ invitedBy, phoneOn, onPhone, onPassword }) {
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState('')
-  const [code, setCode] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState('')
-  const [wait, setWait] = useState(0)
-  useEffect(() => { if (wait <= 0) return undefined; const t = setTimeout(() => setWait((w) => w - 1), 1000); return () => clearTimeout(t) }, [wait])
-  const send = async (e) => {
-    e?.preventDefault()
-    const to = (sent || email).trim()
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) { setErr('Type your email.'); return }
-    setErr(''); setBusy(true)
-    const { error } = await supabase.auth.signInWithOtp({ email: to, options: { shouldCreateUser: true, emailRedirectTo: appUrl() } })
-    setBusy(false)
-    if (error) { setErr(errText(error)); return }
-    setSent(to); setCode(''); setWait(30)
-  }
-  const verify = async (e) => {
-    e.preventDefault()
-    setErr(''); setBusy(true)
-    const { error } = await supabase.auth.verifyOtp({ email: sent, token: code, type: 'email' })
-    setBusy(false)
-    if (error) { setErr(errText(error)); setCode('') }
-  }
-  return (
-    <div className="auth">
-      <form className="auth-card" onSubmit={sent ? verify : send}>
-        <Brand />
-        {invitedBy && <p className="auth-invite"><b>@{invitedBy}</b> invited you to RoarMe. Sign in and your chat opens.</p>}
-        <h1>{sent ? 'Type the code' : 'Your email'}</h1>
-        <p className="auth-sub">{sent ? `We sent a code to ${sent}. Type it here, or tap the link in the email.` : 'We send you a code by email. No password to remember.'}</p>
-        {!sent
-          ? <label className="field"><span>Email</span><input className="input" type="email" autoComplete="email" autoFocus required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></label>
-          : <label className="field"><span>Code</span><input className="input mfa-code" inputMode="numeric" autoComplete="one-time-code" autoFocus value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="123456" /></label>}
-        {err && <p className="auth-err">{err}</p>}
-        <button className="btn btn-main" disabled={busy || (sent && code.length < 6)}>{busy ? '…' : sent ? 'Continue' : 'Send the Code'}</button>
-        {!sent && <p className="auth-legal">By continuing you accept the <a href="?legal=terms" target="_blank" rel="noreferrer">Terms of Service</a> and the <a href="?legal=privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</p>}
-        <div className="auth-links">
-          {sent
-            ? <><button type="button" onClick={() => { setSent(''); setErr('') }}>Change Email</button><button type="button" disabled={wait > 0 || busy} onClick={() => send()}>{wait > 0 ? `Send Again in ${wait}s` : 'Send Again'}</button></>
-            : <><button type="button" onClick={onPassword}>Sign in with Password</button>{phoneOn && <button type="button" onClick={onPhone}>Use Phone Number</button>}</>}
-        </div>
-      </form>
-    </div>
-  )
-}
-
-/* Sign in, sign up, forgotten password: one card, one form at a time. */
 export function Auth() {
   const invitedBy = pendingInvite()
-  const phoneOn = usePhoneAuth()
-  const [way, setWay] = useState('') // '' the first way (phone while it is on, else the email code) · code · password
   const [mode, setMode] = useState('in') // in | up | forgot (the password form)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -149,8 +46,7 @@ export function Auth() {
     }
   }
 
-  if (!way && phoneOn) return <PhoneSignIn invitedBy={invitedBy} onEmail={() => setWay('code')} />
-  if (way !== 'password') return <EmailCode invitedBy={invitedBy} phoneOn={phoneOn} onPhone={() => setWay('')} onPassword={() => setWay('password')} />
+  // email and password, as RoarMe began (Alex, 14 Nov: the sign-in by a 6-digit email code is gone again)
   return (
     <div className="auth">
       <form className="auth-card" onSubmit={submit}>
@@ -176,7 +72,6 @@ export function Auth() {
           {mode === 'in' && <><button type="button" onClick={() => setMode('up')}>Create an account</button><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button></>}
           {mode !== 'in' && <button type="button" onClick={() => setMode('in')}>I have an account, sign in</button>}
         </div>
-        <div className="auth-links"><button type="button" onClick={() => setWay('code')}>Sign in with a Code Instead</button></div>
       </form>
     </div>
   )

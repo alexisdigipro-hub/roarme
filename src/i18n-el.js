@@ -1356,4 +1356,12 @@ export const EL = {
   'Slabs with soft corners, or round capsules': 'Πλάκες με μαλακές γωνίες ή στρογγυλές κάψουλες',
   'Slab': 'Πλάκα',
   'All in one panel of glass, or each chat its own slab': 'Όλες σε ένα γυάλινο πάνελ ή η καθεμία στη δική της πλάκα',
+  // Contacts' menus (14 Nov)
+  'by Last Seen': 'κατά Τελευταία σύνδεση',
+  'by Name': 'κατά Όνομα',
+  'New Contact': 'Νέα επαφή',
+  'Invite Friends': 'Πρόσκληση φίλων',
+  'Sort': 'Ταξινόμηση',
+  'Sort contacts': 'Ταξινόμηση επαφών',
+  'New contact or invite': 'Νέα επαφή ή πρόσκληση',
 }

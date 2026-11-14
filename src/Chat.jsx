@@ -1094,6 +1094,8 @@ export default function Chat({ me, setMe }) {
   // a tap on someone in Contacts opens their card (Alex, 21 Oct, like the iPhone's Contacts); favourites come first
   const [card, setCard] = useState('')
   const [favs, setFavs] = useLocal('roarme-fav', [])
+  const [contactSort, setContactSort] = useLocal('roarme-contacts-sort', 'seen') // Contacts: 'seen' (last seen first) or 'name'
+  const [contactsMenu, setContactsMenu] = useState('') // Contacts' ⋯ ('sort') or + ('add') menu open
   const cardPerson = card ? people[card] : null
   const showTasks = (v) => { setTasksOpen(v); try { localStorage.setItem('roarme-tasks', v ? '1' : '0') } catch { /* private window */ } }
   // on a phone the swipe runs on through the bar at the foot (Alex, 19 Oct): Contacts · Calls · Messages and its folders ·
@@ -1321,8 +1323,31 @@ export default function Chat({ me, setMe }) {
         {tab === 'contacts' && (
           <div className="side-scroll contacts">
             <div className="contacts-top">
+              {/* ⋯ sorts the contacts, + adds one or invites (Alex, 14 Nov, from Telegram's Contacts) */}
+              <span className="plus-wrap">
+                <button type="button" className={`round${contactsMenu === 'sort' ? ' on' : ''}`} onClick={() => setContactsMenu((v) => (v === 'sort' ? '' : 'sort'))} title="Sort" aria-label="Sort contacts">{I.more}</button>
+                {contactsMenu === 'sort' && (
+                  <>
+                    <button type="button" className="scrim" aria-label="Close" onClick={() => setContactsMenu('')} />
+                    <div className="menu menu-left contacts-sort">
+                      {[['seen', 'by Last Seen'], ['name', 'by Name']].map(([k, l]) => <button key={k} type="button" className={contactSort === k ? 'on' : ''} onClick={() => { setContactSort(k); setContactsMenu('') }}><span className="menu-tick">{contactSort === k ? I.check : null}</span><span>{l}</span></button>)}
+                    </div>
+                  </>
+                )}
+              </span>
               <label className="search">{I.search}<input value={cq} onChange={(e) => setCq(e.target.value)} placeholder="Search" /></label>
-              <button type="button" className="round" onClick={() => setModal('newchat')} title="Find people" aria-label="Find people">{I.addPerson}</button>
+              <span className="plus-wrap">
+                <button type="button" className={`round${contactsMenu === 'add' ? ' on' : ''}`} onClick={() => setContactsMenu((v) => (v === 'add' ? '' : 'add'))} title="Add" aria-label="New contact or invite">{I.plus}</button>
+                {contactsMenu === 'add' && (
+                  <>
+                    <button type="button" className="scrim" aria-label="Close" onClick={() => setContactsMenu('')} />
+                    <div className="menu">
+                      <button type="button" onClick={() => { setContactsMenu(''); setModal('newchat') }}>{I.addPerson}<span>New Contact</span></button>
+                      <button type="button" onClick={() => { setContactsMenu(''); setModal('invite') }}>{I.link}<span>Invite Friends</span></button>
+                    </div>
+                  </>
+                )}
+              </span>
             </div>
             {/* inside the iPhone app: who of the phone's contacts is on RoarMe (Alex, 14 Nov; src/phone.jsx) */}
             {contactsAvailable() && !cq.trim() && <button type="button" className="btn phone-find" onClick={() => setModal('phonefriends')}>{I.addPerson}<span>Find Friends From Your Contacts</span></button>}
@@ -1339,7 +1364,7 @@ export default function Chat({ me, setMe }) {
               </div>
             )}
             <div className={`rooms contacts-list${cq.trim() ? ' searching' : ''}`}>
-            {[...contacts].sort((a, b) => favs.includes(b.id) - favs.includes(a.id)).filter((p) => !cq.trim() || foldHas(`${nameOf(p)} ${p.username}`, cq.trim().replace(/^@/, ''))).map((p) => (
+            {[...contacts].sort((a, b) => favs.includes(b.id) - favs.includes(a.id) || (contactSort === 'name' ? nameOf(a).localeCompare(nameOf(b), 'el', { sensitivity: 'base' }) : 0)).filter((p) => !cq.trim() || foldHas(`${nameOf(p)} ${p.username}`, cq.trim().replace(/^@/, ''))).map((p) => (
               <div key={p.id} className="room contact" role="button" tabIndex={0} onClick={() => setCard(p.id)} onKeyDown={(e) => { if (e.key === 'Enter') setCard(p.id) }}>
                 <Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} size={prefs.listPreview ? 54 : 48} />
                 <span className="room-main">

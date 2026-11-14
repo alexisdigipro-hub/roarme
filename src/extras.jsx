@@ -7,6 +7,7 @@ import { I, Modal, Slide, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 import { PhotoEdit } from './photoEdit.jsx'
+import { LocationPicker } from './share.jsx'
 
 /* ---------- emoji grid ---------- */
 export function EmojiPicker({ onPick, onClose }) {
@@ -203,7 +204,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const sheetRef = useRef(null)
   const bodyRef = useRef(null)
   useSwipeClose(sheetRef, onClose, 'y', edit)
-  useTabSwipe(bodyRef, ['gallery', 'file', 'audio'], tab, setTab, `${edit}|${files.length > 0}`)
+  useTabSwipe(bodyRef, onLocation ? ['gallery', 'file', 'location', 'audio'] : ['gallery', 'file', 'audio'], tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
@@ -244,7 +245,6 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
     onTransfer && ['transfer', 'Transfer', I.transfer],
   ].filter(Boolean)
   const go = (k) => {
-    if (k === 'location') return onLocation()
     if (k === 'article') return onArticle()
     if (k === 'transfer') return onTransfer()
     setTab(k)
@@ -289,6 +289,9 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
               )}
               {big.length > 0 && <small className="attach-transfer">{big.length === 1 ? 'Over 50 MB: it goes by RoarTransfer, up to 3 GB, kept 3 days.' : `${big.length} files over 50 MB go by RoarTransfer, kept 3 days.`}</small>}
             </>
+          ) : tab === 'location' && onLocation ? (
+            // Location is a tab of the sheet like the others (Alex, 14 Nov: it popped a window of its own and the sheet was gone)
+            <LocationPicker inline onSend={onLocation} onClose={onClose} />
           ) : tab === 'gallery' ? (
             <>
               <div className="as-tiles">

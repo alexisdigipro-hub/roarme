@@ -160,7 +160,7 @@ const lastPlace = () => { try { const v = JSON.parse(localStorage.getItem(LAST) 
 const Pin = ({ lifted = false, small = false }) => <i className={`map-pin${lifted ? ' up' : ''}${small ? ' small' : ''}`}>{I.place}</i>
 const Me = () => <i className="map-me" />
 
-export function LocationPicker({ onSend, onClose }) {
+export function LocationPicker({ onSend, onClose, inline = false }) {
   const first = useRef(lastPlace())
   const [at, setAt] = useState(first.current ? { lat: first.current.lat, lng: first.current.lng } : HOME)
   const [z, setZ] = useState(first.current?.z || 12)
@@ -218,14 +218,14 @@ export function LocationPicker({ onSend, onClose }) {
     await onSend(loc)
     setBusy(false)
   }
-  return (
-    <Modal title="Location" onClose={onClose}>
-      <div className="loc">
+  // inline: the same map as a tab of the attach sheet, no window and no close of its own (Alex, 14 Nov)
+  const body = (
+      <div className={`loc${inline ? ' loc-inline' : ''}`}>
         <div className="loc-map">
           <MapView at={at} zoom={z} onMove={onMove} onDragging={setLifted} marks={mine ? [{ key: 'me', ...mine, node: <Me /> }] : []} />
           <Pin lifted={lifted} />
           <div className="loc-top">
-            <button type="button" className="loc-round" onClick={onClose} aria-label="Close">{I.x}</button>
+            {!inline && <button type="button" className="loc-round" onClick={onClose} aria-label="Close">{I.x}</button>}
             <form className="loc-search" onSubmit={search}>
               {I.search}
               <input value={q} onChange={(e) => { setQ(e.target.value); if (!e.target.value) setFound(null) }} placeholder="Search a place" enterKeyHint="search" />
@@ -251,8 +251,8 @@ export function LocationPicker({ onSend, onClose }) {
           <span><b>{isMine ? 'Send My Location' : 'Send This Location'}</b><small>{looking ? 'Finding the address…' : [place.name, place.addr].filter(Boolean).join(' · ') || coords(at)}</small></span>
         </button>
       </div>
-    </Modal>
   )
+  return inline ? body : <Modal title="Location" onClose={onClose}>{body}</Modal>
 }
 
 const mapsLinks = (l) => ({

@@ -3302,7 +3302,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={() => { setAttach(null); setLocOpen(true) }} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
+      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
       {transferOpen && (
         <TransferWindow title={title} hidden={transferHidden} onHide={() => setTransferHidden(true)} onProgress={setTransferPct}
           onClose={() => { setTransferOpen(false); setTransferHidden(false); setTransferPct(0) }}

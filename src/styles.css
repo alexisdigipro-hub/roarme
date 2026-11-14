@@ -4665,3 +4665,7 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
   .ctx .ctx-card { height: 48vh; max-height: 48vh; }
   .ctx .ctx-menu { align-self: flex-end; width: min(290px, 66%); max-height: 38vh; transform-origin: 100% 0; }
 }
+/* Location as a tab of the attach sheet (Alex, 14 Nov): the map fills the sheet's body, the send bar under it */
+.as-body .loc.loc-inline { height: min(60vh, 520px); }
+.as-body .loc.loc-inline .loc-map { border-radius: 20px; }
+.as-body .loc.loc-inline .loc-top { left: 10px; right: 10px; }

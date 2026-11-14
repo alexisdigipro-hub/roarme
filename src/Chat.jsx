@@ -999,7 +999,9 @@ export default function Chat({ me, setMe }) {
     if (p && Math.hypot(t.clientX - p.x, t.clientY - p.y) > 10) { clearTimeout(p.timer); p.row?.classList.remove('pressing'); press.current = null }
   }
   // the finger lifting after a long press must not also tap the menu that just opened
-  const pressEnd = (e) => { const was = press.current; clearTimeout(was?.timer); was?.row?.classList.remove('pressing'); press.current = null; if (pressed.current && was && isIPhone() && e?.type === 'touchend') haptic(12); if (pressed.current && e?.cancelable) e.preventDefault() } // an iPhone ticks only as the finger lifts
+  // the finger lifted after the menu opened: its guard time starts again, so the tap the phone makes of that same press
+  // picks nothing in the menu or the preview under the finger (Alex, 14 Nov: "when I lift my finger it picks by itself")
+  const pressEnd = (e) => { const was = press.current; clearTimeout(was?.timer); was?.row?.classList.remove('pressing'); press.current = null; if (pressed.current && was) setRoomMenu((m) => (m ? { ...m, at: Date.now() } : m)); if (pressed.current && was && isIPhone() && e?.type === 'touchend') haptic(12); if (pressed.current && e?.cancelable) e.preventDefault() } // an iPhone ticks only as the finger lifts
   // the menu of a chat in the list (right click, or a long press on a phone), as in Telegram: the screen blurs, the chat's
   // last messages show on a card (a tap on it opens the chat) and the actions sit under it
   const openRoomMenu = (e, r) => {
@@ -1508,10 +1510,11 @@ export default function Chat({ me, setMe }) {
       )}
       {roomMenu && (
         <OnTop>
-          <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 250) setRoomMenu(null) }} onPointerDown={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 250)) { e.preventDefault(); closedAt.current = Date.now(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
-          <div className="ctx-stack" onClick={(e) => e.stopPropagation()}>
-          {/* on a phone the long press shows only the menu; the messages are one tap away in it (Alex, 21 Oct) */}
-          {!window.matchMedia('(max-width: 760px)').matches && (
+          <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 450) setRoomMenu(null) }} onPointerDown={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 450)) { e.preventDefault(); closedAt.current = Date.now(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
+          <div className="ctx-stack" onClick={(e) => e.stopPropagation()} onClickCapture={(e) => { if (roomMenu.at && Date.now() - roomMenu.at < 450) { e.stopPropagation(); e.preventDefault() } }}>
+          {/* the chat's last messages above the menu, on a phone too (Alex, 14 Nov: "the menu we have, plus a preview of
+              the messages in it", from Telegram); a tap on them opens the chat */}
+          {(
           <div className="ctx-card" role="button" tabIndex={0} onClick={() => { const r = roomMenu.r; setRoomMenu(null); setActiveId(r.room_id) }}>
             <span className="ctx-head"><b>{titleOf(roomMenu.r)}</b><small>{roomMenu.r.kind === 'group' ? 'Group' : otherOf(roomMenu.r) ? lastSeenText(otherOf(roomMenu.r)) : ''}</small></span>
             <PeekList room={roomMenu.r} me={me} people={people} clearedAt={cleared[roomMenu.r.room_id]} />

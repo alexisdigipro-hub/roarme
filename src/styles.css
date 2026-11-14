@@ -4644,3 +4644,5 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 .emoji-btn.seal-btn:hover { opacity: 1; }
 .emoji-btn.seal-btn.on { color: #30d158; opacity: 1; }
 .emoji-btn.seal-btn svg { width: 17px; height: 17px; }
+/* the long press on a chat shows its messages above the menu on a phone too (Alex, 14 Nov): the two share the screen */
+@media (max-width: 760px) { .ctx .ctx-card { max-height: 44vh; } .ctx .ctx-menu { max-height: 42vh; } }

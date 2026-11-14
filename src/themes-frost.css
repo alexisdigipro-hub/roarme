@@ -85,9 +85,10 @@ html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.btn
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room.on { background: rgba(255, 255, 255, .3) !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .rooms-pager .rooms > .room :is(.room-top strong) { color: var(--fr-ink); }
 
-/* messages: theirs a darker frosted glass with white words, yours bright frosted white with the warm dark ink */
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: linear-gradient(180deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .12)) !important; border: 1px solid rgba(255, 255, 255, .45) !important; color: var(--fr-ink) !important; box-shadow: 10px 14px 22px -14px var(--fr-shadow) !important; }
-html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: linear-gradient(180deg, var(--halo-mine-top), var(--halo-mine)) !important; border: 1px solid rgba(255, 255, 255, .8) !important; color: var(--fr-ink-dark) !important; box-shadow: 10px 14px 22px -14px var(--fr-shadow) !important; }
+/* messages, flat (Alex, 14 Nov: "no outline on the bubbles, flatter"): one even colour, no rim, no shadow; yours lighter with the warm dark ink, theirs darker */
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: rgba(255, 255, 255, .2) !important; border: 0 !important; box-shadow: none !important; color: var(--fr-ink) !important; }
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-mode='dark'] .msg:not(.mine) .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: rgba(255, 255, 255, .12) !important; }
+html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: var(--halo-mine) !important; border: 0 !important; box-shadow: none !important; color: var(--fr-ink-dark) !important; }
 
 /* menus, windows and sheets: one frosted stone glass with white words */
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.menu, .menu-list, .rx-pick, .emoji-pick, .mention-pick, .toast, .vw-menu, .msg-menu, .modal, .as-sheet, .te-sheet) {

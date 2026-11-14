@@ -57,9 +57,19 @@ function usePeopleSearch(meId) {
     if (t.length < 2) { setHits([]); return }
     let alive = true
     const id = setTimeout(async () => {
-      const { data } = await supabase.from('roar_people').select('id, username, display_name, avatar_url, bio, last_seen, name_color')
-        .or(`username.ilike.${t.toLowerCase()}%,display_name.imatch.${foldRx(t)}`).neq('id', meId).limit(20)
-      if (alive) setHits(data || [])
+      const cols = 'id, username, display_name, avatar_url, bio, last_seen, name_color'
+      // the people I saved under a name of my own are found by that name too, and come first (Alex, 14 Nov: "a name I
+      // have in my contacts does not come up"): the search asked only for their own name and @username
+      const [{ data }, { data: mine }] = await Promise.all([
+        supabase.from('roar_people').select(cols).or(`username.ilike.${t.toLowerCase()}%,display_name.imatch.${foldRx(t)}`).neq('id', meId).limit(20),
+        supabase.from('roar_contacts').select('person, nickname').filter('nickname', 'imatch', foldRx(t)).limit(20),
+      ])
+      const named = Object.fromEntries((mine || []).filter((c) => c.person !== meId).map((c) => [c.person, (c.nickname || '').trim()]))
+      const need = Object.keys(named).filter((pid) => !(data || []).some((x) => x.id === pid))
+      const more = need.length ? (await supabase.from('roar_people').select(cols).in('id', need)).data || [] : []
+      const all = [...more, ...(data || [])].map((x) => (named[x.id] ? { ...x, display_name: named[x.id] } : x))
+      all.sort((x, y) => Number(!named[x.id]) - Number(!named[y.id]))
+      if (alive) setHits(all.slice(0, 20))
     }, 220)
     return () => { alive = false; clearTimeout(id) }
   }, [q, meId])

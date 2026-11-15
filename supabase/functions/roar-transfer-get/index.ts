@@ -17,7 +17,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 // the account id alone, even when the secret holds the whole S3 address (https://<id>.r2.cloudflarestorage.com)
 const account = ((Deno.env.get('R2_ACCOUNT_ID') || '').match(/[0-9a-f]{32}/i) || [''])[0]
 const r2 = new AwsClient({ accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID') || '', secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY') || '', service: 's3', region: 'auto' })
-const r2At = (key: string) => `https://${account}.r2.cloudflarestorage.com/roartransfer/${key.split('/').map(encodeURIComponent).join('/')}`
+const r2At = (key: string) => /(^|\/)\.\.?(\/|$)/.test(key) ? 'https://invalid.invalid/' : `https://${account}.r2.cloudflarestorage.com/roartransfer/${key.split('/').map(encodeURIComponent).join('/')}`
 async function r2Url(key: string, query: Record<string, string>, expires = 3600) {
   const u = new URL(r2At(key))
   for (const [k, v] of Object.entries(query)) u.searchParams.set(k, v)
@@ -57,6 +57,42 @@ async function adminTicket(t: string, slot = Math.floor(Date.now() / SLOT)) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   const h = Array.from(new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`admin-dl:${t}:${slot}`))), (x) => x.toString(16).padStart(2, '0')).join('')
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`
+}
+// A password covers every file of the upload (security check, 15 Nov 2026): a file's own link, a resend of it and its
+// download address all need it. Once the password is right, each file's address carries a password ticket in &c= (as
+// the admin's, an HMAC of the token and a 6-hour slot), so the file's token alone downloads nothing.
+async function pwTicket(t: string, slot = Math.floor(Date.now() / SLOT)) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const h = Array.from(new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`pw-dl:${t}:${slot}`))), (x) => x.toString(16).padStart(2, '0')).join('')
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`
+}
+async function isPwTicket(t: string, c: string) {
+  const now = Math.floor(Date.now() / SLOT)
+  return c === await pwTicket(t, now) || c === await pwTicket(t, now - 1)
+}
+// the upload with a password that holds any of these files (its token and hash), or null
+// deno-lint-ignore no-explicit-any
+async function pwGuard(sb: any, tokens: string[]): Promise<{ token: string, password_hash: string } | null> {
+  if (!tokens.length) return null
+  const { data } = await sb.from('roar_transfer_bundles').select('token, password_hash').overlaps('tokens', tokens).not('password_hash', 'is', null).order('created_at', { ascending: true }).limit(1)
+  return data && data[0] ? data[0] : null
+}
+// the password check with its limits: 10 wrong tries from one address, or 50 from anywhere, in 15 minutes
+// (supabase/transfer-security.sql); null when it is right, else the answer to give
+// deno-lint-ignore no-explicit-any
+async function pwCheck(sb: any, req: Request, q: URLSearchParams, g: { token: string, password_hash: string }, head: any, expires: string) {
+  const given = q.get('p') || ''
+  if (!given) return json({ ...head, expires, error: 'password' }, 401)
+  const ip = (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
+  const since = new Date(Date.now() - 15 * 6e4).toISOString()
+  const { count: mineWrong } = await sb.from('roar_transfer_pw_fails').select('id', { count: 'exact', head: true }).eq('token', g.token).eq('ip', ip).gte('at', since)
+  const { count: allWrong } = await sb.from('roar_transfer_pw_fails').select('id', { count: 'exact', head: true }).eq('token', g.token).gte('at', since)
+  if ((mineWrong || 0) >= 10 || (allWrong || 0) >= 50) return json({ ...head, expires, error: 'password', slow: true }, 429)
+  if ((await sha(`${g.token}:${given}`)) !== g.password_hash) {
+    await sb.from('roar_transfer_pw_fails').insert({ token: g.token, ip })
+    return json({ ...head, expires, error: 'password', wrong: true }, 401)
+  }
+  return null
 }
 async function isTicket(t: string, c: string) {
   const now = Math.floor(Date.now() / SLOT)
@@ -122,6 +158,8 @@ Deno.serve(async (req) => {
       return new Response(null, { status: 302, headers: { ...cors, Location: to, 'Cache-Control': 'no-store' } })
     }
     if (!f || f.store !== 'r2' || new Date(f.expires_at).getTime() <= Date.now() || used(f)) return Response.redirect(page, 302)
+    // a file of an upload with a password: only with the ticket its page got once the password was right
+    if (!(c && await isPwTicket(t, c)) && await pwGuard(sb, [t])) return Response.redirect(page, 302)
     // counted with the country and device of whoever downloads (Cloudflare's header in front of Supabase)
     if (req.method === 'GET') await sb.rpc('roar_transfer_hit', { t, dl: true, country: req.headers.get('cf-ipcountry'), agent: req.headers.get('user-agent') })
     const to = await r2Url(f.path, dlHead(q, f.name || 'file'), 6 * 3600)
@@ -143,6 +181,14 @@ Deno.serve(async (req) => {
       if (new Date(link.expires_at).getTime() <= Date.now()) return json({ ...info, error: 'expired', grace: false }, 410)
       return json({ ...info, error: 'payment', locked_payment: true, files: [{ token: link.token, name: link.name, size: link.size, type: link.type }] }, 423)
     }
+    // a file of an upload with a password asks for that password on its own link too (its sender excepted)
+    if (!admin && !(me && me.id === link.created_by)) {
+      const g = await pwGuard(sb, [t])
+      if (g) {
+        const no = await pwCheck(sb, req, q, g, { from: info.from, brand: lb }, link.expires_at)
+        if (no) return no
+      }
+    }
     if (new Date(link.expires_at).getTime() <= Date.now()) {
       const last = await lastOnes(sb, [link], me)
       if (last.files.length) return json({ ...info, ...last.files[0], last: true, expires: new Date(new Date(link.expires_at).getTime() + GRACE).toISOString() })
@@ -159,22 +205,12 @@ Deno.serve(async (req) => {
   const { data: p } = bundle.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle() : { data: null }
   const bb = await brandOf(sb, bundle.created_by)
   const head = { bundle: true, title: bundle.title || '', from: bb?.name || p?.display_name || (p?.username ? '@' + p.username : ''), brand: bb }
-  if (bundle.password_hash && !admin) {
-    const given = q.get('p') || ''
-    if (!given) return json({ ...head, expires: bundle.expires_at, error: 'password' }, 401)
-    // no guessing (security check, Alex 26 Oct): 10 wrong tries from one address, or 50 from anywhere, in 15 minutes,
-    // and the password is not even tried until the 15 minutes are over (supabase/transfer-security.sql)
-    const ip = (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
-    const since = new Date(Date.now() - 15 * 6e4).toISOString()
-    const { count: mineWrong } = await sb.from('roar_transfer_pw_fails').select('id', { count: 'exact', head: true }).eq('token', t).eq('ip', ip).gte('at', since)
-    const { count: allWrong } = await sb.from('roar_transfer_pw_fails').select('id', { count: 'exact', head: true }).eq('token', t).gte('at', since)
-    if ((mineWrong || 0) >= 10 || (allWrong || 0) >= 50) return json({ ...head, expires: bundle.expires_at, error: 'password', slow: true }, 429)
-    if ((await sha(`${t}:${given}`)) !== bundle.password_hash) {
-      await sb.from('roar_transfer_pw_fails').insert({ token: t, ip })
-      return json({ ...head, expires: bundle.expires_at, error: 'password', wrong: true }, 401)
-    }
+  // its own password, or the password of the first upload of these files (a resend carries it on)
+  const guard = bundle.password_hash ? { token: t, password_hash: bundle.password_hash } : await pwGuard(sb, bundle.tokens || [])
+  if (guard && !admin && !(me && me.id === bundle.created_by)) {
+    const no = await pwCheck(sb, req, q, guard, head, bundle.expires_at)
+    if (no) return no
   }
-  Object.assign(head, { message: bundle.message || '' })
   const { data: rows } = await sb.from('roar_transfer_links').select('token, path, name, size, type, expires_at, store, downloads, max_downloads, created_by, stopped_at').in('token', bundle.tokens)
   const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > Date.now())
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
@@ -184,6 +220,7 @@ Deno.serve(async (req) => {
     return json({ ...head, expires: bundle.expires_at, error: 'payment', locked_payment: true,
       files: live.map((r: any) => ({ token: r.token, name: r.name, size: r.size, type: r.type, expires: r.expires_at })) }, 423)
   }
+  Object.assign(head, { message: bundle.message || '' })
   if (!live.length) {
     // ended: one last download for someone signed in, within GRACE, if the sender has an account
     const last = await lastOnes(sb, (rows || []).sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token)), me)
@@ -210,6 +247,7 @@ async function preview(sb: any, t: string) {
     const gone = new Date(link.expires_at).getTime() <= now
     const { data: lp } = link.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', link.created_by).maybeSingle() : { data: null }
     const lb = await brandOf(sb, link.created_by)
+    if (await pwGuard(sb, [t])) return { title: '', from: lb?.name || lp?.display_name || (lp?.username ? '@' + lp.username : ''), names: [], count: 1, size: Number(link.size || 0), kind: kind([link.type || '']), expires: link.expires_at, locked: true, cover: false, gone }
     return { title: '', from: lb?.name || lp?.display_name || (lp?.username ? '@' + lp.username : ''), names: [link.name || 'file'], count: 1, size: Number(link.size || 0), kind: kind([link.type || '']), expires: link.expires_at, locked: false, cover: false, gone }
   }
   const { data: bundle } = await sb.from('roar_transfer_bundles').select('tokens, expires_at, title, password_hash, created_by').eq('token', t).maybeSingle()
@@ -217,18 +255,20 @@ async function preview(sb: any, t: string) {
   const { data: p } = bundle.created_by ? await sb.from('roar_profiles').select('display_name, username').eq('id', bundle.created_by).maybeSingle() : { data: null }
   const brand = await brandOf(sb, bundle.created_by)
   const from = brand?.name || p?.display_name || (p?.username ? '@' + p.username : '')
-  const locked = !!bundle.password_hash
+  const locked = !!bundle.password_hash || !!(await pwGuard(sb, bundle.tokens || []))
+  // awaiting payment: no picture in the preview either
+  const paid = !(await payLocked(sb, 'roar_transfer_bundles', [t])).size
   const { data: rows } = await sb.from('roar_transfer_links').select('token, name, size, type, expires_at').in('token', bundle.tokens)
   const live = (rows || []).filter((r: any) => new Date(r.expires_at).getTime() > now)
     .sort((a: any, b: any) => bundle.tokens.indexOf(a.token) - bundle.tokens.indexOf(b.token))
   const head = await r2.fetch(r2At(`og/${t}.jpg`), { method: 'HEAD' }).catch(() => null)
-  const own = !locked && !head?.ok && brand?.bgs?.length ? brand.bgs[0] : ''
+  const own = !locked && paid && !head?.ok && brand?.bgs?.length ? brand.bgs[0] : ''
   return {
     brand: brand?.name || '', coverUrl: own,
     title: locked ? '' : bundle.title || '', from, locked, gone: !live.length,
     names: locked ? [] : live.slice(0, 3).map((r: any) => r.name || 'file'), count: live.length,
     size: live.reduce((a: number, r: any) => a + Number(r.size || 0), 0), kind: kind(live.map((r: any) => r.type || '')),
-    expires: bundle.expires_at, cover: !locked && (!!head?.ok || !!own),
+    expires: bundle.expires_at, cover: !locked && paid && (!!head?.ok || !!own),
   }
 }
 
@@ -278,7 +318,7 @@ async function addresses(sb: any, link: any, admin = false): Promise<{ url: stri
   if (link.store === 'r2') {
     const left = link.max_downloads == null ? null : Math.max(0, link.max_downloads - (link.downloads || 0))
     if (left === 0) return { url: '', view: '', used: true, left } as any
-    const url = `${SELF}?t=${encodeURIComponent(link.token)}&dl=1`
+    const url = `${SELF}?t=${encodeURIComponent(link.token)}&dl=1&c=${await pwTicket(link.token)}`
     const view = media && link.max_downloads == null ? await r2Url(link.path, { 'response-content-type': link.type }) : ''
     return { url, view, counted: true, left } as any
   }

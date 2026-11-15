@@ -310,6 +310,11 @@ async function handle(req: Request): Promise<Response> {
     const s = o.share
     // a member of the project on its own link (signed in): their visits and plays are not counted as the link's (Alex, 9 Nov)
     const mine = !!uid && !!(await roleOf(uid, s.project_id))
+    // Awaiting payment (Alex, 10 Nov 2026; supabase/transfer-paylock.sql): while the link's pay_lock is on, someone with it
+    // gets only what it is (share-open: the project's name, who sent it, the files' names and sizes) and nothing that
+    // plays, shows or downloads; members of the project and the admins still open it. Off again, it works at once.
+    const payLock = !!s.pay_lock && !mine && !(uid && (await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()).data)
+    if (payLock && b.action !== 'share-open') return json({ error: 'payment', locked_payment: true }, 423)
     const inShare = async (versionId: string) => {
       if (!isId(versionId)) return null
       const { data: v } = await sb.from('roarstudio_versions').select('*').eq('id', versionId).eq('project_id', s.project_id).maybeSingle()
@@ -343,6 +348,17 @@ async function handle(req: Request): Promise<Response> {
       const { data: comments } = vids.length && !finals ? await sb.from('roarstudio_comments').select('id, version_id, parent_id, at_sec, end_sec, body, author, guest_name, done, created_at, sketch, voice_sec, pos, attach').in('version_id', vids).order('created_at') : { data: [] }
       const who = await names([project?.owner, ...(comments || []).map((c: any) => c.author), ...(versions || []).map((v: any) => v.uploaded_by)])
       if (!mine) await logEvent(s.project_id, 'view', null, String(b.name || '').slice(0, 60) || 'Someone with the link')
+      if (payLock) {
+        // the newest version of each file (on a Finals link, its final one): its name, size and kind, no address, no picture
+        const files = (tracks || []).map((t: any) => {
+          const vs = (versions || []).filter((v: any) => v.track_id === t.id)
+          const v = vs[vs.length - 1]
+          return v ? { title: t.title, name: v.file_name, size: v.size, mime: v.mime } : null
+        }).filter(Boolean)
+        return json({ locked_payment: true, kind: s.kind || 'review', expires: s.expires_at, studio: await studioOf(project?.owner), files,
+          project: { title: project?.title || '', artist: project?.artist || '', color: project?.color || null, owner_name: who[project?.owner] || '' },
+          playlist: playlist ? { title: playlist.title } : null })
+      }
       return json({ project: { ...project, owner_name: who[project?.owner] || '' }, tracks, versions, comments, names: who,
         picks: s.kind === 'finals' ? [] : await picksOf(s.project_id), reactions: s.kind === 'finals' ? [] : await reactionsOf(s.project_id), kind: s.kind || 'review', playlist: playlist ? { id: playlist.id, title: playlist.title } : null, studio: await studioOf(project?.owner),
         can: finals ? { comment: false, approve: false, download: true } : { comment: s.can_comment, approve: s.can_approve, download: s.can_download }, expires: s.expires_at })
@@ -701,7 +717,21 @@ async function handle(req: Request): Promise<Response> {
       if (!error || error.code !== '23505') break
     }
     if (error) return json({ error: error.message }, 500)
-    return json({ token })
+    // Awaiting payment from the start (supabase/transfer-paylock.sql); before that SQL has run the link is made without it
+    let payLock = false
+    if (b.payLock === true) payLock = !(await sb.from('roarstudio_shares').update({ pay_lock: true }).eq('token', token)).error
+    return json({ token, payLock })
+  }
+
+  // Awaiting payment on a link already made (Alex, 10 Nov 2026; supabase/transfer-paylock.sql): those who can make links
+  if (b.action === 'link-paylock') {
+    const token = String(b.token || '')
+    if (!/^[A-Za-z0-9]{6,32}$/.test(token)) return json({ error: 'not found' }, 404)
+    const { data: sh } = await sb.from('roarstudio_shares').select('token, project_id').eq('token', token).maybeSingle()
+    if (!sh || !can(await roleOf(uid, sh.project_id), 'editor')) return json({ error: 'not allowed' }, 403)
+    const { error } = await sb.from('roarstudio_shares').update({ pay_lock: b.on === true }).eq('token', token)
+    if (error) return json({ error: error.code === '42703' ? 'Awaiting payment is not ready yet (supabase/transfer-paylock.sql).' : error.message }, 500)
+    return json({ ok: true, pay_lock: b.on === true })
   }
 
   // ---------- Admin > Studio Pro (Alex, 8 Nov 2026: "let me make people Pro in the Studio, as in RoarTransfer") ----------

@@ -5044,3 +5044,12 @@ html:root:root:root:root .as-sheet.as-lib .as-send .attach-send { background: li
 /* Send's arrow in the very middle of its circle in the attach sheet (Alex, 15 Nov: "the arrow sits off to the right") */
 html:root:root:root:root .as-send .attach-send { display: grid !important; place-items: center !important; padding: 0 !important; }
 html:root:root:root:root .as-send .attach-send > svg { margin: 0 !important; transform: translateX(-1px); grid-area: 1 / 1; }
+
+/* selecting messages: the bar of what to do with them stands at the foot, where the writing box is (Alex, 15 Nov):
+   Cancel, "N selected" in the middle, then Copy, Forward and Delete as round buttons with room between them */
+.pick-foot { padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.pick-bar { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px 8px; border-radius: 999px; background: var(--lg, rgba(255, 255, 255, .8)); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .6)); box-shadow: var(--lg-shadow, 0 6px 18px rgba(0, 0, 0, .12)); }
+.pick-bar .pill-btn { flex: none; height: 40px; padding: 0 16px; font-size: 14.5px; font-weight: 600; }
+.pick-bar strong { flex: 1; min-width: 0; text-align: center; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.pick-bar .head-pick-acts { flex: none; display: flex; gap: 8px; }
+.pick-bar .round { width: 42px; height: 42px; }

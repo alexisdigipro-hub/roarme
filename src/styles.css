@@ -4680,3 +4680,14 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 .loc-inline .loc-top { top: 70px; left: 14px; right: 14px; }
 .loc-inline .loc-found { top: 122px; }
 .loc-inline .loc-send { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); border-top: 0; background: var(--float, var(--panel)); }
+
+/* Bold, italic, underline, strike for a folder's or a group's name (fancy.jsx; Alex, 15 Nov): four small round glass
+   buttons beside the field while it is in use; the chosen marks lit in the accent */
+.name-row { position: relative; }
+.name-marks { display: inline-flex; gap: 6px; flex: none; align-items: center; animation: nm-in .2s ease-out; }
+.name-marks .round { width: 32px; height: 32px; min-width: 32px; padding: 0; font-size: 15px; line-height: 1; font-family: inherit; }
+.name-marks .round b { font-weight: 800; }
+.name-marks .round.on { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.field.name-row .name-marks { margin-top: 8px; }
+.pf-name-row { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+@keyframes nm-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }

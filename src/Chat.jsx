@@ -38,6 +38,7 @@ import { ContactCard } from './contactCard.jsx'
 import { PhoneFriends, contactsAvailable } from './phone.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { taskNotice, useTasks } from './taskCore.js'
+import { useNameMarks } from './fancy.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
 import { ReportHost, report } from './report.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
@@ -3691,6 +3692,7 @@ function NewCall({ people, onClose, onCall }) {
 
 function NewGroup({ me, start, onClose, onOpen }) {
   const [title, setTitle] = useState('')
+  const marks = useNameMarks(title, setTitle)
   const [picked, setPicked] = useState(start ? [start] : [])
   const [q, setQ, hits] = usePeopleSearch(me.id)
   const [err, setErr] = useState('')
@@ -3706,7 +3708,7 @@ function NewGroup({ me, start, onClose, onOpen }) {
   }
   return (
     <Modal title="New group" onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={create} disabled={busy}>{busy ? '…' : 'Create group'}</button></>}>
-      <label className="field"><span>Group name</span><input className="input" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekend shoot" /></label>
+      <label className="field name-row"><span>Group name</span><input {...marks.inputProps} className="input" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekend shoot" />{marks.bar}</label>
       {picked.length > 0 && <div className="chips">{picked.map((p) => <button key={p.id} type="button" className="chip" onClick={() => toggle(p)}>{nameOf(p)} {I.x}</button>)}</div>}
       <label className="search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by @username or name" /></label>
       {err && <p className="auth-err">{err}</p>}

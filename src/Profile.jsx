@@ -6,6 +6,7 @@ import { usePrefs } from './prefs.js'
 import { CopyLink } from './transfer.jsx'
 import { locale } from './i18n.js'
 import { ContactEdit } from './contactCard.jsx'
+import { useNameMarks } from './fancy.jsx'
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
 const monthOf = (iso) => new Date(iso).toLocaleDateString(locale(), { month: 'long', year: 'numeric' }).toUpperCase()
@@ -37,6 +38,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   }
   const [viewer, setViewer] = useState(null)
   const [name, setName] = useState(room.title)
+  const marks = useNameMarks(name, setName)
   const [adding, setAdding] = useState(false)
   const [q, setQ] = useState('')
   const [hits, setHits] = useState([])
@@ -240,7 +242,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
           {cropFile && <CropModal file={cropFile} title={group ? 'Group photo' : `Your photo for ${title}`} onDone={pickPic} onClose={() => setCropFile(null)} />}
           {editing && other && <ContactEdit me={me} other={other} blocked={blocked} onBlock={() => { setEditing(false); block() }} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); loadPeople([other.id]); toast('Saved, only you see it') }} onPhoto={() => { setEditing(false); picRef.current?.click() }} onDropPhoto={dropMyPhoto} />}
           {canName
-            ? <input className="pf-name-edit" value={name} onChange={(e) => setName(e.target.value)} onBlur={rename} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} title="Rename the group" />
+            ? <span className="name-row pf-name-row"><input {...marks.inputProps} className="pf-name-edit" value={name} onChange={(e) => setName(e.target.value)} onBlur={(e) => { marks.inputProps.onBlur(e); rename() }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} title="Rename the group" />{marks.bar}</span>
             : <h2 className="pf-name">{title}</h2>}
           <p className="pf-sub">{group ? `${members.length} members` : lastSeenText(other) || ' '}</p>
           {!group && other?.nickname && <p className="pf-sub pf-real">{`Their name: ${other.real_name || `@${other.username}`}`}</p>}

@@ -111,32 +111,35 @@ struct Lens: View {
     }
 }
 
-// The menu at the foot, as RoarMe's: a tall glass capsule, an icon over its word, the chosen one in a lens that
-// travels (GLASS TRAVEL), the sign of the chosen one pops.
+// The menu at the foot, exactly as RoarMe's (Frost by Night, Alex's screenshot, 15 Nov): a warm frosted glass
+// capsule with a bright rim, white line icons over white words, the chosen one in a lighter glass pill with its own
+// rim and shadow, and a thread of light leaking along the bar's bottom edge. The pill travels (GLASS TRAVEL).
 struct FootMenu<T: Hashable>: View {
-    var items: [(T, String, String)]   // value, word, SF Symbol
+    var items: [(T, String, String)]   // value, word, the icon's name in the asset catalog
     @Binding var value: T
-    var badge: T? = nil
     @Namespace private var ns
     @State private var going = false
     @State private var popped: T?
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.offset) { _, it in
                 Button { pick(it.0) } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: it.2).font(.system(size: 19, weight: value == it.0 ? .semibold : .regular))
-                            .symbolRenderingMode(.hierarchical)
-                            .scaleEffect(popped == it.0 ? 1.18 : 1)
-                        Text(it.1).font(.system(size: 10.5, weight: value == it.0 ? .semibold : .medium)).lineLimit(1).minimumScaleFactor(0.7)
+                    VStack(spacing: 4) {
+                        Image(it.2).renderingMode(.template).resizable().scaledToFit().frame(width: 26, height: 26)
+                            .scaleEffect(popped == it.0 ? 1.16 : 1)
+                        Text(it.1).font(.system(size: 12.5, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.7)
                     }
-                    .foregroundStyle(value == it.0 ? Theme.redHi : Theme.text.opacity(0.75))
-                    .frame(maxWidth: .infinity, minHeight: 54)
+                    .foregroundStyle(Color.white)
+                    .shadow(color: .black.opacity(0.12), radius: 1, y: 1)
+                    .frame(maxWidth: .infinity, minHeight: 60)
                     .background {
                         if value == it.0 {
-                            Capsule().fill(Color.white.opacity(going ? 0.2 : 0.13))
-                                .overlay(Capsule().stroke(Color.white.opacity(going ? 0.36 : 0.18), lineWidth: 1))
+                            Capsule()
+                                .fill(LinearGradient(colors: [Color.white.opacity(going ? 0.5 : 0.42), Color.white.opacity(going ? 0.2 : 0.14)], startPoint: .top, endPoint: .bottom))
+                                .overlay(Capsule().stroke(Color.white.opacity(0.32), lineWidth: 1))
+                                .overlay(alignment: .top) { Capsule().fill(Color.white.opacity(0.5)).frame(height: 1).padding(.horizontal, 16).padding(.top, 0.5) }
+                                .shadow(color: .black.opacity(0.45), radius: 8, y: 5)
                                 .modifier(ChromaRim(on: going))
                                 .scaleEffect(x: going ? 1.03 : 1, y: going ? 1.16 : 1)
                                 .matchedGeometryEffect(id: "foot", in: ns)
@@ -148,11 +151,27 @@ struct FootMenu<T: Hashable>: View {
             }
         }
         .padding(5)
-        .background(Capsule().fill(.ultraThinMaterial))
-        .background(Capsule().fill(Color(red: 0.08, green: 0.08, blue: 0.09).opacity(0.55)))
-        .overlay(Capsule().stroke(Color.white.opacity(0.16), lineWidth: 1))
-        .overlay(alignment: .top) { Capsule().fill(LinearGradient(colors: [Color.white.opacity(0.18), .clear], startPoint: .top, endPoint: .bottom)).frame(height: 18).padding(.horizontal, 22).allowsHitTesting(false) }
-        .shadow(color: .black.opacity(0.4), radius: 24, y: 10)
+        .background {
+            ZStack {
+                Capsule().fill(.ultraThinMaterial)
+                Capsule().fill(Color(red: 0.24, green: 0.215, blue: 0.195).opacity(0.72))
+                Capsule().fill(Color.white.opacity(0.06))
+            }
+        }
+        .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
+        .overlay(alignment: .top) { Capsule().fill(Color.white.opacity(0.22)).frame(height: 1).padding(.horizontal, 30).allowsHitTesting(false) }
+        // the light leaking along the bottom edge
+        .overlay(alignment: .bottom) {
+            Capsule()
+                .fill(RadialGradient(colors: [Color(red: 1, green: 0.93, blue: 0.86).opacity(0.85), .clear], center: .center, startRadius: 0, endRadius: 110))
+                .frame(height: 2)
+                .padding(.horizontal, 90)
+                .shadow(color: Color(red: 1, green: 0.89, blue: 0.78).opacity(0.35), radius: 8, y: 2)
+                .offset(y: 1)
+                .allowsHitTesting(false)
+        }
+        .shadow(color: .black.opacity(0.62), radius: 16, x: 8, y: 12)
+        .shadow(color: .black.opacity(0.4), radius: 4, x: 2, y: 3)
     }
 
     private func pick(_ v: T) {

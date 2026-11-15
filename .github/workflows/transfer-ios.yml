@@ -1,0 +1,133 @@
+name: RoarTransfer for iPhone
+
+# Builds the native RoarTransfer app from transfer-ios/ (SwiftUI; XcodeGen makes the Xcode project fresh each run).
+# It lives in this repository because the App Store Connect key is here (the same four secrets as ios.yml).
+#  - A pull request that touches transfer-ios/ or this file, and Run workflow with "check": builds for the simulator
+#    with no signing. Needs nothing from Apple.
+#  - Run workflow with "testflight": registers the app's bundle id (com.themadlions.roartransfer) with its Associated
+#    Domains, checks that the app exists in App Store Connect, then archives, signs and sends it to TestFlight.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: check (no signing) or testflight
+        default: check
+        type: choice
+        options: [check, testflight]
+  pull_request:
+    branches: [main]
+    paths: ['transfer-ios/**', '.github/workflows/transfer-ios.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: transfer-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ inputs.mode == 'testflight' && 'testflight' || 'check' }}
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: transfer-ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make the Xcode project
+        run: |
+          brew install xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate
+          xcodebuild -version
+      - name: Build for the simulator, unsigned
+        if: inputs.mode != 'testflight'
+        run: |
+          ok=0
+          xcodebuild -project RoarTransfer.xcodeproj -scheme RoarTransfer -configuration Release -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/build.log" 2>&1 || ok=$?
+          grep -E "error:|warning:.*/RoarTransfer/|BUILD (SUCCEEDED|FAILED)" "$RUNNER_TEMP/build.log" | sort -u | head -200 || true
+          [ "$ok" = 0 ] || { tail -40 "$RUNNER_TEMP/build.log"; exit 1; }
+      - name: Apple's side (bundle id, its abilities, the app in App Store Connect)
+        if: inputs.mode == 'testflight'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID; do
+            [ -n "${!v}" ] || { echo "::error::The repository secret $v is missing"; exit 1; }
+          done
+          K="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"; export K
+          printf '%s\n' "$ASC_KEY_P8" > "$K"
+          ruby -ropenssl -rjson -rnet/http -rbase64 -e '
+            key = OpenSSL::PKey::EC.new(File.read(ENV["K"]))
+            b64 = ->(s) { Base64.urlsafe_encode64(s, padding: false) }
+            now = Time.now.to_i
+            data = b64.(JSON.dump({alg: "ES256", kid: ENV["ASC_KEY_ID"], typ: "JWT"})) + "." + b64.(JSON.dump({iss: ENV["ASC_ISSUER_ID"], iat: now, exp: now + 900, aud: "appstoreconnect-v1"}))
+            asn = OpenSSL::ASN1.decode(key.sign(OpenSSL::Digest::SHA256.new, data))
+            sig = asn.value.map { |i| i.value.to_s(2).rjust(32, "\x00")[-32, 32] }.join
+            jwt = data + "." + b64.(sig)
+            http = Net::HTTP.new("api.appstoreconnect.apple.com", 443); http.use_ssl = true
+            hd = {"Authorization" => "Bearer #{jwt}", "Content-Type" => "application/json"}
+            bid = "com.themadlions.roartransfer"
+            res = http.get("/v1/bundleIds?filter[identifier]=#{bid}&limit=5", hd)
+            abort("bundleIds: #{res.code} #{res.body[0, 300]}") unless res.code == "200"
+            found = (JSON.parse(res.body)["data"] || []).find { |b| b["attributes"]["identifier"] == bid }
+            unless found
+              res = http.post("/v1/bundleIds", JSON.dump({data: {type: "bundleIds", attributes: {identifier: bid, name: "RoarTransfer", platform: "IOS"}}}), hd)
+              abort("register bundle id: #{res.code} #{res.body[0, 400]}") unless res.code == "201"
+              found = JSON.parse(res.body)["data"]
+              puts "Registered #{bid}"
+            end
+            # the Team ID that roartransfer.com/.well-known/apple-app-site-association must name (spaced out, since the
+            # log hides the secret of the same value; it is public in every signed app anyway)
+            puts "Team ID for the site: " + found["attributes"]["seedId"].to_s.chars.join(" ")
+            caps = http.get("/v1/bundleIds/#{found["id"]}/bundleIdCapabilities", hd)
+            have = caps.code == "200" ? (JSON.parse(caps.body)["data"] || []).map { |c| c["attributes"]["capabilityType"] } : []
+            unless have.include?("ASSOCIATED_DOMAINS")
+              res = http.post("/v1/bundleIdCapabilities", JSON.dump({data: {type: "bundleIdCapabilities", attributes: {capabilityType: "ASSOCIATED_DOMAINS"}, relationships: {bundleId: {data: {type: "bundleIds", id: found["id"]}}}}}), hd)
+              puts "Associated Domains: #{res.code}"
+            end
+            res = http.get("/v1/apps?filter[bundleId]=#{bid}", hd)
+            apps = res.code == "200" ? (JSON.parse(res.body)["data"] || []) : []
+            if apps.empty?
+              puts "::error::RoarTransfer is not in App Store Connect yet. Make it once: Apps > + > New App, iOS, name RoarTransfer, bundle ID #{bid}, SKU roartransfer. Then run this again."
+              exit 1
+            end
+            puts "App Store Connect app: #{apps[0]["id"]}"
+            # each fresh Mac makes a new development certificate and Apple allows only a few (as ios.yml)
+            res = http.get("/v1/certificates?filter[certificateType]=DEVELOPMENT,IOS_DEVELOPMENT&limit=200", hd)
+            (res.code == "200" ? (JSON.parse(res.body)["data"] || []) : []).each { |c| r = http.delete("/v1/certificates/#{c["id"]}", hd); puts "revoked #{c["attributes"]["name"]} (#{r.code})" }
+          '
+          rm -f "$K"
+      - name: Sign and send to TestFlight
+        if: inputs.mode == 'testflight'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          K="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          printf '%s\n' "$ASC_KEY_P8" > "$K"
+          trap 'rm -f "$K"' EXIT
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$K" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          set -o pipefail
+          xcodebuild -project RoarTransfer.xcodeproj -scheme RoarTransfer -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/RoarTransfer.xcarchive" DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} "${AUTH[@]}" archive 2>&1 | tail -80
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/RoarTransfer.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" 2>&1 | tail -60
+          echo "Sent. Build ${{ github.run_number }} shows in App Store Connect > RoarTransfer > TestFlight once Apple has processed it."

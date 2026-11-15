@@ -1186,6 +1186,7 @@ export default function Chat({ me, setMe }) {
   // Tasks (Alex, 18 Oct): the panel stays open while you move between chats, and remembers it on this device
   // a tap on someone in Contacts opens their card (Alex, 21 Oct, like the iPhone's Contacts); favourites come first
   const [card, setCard] = useState('')
+  useEffect(() => { const f = (e) => { const id = e.detail?.id; if (!id) return; loadPeople([id]); setCard(id) }; window.addEventListener('roarme-card', f); return () => window.removeEventListener('roarme-card', f) }, [loadPeople])
   const [favs, setFavs] = useLocal('roarme-fav', [])
   const [contactSort, setContactSort] = useLocal('roarme-contacts-sort', 'seen') // Contacts: 'seen' (last seen first) or 'name'
   const [contactsMenu, setContactsMenu] = useState('') // Contacts' ⋯ ('sort') or + ('add') menu open
@@ -1932,6 +1933,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const [transferOpen, setTransferOpen] = useState(false)
+  // RoarTransfer stands in the attach sheet's Transfer tab (Alex, 15 Nov): the sheet hands its place here
+  const [transferSlot, setTransferSlot] = useState(undefined)
+  // the people a contact can be shared from (the attach sheet's Contact tab): everyone in my chats
+  const shareable = useMemo(() => [...new Set((rooms || []).flatMap((r) => r.members || []))].filter((id) => id !== me.id).map((id) => people[id]).filter(Boolean).sort((a, b) => nameOf(a).localeCompare(nameOf(b))), [rooms, people, me.id])
   // a RoarTransfer that is uploading with its window hidden, and how far it has got (Alex, 22 Oct)
   const [transferHidden, setTransferHidden] = useState(false)
   const [transferPct, setTransferPct] = useState(0)
@@ -3018,6 +3023,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
                       : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => hands.current.setArtView(m)} />
                       : m.file?.roartransfer ? <BundleCard t={m.file.roartransfer} />
+                      : m.file?.contact ? <SharedContact c={m.file.contact} person={people[m.file.contact.id]} />
                       : m.file?.groupcall?.link ? <LinkCallCard id={m.file.groupcall.id} who={mine ? 'You' : nameOf(who)} onJoin={() => joinCall(m.file.groupcall.id, false, 'Call')} />
                       : m.file?.groupcall ? <GroupCallCard who={mine ? 'You' : nameOf(who)} live={gcLive === m.file.groupcall.id} here={gcLive === m.file.groupcall.id ? gcHere : 0} onJoin={() => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: room.room_id, id: m.file.groupcall.id, video: false } }))} />
                       : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} onJoin={(v) => (room.kind === 'group' ? startGroupCall(room.room_id, v) : hands.current.onCall(v))} />
@@ -3396,10 +3402,14 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
+      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles}
+        onTransfer={() => { setTransferHidden(false); setTransferOpen(true) }} transferSlot={setTransferSlot}
+        onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))}
+        onArticle={({ title: t, text: x }) => sendCard(`${t}\n\n${x}`, { article: { v: 1 } }, '', () => setAttach(null))}
+        contacts={shareable} onContact={(p) => sendCard(nameOf(p), { contact: { id: p.id, username: p.username, name: nameOf(p), avatar: p.avatar_url || '' } }, '', () => setAttach(null))} />}
       {transferOpen && (
-        <TransferWindow title={title} hidden={transferHidden} onHide={() => setTransferHidden(true)} onProgress={setTransferPct}
-          onClose={() => { setTransferOpen(false); setTransferHidden(false); setTransferPct(0) }}
+        <TransferWindow title={title} hidden={transferHidden} slot={transferSlot} onHide={() => { setTransferHidden(true); if (transferSlot) setAttach(null) }} onProgress={setTransferPct}
+          onClose={() => { setTransferOpen(false); setTransferHidden(false); setTransferPct(0); if (transferSlot) setAttach(null) }}
           onSent={(r) => {
             // one card in the chat for the whole transfer (its files live on roartransfer.com, in Cloudflare R2)
             const files = r.sent.map((f) => ({ name: f.name, size: f.size, type: f.type, token: f.token }))
@@ -3663,6 +3673,19 @@ function LiveWave({ stream }) {
 // the two signs of the chat's search (Alex, 15 Nov, from Telegram's): a calendar with a lens, a person with a lens
 const FIND_DAY = svg(<><path d="M11 20H7a3.5 3.5 0 0 1-3.5-3.5v-9A3.5 3.5 0 0 1 7 4h10a3.5 3.5 0 0 1 3.5 3.5V11M3.5 9.5h17M8 2.5v3M16 2.5v3" /><circle cx="16.5" cy="16.5" r="3.2" /><path d="M19 19l2 2" /></>, 22)
 const FIND_WHO = svg(<><circle cx="10" cy="7.5" r="3.8" /><path d="M3.5 20c0-3.6 2.9-6.5 6.5-6.5 1 0 1.9.2 2.7.6" /><circle cx="16.5" cy="16.5" r="3.2" /><path d="M19 19l2 2" /></>, 22)
+
+/* a contact shared from the attach sheet (Alex, 15 Nov, as Telegram's): the picture, name and @username; a tap opens
+   their card (Message, Call), which the app's window event roarme-card answers */
+function SharedContact({ c, person }) {
+  const name = person ? nameOf(person) : c.name
+  return (
+    <span className="sc-card" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: c.id } })) }}>
+      <Avatar src={person?.avatar_url || c.avatar} name={name} size={44} />
+      <span className="sc-text"><b>{name}</b><small>@{person?.username || c.username}</small></span>
+      <span className="sc-go">View</span>
+    </span>
+  )
+}
 
 /* Writing in full screen (Alex, 15 Nov, from Telegram's): the same words as the writing box, the whole screen to write
    them, X (back to the chat, the words kept), Undo and Redo on top; at the foot a glass bar: B, I, U, S around what is

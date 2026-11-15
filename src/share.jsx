@@ -359,7 +359,7 @@ export const articleOf = (body) => {
 const minutesOf = (s) => Math.max(1, Math.round(String(s || '').split(/\s+/).filter(Boolean).length / 200))
 const excerpt = (s) => plainText(String(s || '').split('\n').map((l) => l.replace(LINE_MARK, '')).filter((l) => l.trim() && !/^\s*(-{3,}|_{3,}|\*{3,})\s*$/.test(l)).join(' ')).slice(0, 220)
 
-export function ArticleEditor({ initial = null, onSend, onClose }) {
+export function ArticleEditor({ initial = null, onSend, onClose, inline = false }) {
   const saved = useRef((() => { if (initial) return initial; try { return JSON.parse(localStorage.getItem(DRAFT) || 'null') || {} } catch { return {} } })())
   const [title, setTitle] = useState(saved.current.title || '')
   const [text, setText] = useState(saved.current.text || '')
@@ -435,11 +435,11 @@ export function ArticleEditor({ initial = null, onSend, onClose }) {
     ['quote', 'Quote', I.quote, () => lineMark('quote')],
     ['hr', 'Divider', I.divider, divider],
   ]
-  return (
-    <Modal title={initial ? 'Edit article' : 'Article'} onClose={onClose}>
-      <div className="art">
+  // inside the attach sheet (Alex, 15 Nov, as Telegram's): no window of its own, the sheet's X closes it
+  const body = (
+      <div className={`art${inline ? ' art-inline' : ''}`}>
         <div className="art-bar">
-          <button type="button" className="art-round" onClick={onClose} aria-label="Close">{I.x}</button>
+          {!inline && <button type="button" className="art-round" onClick={onClose} aria-label="Close">{I.x}</button>}
           <span className="art-tools">
             {TOOLS.map(([k, label, face, run]) => (
               <button key={k} type="button" title={label} aria-label={label} disabled={preview} onMouseDown={(e) => e.preventDefault()} onClick={run}>{face}</button>
@@ -462,8 +462,8 @@ export function ArticleEditor({ initial = null, onSend, onClose }) {
         )}
         <small className="art-count">{text.trim() ? `${minutesOf(text)} min read` : 'Headings, lists, checklists, quotes: the buttons above, or # , - , 1. , > at the start of a line.'}</small>
       </div>
-    </Modal>
   )
+  return inline ? body : <Modal title={initial ? 'Edit article' : 'Article'} onClose={onClose}>{body}</Modal>
 }
 
 /* the article in the chat: its mark, the title as the headline, the first lines, Read */

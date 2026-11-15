@@ -3,11 +3,11 @@ import { createPortal } from 'react-dom'
 import { errText, fileLink, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
-import { I, Modal, Slide, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
+import { Avatar, I, Modal, Slide, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 import { PhotoEdit } from './photoEdit.jsx'
-import { LocationPicker } from './share.jsx'
+import { ArticleEditor, LocationPicker } from './share.jsx'
 
 /* ---------- emoji grid ---------- */
 export function EmojiPicker({ onPick, onClose }) {
@@ -191,7 +191,9 @@ function AsThumb({ m, busy, onPick }) {
     </button>
   )
 }
-export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onArticle }) {
+// Article, Transfer and Contact stand inside the sheet as tabs too (Alex, 15 Nov, as Telegram's): onArticle(sends an
+// article), transferSlot (a ref callback: RoarTransfer's window stands in it), onContact(person) with contacts
+export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onArticle, transferSlot, contacts, onContact }) {
   const prefs = usePrefs()
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
@@ -204,7 +206,8 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const sheetRef = useRef(null)
   const bodyRef = useRef(null)
   useSwipeClose(sheetRef, onClose, 'y', edit)
-  useTabSwipe(bodyRef, onLocation ? ['gallery', 'file', 'location', 'audio'] : ['gallery', 'file', 'audio'], tab, setTab, `${edit}|${files.length > 0}`)
+  const [who, setWho] = useState('')
+  useTabSwipe(bodyRef, ['gallery', 'file', onLocation && 'location', 'audio', onContact && 'contact', onArticle && 'article', onTransfer && 'transfer'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
@@ -241,14 +244,13 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
     ['file', 'File', I.file],
     onLocation && ['location', 'Location', I.place],
     ['audio', 'Audio', I.play],
+    onContact && ['contact', 'Contact', I.person],
     onArticle && ['article', 'Article', I.article],
     onTransfer && ['transfer', 'Transfer', I.transfer],
   ].filter(Boolean)
-  const go = (k) => {
-    if (k === 'article') return onArticle()
-    if (k === 'transfer') return onTransfer()
-    setTab(k)
-  }
+  const go = (k) => setTab(k)
+  // RoarTransfer opens in the sheet's body when its tab is chosen
+  useEffect(() => { if (tab === 'transfer' && !files.length) onTransfer?.() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
   const title = files.length ? `${files.length} selected` : TABS.find(([k]) => k === tab)?.[1] || 'Send'
   const media = files.some((f) => /^(image|video)\//.test(f.type))
   const big = files.filter((f) => f.size > 50e6 && !(compress && /^video\//.test(f.type)))
@@ -256,7 +258,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   if (edit >= 0 && files[edit]) return <PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} />
   return createPortal(
     <div className="as-back" onClick={onClose}>
-      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${['article', 'transfer'].includes(tab) && !files.length ? ' as-tall' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <i className="as-grab" data-grab="" aria-hidden="true" />
         <div className="as-head" data-grab="">
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
@@ -288,6 +290,24 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
                 </div>
               )}
               {big.length > 0 && <small className="attach-transfer">{big.length === 1 ? 'Over 50 MB: it goes by RoarTransfer, up to 3 GB, kept 3 days.' : `${big.length} files over 50 MB go by RoarTransfer, kept 3 days.`}</small>}
+            </>
+          ) : tab === 'article' && onArticle ? (
+            <ArticleEditor inline onSend={onArticle} onClose={onClose} />
+          ) : tab === 'transfer' && onTransfer ? (
+            <div className="as-transfer" ref={transferSlot} />
+          ) : tab === 'contact' && onContact ? (
+            <>
+              <label className="search as-search">{I.search}<input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Search contacts" /></label>
+              <div className="as-card as-people">
+                {(contacts || []).filter((p) => !who.trim() || `${p.display_name || ''} ${p.username || ''}`.toLowerCase().includes(who.trim().toLowerCase())).map((p) => (
+                  <button key={p.id} type="button" className="as-row as-person" onClick={() => onContact(p)}>
+                    <Avatar src={p.avatar_url} name={p.display_name || p.username} size={40} />
+                    <span className="as-person-text"><b>{p.display_name || `@${p.username}`}</b><small>@{p.username}</small></span>
+                    <i className="as-person-go">{I.send}</i>
+                  </button>
+                ))}
+                {!(contacts || []).length && <span className="as-row as-wait">No contacts yet.</span>}
+              </div>
             </>
           ) : tab === 'location' && onLocation ? (
             // Location is a tab of the sheet like the others (Alex, 14 Nov: it popped a window of its own and the sheet was gone)

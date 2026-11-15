@@ -205,7 +205,7 @@ const AS_I = {
   transfer: asSolid('M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19zM11.2 7.2l-4 4a1.1 1.1 0 0 0 1.6 1.6l2.1-2.1V16a1.1 1.1 0 0 0 2.2 0v-5.3l2.1 2.1a1.1 1.1 0 0 0 1.6-1.6l-4-4a1.1 1.1 0 0 0-1.6 0z'),
 }
 
-export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, transferSlot, contacts, onContact }) {
+export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, transferSlot, contacts, onContact }) {
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
   // the Gallery tab (and the camera) sends photos and videos made lighter; the File tab sends anything exactly as it is,
@@ -315,7 +315,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
             </>
           ) : tab === 'location' && onLocation ? (
             // Location is a tab of the sheet like the others (Alex, 14 Nov: it popped a window of its own and the sheet was gone)
-            <LocationPicker inline onSend={onLocation} onClose={onClose} />
+            <LocationPicker inline onSend={onLocation} onLive={onLive} onClose={onClose} />
           ) : tab === 'gallery' ? (
             <>
               <div className="as-tiles">

@@ -36,7 +36,8 @@ import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
 import { ContactCard } from './contactCard.jsx'
 import { PhoneFriends, contactsAvailable } from './phone.jsx'
-import { LocationCard, LocationPicker, LocationView } from './share.jsx'
+import { LiveCard, LocationCard, LocationPicker, LocationView } from './share.jsx'
+import { resumeLive, startLive } from './live.js'
 import { taskNotice, useTasks } from './taskCore.js'
 import { useNameMarks } from './fancy.jsx'
 import { GroupCallBar, GroupCallCard, GroupCallHost, LinkCallCard, joinCall, startGroupCall, useGroupCall } from './groupcall.jsx'
@@ -1187,6 +1188,7 @@ export default function Chat({ me, setMe }) {
   // a tap on someone in Contacts opens their card (Alex, 21 Oct, like the iPhone's Contacts); favourites come first
   const [card, setCard] = useState('')
   useEffect(() => { const f = (e) => { const id = e.detail?.id; if (!id) return; loadPeople([id]); setCard(id) }; window.addEventListener('roarme-card', f); return () => window.removeEventListener('roarme-card', f) }, [loadPeople])
+  useEffect(() => { resumeLive() }, []) // live locations still running carry on (live.js)
   // back to the chat's profile after a search or an action asked from it
   useEffect(() => { const f = () => setModal((m) => (m ? m : 'info')); window.addEventListener('roarme-profile', f); return () => window.removeEventListener('roarme-profile', f) }, [])
   const [favs, setFavs] = useLocal('roarme-fav', [])
@@ -2572,6 +2574,19 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     return true
   }
   // a message that shows as a card (a scheduled call, a place, an article): its text in body, the card's details in file
+  // a live location (Alex, 15 Nov): the message, then its row in roar_live that this phone keeps moving (live.js)
+  const sendLive = async ({ lat, lng, acc, hours }) => {
+    if (sealOn) { setAttach(null); setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
+    const until = hours ? new Date(Date.now() + hours * 3600e3).toISOString() : null
+    const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'text', body: 'Live Location', file: { live: { until }, location: { lat, lng, z: 16, name: 'Live Location', addr: '' } } }).select().single()
+    if (error) { setErr(errText(error)); return }
+    const { error: e2 } = await supabase.from('roar_live').insert({ message_id: data.id, room_id: room.room_id, user_id: me.id, lat, lng, acc, until })
+    if (e2) setErr('Live location is not ready yet (supabase/live-location.sql).')
+    else startLive(data.id, until)
+    setAttach(null)
+    stick.current = true
+    setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+  }
   const sendCard = async (body, file, done, close) => {
     if (sealOn) { close?.(); setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return false }
     const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'text', body, file }).select().single()
@@ -3038,6 +3053,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
+                      : m.file?.live ? <LiveCard id={m.id} first={m.file.location} mine={mine} onOpen={(loc) => hands.current.setLocView(loc)} />
                       : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
                       : m.file?.roartransfer ? <BundleCard t={m.file.roartransfer} />
                       : m.file?.contact ? <SharedContact c={m.file.contact} person={people[m.file.contact.id]} />
@@ -3422,6 +3438,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={(f, c, comp, asFile) => sendFiles(f, c, comp, false, { asFile })}
         onTransfer={() => { setTransferHidden(false); setTransferOpen(true) }} transferSlot={setTransferSlot}
         onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))}
+        onLive={sendLive}
         contacts={shareable} onContact={(p) => sendCard(nameOf(p), { contact: { id: p.id, username: p.username, name: nameOf(p), avatar: p.avatar_url || '' } }, '', () => setAttach(null))} />}
       {transferOpen && (
         <TransferWindow title={title} hidden={transferHidden} slot={transferSlot} onHide={() => { setTransferHidden(true); if (transferSlot) setAttach(null) }} onProgress={setTransferPct}

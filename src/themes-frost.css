@@ -113,3 +113,6 @@ html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .as-shee
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .as-sheet .as-tabs button { color: var(--fr-ink-soft) !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .as-sheet .as-tabs button.on { background: rgba(58, 47, 38, .08) !important; box-shadow: none !important; color: var(--fr-ink) !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-mode='dark'] .as-sheet .as-tabs button.on { background: rgba(255, 255, 255, .1) !important; }
+/* the message menu's holder is only a holder (Alex, 15 Nov: "square boxes round the menu"): no glass, rim or shadow of
+   its own; the reaction bar and the menu inside it keep theirs */
+html:root:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .msg-menu { background: none !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }

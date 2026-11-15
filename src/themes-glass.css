@@ -814,3 +814,13 @@ html:root:root:root :is(.pf-acts, .pf-more) > .scrim { inset: -100vh -100vw !imp
   box-shadow: none !important; filter: none !important; }
 html:root:root:root :is(.pf-acts, .pf-more) > .scrim::before, html:root:root:root :is(.pf-acts, .pf-more) > .scrim::after { display: none !important; }
 html:root:root:root .pf-more > .scrim { position: fixed !important; background: rgba(12, 12, 20, .32) !important; border: 0 !important; border-radius: 0 !important; }
+/* the veil's size comes from its four edges alone: a width of 100% (from the round buttons' rules) had pushed the More
+   menu's veil off the screen, so a tap beside the menu did not close it (Alex, 15 Nov) */
+html:root:root:root :is(.pf-acts, .pf-more) > .scrim { width: auto !important; height: auto !important; min-width: 0 !important; max-width: none !important; display: block !important; }
+/* the profile's More menu a little smaller (Alex, 15 Nov: "smaller gaps and letters"): 40px rows, 15px words, 20px signs */
+html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu { width: min(300px, calc(100vw - 48px)); padding: 6px; border-radius: 28px; }
+html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu > button { height: 40px !important; min-height: 40px !important; gap: 12px !important; padding: 0 14px 0 12px !important; font-size: 15px !important; border-radius: 20px !important; }
+html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu > button > svg { width: 20px !important; height: 20px !important; }
+html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu > button span { font-size: 15px !important; }
+html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu > hr { margin: 4px 14px !important; }
+html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu .pf-m-val { font-size: 13px !important; }

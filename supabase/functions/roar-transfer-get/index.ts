@@ -11,7 +11,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { AwsClient } from 'npm:aws4fetch@1.0.20'
 
-const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Access-Control-Allow-Methods': 'GET, OPTIONS' }
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-rt-password', 'Access-Control-Allow-Methods': 'GET, OPTIONS' }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
 // the account id alone, even when the secret holds the whole S3 address (https://<id>.r2.cloudflarestorage.com)
@@ -77,17 +77,19 @@ async function pwGuard(sb: any, tokens: string[]): Promise<{ token: string, pass
   const { data } = await sb.from('roar_transfer_bundles').select('token, password_hash').overlaps('tokens', tokens).not('password_hash', 'is', null).order('created_at', { ascending: true }).limit(1)
   return data && data[0] ? data[0] : null
 }
-// the password check with its limits: 10 wrong tries from one address, or 50 from anywhere, in 15 minutes
+// the password check with its limits: 10 wrong tries from one address, or 300 from anywhere (so nobody can lock the
+// real recipient out with a few tries), in 15 minutes
 // (supabase/transfer-security.sql); null when it is right, else the answer to give
 // deno-lint-ignore no-explicit-any
 async function pwCheck(sb: any, req: Request, q: URLSearchParams, g: { token: string, password_hash: string }, head: any, expires: string) {
-  const given = q.get('p') || ''
+  // in the header x-rt-password (15 Nov 2026: kept out of addresses and their logs); ?p= still works for older pages
+  const given = req.headers.get('x-rt-password') || q.get('p') || ''
   if (!given) return json({ ...head, expires, error: 'password' }, 401)
   const ip = (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
   const since = new Date(Date.now() - 15 * 6e4).toISOString()
   const { count: mineWrong } = await sb.from('roar_transfer_pw_fails').select('id', { count: 'exact', head: true }).eq('token', g.token).eq('ip', ip).gte('at', since)
   const { count: allWrong } = await sb.from('roar_transfer_pw_fails').select('id', { count: 'exact', head: true }).eq('token', g.token).gte('at', since)
-  if ((mineWrong || 0) >= 10 || (allWrong || 0) >= 50) return json({ ...head, expires, error: 'password', slow: true }, 429)
+  if ((mineWrong || 0) >= 10 || (allWrong || 0) >= 300) return json({ ...head, expires, error: 'password', slow: true }, 429)
   if ((await sha(`${g.token}:${given}`)) !== g.password_hash) {
     await sb.from('roar_transfer_pw_fails').insert({ token: g.token, ip })
     return json({ ...head, expires, error: 'password', wrong: true }, 401)

@@ -41,6 +41,11 @@ jobs:
         working-directory: roardino-ios
         run: |
           npm install --no-audit --no-fund
+          # the page stretches past its ends and springs back, as an iPhone's own lists do (Alex, 15 Nov: "more elastic,
+          # no click at the end"): Capacitor turns the web view's bounce off in its own source, which is built from here
+          F=$(grep -rl "scrollView.bounces" node_modules/@capacitor/ios --include=*.swift || true)
+          if [ -n "$F" ]; then perl -pi -e 's/(scrollView\.bounces\s*=\s*)false/${1}true/' $F; fi
+          grep -rn "scrollView.bounces" node_modules/@capacitor/ios --include=*.swift || echo "::warning::Capacitor's bounce line was not found; the page will not spring"
           npx cap add ios
           npx cap sync ios
           cat ios/App/App/capacitor.config.json

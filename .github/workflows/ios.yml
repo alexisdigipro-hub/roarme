@@ -113,6 +113,38 @@ jobs:
             end
             p.save'
           grep -c "\.wav in Resources" App.xcodeproj/project.pbxproj
+      - name: Privacy manifest
+        working-directory: mobile/ios/App
+        run: |
+          # Apple asks every app for a privacy manifest: no tracking, and why the app itself touches the two "required
+          # reason" APIs a web view app uses (its own settings, its own files' dates). What RoarMe collects is declared
+          # in App Store Connect and in the Privacy Policy.
+          cat > App/PrivacyInfo.xcprivacy <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>NSPrivacyTracking</key><false/>
+            <key>NSPrivacyTrackingDomains</key><array/>
+            <key>NSPrivacyCollectedDataTypes</key><array/>
+            <key>NSPrivacyAccessedAPITypes</key><array>
+              <dict><key>NSPrivacyAccessedAPIType</key><string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+                <key>NSPrivacyAccessedAPITypeReasons</key><array><string>CA92.1</string></array></dict>
+              <dict><key>NSPrivacyAccessedAPIType</key><string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+                <key>NSPrivacyAccessedAPITypeReasons</key><array><string>C617.1</string></array></dict>
+            </array>
+          </dict></plist>
+          EOF
+          plutil -lint App/PrivacyInfo.xcprivacy
+          gem list -i xcodeproj >/dev/null || sudo gem install xcodeproj --no-document
+          ruby -e '
+            require "xcodeproj"
+            p = Xcodeproj::Project.open("App.xcodeproj")
+            t = p.targets.find { |x| x.name == "App" }
+            g = p.main_group["App"]
+            n = "PrivacyInfo.xcprivacy"
+            t.resources_build_phase.add_file_reference(g.new_reference(n)) unless g.files.any? { |x| x.path == n }
+            p.save'
+          grep -c "PrivacyInfo.xcprivacy in Resources" App.xcodeproj/project.pbxproj
       - name: Build for the simulator, unsigned
         if: inputs.mode != 'testflight'
         working-directory: mobile/ios/App

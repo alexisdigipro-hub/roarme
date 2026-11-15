@@ -4,18 +4,16 @@ import { I } from './ui.jsx'
 
 /* A PDF opened inside RoarMe, as Telegram's (Alex, 15 Nov): full screen, the file's name on top, "1 of N" as you
    scroll, every page drawn sharp, and at the foot Save (to the phone's Files, or a download on a computer) and Share.
-   The pages are drawn by pdf.js, fetched from jsDelivr only when a PDF is opened (it is large and most people never need
-   it); if it cannot load, Save and Share still work. */
-const PDFJS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/'
+   The pages are drawn by pdf.js (pdfjs-dist 4.4.168, Apache 2.0), which comes with the app itself in public/pdfjs and
+   is read only when a PDF is opened (it is large and most people never need it). Nothing is fetched from another site:
+   an App Store app may not bring in code from outside. If it cannot load, Save and Share still work. */
+const PDFJS = () => new URL('pdfjs/', document.baseURI).href
 let lib = null
 async function pdfjs() {
   if (lib) return lib
   lib = (async () => {
-    const m = await import(/* @vite-ignore */ `${PDFJS}pdf.min.mjs`)
-    // a worker must come from our own origin: wrap the CDN's worker in a module of our own
-    const src = await (await fetch(`${PDFJS}pdf.worker.min.mjs`)).text()
-    const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }))
-    m.GlobalWorkerOptions.workerPort = new Worker(url, { type: 'module' })
+    const m = await import(/* @vite-ignore */ `${PDFJS()}pdf.min.js`)
+    m.GlobalWorkerOptions.workerSrc = `${PDFJS()}pdf.worker.min.js`
     return m
   })()
   try { return await lib } catch (e) { lib = null; throw e }

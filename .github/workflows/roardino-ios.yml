@@ -46,6 +46,13 @@ jobs:
           F=$(grep -rl "scrollView.bounces" node_modules/@capacitor/ios --include=*.swift || true)
           if [ -n "$F" ]; then perl -pi -e 's/(scrollView\.bounces\s*=\s*)false/${1}true/' $F; fi
           grep -rn "scrollView.bounces" node_modules/@capacitor/ios --include=*.swift || echo "::warning::Capacitor's bounce line was not found; the page will not spring"
+          # past the page's ends the web view showed the shell's one fixed colour, light even on the dark theme (Alex,
+          # 15 Nov: "it spills"). Capacitor paints the scroll view itself; with that line gone WebKit paints it in the
+          # page's own background colour, which follows the theme
+          G=$(grep -rl "scrollView.backgroundColor" node_modules/@capacitor/ios --include=*.swift || true)
+          echo "before:"; grep -rn -B3 -A3 "scrollView.backgroundColor" node_modules/@capacitor/ios --include=*.swift || true
+          if [ -n "$G" ]; then perl -ni -e 'print unless /scrollView\.backgroundColor\s*=/' $G; fi
+          echo "after:"; grep -rn "backgroundColor" node_modules/@capacitor/ios/Capacitor/Capacitor/CAPBridgeViewController.swift || true
           npx cap add ios
           npx cap sync ios
           cat ios/App/App/capacitor.config.json

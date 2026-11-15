@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { errText, fileLink, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
+import { errText, fileLink, foldHas, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { Avatar, I, Modal, Slide, useLens, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
@@ -206,6 +206,93 @@ const AS_I = {
   transfer: asSolid('M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19zM11.2 7.2l-4 4a1.1 1.1 0 0 0 1.6 1.6l2.1-2.1V16a1.1 1.1 0 0 0 2.2 0v-5.3l2.1 2.1a1.1 1.1 0 0 0 1.6-1.6l-4-4a1.1 1.1 0 0 0-1.6 0z'),
 }
 
+/* ---------- the phone's own photo library inside the sheet (Alex, 15 Nov, as Telegram's: the paperclip opens the
+   photos at once, the camera first; picked ones go lighter). Only inside the iPhone app, through the native plugin
+   @capacitor-community/media (mobile/package.json), reached over Capacitor's bridge since the site does not carry
+   @capacitor/core. A web page cannot read the photo library, so the web keeps the tiles that open the system picker. */
+const mediaCall = () => {
+  const C = typeof window !== 'undefined' && window.Capacitor
+  if (!C?.isNativePlatform?.() || !C.nativePromise) return null
+  return (m, o = {}) => C.nativePromise('Media', m, o)
+}
+const LIB_STEP = 60
+const mmssOf = (s) => `${Math.floor((s || 0) / 60)}:${String(Math.round(s || 0) % 60).padStart(2, '0')}`
+const EXT_TYPE = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', heic: 'image/heic', heif: 'image/heif', gif: 'image/gif', webp: 'image/webp', mov: 'video/quicktime', mp4: 'video/mp4', m4v: 'video/x-m4v' }
+// the whole photo or video, as a File the sheet can send (a HEIC photo becomes a JPEG on the way)
+async function libFile(asset, n) {
+  const call = mediaCall()
+  const C = window.Capacitor
+  const r = await call('getMediaByIdentifier', { identifier: asset.identifier })
+  const src = C.convertFileSrc ? C.convertFileSrc(r.path) : r.path
+  const blob = await (await fetch(src)).blob()
+  const ext = (/\.([a-z0-9]+)(?:\?|$)/i.exec(r.path)?.[1] || (asset.duration ? 'mov' : 'jpg')).toLowerCase()
+  const type = EXT_TYPE[ext] || blob.type || (asset.duration ? 'video/quicktime' : 'image/jpeg')
+  let file = new File([blob], `${asset.duration ? 'VID' : 'IMG'}_${Date.now()}_${n}.${ext}`, { type })
+  if (/^image\/hei[cf]$/.test(type)) file = await shrinkImage(file, 2048, 0.85)
+  return file
+}
+function LibraryGrid({ picked, onPick, onCamera, onFail }) {
+  const [items, setItems] = useState(null)
+  const [want, setWant] = useState(LIB_STEP)
+  const end = useRef(null)
+  useEffect(() => {
+    const call = mediaCall()
+    if (!call) { onFail(); return undefined }
+    let alive = true
+    call('getMedias', { quantity: want, thumbnailWidth: 300, thumbnailHeight: 300, thumbnailQuality: 65, types: 'all' })
+      .then((r) => { if (alive) setItems(r?.medias || []) })
+      .catch(() => { if (alive) onFail() })
+    return () => { alive = false }
+  }, [want]) // eslint-disable-line react-hooks/exhaustive-deps
+  // more as the end comes into sight
+  useEffect(() => {
+    const el = end.current
+    if (!el || !items || items.length < want || typeof IntersectionObserver === 'undefined') return undefined
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) setWant((w) => w + LIB_STEP) }, { rootMargin: '400px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [items, want])
+  return (
+    <div className="lib-grid">
+      <button type="button" className="lib-cell lib-cam" onClick={onCamera} aria-label="Camera">{I.camera}<span>Camera</span></button>
+      {(items || []).map((a) => {
+        const n = picked.findIndex((p) => p.identifier === a.identifier)
+        return (
+          <button key={a.identifier} type="button" className={`lib-cell${n >= 0 ? ' on' : ''}`} onClick={() => onPick(a)} aria-label={a.duration ? 'Video' : 'Photo'}>
+            <img src={`data:image/jpeg;base64,${a.data}`} alt="" loading="lazy" decoding="async" draggable={false} />
+            {a.duration ? <small className="lib-dur">{mmssOf(a.duration)}</small> : null}
+            <i className="lib-ring">{n >= 0 ? n + 1 : ''}</i>
+          </button>
+        )
+      })}
+      {!items && Array.from({ length: 11 }, (_, k) => <span key={k} className="lib-cell lib-ghost" />)}
+      <span ref={end} className="lib-end" />
+    </div>
+  )
+}
+
+// a file sent before, as Telegram's list: its picture (or its kind), the name, the size and when
+function RecentFile({ m, onPick }) {
+  const f = m.file || {}
+  const [ref, seen] = useSeen()
+  const [url, setUrl] = useState('')
+  const ext = extOf(f.name) || ''
+  useEffect(() => { if (!seen || !f.thumb) return undefined; let alive = true; fileLink(thumbOf(f)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [seen, f.thumb])
+  return (
+    <button ref={ref} type="button" className="as-row as-recent" onClick={() => onPick(m)}>
+      {url ? <i className="as-ext as-rthumb"><img src={url} alt="" loading="lazy" /></i>
+        : <i className="as-ext" style={{ '--tint': EXT_TINT[ext] || '#8e8e93' }}>{ext ? <b>{ext.slice(0, 4)}</b> : I.file}</i>}
+      <span className="as-text"><b>{f.name || 'File'}</b><small>{fmtBytes(f.size)} · {whenSent(m.created_at)}</small></span>
+    </button>
+  )
+}
+// the File tab's three ways in, as Telegram's: line signs and words in the accent
+const FT_I = {
+  gallery: <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><circle cx="15.5" cy="9.5" r="1.6" /><path d="M4 17l4.6-4.6a1.4 1.4 0 0 1 2 0L16 17.8M13.5 15.3l1.6-1.6a1.4 1.4 0 0 1 2 0L20 16.6" /></svg>,
+  files: <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.6 9.1 4.7 4.7 0 0 0 7 18.5z" /></svg>,
+  scan: <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 8V6.5A2.5 2.5 0 0 1 6.5 4H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V8M20 16v1.5a2.5 2.5 0 0 1-2.5 2.5H16M8 20H6.5A2.5 2.5 0 0 1 4 17.5V16" /><path d="M9 7.5h4l2.5 2.5v6.5H9z" /><path d="M13 7.5V10h2.5" /></svg>,
+}
+
 export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, transferSlot, contacts, onContact }) {
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
@@ -216,6 +303,20 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const [recent, setRecent] = useState(null)
   const [sending, setSending] = useState('')
   const [edit, setEdit] = useState(-1) // the photo being touched up before it is sent
+  const [lib, setLib] = useState(() => !!mediaCall()) // the photo library inside the sheet (iPhone app)
+  const [libPicked, setLibPicked] = useState([])
+  const [libBusy, setLibBusy] = useState(false)
+  const [fileQ, setFileQ] = useState(null) // the File tab's search, null while closed
+  const pickLib = (a) => setLibPicked((l) => (l.some((x) => x.identifier === a.identifier) ? l.filter((x) => x.identifier !== a.identifier) : [...l, a]))
+  const sendLib = async () => {
+    if (libBusy || !libPicked.length) return
+    setLibBusy(true)
+    try {
+      const got = []
+      for (let k = 0; k < libPicked.length; k++) got.push(await libFile(libPicked[k], k)) // eslint-disable-line no-await-in-loop
+      onSend(got, caption.trim(), true, false)
+    } catch { setLibBusy(false); setLib(false) }
+  }
   // the sheet is pulled down by its top to close, and a slide left or right goes from Gallery to File to Audio
   const sheetRef = useRef(null)
   const bodyRef = useRef(null)
@@ -228,6 +329,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const cam = useRef(null)
   const doc = useRef(null)
   const galRaw = useRef(null)
+  const scan = useRef(null) // Scan Document: the camera, the picture sent as a file, untouched
   const aud = useRef(null)
   const touchOnly = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches
   const add = (list, raw) => { if (!files.length) setAsFile(!!raw); setFiles((f) => [...f, ...list]) }
@@ -250,9 +352,12 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
         const once = (m) => { const k = `${m.file.name}|${m.file.size}`; if (seen.has(k)) return false; seen.add(k); return true }
         const audio = live.filter((m) => isAudioFile(m.file)).filter(once)
         seen.clear()
-        const mine = live.filter((m) => m.user_id === meId && !isAudioFile(m.file)).filter(once).slice(0, 40)
+        // files sent as files (Alex, 15 Nov: "the recents do not show"): anything from the File tab, raw photos and
+        // videos too, but not the Gallery's photos and videos, which wait in the Gallery tab
+        const asFileMsg = (m) => m.kind === 'file' && !m.file?.round && !isAudioFile(m.file) && (m.file?.asFile || !/^(image|video)\//.test(m.file?.type || ''))
+        const mine = live.filter((m) => m.user_id === meId && asFileMsg(m)).filter(once).slice(0, 40)
         const photos = live.filter((m) => m.user_id === meId && (m.kind === 'image' || /^(image|video)\//.test(m.file?.type || '')) && !m.file?.round).filter(once).slice(0, 30)
-        setRecent({ mine: mine.filter((m) => m.kind !== 'image' && !/^(image|video)\//.test(m.file?.type || '')), audio: audio.slice(0, 40), photos })
+        setRecent({ mine, audio: audio.slice(0, 40), photos })
       })
   }, [tab, recent, meId])
   const pick = async (m) => { if (!onResend || sending) return; setSending(m.id); const ok = await onResend(m); setSending(''); if (ok !== false) onClose() }
@@ -274,12 +379,14 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   if (edit >= 0 && files[edit]) return <Suspense fallback={null}><PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} /></Suspense>
   return createPortal(
     <div className="as-back" onClick={onClose}>
-      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${tab === 'transfer' && !files.length ? ' as-tall' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${(tab === 'transfer' || (tab === 'gallery' && lib)) && !files.length ? ' as-tall' : ''}${tab === 'gallery' && lib && !files.length ? ' as-lib' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <i className="as-grab" data-grab="" aria-hidden="true" />
         <div className="as-head" data-grab="">
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
           <b>{title}</b>
-          <span className="as-head-pad" />
+          {tab === 'file' && !files.length
+            ? <button type="button" className="round" onClick={() => setFileQ((q) => (q === null ? '' : null))} aria-label="Search files">{fileQ === null ? I.search : I.x}</button>
+            : <span className="as-head-pad" />}
         </div>
         <div className="as-body" ref={bodyRef}>
           {files.length > 0 ? (
@@ -318,6 +425,8 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
           ) : tab === 'location' && onLocation ? (
             // Location is a tab of the sheet like the others (Alex, 14 Nov: it popped a window of its own and the sheet was gone)
             <Suspense fallback={<div className="loc loc-inline" />}><LocationPicker inline onSend={onLocation} onLive={onLive} onClose={onClose} /></Suspense>
+          ) : tab === 'gallery' && lib ? (
+            <LibraryGrid picked={libPicked} onPick={pickLib} onCamera={() => cam.current?.click()} onFail={() => setLib(false)} />
           ) : tab === 'gallery' ? (
             <>
               <div className="as-tiles">
@@ -336,24 +445,35 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
             </>
           ) : (
             <>
-              <div className="as-tiles">
-                {tab === 'audio'
-                  ? <AsTile wide icon={I.play} title="Choose a Sound File" sub="MP3, WAV, M4A, FLAC and the rest" onClick={() => aud.current?.click()} />
-                  : <>
-                    <AsTile icon={I.file} title="Files" sub={touchOnly ? 'From this phone' : 'From this computer'} onClick={() => doc.current?.click()} />
-                    <AsTile icon={I.image} title="Gallery" sub="Sent as a file, untouched" onClick={() => galRaw.current?.click()} />
-                  </>}
-              </div>
+              {tab === 'audio' ? (
+                <div className="as-tiles"><AsTile wide icon={I.play} title="Choose a Sound File" sub="MP3, WAV, M4A, FLAC and the rest" onClick={() => aud.current?.click()} /></div>
+              ) : fileQ !== null ? (
+                <label className="search as-search">{I.search}<input autoFocus value={fileQ} onChange={(e) => setFileQ(e.target.value)} placeholder="Search sent files" /></label>
+              ) : (
+                // as Telegram's (Alex, 15 Nov): three ways in, each sent exactly as it is
+                <div className="as-card as-ways">
+                  <button type="button" className="as-row as-way" onClick={() => galRaw.current?.click()}>{FT_I.gallery}<span>Select from Gallery</span></button>
+                  <button type="button" className="as-row as-way" onClick={() => doc.current?.click()}>{FT_I.files}<span>Select from Files</span></button>
+                  {touchOnly && <button type="button" className="as-row as-way" onClick={() => scan.current?.click()}>{FT_I.scan}<span>Scan Document</span></button>}
+                </div>
+              )}
               <small className="as-label">{tab === 'audio' ? 'Sound in your chats' : 'Recently sent files'}</small>
               <div className="as-card">
                 {!list && <span className="as-row as-wait">Loading…</span>}
-                {list && !list.length && <span className="as-row as-wait">{tab === 'audio' ? 'No sound files in your chats yet.' : 'Nothing sent yet.'}</span>}
-                {list?.map((m) => <RecentRow key={m.id} m={m} onPick={pick} />)}
+                {list && !list.length && <span className="as-row as-wait">{tab === 'audio' ? 'No sound files in your chats yet.' : 'Files you send from here will wait here, to send again with a tap.'}</span>}
+                {tab === 'audio'
+                  ? list?.map((m) => <RecentRow key={m.id} m={m} onPick={pick} />)
+                  : list?.filter((m) => !fileQ || foldHas(m.file?.name || "", fileQ)).map((m) => <RecentFile key={m.id} m={m} onPick={pick} />)}
               </div>
             </>
           )}
         </div>
-        {files.length > 0 ? (
+        {!files.length && tab === 'gallery' && lib && libPicked.length > 0 ? (
+          <div className="as-send">
+            <input className="input attach-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" />
+            <button type="button" className={`round send ready attach-send${libBusy ? ' busy' : ''}`} disabled={libBusy} onClick={sendLib} aria-label={`Send ${libPicked.length}`} title="Send">{I.send}<b className="lib-count">{libPicked.length}</b></button>
+          </div>
+        ) : files.length > 0 ? (
           <div className="as-send">
             <input className="input attach-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" />
             <button type="button" className="round send ready attach-send" onClick={() => onSend(files, caption.trim(), !asFile, asFile)} aria-label="Send" title="Send">{I.send}</button>
@@ -366,6 +486,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
         <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
         <input ref={cam} type="file" accept="image/*,video/*" capture="environment" hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
         <input ref={doc} type="file" multiple hidden onChange={(e) => { add([...(e.target.files || [])], tab === 'file' || asFile); e.target.value = '' }} />
+        <input ref={scan} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { add([...(e.target.files || [])], true); e.target.value = '' }} />
         <input ref={galRaw} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])], true); e.target.value = '' }} />
         <input ref={aud} type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.aif,.aiff,.ogg,.opus" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
       </div>

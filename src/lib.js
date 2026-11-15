@@ -89,7 +89,7 @@ export function videoPoster(file, max = 640, quality = 0.72) {
 }
 
 export async function shrinkImage(file, max = 1920, quality = 0.85) {
-  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file
+  if (!/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type)) return file
   const url = URL.createObjectURL(file)
   try {
     const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url })

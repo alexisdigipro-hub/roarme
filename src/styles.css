@@ -4912,3 +4912,14 @@ html button.link.danger-link { color: var(--danger, #e5484d) !important; }
 .pf-row { min-width: 0; }
 .pf-row .pf-row-text { min-width: 0; flex: 1; }
 .pf-row .pf-row-text small, .pf-row .pf-row-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* a chat's Notifications and Sounds window (Profile.jsx, More; Alex, 15 Nov): Telegram's grouped boxes */
+.ns { display: flex; flex-direction: column; }
+.ns-sec { margin: 6px 6px 8px; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.ns-box { display: flex; flex-direction: column; border-radius: 22px; background: var(--glass, rgba(127, 127, 140, .1)); border: 1px solid var(--edge, rgba(127, 127, 140, .18)); overflow: hidden; }
+.ns-box.off { opacity: .45; }
+.ns-row { display: flex; align-items: center; justify-content: space-between; height: 50px; padding: 0 18px; border: 0; background: none; color: var(--text); font: inherit; font-size: 16px; text-align: left; }
+.ns-row + .ns-row { box-shadow: inset 0 1px 0 rgba(127, 127, 140, .18); }
+.ns-row:active:not(:disabled) { background: rgba(127, 127, 140, .12); }
+.ns-row > i { display: grid; color: var(--halo, var(--accent)); }
+.ns-note { margin: 8px 8px 18px; font-size: 13px; color: var(--muted); line-height: 1.4; }

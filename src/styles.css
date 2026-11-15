@@ -4868,3 +4868,20 @@ html.kb .bw { bottom: auto; height: var(--vvh, 100dvh); top: var(--vvt, 0px); pa
    keyboard's round corners the page's own colour shows, not black */
 html.in-shell { background: var(--kb-bg, var(--bg)); }
 html.in-shell #root { height: calc(100% - var(--kbh, 0px)); overflow-y: auto; transition: height .28s cubic-bezier(.2, .8, .2, 1); }
+
+/* Friends From Your Contacts (phone.jsx PhoneFriends; Alex, 15 Nov): full size from the start, rows waiting while it
+   looks, the list fading in, and light rows (no glass, no grain) since there can be hundreds */
+.modal:has(.pfr) { height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); max-height: 820px; }
+.pfr { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.pfr-wait { display: flex; flex-direction: column; gap: 14px; }
+.pfr-ghost { display: flex; align-items: center; gap: 12px; padding: 4px 6px; }
+.pfr-ghost i { width: 40px; height: 40px; border-radius: 50%; background: rgba(127, 127, 140, .16); }
+.pfr-ghost b { flex: 1; height: 14px; max-width: 60%; border-radius: 7px; background: rgba(127, 127, 140, .14); }
+@media (prefers-reduced-motion: no-preference) { .pfr-ghost { animation: pfr-pulse 1.2s ease-in-out infinite alternate; } .pfr-ghost:nth-child(odd) { animation-delay: .3s; } }
+@keyframes pfr-pulse { from { opacity: .55; } to { opacity: 1; } }
+.pfr-in { animation: pfr-in .24s ease-out both; }
+@keyframes pfr-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.pfr .phone-person { content-visibility: auto; contain-intrinsic-size: auto 60px; }
+.pfr .phone-person .av { background-image: none !important; }
+.pfr .phone-person .av::after, .pfr .phone-person .av::before { display: none !important; }
+.modal:has(.pfr) .modal-body { overflow: hidden; }

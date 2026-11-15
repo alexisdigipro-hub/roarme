@@ -4952,3 +4952,14 @@ html:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][da
    round the map is cut, not round right"): its corners are the bubble's less the 4px around, and Safari clips the moving
    tiles with a mask */
 .bubble.loc-b .locc-map { border-radius: calc(var(--bubble-r, 22px) - 4px); -webkit-mask-image: -webkit-radial-gradient(white, black); mask-image: radial-gradient(white, black); isolation: isolate; transform: translateZ(0); }
+
+/* a place's map sits on the message with no frame round it, as photos do (Alex, 15 Nov: "wherever you can, no border;
+   the background only under the words"): the map reaches the bubble's edges, the bubble's own curve cuts it at the top,
+   and the bubble's colour shows only under the name, the address and the time */
+html:root:root:root:root .bubble.loc-b { padding: 0 !important; overflow: hidden; -webkit-mask-image: -webkit-radial-gradient(white, black); isolation: isolate; }
+html:root:root:root:root .bubble.loc-b .locc-map { border-radius: 0 !important; height: 170px; }
+html:root:root:root:root .bubble.loc-b .locc-text { padding: 9px 12px 2px; }
+html:root:root:root:root .bubble.loc-b .meta { padding: 0 12px 7px 0; margin-right: 0; }
+html:root:root:root:root .bubble.loc-b .live-stop { margin: 6px 10px 4px; }
+html:root:root:root:root .bubble.loc-b > .rx.rx-in { margin-left: 10px !important; margin-bottom: 7px !important; }
+html:root:root:root:root .msg.mine .bubble.loc-b > .rx.rx-in { margin-right: 10px !important; margin-left: 4px !important; }

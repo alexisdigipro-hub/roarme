@@ -10,5 +10,11 @@
     "contentInset": "never",
     "backgroundColor": "#eceef1",
     "allowsLinkPreview": false
+  },
+  "plugins": {
+    "Keyboard": {
+      "resize": "native",
+      "resizeOnFullScreen": true
+    }
   }
 }

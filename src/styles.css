@@ -4927,3 +4927,7 @@ html button.link.danger-link { color: var(--danger, #e5484d) !important; }
    shadow, and the camera badge without the white rim */
 html[data-skin='halo'] .pf-head .pf-top .av { box-shadow: 0 10px 26px rgba(0, 0, 0, .3) !important; }
 html[data-skin='halo'] .pf-head .pf-pic-cam { box-shadow: 0 4px 12px rgba(0, 0, 0, .3) !important; }
+
+/* a photo taller than 4:5 (a 9:16 from the phone) shows as 4:5 at the same width, cut evenly at top and bottom;
+   shorter photos keep their own shape (Alex, 15 Nov) */
+.bubble.pic img.pic-img.tall { aspect-ratio: 4 / 5 !important; height: auto !important; max-height: none !important; object-fit: cover !important; object-position: center; }

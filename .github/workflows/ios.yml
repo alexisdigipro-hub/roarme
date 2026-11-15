@@ -60,6 +60,9 @@ jobs:
           set_key NSPhotoLibraryAddUsageDescription "RoarMe saves the photos and videos you choose to keep."
           set_key NSContactsUsageDescription "RoarMe checks which of your contacts are on RoarMe. Their numbers are coded on your iPhone and never stored."
           V=$(node -p "require('./package.json').version")
+          # only the standard encryption of HTTPS and the system: every build reaches TestFlight without the "Missing Compliance" question (Alex, 15 Nov)
+          /usr/libexec/PlistBuddy -c "Delete :ITSAppUsesNonExemptEncryption" "$P" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$P"
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" "$P"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" "$P"
           /usr/libexec/PlistBuddy -c "Print" "$P"

@@ -66,6 +66,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const [adding, setAdding] = useState(false)
   // the Mute button's menu (Alex, 15 Nov, from Telegram's): for a while, quiet, this chat's own sound, for ever
   const [muteOpen, setMuteOpen] = useState(false)
+  const [soundsOpen, setSoundsOpen] = useState(false) // More > Notifications and Sounds: this chat's sound on / off and its tone
   const [vcOpen, setVcOpen] = useState(false) // a group's Video Chat: start one now, or schedule one
   const [muteSub, setMuteSub] = useState('')
   const [own, setOwn] = useState({})
@@ -292,6 +293,27 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
             )
             : <Avatar src={group ? room.avatar_url : other?.avatar_url} name={title} size={112} group={group} />}
           <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { setCropFile(e.target.files?.[0] || null); e.target.value = '' }} />
+          {soundsOpen && (
+            <Modal title="Notifications and Sounds" onClose={() => setSoundsOpen(false)}>
+              {/* grouped as Telegram's (Alex, 15 Nov: "put Customize somewhere else, group them right"): the bell is only
+                  for muting; whether this chat's notifications sound, and with which tone, live here */}
+              <div className="ns">
+                <p className="ns-sec">Sound</p>
+                <div className="ns-box">
+                  <button type="button" className="ns-row" onClick={() => own.silent && setOwnPref({ silent: false }, 'Sound on for this chat')}><span>With Sound</span>{!own.silent && <i>{I.check}</i>}</button>
+                  <button type="button" className="ns-row" onClick={() => !own.silent && setOwnPref({ silent: true }, 'Notifications come quietly')}><span>Without Sound</span>{own.silent && <i>{I.check}</i>}</button>
+                </div>
+                <p className="ns-note">Without sound, notifications from this chat still come, quietly.</p>
+                <p className="ns-sec">Tone</p>
+                <div className={`ns-box${own.silent ? ' off' : ''}`}>
+                  {[['', 'Default'], ...SOUNDS.map(([k, l]) => [k, l])].map(([k, l]) => (
+                    <button key={k || 'def'} type="button" className="ns-row" disabled={!!own.silent} onClick={() => { if (k) chime(k); setOwnPref({ sound: k || null }, k ? `${l} for this chat` : 'Default sound for this chat') }}><span>{l}</span>{(own.sound || '') === k && <i>{I.check}</i>}</button>
+                  ))}
+                </div>
+                <p className="ns-note">Default is the sound chosen in Settings, Notifications and Sounds.</p>
+              </div>
+            </Modal>
+          )}
           {cropFile && <CropModal file={cropFile} title={group ? 'Group photo' : `Your photo for ${title}`} onDone={pickPic} onClose={() => setCropFile(null)} />}
           {editing && other && <ContactEdit me={me} other={other} blocked={blocked} onBlock={() => { setEditing(false); block() }} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); loadPeople([other.id]); toast('Saved, only you see it') }} onPhoto={() => { setEditing(false); picRef.current?.click() }} onDropPhoto={dropMyPhoto} />}
           {canName
@@ -324,12 +346,6 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   {room.muted && <button type="button" onClick={() => muteFor(0, true)}>{I.bell}<span>Unmute<small className="pf-m-note">{mutedTill ? `Muted until ${mutedTill.toLocaleString(locale(), { weekday: mutedTill - Date.now() > 864e5 ? 'short' : undefined, hour: '2-digit', minute: '2-digit' })}` : 'Muted forever'}</small></span></button>}
                   <button type="button" onClick={() => setMuteSub((v) => (v === 'for' ? '' : 'for'))}>{MUTE_FOR_I}<span>Mute for…</span><i className="pf-m-arrow">{I.right}</i></button>
                   {muteSub === 'for' && [[1, 'For 1 hour'], [8, 'For 8 hours'], [24, 'For 1 day'], [168, 'For 7 days']].map(([h, l]) => <button key={h} type="button" className="pf-m-sub" onClick={() => muteFor(h)}><span>{l}</span></button>)}
-                  <hr />
-                  <button type="button" onClick={() => setOwnPref({ silent: !own.silent }, own.silent ? 'Sound on for this chat' : 'Notifications come quietly')}>{own.silent ? SOUND_ON_I : SOUND_OFF_I}<span>{own.silent ? 'Enable Sound' : 'Disable Sound'}</span></button>
-                  <button type="button" onClick={() => setMuteSub((v) => (v === 'sound' ? '' : 'sound'))}>{CUSTOM_I}<span>Customize<small className="pf-m-note">{own.sound ? SOUNDS.find(([k]) => k === own.sound)?.[1] || 'Default' : 'Default sound'}</small></span><i className="pf-m-arrow">{I.right}</i></button>
-                  {muteSub === 'sound' && [['', 'Default'], ...SOUNDS.map(([k, l]) => [k, l])].map(([k, l]) => (
-                    <button key={k || 'def'} type="button" className="pf-m-sub" onClick={() => { if (k) chime(k); setOwnPref({ sound: k || null }, k ? `${l} for this chat` : 'Default sound for this chat') }}><span>{l}</span>{(own.sound || '') === k && <i>{I.check}</i>}</button>
-                  ))}
                   {!room.muted && <button type="button" className="danger" onClick={() => muteFor(0)}>{I.bellOff}<span>Mute Forever</span></button>}
                 </div>
               </>
@@ -344,6 +360,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                 <div className="menu pf-menu">
                   {/* what can be done with the chat (Alex, 12 Nov, after Telegram's): nothing here repeats Edit (the name,
                       the note and the photo are there) or the buttons beside it (mute, search) */}
+                  <button type="button" onClick={() => { setMore(false); setSoundsOpen(true) }}>{CUSTOM_I}<span>Notifications and Sounds</span></button>
                   <button type="button" onClick={() => toChat('wallpaper')}>{I.brush}<span>Change Wallpaper</span></button>
                   <button type="button" onClick={() => toChat('seal')}>{I.lock}<span>Encrypted Chat</span></button>
                   {!group && other && <button type="button" onClick={shareContact}>{I.forward}<span>Share Contact</span></button>}

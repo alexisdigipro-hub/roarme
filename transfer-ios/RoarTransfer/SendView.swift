@@ -114,7 +114,7 @@ struct SendView: View {
             .buttonStyle(PillStyle(main: true)).disabled(over).opacity(over ? 0.5 : 1)
         } else {
             Text(t("Videos go in their original quality, exactly as they are on your iPhone."))
-                .font(.system(size: 13)).foregroundStyle(Theme.dim).multilineTextAlignment(.center)
+                .font(.system(size: 12)).foregroundStyle(Theme.dim).multilineTextAlignment(.center)
         }
     }
 
@@ -127,12 +127,16 @@ struct SendView: View {
         let empty = picked.isEmpty
         return Group {
             if empty {
-                VStack(spacing: 12) {
-                    upIcon(64)
-                    Text(t("Drop your files here")).font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.text)
-                    Text(t("Tap to choose them")).font(.system(size: 14)).foregroundStyle(Theme.muted)
+                // compact (Alex, 15 Nov: "the window is huge"): the icon beside its two lines, as the website's Add more
+                HStack(spacing: 14) {
+                    upIcon(46)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t("Drop your files here")).font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.text)
+                        Text(t("Tap to choose them")).font(.system(size: 13)).foregroundStyle(Theme.muted)
+                    }
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity).padding(.vertical, 34)
+                .padding(14)
             } else {
                 HStack(spacing: 14) {
                     upIcon(44)

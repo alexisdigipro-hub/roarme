@@ -56,7 +56,7 @@ struct Card<Content: View>: View {
 struct BigTitle: View {
     var a: String; var b: String; var c: String
     var body: some View {
-        (Text(a).font(.system(size: 30, weight: .light)) + Text(b).font(.system(size: 30, weight: .heavy)) + Text(c).font(.system(size: 30, weight: .light)))
+        (Text(a).font(.system(size: 24, weight: .light)) + Text(b).font(.system(size: 24, weight: .heavy)) + Text(c).font(.system(size: 24, weight: .light)))
             .foregroundStyle(Theme.text).lineLimit(1).minimumScaleFactor(0.6)
     }
 }

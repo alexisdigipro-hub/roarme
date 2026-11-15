@@ -5053,3 +5053,10 @@ html:root:root:root:root .as-send .attach-send > svg { margin: 0 !important; tra
 .pick-bar strong { flex: 1; min-width: 0; text-align: center; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
 .pick-bar .head-pick-acts { flex: none; display: flex; gap: 8px; }
 .pick-bar .round { width: 42px; height: 42px; }
+
+/* the brand block (the mark, ROARME, by THEMADLIONS): the mark in the words' colour, white by Night, not the accent,
+   and "by THEMADLIONS" much smaller under it (Alex, 15 Nov) */
+html:root:root:root:root .wordmark.with-by .rm-mark { color: var(--text) !important; filter: none !important; }
+html:root:root:root:root[data-mode='dark'] .wordmark.with-by .rm-mark { color: #fff !important; }
+html:root:root:root:root .wordmark.with-by .by-tml, html:root:root:root:root .wordmark.with-by .by-tml b { font-size: 8px !important; letter-spacing: .16em; }
+html:root:root:root:root .wordmark.with-by .by-tml { gap: 4px; opacity: .8; margin-top: 2px; }

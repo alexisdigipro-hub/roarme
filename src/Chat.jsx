@@ -3094,17 +3094,18 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'file' && isAudioFile(m.file) && !m.file?.asFile ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name }], index: 0 })} />
                       : null}
-                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
+                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && !m.file?.contact && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
+                    {/* reactions inside the bubble, on its outer side (Alex, 15 Nov: "never towards the middle, and inside the frame") */}
+                    {(rx || replyCount[m.id]) && (
+                      <span className="rx rx-in">
+                        {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); hands.current.react(m, e) }}>{e === '❤️' ? RX_HEART : e}{v.n > 1 && <small>{v.n}</small>}</button>)}
+                        {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); hands.current.setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
+                      </span>
+                    )}
                     <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
-                  {(rx || replyCount[m.id]) && (
-                    <span className="rx">
-                      {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); hands.current.react(m, e) }}>{e === '❤️' ? RX_HEART : e}{v.n > 1 && <small>{v.n}</small>}</button>)}
-                      {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); hands.current.setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -3777,10 +3778,14 @@ const FIND_WHO = svg(<><circle cx="10" cy="7.5" r="3.8" /><path d="M3.5 20c0-3.6
 function SharedContact({ c, person }) {
   const name = person ? nameOf(person) : c.name
   return (
-    <span className="sc-card" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: c.id } })) }}>
-      <Avatar src={person?.avatar_url || c.avatar} name={name} size={44} />
-      <span className="sc-text"><b>{name}</b><small>@{person?.username || c.username}</small></span>
-      <span className="sc-go">View</span>
+    // a contact card as a card (Alex, 15 Nov: "ugly, cramped against the lines"): the picture and the name with room
+    // around them, a fine line, then View Contact across the card
+    <span className="sc-card sc2" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: c.id } })) }}>
+      <span className="sc2-top">
+        <Avatar src={person?.avatar_url || c.avatar} name={name} size={52} />
+        <span className="sc2-text"><b>{name}</b><small>@{person?.username || c.username}</small></span>
+      </span>
+      <span className="sc2-go">View Contact</span>
     </span>
   )
 }

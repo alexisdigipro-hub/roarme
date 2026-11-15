@@ -830,9 +830,9 @@ html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile,
     transition: transform .28s var(--jelly);
   }
   html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.round, .btn, .pill-btn, .trx-get, .acc, .theme-tile, .rt-plan, .rt-send, .as-tabs button, .pf-tabs button, .pf-acts > button, .head-ava, .rx button, .voice-btn, .music-btn, .loc-round, .wall-tile, .as-tile, .as-thumb):active { transform: scale(.9); transition-duration: .07s; }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.as-row, .head-card, .room, .person, .pf-row, .set-pick, .set-nav, .menu > button, .menu-list > button, .rt-drop, .note, .ce2-row):active { transform: scale(.975); transition-duration: .07s; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) :is(.as-row, .head-card, .room, .person, .pf-row, .set-pick, .set-nav, .menu > button, .menu-list > button, .rt-drop, .ce2-row):active { transform: scale(.975); transition-duration: .07s; }
   html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble { transition: transform .28s var(--jelly); }
-  html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble.pressing, html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble:active { transform: scale(.97); transition-duration: .07s; }
+  html[data-skin='halo']:not([data-still]):not([data-lite]) .msg .bubble.pressing { transform: scale(.97); transition-duration: .07s; }
 }
 /* nothing blurs what is behind it while it pops or slides in Halo: these are close to solid anyway, and a blurred layer
    that moves is what made the motion stutter on the phone */

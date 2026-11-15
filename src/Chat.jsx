@@ -2880,7 +2880,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       hands.current.openMenu({ preventDefault() {}, clientX: x.x, clientY: x.y }, x.m)
       window.getSelection?.()?.removeAllRanges()
     }
-    const drop = () => { if (!h) return; clearTimeout(h.timer); h.bubble.classList.remove('pressing'); h = null }
+    const drop = () => { if (!h) return; clearTimeout(h.timer); clearTimeout(h.sink); h.bubble.classList.remove('pressing'); h = null }
     const lift = () => {
       if (h?.ready) { const x = h; h = null; show(x); liftGuard.current = Date.now() + 400; return }
       if (liftGuard.current === Infinity) liftGuard.current = Date.now() + 400
@@ -2895,8 +2895,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       const m = row && hands.current.byId[row.id.slice(2)]
       if (!m || m.deleted_at) return
       const t = e.touches[0]
-      bubble.classList.add('pressing')
-      h = { bubble, m, x: t.clientX, y: t.clientY, timer: setTimeout(() => {
+      // a quick tap shows nothing; only a finger that stays makes it sink, then pop as the menu opens (Alex, 15 Nov)
+      h = { bubble, m, x: t.clientX, y: t.clientY, sink: setTimeout(() => bubble.classList.add('pressing'), 160), timer: setTimeout(() => {
         const b = h.bubble
         b.classList.remove('pressing'); b.classList.remove('held'); void b.offsetWidth; b.classList.add('held')
         setTimeout(() => b.classList.remove('held'), 450)

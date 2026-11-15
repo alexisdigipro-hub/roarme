@@ -4981,3 +4981,8 @@ html[data-mode='dark'] .pv { background: #111114; }
 .pv-foot button i { display: grid; place-items: center; font-style: normal; }
 .pv-foot button:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
 .room-head .head-calls > button svg { width: 26px; height: 26px; }
+
+/* the handset and the camera from Alex's screenshot, as masks in the colour of the words (ui.jsx I.phone / I.video) */
+.ic-mask { display: inline-block; flex: none; width: 22px; height: 22px; background: currentColor; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; font-style: normal; }
+.room-head .head-calls > button .ic-mask { width: 27px; height: 27px; }
+:is(.round, .pv-foot button, .menu > button, .menu-list > button) > .ic-mask { width: 22px; height: 22px; }

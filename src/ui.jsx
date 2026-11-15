@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { initialsOf } from './lib.js'
+import phoneMask from './icons/phone.png'
+import videoMask from './icons/video.png'
 
 /* ---------- small pieces ---------- */
 export const svg = (d, w = 20) => <svg viewBox="0 0 24 24" width={w} height={w} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
@@ -47,9 +49,10 @@ export const I = {
   file: svg(<><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5" /></>, 22),
   bell: svg(<><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></>, 16),
   archive: svg(<><rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v11h14V8M10 12h4" /></>, 16),
-  // the handset and the camera in a fine line, as Telegram's (Alex, 15 Nov: "I like these icons very much")
-  phone: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5.2 3.3h2.3c.6 0 1.1.4 1.2 1l.6 3.1c.1.5-.1 1-.5 1.3l-1.4 1.1c1.4 2.9 3.4 4.9 6.3 6.3l1.1-1.4c.3-.4.8-.6 1.3-.5l3.1.6c.6.1 1 .6 1 1.2v2.3c0 1.1-.9 1.9-2 1.9C10.7 21.2 2.8 13.3 3.3 5.3c.1-1.1.9-2 1.9-2z" /></svg>,
-  video: <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="12.5" height="12" rx="3" /><path d="M15 10l4.9-3c.5-.3 1.1.1 1.1.7v8.6c0 .6-.6 1-1.1.7L15 14" /></svg>,
+  // the handset and the camera exactly as in Alex's screenshot of Telegram's head (15 Nov: "exactly as they are, both"):
+  // the two drawings cut from it (src/icons/*.png), worn as masks so they take the colour of the words around them
+  phone: <i className="ic-mask" style={{ '--m': `url(${phoneMask})` }} aria-hidden="true" />,
+  video: <i className="ic-mask" style={{ '--m': `url(${videoMask})` }} aria-hidden="true" />,
   more: svg(<><circle cx="5" cy="12" r="1.2" fill="currentColor" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /><circle cx="19" cy="12" r="1.2" fill="currentColor" /></>),
   mic: svg(<><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>),
   translate: svg(<><path d="M4 5h8M8 3v2M6 5c0 4 2.5 7 5 8M10 5c-.5 3-2.5 6-6 8" /><path d="m13 21 4-9 4 9M14.5 18h5" /></>, 16),

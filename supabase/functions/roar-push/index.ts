@@ -81,6 +81,7 @@ function preview(m: { kind: string; body: string; file: Record<string, unknown> 
   if (m.kind === 'image') return m.body ? `📷 ${clean(m.body)}` : '📷 Photo'
   if (m.kind === 'voice') return '🎤 Voice message'
   if (m.kind === 'file') return `📎 ${(f.name as string) || 'File'}`
+  if (f.groupcall) return '📹 started a video chat'
   if (f.event) return `📅 ${clean(m.body)}`
   if (f.location) return '📍 Location'
   if (f.article) return `📰 ${clean(m.body).split(' ').slice(0, 12).join(' ')}`

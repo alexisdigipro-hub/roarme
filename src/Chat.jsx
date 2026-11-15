@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -39,6 +39,7 @@ import { PhoneFriends, contactsAvailable } from './phone.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { taskNotice, useTasks } from './taskCore.js'
 import { useNameMarks } from './fancy.jsx'
+import { GroupCallBar, GroupCallCard, GroupCallHost, LinkCallCard, joinCall, startGroupCall, useGroupCall } from './groupcall.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
 import { ReportHost, report } from './report.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
@@ -269,6 +270,17 @@ export default function Chat({ me, setMe }) {
   const [jump, setJump] = useState('')
   useEffect(() => {
     const go = () => {
+      // a call link (#call=<token>, Alex, 15 Nov): into that call
+      const cl = window.location.hash.match(/^#call=([A-Za-z0-9_-]{6,40})$/)
+      if (cl) {
+        history.replaceState(null, '', window.location.pathname)
+        supabase.rpc('roar_call_by_link', { t: cl[1] }).then(({ data, error }) => {
+          if (error || !data) { toast('This call link does not work'); return }
+          if (data.ended) { toast('This call has ended'); return }
+          joinCall(data.id, false, 'Call')
+        })
+        return
+      }
       const c = window.location.hash.match(/^#c=([0-9a-f-]{36})$/)
       if (c) { setTab('chats'); setActiveId(c[1]); history.replaceState(null, '', window.location.pathname); return }
       const m = window.location.hash.match(/^#m=([0-9a-f-]{36})\/([0-9a-f-]{36})$/)
@@ -1531,6 +1543,7 @@ export default function Chat({ me, setMe }) {
       </main>
 
       <ReportHost me={me} people={people} blocks={[...blocks]} onBlocks={loadBlocks} toast={toast} />
+      <GroupCallHost me={me} people={people} rooms={rooms} toast={toast} />
       <ReminderCards me={me} rooms={rooms} titleOf={titleOf} onOpen={libChat}
         onDue={(r, m) => {
           if (prefsRef.current.sound) chime()
@@ -1547,7 +1560,7 @@ export default function Chat({ me, setMe }) {
       {inboxOpen && <RoarMeInbox onClose={() => setInboxOpen(false)} />}
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'phonefriends' && <PhoneFriends onClose={() => setModal('')} onOpen={openRoom} />}
-      {modal === 'newcall' && <NewCall people={calls} onClose={() => setModal('')} onCall={(p, v) => { setModal(''); startCall(p, directWith(p), v) }} />}
+      {modal === 'newcall' && <NewCall me={me} people={calls} toast={toast} onClose={() => setModal('')} onCall={(p, v) => { setModal(''); startCall(p, directWith(p), v) }} />}
       {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null) }} onOpen={(id) => { setGroupWith(null); openRoom(id) }} />}
       {modal === 'info' && active && <Suspense fallback={null}><Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
@@ -1876,6 +1889,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [flash, setFlash] = useState('')
   const [find, setFind] = useState(null) // null, or the words looked for in this chat
   const [findAt, setFindAt] = useState(0)
+  // a group's video chat (groupcall.jsx): the bar over the chat and the cards it left
+  const gc = useGroupCall(room.room_id, me.id, room.kind === 'group')
+  const gcLive = gc.call?.id || ''
+  const gcHere = gc.here.length
+  const joinGc = () => gc.call && window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: room.room_id, id: gc.call.id, video: false } }))
   // Telegram's way (Alex, 15 Nov): the search takes the head's place; under it, over the keyboard, a date to jump to and a person to look in
   const [findWho, setFindWho] = useState('') // only this person's messages
   const [whoOpen, setWhoOpen] = useState(false)
@@ -2942,7 +2960,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       const quoted = m.reply_to ? byId[m.reply_to] : null
       const rx = reactsOf[m.id]
       const key = [m, prev?.user_id, prev?.created_at, quoted, rx ? JSON.stringify(rx) : '', m.user_id === me.id ? seenBy(m).join() : '',
-        !!picked?.includes(m.id), wideIds.has(m.id), hits?.has(m.id) ? `${find}${nowId === m.id ? '*' : ''}` : '', flash === m.id, pinnedSet.has(m.id), replyCount[m.id] || 0]
+        !!picked?.includes(m.id), wideIds.has(m.id), hits?.has(m.id) ? `${find}${nowId === m.id ? '*' : ''}` : '', flash === m.id, pinnedSet.has(m.id), replyCount[m.id] || 0, m.file?.groupcall ? `${gcLive === m.file.groupcall.id}|${gcHere}` : '']
       const had = c.rows.get(m.id)
       const el = had && key.every((x, j) => x === had.key[j]) ? had.el : drawMsg(m, i)
       rows.set(m.id, { key, el })
@@ -2950,7 +2968,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     })
     c.rows = rows
     return list
-  }, [shownMsgs, peopleLook, picked, prefs, byId, reactsOf, reads, wideIds, find, found, nowId, flash, rolesLook, room.kind, room.room_id, title, autoDl, pinnedSet, replyCount, me]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shownMsgs, peopleLook, picked, prefs, byId, reactsOf, reads, wideIds, find, found, nowId, flash, rolesLook, room.kind, room.room_id, title, autoDl, pinnedSet, replyCount, me, gcLive, gcHere]) // eslint-disable-line react-hooks/exhaustive-deps
   function drawMsg(m, i) {
           const prev = shownMsgs[i - 1]
           const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
@@ -2999,7 +3017,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
                       : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => hands.current.setArtView(m)} />
                       : m.file?.roartransfer ? <BundleCard t={m.file.roartransfer} />
-                      : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} canJoin={room.kind !== 'group'} onJoin={(v) => hands.current.onCall(v)} />
+                      : m.file?.groupcall?.link ? <LinkCallCard id={m.file.groupcall.id} who={mine ? 'You' : nameOf(who)} onJoin={() => joinCall(m.file.groupcall.id, false, 'Call')} />
+                      : m.file?.groupcall ? <GroupCallCard who={mine ? 'You' : nameOf(who)} live={gcLive === m.file.groupcall.id} here={gcLive === m.file.groupcall.id ? gcHere : 0} onJoin={() => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: room.room_id, id: m.file.groupcall.id, video: false } }))} />
+                      : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} onJoin={(v) => (room.kind === 'group' ? startGroupCall(room.room_id, v) : hands.current.onCall(v))} />
                       : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : hands.current.openPhoto(m))} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
                       : isTransfer ? <TransferTile file={m.file} onCinema={hands.current.setCinema} />
@@ -3122,6 +3142,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           <button type="button" className="round" onClick={() => setFind(null)} aria-label="Close">{I.x}</button>
         </div>
       )}
+
+      {room.kind === 'group' && find === null && <GroupCallBar call={gc.call} here={gc.here} people={people} me={me} inIt={gc.here.includes(me.id)} onJoin={joinGc} />}
 
       {pinned && !picked && (
         <div className="pinbar" role="button" tabIndex={0} onClick={() => setPinView(true)} title="All pinned messages">
@@ -3730,36 +3752,99 @@ function NewChat({ me, onClose, onOpen }) {
 
 /* New Call (Alex, 14 Nov, from Telegram's): the search on top, the people in letter order under their letters, and the
    letters down the right side to jump to one; a call or a video call from each row */
-function NewCall({ people, onClose, onCall }) {
+function NewCall({ me, people, toast, onClose, onCall }) {
   const [q, setQ] = useState('')
   const box = useRef(null)
+  // Telegram's New Call (Alex, 15 Nov): New Group Call (pick people, each gets the call in their chat with Join) and
+  // Create Call Link (a link anyone signed in can open to join); both are calls of no group (supabase/group-calls.sql)
+  const [mode, setMode] = useState('') // '' | 'pick' | 'link'
+  const [picked, setPicked] = useState([])
+  const [video, setVideo] = useState(true)
+  const [link, setLink] = useState(null) // { id, url }
+  const [busy, setBusy] = useState(false)
   const letterOf = (p) => { const c = fold(nameOf(p)).trim().charAt(0).toUpperCase(); return /\p{L}/u.test(c) ? c : '#' }
   const shown = q.trim() ? people.filter((p) => foldHas(`${nameOf(p)} ${p.username || ''}`, q.trim())) : people
   const groups = []
   for (const p of shown) { const l = letterOf(p); const g = groups[groups.length - 1]; if (g && g.l === l) g.list.push(p); else groups.push({ l, list: [p] }) }
   const jump = (l) => box.current?.querySelector(`[data-letter="${CSS.escape(l)}"]`)?.scrollIntoView({ block: 'start' })
+  const toggle = (p) => setPicked((l) => (l.includes(p.id) ? l.filter((x) => x !== p.id) : [...l, p.id]))
+  const makeLink = async () => {
+    setBusy(true)
+    const { data, error } = await supabase.rpc('roar_call_link_create', { v: true })
+    setBusy(false)
+    if (error || !data) { toast(/function|does not exist/i.test(error?.message || '') ? 'Call links need one more step on the server (supabase/group-calls.sql).' : errText(error)); return }
+    setLink({ id: data.id, url: `${appUrl()}#call=${data.token}` })
+    setMode('link')
+  }
+  const copyLink = async () => { try { await navigator.clipboard.writeText(link.url); toast('Link copied') } catch { toast('Copy did not work here') } }
+  const shareLink = async () => { try { await navigator.share({ title: 'RoarMe call', url: link.url }) } catch { copyLink() } }
+  const callPicked = async () => {
+    if (!picked.length) return
+    setBusy(true)
+    const { data, error } = await supabase.rpc('roar_call_link_create', { v: video })
+    if (error || !data) { setBusy(false); toast(/function|does not exist/i.test(error?.message || '') ? 'Group calls need one more step on the server (supabase/group-calls.sql).' : errText(error)); return }
+    // each one gets the call in their chat with me, with Join (and a notification, as for any message)
+    await Promise.all(picked.map(async (pid) => {
+      const { data: rid } = await supabase.rpc('roar_open_direct', { other: pid })
+      if (rid) await supabase.from('roar_messages').insert({ room_id: rid, user_id: me.id, kind: 'text', body: video ? 'Video call' : 'Call', file: { groupcall: { id: data.id, video, link: data.token } } })
+    }))
+    setBusy(false)
+    onClose()
+    joinCall(data.id, video, picked.length === 1 ? nameOf(people.find((p) => p.id === picked[0])) : `${picked.length + 1} people`)
+  }
   return (
-    <Modal title="New Call" onClose={onClose}>
-      <label className="search nc-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" /></label>
-      <div className="nc-wrap">
-        <div className="people nc-list" ref={box}>
-          {!shown.length && <p className="muted">{q.trim() ? 'No one by that name.' : 'No contacts yet.'}</p>}
-          {groups.map((g) => (
-            <div key={g.l} className="nc-group">
-              <div className="nc-letter" data-letter={g.l}>{g.l}</div>
-              {g.list.map((p) => (
-                <div key={p.id} className="person call-row">
-                  <Avatar src={p.avatar_url} name={nameOf(p)} size={48} online={onlineNow(p)} />
-                  <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
-                  <button type="button" className="round" onClick={() => onCall(p, false)} aria-label="Voice call">{I.phone}</button>
-                  <button type="button" className="round" onClick={() => onCall(p, true)} aria-label="Video call">{I.video}</button>
+    <Modal title={mode === 'pick' ? 'New Group Call' : mode === 'link' ? 'Call Link' : 'New Call'} onClose={onClose}>
+      {mode === 'link' && link ? (
+        <div className="nc-link">
+          <i className="nc-link-ico">{I.link}</i>
+          <p>Anyone with this link can join the call. Send it in any chat or app.</p>
+          <button type="button" className="nc-link-url" onClick={copyLink}>{link.url.replace(/^https?:\/\//, '')}</button>
+          <div className="nc-link-acts">
+            <button type="button" className="btn" onClick={copyLink}>{I.copy}<span>Copy</span></button>
+            {typeof navigator !== 'undefined' && navigator.share && <button type="button" className="btn" onClick={shareLink}>{I.forward}<span>Share</span></button>}
+            <button type="button" className="btn btn-main" onClick={() => { onClose(); joinCall(link.id, true, 'Call') }}>{I.video}<span>Join Now</span></button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <label className="search nc-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" /></label>
+          {!mode && !q.trim() && (
+            <div className="nc-starts">
+              <button type="button" className="nc-start" onClick={() => setMode('pick')}><i>{I.people}</i><span>New Group Call</span></button>
+              <button type="button" className="nc-start" onClick={makeLink} disabled={busy}><i>{I.link}</i><span>Create Call Link</span></button>
+            </div>
+          )}
+          <div className="nc-wrap">
+            <div className="people nc-list" ref={box}>
+              {!shown.length && <p className="muted">{q.trim() ? 'No one by that name.' : 'No contacts yet.'}</p>}
+              {groups.map((g) => (
+                <div key={g.l} className="nc-group">
+                  <div className="nc-letter" data-letter={g.l}>{g.l}</div>
+                  {g.list.map((p) => (
+                    <div key={p.id} className={`person call-row${mode === 'pick' && picked.includes(p.id) ? ' on' : ''}`} onClick={mode === 'pick' ? () => toggle(p) : undefined}>
+                      <Avatar src={p.avatar_url} name={nameOf(p)} size={48} online={onlineNow(p)} />
+                      <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
+                      {mode === 'pick'
+                        ? <i className={`nc-tick${picked.includes(p.id) ? ' on' : ''}`}>{picked.includes(p.id) && I.check}</i>
+                        : <>
+                            <button type="button" className="round" onClick={() => onCall(p, false)} aria-label="Voice call">{I.phone}</button>
+                            <button type="button" className="round" onClick={() => onCall(p, true)} aria-label="Video call">{I.video}</button>
+                          </>}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
-          ))}
-        </div>
-        {!q.trim() && groups.length > 1 && <div className="nc-index">{groups.map((g) => <button key={g.l} type="button" onClick={() => jump(g.l)}>{g.l}</button>)}</div>}
-      </div>
+            {!q.trim() && groups.length > 1 && <div className="nc-index">{groups.map((g) => <button key={g.l} type="button" onClick={() => jump(g.l)}>{g.l}</button>)}</div>}
+          </div>
+          {mode === 'pick' && (
+            <div className="nc-pickbar">
+              <button type="button" className={`round${video ? ' on' : ''}`} onClick={() => setVideo((v) => !v)} aria-label={video ? 'With video' : 'Voice only'} title={video ? 'With video' : 'Voice only'}>{video ? I.video : I.phone}</button>
+              <button type="button" className="btn btn-main" disabled={!picked.length || busy} onClick={callPicked}>{busy ? '…' : picked.length ? `Call ${picked.length} ${picked.length === 1 ? 'person' : 'people'}` : 'Choose people'}</button>
+            </div>
+          )}
+        </>
+      )}
     </Modal>
   )
 }

@@ -3102,7 +3102,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : isVideo && m.file?.round ? <NoteTile file={m.file} />
                       : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />
                       : m.kind === 'file' && isAudioFile(m.file) && !m.file?.asFile ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
-                      : m.kind === 'file' ? <FileTile file={m.file} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name }], index: 0 })} />
+                      : m.kind === 'file' ? <FileTile file={m.file} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name, who: mine ? 'You' : nameOf(who), at: m.created_at, m }], index: 0 })} />
                       : null}
                     {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && !m.file?.contact && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
@@ -3535,6 +3535,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       )}
       {forward && <Forward msgs={forward} me={me} rooms={rooms} titleOf={titleOf} fromRoom={room.room_id} onClose={() => setForward(null)} onDone={(n) => { setForward(null); setPicked(null); toast(n > 1 ? `${n} messages forwarded` : 'Forwarded') }} />}
       {viewer && <OnTop><MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)}
+        onShow={(m) => { setViewer(null); setTimeout(() => hands.current.goTo(m.id), 60) }}
+        onReply={(m) => { setViewer(null); setReplyTo(m); requestAnimationFrame(() => inputRef.current?.focus()) }}
         onDelete={(it) => {
           // the bin in the photo viewer (Alex, 12 Nov): one's own photo goes for everyone, someone else's only for oneself
           const m = it.m

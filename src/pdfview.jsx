@@ -53,7 +53,7 @@ function Page({ doc, n, width }) {
     })
     return () => { alive = false; task?.cancel?.() }
   }, [seen, width, doc, n])
-  return <div ref={ref} className="pv-page" data-page={n} style={{ height: width ? width * ratio : undefined }}><canvas /></div>
+  return <div ref={ref} className="pdfv-page" data-page={n} style={{ height: width ? width * ratio : undefined }}><canvas /></div>
 }
 
 export function PdfView({ url, name, onClose }) {
@@ -82,7 +82,7 @@ export function PdfView({ url, name, onClose }) {
     const el = e.currentTarget
     const mid = el.scrollTop + el.clientHeight / 3
     let cur = 1
-    el.querySelectorAll('.pv-page').forEach((p) => { if (p.offsetTop <= mid) cur = Number(p.dataset.page) })
+    el.querySelectorAll('.pdfv-page').forEach((p) => { if (p.offsetTop <= mid) cur = Number(p.dataset.page) })
     setAt(cur)
   }
   const file = async () => {
@@ -103,19 +103,19 @@ export function PdfView({ url, name, onClose }) {
     } catch { /* closed */ }
   }
   return createPortal(
-    <div className="pv" role="dialog" aria-label={name || 'PDF'}>
-      <div className="pv-head">
+    <div className="pdfv" role="dialog" aria-label={name || 'PDF'}>
+      <div className="pdfv-head">
         <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
-        <b className="pv-name">{name || 'file.pdf'}</b>
-        <span className="pv-pad" />
+        <b className="pdfv-name">{name || 'file.pdf'}</b>
+        <span className="pdfv-pad" />
       </div>
-      <div className="pv-body" ref={box} onScroll={onScroll}>
-        {doc && <span className="pv-count">{at} of {doc.numPages}</span>}
-        {!doc && !err && <p className="pv-wait">Opening…</p>}
-        {err && <p className="pv-wait">{err}</p>}
+      <div className="pdfv-body" ref={box} onScroll={onScroll}>
+        {doc && <span className="pdfv-count">{at} of {doc.numPages}</span>}
+        {!doc && !err && <p className="pdfv-wait">Opening…</p>}
+        {err && <p className="pdfv-wait">{err}</p>}
         {doc && Array.from({ length: doc.numPages }, (_, k) => <Page key={k} doc={doc} n={k + 1} width={width} />)}
       </div>
-      <div className="pv-foot">
+      <div className="pdfv-foot">
         <button type="button" onClick={save} aria-label="Save"><i>{SAVE_I}</i><span>Save</span></button>
         <button type="button" onClick={share} aria-label="Share"><i>{SHARE_I}</i><span>Share</span></button>
       </div>

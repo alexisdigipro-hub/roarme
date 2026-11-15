@@ -10,6 +10,7 @@ import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } fro
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { MyTransfers } from './transfer.jsx'
+import { useNameMarks } from './fancy.jsx'
 import { PhoneField, showPhone, toE164, usePhoneAuth } from './phone.jsx'
 import { badgeSupported, inApp, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest, syncPushSound } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
@@ -1203,6 +1204,7 @@ function FolderEdit({ id, kit, onDone, toast }) {
   const [pick, setPick] = useState('') // 'in' | 'out': the chats picker
   const [q, setQ] = useState('')
   const first = useRef(true)
+  const marks = useNameMarks(draft.name, (v) => setDraft((d) => ({ ...d, name: v })))
   useEffect(() => {
     if (first.current) { first.current = false; if (saved) return }
     if (!draft.name.trim()) return
@@ -1249,7 +1251,7 @@ function FolderEdit({ id, kit, onDone, toast }) {
   return (
     <>
       <Box title="Folder name">
-        <div className="set-row"><input className="fold-name" value={draft.name} onChange={(e) => set({ name: e.target.value })} placeholder="Folder name" autoFocus={!saved} maxLength={40} /></div>
+        <div className="set-row name-row"><input {...marks.inputProps} className="fold-name" value={draft.name} onChange={(e) => set({ name: e.target.value })} placeholder="Folder name" autoFocus={!saved} maxLength={120} />{marks.bar}</div>
       </Box>
       <Box title="Included chats" note="Choose chats or types of chats that will appear in this folder.">
         <button type="button" className="set-row set-pick set-add" onClick={() => { setQ(''); setPick('in') }}><i className="fold-plus">{I.plus}</i><span className="set-text">Add Chats</span></button>

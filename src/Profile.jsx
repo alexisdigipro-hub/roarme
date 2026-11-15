@@ -6,6 +6,7 @@ import { usePrefs } from './prefs.js'
 import { CopyLink } from './transfer.jsx'
 import { locale } from './i18n.js'
 import { ContactEdit } from './contactCard.jsx'
+import { useNameMarks } from './fancy.jsx'
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
 const monthOf = (iso) => new Date(iso).toLocaleDateString(locale(), { month: 'long', year: 'numeric' }).toUpperCase()
@@ -25,6 +26,21 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const [tab, setTab] = useState(group ? 'members' : 'media')
   const [more, setMore] = useState(false)
   const bodyRef = useRef(null)
+  // Telegram's way (Alex, 15 Nov): scrolled down to the tabs, the big head folds into a small bar on top (the name, how
+  // many of this tab, search) and the tabs stay under it, so the list fills the screen
+  const pfRef = useRef(null)
+  const tabsRef = useRef(null)
+  const [docked, setDocked] = useState(false)
+  useEffect(() => {
+    const pf = pfRef.current
+    let sc = pf?.parentElement
+    while (sc && sc !== document.body && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement
+    if (!sc || !tabsRef.current) return
+    const check = () => { const t = tabsRef.current; if (t) setDocked(t.getBoundingClientRect().top - sc.getBoundingClientRect().top <= (pf.querySelector('.pf-dock')?.offsetHeight || 64) + 2) }
+    check()
+    sc.addEventListener('scroll', check, { passive: true })
+    return () => sc.removeEventListener('scroll', check)
+  }, [])
   const [autoOpen, setAutoOpen] = useState(false)
   const AUTO = [[null, 'Off'], [24, 'After 1 day'], [168, 'After 1 week'], [720, 'After 1 month']]
   // the chat does these itself (Chat.jsx listens for roarme-roomact): the profile closes and hands them over
@@ -37,6 +53,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   }
   const [viewer, setViewer] = useState(null)
   const [name, setName] = useState(room.title)
+  const marks = useNameMarks(name, setName)
   const [adding, setAdding] = useState(false)
   const [q, setQ] = useState('')
   const [hits, setHits] = useState([])
@@ -198,6 +215,10 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     !group && ['groups', 'Groups', common.length],
   ].filter(Boolean)
 
+  const DOCK_WORDS = { members: ['member', 'members'], media: ['photo or video', 'photos and videos'], transfers: ['transfer', 'transfers'], files: ['file', 'files'], links: ['link', 'links'], music: ['music file', 'music files'], voice: ['voice message', 'voice messages'], gifs: ['GIF', 'GIFs'], groups: ['group in common', 'groups in common'] }
+  const dockN = tabs.find(([k]) => k === tab)?.[2] || 0
+  const dockSub = `${dockN.toLocaleString(locale())} ${(DOCK_WORDS[tab] || ['', ''])[dockN === 1 ? 0 : 1]}`
+
   // the media grid, one header per month
   const byMonth = useMemo(() => {
     const out = []
@@ -220,7 +241,12 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   useTabSwipe(bodyRef, tabs.map(([k]) => k), tab, setTab)
   return (
     <Modal title="" onClose={onClose} wide>
-      <div className="pf">
+      <div className={`pf${docked ? ' pf-docked' : ''}`} ref={pfRef}>
+        <div className="pf-dock" aria-hidden={!docked}>
+          <button type="button" className="round" onClick={onClose} aria-label="Back" tabIndex={docked ? 0 : -1}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg></button>
+          <span className="pf-dock-title"><b>{title}</b><small>{dockSub}</small></span>
+          <button type="button" className="round" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('roarme-find')) }} aria-label="Search" tabIndex={docked ? 0 : -1}>{I.search}</button>
+        </div>
         {/* Halo shows the head as Telegram's (Alex, 12 Nov): the picture large, the name over it, the buttons under it;
             elsewhere pf-head is display: contents and the hero, back and Edit are hidden */}
         <div className={`pf-head${(group ? room.avatar_url : other?.avatar_url) ? ' has-photo' : ''}`}>
@@ -240,7 +266,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
           {cropFile && <CropModal file={cropFile} title={group ? 'Group photo' : `Your photo for ${title}`} onDone={pickPic} onClose={() => setCropFile(null)} />}
           {editing && other && <ContactEdit me={me} other={other} blocked={blocked} onBlock={() => { setEditing(false); block() }} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); loadPeople([other.id]); toast('Saved, only you see it') }} onPhoto={() => { setEditing(false); picRef.current?.click() }} onDropPhoto={dropMyPhoto} />}
           {canName
-            ? <input className="pf-name-edit" value={name} onChange={(e) => setName(e.target.value)} onBlur={rename} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} title="Rename the group" />
+            ? <span className="name-row pf-name-row"><input {...marks.inputProps} className="pf-name-edit" value={name} onChange={(e) => setName(e.target.value)} onBlur={(e) => { marks.inputProps.onBlur(e); rename() }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} title="Rename the group" />{marks.bar}</span>
             : <h2 className="pf-name">{title}</h2>}
           <p className="pf-sub">{group ? `${members.length} members` : lastSeenText(other) || ' '}</p>
           {!group && other?.nickname && <p className="pf-sub pf-real">{`Their name: ${other.real_name || `@${other.username}`}`}</p>}
@@ -297,7 +323,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
         )}
         {err && <p className="auth-err">{err}</p>}
 
-        <nav className="pf-tabs">
+        <nav className="pf-tabs" ref={tabsRef}>
           {tabs.map(([k, l, n]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}{n > 0 && <small>{n}</small>}</button>)}
         </nav>
 

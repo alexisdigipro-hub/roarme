@@ -160,7 +160,7 @@ const lastPlace = () => { try { const v = JSON.parse(localStorage.getItem(LAST) 
 const Pin = ({ lifted = false, small = false }) => <i className={`map-pin${lifted ? ' up' : ''}${small ? ' small' : ''}`}>{I.place}</i>
 const Me = () => <i className="map-me" />
 
-export function LocationPicker({ onSend, onClose }) {
+export function LocationPicker({ onSend, onClose, inline = false }) {
   const first = useRef(lastPlace())
   const [at, setAt] = useState(first.current ? { lat: first.current.lat, lng: first.current.lng } : HOME)
   const [z, setZ] = useState(first.current?.z || 12)
@@ -172,6 +172,8 @@ export function LocationPicker({ onSend, onClose }) {
   const [q, setQ] = useState('')
   const [found, setFound] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [acc, setAcc] = useState(0) // how close the phone's own fix is, in metres
+  const [findOpen, setFindOpen] = useState(false) // inline: the search opens from its round button
   const seq = useRef(0)
   const timer = useRef(0)
 
@@ -193,7 +195,7 @@ export function LocationPicker({ onSend, onClose }) {
     if (!quiet) setNote('Finding you…')
     navigator.geolocation.getCurrentPosition((pos) => {
       const p = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-      setMine(p); setAt(p); setZ(16); setNote(''); look(p)
+      setMine(p); setAcc(pos.coords.accuracy || 0); setAt(p); setZ(16); setNote(''); look(p)
     }, () => { setNote(quiet ? '' : 'Your location is not shared here: move the map or search a place.') }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 })
   }, [look])
   useEffect(() => { look(at); locate(true); return () => clearTimeout(timer.current) }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -218,19 +220,24 @@ export function LocationPicker({ onSend, onClose }) {
     await onSend(loc)
     setBusy(false)
   }
-  return (
-    <Modal title="Location" onClose={onClose}>
-      <div className="loc">
+  // inline: the same map as a tab of the attach sheet, no window and no close of its own (Alex, 14 Nov)
+  const body = (
+      <div className={`loc${inline ? ' loc-inline' : ''}`}>
         <div className="loc-map">
           <MapView at={at} zoom={z} onMove={onMove} onDragging={setLifted} marks={mine ? [{ key: 'me', ...mine, node: <Me /> }] : []} />
           <Pin lifted={lifted} />
+          {/* inline, as Telegram's (Alex, 14 Nov): the sheet's own X and title lie over the map, the search is a round
+              button at the right that opens the field under them */}
+          {inline && <button type="button" className={`loc-round loc-find${findOpen ? ' on' : ''}`} onClick={() => { setFindOpen((v) => !v); setFound(null); setQ('') }} aria-label="Search a place">{findOpen ? I.x : I.search}</button>}
+          {(!inline || findOpen) && (
           <div className="loc-top">
-            <button type="button" className="loc-round" onClick={onClose} aria-label="Close">{I.x}</button>
+            {!inline && <button type="button" className="loc-round" onClick={onClose} aria-label="Close">{I.x}</button>}
             <form className="loc-search" onSubmit={search}>
               {I.search}
-              <input value={q} onChange={(e) => { setQ(e.target.value); if (!e.target.value) setFound(null) }} placeholder="Search a place" enterKeyHint="search" />
+              <input autoFocus={inline} value={q} onChange={(e) => { setQ(e.target.value); if (!e.target.value) setFound(null) }} placeholder="Search a place" enterKeyHint="search" />
             </form>
           </div>
+          )}
           {found && (
             <div className="loc-found">
               {found === 'busy' ? <p>Searching…</p> : !found.length ? <p>Nothing found.</p>
@@ -248,11 +255,11 @@ export function LocationPicker({ onSend, onClose }) {
         </div>
         <button type="button" className="loc-send" disabled={busy} onClick={send}>
           <i>{busy ? I.send : I.place}</i>
-          <span><b>{isMine ? 'Send My Location' : 'Send This Location'}</b><small>{looking ? 'Finding the address…' : [place.name, place.addr].filter(Boolean).join(' · ') || coords(at)}</small></span>
+          <span><b>{isMine ? (inline ? 'Send My Current Location' : 'Send My Location') : 'Send This Location'}</b><small>{isMine && acc ? `Accurate to ${Math.max(1, Math.round(acc))} metres` : looking ? 'Finding the address…' : [place.name, place.addr].filter(Boolean).join(' · ') || coords(at)}</small></span>
         </button>
       </div>
-    </Modal>
   )
+  return inline ? body : <Modal title="Location" onClose={onClose}>{body}</Modal>
 }
 
 const mapsLinks = (l) => ({

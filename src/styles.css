@@ -4665,3 +4665,71 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
   .ctx .ctx-card { height: 48vh; max-height: 48vh; }
   .ctx .ctx-menu { align-self: flex-end; width: min(290px, 66%); max-height: 38vh; transform-origin: 100% 0; }
 }
+/* Location as a tab of the attach sheet (Alex, 14 Nov): the map fills the sheet's body, the send bar under it */
+/* as Telegram's (Alex, 14 Nov): the map fills the sheet edge to edge, the sheet's X and title lie over it, the search a
+   round button at the right, the send row under the map above the tabs */
+.as-sheet.as-loc { padding: 0; overflow: hidden; }
+.as-sheet.as-loc .as-grab { position: absolute; top: 6px; left: 50%; z-index: 6; margin: 0 0 0 -19px; }
+.as-sheet.as-loc .as-head { position: absolute; top: 16px; left: 14px; right: 14px; z-index: 6; margin: 0; pointer-events: none; }
+.as-sheet.as-loc .as-head > * { pointer-events: auto; }
+.as-sheet.as-loc .as-head > b { text-shadow: 0 0 6px var(--float, #fff), 0 0 12px var(--float, #fff); }
+.as-sheet.as-loc .as-body { padding: 0; margin: 0; gap: 0; overflow: hidden; }
+.as-body .loc.loc-inline { flex: 1; min-height: 0; }
+.as-body .loc.loc-inline .loc-map { border-radius: 0; min-height: 0; }
+.loc-inline .loc-find { position: absolute; top: 16px; right: 14px; z-index: 7; width: 44px; height: 44px; }
+.loc-inline .loc-top { top: 70px; left: 14px; right: 14px; }
+.loc-inline .loc-found { top: 122px; }
+.loc-inline .loc-send { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); border-top: 0; background: var(--float, var(--panel)); }
+
+/* Bold, italic, underline, strike for a folder's or a group's name (fancy.jsx; Alex, 15 Nov): four small round glass
+   buttons beside the field while it is in use; the chosen marks lit in the accent */
+.name-row { position: relative; }
+.name-marks { display: inline-flex; gap: 6px; flex: none; align-items: center; animation: nm-in .2s ease-out; }
+.name-marks .round { width: 32px; height: 32px; min-width: 32px; padding: 0; font-size: 15px; line-height: 1; font-family: inherit; }
+.name-marks .round b { font-weight: 800; }
+.name-marks .round.on { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.field.name-row .name-marks { margin-top: 8px; }
+.pf-name-row { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+@keyframes nm-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+
+/* The chat's search as Telegram's (Alex, 15 Nov): while looking, the search pill and a round X take the head's place at
+   the very top; the writing box steps aside for a bar over the keyboard: on the left a capsule with a date to jump to
+   and a person to look in, on the right "1 of N" with older / newer */
+html .room-view.finding > .room-head, html .room-view.finding > .compose-wrap, html .room-view.finding > .pinbar { display: none !important; }
+.findtop { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; position: relative; z-index: 6; animation: drop-in .26s var(--ease) both; }
+html .findtop .findbar { flex: 1; margin: 0; height: 46px; padding: 0 14px; gap: 10px; cursor: text; }
+html .findtop .findbar input { font-size: 17px; }
+.find-chip { display: inline-flex !important; align-items: center; gap: 4px; width: auto !important; height: 28px !important; padding: 0 8px 0 10px !important; border-radius: 999px !important; background: var(--halo, var(--accent)) !important; color: var(--halo-ink, #fff) !important; font: inherit; font-size: 13.5px; font-weight: 600; white-space: nowrap; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
+.find-chip svg { width: 13px; height: 13px; }
+.findfoot { position: relative; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 14px 14px; animation: drop-in .26s var(--ease) both; }
+html.kb .findfoot { padding-bottom: 8px; }
+.find-tools, .find-count { display: inline-flex; align-items: center; gap: 2px; height: 50px; padding: 0 6px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); -webkit-backdrop-filter: blur(var(--blur, 10px)); backdrop-filter: blur(var(--blur, 10px)); box-shadow: 0 6px 18px rgba(0, 0, 0, .08); color: var(--text); }
+.find-tools button, .find-count button { display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 50%; background: none; color: inherit; }
+.find-tools button.on { color: var(--halo, var(--accent)); }
+.find-count { padding: 0 4px 0 14px; }
+.find-count small { font-size: 14px; color: var(--muted); margin-right: 4px; white-space: nowrap; }
+.find-count button:disabled { opacity: .3; }
+.find-date { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; left: 20px; bottom: 20px; }
+.find-who { position: absolute; left: 14px; bottom: 70px; min-width: 220px; max-height: 50vh; overflow: auto; z-index: 20; }
+.find-who button { display: flex; align-items: center; gap: 10px; }
+.find-who button.on { font-weight: 600; }
+@media (max-width: 820px) {
+  .main .room-view > .findtop { padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px 6px; }
+  .findfoot { padding: 6px 10px 10px; }
+}
+
+/* The profile's head folds as Telegram's (Alex, 15 Nov): scrolled down to the tabs, a small glass bar on top (back, the
+   name and how many of this tab, search) and the tabs held under it, the list filling the screen */
+.pf-dock { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 10px; height: 64px; margin-bottom: -78px; padding: 0 4px;
+  opacity: 0; transform: translateY(-8px); pointer-events: none; transition: opacity .2s ease, transform .26s cubic-bezier(.25, 1.35, .45, 1); }
+.pf.pf-docked .pf-dock { opacity: 1; transform: none; pointer-events: auto; }
+.pf-dock::before { content: ''; position: absolute; inset: -12px -40px -6px; z-index: -1; background: var(--bg, #f2f2f6); background: color-mix(in srgb, var(--bg, #f2f2f6) 82%, transparent); -webkit-backdrop-filter: blur(var(--blur, 10px)); backdrop-filter: blur(var(--blur, 10px)); -webkit-mask: linear-gradient(#000 80%, transparent); mask: linear-gradient(#000 80%, transparent); }
+.pf-dock .round { flex: none; }
+.pf-dock-title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; line-height: 1.2; }
+.pf-dock-title b { max-width: 100%; font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-dock-title small { font-size: 13.5px; color: var(--muted); }
+.pf-tabs { position: sticky; top: 66px; z-index: 39; }
+@media (max-width: 820px) {
+  .pf-dock { height: calc(64px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); margin-bottom: calc(-78px - env(safe-area-inset-top, 0px)); }
+  .pf-tabs { top: calc(66px + env(safe-area-inset-top, 0px)); }
+}

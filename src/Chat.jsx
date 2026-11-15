@@ -38,6 +38,7 @@ import { ContactCard } from './contactCard.jsx'
 import { PhoneFriends, contactsAvailable } from './phone.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { taskNotice, useTasks } from './taskCore.js'
+import { useNameMarks } from './fancy.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
 import { ReportHost, report } from './report.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
@@ -1845,6 +1846,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [flash, setFlash] = useState('')
   const [find, setFind] = useState(null) // null, or the words looked for in this chat
   const [findAt, setFindAt] = useState(0)
+  // Telegram's way (Alex, 15 Nov): the search takes the head's place; under it, over the keyboard, a date to jump to and a person to look in
+  const [findWho, setFindWho] = useState('') // only this person's messages
+  const [whoOpen, setWhoOpen] = useState(false)
+  const dateRef = useRef(null)
+  useEffect(() => { if (find === null) { setFindWho(''); setWhoOpen(false) } }, [find])
   const [emoji, setEmoji] = useState(false)
   const [attach, setAttach] = useState(null) // files waiting in the send window
   const [media, setMedia] = useState(false)
@@ -2645,9 +2651,17 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // looking for words in this chat
   const found = useMemo(() => {
     const t = fold((find || '').trim())
-    if (!t) return []
-    return msgs.filter((m) => !m.deleted_at && m.body && fold(m.body).includes(t)).map((m) => m.id)
-  }, [find, msgs])
+    if (!t && !findWho) return []
+    return msgs.filter((m) => !m.deleted_at && m.kind !== 'system' && (!findWho || m.user_id === findWho) && (!t || (m.body && fold(m.body).includes(t)))).map((m) => m.id)
+  }, [find, msgs, findWho])
+  // the first message of a chosen day (or the nearest after it)
+  const goDay = (v) => {
+    if (!v) return
+    const from = new Date(`${v}T00:00:00`).getTime()
+    const m = msgs.find((x) => !x.deleted_at && new Date(x.created_at).getTime() >= from) || msgs[msgs.length - 1]
+    if (m) goTo(m.id)
+  }
+  const pickDay = () => { const el = dateRef.current; if (!el) return; try { el.showPicker ? el.showPicker() : el.click() } catch { el.click() } }
   useEffect(() => { if (found.length) { const id = found[found.length - 1 - Math.min(findAt, found.length - 1)]; if (id) goTo(id) } }, [found, findAt]) // eslint-disable-line react-hooks/exhaustive-deps
   // the one found now, and the words themselves marked in every found message (Alex, 12 Nov: "show where it is")
   const nowId = find && found.length ? found[found.length - 1 - Math.min(findAt, found.length - 1)] : ''
@@ -2986,7 +3000,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     export: () => exportChat(), auto: (h) => setAutoDelete(h ?? null), clear: () => act('clear'), roles: () => setRolesOpen(true), delete: () => act('delete'),
   }
   return (
-    <div className={`room-view${prefs.compact ? ' compact' : ''}${prefs.frost || wall === (prefs.appBackground || prefs.background) && (!prefs.appBackground || (prefs.appWallStrength ?? prefs.wallStrength) === prefs.wallStrength) ? ' same-wall' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
+    <div className={`room-view${find !== null ? ' finding' : ''}${prefs.compact ? ' compact' : ''}${prefs.frost || wall === (prefs.appBackground || prefs.background) && (!prefs.appBackground || (prefs.appWallStrength ?? prefs.wallStrength) === prefs.wallStrength) ? ' same-wall' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
       <header className="room-head">
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
@@ -3068,14 +3082,14 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       </header>
 
       {find !== null && (
-        <div className="findbar">
-          {I.search}
-          <input autoFocus value={find} onChange={(e) => { setFind(e.target.value); setFindAt(0) }} placeholder="Search in this chat"
-            onKeyDown={(e) => { if (e.key === 'Escape') setFind(null); if (e.key === 'Enter') setFindAt((n) => (found.length ? (n + 1) % found.length : 0)) }} />
-          <small>{find.trim() ? (found.length ? `${Math.min(findAt, found.length - 1) + 1} of ${found.length}` : 'None') : ''}</small>
-          <button type="button" onClick={() => setFindAt((n) => (found.length ? (n + 1) % found.length : 0))} disabled={!found.length} aria-label="Older">{I.up}</button>
-          <button type="button" onClick={() => setFindAt((n) => (found.length ? (n - 1 + found.length) % found.length : 0))} disabled={!found.length} aria-label="Newer">{I.down}</button>
-          <button type="button" onClick={() => setFind(null)} aria-label="Close">{I.x}</button>
+        <div className="findtop">
+          <label className="findbar">
+            {I.search}
+            {findWho && <button type="button" className="find-chip" onClick={() => setFindWho('')} aria-label="Any person">{findWho === me.id ? 'You' : nameOf(people[findWho])}{I.x}</button>}
+            <input autoFocus value={find} onChange={(e) => { setFind(e.target.value); setFindAt(0) }} placeholder="Search this chat" enterKeyHint="search"
+              onKeyDown={(e) => { if (e.key === 'Escape') setFind(null); if (e.key === 'Enter') setFindAt((n) => (found.length ? (n + 1) % found.length : 0)) }} />
+          </label>
+          <button type="button" className="round" onClick={() => setFind(null)} aria-label="Close">{I.x}</button>
         </div>
       )}
 
@@ -3116,6 +3130,33 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           )
         })}
       </div>
+
+      {find !== null && (
+        <div className="findfoot">
+          <span className="find-tools">
+            <button type="button" onClick={pickDay} aria-label="Go to a date" title="Go to a date">{FIND_DAY}</button>
+            <button type="button" className={findWho ? 'on' : ''} onClick={() => setWhoOpen((o) => !o)} aria-label="Messages from a person" title="Messages from a person">{FIND_WHO}</button>
+            <input ref={dateRef} type="date" className="find-date" tabIndex={-1} aria-hidden="true" max={new Date().toISOString().slice(0, 10)} onChange={(e) => { goDay(e.target.value); e.target.value = '' }} />
+          </span>
+          {(find.trim() || findWho) && (
+            <span className="find-count">
+              <small>{found.length ? `${Math.min(findAt, found.length - 1) + 1} of ${found.length}` : 'No results'}</small>
+              <button type="button" onClick={() => setFindAt((n) => (found.length ? (n + 1) % found.length : 0))} disabled={found.length < 2} aria-label="Older">{I.up}</button>
+              <button type="button" onClick={() => setFindAt((n) => (found.length ? (n - 1 + found.length) % found.length : 0))} disabled={found.length < 2} aria-label="Newer">{I.down}</button>
+            </span>
+          )}
+          {whoOpen && (
+            <div className="menu find-who">
+              {[me.id, ...members.map((p) => p.id)].map((id) => (
+                <button key={id} type="button" className={findWho === id ? 'on' : ''} onClick={() => { setFindWho(findWho === id ? '' : id); setFindAt(0); setWhoOpen(false) }}>
+                  <Avatar src={people[id]?.avatar_url || (id === me.id ? me.avatar_url : '')} name={id === me.id ? nameOf(me) : nameOf(people[id])} size={24} />
+                  <span>{id === me.id ? 'You' : nameOf(people[id])}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {blocked ? (
         <footer className="compose-wrap"><div className="bar blocked-bar"><span>You blocked {title}. They cannot message or call you.</span><button type="button" className="link" onClick={onUnblock}>Unblock</button></div></footer>
@@ -3302,7 +3343,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={() => { setAttach(null); setLocOpen(true) }} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
+      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
       {transferOpen && (
         <TransferWindow title={title} hidden={transferHidden} onHide={() => setTransferHidden(true)} onProgress={setTransferPct}
           onClose={() => { setTransferOpen(false); setTransferHidden(false); setTransferPct(0) }}
@@ -3565,6 +3606,10 @@ function LiveWave({ stream }) {
   return <canvas ref={ref} className="rec-wave" role="img" aria-label="Recording…" />
 }
 
+// the two signs of the chat's search (Alex, 15 Nov, from Telegram's): a calendar with a lens, a person with a lens
+const FIND_DAY = svg(<><path d="M11 20H7a3.5 3.5 0 0 1-3.5-3.5v-9A3.5 3.5 0 0 1 7 4h10a3.5 3.5 0 0 1 3.5 3.5V11M3.5 9.5h17M8 2.5v3M16 2.5v3" /><circle cx="16.5" cy="16.5" r="3.2" /><path d="M19 19l2 2" /></>, 22)
+const FIND_WHO = svg(<><circle cx="10" cy="7.5" r="3.8" /><path d="M3.5 20c0-3.6 2.9-6.5 6.5-6.5 1 0 1.9.2 2.7.6" /><circle cx="16.5" cy="16.5" r="3.2" /><path d="M19 19l2 2" /></>, 22)
+
 const FMT_MARKS = [
   ['**', 'Bold', <b key="b">B</b>, `${MOD}B`],
   ['_', 'Italic', <i key="i">I</i>, `${MOD}I`],
@@ -3691,6 +3736,7 @@ function NewCall({ people, onClose, onCall }) {
 
 function NewGroup({ me, start, onClose, onOpen }) {
   const [title, setTitle] = useState('')
+  const marks = useNameMarks(title, setTitle)
   const [picked, setPicked] = useState(start ? [start] : [])
   const [q, setQ, hits] = usePeopleSearch(me.id)
   const [err, setErr] = useState('')
@@ -3706,7 +3752,7 @@ function NewGroup({ me, start, onClose, onOpen }) {
   }
   return (
     <Modal title="New group" onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={create} disabled={busy}>{busy ? '…' : 'Create group'}</button></>}>
-      <label className="field"><span>Group name</span><input className="input" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekend shoot" /></label>
+      <label className="field name-row"><span>Group name</span><input {...marks.inputProps} className="input" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekend shoot" />{marks.bar}</label>
       {picked.length > 0 && <div className="chips">{picked.map((p) => <button key={p.id} type="button" className="chip" onClick={() => toggle(p)}>{nameOf(p)} {I.x}</button>)}</div>}
       <label className="search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by @username or name" /></label>
       {err && <p className="auth-err">{err}</p>}

@@ -38,6 +38,8 @@ struct SendView: View {
 
     var body: some View {
         ZStack {
+        // the card in the very middle of the screen, between the top and the menu (Alex, 15 Nov); a longer one scrolls
+        GeometryReader { g in
         ScrollView {
             Card {
                 VStack(spacing: 16) {
@@ -45,7 +47,10 @@ struct SendView: View {
                     if up.busy { sending } else if let l = up.link { done(l) } else { pick }
                 }
             }
-            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 120)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: max(0, g.size.height - 72), alignment: .center)
+            .padding(.bottom, 72)
+        }
         }
         .scrollDismissesKeyboard(.interactively)
         // pull down: the account, its Pro and its limits read again

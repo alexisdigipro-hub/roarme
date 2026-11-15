@@ -215,4 +215,7 @@ let EL: [String: String] = [
     "Could not save.": "Δεν αποθηκεύτηκε.",
     "Open the email we sent you and confirm your account first.": "Άνοιξε πρώτα το email που σου στείλαμε και επιβεβαίωσε τον λογαριασμό σου.",
     "Sign in first.": "Συνδέσου πρώτα.",
+    "Send by email": "Αποστολή με email",
+    "Sent by email to": "Στάλθηκε με email σε",
+    "Could not send the email. Try again.": "Δεν στάλθηκε το email. Δοκίμασε ξανά.",
 ]

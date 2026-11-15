@@ -219,6 +219,11 @@ struct TransferWindow: View {
     @State private var busy = false
     @State private var saved = ""
     @State private var activity = false
+    @State private var mailOpen = false
+    @State private var mailTo = ""
+    @State private var mailMsg = ""
+    @State private var mailBusy = false
+    @State private var mailDone = ""
     private var link: String? { m.token.map { Config.page + $0 } }
 
     var body: some View {
@@ -237,7 +242,21 @@ struct TransferWindow: View {
                     Button { UIPasteboard.general.string = link; copied = true; Glass.tap(.soft) } label: { Label(copied ? t("Copied") : t("Copy link"), systemImage: copied ? "checkmark" : "link").frame(maxWidth: .infinity) }.buttonStyle(PillStyle(main: true))
                     Button { if let u = URL(string: link) { UIApplication.shared.open(u) } } label: { Label(t("Open"), systemImage: "eye").frame(maxWidth: .infinity) }.buttonStyle(PillStyle())
                 }
-                Button { share = true } label: { Label(t("Share"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity) }.buttonStyle(PillStyle())
+                HStack(spacing: 10) {
+                    Button { share = true } label: { Label(t("Share"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity) }.buttonStyle(PillStyle())
+                    Button { withAnimation(Glass.spring) { mailOpen.toggle(); mailDone = "" } } label: { Label(t("Send by email"), systemImage: "envelope").frame(maxWidth: .infinity) }.buttonStyle(PillStyle())
+                }
+                // send it again, to the same people or anyone (Alex, 15 Nov): an email with a link to all its files
+                if mailOpen {
+                    VStack(spacing: 10) {
+                        GlassField(placeholder: t("Send to: emails, separated by commas"), text: $mailTo, keyboard: .emailAddress)
+                        GlassField(placeholder: t("Your message (optional)"), text: $mailMsg)
+                        Button { sendMail() } label: {
+                            HStack { if mailBusy { ProgressView().tint(.white) }; Label(t("Send"), systemImage: "paperplane") }.frame(maxWidth: .infinity)
+                        }.buttonStyle(PillStyle(main: true)).disabled(mailBusy || mailTo.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }.transition(.glassDrop)
+                }
+                if !mailDone.isEmpty { Text(mailDone).font(.system(size: 13)).foregroundStyle(Theme.ok).multilineTextAlignment(.center) }
             }
 
             // an upload of many: its files, under the one link
@@ -370,6 +389,25 @@ struct TransferWindow: View {
                 if let p = r.payLock { payLock = p; det?.payLock = p }
                 saved = t("Saved.")
             } catch { payLock = !on; err = t(error.localizedDescription) }
+        }
+    }
+
+    private func sendMail() {
+        let to = mailTo.split(whereSeparator: { $0 == "," || $0 == " " || $0 == ";" || $0 == "\n" }).map(String.init).filter { $0.contains("@") }
+        let tokens = (m.files?.compactMap { $0.token }) ?? [m.token].compactMap { $0 }
+        guard !to.isEmpty, !tokens.isEmpty else { err = t("Add at least one email to send to."); return }
+        mailBusy = true; err = ""; mailDone = ""
+        Task {
+            do {
+                // a new link to the same files, mailed to them (roartransfer-r2 'bundle', as the website's Send by email)
+                struct Reply: Decodable { var mailed: Int?; var mailErrors: [String]? }
+                let r = try await API.bridge(["action": "bundle", "tokens": tokens, "title": m.title ?? "", "message": mailMsg, "recipients": to, "notify": true], as: Reply.self)
+                let n = r.mailed ?? 0
+                if n > 0 { mailDone = t("Sent by email to") + " \(n)."; mailTo = ""; mailMsg = ""; Glass.tap(.medium); withAnimation(Glass.spring) { mailOpen = false } }
+                if let e = r.mailErrors, !e.isEmpty { err = e.joined(separator: "\n") }
+                if n == 0 && (r.mailErrors ?? []).isEmpty { err = t("Could not send the email. Try again.") }
+            } catch { err = t(error.localizedDescription) }
+            mailBusy = false
         }
     }
 

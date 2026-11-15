@@ -23,7 +23,7 @@ struct ReceiveView: View {
                     if token == nil { start } else { linkPage }
                 }
             }
-            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 30)
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 120)
         }
         .scrollDismissesKeyboard(.interactively)
         .onChange(of: router.openToken) { t in if let t { openLink(t); router.openToken = nil } }

@@ -14,6 +14,7 @@ struct RoarTransferApp: App {
                 .environmentObject(Downloads.shared)
                 .environmentObject(Lang.shared)
                 .environmentObject(Uploader.shared)
+                .environmentObject(ProStore.shared)
                 .preferredColorScheme(.dark)
                 .tint(Theme.redHi)
                 // a RoarTransfer link (roartransfer.com/<token>, or roartransfer://<token>) opens it here
@@ -52,8 +53,10 @@ enum UIApplicationBackground {
 
 @MainActor
 final class Router: ObservableObject {
-    enum Tab: Hashable { case send, mine, receive }
+    enum Tab: Hashable { case send, mine, receive, studio, settings }
+    static weak var shared: Router?
     @Published var tab: Tab = .send
+    init() { Router.shared = self }
     @Published var openToken: String?
     func open(_ text: String) {
         guard let t = API.token(from: text) else { return }
@@ -62,38 +65,49 @@ final class Router: ObservableObject {
     }
 }
 
-// As roartransfer.com: the wordmark, Settings and EN | GR at the top, the switch Send | My transfers (and Receive,
-// the app's own) under it, the page in the website's glass card on one of Alex's stills.
+// As roartransfer.com: the wordmark (with PRO for a Pro) and EN | GR at the top, the page in the website's glass card
+// on one of Alex's stills, and at the foot RoarMe's menu: Send · My transfers · Receive · Studio · Settings.
 struct RootView: View {
     @EnvironmentObject var router: Router
     @EnvironmentObject var lang: Lang
-    @State private var settings = false
+    @EnvironmentObject var pro: ProStore
+    @EnvironmentObject var session: Session
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             Backdrop()
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 HStack(spacing: 10) {
                     Wordmark()
+                    if pro.isPro { ProBadge().transition(.glassDrop) }
                     Spacer()
-                    Button { settings = true } label: { Image(systemName: "gearshape") }.buttonStyle(RoundStyle(size: 38))
-                    Segments(items: [("en", "EN", nil), ("el", "GR", nil)], value: $lang.code, height: 38)
-                        .frame(width: 96)
+                    Segments(items: [("en", "EN", nil), ("el", "GR", nil)], value: $lang.code, height: 38).frame(width: 96)
                 }
                 .padding(.horizontal, 16)
-                Segments(items: [(Router.Tab.send, t("Send"), nil), (.mine, t("My transfers"), nil), (.receive, t("Receive"), nil)], value: $router.tab, height: 44)
-                    .padding(.horizontal, 16)
                 ZStack {
                     switch router.tab {
-                    case .send: SendView()
-                    case .mine: MineView()
-                    case .receive: ReceiveView()
+                    case .send: SendView().transition(.glassDrop)
+                    case .mine: MineView().transition(.glassDrop)
+                    case .receive: ReceiveView().transition(.glassDrop)
+                    case .studio: StudioView().padding(.bottom, 92).transition(.glassDrop)
+                    case .settings: SettingsView().transition(.glassDrop)
                     }
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
+                .animation(Glass.spring, value: router.tab)
             }
             .padding(.top, 6)
+
+            FootMenu(items: [
+                (Router.Tab.send, t("Send"), "arrow.up.circle"),
+                (.mine, t("My transfers"), "tray.full"),
+                (.receive, t("Receive"), "arrow.down.circle"),
+                (.studio, "Studio", "film.stack"),
+                (.settings, t("Settings"), "gearshape"),
+            ], value: $router.tab)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 4)
         }
-        .sheet(isPresented: $settings) { SettingsSheet().presentationDetents([.medium, .large]) }
+        .task(id: session.signedIn) { await pro.load() }
     }
 }

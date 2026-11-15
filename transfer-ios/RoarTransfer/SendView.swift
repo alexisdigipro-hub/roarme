@@ -7,6 +7,9 @@ struct SendView: View {
     @EnvironmentObject var session: Session
     @EnvironmentObject var lang: Lang
     @EnvironmentObject var up: Uploader
+    @EnvironmentObject var pro: ProStore
+    @State private var notify = true
+    @State private var payLock = false
     @State private var notes: [String] = []
     @State private var chooser = false
     @State private var photos = false
@@ -24,11 +27,17 @@ struct SendView: View {
 
     private var picked: [Picked] { up.picked }
     private var total: Int64 { picked.reduce(0) { $0 + $1.size } }
-    private func limitGB(_ d: Int) -> Int64 { !session.signedIn ? 1 : d == 1 ? 5 : d == 7 ? 1 : 3 }
+    private func limitGB(_ d: Int) -> Int64 {
+        if !session.signedIn { return 1 }
+        if pro.isPro { return d == 1 ? 50 : d == 3 ? 40 : d == 7 ? 30 : 20 }
+        return d == 1 ? 5 : d == 7 ? 1 : 3
+    }
+    private var dayChoices: [Int] { pro.isPro ? [1, 3, 7, 30] : [1, 3, 7] }
     // only a guest is stopped here; an account's own limit (Free or Pro) is the server's to say
     private var over: Bool { !session.signedIn && total > limitGB(1) * 1_073_741_824 }
 
     var body: some View {
+        ZStack {
         ScrollView {
             Card {
                 VStack(spacing: 16) {
@@ -36,9 +45,10 @@ struct SendView: View {
                     if up.busy { sending } else if let l = up.link { done(l) } else { pick }
                 }
             }
-            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 30)
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 120)
         }
         .scrollDismissesKeyboard(.interactively)
+        .onAppear { notify = pro.mails.downloads ?? true }
         .confirmationDialog(t("Choose from"), isPresented: $chooser, titleVisibility: .visible) {
             Button(t("Photos & Videos")) { photos = true }
             Button(t("Files")) { files = true }
@@ -47,7 +57,8 @@ struct SendView: View {
         .sheet(isPresented: $photos) { PhotoPicker { p, e in add(p, e) }.ignoresSafeArea() }
         .sheet(isPresented: $files) { FilePicker { p, e in add(p, e) }.ignoresSafeArea() }
         .sheet(isPresented: $share) { if let l = up.link, let u = URL(string: l) { ShareSheet(items: [u]).presentationDetents([.medium, .large]) } }
-        .sheet(isPresented: $more) { moreSheet.presentationDetents([.medium]) }
+        if more { GlassWindow(title: t("More options"), close: { more = false }) { moreBody }.zIndex(5) }
+        }
     }
 
     private func add(_ p: [Picked], _ e: [String]) { up.picked += p; notes = e }
@@ -58,7 +69,7 @@ struct SendView: View {
         ForEach(notes, id: \.self) { n in Text(n).font(.system(size: 13)).foregroundStyle(Theme.redHi) }
 
         if !picked.isEmpty {
-            VStack(spacing: 8) { ForEach(picked) { f in fileRow(f) } }
+            VStack(spacing: 8) { ForEach(picked) { f in fileRow(f).transition(.glassDrop) } }.animation(Glass.spring, value: picked)
             VStack(alignment: .leading, spacing: 6) {
                 ProgressBar(value: session.signedIn ? 0 : Double(total) / Double(limitGB(1) * 1_073_741_824))
                 Text(session.signedIn ? "\(sizeText(total)) · \(picked.count) \(picked.count == 1 ? "file" : t("files"))" : "\(sizeText(total)) / \(limitGB(1)) GB · \(picked.count) \(t("files"))")
@@ -70,7 +81,7 @@ struct SendView: View {
                 Segments(items: [("mail", t("Email"), "sf:envelope"), ("link", t("Link"), "sf:link")], value: $mode)
                 if mode == "mail" { GlassField(placeholder: t("Send to: emails, separated by commas"), text: $to, keyboard: .emailAddress) }
                 StepLabel(text: t("How long should it stay?"))
-                Segments(items: [1, 3, 7].map { d -> (Int, String, String?) in (d, t(d == 1 ? "1 day" : d == 3 ? "3 days" : "7 days"), "up to \(limitGB(d)) GB") }, value: $days, height: 56)
+                Segments(items: dayChoices.map { d -> (Int, String, String?) in (d, t(d == 1 ? "1 day" : d == 3 ? "3 days" : d == 7 ? "7 days" : "30 days"), "\(t("up to")) \(limitGB(d)) GB") }, value: $days, height: 56)
             } else {
                 Text(t("Without an account: link only, 24 hours, up to 1 GB. Sign in for more."))
                     .font(.system(size: 13)).foregroundStyle(Theme.muted).frame(maxWidth: .infinity, alignment: .leading)
@@ -106,7 +117,7 @@ struct SendView: View {
     }
 
     private var moreLine: String {
-        let parts = [title, message.isEmpty ? "" : "“\(message)”", password.isEmpty ? "" : "••••"].filter { !$0.isEmpty }
+        let parts = [title, message.isEmpty ? "" : "“\(message)”", password.isEmpty ? "" : "••••", pro.isPro && payLock ? t("Locked until paid") : ""].filter { !$0.isEmpty }
         return parts.isEmpty ? t("Title, message, password") : parts.joined(separator: " · ")
     }
 
@@ -157,18 +168,21 @@ struct SendView: View {
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(Theme.edge))
     }
 
-    private var moreSheet: some View {
-        ZStack {
-            Theme.bg.ignoresSafeArea()
-            VStack(spacing: 12) {
-                Text(t("More options")).font(.system(size: 20, weight: .bold)).foregroundStyle(Theme.text).padding(.top, 20)
-                GlassField(placeholder: t("Title (optional)"), text: $title)
-                GlassField(placeholder: t("Your message (optional)"), text: $message)
-                GlassField(placeholder: t("Password (optional)"), text: $password, secure: true)
-                Button { more = false } label: { Text(t("Done")).frame(maxWidth: .infinity) }.buttonStyle(PillStyle(main: true))
-                Spacer()
+    private var moreBody: some View {
+        VStack(spacing: 12) {
+            GlassField(placeholder: t("Title (optional)"), text: $title)
+            GlassField(placeholder: t("Your message (optional)"), text: $message)
+            GlassField(placeholder: t("Password (optional)"), text: $password, secure: true)
+            if session.signedIn {
+                RowBox {
+                    SwitchRow(title: t("Email me when it is downloaded"), on: $notify)
+                    if pro.isPro {
+                        Divider().overlay(Theme.edge)
+                        SwitchRow(title: t("Locked until paid"), sub: t("The link shows what it holds but opens nothing until you unlock it."), on: $payLock)
+                    }
+                }
             }
-            .padding(.horizontal, 20)
+            Button { more = false } label: { Text(t("Done")).frame(maxWidth: .infinity) }.buttonStyle(PillStyle(main: true))
         }
     }
 
@@ -214,7 +228,7 @@ struct SendView: View {
             rec = to.split(whereSeparator: { $0 == "," || $0 == " " || $0 == ";" }).map { String($0) }.filter { !$0.isEmpty }
             if rec.isEmpty { problem = t("Add at least one email to send to."); return }
         }
-        up.send(picked, days: session.signedIn ? days : 1, title: title, message: message, password: password, recipients: rec)
+        up.send(picked, days: session.signedIn ? days : 1, title: title, message: message, password: password, recipients: rec, notify: notify, payLock: pro.isPro && payLock)
     }
     private func remove(_ f: Picked) {
         try? FileManager.default.removeItem(at: f.url.deletingLastPathComponent())

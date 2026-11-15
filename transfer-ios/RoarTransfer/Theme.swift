@@ -70,43 +70,6 @@ struct LightBoldTitle: View {
     }
 }
 
-// a row of choices in one glass pill, the chosen one lit (Email | Link, the tabs, All | Active | Expired)
-struct Segments<T: Hashable>: View {
-    var items: [(T, String, String?)]   // value, title, optional second line or SF Symbol name prefixed "sf:"
-    @Binding var value: T
-    var height: CGFloat = 46
-    @Namespace private var ns
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, it in
-                Button { withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) { value = it.0 } } label: {
-                    VStack(spacing: 1) {
-                        if let sub = it.2, sub.hasPrefix("sf:") {
-                            Label(it.1, systemImage: String(sub.dropFirst(3))).font(.system(size: 15, weight: value == it.0 ? .semibold : .regular))
-                        } else {
-                            Text(it.1).font(.system(size: 15, weight: value == it.0 ? .semibold : .regular))
-                            if let sub = it.2 { Text(sub).font(.system(size: 11)).foregroundStyle(Theme.muted) }
-                        }
-                    }
-                    .foregroundStyle(value == it.0 ? Theme.text : Theme.muted)
-                    .frame(maxWidth: .infinity, minHeight: height - 8)
-                    .background {
-                        if value == it.0 {
-                            Capsule().fill(Color.white.opacity(0.16)).overlay(Capsule().stroke(Color.white.opacity(0.22), lineWidth: 1))
-                                .matchedGeometryEffect(id: "lens", in: ns)
-                        }
-                    }
-                    .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(4)
-        .background(Capsule().fill(Color.black.opacity(0.28)))
-        .overlay(Capsule().stroke(Theme.edge, lineWidth: 1))
-    }
-}
-
 struct StepLabel: View {
     var text: String
     var body: some View {
@@ -140,9 +103,7 @@ struct PillStyle: ButtonStyle {
             )
             .overlay(Capsule().stroke(main ? Color.white.opacity(0.18) : Theme.edge, lineWidth: 1))
             .shadow(color: main ? Theme.red.opacity(0.45) : .clear, radius: 16, y: 8)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .opacity(configuration.isPressed ? 0.9 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: configuration.isPressed)
+            .glassPress(configuration.isPressed, shape: Capsule())
     }
 }
 
@@ -156,8 +117,7 @@ struct RoundStyle: ButtonStyle {
             .frame(width: size, height: size)
             .background(Circle().fill(Theme.glass))
             .overlay(Circle().stroke(Theme.edge, lineWidth: 1))
-            .scaleEffect(configuration.isPressed ? 0.92 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: configuration.isPressed)
+            .glassPress(configuration.isPressed, shape: Circle())
     }
 }
 

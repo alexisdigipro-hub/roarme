@@ -46,7 +46,7 @@ final class Uploader: ObservableObject {
 
     static let part: Int64 = 16 * 1024 * 1024
 
-    func send(_ files: [Picked], days: Int, title: String, message: String, password: String, recipients: [String] = []) {
+    func send(_ files: [Picked], days: Int, title: String, message: String, password: String, recipients: [String] = [], notify: Bool = true, payLock: Bool = false) {
         guard !busy, !files.isEmpty else { return }
         busy = true; stopped = false; link = nil; errors = []; mailed = 0
         sentBytes = 0; totalBytes = files.reduce(0) { $0 + $1.size }
@@ -70,12 +70,16 @@ final class Uploader: ObservableObject {
                 sentBytes = before
             }
             if !tokens.isEmpty && !stopped {
-                var body: [String: Any] = ["action": "bundle", "tokens": tokens, "title": title, "message": message, "recipients": recipients, "password": password, "notify": true]
+                var body: [String: Any] = ["action": "bundle", "tokens": tokens, "title": title, "message": message, "recipients": recipients, "password": password, "notify": notify, "payLock": payLock]
                 if password.isEmpty { body.removeValue(forKey: "password") }
                 do {
                     let b = try await API.bridge(body, as: Bundled.self)
                     link = Config.page + b.token
                     mailed = b.mailed ?? 0
+                    // Locked until paid, ticked when sending: locked at once, as the website does when the bundle did not
+                    if payLock && b.payLock != true {
+                        _ = try? await API.pro(["action": "edit", "token": tokens[0], "payLock": true], as: EditReply.self)
+                    }
                 } catch {
                     if tokens.count == 1 { link = Config.page + tokens[0] } else { errors.append(error.localizedDescription) }
                 }

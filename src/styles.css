@@ -5069,3 +5069,6 @@ html:root:root:root :is(.pf-acts > button, .pf-more > button:not(.scrim)) > .ic-
 html:root:root:root :is(.pf-acts > button, .pf-more > button:not(.scrim)) > .ic-mask::before { width: 22px; height: 22px; }
 html:root:root:root .pf-acts > button:hover > .ic-mask { background: rgba(255, 255, 255, .24); }
 html:root:root:root .pf-acts > button:active > .ic-mask { transform: scale(.94); }
+/* the same in Roar: over the photo library the attach sheet's tab bar is solid, never see-through (Alex, 15 Nov) */
+html:root:root:root:root:root:not([data-frost]) .as-sheet.as-lib .as-tabs { background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 10px 26px rgba(0, 0, 0, .22) !important; }
+html:root:root:root:root:root:not([data-frost])[data-mode='dark'] .as-sheet.as-lib .as-tabs { background: #2c2c31 !important; }

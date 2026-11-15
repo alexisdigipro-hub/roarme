@@ -116,3 +116,9 @@ html:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-mod
 /* the message menu's holder is only a holder (Alex, 15 Nov: "square boxes round the menu"): no glass, rim or shadow of
    its own; the reaction bar and the menu inside it keep theirs */
 html:root:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .msg-menu { background: none !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+/* over the photo library (and the map) the tab bar needs a body of its own, or the pictures show through it (Alex,
+   15 Nov: "the whole menu has holes"): there, and only there, Frost's bar is a solid stone capsule with a rim and shadow */
+html:root:root:root:root:root[data-frost][data-glass][data-skin][data-theme] .as-sheet:is(.as-lib, .as-loc) .as-tabs {
+  background: #e9e3dc !important; border: 1px solid rgba(58, 47, 38, .14) !important; box-shadow: 0 10px 26px rgba(0, 0, 0, .28) !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root:root:root:root[data-frost][data-glass][data-skin][data-theme][data-mode='dark'] .as-sheet:is(.as-lib, .as-loc) .as-tabs { background: #3a322c !important; border-color: rgba(255, 255, 255, .14) !important; }

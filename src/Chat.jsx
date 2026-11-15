@@ -3674,13 +3674,13 @@ function FileTile({ file, onView }) {
     <button type="button" className={`file ft${p === 1 ? ' here' : ''}`} onClick={tap} title={p === 1 ? 'Open' : 'Download'}>
       <span className="ft-box" style={{ '--tint': FT_EXT[ext] || '#8e8e93' }}>
         {thumb ? <img src={thumb} alt="" loading="lazy" draggable={false} /> : <b className="ft-ext">{ext ? ext.slice(0, 4) : I.file}</b>}
-        {p < 1 && (
-          <i className="ft-go">
-            {p >= 0 ? <svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><circle cx="24" cy="24" r={R} fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="3" /><circle cx="24" cy="24" r={R} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - Math.max(0.03, p))} transform="rotate(-90 24 24)" /></svg> : FT_DOWN}
-          </i>
-        )}
+        {thumb && ext && <small className="ft-kind">{ext.slice(0, 4)}</small>}
       </span>
       <span className="file-text"><b>{file?.name}</b><small>{p >= 0 && p < 1 ? `${fmtBytes(got)} of ${fmtBytes(file?.size)}` : fmtBytes(file?.size)}</small></span>
+      {/* our own way, not Telegram's (Alex, 15 Nov): the picture bigger and clear, the download a round button of its own at the end */}
+      <i className={`ft-go ft-end${p === 1 ? ' here' : ''}`}>
+        {p >= 0 && p < 1 ? <svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><circle cx="24" cy="24" r={R} fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="3" /><circle cx="24" cy="24" r={R} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - Math.max(0.03, p))} transform="rotate(-90 24 24)" /></svg> : p === 1 ? I.right : FT_DOWN}
+      </i>
     </button>
   )
 }
@@ -3794,12 +3794,10 @@ function SharedContact({ c, person }) {
   return (
     // a contact card as a card (Alex, 15 Nov: "ugly, cramped against the lines"): the picture and the name with room
     // around them, a fine line, then View Contact across the card
-    <span className="sc-card sc2" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: c.id } })) }}>
-      <span className="sc2-top">
-        <Avatar src={person?.avatar_url || c.avatar} name={name} size={52} />
-        <span className="sc2-text"><b>{name}</b><small>@{person?.username || c.username}</small></span>
-      </span>
-      <span className="sc2-go">View Contact</span>
+    <span className="sc-card sc3" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: c.id } })) }}>
+      <Avatar src={person?.avatar_url || c.avatar} name={name} size={48} />
+      <span className="sc2-text"><b>{name}</b><small>@{person?.username || c.username}</small></span>
+      <i className="sc3-go">{I.right}</i>
     </span>
   )
 }

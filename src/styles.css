@@ -4918,3 +4918,20 @@ html:root:root:root:root .msg.mine .bubble > .rx.rx-in > button { background: rg
 .room-head .head-calls > button svg { width: 24px; height: 24px; }
 .room-head .head-calls > button:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
 @media (prefers-reduced-motion: reduce) { .room-head .plus-wrap, .room-head .plus-wrap > .head-ava, .room-head .head-calls { transition: none; } }
+
+/* a shared contact half as tall, as wide as the other messages (Alex, 15 Nov): one row, the picture, the name and
+   @username, a small round arrow at the end; the whole card opens the contact */
+.sc-card.sc3 { display: flex; align-items: center; gap: 12px; width: var(--media-w); max-width: 100%; padding: 2px 0; cursor: pointer; }
+.sc-card.sc3 .sc2-text { flex: 1; }
+.sc3-go { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: color-mix(in srgb, currentColor 10%, transparent); font-style: normal; }
+.sc3-go svg { width: 16px; height: 16px; }
+.sc-card.sc3:active { opacity: .7; }
+/* a file in a message, our own layout (Alex, 15 Nov: "not the same as Telegram, the picture bigger, the same height"):
+   the picture larger and clear with its kind in a corner, the name and size, the download a round button at the end */
+.bubble .file.ft { width: var(--media-w); max-width: 100%; gap: 12px; }
+.file.ft .ft-box { width: 76px; height: 76px; border-radius: 16px; }
+.file.ft .ft-kind { position: absolute; left: 5px; bottom: 5px; padding: 1px 6px; border-radius: 999px; background: rgba(0, 0, 0, .5); color: #fff; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.file.ft .file-text { flex: 1; }
+.file.ft .ft-go.ft-end { position: static; inset: auto; margin: 0; flex: none; width: 38px; height: 38px; background: color-mix(in srgb, currentColor 12%, transparent); color: inherit; }
+.file.ft .ft-go.ft-end svg { width: 20px; height: 20px; }
+.file.ft .ft-go.ft-end svg[viewBox="0 0 48 48"] { width: 38px; height: 38px; }

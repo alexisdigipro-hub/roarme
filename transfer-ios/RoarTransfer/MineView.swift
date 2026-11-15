@@ -259,6 +259,20 @@ struct TransferWindow: View {
                 if !mailDone.isEmpty { Text(mailDone).font(.system(size: 13)).foregroundStyle(Theme.ok).multilineTextAlignment(.center) }
             }
 
+            // who it went to by email
+            if let to = m.sentTo, !to.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(t("Sent to")).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.muted)
+                    ForEach(to, id: \.self) { e in
+                        Text(e).font(.system(size: 14)).foregroundStyle(Theme.text).lineLimit(1)
+                            .padding(.horizontal, 12).frame(height: 30)
+                            .background(Capsule().fill(Theme.glass)).overlay(Capsule().stroke(Theme.edge))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.black.opacity(0.22)))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.edge))
+            }
             // an upload of many: its files, under the one link
             if let fs = m.files, fs.count > 1 {
                 VStack(spacing: 0) {

@@ -88,6 +88,7 @@ struct MyTransfer: Codable, Identifiable, Hashable {
     // an upload of many files shown as one row (Alex, 15 Nov): its files, and the upload's own token in `token`
     var files: [MyTransfer]?
     var title: String?
+    var sentTo: [String]?
     var id: String { (token ?? "") + (path ?? "") + (created_at ?? "") }
     var proToken: String? { files?.first?.token ?? token }
     var paths: [String] { files.map { $0.compactMap { $0.path } } ?? [path].compactMap { $0 } }
@@ -170,7 +171,7 @@ enum API {
         return try JSONDecoder().decode(T.self, from: d)
     }
 
-    struct MyBundle: Codable { var token: String; var tokens: [String]?; var title: String?; var created_at: String?; var expires_at: String? }
+    struct MyBundle: Codable { var token: String; var tokens: [String]?; var title: String?; var created_at: String?; var expires_at: String?; var recipients: [String]? }
 
     // My transfers, one row an upload: the files of an upload of many become one row with the upload's own link
     static func myTransfersByUpload() async throws -> [MyTransfer] {
@@ -182,14 +183,19 @@ enum API {
             bundles = (try? JSONDecoder().decode([MyBundle].self, from: got.0)) ?? []
         }
         var of: [String: MyBundle] = [:]
-        for b in bundles { for t in b.tokens ?? [] { of[t] = b } }
+        var to: [String: [String]] = [:]
+        // who each file went to by email, from every upload or resend that holds it (Alex, 15 Nov)
+        for b in bundles { for t in b.tokens ?? [] { for e in b.recipients ?? [] where !(to[t] ?? []).contains(e) { to[t, default: []].append(e) } } }
+        for b in bundles where (b.tokens?.count ?? 0) > 1 { for t in b.tokens ?? [] { of[t] = b } }
         var out: [MyTransfer] = []
         var at: [String: Int] = [:]
-        for m in rows {
+        for var m in rows {
+            if let t = m.token, let e = to[t] { m.sentTo = e }
             guard let t = m.token, let b = of[t] else { out.append(m); continue }
             if let i = at[b.token] {
                 var g = out[i]
                 g.files!.append(m)
+                for e in m.sentTo ?? [] where !(g.sentTo ?? []).contains(e) { g.sentTo = (g.sentTo ?? []) + [e] }
                 g.size = (g.size ?? 0) + (m.size ?? 0)
                 g.downloads = max(g.downloads ?? 0, m.downloads ?? 0)
                 g.opens = max(g.opens ?? 0, m.opens ?? 0)
@@ -200,7 +206,7 @@ enum API {
             } else {
                 var g = MyTransfer(path: "bundle:" + b.token, name: nil, size: m.size, type: "bundle", created_at: b.created_at ?? m.created_at, expires: m.expires,
                                    source: "link", token: b.token, opens: m.opens, downloads: m.downloads, stopped: m.stopped, deleted: m.deleted)
-                g.files = [m]; g.title = b.title
+                g.files = [m]; g.title = b.title; g.sentTo = m.sentTo
                 at[b.token] = out.count
                 out.append(g)
             }

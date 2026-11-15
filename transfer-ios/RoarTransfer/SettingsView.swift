@@ -23,14 +23,21 @@ struct SettingsView: View {
         ZStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    if session.signedIn { account } else { AuthCard() }
-                    language
-                    downloads
-                    if session.signedIn {
-                        Button { session.signOut(); Task { await pro.load() } } label: { Label(t("Sign out"), systemImage: "rectangle.portrait.and.arrow.right").frame(maxWidth: .infinity) }
-                            .buttonStyle(PillStyle(danger: true))
+                    if !session.signedIn { AuthCard() }
+                    // everything in the website's dark glass card, as the Send page (Alex, 15 Nov: "not so see-through")
+                    Card {
+                        VStack(spacing: 14) {
+                            LightBoldTitle(light: "", bold: t("Settings") + ".")
+                            if session.signedIn { account }
+                            language
+                            downloads
+                            if session.signedIn {
+                                Button { session.signOut(); Task { await pro.load() } } label: { Label(t("Sign out"), systemImage: "rectangle.portrait.and.arrow.right").frame(maxWidth: .infinity) }
+                                    .buttonStyle(PillStyle(danger: true))
+                            }
+                            footer
+                        }
                     }
-                    footer
                 }
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 120)
             }

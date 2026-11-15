@@ -5073,3 +5073,15 @@ html:root:root:root .pf-acts > button:active > .ic-mask { transform: scale(.94);
 /* the same in Roar: over the photo library the attach sheet's tab bar is solid, never see-through (Alex, 15 Nov) */
 html:root:root:root:root:root:not([data-frost]) .as-sheet.as-lib .as-tabs { background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 10px 26px rgba(0, 0, 0, .22) !important; }
 html:root:root:root:root:root:not([data-frost])[data-mode='dark'] .as-sheet.as-lib .as-tabs { background: #2c2c31 !important; }
+
+/* signing in with the keyboard up (Alex, 15 Nov: "the keyboard covers Sign in and what is under it"): the card goes to
+   the top of what is left of the screen and gets compact: no mark, smaller gaps, so the fields, Sign in and the two
+   buttons under it all stand above the keyboard; the page scrolls if a small phone still needs it */
+html.kb .auth { place-items: start center; padding: 10px 16px 14px; min-height: 0; }
+html.kb .auth .auth-card { padding-top: 14px; padding-bottom: 14px; gap: 8px; margin: 0; }
+html.kb .auth .wordmark.with-by .rm-mark { display: none; }
+html.kb .auth .wordmark.with-by { gap: 2px; }
+html.kb .auth .brand { margin: 0 0 4px; }
+html.kb .auth :is(.auth-sub, .auth-invite) { display: none; }
+html.kb .auth .auth-card :is(input, .input) { height: 44px; }
+html.kb .auth .auth-card .btn-main { height: 46px; min-height: 0; }

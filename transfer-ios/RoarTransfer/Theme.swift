@@ -178,6 +178,7 @@ struct ProgressBar: View {
 
 func kindIcon(_ name: String, type: String?) -> String {
     let t = type ?? "", e = (name as NSString).pathExtension.lowercased()
+    if t == "bundle" { return "square.stack.3d.up" }
     if t.hasPrefix("video/") || ["mov", "mp4", "m4v"].contains(e) { return "film" }
     if t.hasPrefix("image/") || ["jpg", "jpeg", "png", "heic", "gif", "webp"].contains(e) { return "photo" }
     if t.hasPrefix("audio/") || ["wav", "mp3", "aif", "aiff", "m4a"].contains(e) { return "waveform" }

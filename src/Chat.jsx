@@ -1894,6 +1894,16 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [cinema, setCinema] = useState(null) // lights off: { kind: 'file' | 'embed', src, at }
   const flipWide = (id) => setWideIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const [headMenu, setHeadMenu] = useState(false)
+  // the picture in the chat's head turns into a capsule of Call and Video (Alex, 15 Nov: the name already opens the
+  // profile, so the picture does something of its own); a tap anywhere else or a few seconds turn it back
+  const [callsOpen, setCallsOpen] = useState(false)
+  useEffect(() => {
+    if (!callsOpen) return undefined
+    const away = (e) => { if (!e.target.closest?.('.head-calls, .head-ava')) setCallsOpen(false) }
+    const t = setTimeout(() => setCallsOpen(false), 6000)
+    document.addEventListener('pointerdown', away, true)
+    return () => { clearTimeout(t); document.removeEventListener('pointerdown', away, true) }
+  }, [callsOpen])
   const [picked, setPicked] = useState(null) // null, or the ids picked with Select
   const [forward, setForward] = useState(null) // the messages being forwarded
   const [replies, setReplies] = useState(null) // the message whose replies are listed
@@ -3119,7 +3129,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   return (
     <div className={`room-view${find !== null ? ' finding' : ''}${prefs.compact ? ' compact' : ''}${prefs.frost || wall === (prefs.appBackground || prefs.background) && (!prefs.appBackground || (prefs.appWallStrength ?? prefs.wallStrength) === prefs.wallStrength) ? ' same-wall' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
-      <header className="room-head">
+      <header className={`room-head${callsOpen ? ' calls-open' : ''}`}>
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
         {picked ? (
           <div className="head-card head-pick">
@@ -3146,7 +3156,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             {onTasks && <button type="button" className="round tasks-btn only-phone" onClick={onTasks} aria-label="Tasks" title="Tasks">{I.tasks}{tasksCount > 0 && <i>{tasksCount > 99 ? '99+' : tasksCount}</i>}</button>}
             <span className="plus-wrap">
               {/* Halo shows the picture here, round, in place of ⋯ (Alex, 12 Nov, from a picture he sent); it opens the profile, as the name does */}
-              <button type="button" className="head-ava" onClick={onInfo} aria-label="More" title="More"><Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={44} group={room.kind === 'group'} /></button>
+              <button type="button" className="head-ava" onClick={() => setCallsOpen(true)} aria-label="Call" title="Call"><Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={44} group={room.kind === 'group'} /></button>
+              <span className="head-calls" aria-hidden={!callsOpen}>
+                <button type="button" onClick={() => { setCallsOpen(false); onCall(false) }} aria-label="Voice call" title="Voice call" tabIndex={callsOpen ? 0 : -1}>{I.phone}</button>
+                <button type="button" onClick={() => { setCallsOpen(false); onCall(true) }} aria-label="Video call" title="Video call" tabIndex={callsOpen ? 0 : -1}>{I.video}</button>
+              </span>
               <button type="button" className={`round head-more${headMenu ? ' on' : ''}`} onClick={() => { setHeadSub(''); setHeadMenu((v) => !v) }} aria-label="More" title="More">{I.more}</button>
               {headMenu && (
                 <>

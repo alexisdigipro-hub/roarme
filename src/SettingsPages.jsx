@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, foldHas, nameOf, supabase } from './lib.js'
 import { Avatar, FOOT_I, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, dressTheme, haloish, inThemeLab, setPrefs, usePrefs, wearTheme } from './prefs.js'
+import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, haloish, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ThemeEditor } from './themeEditor.jsx'
 import { useWalls, wallLook } from './walls.js'

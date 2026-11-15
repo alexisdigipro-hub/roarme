@@ -1,21 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { lang, locale } from './i18n.js'
-import { formatText, plainText, toggleMark } from './format.jsx'
 import { I, Modal } from './ui.jsx'
 import { liveOn, stopLive, useLive } from './live.js'
 
-/* Location and Article, from the send window (Alex, 17 Oct, after Telegram).
+/* Location, from the send window (Alex, 17 Oct, after Telegram; Article was taken out of the app on 15 Nov).
 
    Location: a map you move under a pin, a search box, your own position if the computer or phone shares it. It goes
    into the chat as a text message whose `file.location` holds { lat, lng, z, name, addr } (the body is the place's
    name, so list previews and search read it), shown as a small map; a tap opens it big, with Google and Apple Maps.
    The map is OpenStreetMap's own tiles, the names come from OpenStreetMap's Nominatim; both only see the spot on the
-   map, never who is looking.
-
-   Article: a long post with a title, headings, lists, checklists, quotes and dividers, written in the same marks as a
-   message (**bold**, _italic_ …) plus a few line marks (# heading, - list, 1. list, - [ ] check, > quote, ---). The
-   body holds the title on its first line and then the text; `file.article` only marks it as an article. */
+   map, never who is looking. */
 
 /* ---------- the map ---------- */
 const TILE = 256
@@ -353,193 +348,6 @@ export function LocationView({ loc, onClose }) {
             <a className="trx-get soft" href={links.apple} target="_blank" rel="noopener noreferrer">{I.place}<span>Apple Maps</span></a>
           </span>
         </div>
-      </div>
-    </Modal>
-  )
-}
-
-/* ---------- Article ---------- */
-const DRAFT = 'roarme-article-draft'
-const LINE_MARK = /^(#{1,2} |- \[[ xX]\] |[-•] |\d+\. |> ?)/
-
-/* the text in blocks: headings, lists, checklists, quotes, dividers and paragraphs, each line with the message marks */
-export function ArticleBody({ text, plain = (s) => s }) {
-  const out = []
-  let list = null
-  let para = []
-  let quote = []
-  const f = (s, k) => formatText(s, plain, k)
-  const flush = () => {
-    if (para.length) { out.push(<p key={`p${out.length}`}>{f(para.join('\n'), `p${out.length}`)}</p>); para = [] }
-    if (quote.length) { out.push(<blockquote key={`q${out.length}`}>{f(quote.join('\n'), `q${out.length}`)}</blockquote>); quote = [] }
-    if (list) {
-      const Tag = list.kind === 'ol' ? 'ol' : 'ul'
-      out.push(<Tag key={`l${out.length}`} className={list.kind === 'check' ? 'art-checks' : undefined} start={list.kind === 'ol' ? list.start : undefined}>
-        {list.items.map((it, n) => <li key={n} className={it.done ? 'done' : undefined}>{list.kind === 'check' && <i>{it.done ? I.check : null}</i>}<span>{f(it.text, `l${out.length}-${n}`)}</span></li>)}
-      </Tag>)
-      list = null
-    }
-  }
-  const item = (kind, t, extra = {}) => {
-    if (para.length || quote.length || (list && list.kind !== kind)) flush()
-    if (!list) list = { kind, items: [], ...extra }
-    list.items.push({ text: t, ...extra })
-  }
-  String(text || '').split('\n').forEach((line) => {
-    let m
-    if (/^\s*(-{3,}|_{3,}|\*{3,})\s*$/.test(line)) { flush(); out.push(<hr key={`h${out.length}`} />) }
-    else if ((m = /^(#{1,2}) (.+)$/.exec(line))) { flush(); const H = m[1].length === 1 ? 'h3' : 'h4'; out.push(<H key={`t${out.length}`}>{f(m[2], `t${out.length}`)}</H>) }
-    else if ((m = /^- \[([ xX])\] ?(.*)$/.exec(line))) item('check', m[2], { done: m[1] !== ' ' })
-    else if ((m = /^[-•] (.*)$/.exec(line))) item('ul', m[1])
-    else if ((m = /^(\d+)\. (.*)$/.exec(line))) item('ol', m[2], list?.kind === 'ol' ? {} : { start: Number(m[1]) })
-    else if ((m = /^> ?(.*)$/.exec(line))) { if (para.length || list) flush(); quote.push(m[1]) }
-    else if (!line.trim()) flush()
-    else { if (quote.length || list) flush(); para.push(line) }
-  })
-  flush()
-  return <div className="art-body">{out}</div>
-}
-
-/* the title is the body's first line, the text follows an empty line (so editing an article changes only its body) */
-export const articleOf = (body) => {
-  const s = String(body || '')
-  const n = s.indexOf('\n')
-  return n < 0 ? { title: s.trim(), text: '' } : { title: s.slice(0, n).trim(), text: s.slice(n + 1).replace(/^\n+/, '') }
-}
-const minutesOf = (s) => Math.max(1, Math.round(String(s || '').split(/\s+/).filter(Boolean).length / 200))
-const excerpt = (s) => plainText(String(s || '').split('\n').map((l) => l.replace(LINE_MARK, '')).filter((l) => l.trim() && !/^\s*(-{3,}|_{3,}|\*{3,})\s*$/.test(l)).join(' ')).slice(0, 220)
-
-export function ArticleEditor({ initial = null, onSend, onClose, inline = false }) {
-  const saved = useRef((() => { if (initial) return initial; try { return JSON.parse(localStorage.getItem(DRAFT) || 'null') || {} } catch { return {} } })())
-  const [title, setTitle] = useState(saved.current.title || '')
-  const [text, setText] = useState(saved.current.text || '')
-  const [preview, setPreview] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const ta = useRef(null)
-  // an unsent article stays as a draft on this device (not while editing one that was sent)
-  useEffect(() => {
-    if (initial) return
-    try { if (title || text) localStorage.setItem(DRAFT, JSON.stringify({ title, text })); else localStorage.removeItem(DRAFT) } catch { /* private window */ }
-  }, [title, text, initial])
-  const place = (next, a, b) => { setText(next); requestAnimationFrame(() => { const el = ta.current; if (el) { el.focus(); el.setSelectionRange(a, b) } }) }
-  const mark = (m) => { const el = ta.current; if (!el) return; const r = toggleMark(el, text, m); place(r.next, r.caretA, r.caretB) }
-  // put a line mark on every chosen line, or take it off when they all have it
-  const lineMark = (kind) => {
-    const el = ta.current
-    if (!el) return
-    const a = el.selectionStart
-    const b = el.selectionEnd
-    const s0 = text.lastIndexOf('\n', a - 1) + 1
-    let e0 = text.indexOf('\n', b)
-    if (e0 < 0) e0 = text.length
-    const lines = text.slice(s0, e0).split('\n')
-    const has = { h: /^## /, ul: /^[-•] (?!\[)/, ol: /^\d+\. /, check: /^- \[[ xX]\] /, quote: /^> / }[kind]
-    const lead = (n) => ({ h: '## ', ul: '- ', ol: `${n + 1}. `, check: '- [ ] ', quote: '> ' }[kind])
-    const all = lines.every((l) => has.test(l))
-    const out = lines.map((l, n) => (all ? l.replace(LINE_MARK, '') : lead(n) + l.replace(LINE_MARK, ''))).join('\n')
-    place(text.slice(0, s0) + out + text.slice(e0), s0 + out.length, s0 + out.length)
-  }
-  const divider = () => {
-    const el = ta.current
-    if (!el) return
-    const a = el.selectionStart
-    const before = text.slice(0, a)
-    const ins = `${before && !before.endsWith('\n') ? '\n' : ''}---\n`
-    place(before + ins + text.slice(el.selectionEnd), a + ins.length, a + ins.length)
-  }
-  // Enter carries a list on; Enter on an empty item ends it
-  const onKey = (e) => {
-    const mod = e.metaKey || e.ctrlKey
-    if (mod && !e.shiftKey && /^[biu]$/i.test(e.key)) { e.preventDefault(); mark({ b: '**', i: '_', u: '__' }[e.key.toLowerCase()]); return }
-    if (mod && e.key === 'Enter') { e.preventDefault(); send(); return }
-    if (e.key !== 'Enter' || e.shiftKey) return
-    const el = e.currentTarget
-    const a = el.selectionStart
-    if (a !== el.selectionEnd) return
-    const s0 = text.lastIndexOf('\n', a - 1) + 1
-    const line = text.slice(s0, a)
-    const m = /^(- \[[ xX]\] |[-•] |(\d+)\. |> )/.exec(line)
-    if (!m) return
-    e.preventDefault()
-    if (line === m[1]) { place(text.slice(0, s0) + text.slice(a), s0, s0); return }
-    const next = m[2] ? `${Number(m[2]) + 1}. ` : m[1].startsWith('- [') ? '- [ ] ' : m[1]
-    place(`${text.slice(0, a)}\n${next}${text.slice(a)}`, a + 1 + next.length, a + 1 + next.length)
-  }
-  const ready = !!(title.trim() && text.trim())
-  const send = async () => {
-    if (!ready || busy) return
-    setBusy(true)
-    const ok = await onSend({ title: title.trim().slice(0, 140), text: text.trim() })
-    setBusy(false)
-    if (ok !== false && !initial) { try { localStorage.removeItem(DRAFT) } catch { /* private window */ } }
-  }
-  const TOOLS = [
-    ['h', 'Heading', I.heading, () => lineMark('h')],
-    ['b', 'Bold', <b key="b">B</b>, () => mark('**')],
-    ['i', 'Italic', <i key="i">I</i>, () => mark('_')],
-    ['u', 'Underline', <u key="u">U</u>, () => mark('__')],
-    ['s', 'Strikethrough', <s key="s">S</s>, () => mark('~~')],
-    ['ul', 'List', I.bullets, () => lineMark('ul')],
-    ['ol', 'Numbered list', I.numbers, () => lineMark('ol')],
-    ['check', 'Checklist', I.checklist, () => lineMark('check')],
-    ['quote', 'Quote', I.quote, () => lineMark('quote')],
-    ['hr', 'Divider', I.divider, divider],
-  ]
-  // inside the attach sheet (Alex, 15 Nov, as Telegram's): no window of its own, the sheet's X closes it
-  const body = (
-      <div className={`art${inline ? ' art-inline' : ''}`}>
-        <div className="art-bar">
-          {!inline && <button type="button" className="art-round" onClick={onClose} aria-label="Close">{I.x}</button>}
-          <span className="art-tools">
-            {TOOLS.map(([k, label, face, run]) => (
-              <button key={k} type="button" title={label} aria-label={label} disabled={preview} onMouseDown={(e) => e.preventDefault()} onClick={run}>{face}</button>
-            ))}
-          </span>
-          <button type="button" className={`art-round${preview ? ' on' : ''}`} onClick={() => setPreview((v) => !v)} aria-label="Preview" title="Preview">{I.eye}</button>
-          <button type="button" className="art-send" disabled={!ready || busy} onClick={send} aria-label={initial ? 'Save' : 'Send'} title={initial ? 'Save' : 'Send'}>{initial ? I.check : I.send}</button>
-        </div>
-        {preview ? (
-          <div className="art-sheet art-read">
-            {title.trim() && <h2>{title.trim()}</h2>}
-            {text.trim() ? <ArticleBody text={text} /> : <p className="muted">Nothing written yet.</p>}
-          </div>
-        ) : (
-          <div className="art-sheet">
-            <input className="art-title" value={title} onChange={(e) => setTitle(e.target.value.replace(/\n/g, ' ').slice(0, 140))} placeholder="Title" autoFocus={!initial}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); ta.current?.focus() } }} />
-            <textarea ref={ta} className="art-text" value={text} onChange={(e) => setText(e.target.value.slice(0, 19000))} onKeyDown={onKey} placeholder="Type something…" />
-          </div>
-        )}
-        <small className="art-count">{text.trim() ? `${minutesOf(text)} min read` : 'Headings, lists, checklists, quotes: the buttons above, or # , - , 1. , > at the start of a line.'}</small>
-      </div>
-  )
-  return inline ? body : <Modal title={initial ? 'Edit article' : 'Article'} onClose={onClose}>{body}</Modal>
-}
-
-/* the article in the chat: its mark, the title as the headline, the first lines, Read */
-export function ArticleCard({ title, text, onOpen }) {
-  return (
-    <span className="trx artc" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); onOpen() }} onKeyDown={(e) => { if (e.key === 'Enter') onOpen() }}>
-      <span className="trx-head"><span className="rt-mark"><i>{I.article}</i><b><span>Article</span></b></span></span>
-      <span className="artc-hero">
-        {title && <b>{title}</b>}
-        {excerpt(text) && <span>{excerpt(text)}</span>}
-      </span>
-      <span className="trx-acts">
-        <span className="trx-get">{I.article}<span>Read</span></span>
-        <span className="artc-min">{minutesOf(text)} min</span>
-      </span>
-    </span>
-  )
-}
-
-export function ArticleReader({ title, text, who, at, plain, onClose }) {
-  return (
-    <Modal title="Article" onClose={onClose} wide>
-      <div className="art-read">
-        {title && <h2>{title}</h2>}
-        <p className="art-meta">{who}{at ? ` · ${new Date(at).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })}` : ''} · {minutesOf(text)} min read</p>
-        <ArticleBody text={text} plain={plain} />
       </div>
     </Modal>
   )

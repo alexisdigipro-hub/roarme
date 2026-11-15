@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { errText, fileLink, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
@@ -6,8 +6,9 @@ import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { Avatar, I, Modal, Slide, useLens, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
-import { PhotoEdit } from './photoEdit.jsx'
-import { LocationPicker } from './share.jsx'
+// the photo editor and the map load only when they are opened (lighter start, 15 Nov)
+const PhotoEdit = lazy(() => import('./photoEdit.jsx').then((m) => ({ default: m.PhotoEdit })))
+const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationPicker })))
 
 /* ---------- emoji grid ---------- */
 export function EmojiPicker({ onPick, onClose }) {
@@ -270,7 +271,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const asFile = pickedRaw || (tab === 'file' && files.length > 0) // anything picked while on the File tab goes raw
   const big = files.filter((f) => f.size > 50e6 && !(!asFile && /^video\//.test(f.type)))
   const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
-  if (edit >= 0 && files[edit]) return <PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} />
+  if (edit >= 0 && files[edit]) return <Suspense fallback={null}><PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} /></Suspense>
   return createPortal(
     <div className="as-back" onClick={onClose}>
       <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${tab === 'transfer' && !files.length ? ' as-tall' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
@@ -316,7 +317,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
             </>
           ) : tab === 'location' && onLocation ? (
             // Location is a tab of the sheet like the others (Alex, 14 Nov: it popped a window of its own and the sheet was gone)
-            <LocationPicker inline onSend={onLocation} onLive={onLive} onClose={onClose} />
+            <Suspense fallback={<div className="loc loc-inline" />}><LocationPicker inline onSend={onLocation} onLive={onLive} onClose={onClose} /></Suspense>
           ) : tab === 'gallery' ? (
             <>
               <div className="as-tiles">

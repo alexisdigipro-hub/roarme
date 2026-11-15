@@ -306,9 +306,7 @@ html[data-skin='halo'][data-theme='stone'][data-mode='light'] :is(.contacts-top,
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.contacts-top, .new-call.new-call-bar) { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(14, 14, 18, .9); }
 
 /* Calls: the words only, in capitals, white */
-html[data-skin='halo'][data-theme='stone'] .new-call.new-call-bar { position: relative; z-index: 4; width: auto; align-self: stretch; justify-content: center; gap: 0; margin-top: 0; margin-bottom: -11px; color: rgba(255, 255, 255, .9); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-html[data-skin='halo'][data-theme='stone'] .new-call.new-call-bar:hover { color: #fff; }
-html[data-skin='halo'][data-theme='stone'] .new-call.new-call-bar .new-call-ico { display: none; }
+
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls { margin-bottom: calc(-101px - var(--hfmb) - var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls::after { content: ''; flex: none; height: calc(99px + var(--hfmb) + var(--hpb)); }
 
@@ -328,7 +326,6 @@ html[data-skin='halo'][data-theme='stone'] .contacts-top .round svg { width: 17p
 html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom .tabs { margin-bottom: calc(50px + var(--hfmb) + var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-100px - var(--hfmb) - var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(108px + var(--hfmb) + var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .new-call.new-call-bar { margin-bottom: -10px; }
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls { margin-bottom: calc(-102px - var(--hfmb) - var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls::after { height: calc(100px + var(--hfmb) + var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-top { bottom: calc(50px + var(--hfmb) + var(--hpb)); }
@@ -449,28 +446,7 @@ html[data-skin='halo'] .bubble.rt-b { width: var(--media-w); }
 
 /* Halo: an article in a chat is a white frosted card whoever sent it, as wide as a photo; the title dark and large, its
    first lines grey; the orange only on Read and on the word Article */
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.art-b:not(.pic):not(.big-emoji) {
-  width: var(--media-w); max-width: 100%; box-sizing: border-box;
-  background: linear-gradient(135deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .78)) !important; border: 1px solid #fff !important; color: #1d1d24 !important;
-  box-shadow: 0 8px 22px rgba(70, 70, 110, .1), inset 0 1px 0 #fff !important;
-}
-html[data-skin='halo'][data-mode='dark'][data-bubbles] .msg .bubble.art-b:not(.pic):not(.big-emoji) {
-  background: linear-gradient(135deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .06)) !important; border-color: rgba(255, 255, 255, .14) !important; color: #f1f1f5 !important; box-shadow: none !important;
-}
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.art-b :is(.meta, .ticks) { color: var(--muted) !important; }
-html[data-skin='halo'][data-mode][data-bubbles] .msg .bubble.art-b .ticks.seen { color: var(--halo) !important; }
-html[data-skin='halo'] .bubble .artc { gap: 10px; padding: 4px 2px 2px; }
-html[data-skin='halo'] .bubble .artc .trx-head { justify-content: flex-start; }
-html[data-skin='halo'] .bubble .artc .rt-mark i { width: 30px; height: 30px; background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; border: 0 !important; box-shadow: none !important; }
-html[data-skin='halo'] .bubble .artc .rt-mark i svg { width: 16px; height: 16px; }
-html[data-skin='halo'] .bubble .artc .rt-mark b { font-size: 15px; color: inherit !important; }
-html[data-skin='halo'] .bubble .artc .rt-mark b span { color: var(--halo) !important; }
-html[data-skin='halo'][data-bubbles] .bubble .artc .artc-hero { padding: 2px 2px 0; border: 0 !important; border-radius: 0; background: none !important; box-shadow: none !important; }
-html[data-skin='halo'] .bubble .artc .artc-hero b { font-size: 18px; color: inherit !important; }
-html[data-skin='halo'] .bubble .artc .artc-hero span { color: var(--muted) !important; opacity: 1; }
-html[data-skin='halo'][data-bubbles] .bubble .artc .trx-get { height: 38px; border: 0 !important; border-radius: 999px; background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: #fff !important; box-shadow: none !important; }
-html[data-skin='halo'][data-bubbles] .bubble .artc .artc-min { height: 38px; border: 0 !important; background: rgba(20, 20, 40, .06) !important; color: var(--muted) !important; }
-html[data-skin='halo'][data-mode='dark'][data-bubbles] .bubble .artc .artc-min { background: rgba(255, 255, 255, .1) !important; }
+
 html[data-skin='halo'][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji):is(.art-b, .rt-b) :is(.meta, .ticks:not(.seen)) { color: var(--muted) !important; }
 /* every message that is a thing, not words, the same width to the pixel (Alex, 12 Nov): photo, video, place, article,
    sound, file, RoarTransfer, event all var(--media-w) from edge to edge */
@@ -516,7 +492,6 @@ html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)), ht
 html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)) svg { width: 24px; height: 24px; }
 html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)) span { color: #fff; font-size: 12.5px; text-transform: lowercase; }
 html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)):hover, html[data-skin='halo'] .pf-more > button:not(.scrim).on { background: rgba(255, 255, 255, .24); }
-html[data-skin='halo'] .pf-menu .pf-m-opts { display: flex; }
 html[data-skin='halo'] .pf-menu { top: calc(100% + 8px); bottom: auto; right: 0; z-index: 30; }
 html[data-skin='halo'] .pf-card { border-radius: 26px; background: rgba(255, 255, 255, .92); border: 1px solid #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .06); }
 html[data-skin='halo'][data-mode='dark'] .pf-card { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .1); box-shadow: none; }
@@ -946,8 +921,6 @@ html[data-skin='halo'] .msg-menu .rx-pick button { animation: none !important; }
    a dark one (Alex, 12 Nov: "some letters do not show in dark", the chosen theme's name). In the dark, what Stone
    draws in its colour takes Halo's instead. */
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] { --accent: var(--halo) !important; --accent-2: var(--halo-2) !important; --accent-ink: #ffffff !important; }
-html[data-skin='halo'][data-mode='dark'] .theme-tile.on small { color: #f1f1f5; }
-html[data-skin='halo'][data-mode='dark'] .theme-tile.on .theme-sw { border-color: var(--halo); }
 /* the bars at the foot a little more solid, now that they no longer blur the list under them (its words showed through) */
 html[data-skin='halo'][data-theme='stone'][data-mode='light'] :is(.foot, .rooms-area.bottom .tabs, .foot-bar-empty, .contacts-top, .new-call-bar) { background-color: rgba(16, 16, 20, .93) !important; }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.foot, .rooms-area.bottom .tabs, .foot-bar-empty, .contacts-top, .new-call-bar) { background-color: rgba(14, 14, 18, .92) !important; }

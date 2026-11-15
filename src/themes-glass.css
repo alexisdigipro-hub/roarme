@@ -824,3 +824,14 @@ html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu > button > s
 html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu > button span { font-size: 15px !important; }
 html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu > hr { margin: 4px 14px !important; }
 html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu .pf-m-val { font-size: 13px !important; }
+
+/* The + and ⋯ menus at the top of the list pages (Contacts, Calls, Messages) small again, as on 14 Nov (Alex, 15 Nov:
+   "you had these smaller and they were nicer"): rows 36px, 14px words, 19px signs, 24px corners, 6px round the rows */
+html:root:root:root:root[data-glass][data-skin='halo'] .side-head .menu { min-width: 190px; padding: 6px; border-radius: 24px; }
+html:root:root:root:root[data-glass][data-skin='halo'] .side-head .menu > button,
+html:root:root:root:root[data-glass][data-skin='halo'] .side-head .menu > .has-sub > button {
+  height: 36px; min-height: 36px; gap: 10px; padding: 0 14px 0 10px; border-radius: 16px; font-size: 14px;
+}
+html:root:root:root:root[data-glass][data-skin='halo'] .side-head .menu > button > svg,
+html:root:root:root:root[data-glass][data-skin='halo'] .side-head .menu > button .menu-tick svg { width: 19px; height: 19px; }
+html:root:root:root:root[data-glass][data-skin='halo'] .side-head .menu > hr { margin: 4px 12px; }

@@ -31,20 +31,24 @@ struct Picked: Identifiable, Hashable {
 
 @MainActor
 final class Uploader: ObservableObject {
+    static let shared = Uploader()
+    // what is chosen to send, kept while moving between the tabs
+    @Published var picked: [Picked] = []
     @Published var sentBytes: Int64 = 0
     @Published var totalBytes: Int64 = 0
     @Published var current = ""
     @Published var busy = false
     @Published var link: String?
+    @Published var mailed = 0
     @Published var errors: [String] = []
     private var stopped = false
     private var running: Task<Void, Never>?
 
     static let part: Int64 = 16 * 1024 * 1024
 
-    func send(_ files: [Picked], days: Int, title: String, message: String, password: String) {
+    func send(_ files: [Picked], days: Int, title: String, message: String, password: String, recipients: [String] = []) {
         guard !busy, !files.isEmpty else { return }
-        busy = true; stopped = false; link = nil; errors = []
+        busy = true; stopped = false; link = nil; errors = []; mailed = 0
         sentBytes = 0; totalBytes = files.reduce(0) { $0 + $1.size }
         running = Task {
             UIApplicationBackground.begin()
@@ -66,11 +70,12 @@ final class Uploader: ObservableObject {
                 sentBytes = before
             }
             if !tokens.isEmpty && !stopped {
-                var body: [String: Any] = ["action": "bundle", "tokens": tokens, "title": title, "message": message, "recipients": [String](), "password": password, "notify": true]
+                var body: [String: Any] = ["action": "bundle", "tokens": tokens, "title": title, "message": message, "recipients": recipients, "password": password, "notify": true]
                 if password.isEmpty { body.removeValue(forKey: "password") }
                 do {
                     let b = try await API.bridge(body, as: Bundled.self)
                     link = Config.page + b.token
+                    mailed = b.mailed ?? 0
                 } catch {
                     if tokens.count == 1 { link = Config.page + tokens[0] } else { errors.append(error.localizedDescription) }
                 }

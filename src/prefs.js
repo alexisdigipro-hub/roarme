@@ -18,6 +18,7 @@ export const DEFAULTS = {
   listPreview: true, // the last message and its time in the chat list; on since 12 Nov, when Alex picked the list as a glass panel that shows them (it was off since 17 Oct)
   compact: false,
   enterSends: true,
+  enterSendsPhone: false, // on a phone Enter is a new line and the arrow sends (Alex, 15 Nov); a computer keeps enterSends
   spell: true,
   faces: true,
   largePhotos: false,

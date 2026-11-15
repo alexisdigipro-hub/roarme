@@ -30,7 +30,7 @@ import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { NowPlaying } from './player.jsx'
-import { onNotificationTap, pushFirstTap, pushSync, setBadge } from './push.js'
+import { onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
@@ -2693,7 +2693,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       return
     }
     if (mentionHits.length && (e.key === 'Enter' || e.key === 'Tab')) { e.preventDefault(); pickMention(mentionHits[0]); return }
-    const sendKey = prefs.enterSends ? e.key === 'Enter' && !e.shiftKey : e.key === 'Enter' && (e.metaKey || e.ctrlKey)
+    // a phone sends with the arrow and Enter is a new line, unless chosen otherwise (Alex, 15 Nov; prefs.enterSendsPhone)
+    const enterSends = onPhone() ? !!prefs.enterSendsPhone : prefs.enterSends
+    const sendKey = enterSends ? e.key === 'Enter' && !e.shiftKey : e.key === 'Enter' && (e.metaKey || e.ctrlKey)
     if (sendKey) { e.preventDefault(); send(); return }
     if (e.key === 'Escape') { setReplyTo(null); setEmoji(false); if (editing) { setEditing(null); setText('') } }
     if (e.key === 'ArrowUp' && !text) {
@@ -3288,7 +3290,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                   <button type="button" className="compose-ref-x" onClick={() => { setReplyTo(null); if (editing) { setEditing(null); setText('') } }} aria-label="Cancel">{I.x}</button>
                 </span>
               )}
-              <textarea ref={inputRef} rows={1} value={text} spellCheck={prefs.spell} autoCorrect={prefs.spell ? 'on' : 'off'}
+              <textarea ref={inputRef} rows={1} value={text} enterKeyHint={onPhone() && !prefs.enterSendsPhone ? 'enter' : 'send'} spellCheck={prefs.spell} autoCorrect={prefs.spell ? 'on' : 'off'}
                 onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart) }} onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)} onClick={(e) => setCaret(e.currentTarget.selectionStart)} onKeyDown={onKey}
                 onSelect={(e) => readSel(e.currentTarget)} onBlur={() => setSel(null)}
                 onPaste={(e) => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach(f) } }}

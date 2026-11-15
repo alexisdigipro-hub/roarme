@@ -55,8 +55,11 @@ Deno.serve(async (req) => {
     const { data: g } = await sb.from('roar_group_calls').select('room_id, ended_at').eq('id', groupCallId).maybeSingle()
     if (!g) return json({ error: 'No call' }, 404)
     if (g.ended_at) return json({ error: 'This video chat has ended' }, 410)
-    const { data: mem } = await sb.from('roar_members').select('user_id').eq('room_id', g.room_id).eq('user_id', user.id).maybeSingle()
-    if (!mem) return json({ error: 'Not your group' }, 403)
+    // a call link's call (no group): whoever has it, through the link or the call's card
+    if (g.room_id) {
+      const { data: mem } = await sb.from('roar_members').select('user_id').eq('room_id', g.room_id).eq('user_id', user.id).maybeSingle()
+      if (!mem) return json({ error: 'Not your group' }, 403)
+    }
     const { data: gp } = await sb.from('roar_profiles').select('display_name, username').eq('id', user.id).maybeSingle()
     const gname = gp?.display_name || (gp?.username ? `@${gp.username}` : '')
     return json({ url: url.replace(/^http/, 'ws'), token: await pass(key, secret, user.id, gname, `roar-gcall-${groupCallId}`) })

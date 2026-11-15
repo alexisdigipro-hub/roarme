@@ -67,6 +67,7 @@ export function useGroupCall(roomId, myId, enabled = true) {
 }
 
 // start (or join the one already on) from anywhere: window event roarme-gcall { room, video }
+export const joinCall = (id, video = false, title = '') => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { id, video, title } }))
 export const startGroupCall = (room, video = true) => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room, video } }))
 
 // the bar over a group's chat while its video chat is on
@@ -94,6 +95,19 @@ export function GroupCallCard({ who, live, here, onJoin }) {
       {live && <button type="button" className="gc-join" onClick={onJoin}>Join</button>}
     </span>
   )
+}
+
+// the card of a call with chosen people or a call link (no group): on or ended, asked of the server
+export function LinkCallCard({ id, who, onJoin }) {
+  const [live, setLive] = useState(true)
+  useEffect(() => {
+    let alive = true
+    const ask = () => supabase.rpc('roar_call_state', { c: id }).then(({ data }) => { if (alive && data) setLive(!data.ended) })
+    ask()
+    const t = setInterval(ask, 30000)
+    return () => { alive = false; clearInterval(t) }
+  }, [id])
+  return <GroupCallCard who={who} live={live} here={0} onJoin={onJoin} />
 }
 
 // one person's tile: their camera, or their picture while it is off; a ring while they speak
@@ -257,13 +271,13 @@ export function GroupCallHost({ me, people, rooms, toast }) {
   openRef.current = open
   useEffect(() => {
     const f = async (e) => {
-      const { room, video = true, id } = e.detail || {}
-      if (!room) return
-      if (openRef.current) { if (openRef.current.room === room) return; toast('You are already in a video chat'); return }
+      const { room = null, video = true, id, title } = e.detail || {}
+      if (!room && !id) return
+      if (openRef.current) { if (openRef.current.id === id || (room && openRef.current.room === room)) return; toast('You are already in a video chat'); return }
       const r = rooms.find((x) => x.room_id === room)
       let cid = id
       let startedBy = null
-      if (!cid) {
+      if (!cid && room) {
         const { data, error } = await supabase.rpc('roar_group_call_start', { r: room, v: video })
         if (error) { toast(/function|does not exist/i.test(error.message) ? 'Video chats need one more step on the server (supabase/group-calls.sql).' : errText(error)); return }
         cid = data?.id
@@ -276,7 +290,7 @@ export function GroupCallHost({ me, people, rooms, toast }) {
       if (!cid) return
       if (!startedBy) { const { data } = await supabase.from('roar_group_calls').select('started_by').eq('id', cid).maybeSingle(); startedBy = data?.started_by }
       window.dispatchEvent(new Event('roarme-gcall-changed'))
-      setOpen({ id: cid, room, video, title: r?.title || 'Group', canEnd: startedBy === me.id || r?.role === 'admin' })
+      setOpen({ id: cid, room, video, title: title || r?.title || 'Call', canEnd: startedBy === me.id || r?.role === 'admin' })
     }
     window.addEventListener('roarme-gcall', f)
     return () => window.removeEventListener('roarme-gcall', f)

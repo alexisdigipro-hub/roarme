@@ -4935,3 +4935,20 @@ html:root:root:root:root .msg.mine .bubble > .rx.rx-in > button { background: rg
 .file.ft .ft-go.ft-end { position: static; inset: auto; margin: 0; flex: none; width: 38px; height: 38px; background: color-mix(in srgb, currentColor 12%, transparent); color: inherit; }
 .file.ft .ft-go.ft-end svg { width: 20px; height: 20px; }
 .file.ft .ft-go.ft-end svg[viewBox="0 0 48 48"] { width: 38px; height: 38px; }
+
+/* reactions share the time's row, no extra band under a message (Alex, 15 Nov: "a huge gap under the live location"):
+   on one's own the chip floats to the far right with the time beside it, on theirs to the left */
+html:root:root:root:root:root .bubble > .rx.rx-in { float: left; display: inline-flex; margin: 4px 8px -2px 0 !important; }
+html:root:root:root:root:root .msg.mine .bubble > .rx.rx-in { float: right; margin: 4px -2px -2px 8px !important; }
+html:root:root:root:root .bubble.loc-b > .rx.rx-in { margin-left: 6px !important; }
+html:root:root:root:root .msg.mine .bubble.loc-b > .rx.rx-in { margin-right: 4px !important; }
+
+/* one's own messages with a soft fall of their colour, not flat (Alex, 15 Nov: "a gradient of the accent"): lighter at
+   the top, the colour itself at the foot, the fine grain kept */
+html:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: var(--grain-min), linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; }
+html:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles][data-my-bubble] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: linear-gradient(170deg, color-mix(in srgb, var(--my-bubble), #fff 16%), var(--my-bubble) 70%) !important; }
+
+/* the map inside a place's message follows the bubble's own curve and is cut cleanly by it (Alex, 15 Nov: "the line
+   round the map is cut, not round right"): its corners are the bubble's less the 4px around, and Safari clips the moving
+   tiles with a mask */
+.bubble.loc-b .locc-map { border-radius: calc(var(--bubble-r, 22px) - 4px); -webkit-mask-image: -webkit-radial-gradient(white, black); mask-image: radial-gradient(white, black); isolation: isolate; transform: translateZ(0); }

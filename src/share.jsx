@@ -267,7 +267,7 @@ export function LocationPicker({ onSend, onClose, inline = false, onLive }) {
         <div className="loc-foot">
           <small className="loc-where">{isMine && acc ? `Your location · accurate to ${Math.max(1, Math.round(acc))} metres` : looking ? 'Finding the address…' : [place.name, place.addr].filter(Boolean).join(' · ') || coords(at)}</small>
           <div className="loc-acts">
-            <button type="button" className="loc-btn main" disabled={busy} onClick={send}>{I.place}<span>Send Location</span></button>
+            <button type="button" className="loc-btn go" disabled={busy} onClick={send}>{I.place}<span>Send Location</span></button>
             {onLive && <button type="button" className="loc-btn live" disabled={busy} onClick={() => setLiveAsk(true)}>{LIVE_I}<span>Live Location</span></button>}
           </div>
           {/* over everything, in the middle of the screen (Alex, 15 Nov: inside the sheet it hid under the tab bar) */}

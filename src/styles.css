@@ -4986,3 +4986,14 @@ html[data-mode='dark'] .pv { background: #111114; }
 .ic-mask { display: inline-block; flex: none; width: 22px; height: 22px; background: currentColor; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; font-style: normal; }
 .room-head .head-calls > button .ic-mask { width: 27px; height: 27px; }
 :is(.round, .pv-foot button, .menu > button, .menu-list > button) > .ic-mask { width: 22px; height: 22px; }
+
+/* one size for words in every kind of message (Alex, 15 Nov: "the same measure everywhere; if I make the letters
+   bigger in Settings they grow together"): the titles in maps, files, contacts, polls, songs, calls and events take the
+   message text's own size (--fs, set by Message Text Size), in a medium weight; their second lines a little smaller */
+html:root:root:root:root .bubble :is(.locc-text b, .file .file-text b, .sc2-text b, .poll-q, .poll-label, .music-top b, .ev-title, .gc-card b, .lc-card b, .sc-text b) {
+  font-size: var(--fs, 14.5px) !important; font-weight: 500 !important; line-height: 1.3;
+}
+html:root:root:root:root .bubble :is(.locc-text small, .file .file-text small, .sc2-text small, .poll-d, .music-top small, .sc-text small) {
+  font-size: calc(var(--fs, 14.5px) * .86) !important;
+}
+html:root:root:root:root .bubble :is(.poll-kind, .poll-foot small) { font-size: calc(var(--fs, 14.5px) * .8) !important; }

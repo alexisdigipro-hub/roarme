@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -2260,9 +2260,17 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         if (asFile) meta.asFile = true
         if (/^image\/(jpeg|png|webp)$/.test(file.type) && !meta.bucket) {
           try {
-            const small = await shrinkImage(file, asFile ? 320 : 900, asFile ? 0.72 : 0.78)
+            // lighter in the chat (Alex, 15 Nov): 640 px at .72; the whole photo opens full screen
+            const small = await shrinkImage(file, asFile ? 320 : 640, 0.72)
             if (small !== file) meta.thumb = (await upload(small)).path
           } catch { /* the chat shows the whole photo */ }
+        }
+        // a video shows in the chat as one still frame; the video itself loads only when it is played (Alex, 15 Nov)
+        if (/^video\//.test(file.type) && !meta.bucket) {
+          try {
+            const poster = await videoPoster(raw, asFile ? 320 : 640)
+            if (poster) meta.thumb = (await upload(poster)).path
+          } catch { /* the chat reads the video's first frame itself */ }
         }
         stick.current = true
         const last = n === ok.length

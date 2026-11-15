@@ -4745,3 +4745,12 @@ html:root:root:root:root .loc-foot .loc-btn.live { color: var(--text) !important
 .loc-live-back { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: flex-end; justify-content: center; padding: 0 16px calc(170px + env(safe-area-inset-bottom, 0px)); background: rgba(12, 12, 20, .28); }
 html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relative !important; inset: auto !important; transform: none !important; width: min(330px, 100%) !important; margin: 0 !important; display: flex; flex-direction: column; }
 .loc-live-menu p { white-space: normal; }
+
+/* a video in a chat as a still frame with a play sign and its size (Alex, 15 Nov: "nothing heavy, small pictures");
+   the video loads when tapped */
+.vid-box.vid-poster { position: relative; display: block; cursor: pointer; }
+.vid-box.vid-poster .vid-play { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; display: grid; place-items: center; border-radius: 50%; background: rgba(0, 0, 0, .45); color: #fff; pointer-events: none; }
+.vid-box.vid-poster .vid-play svg { width: 24px; height: 24px; margin-left: 3px; }
+.vid-box.vid-poster .vid-play.spin { border: 3px solid rgba(255, 255, 255, .35); border-top-color: #fff; background: rgba(0, 0, 0, .35); animation: vid-spin .9s linear infinite; }
+@keyframes vid-spin { to { transform: rotate(360deg); } }
+.vid-box.vid-poster .vid-size { position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .45); color: #fff; font-size: 11.5px; pointer-events: none; }

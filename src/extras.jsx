@@ -517,12 +517,26 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
     io.observe(v)
     return () => io.disconnect()
   }, [play, url])
+  // nothing heavy in the chat (Alex, 15 Nov): a video with a still frame shows only that small picture and a play sign;
+  // the video itself is fetched when it is tapped (unless videos are set to play by themselves)
+  const [poster, setPoster] = useState('')
+  const [tapped, setTapped] = useState(false)
+  useEffect(() => { if (!file?.thumb) return undefined; let alive = true; fileLink(thumbOf(file)).then((u) => { if (alive) setPoster(u) }); return () => { alive = false } }, [file?.thumb])
+  if (file?.thumb && !play && !tapped) {
+    return (
+      <span className="vid-box vid-poster" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setGo(true); setTapped(true) }}>
+        {poster ? <img className="pic-img ready" src={poster} alt="" loading="lazy" decoding="async" draggable={false} /> : <span className="pic-wait" />}
+        <i className="vid-play">{I.play}</i>
+        <small className="vid-size">{fmtBytes(file?.size)}</small>
+      </span>
+    )
+  }
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{I.play}<span>Video · {fmtBytes(file?.size)}</span><small>Tap to load</small></button>
   // videos can play by themselves, silent and on a loop (Settings > Data and Storage)
-  if (!url) return <span className="pic-wait" />
+  if (!url) return poster ? <span className="vid-box vid-poster"><img className="pic-img ready" src={poster} alt="" draggable={false} /><i className="vid-play spin" /></span> : <span className="pic-wait" />
   return (
     <span className="vid-box">
-      <video ref={ref} className="pic-img ready" src={url} controls preload="metadata" muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} />
+      <video ref={ref} className="pic-img ready" src={url} poster={poster || undefined} controls autoPlay={tapped} preload={tapped ? 'auto' : 'metadata'} muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} />
       <VideoTools wide={wide} onWide={onWide} onCinema={onCinema && (() => { const v = ref.current; const at = v?.currentTime || 0; v?.pause(); onCinema({ kind: 'file', src: url, at }) })} />
     </span>
   )

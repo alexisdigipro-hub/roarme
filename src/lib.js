@@ -62,6 +62,32 @@ export const lastSeenText = (p) => {
 export const fmtBytes = (n) => (n > 1e9 ? `${(n / 1e9).toFixed(1)} GB` : n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round((n || 0) / 1e3))} KB`)
 
 // a photo made smaller before it is sent, as WhatsApp and Telegram do
+/* one frame of a video as a small JPEG, the poster the chat shows instead of the video itself (Alex, 15 Nov: "nothing
+   heavy inside the messages, small pictures"); null when the device cannot read the video */
+export function videoPoster(file, max = 640, quality = 0.72) {
+  return new Promise((resolve) => {
+    let done = false
+    const url = URL.createObjectURL(file)
+    const v = document.createElement('video')
+    const end = (b) => { if (done) return; done = true; clearTimeout(t); v.removeAttribute('src'); v.load?.(); URL.revokeObjectURL(url); resolve(b) }
+    const t = setTimeout(() => end(null), 6000)
+    v.muted = true; v.playsInline = true; v.preload = 'auto'
+    v.onloadeddata = () => { try { v.currentTime = Math.min(0.5, (v.duration || 1) / 3) } catch { end(null) } }
+    v.onseeked = () => {
+      try {
+        const w = v.videoWidth; const h = v.videoHeight
+        if (!w || !h) { end(null); return }
+        const k = Math.min(1, max / Math.max(w, h))
+        const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k)
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height)
+        c.toBlob((b) => end(b ? new File([b], 'poster.jpg', { type: 'image/jpeg' }) : null), 'image/jpeg', quality)
+      } catch { end(null) }
+    }
+    v.onerror = () => end(null)
+    v.src = url
+  })
+}
+
 export async function shrinkImage(file, max = 1920, quality = 0.85) {
   if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file
   const url = URL.createObjectURL(file)

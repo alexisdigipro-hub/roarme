@@ -3043,7 +3043,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             <div key={m.id} id={`m-${m.id}`}>
               {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
               <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${hit && nowId === m.id ? ' hit-now' : ''}${!mine && !m.deleted_at && mentionsMe(m.body, me, roles) ? ' at-me' : ''}${wide ? ' wide-media' : ''}`}
-                onClick={picked ? () => setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) : (e) => hands.current.onTap(e, m)}
+                onClick={picked ? undefined : (e) => hands.current.onTap(e, m)}
+                // while selecting, a tap anywhere on a message (a photo, a video, a file, a link, its words) only picks it (Alex, 15 Nov)
+                onClickCapture={picked ? (e) => { e.preventDefault(); e.stopPropagation(); setPicked((l) => (l.includes(m.id) ? l.filter((x) => x !== m.id) : [...l, m.id])) } : undefined}
                 onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (hands.current.onBubble(e)) hands.current.onDouble(m, e) }}
                 onContextMenu={(e) => { if (hands.current.onBubble(e)) hands.current.openMenu(e, m) }}>
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}

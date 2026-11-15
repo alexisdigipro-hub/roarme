@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Avatar, I, Lens, Modal } from './ui.jsx'
 import { errText, foldHas, nameOf, supabase } from './lib.js'
 import { usePrefs } from './prefs.js'

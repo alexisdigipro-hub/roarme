@@ -36,7 +36,12 @@ import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
 import { ContactCard } from './contactCard.jsx'
 import { PhoneFriends, contactsAvailable } from './phone.jsx'
-import { LiveCard, LocationCard, LocationPicker, LocationView } from './share.jsx'
+// the map and everything about places load only when one is shown (lighter start, 15 Nov)
+const LiveCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.LiveCard })))
+const LocationCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationCard })))
+const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationPicker })))
+const LocationView = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationView })))
+const LOC_WAIT = <span className="locc"><span className="locc-map" /></span>
 import { resumeLive, startLive } from './live.js'
 import { taskNotice, useTasks } from './taskCore.js'
 import { useNameMarks } from './fancy.jsx'
@@ -47,7 +52,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
-import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, EmojiPicker, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
+import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
 // the moving bars while a voice message records (Alex, 16 Oct): not the real sound, a lively stand-in
 
@@ -1904,7 +1909,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [whoOpen, setWhoOpen] = useState(false)
   const dateRef = useRef(null)
   useEffect(() => { if (find === null) { setFindWho(''); setWhoOpen(false) } }, [find])
-  const [emoji, setEmoji] = useState(false)
   const [attach, setAttach] = useState(null) // files waiting in the send window
   const [media, setMedia] = useState(false)
   const [headSub, setHeadSub] = useState('') // Mute › or Auto-Delete › open in the ⋯ menu
@@ -1929,7 +1933,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [wallPick, setWallPick] = useState(false)
   const [rec, setRec] = useState(null) // { started }
   const [outbox, setOutbox] = useState([]) // { id, name, preview, p, stage, holder }
-  const [recSecs, setRecSecs] = useState(0)
   const recRef = useRef(null)
   // Telegram's way (Alex, 12 Nov): a tap on the microphone turns it into the camera and back; holding it records a voice
   // or a round video message, sliding left throws it away, sliding up locks it so the hand can let go
@@ -2142,18 +2145,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     setText(next)
     requestAnimationFrame(() => { const el = inputRef.current; if (el) { el.focus(); el.selectionStart = el.selectionEnd = before.length; setCaret(before.length) } })
   }
-  const addEmoji = (e) => {
-    const el = inputRef.current
-    const at = el ? el.selectionStart : text.length
-    const next = text.slice(0, at) + e + text.slice(at)
-    setText(next)
-    // on a phone the box is not given the focus when the keyboard is down: the keyboard would not come up from here, and
-    // the page would still make room as if it had (Alex, 12 Nov: "the bar goes down when I tap an emoji")
-    const touch = window.matchMedia?.('(pointer: coarse)').matches
-    const had = el && document.activeElement === el
-    requestAnimationFrame(() => { if (el) { if (!touch || had) el.focus(); el.selectionStart = el.selectionEnd = at + e.length; setCaret(at + e.length) } })
-  }
-
   const send = async () => {
     const body = prefs.autoEmoji ? swapEmoji(text.trim()) : text.trim()
     if (!body) return
@@ -2292,11 +2283,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
   // voice messages: record, then send or throw away
   const canVoice = typeof window !== 'undefined' && !!window.MediaRecorder && !!navigator.mediaDevices?.getUserMedia
-  useEffect(() => {
-    if (!rec) return
-    const id = setInterval(() => setRecSecs(Math.round((Date.now() - rec.started) / 1000)), 250)
-    return () => clearInterval(id)
-  }, [rec])
   const startVoice = async (locked = true) => {
     if (sealOn) { setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
     try {
@@ -2309,7 +2295,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       const started = Date.now()
       recRef.current = { mr, stream, chunks, type: mr.mimeType || type || 'audio/webm', started }
       mr.start(250)
-      setRecSecs(0)
       setRec({ started, stream, locked })
     } catch {
       setErr('The microphone is not allowed. Allow it in the browser to send voice messages.')
@@ -2728,7 +2713,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const enterSends = onPhone() ? !!prefs.enterSendsPhone : prefs.enterSends
     const sendKey = enterSends ? e.key === 'Enter' && !e.shiftKey : e.key === 'Enter' && (e.metaKey || e.ctrlKey)
     if (sendKey) { e.preventDefault(); send(); return }
-    if (e.key === 'Escape') { setReplyTo(null); setEmoji(false); if (editing) { setEditing(null); setText('') } }
+    if (e.key === 'Escape') { setReplyTo(null); if (editing) { setEditing(null); setText('') } }
     if (e.key === 'ArrowUp' && !text) {
       const mine = [...msgs].reverse().find((m) => canEdit(m) && !m.deleted_at)
       if (mine) { e.preventDefault(); setEditing(mine); setText(mine.body) }
@@ -3055,8 +3040,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
-                      : m.file?.live ? <LiveCard id={m.id} first={m.file.location} mine={mine} onOpen={(loc) => hands.current.setLocView(loc)} />
-                      : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
+                      : m.file?.live ? <Suspense fallback={LOC_WAIT}><LiveCard id={m.id} first={m.file.location} mine={mine} onOpen={(loc) => hands.current.setLocView(loc)} /></Suspense>
+                      : m.file?.location ? <Suspense fallback={LOC_WAIT}><LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} /></Suspense>
                       : m.file?.roartransfer ? <BundleCard t={m.file.roartransfer} />
                       : m.file?.contact ? <SharedContact c={m.file.contact} person={people[m.file.contact.id]} />
                       : m.file?.groupcall?.link ? <LinkCallCard id={m.file.groupcall.id} who={mine ? 'You' : nameOf(who)} onJoin={() => joinCall(m.file.groupcall.id, false, 'Call')} />
@@ -3464,8 +3449,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       )}
       {writer && <BigWriter text={text} setText={setText} onClose={() => { setWriter(false); requestAnimationFrame(() => inputRef.current?.focus()) }} onSend={() => { setWriter(false); send() }} onAttach={() => { setWriter(false); setAttach([]) }} />}
       {schedOpen && <ScheduleCall who={title} onClose={() => setSchedOpen(false)} onSend={(event) => sendCard(event.title, { event }, 'Call scheduled', () => setSchedOpen(false))} />}
-      {locOpen && <LocationPicker onClose={() => setLocOpen(false)} onSend={(location) => sendCard(location.name, { location }, '', () => setLocOpen(false))} />}
-      {locView && <LocationView loc={locView} onClose={() => setLocView(null)} />}
+      {locOpen && <Suspense fallback={null}><LocationPicker onClose={() => setLocOpen(false)} onSend={(location) => sendCard(location.name, { location }, '', () => setLocOpen(false))} /></Suspense>}
+      {locView && <Suspense fallback={null}><LocationView loc={locView} onClose={() => setLocView(null)} /></Suspense>}
       {pinView && (
         <Modal title={pinnedList.length === 1 ? '1 pinned message' : `${pinnedList.length} pinned messages`} onClose={() => setPinView(false)}
           foot={pinnedList.length > 1 ? <button type="button" className="btn btn-danger pins-all" onClick={unpinAll}>{I.pin}<span>Unpin all</span></button> : null}>

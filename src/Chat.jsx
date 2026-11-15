@@ -3635,10 +3635,17 @@ function FileTile({ file, onView }) {
   const [p, setP] = useState(fileDone.has(key) ? 1 : -1) // -1 not downloaded, 0..1 downloading, 1 here
   const [got, setGot] = useState(0)
   const ext = (/\.([a-z0-9]{1,5})$/i.exec(file?.name || '')?.[1] || '').toLowerCase()
-  const media = /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/)/.test(file?.type || '')
+  const media = /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/)/.test(file?.type || '') || /^(jpe?g|png|webp|gif|heic|heif|mov|mp4|m4v)$/.test(ext)
   useEffect(() => { if (!file?.thumb) return undefined; let alive = true; fileLink(thumbOf(file)).then((u) => { if (alive) setThumb(u) }); return () => { alive = false } }, [file?.thumb])
   const open = async (url) => {
     if (media && onView) { onView(url); return }
+    // on a phone the file goes to the phone's own share sheet (Save to Files, AirDrop, another app) instead of a page
+    // that shows the website's address (Alex, 15 Nov)
+    try {
+      const blob = await (await fetch(url)).blob()
+      const f = new File([blob], file?.name || 'file', { type: file?.type || blob.type || 'application/octet-stream' })
+      if (navigator.canShare?.({ files: [f] }) && window.matchMedia?.('(pointer: coarse)').matches) { await navigator.share({ files: [f] }); return }
+    } catch (e) { if (e?.name === 'AbortError') return }
     if (inApp()) { const u = await fileLink(file); if (u) window.open(u, '_blank', 'noopener'); return }
     const a = document.createElement('a'); a.href = url; a.download = file?.name || 'file'; document.body.appendChild(a); a.click(); a.remove()
   }

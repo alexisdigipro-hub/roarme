@@ -91,13 +91,21 @@ export function useNameMarks(value, setValue) {
     setValue(r.text)
     requestAnimationFrame(() => { const el = ref.current; if (!el) return; el.focus(); if (a !== b) el.setSelectionRange(r.a, r.b); sel.current = a !== b ? [r.a, r.b] : [r.text.length, r.text.length] })
   }
-  const press = (k) => (e) => { e.preventDefault(); act(k) }
+  // one press is one mark (Alex, 15 Nov, on the iPhone: the touch and the click that follows it both toggled it, so it
+  // went on and off at once): the press only keeps the focus and the chosen letters, the click does the mark; the bar
+  // hides a moment after the field lets go, unless one of its buttons is being pressed
+  const pressing = useRef(false)
+  const hideT = useRef(0)
+  const press = (e) => { e.preventDefault(); pressing.current = true; clearTimeout(hideT.current) }
   const inputProps = {
     ref,
     onSelect: keep,
     onKeyUp: keep,
-    onFocus: () => setFocus(true),
-    onBlur: (e) => { if (!e.relatedTarget?.closest?.('.name-marks')) setFocus(false) },
+    autoCorrect: 'off',
+    autoComplete: 'off',
+    spellCheck: false,
+    onFocus: () => { clearTimeout(hideT.current); setFocus(true) },
+    onBlur: () => { clearTimeout(hideT.current); hideT.current = setTimeout(() => { if (!pressing.current) setFocus(false) }, 250) },
   }
   const [a, b] = sel.current
   const chosen = a !== b ? String(value || '').slice(Math.min(a, b), Math.max(a, b)) : value
@@ -105,7 +113,7 @@ export function useNameMarks(value, setValue) {
     <span className="name-marks" role="toolbar" aria-label="Format the name">
       {MARKS.map(([k, label, face]) => (
         <button key={k} type="button" tabIndex={-1} className={`round${nameHas(chosen, k) ? ' on' : ''}`} aria-label={label} title={label}
-          onTouchStart={press(k)} onMouseDown={press(k)} onClick={(e) => { if (e.detail === 0) act(k) }}>{face}</button>
+          onPointerDown={press} onMouseDown={(e) => e.preventDefault()} onClick={() => { pressing.current = false; act(k) }}>{face}</button>
       ))}
     </span>
   ) : null

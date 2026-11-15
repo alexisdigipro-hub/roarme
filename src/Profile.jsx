@@ -17,6 +17,8 @@ const isAudio = (m) => m.kind === 'file' && isAudioFile(m.file)
 
 /* A chat's card, as in Telegram (Alex, 16 Oct): the big picture, the name, last seen, Message · Call ·
    Video · More, what we know about the person, and everything shared in the chat by kind. */
+// a group member's admin button (Alex, 15 Nov: "round icons"): a shield with a star; lit while they are an admin
+const ADMIN_I = svg(<><path d="M12 3 4.5 6v5.2c0 4.6 3.1 8.6 7.5 9.8 4.4-1.2 7.5-5.2 7.5-9.8V6z" /><path d="m12 8.3 1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.2-2.4 1.2.5-2.6-1.9-1.8 2.6-.4z" /></>, 18)
 // the Mute menu's signs (Alex, 15 Nov, from Telegram's): a bell with a z, a speaker crossed or sounding, two sliders
 const MUTE_FOR_I = svg(<><path d="M6 16V11a6 6 0 0 1 9-5.2M18 11v5l1.5 2h-15" /><path d="M10 20a2 2 0 0 0 4 0M15.5 3h4l-4 4.5h4" /></>, 22)
 const SOUND_OFF_I = svg(<><path d="M4 9.5h3l4.5-4v13L7 14.5H4z" /><path d="M3 3l18 18" /></>, 22)
@@ -234,7 +236,6 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     ['links', 'Links', links.length],
     ['music', 'Music', sets.music.length],
     ['voice', 'Voice', sets.voice.length],
-    ['gifs', 'GIFs', sets.gifs.length],
     !group && ['groups', 'Groups', common.length],
   ].filter(Boolean)
 
@@ -399,9 +400,9 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   <Avatar src={p.avatar_url} name={nameOf(p)} size={40} />
                   <span className="pf-row-text"><b>{p.id === me.id ? 'You' : nameOf(p)}{roles[p.id] === 'admin' && <span className="pf-tag pf-admin">Admin</span>}</b><small>{p.username !== '…' ? `@${p.username} · ${lastSeenText(p)}` : ''}</small></span>
                   {admin && (roles[p.id] === 'admin'
-                    ? (p.id !== me.id || Object.values(roles).filter((x) => x === 'admin').length > 1) && <button type="button" className="link" onClick={() => setAdmin(p, false)}>{p.id === me.id ? 'Step Down' : 'Remove Admin'}</button>
-                    : <button type="button" className="link" onClick={() => setAdmin(p, true)}>Make Admin</button>)}
-                  {admin && p.id !== me.id && <button type="button" className="link danger-link" onClick={() => removeMember(p)}>Remove</button>}
+                    ? (p.id !== me.id || Object.values(roles).filter((x) => x === 'admin').length > 1) && <button type="button" className="round on pf-row-adm" onClick={() => setAdmin(p, false)} aria-label={p.id === me.id ? 'Step Down' : 'Remove Admin'} title={p.id === me.id ? 'Step down as admin' : 'Remove as admin'}>{ADMIN_I}</button>
+                    : <button type="button" className="round pf-row-adm" onClick={() => setAdmin(p, true)} aria-label="Make Admin" title="Make admin">{ADMIN_I}</button>)}
+                  {admin && p.id !== me.id && <button type="button" className="round danger pf-row-del" onClick={() => removeMember(p)} aria-label={`Remove ${nameOf(p)}`} title="Remove from the group">{I.trash}</button>}
                 </div>
               ))}
             </div>

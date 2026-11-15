@@ -4862,3 +4862,52 @@ html.kb .bw { bottom: auto; height: var(--vvh, 100dvh); top: var(--vvt, 0px); pa
 .ob-field.ob-phone .phone-field { flex: 1; min-width: 0; display: flex; gap: 6px; }
 .ob-field.ob-phone .phone-cc { flex: none; width: 92px; padding: 0 6px; border: 0; background: none; }
 .ob-field.ob-phone .phone-field .input { border: 0; background: none; min-width: 0; flex: 1; }
+
+/* Inside the iPhone app the page no longer shrinks for the keyboard (main.jsx kb-native, Alex, 15 Nov): the app takes
+   the keyboard's height off its own, on the keyboard's own curve, so the writing box rises with it; under the
+   keyboard's round corners the page's own colour shows, not black */
+html.in-shell { background: var(--kb-bg, var(--bg)); }
+html.in-shell #root { height: calc(100% - var(--kbh, 0px)); overflow-y: auto; transition: height .28s cubic-bezier(.2, .8, .2, 1); }
+
+/* Friends From Your Contacts (phone.jsx PhoneFriends; Alex, 15 Nov): full size from the start, rows waiting while it
+   looks, the list fading in, and light rows (no glass, no grain) since there can be hundreds */
+.modal:has(.pfr) { height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); max-height: 820px; }
+.pfr { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.pfr-wait { display: flex; flex-direction: column; gap: 14px; }
+.pfr-ghost { display: flex; align-items: center; gap: 12px; padding: 4px 6px; }
+.pfr-ghost i { width: 40px; height: 40px; border-radius: 50%; background: rgba(127, 127, 140, .16); }
+.pfr-ghost b { flex: 1; height: 14px; max-width: 60%; border-radius: 7px; background: rgba(127, 127, 140, .14); }
+@media (prefers-reduced-motion: no-preference) { .pfr-ghost { animation: pfr-pulse 1.2s ease-in-out infinite alternate; } .pfr-ghost:nth-child(odd) { animation-delay: .3s; } }
+@keyframes pfr-pulse { from { opacity: .55; } to { opacity: 1; } }
+.pfr-in { animation: pfr-in .24s ease-out both; }
+@keyframes pfr-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.pfr .phone-person { content-visibility: auto; contain-intrinsic-size: auto 60px; }
+.pfr .phone-person .av { background-image: none !important; }
+.pfr .phone-person .av::after, .pfr .phone-person .av::before { display: none !important; }
+.modal:has(.pfr) .modal-body { overflow: hidden; }
+
+/* Never a word with an underline as a button (Alex, 5 Nov, said again 15 Nov: "I don't want buttons with little words
+   like these, they are 1990"): every .link button is a flat matte glass pill, the red ones red; the group's members get
+   a pill (Make Admin) and a round glass bin (Remove) */
+html button.link, html a.link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px !important;
+  background: var(--glass, rgba(127, 127, 140, .12)) !important; border: 1px solid var(--edge, rgba(127, 127, 140, .2)) !important; color: var(--text) !important;
+  font-size: 13.5px; font-weight: 600; text-decoration: none !important; white-space: nowrap; }
+html button.link:active, html a.link:active { transform: scale(.96); }
+html button.link.danger-link { color: var(--danger, #e5484d) !important; }
+.pf-row .pf-row-btn { flex: none; height: 32px; padding: 0 12px; font-size: 12.5px; margin-left: auto; }
+.pf-row .pf-row-del { flex: none; width: 34px; height: 34px; min-width: 34px; }
+.pf-row .pf-row-del svg { width: 16px; height: 16px; }
+.people .pf-row { flex-wrap: nowrap; }
+.pf-row .pf-row-adm { flex: none; width: 34px; height: 34px; min-width: 34px; margin-left: auto; }
+.pf-row .pf-row-adm svg { width: 17px; height: 17px; }
+.pf-row .pf-row-adm.on { color: var(--halo, var(--accent)); }
+.pf-row .pf-row-adm + .pf-row-del { margin-left: 6px; }
+/* while a menu of the profile is open (More, Mute, Video Chat), the held tabs and the folded bar go under it and its veil
+   (Alex, 15 Nov: the tabs showed through the menu) */
+.pf:has(.pf-menu, .pf-mute-menu) :is(.pf-tabs, .pf-dock) { z-index: 1; }
+.pf:has(.pf-menu, .pf-mute-menu) .pf-head { position: relative; z-index: 50; }
+/* a profile never slides sideways (Alex, 15 Nov: "it spills over"): nothing in it may be wider than the window */
+.modal:has(.pf) .modal-body, .pf { overflow-x: hidden; }
+.pf-row { min-width: 0; }
+.pf-row .pf-row-text { min-width: 0; flex: 1; }
+.pf-row .pf-row-text small, .pf-row .pf-row-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

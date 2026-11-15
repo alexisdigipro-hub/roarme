@@ -110,14 +110,23 @@ export async function friendsFromContacts() {
   const { contacts = [] } = await P.getContacts({ projection: { name: true, phones: true, emails: true } })
   const byHash = new Map()
   const people = []
+  const keys = [] // [key, entry]
   for (const c of contacts) {
     const nums = [...new Set((c.phones || []).map((p) => contactDigits(p.number, cc)).filter((d) => d.length >= 8 && d.length <= 15))]
     const mails = [...new Set((c.emails || []).map((e) => String(e.address || '').trim().toLowerCase()).filter((e) => e.includes('@')))]
     if (!nums.length && !mails.length) continue
     const name = c.name?.display || [c.name?.given, c.name?.family].filter(Boolean).join(' ') || (nums[0] ? `+${nums[0]}` : mails[0])
     const entry = { name, number: nums[0] ? `+${nums[0]}` : '' }
-    for (const k of [...nums, ...mails]) byHash.set(await sha256hex(k), entry)
+    for (const k of [...nums, ...mails]) keys.push([k, entry])
     people.push(entry)
+  }
+  // the hashes 200 at a time, side by side, with a breath between so the screen keeps moving (Alex, 15 Nov: one by
+  // one took seconds and the window stuttered)
+  for (let i = 0; i < keys.length; i += 200) {
+    const part = keys.slice(i, i + 200)
+    const hs = await Promise.all(part.map(([k]) => sha256hex(k)))
+    hs.forEach((h, j) => byHash.set(h, part[j][1]))
+    await new Promise((ok) => setTimeout(ok, 0))
   }
   const hashes = [...byHash.keys()]
   const found = new Map()
@@ -136,24 +145,40 @@ export async function friendsFromContacts() {
 
 const INVITE_TEXT = 'Join me on RoarMe: https://alexisdigipro-hub.github.io/roarme/'
 
-/* Contacts > Find Friends: who of your contacts is on RoarMe (Message), and the rest to invite by SMS */
+/* Contacts > Find Friends: who of your contacts is on RoarMe (Message), and the rest to invite by SMS.
+   Light and steady (Alex, 15 Nov: a small card first, then a big one, and it stuttered): the window opens at its full
+   size with rows waiting in it, the answer is kept for ten minutes so it opens at once the next time, and the invite
+   list draws 40 rows at a time as it is scrolled */
+let lastFriends = null // { at, r }
 export function PhoneFriends({ onClose, onOpen }) {
-  const [state, setState] = useState({ busy: true, err: '', found: [], invite: [] })
+  const kept = lastFriends && Date.now() - lastFriends.at < 10 * 60e3 ? lastFriends.r : null
+  const [state, setState] = useState(kept ? { busy: false, err: '', ...kept } : { busy: true, err: '', found: [], invite: [] })
   const [q, setQ] = useState('')
+  const [shown, setShown] = useState(40)
   useEffect(() => {
-    friendsFromContacts().then((r) => setState({ busy: false, err: '', ...r })).catch((e) => setState({ busy: false, err: errText(e), found: [], invite: [] }))
-  }, [])
+    if (kept) return
+    friendsFromContacts().then((r) => { lastFriends = { at: Date.now(), r }; setState({ busy: false, err: '', ...r }) }).catch((e) => setState({ busy: false, err: errText(e), found: [], invite: [] }))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setShown(40) }, [q])
+  const more = (e) => { const el = e.currentTarget; if (el.scrollTop + el.clientHeight > el.scrollHeight - 600) setShown((n) => n + 40) }
   const message = async (p) => {
     const { data, error } = await supabase.rpc('roar_open_direct', { other: p.id })
     if (error) setState((s) => ({ ...s, err: errText(error) })); else onOpen(data)
   }
   const has = (s) => !q.trim() || String(s).toLowerCase().includes(q.trim().toLowerCase())
+  const invites = state.invite.filter((p) => has(`${p.name} ${p.number}`))
   return (
     <Modal title="Friends From Your Contacts" onClose={onClose}>
-      {state.busy && <p className="muted">Looking through your contacts…</p>}
+      <div className="pfr" onScroll={more}>
+      {state.busy && (
+        <div className="pfr-wait" aria-label="Looking through your contacts">
+          <p className="muted">Looking through your contacts…</p>
+          {Array.from({ length: 8 }, (_, i) => <span key={i} className="pfr-ghost"><i /><b /></span>)}
+        </div>
+      )}
       {state.err && <p className="auth-err">{state.err}</p>}
       {!state.busy && !state.err && (
-        <>
+        <div className="pfr-in">
           <label className="search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" /></label>
           <p className="phone-sec">{state.found.length ? 'On RoarMe' : 'None of your contacts is on RoarMe yet'}</p>
           <div className="people">
@@ -167,7 +192,7 @@ export function PhoneFriends({ onClose, onOpen }) {
           </div>
           {state.invite.length > 0 && <p className="phone-sec">Invite to RoarMe</p>}
           <div className="people">
-            {state.invite.filter((p) => has(`${p.name} ${p.number}`)).slice(0, 300).map((p) => (
+            {invites.slice(0, shown).map((p) => (
               <div key={p.number} className="person phone-person">
                 <Avatar name={p.name} size={40} />
                 <span className="person-text"><b>{p.name}</b><small data-raw="">{p.number}</small></span>
@@ -175,8 +200,9 @@ export function PhoneFriends({ onClose, onOpen }) {
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
+      </div>
     </Modal>
   )
 }

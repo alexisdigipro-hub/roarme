@@ -326,8 +326,17 @@ function Chats({ p }) {
   return (
     <>
       <Box title="Typing">
-        <Check on={p.enterSends} onClick={() => setPrefs({ enterSends: true })}>Send with Enter<small>{onPhone() ? 'The send button works too' : 'Shift + Enter for a new line'}</small></Check>
-        <Check on={!p.enterSends} onClick={() => setPrefs({ enterSends: false })}>{onPhone() ? 'Send with the Send Button' : 'Send with ⌘ / Ctrl + Enter'}<small>Enter for a new line</small></Check>
+        {onPhone() ? (
+          <>
+            <Check on={!p.enterSendsPhone} onClick={() => setPrefs({ enterSendsPhone: false })}>Send with the Send Button<small>Enter for a new line</small></Check>
+            <Check on={!!p.enterSendsPhone} onClick={() => setPrefs({ enterSendsPhone: true })}>Send with Enter<small>The send button works too</small></Check>
+          </>
+        ) : (
+          <>
+            <Check on={p.enterSends} onClick={() => setPrefs({ enterSends: true })}>Send with Enter<small>Shift + Enter for a new line</small></Check>
+            <Check on={!p.enterSends} onClick={() => setPrefs({ enterSends: false })}>Send with ⌘ / Ctrl + Enter<small>Enter for a new line</small></Check>
+          </>
+        )}
         <Switch on={p.spell} set={(v) => setPrefs({ spell: v })}>Check Spelling While Typing</Switch>
         <Switch on={p.autoEmoji} set={(v) => setPrefs({ autoEmoji: v })} hint=":) becomes 🙂 and <3 becomes ❤️ when you send">Replace Emoji Automatically</Switch>
         <Switch on={p.copyFormat !== false} set={(v) => setPrefs({ copyFormat: v })} hint="**bold**, _italic_, ~~strike~~, `code`, ||spoiler|| stay when you copy">Copy Text Formatting</Switch>

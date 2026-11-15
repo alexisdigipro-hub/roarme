@@ -82,6 +82,33 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
     const K = C.Plugins?.Keyboard
     const off = { isVisible: false }
     try { if (K?.setAccessoryBarVisible) K.setAccessoryBarVisible(off).catch(() => {}); else C.nativePromise?.('Keyboard', 'setAccessoryBarVisible', off)?.catch?.(() => {}) } catch { /* an older shell */ }
+    // the keyboard rides up with the writing box, and the page stays whole behind it (Alex, 15 Nov: the box came up
+    // late, and black showed at the keyboard's round corners, where the shrunk page left the iPhone's own black):
+    // the shell no longer shrinks the page (mobile/capacitor.config.json Keyboard resize none); as the keyboard starts
+    // to rise, iOS says how tall it will be, and the app takes that much off its own height (#root, --kbh) on the
+    // keyboard's own curve, so both move together and the page's colour stays under the keyboard's corners
+    const root = document.documentElement
+    const kbOn = (info) => {
+      const h = Math.round(info?.keyboardHeight || 0)
+      if (!h) return
+      root.style.setProperty('--kbh', `${h}px`)
+      root.style.setProperty('--vvh', `${window.innerHeight - h}px`)
+      root.style.setProperty('--vvt', '0px')
+      root.classList.add('kb', 'kb-native')
+      if (window.scrollY) window.scrollTo(0, 0)
+    }
+    const kbOff = () => {
+      root.style.setProperty('--kbh', '0px')
+      root.style.setProperty('--vvh', `${window.innerHeight}px`)
+      root.classList.remove('kb-native')
+      setTimeout(down, 60)
+    }
+    const listen = (ev, fn) => { try { if (K?.addListener) K.addListener(ev, fn); else C.addListener?.('Keyboard', ev, fn) } catch { /* an older shell */ } }
+    listen('keyboardWillShow', kbOn)
+    listen('keyboardWillHide', kbOff)
+    // iOS still tries to scroll a focused field into sight: the app does that itself, so the page stays put
+    window.addEventListener('scroll', () => { if (root.classList.contains('kb-native') && window.scrollY) window.scrollTo(0, 0) }, { passive: true })
+    root.classList.add('in-shell')
   }
   // a field taken off the page while it had the keyboard (closing a chat) never says focusout: the keyboard going
   // down still shrinks or grows the visible area, and that is checked too (Alex, 21 Oct: the bar at the foot hung low)
@@ -90,7 +117,7 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
   // "when you write you see nothing")
   const vv = window.visualViewport
   if (vv) {
-    const fit = () => { const r = document.documentElement.style; r.setProperty('--vvh', `${Math.round(vv.height)}px`); r.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`) }
+    const fit = () => { if (document.documentElement.classList.contains('kb-native')) return; const r = document.documentElement.style; r.setProperty('--vvh', `${Math.round(vv.height)}px`); r.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`) }
     vv.addEventListener('resize', fit)
     vv.addEventListener('scroll', fit)
     fit()

@@ -4942,7 +4942,6 @@ html:root:root:root:root:root .bubble > .rx.rx-in { float: left; display: inline
 html:root:root:root:root:root .msg.mine .bubble > .rx.rx-in { float: right; margin: 4px -2px -2px 8px !important; }
 html:root:root:root:root .bubble.loc-b > .rx.rx-in { margin-left: 6px !important; }
 html:root:root:root:root .msg.mine .bubble.loc-b > .rx.rx-in { margin-right: 4px !important; }
-.bubble::after { content: ''; display: block; clear: both; }
 
 /* one's own messages with a soft fall of their colour, not flat (Alex, 15 Nov: "a gradient of the accent"): lighter at
    the top, the colour itself at the foot, the fine grain kept */

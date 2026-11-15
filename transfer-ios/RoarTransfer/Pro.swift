@@ -81,7 +81,7 @@ extension API {
     }
 
     static func saveMailPrefs(_ m: MailPrefs) async throws {
-        guard let token = await Session.shared.freshToken(), let uid = Session.shared.userId else { return }
+        guard let token = await Session.shared.freshToken(), let uid = await Session.shared.userId else { return }
         var r = request(Config.base.appendingPathComponent("rest/v1/roar_transfer_mail_prefs"), method: "POST",
                         body: ["user_id": uid, "downloads": m.downloads ?? true, "received": m.received ?? true], auth: token)
         r.setValue("resolution=merge-duplicates,return=minimal", forHTTPHeaderField: "Prefer")
@@ -97,7 +97,7 @@ extension API {
 
     // a picture for the brand, into roartransfer-brand/<id>/, its public address back
     static func uploadBrandPicture(_ data: Data, type: String) async throws -> String {
-        guard let token = await Session.shared.freshToken(), let uid = Session.shared.userId else { throw APIError(message: "Sign in first.") }
+        guard let token = await Session.shared.freshToken(), let uid = await Session.shared.userId else { throw APIError(message: "Sign in first.") }
         let ext = type == "image/png" ? "png" : type == "image/webp" ? "webp" : type == "image/gif" ? "gif" : "jpg"
         let path = "\(uid)/\(Int(Date().timeIntervalSince1970 * 1000))-\(UUID().uuidString.prefix(6).lowercased()).\(ext)"
         var r = URLRequest(url: Config.base.appendingPathComponent("storage/v1/object/roartransfer-brand/" + path))

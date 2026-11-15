@@ -70,6 +70,18 @@ final class Session: ObservableObject {
         keychainDelete()
     }
 
+    // Delete account (App Store 5.1.1(v), 15 Nov 2026): the same RoarMe account as the website, deleted on the server by
+    // roar_delete_me (its transfers, links, brand and Receive files page go with it), then signed out here
+    func deleteAccount() async throws {
+        guard let t = await freshToken() else { throw APIError(message: "Sign in again first.") }
+        var r = API.request(Config.base.appendingPathComponent("rest/v1/rpc/roar_delete_me"), method: "POST", body: [String: Any](), auth: t)
+        r.timeoutInterval = 20
+        let (_, resp) = try await URLSession.shared.data(for: r)
+        guard let code = (resp as? HTTPURLResponse)?.statusCode, (200..<300).contains(code) else { throw APIError(message: "Could not delete the account. Try again.") }
+        stored = nil
+        keychainDelete()
+    }
+
     // a token good for at least a minute more, or nil when signed out
     func freshToken() async -> String? {
         guard let s = stored else { return nil }

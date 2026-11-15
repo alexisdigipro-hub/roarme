@@ -33,6 +33,9 @@ Deno.serve(async (req) => {
   try { b = await req.json() } catch { return json({ error: 'bad request' }, 400) }
   if (!/^[A-Za-z0-9]{6,32}$/.test(b.bundle || '')) return json({ error: 'bad request' }, 400)
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  // only roar_transfer_hit calls it (security check, 15 Nov 2026): the Vault secret in x-roar-cron
+  const { data: ok } = await sb.rpc('roar_cron_ok', { s: req.headers.get('x-roar-cron') || '' })
+  if (ok !== true) return json({ error: 'forbidden' }, 403)
   const { data: x } = await sb.from('roar_transfer_bundles').select('token, tokens, title, created_by, notify, notified_at').eq('token', b.bundle).maybeSingle()
   if (!x || !x.notify || !x.notified_at || Date.now() - new Date(x.notified_at).getTime() > 120000) return json({ skipped: true })
   // turned off in My transfers > Emails from RoarTransfer (Alex, 3 Nov; supabase/transfer-mail-prefs.sql)

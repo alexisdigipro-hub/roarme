@@ -3,8 +3,12 @@
 // already older than 3 days (the list comes from roar_expired_transfers()), so it needs no login.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
-Deno.serve(async () => {
+// Only pg_cron calls it (security check, 15 Nov 2026): the header x-roar-cron must hold the secret kept in Vault
+// (supabase/transfer-cron-secret.sql), or nothing happens.
+Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  const { data: ok } = await sb.rpc('roar_cron_ok', { s: req.headers.get('x-roar-cron') || '' })
+  if (ok !== true) return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } })
   const { data, error } = await sb.rpc('roar_expired_transfers')
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   const names = ((data || []) as unknown[]).map((x) => (typeof x === 'string' ? x : (x as Record<string, string>)?.roar_expired_transfers)).filter(Boolean) as string[]

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { lang, locale } from './i18n.js'
 import { formatText, plainText, toggleMark } from './format.jsx'
 import { I, Modal } from './ui.jsx'
@@ -274,15 +275,16 @@ export function LocationPicker({ onSend, onClose, inline = false, onLive }) {
             <button type="button" className="loc-btn main" disabled={busy} onClick={send}>{I.place}<span>Send Location</span></button>
             {onLive && <button type="button" className="loc-btn live" disabled={busy} onClick={() => setLiveAsk(true)}>{LIVE_I}<span>Live Location</span></button>}
           </div>
-          {liveAsk && (
-            <>
-              <div className="loc-veil" onClick={() => setLiveAsk(false)} />
-              <div className="menu loc-live-menu" role="menu">
+          {/* over everything, in the middle of the screen (Alex, 15 Nov: inside the sheet it hid under the tab bar) */}
+          {liveAsk && createPortal(
+            <div className="loc-live-back" onClick={() => setLiveAsk(false)}>
+              <div className="menu loc-live-menu" role="menu" onClick={(e) => e.stopPropagation()}>
                 <p>Choose for how long people in this chat will see your location as it changes. It moves while RoarMe is open on this phone.</p>
                 <hr />
                 {LIVE_FOR.map(([h, label]) => <button key={label} type="button" disabled={busy} onClick={() => goLive(h)}><span>{label}</span></button>)}
               </div>
-            </>
+            </div>,
+            document.body,
           )}
         </div>
       </div>

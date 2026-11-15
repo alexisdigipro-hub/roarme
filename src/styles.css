@@ -4970,3 +4970,11 @@ html[data-skin='halo'] .pf-head .pf-pic-cam { box-shadow: 0 4px 12px rgba(0, 0, 
 .locc.live-c .live-ping { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #34c759; box-shadow: 0 0 0 0 rgba(52, 199, 89, .6); animation: live-ping 1.8s ease-out infinite; pointer-events: none; }
 @keyframes live-ping { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, .55); } 100% { box-shadow: 0 0 0 18px rgba(52, 199, 89, 0); } }
 .locc.live-c .live-stop { align-self: stretch; margin: 6px 6px 4px; height: 36px; border-radius: 999px; border: 0; background: rgba(255, 59, 48, .14); color: #ff3b30; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+/* Send Location in the theme's colour with its words showing (Alex, 15 Nov: the words were white on white), and the
+   live menu over everything in the middle of the screen */
+html:root:root:root:root .loc-foot .loc-btn.main { background: var(--halo, var(--accent)) !important; color: var(--halo-ink, #fff) !important; border-color: transparent !important; }
+html:root:root:root:root .loc-foot .loc-btn.main svg { color: inherit !important; }
+html:root:root:root:root .loc-foot .loc-btn.live { color: var(--text) !important; }
+.loc-live-back { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: flex-end; justify-content: center; padding: 0 16px calc(170px + env(safe-area-inset-bottom, 0px)); background: rgba(12, 12, 20, .28); }
+html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relative !important; inset: auto !important; transform: none !important; width: min(330px, 100%) !important; margin: 0 !important; display: flex; flex-direction: column; }
+.loc-live-menu p { white-space: normal; }

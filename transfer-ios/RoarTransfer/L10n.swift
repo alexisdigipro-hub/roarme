@@ -218,4 +218,5 @@ let EL: [String: String] = [
     "Send by email": "Αποστολή με email",
     "Sent by email to": "Στάλθηκε με email σε",
     "Could not send the email. Try again.": "Δεν στάλθηκε το email. Δοκίμασε ξανά.",
+    "Sent to": "Στάλθηκε σε",
 ]

@@ -4948,3 +4948,25 @@ html[data-skin='halo'] .pf-head .pf-pic-cam { box-shadow: 0 4px 12px rgba(0, 0, 
 .file.ft .file-text small { font-size: 13px; opacity: .75; color: inherit; }
 .file.ft:active .ft-box { transform: scale(.96); transition: transform .07s; }
 .attach-raw { display: block; margin-top: 6px; font-size: 12.5px; }
+
+/* the Location tab's foot (Alex, 15 Nov): the place in a small line, then Send Location and Live Location side by side,
+   the same size; Live Location asks for how long in a menu over them */
+.loc-foot { position: relative; flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px)); background: var(--float, var(--panel)); }
+.loc-inline .loc-foot { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.loc-where { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+.loc-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.loc-btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 50px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--lg-rim, rgba(255, 255, 255, .5));
+  background: var(--lg, rgba(255, 255, 255, .7)); box-shadow: var(--lg-shadow, 0 6px 18px rgba(0, 0, 0, .12)); font: inherit; font-size: 15px; font-weight: 600; color: var(--text); cursor: pointer; transition: transform .07s; min-width: 0; }
+.loc-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loc-btn svg { flex: none; width: 20px; height: 20px; }
+.loc-btn.main { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.loc-btn.live svg { color: #34c759; }
+.loc-btn:active:not(:disabled) { transform: scale(.96); }
+.loc-btn:disabled { opacity: .55; }
+.loc-veil { position: fixed; inset: 0; z-index: 20; }
+.loc-foot .menu.loc-live-menu { position: absolute; left: 50%; bottom: calc(100% - 60px); transform: translateX(-50%); z-index: 21; width: min(330px, 92vw); }
+.loc-live-menu p { margin: 8px 12px 4px; font-size: 14px; line-height: 1.35; color: var(--text); }
+/* a live location in a message: a green pulse on the map while it lasts, Stop Sharing for its sender */
+.locc.live-c .live-ping { position: absolute; left: 50%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #34c759; box-shadow: 0 0 0 0 rgba(52, 199, 89, .6); animation: live-ping 1.8s ease-out infinite; pointer-events: none; }
+@keyframes live-ping { 0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, .55); } 100% { box-shadow: 0 0 0 18px rgba(52, 199, 89, 0); } }
+.locc.live-c .live-stop { align-self: stretch; margin: 6px 6px 4px; height: 36px; border-radius: 999px; border: 0; background: rgba(255, 59, 48, .14); color: #ff3b30; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }

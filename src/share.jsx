@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { lang, locale } from './i18n.js'
 import { formatText, plainText, toggleMark } from './format.jsx'
 import { I, Modal } from './ui.jsx'
+import { liveOn, stopLive, useLive } from './live.js'
 
 /* Location and Article, from the send window (Alex, 17 Oct, after Telegram).
 
@@ -160,7 +161,8 @@ const lastPlace = () => { try { const v = JSON.parse(localStorage.getItem(LAST) 
 const Pin = ({ lifted = false, small = false }) => <i className={`map-pin${lifted ? ' up' : ''}${small ? ' small' : ''}`}>{I.place}</i>
 const Me = () => <i className="map-me" />
 
-export function LocationPicker({ onSend, onClose, inline = false }) {
+export function LocationPicker({ onSend, onClose, inline = false, onLive }) {
+  const [liveAsk, setLiveAsk] = useState(false)
   const first = useRef(lastPlace())
   const [at, setAt] = useState(first.current ? { lat: first.current.lat, lng: first.current.lng } : HOME)
   const [z, setZ] = useState(first.current?.z || 12)
@@ -220,6 +222,17 @@ export function LocationPicker({ onSend, onClose, inline = false }) {
     await onSend(loc)
     setBusy(false)
   }
+  // live: always the phone's own place, never the pin's
+  const goLive = (hours) => {
+    setLiveAsk(false)
+    if (!navigator.geolocation) { setNote('Your location is not shared here.'); return }
+    setBusy(true); setNote('Finding you…')
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      setNote('')
+      await onLive({ lat: +pos.coords.latitude.toFixed(6), lng: +pos.coords.longitude.toFixed(6), acc: pos.coords.accuracy || null, hours })
+      setBusy(false)
+    }, () => { setBusy(false); setNote('Allow RoarMe to use your location to share it live.') }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 })
+  }
   // inline: the same map as a tab of the attach sheet, no window and no close of its own (Alex, 14 Nov)
   const body = (
       <div className={`loc${inline ? ' loc-inline' : ''}`}>
@@ -253,10 +266,25 @@ export function LocationPicker({ onSend, onClose, inline = false }) {
           </div>
           {note && <span className="loc-note">{note}</span>}
         </div>
-        <button type="button" className="loc-send" disabled={busy} onClick={send}>
-          <i>{busy ? I.send : I.place}</i>
-          <span><b>{isMine ? (inline ? 'Send My Current Location' : 'Send My Location') : 'Send This Location'}</b><small>{isMine && acc ? `Accurate to ${Math.max(1, Math.round(acc))} metres` : looking ? 'Finding the address…' : [place.name, place.addr].filter(Boolean).join(' · ') || coords(at)}</small></span>
-        </button>
+        {/* two buttons side by side, the same size (Alex, 15 Nov): Send Location sends the pin's place; Live Location
+            asks for how long, then shares the phone's own place as it moves */}
+        <div className="loc-foot">
+          <small className="loc-where">{isMine && acc ? `Your location · accurate to ${Math.max(1, Math.round(acc))} metres` : looking ? 'Finding the address…' : [place.name, place.addr].filter(Boolean).join(' · ') || coords(at)}</small>
+          <div className="loc-acts">
+            <button type="button" className="loc-btn main" disabled={busy} onClick={send}>{I.place}<span>Send Location</span></button>
+            {onLive && <button type="button" className="loc-btn live" disabled={busy} onClick={() => setLiveAsk(true)}>{LIVE_I}<span>Live Location</span></button>}
+          </div>
+          {liveAsk && (
+            <>
+              <div className="loc-veil" onClick={() => setLiveAsk(false)} />
+              <div className="menu loc-live-menu" role="menu">
+                <p>Choose for how long people in this chat will see your location as it changes. It moves while RoarMe is open on this phone.</p>
+                <hr />
+                {LIVE_FOR.map(([h, label]) => <button key={label} type="button" disabled={busy} onClick={() => goLive(h)}><span>{label}</span></button>)}
+              </div>
+            </>
+          )}
+        </div>
       </div>
   )
   return inline ? body : <Modal title="Location" onClose={onClose}>{body}</Modal>
@@ -266,6 +294,26 @@ const mapsLinks = (l) => ({
   google: `https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}`,
   apple: `https://maps.apple.com/?ll=${l.lat},${l.lng}&q=${encodeURIComponent(l.name || 'Location')}`,
 })
+
+const LIVE_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" /><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.4 5.4a9.3 9.3 0 0 0 0 13.2M18.6 5.4a9.3 9.3 0 0 1 0 13.2" /></svg>
+const LIVE_FOR = [[0.25, 'For 15 minutes'], [1, 'For 1 hour'], [8, 'For 8 hours'], [null, 'Until I turn it off']]
+const agoText = (at) => { const s = Math.max(0, (Date.now() - new Date(at).getTime()) / 1000); return s < 60 ? 'updated just now' : s < 3600 ? `updated ${Math.floor(s / 60)} min ago` : `updated ${Math.floor(s / 3600)} h ago` }
+
+/* a live location in the chat (Alex, 15 Nov): the map follows the sender while it lasts; its sender can stop it */
+export function LiveCard({ id, first, mine, onOpen }) {
+  const row = useLive(id)
+  const on = liveOn(row)
+  const loc = row ? { lat: row.lat, lng: row.lng } : first
+  const until = row?.until ? new Date(row.until).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) : ''
+  const sub = !row ? 'Live location' : on ? `${agoText(row.updated_at)} · ${until ? `until ${until}` : mine ? 'until you stop it' : 'until stopped'}` : 'Ended'
+  return (
+    <span className={`locc live-c${on ? ' on' : ''}`} role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); onOpen({ ...loc, z: 16, name: 'Live Location', addr: sub }) }}>
+      <span className="locc-map"><MapView at={loc} zoom={16} interactive={false} /><Pin small />{on && <i className="live-ping" />}</span>
+      <span className="locc-text"><b>Live Location</b><small>{sub}</small></span>
+      {mine && on && <button type="button" className="live-stop" onClick={(e) => { e.stopPropagation(); stopLive(id) }}>Stop Sharing</button>}
+    </span>
+  )
+}
 
 /* the place in the chat: a small map with the pin, the name under it */
 export function LocationCard({ loc, onOpen }) {

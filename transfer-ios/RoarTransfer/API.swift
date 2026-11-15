@@ -144,9 +144,12 @@ enum API {
 
     static func link(_ t: String, password: String = "") async throws -> LinkInfo {
         var c = URLComponents(url: Config.getFn, resolvingAgainstBaseURL: false)!
-        c.queryItems = [URLQueryItem(name: "t", value: t)] + (password.isEmpty ? [] : [URLQueryItem(name: "p", value: password)])
+        c.queryItems = [URLQueryItem(name: "t", value: t)]
         let token = await Session.shared.freshToken()
-        let (d, r) = try await URLSession.shared.data(for: request(c.url!, auth: token))
+        var rq = request(c.url!, auth: token)
+        // the password in a header, never in the address (security check, 15 Nov 2026)
+        if !password.isEmpty { rq.setValue(password, forHTTPHeaderField: "x-rt-password") }
+        let (d, r) = try await URLSession.shared.data(for: rq)
         let info = (try? JSONDecoder().decode(LinkInfo.self, from: d)) ?? LinkInfo(error: "Error \((r as? HTTPURLResponse)?.statusCode ?? 0)")
         return info
     }

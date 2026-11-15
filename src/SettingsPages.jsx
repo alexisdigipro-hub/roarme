@@ -11,7 +11,7 @@ import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { MyTransfers } from './transfer.jsx'
 import { useNameMarks } from './fancy.jsx'
-import { PhoneField, showPhone, toE164, usePhoneAuth } from './phone.jsx'
+import { PhoneField, showPhone, smsErr, toE164, usePhoneAuth } from './phone.jsx'
 import { badgeSupported, inApp, isIOS, isStandalone, onPhone, pushIsOn, pushOff, pushOn, pushSupported, pushTest, syncPushSound } from './push.js'
 import { InstallGuide, appVersion, fetchLatest, startDownload, thisComputer, useAppUpdate } from './update.jsx'
 
@@ -639,12 +639,12 @@ function PhoneNumber({ toast }) {
     if (p.replace(/\D/g, '').length < 8) { up({ err: 'Type your mobile number.' }); return }
     up({ busy: true, err: '' })
     const { error } = await supabase.auth.updateUser({ phone: p })
-    up(error ? { busy: false, err: errText(error) } : { busy: false, sent: p, code: '' })
+    up(error ? { busy: false, err: smsErr(error) } : { busy: false, sent: p, code: '' })
   }
   const verify = async () => {
     up({ busy: true, err: '' })
     const { error } = await supabase.auth.verifyOtp({ phone: edit.sent, token: edit.code, type: 'phone_change' })
-    if (error) { up({ busy: false, err: errText(error), code: '' }); return }
+    if (error) { up({ busy: false, err: smsErr(error), code: '' }); return }
     setEdit({ open: false, cc: '30', num: '', sent: '', code: '', busy: false, err: '' })
     toast('Phone number saved')
     load()

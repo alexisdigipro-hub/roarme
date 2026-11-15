@@ -49,9 +49,9 @@ struct MineView: View {
     private var shown: [MyTransfer] {
         let byFilter = filter == 1 ? all.filter { $0.live } : filter == 2 ? all.filter { !$0.live } : all
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-        return q.isEmpty ? byFilter : byFilter.filter { ($0.name ?? "").lowercased().contains(q) }
+        return q.isEmpty ? byFilter : byFilter.filter { m in ([m.name] + (m.files ?? []).map { $0.name }).contains { ($0 ?? "").lowercased().contains(q) } }
     }
-    private func pickable(_ m: MyTransfer) -> Bool { m.live && m.source == "link" && (m.path ?? "").range(of: "^(free|week|pro)/", options: .regularExpression) != nil }
+    private func pickable(_ m: MyTransfer) -> Bool { m.live && m.source == "link" && m.paths.contains { $0.range(of: "^(free|week|pro)/", options: .regularExpression) != nil } }
     private var facts: String {
         guard !all.isEmpty else { return "" }
         let size = all.reduce(Int64(0)) { $0 + Int64($1.size ?? 0) }
@@ -173,14 +173,14 @@ struct MineView: View {
     }
 
     private func load() async {
-        do { let l = try await API.myTransfers(); withAnimation(Glass.spring) { list = l }; listErr = "" }
+        do { let l = try await API.myTransfersByUpload(); withAnimation(Glass.spring) { list = l }; listErr = "" }
         catch { listErr = error.localizedDescription; if list == nil { list = [] } }
         await pro.load()
     }
 
     private func deleteMany() {
         deleting = true
-        let paths = (list ?? []).filter { picked.contains($0.id) }.compactMap { $0.path }
+        let paths = (list ?? []).filter { picked.contains($0.id) }.flatMap { $0.paths }.filter { !$0.hasPrefix("bundle:") }
         Task {
             for p in paths { _ = try? await API.bridge(["action": "delete", "key": p], as: AnyCodable.self) }
             deleting = false; picked = []; withAnimation(Glass.spring) { picking = false }
@@ -240,7 +240,23 @@ struct TransferWindow: View {
                 Button { share = true } label: { Label(t("Share"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity) }.buttonStyle(PillStyle())
             }
 
-            if isPro && m.token != nil && m.source == "link" { proPart }
+            // an upload of many: its files, under the one link
+            if let fs = m.files, fs.count > 1 {
+                VStack(spacing: 0) {
+                    ForEach(Array(fs.enumerated()), id: \.offset) { i, f in
+                        if i > 0 { Divider().overlay(Theme.edge) }
+                        HStack(spacing: 10) {
+                            Image(systemName: kindIcon(f.name ?? "", type: f.type)).font(.system(size: 14)).foregroundStyle(Theme.redHi).frame(width: 20)
+                            Text(f.name ?? "file").font(.system(size: 14)).foregroundStyle(Theme.text).lineLimit(1)
+                            Spacer()
+                            Text(sizeText(Int64(f.size ?? 0))).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.dim)
+                        }.padding(.horizontal, 12).padding(.vertical, 9)
+                    }
+                }
+                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.black.opacity(0.22)))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Theme.edge))
+            }
+            if isPro && m.proToken != nil && m.source == "link" { proPart }
 
             if m.live && m.source == "link" {
                 Button { asking = true } label: { Label(t("Delete"), systemImage: "trash").frame(maxWidth: .infinity) }.buttonStyle(PillStyle(danger: true)).padding(.top, 6)
@@ -321,7 +337,7 @@ struct TransferWindow: View {
     }
 
     private func loadDetails() async {
-        guard isPro, let tok = m.token, m.source == "link" else { return }
+        guard isPro, let tok = m.proToken, m.source == "link" else { return }
         if let d = try? await API.pro(["action": "link", "token": tok], as: LinkDetails.self) {
             withAnimation(Glass.spring) { det = d }
             until = Dates.parse(d.expires) ?? Date()
@@ -330,7 +346,7 @@ struct TransferWindow: View {
     }
 
     private func save(pwOff: Bool) {
-        guard let tok = m.token, let d = det else { return }
+        guard let tok = m.proToken, let d = det else { return }
         var body: [String: Any] = ["action": "edit", "token": tok]
         if let e = Dates.parse(d.expires), abs(e.timeIntervalSince(until)) > 59 { body["until"] = ISO8601DateFormatter().string(from: until) }
         if pwOff { body["password"] = "" } else if !pw.isEmpty { body["password"] = pw }
@@ -347,7 +363,7 @@ struct TransferWindow: View {
     }
 
     private func savePay(_ on: Bool) {
-        guard let tok = m.token else { return }
+        guard let tok = m.proToken else { return }
         Task {
             do {
                 let r = try await API.pro(["action": "edit", "token": tok, "payLock": on], as: EditReply.self)
@@ -358,10 +374,11 @@ struct TransferWindow: View {
     }
 
     private func delete() {
-        guard let p = m.path else { return }
+        let ps = m.paths.filter { !$0.hasPrefix("bundle:") }
+        guard !ps.isEmpty else { return }
         Task {
             do {
-                _ = try await API.bridge(["action": "delete", "key": p], as: AnyCodable.self)
+                for p in ps { _ = try await API.bridge(["action": "delete", "key": p], as: AnyCodable.self) }
                 Glass.tap(.medium); onChanged(); close()
             } catch { err = error.localizedDescription }
         }

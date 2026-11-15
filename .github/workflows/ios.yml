@@ -133,10 +133,28 @@ jobs:
           for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID; do
             [ -n "${!v}" ] || { echo "::error::The repository secret $v is missing"; exit 1; }
           done
-          K="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          K="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"; export K
           printf '%s\n' "$ASC_KEY_P8" > "$K"
           trap 'rm -f "$K"' EXIT
           AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$K" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          # Every fresh Mac makes a new Apple Development certificate and Apple allows only a few (build 41 stopped on
+          # "maximum number of certificates", 15 Nov). Alex agreed (15 Nov, "way 2") that each TestFlight run revokes the
+          # old development ones first, through the same API key. Distribution certificates are never touched.
+          ruby -ropenssl -rjson -rnet/http -rbase64 -e '
+            key = OpenSSL::PKey::EC.new(File.read(ENV["K"]))
+            b64 = ->(s) { Base64.urlsafe_encode64(s, padding: false) }
+            now = Time.now.to_i
+            data = b64.(JSON.dump({alg: "ES256", kid: ENV["ASC_KEY_ID"], typ: "JWT"})) + "." + b64.(JSON.dump({iss: ENV["ASC_ISSUER_ID"], iat: now, exp: now + 600, aud: "appstoreconnect-v1"}))
+            asn = OpenSSL::ASN1.decode(key.sign(OpenSSL::Digest::SHA256.new, data))
+            sig = asn.value.map { |i| i.value.to_s(2).rjust(32, "\x00")[-32, 32] }.join
+            jwt = data + "." + b64.(sig)
+            http = Net::HTTP.new("api.appstoreconnect.apple.com", 443); http.use_ssl = true
+            res = http.get("/v1/certificates?filter[certificateType]=DEVELOPMENT,IOS_DEVELOPMENT&limit=200", {"Authorization" => "Bearer #{jwt}"})
+            abort("certificates: #{res.code} #{res.body[0, 200]}") unless res.code == "200"
+            list = JSON.parse(res.body)["data"] || []
+            puts "Development certificates found: #{list.size}"
+            list.each { |c| r = http.delete("/v1/certificates/#{c["id"]}", {"Authorization" => "Bearer #{jwt}"}); puts "revoked #{c["attributes"]["name"]} #{c["attributes"]["certificateType"]} (#{r.code})" }
+          ' || echo "::warning::Could not tidy the development certificates"
           W=App.xcworkspace; [ -d "$W" ] && T=(-workspace "$W") || T=(-project App.xcodeproj)
           set -o pipefail
           xcodebuild "${T[@]}" -scheme App -configuration Release -destination 'generic/platform=iOS' \

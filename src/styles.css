@@ -4754,3 +4754,29 @@ html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relati
 .vid-box.vid-poster .vid-play.spin { border: 3px solid rgba(255, 255, 255, .35); border-top-color: #fff; background: rgba(0, 0, 0, .35); animation: vid-spin .9s linear infinite; }
 @keyframes vid-spin { to { transform: rotate(360deg); } }
 .vid-box.vid-poster .vid-size { position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .45); color: #fff; font-size: 11.5px; pointer-events: none; }
+
+/* the photo library inside the attach sheet, as Telegram's (Alex, 15 Nov; iPhone app): edge to edge, three across,
+   the camera first, a ring at each corner that takes a number when picked; the sheet is tall while it shows */
+.as-sheet.as-lib .as-body { padding-left: 0; padding-right: 0; }
+.lib-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding-bottom: 96px; }
+.lib-cell { position: relative; aspect-ratio: 1; padding: 0; border: 0; overflow: hidden; background: color-mix(in srgb, var(--text) 7%, transparent); cursor: pointer; }
+.lib-cell img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .2s; }
+.lib-cell.on img { transform: scale(.9); border-radius: 10px; }
+.lib-cam { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--text); font: inherit; font-size: 12.5px; font-weight: 600; }
+.lib-cam svg { width: 30px; height: 30px; }
+.lib-ring { position: absolute; top: 7px; right: 7px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: rgba(0, 0, 0, .18); color: #fff; font-style: normal; font-size: 12.5px; font-weight: 700; box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
+.lib-cell.on .lib-ring { background: var(--halo, var(--accent)); border-color: #fff; }
+.lib-dur { position: absolute; left: 6px; bottom: 6px; padding: 1px 6px; border-radius: 999px; background: rgba(0, 0, 0, .5); color: #fff; font-size: 11px; font-variant-numeric: tabular-nums; }
+.lib-ghost { animation: lib-pulse 1.2s ease-in-out infinite alternate; cursor: default; }
+@keyframes lib-pulse { from { opacity: .5; } to { opacity: 1; } }
+.lib-end { grid-column: 1 / -1; height: 1px; }
+.attach-send { position: relative; }
+.attach-send .lib-count { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; display: grid; place-items: center; border-radius: 999px; background: #fff; color: #111; font-size: 11.5px; font-weight: 700; box-shadow: 0 1px 4px rgba(0, 0, 0, .25); }
+.attach-send.busy { opacity: .6; }
+/* the File tab's three ways in and its list of files sent, as Telegram's: line signs and words in the accent, each file
+   with its little picture, name, size and when */
+.as-card.as-ways .as-way { gap: 16px; min-height: 54px; color: var(--halo, var(--accent)); font-size: 16.5px; }
+.as-card.as-ways .as-way svg { flex: none; width: 26px; height: 26px; }
+.as-card.as-ways .as-way + .as-way { background: linear-gradient(color-mix(in srgb, var(--text) 10%, transparent), color-mix(in srgb, var(--text) 10%, transparent)) 58px 0 / calc(100% - 58px) 1px no-repeat; }
+.as-ext.as-rthumb { overflow: hidden; background: color-mix(in srgb, var(--text) 8%, transparent); }
+.as-ext.as-rthumb img { width: 100%; height: 100%; object-fit: cover; }

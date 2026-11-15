@@ -4869,3 +4869,7 @@ html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relati
 .cp-index { position: sticky; top: 30px; z-index: 2; height: 0; align-self: flex-end; overflow: visible; }
 .cp-index > div { position: absolute; top: 0; right: -22px; display: flex; flex-direction: column; align-items: center; }
 .cp-index button { width: 20px; height: 17px; padding: 0; border: 0; background: none; color: var(--halo, var(--accent)); font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; }
+/* Stop Sharing readable in Day and Night (Alex, 15 Nov: "the red letters do not show in dark, and not red"): a plain
+   glass pill in the message's own ink, no red */
+html:root:root:root .locc.live-c .live-stop { background: color-mix(in srgb, currentColor 14%, transparent); color: inherit; font-weight: 600; }
+html:root:root:root .locc.live-c .live-stop:active { background: color-mix(in srgb, currentColor 22%, transparent); }

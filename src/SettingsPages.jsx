@@ -1262,13 +1262,13 @@ function FolderEdit({ id, kit, onDone, toast }) {
       <Box title="Folder name">
         <div className="set-row name-row"><input {...marks.inputProps} className="fold-name" value={draft.name} onChange={(e) => set({ name: e.target.value })} placeholder="Folder name" autoFocus={!saved} maxLength={120} />{marks.bar}</div>
       </Box>
-      <Box title="Included chats" note="Choose chats or types of chats that will appear in this folder.">
+      <Box title="Included chats" note="Choose the chats that will appear in this folder.">
         <button type="button" className="set-row set-pick set-add" onClick={() => { setQ(''); setPick('in') }}><i className="fold-plus">{I.plus}</i><span className="set-text">Add Chats</span></button>
         {types.private && typeRow('private', 'Private chats', I.person)}
         {types.groups && typeRow('groups', 'Groups', I.people)}
         {draft.rooms.map((rid) => chatRow(rid, 'in'))}
       </Box>
-      <Box title="Excluded chats" note="Chats that never appear in this folder, even when their type is included.">
+      <Box title="Excluded chats" note="Chats that never appear in this folder.">
         <button type="button" className="set-row set-pick set-add" onClick={() => { setQ(''); setPick('out') }}><i className="fold-plus">{I.plus}</i><span className="set-text">Add Chats</span></button>
         {draft.exclude.map((rid) => chatRow(rid, 'out'))}
       </Box>
@@ -1278,19 +1278,6 @@ function FolderEdit({ id, kit, onDone, toast }) {
       {pick && (
         <Modal title={pick === 'in' ? 'Included chats' : 'Excluded chats'} onClose={() => setPick('')} foot={<button type="button" className="btn btn-main" onClick={() => setPick('')}>Done</button>}>
           <input className="input fold-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" autoFocus />
-          {pick === 'in' && !t && (
-            <>
-              <p className="fold-pick-h">Chat types</p>
-              <div className="people">
-                {[['private', 'Private chats', I.person], ['groups', 'Groups', I.people]].map(([k, l, ico]) => (
-                  <button key={k} type="button" className="person" onClick={() => set({ types: { ...types, [k]: !types[k] } })}>
-                    <span className="fold-type">{ico}</span><span className="person-text"><b>{l}</b></span><span className={`tick${types[k] ? ' on' : ''}`} />
-                  </button>
-                ))}
-              </div>
-              <p className="fold-pick-h">Chats</p>
-            </>
-          )}
           <div className="people">
             {list.map((r) => {
               const on = (pick === 'in' ? draft.rooms : draft.exclude).includes(r.room_id)

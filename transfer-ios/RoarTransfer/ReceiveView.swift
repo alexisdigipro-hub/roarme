@@ -26,6 +26,8 @@ struct ReceiveView: View {
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 120)
         }
         .scrollDismissesKeyboard(.interactively)
+        // pull down: the open link asked again (what is left, what was downloaded)
+        .refreshable { if token != nil { await reload() }; Glass.tap(.soft) }
         .onChange(of: router.openToken) { t in if let t { openLink(t); router.openToken = nil } }
         .onAppear { if let t = router.openToken { openLink(t); router.openToken = nil } }
     }
@@ -184,6 +186,10 @@ struct ReceiveView: View {
         }
     }
     private func unlock() { load() }
+    private func reload() async {
+        guard let tok = token else { return }
+        if let i = try? await API.link(tok, password: password), i.error != "password" || info?.error == "password" { info = i }
+    }
     private func close() { token = nil; info = nil; pasted = "" }
     private func save(_ f: LinkFile, toFiles: Bool = false) {
         downloads.start(f, toPhotos: f.isMedia && !toFiles)

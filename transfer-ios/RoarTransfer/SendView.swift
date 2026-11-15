@@ -48,6 +48,8 @@ struct SendView: View {
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 120)
         }
         .scrollDismissesKeyboard(.interactively)
+        // pull down: the account, its Pro and its limits read again
+        .refreshable { await pro.load(); Glass.tap(.soft) }
         .onAppear { notify = pro.mails.downloads ?? true }
         .confirmationDialog(t("Choose from"), isPresented: $chooser, titleVisibility: .visible) {
             Button(t("Photos & Videos")) { photos = true }

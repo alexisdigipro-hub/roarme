@@ -68,6 +68,12 @@ struct StudioWeb: UIViewRepresentable {
         w.backgroundColor = .clear
         w.scrollView.backgroundColor = .clear
         w.allowsBackForwardNavigationGestures = true
+        // pull down: the page loads again
+        let rc = UIRefreshControl()
+        rc.tintColor = .white
+        rc.addTarget(context.coordinator, action: #selector(Coord.pulled(_:)), for: .valueChanged)
+        w.scrollView.refreshControl = rc
+        context.coordinator.web = w
         w.load(URLRequest(url: URL(string: "https://roartransfer.com/studio/")!))
         return w
     }
@@ -75,7 +81,13 @@ struct StudioWeb: UIViewRepresentable {
 
     final class Coord: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, WKDownloadDelegate {
         let parent: StudioWeb
+        weak var web: WKWebView?
         init(_ p: StudioWeb) { parent = p }
+        @objc func pulled(_ rc: UIRefreshControl) {
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+            web?.reload()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { rc.endRefreshing() }
+        }
 
         func userContentController(_ u: WKUserContentController, didReceive m: WKScriptMessage) {
             guard m.name == "session", let s = m.body as? String, let d = s.data(using: .utf8),

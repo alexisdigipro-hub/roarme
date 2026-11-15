@@ -102,7 +102,9 @@ export default function Chat({ me, setMe }) {
   const [q, setQ] = useState('')
   const [modal, setModal] = useState('') // '' | newchat | newgroup | info | folders | newfolder | pickfolder
   const [plus, setPlus] = useState(false)
-  const [tab, setTab] = useState('chats') // the bar at the foot: contacts | calls | chats | settings
+  // the bar at the foot: contacts | calls | chats | settings. A pull to refresh on Contacts comes back to Contacts
+  // (Alex, 15 Nov: it landed on Messages)
+  const [tab, setTab] = useState(() => { try { const t = sessionStorage.getItem('roarme-tab'); sessionStorage.removeItem('roarme-tab'); return t || 'chats' } catch { return 'chats' } })
   const [callsFilter, setCallsFilter] = useState('all') // Calls: all | missed (the switch in the head, Alex, 14 Nov)
   const [callsEdit, setCallsEdit] = useState(false) // Calls: the head's ⋯ shows a red minus on every call and + becomes Delete All
   const [callsClear, setCallsClear] = useState(0) // Calls: Delete All asks RecentCalls to clear the list
@@ -252,7 +254,7 @@ export default function Chat({ me, setMe }) {
       cDrag.current = null
       if (!g) return
       cMove(e.currentTarget, 0, true)
-      if (g.p >= 1) { setCPull(2); setTimeout(() => window.location.reload(), 150); return }
+      if (g.p >= 1) { setCPull(2); try { sessionStorage.setItem('roarme-tab', 'contacts') } catch { /* private window */ } setTimeout(() => window.location.reload(), 150); return }
       setCPull(0)
     },
   }

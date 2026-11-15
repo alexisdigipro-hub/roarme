@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { locale } from './i18n.js'
 import { Wordmark } from './ui.jsx'
+import { appUrl } from './lib.js'
 
 /* Privacy Policy and Terms of Service (17 Oct 2026; brought up to date 15 Nov for the App Store: phone number and SMS,
    contacts as hashes, location and live location, camera / microphone / photos, Apple push, group calls, reports,
@@ -233,7 +234,7 @@ const DOCS = {
 
 const lang = () => (locale() === 'el-GR' ? 'el' : 'en')
 export const legalTitle = (doc) => DOCS[doc][lang()].title
-export const legalUrl = (doc) => `${window.location.origin}${window.location.pathname}?legal=${doc}`
+export const legalUrl = (doc) => `${appUrl()}?legal=${doc}` // inside the iPhone app, the website's address
 
 /* the text itself; data-raw keeps the app's word-by-word translation away from it */
 export function LegalDoc({ doc }) {

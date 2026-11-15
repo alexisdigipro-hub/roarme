@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import { SUPABASE_KEY, SUPABASE_URL, fmtBytes, supabase, withName } from './lib.js'
 import { locale } from './i18n.js'
@@ -72,7 +73,9 @@ export function CopyLink({ file, className = '', round = false }) {
    src/r2upload.js, 1 day up to 5 GB or 3 days up to 3 GB, and come back as ONE link for all of them, with a title,
    a message, a password and an email to you when someone downloads. The chat gets one card for the whole transfer
    (BundleCard). Closing the window while it uploads only hides it: the upload goes on and the card comes when done. */
-export function TransferWindow({ title, hidden = false, onHide, onClose, onSent, onProgress }) {
+// slot (Alex, 15 Nov): a place in the attach sheet to stand in, as Telegram's, instead of a window of its own; when the
+// sheet goes, an upload carries on hidden and an unstarted one closes
+export function TransferWindow({ title, hidden = false, onHide, onClose, onSent, onProgress, slot }) {
   const [files, setFiles] = useState([])
   const [phase, setPhase] = useState('pick')
   const [days, setDays] = useState(1)
@@ -105,11 +108,104 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
   const cancel = () => { job.current?.stop() }
   // while it uploads, closing only hides the window
   const close = phase === 'up' ? onHide : onClose
-  if (hidden) return null
+  const hadSlot = useRef(false)
+  useEffect(() => {
+    if (slot) { hadSlot.current = true; return }
+    if (slot === null && hadSlot.current) { hadSlot.current = false; (phase === 'up' ? onHide : onClose)?.() }
+  }, [slot]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (hidden && !slot) return null
 
   const R = 54
   const C = 2 * Math.PI * R
   return (
+    slot ? createPortal(<div className="rt-slot">
+      <div className={`rt is-${phase}`}>
+        <div className="rt-top"><TransferMark /></div>
+        {phase === 'pick' && (
+          <>
+            <button type="button" className={`rt-drop${over ? ' over' : ''}${files.length ? ' has' : ''}`} onClick={() => pick.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setOver(true) }} onDragLeave={() => setOver(false)}
+              onDrop={(e) => { e.preventDefault(); setOver(false); add([...(e.dataTransfer?.files || [])]) }}>
+              <i>{files.length ? I.plus : I.transfer}</i>
+              <span className="rt-drop-text">
+                <b>{files.length ? 'Add more' : touchOnly ? 'Choose your files' : 'Drop your files here'}</b>
+                <small>{files.length ? (touchOnly ? 'tap to choose more' : 'or drop them here') : (touchOnly ? 'Tap to choose them' : 'or click to choose them')}</small>
+              </span>
+            </button>
+            <input ref={pick} type="file" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
+            {files.length > 0 && (
+              <ul className="rt-files">
+                {files.map((f, n) => (
+                  <li key={`${f.name}-${n}`}>
+                    <span className="rt-file-ico">{/^video\//.test(f.type) ? I.play : /^image\//.test(f.type) ? I.image : I.file}</span>
+                    <span className="rt-file-text"><b>{f.name}</b><small>{fmtBytes(f.size)}</small></span>
+                    <button type="button" className="rt-x" onClick={() => setFiles((l) => l.filter((_, k) => k !== n))} aria-label="Remove">{I.x}</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {files.length > 0 && (
+              <div className={`rt-meter${tooBig ? ' over' : ''}`}>
+                <span className="rt-bar"><i style={{ width: `${Math.min(100, (total / max) * 100)}%` }} /></span>
+                <small><b>{fmtBytes(total)}</b>{` of ${max / 1024 ** 3} GB · ${files.length === 1 ? '1 file' : `${files.length} files`}`}</small>
+              </div>
+            )}
+            {/* how long and how big, as on roartransfer.com: 1 day up to 5 GB (first, chosen, with the leaf), 3 days up to 3 GB,
+                7 days up to 1 GB, and one small line why (Alex, 23 Oct) */}
+            <div className="rt-plans" role="radiogroup" aria-label="How long the link lasts">
+              {PLANS.map((x) => (
+                <button key={x.days} type="button" role="radio" aria-checked={days === x.days} className={`rt-tile rt-plan${days === x.days ? ' on' : ''}`} onClick={() => setDays(x.days)}>
+                  <i>{I.timer}</i><b>{x.days === 1 ? '1 day' : `${x.days} days`}{x.eco && <span className="rt-leaf" title="Recommended">{LEAF}</span>}</b><small><span>{`up to ${x.max / 1024 ** 3} GB`}</span><span>{`until ${untilDate(Date.now() + x.days * 864e5)}`}</span></small>
+                </button>
+              ))}
+            </div>
+            <p className="rt-eco rt-dls">{I.download}<span>Each file can be downloaded up to 5 times.</span></p>
+            <p className="rt-eco">{LEAF}<span>The greener choice is also the bigger one: most files are picked up the same day, so a 1-day link spends less time on our servers and carries up to 5 GB.</span></p>
+            {files.length > 0 && (
+              <div className="rt-opts">
+                <input className="rt-in" value={name} onChange={(e) => setName(e.target.value.slice(0, 120))} placeholder="Title (optional)" />
+                <textarea className="rt-in" rows={2} value={note} onChange={(e) => setNote(e.target.value.slice(0, 2000))} placeholder="Message (optional)" />
+                <label className="rt-in rt-pw">{I.lock}<input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value.slice(0, 100))} placeholder="Password (optional)" /></label>
+                <label className="rt-check"><input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} /><span>Email me when it is downloaded</span></label>
+              </div>
+            )}
+            {files.length > 0 && <button type="button" className="rt-send" disabled={tooBig} onClick={start}>{tooBig ? `Over ${max / 1024 ** 3} GB` : 'Transfer'}{!tooBig && I.send}</button>}
+          </>
+        )}
+        {phase === 'up' && (
+          <>
+            <span className="rt-ring">
+              <svg viewBox="0 0 128 128" width="160" height="160" aria-hidden="true">
+                <circle cx="64" cy="64" r={R} className="ring-track" />
+                <circle cx="64" cy="64" r={R} className="rt-ring-fill" strokeDasharray={C} strokeDashoffset={C * (1 - p)} />
+              </svg>
+              <b>{Math.round(p * 100)}%</b>
+            </span>
+            <p className="rt-sub">{fmtBytes(Math.min(done, total))} of {fmtBytes(total)}</p>
+            <p className="rt-hint">You can keep chatting: it goes on uploading, and the link comes into the chat when it is done.</p>
+            <div className="rt-acts">
+              <button type="button" className="btn" onClick={cancel}>{I.x}<span>Stop</span></button>
+              <button type="button" className="btn btn-main" onClick={onHide}>{I.check}<span>Keep chatting</span></button>
+            </div>
+          </>
+        )}
+        {phase === 'done' && res && (
+          <>
+            <span className={`rt-done${res.url ? '' : ' fail'}`}>{res.url ? I.check : I.x}</span>
+            <p className="rt-title">{res.url ? 'Sent!' : 'Nothing was sent'}</p>
+            {res.url && <p className="rt-sub">{`In ${title}, and anyone with the link can download until ${until(res.expires)}.`}</p>}
+            {res.url && pw && <p className="rt-sub">It asks for the password.</p>}
+            {res.errs.length > 0 && <p className="auth-err">{res.errs.join(' · ')}</p>}
+            {res.url && (
+              <button type="button" className={`rt-link${copied ? ' ok' : ''}`} onClick={async () => { try { await navigator.clipboard.writeText(res.url); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* not allowed */ } }}>
+                {copied ? I.check : I.link}<span>{copied ? 'Link copied' : res.url.replace('https://', '')}</span>
+              </button>
+            )}
+            <button type="button" className="btn btn-main rt-go" onClick={onClose}><span>Done</span></button>
+          </>
+        )}
+      </div>
+</div>, slot) : (
     <Modal title="RoarTransfer" onClose={close}>
       <div className={`rt is-${phase}`}>
         <div className="rt-top"><TransferMark /></div>
@@ -198,6 +294,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
         )}
       </div>
     </Modal>
+    )
   )
 }
 

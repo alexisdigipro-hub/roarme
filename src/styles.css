@@ -4817,3 +4817,42 @@ html.kb .findfoot { padding-bottom: 8px; }
 .nc-link p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.45; max-width: 300px; }
 .nc-link-url { max-width: 100%; padding: 12px 16px; border: 0; border-radius: 16px; background: rgba(127, 127, 140, .12); color: var(--text); font: inherit; font-size: 14px; word-break: break-all; }
 .nc-link-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+/* Writing in full screen (Chat.jsx BigWriter; Alex, 15 Nov, from Telegram's) */
+.bw { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; background: var(--bg, #f2f2f6); color: var(--text);
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px calc(env(safe-area-inset-bottom, 0px) + 12px); animation: drop-in .26s var(--ease) both; }
+html.kb .bw { bottom: auto; height: var(--vvh, 100dvh); top: var(--vvt, 0px); padding-bottom: 8px; }
+.bw-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.bw-undo { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); }
+.bw-undo button { display: grid; place-items: center; width: 42px; height: 38px; border: 0; border-radius: 999px; background: none; color: var(--text); }
+.bw-undo button:disabled { opacity: .3; }
+.bw-text { flex: 1; min-height: 0; width: 100%; margin: 14px 0 10px; padding: 4px 6px; border: 0; outline: none; resize: none; background: none; color: var(--text); font: inherit; font-size: 17px; line-height: 1.45; }
+.bw-foot { display: flex; align-items: center; gap: 10px; }
+.bw-bar { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; height: 50px; padding: 0 6px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); -webkit-backdrop-filter: blur(var(--blur, 10px)); backdrop-filter: blur(var(--blur, 10px)); overflow-x: auto; scrollbar-width: none; }
+.bw-bar button { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border: 0; border-radius: 50%; background: none; color: var(--text); font: inherit; font-size: 18px; }
+.bw-bar button:active { background: rgba(127, 127, 140, .16); }
+.bw-bar svg { width: 22px; height: 22px; }
+.bw-foot .send { flex: none; width: 50px; height: 50px; }
+
+/* The attach sheet's Article, Transfer and Contact tabs (Alex, 15 Nov, as Telegram's) and a shared contact */
+.as-tabs { overflow-x: auto; scrollbar-width: none; }
+.as-tabs::-webkit-scrollbar { display: none; }
+.as-tabs > button { flex: 0 0 auto; min-width: 64px; }
+.as-sheet.as-tall { height: min(88dvh, 860px); }
+.as-sheet.as-tall .as-body { display: flex; flex-direction: column; }
+.as-sheet .art-inline { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.as-sheet .art-inline .art-sheet { flex: 1; min-height: 0; }
+.as-transfer { flex: 1; min-height: 0; }
+.rt-slot { padding: 4px 2px 10px; }
+.as-search { margin-bottom: 10px; }
+.as-people { max-height: none; }
+.as-person { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.as-person-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.as-person-text b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.as-person-text small { color: var(--muted); font-size: 12.5px; }
+.as-person-go { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--halo, var(--accent)); opacity: .8; }
+.sc-card { display: flex; align-items: center; gap: 12px; min-width: 230px; padding: 4px 2px; cursor: pointer; }
+.sc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.sc-text b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-text small { font-size: 12.5px; opacity: .7; }
+.sc-go { flex: none; height: 30px; padding: 0 14px; border-radius: 999px; background: rgba(127, 127, 140, .18); display: grid; place-items: center; font-size: 13px; font-weight: 600; }

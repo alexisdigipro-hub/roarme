@@ -1186,6 +1186,7 @@ export default function Chat({ me, setMe }) {
   // Tasks (Alex, 18 Oct): the panel stays open while you move between chats, and remembers it on this device
   // a tap on someone in Contacts opens their card (Alex, 21 Oct, like the iPhone's Contacts); favourites come first
   const [card, setCard] = useState('')
+  useEffect(() => { const f = (e) => { const id = e.detail?.id; if (!id) return; loadPeople([id]); setCard(id) }; window.addEventListener('roarme-card', f); return () => window.removeEventListener('roarme-card', f) }, [loadPeople])
   const [favs, setFavs] = useLocal('roarme-fav', [])
   const [contactSort, setContactSort] = useLocal('roarme-contacts-sort', 'seen') // Contacts: 'seen' (last seen first) or 'name'
   const [contactsMenu, setContactsMenu] = useState('') // Contacts' ⋯ ('sort') or + ('add') menu open
@@ -1932,6 +1933,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const [transferOpen, setTransferOpen] = useState(false)
+  // RoarTransfer stands in the attach sheet's Transfer tab (Alex, 15 Nov): the sheet hands its place here
+  const [transferSlot, setTransferSlot] = useState(undefined)
+  // the people a contact can be shared from (the attach sheet's Contact tab): everyone in my chats
+  const shareable = useMemo(() => [...new Set((rooms || []).flatMap((r) => r.members || []))].filter((id) => id !== me.id).map((id) => people[id]).filter(Boolean).sort((a, b) => nameOf(a).localeCompare(nameOf(b))), [rooms, people, me.id])
   // a RoarTransfer that is uploading with its window hidden, and how far it has got (Alex, 22 Oct)
   const [transferHidden, setTransferHidden] = useState(false)
   const [transferPct, setTransferPct] = useState(0)
@@ -1968,7 +1973,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [artView, setArtView] = useState(null)
   // the message box grows with what is written, wrapped lines too; past a few lines a corner button makes it big
   // (Alex, 17 Oct, as on Telegram) and it shrinks back once the message is sent
-  const [bigBox, setBigBox] = useState(false)
+  const [bigBox] = useState(false)
+  // the box's corner button opens the whole screen for writing (Alex, 15 Nov, from Telegram's): BigWriter
+  const [writer, setWriter] = useState(false)
   const [tall, setTall] = useState(false)
   // typing on (more letters, no fewer lines) only ever grows the box: it is measured as it is, without first being
   // squashed to nothing, which made the phone lay out the whole chat twice on every letter (Alex, 21 Oct: lighter)
@@ -1992,7 +1999,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     el.style.height = `${bigBox ? max : Math.min(max, full)}px`
     setTall(full > 90)
   }, [text, bigBox])
-  useEffect(() => { if (!text) setBigBox(false) }, [text])
   const [pinExtra, setPinExtra] = useState({})
   const loadPins = useCallback(() => supabase.from('roar_pins').select('message_id, pinned_by, pinned_at').eq('room_id', room.room_id).order('pinned_at').then(({ data }) => setPinRows(data || [])), [room.room_id])
   useEffect(() => {
@@ -3017,6 +3023,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
                       : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => hands.current.setArtView(m)} />
                       : m.file?.roartransfer ? <BundleCard t={m.file.roartransfer} />
+                      : m.file?.contact ? <SharedContact c={m.file.contact} person={people[m.file.contact.id]} />
                       : m.file?.groupcall?.link ? <LinkCallCard id={m.file.groupcall.id} who={mine ? 'You' : nameOf(who)} onJoin={() => joinCall(m.file.groupcall.id, false, 'Call')} />
                       : m.file?.groupcall ? <GroupCallCard who={mine ? 'You' : nameOf(who)} live={gcLive === m.file.groupcall.id} here={gcLive === m.file.groupcall.id ? gcHere : 0} onJoin={() => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: room.room_id, id: m.file.groupcall.id, video: false } }))} />
                       : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} onJoin={(v) => (room.kind === 'group' ? startGroupCall(room.room_id, v) : hands.current.onCall(v))} />
@@ -3286,7 +3293,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 onSelect={(e) => readSel(e.currentTarget)} onBlur={() => setSel(null)}
                 onPaste={(e) => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach(f) } }}
                 disabled={!!sealOn && !keyOk} placeholder={sealOn ? 'Encrypted message…' : 'Write a message…'} />
-              {(bigBox || tall) && <button type="button" className="compose-grow" onMouseDown={(e) => e.preventDefault()} onClick={() => { setBigBox((v) => !v); inputRef.current?.focus() }} aria-label={bigBox ? 'Smaller' : 'Bigger'} title={bigBox ? 'Smaller' : 'Bigger'}>{bigBox ? GROW_OFF : GROW_ON}</button>}
+              {tall && !sealOn && <button type="button" className="compose-grow" onMouseDown={(e) => e.preventDefault()} onClick={() => setWriter(true)} aria-label="Write in full screen" title="Write in full screen">{GROW_ON}</button>}
               {sched.list.length > 0 && <button type="button" className="sched-btn" onClick={() => setSchedList(true)} aria-label="Scheduled Messages" title="Scheduled Messages">{I.timer}<i>{sched.list.length}</i></button>}
               {/* a small lock in place of the emoji button turns Encrypted Chat on and off (Alex, 14 Nov: "a small discreet lock in
                   the writing box, and take the emoji out"); on asks first, as from the profile's More, off at once */}
@@ -3395,10 +3402,14 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles} onTransfer={() => { setAttach(null); setTransferOpen(true) }} onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))} onArticle={() => { setAttach(null); setArtOpen(true) }} />}
+      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles}
+        onTransfer={() => { setTransferHidden(false); setTransferOpen(true) }} transferSlot={setTransferSlot}
+        onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))}
+        onArticle={({ title: t, text: x }) => sendCard(`${t}\n\n${x}`, { article: { v: 1 } }, '', () => setAttach(null))}
+        contacts={shareable} onContact={(p) => sendCard(nameOf(p), { contact: { id: p.id, username: p.username, name: nameOf(p), avatar: p.avatar_url || '' } }, '', () => setAttach(null))} />}
       {transferOpen && (
-        <TransferWindow title={title} hidden={transferHidden} onHide={() => setTransferHidden(true)} onProgress={setTransferPct}
-          onClose={() => { setTransferOpen(false); setTransferHidden(false); setTransferPct(0) }}
+        <TransferWindow title={title} hidden={transferHidden} slot={transferSlot} onHide={() => { setTransferHidden(true); if (transferSlot) setAttach(null) }} onProgress={setTransferPct}
+          onClose={() => { setTransferOpen(false); setTransferHidden(false); setTransferPct(0); if (transferSlot) setAttach(null) }}
           onSent={(r) => {
             // one card in the chat for the whole transfer (its files live on roartransfer.com, in Cloudflare R2)
             const files = r.sent.map((f) => ({ name: f.name, size: f.size, type: f.type, token: f.token }))
@@ -3416,6 +3427,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           <WallTiles value={wall} toast={toast} onPick={(k) => setWalls((w) => ({ ...w, [room.room_id]: k }))} />
         </Modal>
       )}
+      {writer && <BigWriter text={text} setText={setText} onClose={() => { setWriter(false); requestAnimationFrame(() => inputRef.current?.focus()) }} onSend={() => { setWriter(false); send() }} onAttach={() => { setWriter(false); setAttach([]) }} />}
       {schedOpen && <ScheduleCall who={title} onClose={() => setSchedOpen(false)} onSend={(event) => sendCard(event.title, { event }, 'Call scheduled', () => setSchedOpen(false))} />}
       {locOpen && <LocationPicker onClose={() => setLocOpen(false)} onSend={(location) => sendCard(location.name, { location }, '', () => setLocOpen(false))} />}
       {locView && <LocationView loc={locView} onClose={() => setLocView(null)} />}
@@ -3661,6 +3673,95 @@ function LiveWave({ stream }) {
 // the two signs of the chat's search (Alex, 15 Nov, from Telegram's): a calendar with a lens, a person with a lens
 const FIND_DAY = svg(<><path d="M11 20H7a3.5 3.5 0 0 1-3.5-3.5v-9A3.5 3.5 0 0 1 7 4h10a3.5 3.5 0 0 1 3.5 3.5V11M3.5 9.5h17M8 2.5v3M16 2.5v3" /><circle cx="16.5" cy="16.5" r="3.2" /><path d="M19 19l2 2" /></>, 22)
 const FIND_WHO = svg(<><circle cx="10" cy="7.5" r="3.8" /><path d="M3.5 20c0-3.6 2.9-6.5 6.5-6.5 1 0 1.9.2 2.7.6" /><circle cx="16.5" cy="16.5" r="3.2" /><path d="M19 19l2 2" /></>, 22)
+
+/* a contact shared from the attach sheet (Alex, 15 Nov, as Telegram's): the picture, name and @username; a tap opens
+   their card (Message, Call), which the app's window event roarme-card answers */
+function SharedContact({ c, person }) {
+  const name = person ? nameOf(person) : c.name
+  return (
+    <span className="sc-card" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: c.id } })) }}>
+      <Avatar src={person?.avatar_url || c.avatar} name={name} size={44} />
+      <span className="sc-text"><b>{name}</b><small>@{person?.username || c.username}</small></span>
+      <span className="sc-go">View</span>
+    </span>
+  )
+}
+
+/* Writing in full screen (Alex, 15 Nov, from Telegram's): the same words as the writing box, the whole screen to write
+   them, X (back to the chat, the words kept), Undo and Redo on top; at the foot a glass bar: B, I, U, S around what is
+   chosen, a list (each chosen line starts with "• "), the clip and Send. Enter is a new line here. */
+function BigWriter({ text, setText, onClose, onSend, onAttach }) {
+  const ref = useRef(null)
+  const past = useRef([text])
+  const at = useRef(0)
+  const lastPush = useRef(0)
+  const [, tick] = useState(0)
+  useEffect(() => { const el = ref.current; if (el) { el.focus(); el.selectionStart = el.selectionEnd = el.value.length } }, [])
+  const put = (next, a, b, push = true) => {
+    setText(next)
+    if (push) {
+      const now = Date.now()
+      if (now - lastPush.current > 700 || at.current !== past.current.length - 1) { past.current = past.current.slice(0, at.current + 1); past.current.push(next); at.current++ } else past.current[at.current] = next
+      lastPush.current = now
+      tick((n) => n + 1)
+    }
+    if (a != null) requestAnimationFrame(() => { const el = ref.current; if (el) { el.focus(); el.selectionStart = a; el.selectionEnd = b ?? a } })
+  }
+  const undo = () => { if (at.current > 0) { at.current--; lastPush.current = 0; setText(past.current[at.current]); tick((n) => n + 1) } }
+  const redo = () => { if (at.current < past.current.length - 1) { at.current++; lastPush.current = 0; setText(past.current[at.current]); tick((n) => n + 1) } }
+  const mark = (m) => { const el = ref.current; if (!el) return; const { next, caretA, caretB } = toggleMark(el, text, m); lastPush.current = 0; put(next, caretA, caretB) }
+  const list = () => {
+    const el = ref.current
+    if (!el) return
+    const a = text.lastIndexOf('\n', el.selectionStart - 1) + 1
+    let b = text.indexOf('\n', el.selectionEnd)
+    if (b < 0) b = text.length
+    const lines = text.slice(a, b).split('\n')
+    const on = lines.every((l) => l.startsWith('• '))
+    const block = lines.map((l) => (on ? l.replace(/^• /, '') : l.startsWith('• ') ? l : `• ${l}`)).join('\n')
+    lastPush.current = 0
+    put(text.slice(0, a) + block + text.slice(b), a, a + block.length)
+  }
+  // a new line after a "• " line goes on with "• " (an empty one ends the list)
+  const onKey = (e) => {
+    if (e.key !== 'Enter' || e.shiftKey || e.metaKey || e.ctrlKey) return
+    const el = e.currentTarget
+    const p = el.selectionStart
+    const a = text.lastIndexOf('\n', p - 1) + 1
+    const line = text.slice(a, p)
+    if (!line.startsWith('• ')) return
+    e.preventDefault()
+    if (line === '• ') { put(text.slice(0, a) + text.slice(p), a); return }
+    put(`${text.slice(0, p)}\n• ${text.slice(el.selectionEnd)}`, p + 3)
+  }
+  return createPortal(
+    <div className="bw" role="dialog" aria-label="Write">
+      <div className="bw-top">
+        <button type="button" className="round" onClick={onClose} aria-label="Close" title="Back to the chat">{I.x}</button>
+        <span className="bw-undo">
+          <button type="button" onClick={undo} disabled={at.current === 0} aria-label="Undo" title="Undo">{BW_UNDO}</button>
+          <button type="button" onClick={redo} disabled={at.current >= past.current.length - 1} aria-label="Redo" title="Redo">{BW_REDO}</button>
+        </span>
+      </div>
+      <textarea ref={ref} className="bw-text" value={text} onChange={(e) => put(e.target.value)} onKeyDown={onKey} placeholder="Write a message…" />
+      <div className="bw-foot">
+        <span className="bw-bar" onMouseDown={(e) => e.preventDefault()}>
+          <button type="button" onClick={() => mark('**')} aria-label="Bold"><b>B</b></button>
+          <button type="button" onClick={() => mark('_')} aria-label="Italic"><i>I</i></button>
+          <button type="button" onClick={() => mark('__')} aria-label="Underline"><u>U</u></button>
+          <button type="button" onClick={() => mark('~~')} aria-label="Strikethrough"><s>S</s></button>
+          <button type="button" onClick={list} aria-label="List">{BW_LIST}</button>
+          <button type="button" onClick={onAttach} aria-label="Photo, video or file">{I.clip}</button>
+        </span>
+        <button type="button" className="round send ready" onClick={onSend} disabled={!text.trim()} aria-label="Send">{I.send}</button>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+const BW_UNDO = svg(<path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />, 22)
+const BW_REDO = svg(<path d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />, 22)
+const BW_LIST = svg(<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />, 22)
 
 const FMT_MARKS = [
   ['**', 'Bold', <b key="b">B</b>, `${MOD}B`],

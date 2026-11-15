@@ -5074,14 +5074,20 @@ html:root:root:root .pf-acts > button:active > .ic-mask { transform: scale(.94);
 html:root:root:root:root:root:not([data-frost]) .as-sheet.as-lib .as-tabs { background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; box-shadow: 0 10px 26px rgba(0, 0, 0, .22) !important; }
 html:root:root:root:root:root:not([data-frost])[data-mode='dark'] .as-sheet.as-lib .as-tabs { background: #2c2c31 !important; }
 
-/* signing in with the keyboard up (Alex, 15 Nov: "the keyboard covers Sign in and what is under it"): the card goes to
-   the top of what is left of the screen and gets compact: no mark, smaller gaps, so the fields, Sign in and the two
-   buttons under it all stand above the keyboard; the page scrolls if a small phone still needs it */
-html.kb .auth { place-items: start center; padding: 10px 16px 14px; min-height: 0; }
-html.kb .auth .auth-card { padding-top: 14px; padding-bottom: 14px; gap: 8px; margin: 0; }
-html.kb .auth .wordmark.with-by .rm-mark { display: none; }
-html.kb .auth .wordmark.with-by { gap: 2px; }
-html.kb .auth .brand { margin: 0 0 4px; }
-html.kb .auth :is(.auth-sub, .auth-invite) { display: none; }
-html.kb .auth .auth-card :is(input, .input) { height: 44px; }
-html.kb .auth .auth-card .btn-main { height: 46px; min-height: 0; }
+/* signing in with the keyboard up (Alex, 15 Nov, second pass: "not up there; the whole frame just above the keyboard"):
+   the card stays as it is, mark and all, and only moves: its foot sits a little over the keyboard. The page is fixed to the
+   screen in Glass, so its own foot is lifted by the keyboard's height (--kbh). If a small phone has no room for all of
+   it, the top stays reachable by scrolling (margin-top auto, not a centred grid). The mark is a
+   little smaller there so the card clears the clock */
+html.kb .auth, html:root:root[data-glass][data-theme].kb .auth { display: flex; flex-direction: column; align-items: center; min-height: 0; box-sizing: border-box; padding: calc(env(safe-area-inset-top, 0px) + 6px) 24px 12px; bottom: var(--kbh, 0px); transition: bottom .28s cubic-bezier(.2, .8, .2, 1); }
+html.kb .auth .auth-card { margin-top: auto; margin-bottom: 0; flex: none; }
+html.kb .auth .wordmark.with-by .rm-mark { width: 48px; height: 48px; }
+/* a regular iPhone has about 430px between the clock and the keyboard and the card is 484: only there, a little less
+   air inside it (nothing hidden, nothing moved), so the whole card stands between the two */
+@media (max-height: 900px) {
+  html.kb .auth .auth-card { padding-top: 18px !important; padding-bottom: 16px !important; }
+  html.kb .auth .wordmark.with-by .rm-mark { width: 40px !important; height: 40px !important; margin-bottom: -2px !important; }
+  html.kb .auth .auth-card .brand { margin-bottom: 12px !important; }
+  html.kb .auth .auth-card .field { margin-bottom: 10px !important; }
+  html.kb .auth .auth-card .btn-main { margin-top: 4px !important; }
+}

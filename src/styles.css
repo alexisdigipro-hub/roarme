@@ -4459,7 +4459,7 @@ button, [role='button'], .tabs, .foot { -webkit-user-select: none; user-select: 
 .name-marks { display: inline-flex; gap: 6px; flex: none; align-items: center; animation: nm-in .2s ease-out; }
 .name-marks .round { width: 32px; height: 32px; min-width: 32px; padding: 0; font-size: 15px; line-height: 1; font-family: inherit; }
 .name-marks .round b { font-weight: 800; }
-.name-marks .round.on { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.name-marks .round.on { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); border-color: transparent; }
 .field.name-row .name-marks { margin-top: 8px; }
 .pf-name-row { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
 @keyframes nm-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
@@ -4471,7 +4471,7 @@ html .room-view.finding > .room-head, html .room-view.finding > .compose-wrap, h
 .findtop { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; position: relative; z-index: 6; animation: drop-in .26s var(--ease) both; }
 html .findtop .findbar { flex: 1; margin: 0; height: 46px; padding: 0 14px; gap: 10px; cursor: text; }
 html .findtop .findbar input { font-size: 17px; }
-.find-chip { display: inline-flex !important; align-items: center; gap: 4px; width: auto !important; height: 28px !important; padding: 0 8px 0 10px !important; border-radius: 999px !important; background: var(--halo, var(--accent)) !important; color: var(--halo-ink, #fff) !important; font: inherit; font-size: 13.5px; font-weight: 600; white-space: nowrap; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
+.find-chip { display: inline-flex !important; align-items: center; gap: 4px; width: auto !important; height: 28px !important; padding: 0 8px 0 10px !important; border-radius: 999px !important; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; color: var(--halo-ink, #fff) !important; font: inherit; font-size: 13.5px; font-weight: 600; white-space: nowrap; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
 .find-chip svg { width: 13px; height: 13px; }
 .findfoot { position: relative; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 14px 14px; animation: drop-in .26s var(--ease) both; }
 html.kb .findfoot { padding-bottom: 8px; }
@@ -4523,14 +4523,14 @@ html.kb .findfoot { padding-bottom: 8px; }
 .gc-bar-faces { display: flex; flex: none; }
 .gc-bar-faces > * + * { margin-left: -8px; }
 .gc-bar-faces .av { box-shadow: 0 0 0 2px var(--bg, #fff); border-radius: 50%; }
-.gc-bar-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); }
+.gc-bar-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); }
 .gc-bar-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
 .gc-bar-text b { font-size: 14.5px; font-weight: 600; }
 .gc-bar-text small { font-size: 12.5px; color: var(--muted); }
-.gc-join { flex: none; height: 34px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); font: inherit; font-size: 14px; font-weight: 600; }
+.gc-join { flex: none; height: 34px; padding: 0 18px; border: 0; border-radius: 999px; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); font: inherit; font-size: 14px; font-weight: 600; }
 .gc-card { display: flex; align-items: center; gap: 10px; min-width: 230px; padding: 4px 2px; }
 .gc-card-ico { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: rgba(127, 127, 140, .18); }
-.gc-card.live .gc-card-ico { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); }
+.gc-card.live .gc-card-ico { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); }
 .gc-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
 .gc-card-text b { font-weight: 600; }
 .gc-card-text small { font-size: 12.5px; opacity: .7; }
@@ -4584,7 +4584,7 @@ html.kb .findfoot { padding-bottom: 8px; }
 .nc-pickbar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 10px 0 4px; }
 .nc-pickbar .btn { flex: 1; height: 46px; justify-content: center; }
 .nc-link { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 10px 4px 6px; text-align: center; }
-.nc-link-ico { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); }
+.nc-link-ico { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); }
 .nc-link-ico svg { width: 34px; height: 34px; }
 .nc-link p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.45; max-width: 300px; }
 .nc-link-url { max-width: 100%; padding: 12px 16px; border: 0; border-radius: 16px; background: rgba(127, 127, 140, .12); color: var(--text); font: inherit; font-size: 14px; word-break: break-all; }
@@ -4727,7 +4727,7 @@ html[data-skin='halo'] .pf-head .pf-pic-cam { box-shadow: 0 4px 12px rgba(0, 0, 
   background: var(--lg, rgba(255, 255, 255, .7)); box-shadow: var(--lg-shadow, 0 6px 18px rgba(0, 0, 0, .12)); font: inherit; font-size: 15px; font-weight: 600; color: var(--text); cursor: pointer; transition: transform .07s; min-width: 0; }
 .loc-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loc-btn svg { flex: none; width: 20px; height: 20px; }
-.loc-btn.go { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.loc-btn.go { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); border-color: transparent; }
 .loc-btn.live svg { color: #34c759; }
 .loc-btn:active:not(:disabled) { transform: scale(.96); }
 .loc-btn:disabled { opacity: .55; }
@@ -4739,7 +4739,7 @@ html[data-skin='halo'] .pf-head .pf-pic-cam { box-shadow: 0 4px 12px rgba(0, 0, 
 .locc.live-c .live-stop { align-self: stretch; margin: 6px 6px 4px; height: 36px; border-radius: 999px; border: 0; background: rgba(255, 59, 48, .14); color: #ff3b30; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 /* Send Location in the theme's colour with its words showing (Alex, 15 Nov: the words were white on white), and the
    live menu over everything in the middle of the screen */
-html:root:root:root:root .loc-foot .loc-btn.go { background: var(--halo, var(--accent)) !important; color: var(--halo-ink, #fff) !important; border-color: transparent !important; }
+html:root:root:root:root .loc-foot .loc-btn.go { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; color: var(--halo-ink, #fff) !important; border-color: transparent !important; }
 html:root:root:root:root .loc-foot .loc-btn.go svg { color: inherit !important; }
 html:root:root:root:root .loc-foot .loc-btn.live { color: var(--text) !important; }
 .loc-live-back { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: flex-end; justify-content: center; padding: 0 16px calc(170px + env(safe-area-inset-bottom, 0px)); background: rgba(12, 12, 20, .28); }
@@ -4786,7 +4786,7 @@ html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relati
 .as-head.pl-head { grid-template-columns: 76px 1fr 76px; }
 .as-head .pl-send { justify-self: end; height: 40px; padding: 0 18px; font-weight: 650; }
 .as-head .pl-send:disabled { opacity: .45; }
-.as-head .pl-send.on { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.as-head .pl-send.on { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); border-color: transparent; }
 .pl-ed { display: flex; flex-direction: column; padding-bottom: 104px; }
 .pl-card { padding: 0 0 0 16px; }
 .pl-in { width: 100%; min-width: 0; height: 52px; padding: 0 16px 0 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 16px; outline: none; }
@@ -4809,7 +4809,7 @@ html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relati
 .pl-set .switch input:checked + span { background: #34c759; }
 .pl-dur { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 14px 14px 46px; }
 .pl-dur .pill-btn { height: 32px; padding: 0 12px; font-size: 13px; }
-.pl-dur .pill-btn.on { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.pl-dur .pill-btn.on { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); border-color: transparent; }
 
 /* the poll in a chat: the question, the kind of poll, the options as rows (a circle, or a square when several answers
    are allowed), then the results as bars with the share, a tick on mine, green and red for a quiz, faces of voters */
@@ -4831,7 +4831,7 @@ html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relati
 .poll-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .poll-line { display: flex; align-items: center; gap: 6px; min-height: 22px; }
 .poll-label { min-width: 0; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
-.poll-tick { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); font-style: normal; }
+.poll-tick { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); font-style: normal; }
 .msg.mine .poll-tick { background: currentColor; }
 .msg.mine .poll-tick svg { color: var(--halo, #000); }
 .poll-tick svg { width: 10px; height: 10px; }
@@ -4848,7 +4848,7 @@ html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relati
 .poll-foot small { font-size: 12.5px; opacity: .7; }
 .poll-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
 .poll-acts .pill-btn, .poll-add .pill-btn { height: 32px; padding: 0 12px; font-size: 13px; }
-.poll-acts .pill-btn.on, .poll-add .pill-btn.on { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.poll-acts .pill-btn.on, .poll-add .pill-btn.on { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); border-color: transparent; }
 .msg.mine .poll-acts .pill-btn.on { background: currentColor; color: var(--halo, #000); }
 .poll-acts .pill-btn.danger { color: #ff3b30; }
 .poll.pl-wait { min-height: 80px; justify-content: center; opacity: .7; }

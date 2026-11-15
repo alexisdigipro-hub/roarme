@@ -115,7 +115,9 @@ struct Lens: View {
 // capsule with a bright rim, white line icons over white words, the chosen one in a lighter glass pill with its own
 // rim and shadow, and a thread of light leaking along the bar's bottom edge. The pill travels (GLASS TRAVEL).
 struct FootMenu<T: Hashable>: View {
-    var items: [(T, String, String)]   // value, word, the icon's name in the asset catalog
+    // value, word (for VoiceOver), the SF Symbol; the chosen one wears its .fill form (Alex, 15 Nov: icons only, smaller,
+    // as his reference: a slim dark glass capsule, the chosen sign white and filled in a soft glass pill, the rest thin lines)
+    var items: [(T, String, String)]
     @Binding var value: T
     @Namespace private var ns
     @State private var going = false
@@ -124,54 +126,40 @@ struct FootMenu<T: Hashable>: View {
     var body: some View {
         HStack(spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.offset) { _, it in
+                let on = value == it.0
                 Button { pick(it.0) } label: {
-                    VStack(spacing: 4) {
-                        Image(it.2).renderingMode(.template).resizable().scaledToFit().frame(width: 26, height: 26)
-                            .scaleEffect(popped == it.0 ? 1.16 : 1)
-                        Text(it.1).font(.system(size: 12.5, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.7)
-                    }
-                    .foregroundStyle(Color.white)
-                    .shadow(color: .black.opacity(0.12), radius: 1, y: 1)
-                    .frame(maxWidth: .infinity, minHeight: 60)
-                    .background {
-                        if value == it.0 {
-                            Capsule()
-                                .fill(LinearGradient(colors: [Color.white.opacity(going ? 0.5 : 0.42), Color.white.opacity(going ? 0.2 : 0.14)], startPoint: .top, endPoint: .bottom))
-                                .overlay(Capsule().stroke(Color.white.opacity(0.32), lineWidth: 1))
-                                .overlay(alignment: .top) { Capsule().fill(Color.white.opacity(0.5)).frame(height: 1).padding(.horizontal, 16).padding(.top, 0.5) }
-                                .shadow(color: .black.opacity(0.45), radius: 8, y: 5)
-                                .modifier(ChromaRim(on: going))
-                                .scaleEffect(x: going ? 1.03 : 1, y: going ? 1.16 : 1)
-                                .matchedGeometryEffect(id: "foot", in: ns)
+                    Image(systemName: on ? it.2 + ".fill" : it.2)
+                        .font(.system(size: 21, weight: on ? .semibold : .regular))
+                        .symbolRenderingMode(.monochrome)
+                        .foregroundStyle(on ? Color.white : Color.white.opacity(0.62))
+                        .scaleEffect(popped == it.0 ? 1.14 : 1)
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background {
+                            if on {
+                                Capsule()
+                                    .fill(Color.white.opacity(going ? 0.2 : 0.14))
+                                    .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 0.8))
+                                    .modifier(ChromaRim(on: going))
+                                    .scaleEffect(x: going ? 1.03 : 1, y: going ? 1.12 : 1)
+                                    .matchedGeometryEffect(id: "foot", in: ns)
+                            }
                         }
-                    }
-                    .contentShape(Capsule())
+                        .contentShape(Capsule())
                 }
                 .buttonStyle(FootPress())
+                .accessibilityLabel(it.1)
+                .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
         .padding(5)
         .background {
             ZStack {
                 Capsule().fill(.ultraThinMaterial)
-                Capsule().fill(Color(red: 0.24, green: 0.215, blue: 0.195).opacity(0.72))
-                Capsule().fill(Color.white.opacity(0.06))
+                Capsule().fill(Color(red: 0.08, green: 0.09, blue: 0.1).opacity(0.55))
             }
         }
-        .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
-        .overlay(alignment: .top) { Capsule().fill(Color.white.opacity(0.22)).frame(height: 1).padding(.horizontal, 30).allowsHitTesting(false) }
-        // the light leaking along the bottom edge
-        .overlay(alignment: .bottom) {
-            Capsule()
-                .fill(RadialGradient(colors: [Color(red: 1, green: 0.93, blue: 0.86).opacity(0.85), .clear], center: .center, startRadius: 0, endRadius: 110))
-                .frame(height: 2)
-                .padding(.horizontal, 90)
-                .shadow(color: Color(red: 1, green: 0.89, blue: 0.78).opacity(0.35), radius: 8, y: 2)
-                .offset(y: 1)
-                .allowsHitTesting(false)
-        }
-        .shadow(color: .black.opacity(0.62), radius: 16, x: 8, y: 12)
-        .shadow(color: .black.opacity(0.4), radius: 4, x: 2, y: 3)
+        .overlay(Capsule().stroke(LinearGradient(colors: [Color.white.opacity(0.28), Color.white.opacity(0.08), Color.white.opacity(0.18)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
+        .shadow(color: .black.opacity(0.45), radius: 18, y: 10)
     }
 
     private func pick(_ v: T) {

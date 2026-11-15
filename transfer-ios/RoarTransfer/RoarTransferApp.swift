@@ -98,13 +98,14 @@ struct RootView: View {
             .padding(.top, 6)
 
             FootMenu(items: [
-                (Router.Tab.send, t("Send"), "foot-send"),
-                (.mine, t("My transfers"), "foot-mine"),
-                (.receive, t("Receive"), "foot-receive"),
-                (.settings, t("Settings"), "foot-settings"),
+                (Router.Tab.send, t("Send"), "arrow.up.circle"),
+                (.mine, t("My transfers"), "tray.full"),
+                (.receive, t("Receive"), "arrow.down.circle"),
+                (.settings, t("Settings"), "gearshape"),
             ], value: $router.tab)
-            .padding(.horizontal, 12)
-            .padding(.bottom, 4)
+            .frame(maxWidth: 330)
+            .padding(.horizontal, 28)
+            .padding(.bottom, 6)
         }
         .task(id: session.signedIn) { await pro.load() }
     }

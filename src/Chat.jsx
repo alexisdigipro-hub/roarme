@@ -30,7 +30,7 @@ import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { NowPlaying } from './player.jsx'
-import { onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
+import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
@@ -2221,7 +2221,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // hooks: the RoarTransfer window follows its own files (batch), can stop them, and hears each one sent
   const sendFiles = async (files, caption = '', compress = true, viaTransfer = false, hooks = {}) => {
     if (sealOn) { setAttach(null); setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
-    if (viaTransfer) compress = false
+    // from the attach sheet's File tab: sent exactly as they are, as files (Alex, 15 Nov: photos raw, untouched)
+    const asFile = !!hooks.asFile
+    if (viaTransfer || asFile) compress = false
     setAttach(null); setErr('')
     const reply = replyTo
     setReplyTo(null)
@@ -2250,7 +2252,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       if (hooks.stopped?.()) { dropOut(tile.id); continue }
       const isImg = /^image\/(jpeg|png|webp)$/.test(raw.type)
       try {
-        let file = isImg && compress ? await shrinkImage(raw, prefs.largePhotos ? 2560 : 1600, prefs.largePhotos ? 0.88 : 0.82) : raw
+        // the Gallery tab sends photos at one middle size, quick to send (Alex, 15 Nov: no SD / HD question any more)
+        let file = isImg && compress ? await shrinkImage(raw, 2048, 0.85) : raw
         if (handles.get(raw)) {
           const small = await compressVideo(handles.get(raw), (p) => setOut(tile.id, { stage: 'shrink', p }))
           if (small?.file) file = small.file
@@ -2259,16 +2262,17 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         const meta = await upload(file, null, {}, tile.id, viaTransfer)
         // a small copy of a photo for the chat itself: a phone no longer opens every photo whole (a 1600 px photo
         // takes about 8 MB once opened); the whole photo still opens full screen (Alex, 21 Oct: RoarMe lighter)
+        if (asFile) meta.asFile = true
         if (/^image\/(jpeg|png|webp)$/.test(file.type) && !meta.bucket) {
           try {
-            const small = await shrinkImage(file, 900, 0.78)
+            const small = await shrinkImage(file, asFile ? 320 : 900, asFile ? 0.72 : 0.78)
             if (small !== file) meta.thumb = (await upload(small)).path
           } catch { /* the chat shows the whole photo */ }
         }
         stick.current = true
         const last = n === ok.length
         const { data, error } = await supabase.from('roar_messages').insert({
-          room_id: room.room_id, user_id: me.id, kind: /^image\//.test(file.type) && !/gif|svg/.test(file.type) && !meta.bucket ? 'image' : 'file', body: last ? caption : '',
+          room_id: room.room_id, user_id: me.id, kind: !asFile && /^image\//.test(file.type) && !/gif|svg/.test(file.type) && !meta.bucket ? 'image' : 'file', body: last ? caption : '',
           file: meta, reply_to: reply?.id || null,
         }).select().single()
         if (error) throw error
@@ -3005,9 +3009,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           // what the message is, as classes on its bubble, so the themes need no :has() to find it out (Alex, 12 Nov: lighter):
           // rt-b a RoarTransfer card, aud-b a voice message or a song, file-b a file, solo with no words, quote or name over it
           const isAud = m.kind === 'voice' || (m.kind === 'file' && !isTransfer && !m.file?.roartransfer && isAudioFile(m.file))
-          const kindCls = `${m.file?.roartransfer ? ' rt-b' : ''}${isAud ? ' aud-b' : ''}${m.kind === 'file' && !isAud && !m.file?.roartransfer && !m.file?.event && !m.file?.location && !m.file?.article && !/^(image|video)\//.test(m.file?.type || '') ? ' file-b' : ''}${!m.body && !(m.reply_to && byId[m.reply_to] && !byId[m.reply_to].deleted_at) && !(m.user_id !== me.id && room.kind === 'group') ? ' solo' : ''}`
-          const isVideo = m.kind === 'file' && !isTransfer && /^video\//.test(m.file?.type || '')
-          const isGifFile = m.kind === 'file' && !isTransfer && /gif/.test(m.file?.type || '')
+          const kindCls = `${m.file?.roartransfer ? ' rt-b' : ''}${isAud ? ' aud-b' : ''}${m.kind === 'file' && !isAud && !m.file?.roartransfer && !m.file?.event && !m.file?.location && !m.file?.article && (m.file?.asFile || !/^(image|video)\//.test(m.file?.type || '')) ? ' file-b' : ''}${!m.body && !(m.reply_to && byId[m.reply_to] && !byId[m.reply_to].deleted_at) && !(m.user_id !== me.id && room.kind === 'group') ? ' solo' : ''}`
+          const isVideo = m.kind === 'file' && !isTransfer && !m.file?.asFile && /^video\//.test(m.file?.type || '')
+          const isGifFile = m.kind === 'file' && !isTransfer && !m.file?.asFile && /gif/.test(m.file?.type || '')
           const vlink = !m.deleted_at && m.kind === 'text' ? videoLinkOf(m.body) : null
           const wide = wideIds.has(m.id)
           const hit = find && found.includes(m.id)
@@ -3045,8 +3049,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : isTransfer ? <TransferTile file={m.file} onCinema={hands.current.setCinema} />
                       : isVideo && m.file?.round ? <NoteTile file={m.file} />
                       : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />
-                      : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
-                      : m.kind === 'file' ? <FileTile file={m.file} />
+                      : m.kind === 'file' && isAudioFile(m.file) && !m.file?.asFile ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
+                      : m.kind === 'file' ? <FileTile file={m.file} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name }], index: 0 })} />
                       : null}
                     {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
@@ -3415,7 +3419,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles}
+      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={(f, c, comp, asFile) => sendFiles(f, c, comp, false, { asFile })}
         onTransfer={() => { setTransferHidden(false); setTransferOpen(true) }} transferSlot={setTransferSlot}
         onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))}
         contacts={shareable} onContact={(p) => sendCard(nameOf(p), { contact: { id: p.id, username: p.username, name: nameOf(p), avatar: p.avatar_url || '' } }, '', () => setAttach(null))} />}
@@ -3560,12 +3564,64 @@ function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
   return url ? <img className={`pic-img${ready ? ' ready' : ''}${tall ? ' tall' : ''}`} src={url} alt={file?.name || ''} loading="lazy" decoding="async" onLoad={(e) => { const t = e.currentTarget; setTall(t.naturalHeight > t.naturalWidth * 1.25); setReady(true) }} draggable={false} onClick={(e) => { e.stopPropagation(); if (Date.now() - (window.roarHeldAt || 0) < 800) return; onOpen(url) }} /> : <span className="pic-wait" />
 }
 
-function FileTile({ file }) {
-  const open = async () => { const u = await fileLink(file); if (u) window.open(u, '_blank', 'noopener') }
+/* a file in a message, as Telegram's (Alex, 15 Nov): a square with its picture (or its kind) and a round download
+   sign, the name in the accent and the size; a tap downloads it first, with a ring that fills, then opens it (a photo
+   or a video in the app's viewer; anything else in the browser, or saved on a computer) */
+const FT_EXT = { pdf: '#ff3b30', doc: '#2f7cf6', docx: '#2f7cf6', xls: '#34c759', xlsx: '#34c759', csv: '#34c759', ppt: '#ff9500', pptx: '#ff9500', zip: '#8e8e93', rar: '#8e8e93', '7z': '#8e8e93', mov: '#5856d6', mp4: '#5856d6', png: '#af52de', jpg: '#af52de', jpeg: '#af52de', heic: '#af52de', tif: '#af52de', tiff: '#af52de', dng: '#af52de', mp3: '#ff2d55', wav: '#ff2d55', m4a: '#ff2d55', drp: '#00a1e4' }
+const fileDone = new Map() // path -> a link to the downloaded copy, for this visit
+const FT_DOWN = <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v13M6 12.5l6 6 6-6" /></svg>
+function FileTile({ file, onView }) {
+  const key = file?.path || ''
+  const [thumb, setThumb] = useState('')
+  const [p, setP] = useState(fileDone.has(key) ? 1 : -1) // -1 not downloaded, 0..1 downloading, 1 here
+  const [got, setGot] = useState(0)
+  const ext = (/\.([a-z0-9]{1,5})$/i.exec(file?.name || '')?.[1] || '').toLowerCase()
+  const media = /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/)/.test(file?.type || '')
+  useEffect(() => { if (!file?.thumb) return undefined; let alive = true; fileLink(thumbOf(file)).then((u) => { if (alive) setThumb(u) }); return () => { alive = false } }, [file?.thumb])
+  const open = async (url) => {
+    if (media && onView) { onView(url); return }
+    if (inApp()) { const u = await fileLink(file); if (u) window.open(u, '_blank', 'noopener'); return }
+    const a = document.createElement('a'); a.href = url; a.download = file?.name || 'file'; document.body.appendChild(a); a.click(); a.remove()
+  }
+  const tap = async (e) => {
+    e.stopPropagation()
+    if (p >= 0 && p < 1) return
+    if (fileDone.has(key)) { open(fileDone.get(key)); return }
+    const u = await fileLink(file)
+    if (!u) return
+    setP(0)
+    try {
+      const r = await fetch(u)
+      if (!r.ok || !r.body) throw new Error('download')
+      const total = Number(r.headers.get('content-length')) || file?.size || 0
+      const reader = r.body.getReader()
+      const parts = []
+      let n = 0
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        parts.push(value); n += value.length
+        setGot(n); if (total) setP(Math.min(0.99, n / total))
+      }
+      const url = URL.createObjectURL(new Blob(parts, { type: file?.type || 'application/octet-stream' }))
+      fileDone.set(key, url)
+      setP(1)
+      open(url)
+    } catch { setP(-1); window.open(u, '_blank', 'noopener') }
+  }
+  const R = 20
+  const C = 2 * Math.PI * R
   return (
-    <button type="button" className="file" onClick={open} title="Open">
-      <span className="file-ico">{I.file}</span>
-      <span className="file-text"><b>{file?.name}</b><small>{fmtBytes(file?.size)}</small></span>
+    <button type="button" className={`file ft${p === 1 ? ' here' : ''}`} onClick={tap} title={p === 1 ? 'Open' : 'Download'}>
+      <span className="ft-box" style={{ '--tint': FT_EXT[ext] || '#8e8e93' }}>
+        {thumb ? <img src={thumb} alt="" loading="lazy" draggable={false} /> : <b className="ft-ext">{ext ? ext.slice(0, 4) : I.file}</b>}
+        {p < 1 && (
+          <i className="ft-go">
+            {p >= 0 ? <svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><circle cx="24" cy="24" r={R} fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="3" /><circle cx="24" cy="24" r={R} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - Math.max(0.03, p))} transform="rotate(-90 24 24)" /></svg> : FT_DOWN}
+          </i>
+        )}
+      </span>
+      <span className="file-text"><b>{file?.name}</b><small>{p >= 0 && p < 1 ? `${fmtBytes(got)} of ${fmtBytes(file?.size)}` : fmtBytes(file?.size)}</small></span>
     </button>
   )
 }

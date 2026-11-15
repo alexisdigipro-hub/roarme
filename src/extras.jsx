@@ -206,10 +206,11 @@ const AS_I = {
 }
 
 export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, transferSlot, contacts, onContact }) {
-  const prefs = usePrefs()
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
-  const [compress, setCompress] = useState(prefs.compress)
+  // the Gallery tab (and the camera) sends photos and videos made lighter; the File tab sends anything exactly as it is,
+  // shown in the chat as a file to download (Alex, 15 Nov). asFile is set by where the first ones were picked
+  const [asFile, setAsFile] = useState(false)
   const [tab, setTab] = useState('gallery')
   const [recent, setRecent] = useState(null)
   const [sending, setSending] = useState('')
@@ -225,9 +226,10 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
+  const galRaw = useRef(null)
   const aud = useRef(null)
   const touchOnly = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches
-  const add = (list) => setFiles((f) => [...f, ...list])
+  const add = (list, raw) => { if (!files.length) setAsFile(!!raw); setFiles((f) => [...f, ...list]) }
   const urls = useRef(new Map())
   const thumb = (f) => {
     if (!/^(image|video)\//.test(f.type)) return ''
@@ -265,8 +267,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   // RoarTransfer opens in the sheet's body when its tab is chosen
   useEffect(() => { if (tab === 'transfer' && !files.length) onTransfer?.() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
   const title = files.length ? `${files.length} selected` : TABS.find(([k]) => k === tab)?.[1] || 'Send'
-  const media = files.some((f) => /^(image|video)\//.test(f.type))
-  const big = files.filter((f) => f.size > 50e6 && !(compress && /^video\//.test(f.type)))
+  const big = files.filter((f) => f.size > 50e6 && !(!asFile && /^video\//.test(f.type)))
   const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
   if (edit >= 0 && files[edit]) return <PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} />
   return createPortal(
@@ -284,24 +285,16 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
               <div className="attach-grid">
                 {files.map((f, n) => (
                   <span key={n} className="attach-item">
-                    {/^image\//.test(f.type) ? <img src={thumb(f)} alt="" onClick={() => !/gif/.test(f.type) && setEdit(n)} /> : /^video\//.test(f.type) ? <video src={thumb(f)} muted /> : <span className="attach-doc">{I.file}<small>{f.name}</small></span>}
+                    {/^image\//.test(f.type) ? <img src={thumb(f)} alt="" onClick={() => !asFile && !/gif/.test(f.type) && setEdit(n)} /> : /^video\//.test(f.type) ? <video src={thumb(f)} muted /> : <span className="attach-doc">{I.file}<small>{f.name}</small></span>}
                     {/^video\//.test(f.type) && <i className="attach-play">{I.play}</i>}
                     <small className="attach-size">{fmtBytes(f.size)}</small>
-                    {/^image\//.test(f.type) && !/gif/.test(f.type) && <i className="attach-edit" onClick={() => setEdit(n)} role="button" aria-label="Edit Photo">{I.edit}</i>}
+                    {/^image\//.test(f.type) && !/gif/.test(f.type) && !asFile && <i className="attach-edit" onClick={() => setEdit(n)} role="button" aria-label="Edit Photo">{I.edit}</i>}
                     <button type="button" onClick={() => setFiles((l) => l.filter((_, k) => k !== n))} aria-label="Remove">{I.x}</button>
                   </span>
                 ))}
-                <button type="button" className="attach-more" onClick={() => (media ? gal : doc).current?.click()} aria-label="Add more">{I.plus}</button>
+                <button type="button" className="attach-more" onClick={() => (asFile ? doc : gal).current?.click()} aria-label="Add more">{I.plus}</button>
               </div>
-              {media && (
-                <div className="attach-quality">
-                  <div className="seg">
-                    <button type="button" className={compress ? 'on' : ''} onClick={() => setCompress(true)}>SD</button>
-                    <button type="button" className={!compress ? 'on' : ''} onClick={() => setCompress(false)}>HD</button>
-                  </div>
-                  <small className="muted">{compress ? 'Smaller and faster: photos resized, videos to 720p.' : 'Full quality, as they are.'}</small>
-                </div>
-              )}
+              {asFile && <small className="muted attach-raw">Sent as files, exactly as they are.</small>}
               {big.length > 0 && <small className="attach-transfer">{big.length === 1 ? 'Over 50 MB: it goes by RoarTransfer, up to 3 GB, kept 3 days.' : `${big.length} files over 50 MB go by RoarTransfer, kept 3 days.`}</small>}
             </>
           ) : tab === 'transfer' && onTransfer ? (
@@ -346,7 +339,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
                   ? <AsTile wide icon={I.play} title="Choose a Sound File" sub="MP3, WAV, M4A, FLAC and the rest" onClick={() => aud.current?.click()} />
                   : <>
                     <AsTile icon={I.file} title="Files" sub={touchOnly ? 'From this phone' : 'From this computer'} onClick={() => doc.current?.click()} />
-                    <AsTile icon={I.image} title="Gallery" sub="Sent as a file, untouched" onClick={() => gal.current?.click()} />
+                    <AsTile icon={I.image} title="Gallery" sub="Sent as a file, untouched" onClick={() => galRaw.current?.click()} />
                   </>}
               </div>
               <small className="as-label">{tab === 'audio' ? 'Sound in your chats' : 'Recently sent files'}</small>
@@ -361,7 +354,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
         {files.length > 0 ? (
           <div className="as-send">
             <input className="input attach-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" />
-            <button type="button" className="round send ready attach-send" onClick={() => { setPrefs({ compress }); onSend(files, caption.trim(), compress) }} aria-label="Send" title="Send">{I.send}</button>
+            <button type="button" className="round send ready attach-send" onClick={() => onSend(files, caption.trim(), !asFile, asFile)} aria-label="Send" title="Send">{I.send}</button>
           </div>
         ) : (
           <nav ref={tabsLens} className="as-tabs lens" data-travel="">
@@ -370,7 +363,8 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
         )}
         <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
         <input ref={cam} type="file" accept="image/*,video/*" capture="environment" hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
-        <input ref={doc} type="file" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
+        <input ref={doc} type="file" multiple hidden onChange={(e) => { add([...(e.target.files || [])], tab === 'file' || asFile); e.target.value = '' }} />
+        <input ref={galRaw} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])], true); e.target.value = '' }} />
         <input ref={aud} type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.aif,.aiff,.ogg,.opus" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
       </div>
     </div>,

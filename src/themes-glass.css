@@ -807,3 +807,10 @@ html:root:root:root .pf-acts .menu > button > span { display: flex !important; f
 html:root:root:root .pf-acts .menu > button .pf-m-note { color: var(--muted) !important; font-size: 12.5px !important; }
 html:root:root:root .pf-acts .menu > button > .pf-m-arrow { margin-left: auto !important; }
 html:root:root:root .pf-acts .menu { color: var(--text); }
+/* the profile menus' veil covers the whole screen and takes no press effect (Alex, 15 Nov: "everything spills"): it
+   stood inside the moving profile window, so it is drawn far past every edge, with no split-colour rim, no press
+   squash and no animation */
+html:root:root:root :is(.pf-acts, .pf-more) > .scrim { inset: -100vh -100vw !important; transform: none !important; animation: none !important; transition: none !important; outline: 0 !important;
+  box-shadow: none !important; filter: none !important; }
+html:root:root:root :is(.pf-acts, .pf-more) > .scrim::before, html:root:root:root :is(.pf-acts, .pf-more) > .scrim::after { display: none !important; }
+html:root:root:root .pf-more > .scrim { position: fixed !important; background: rgba(12, 12, 20, .32) !important; border: 0 !important; border-radius: 0 !important; }

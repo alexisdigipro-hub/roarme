@@ -53,7 +53,7 @@ enum UIApplicationBackground {
 
 @MainActor
 final class Router: ObservableObject {
-    enum Tab: Hashable { case send, mine, receive, studio, settings }
+    enum Tab: Hashable { case send, mine, receive, settings }
     static weak var shared: Router?
     @Published var tab: Tab = .send
     init() { Router.shared = self }
@@ -66,7 +66,7 @@ final class Router: ObservableObject {
 }
 
 // As roartransfer.com: the wordmark (with PRO for a Pro) and EN | GR at the top, the page in the website's glass card
-// on one of Alex's stills, and at the foot RoarMe's menu: Send · My transfers · Receive · Studio · Settings.
+// on one of Alex's stills, and at the foot RoarMe's menu: Send · My transfers · Receive · Settings (Studio left on 15 Nov: it becomes an app of its own).
 struct RootView: View {
     @EnvironmentObject var router: Router
     @EnvironmentObject var lang: Lang
@@ -89,7 +89,6 @@ struct RootView: View {
                     case .send: SendView().transition(.glassDrop)
                     case .mine: MineView().transition(.glassDrop)
                     case .receive: ReceiveView().transition(.glassDrop)
-                    case .studio: StudioView().padding(.bottom, 92).transition(.glassDrop)
                     case .settings: SettingsView().transition(.glassDrop)
                     }
                 }
@@ -102,7 +101,6 @@ struct RootView: View {
                 (Router.Tab.send, t("Send"), "foot-send"),
                 (.mine, t("My transfers"), "foot-mine"),
                 (.receive, t("Receive"), "foot-receive"),
-                (.studio, "Studio", "foot-studio"),
                 (.settings, t("Settings"), "foot-settings"),
             ], value: $router.tab)
             .padding(.horizontal, 12)

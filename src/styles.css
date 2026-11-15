@@ -4898,3 +4898,7 @@ html button.link.danger-link { color: var(--danger, #e5484d) !important; }
 .pf-row .pf-row-del { flex: none; width: 34px; height: 34px; min-width: 34px; }
 .pf-row .pf-row-del svg { width: 16px; height: 16px; }
 .people .pf-row { flex-wrap: nowrap; }
+.pf-row .pf-row-adm { flex: none; width: 34px; height: 34px; min-width: 34px; margin-left: auto; }
+.pf-row .pf-row-adm svg { width: 17px; height: 17px; }
+.pf-row .pf-row-adm.on { color: var(--halo, var(--accent)); }
+.pf-row .pf-row-adm + .pf-row-del { margin-left: 6px; }

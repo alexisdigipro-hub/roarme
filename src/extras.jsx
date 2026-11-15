@@ -7,6 +7,7 @@ import { Avatar, I, Modal, Slide, useLens, useSeen, useSwipeClose, useTabSwipe }
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 // the photo editor and the map load only when they are opened (lighter start, 15 Nov)
+const PollEditor = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollEditor })))
 const PhotoEdit = lazy(() => import('./photoEdit.jsx').then((m) => ({ default: m.PhotoEdit })))
 const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationPicker })))
 
@@ -203,6 +204,7 @@ const AS_I = {
   location: asSolid('M12 2.2a7.6 7.6 0 0 1 7.6 7.6c0 5.3-6.1 11.2-6.9 11.9a1 1 0 0 1-1.4 0c-.8-.7-6.9-6.6-6.9-11.9A7.6 7.6 0 0 1 12 2.2zM12 6.9a2.9 2.9 0 1 0 0 5.8 2.9 2.9 0 0 0 0-5.8z'),
   audio: asSolid('M19.5 3.2v12.3a3.2 3.2 0 1 1-1.8-2.9V7.4l-8.4 1.9v8.3a3.2 3.2 0 1 1-1.8-2.9V6.3c0-.6.4-1.1 1-1.2l9.8-2.3c.6-.1 1.2.3 1.2.9z'),
   contact: asSolid('M12 3a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zM3 21a9 9 0 0 1 18 0z'),
+  poll: asSolid('M6 3.5h12A2.5 2.5 0 0 1 20.5 6v12a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 18V6A2.5 2.5 0 0 1 6 3.5zM7.6 11.2a1.1 1.1 0 0 0-1.1 1.1v4.2a1.1 1.1 0 0 0 2.2 0v-4.2a1.1 1.1 0 0 0-1.1-1.1zM12 6.8a1.1 1.1 0 0 0-1.1 1.1v8.6a1.1 1.1 0 0 0 2.2 0V7.9A1.1 1.1 0 0 0 12 6.8zM16.4 13.4a1.1 1.1 0 0 0-1.1 1.1v2a1.1 1.1 0 0 0 2.2 0v-2a1.1 1.1 0 0 0-1.1-1.1z'),
   transfer: asSolid('M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19zM11.2 7.2l-4 4a1.1 1.1 0 0 0 1.6 1.6l2.1-2.1V16a1.1 1.1 0 0 0 2.2 0v-5.3l2.1 2.1a1.1 1.1 0 0 0 1.6-1.6l-4-4a1.1 1.1 0 0 0-1.6 0z'),
 }
 
@@ -293,7 +295,7 @@ const FT_I = {
   scan: <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 8V6.5A2.5 2.5 0 0 1 6.5 4H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V8M20 16v1.5a2.5 2.5 0 0 1-2.5 2.5H16M8 20H6.5A2.5 2.5 0 0 1 4 17.5V16" /><path d="M9 7.5h4l2.5 2.5v6.5H9z" /><path d="M13 7.5V10h2.5" /></svg>,
 }
 
-export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, transferSlot, contacts, onContact }) {
+export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, onPoll, transferSlot, contacts, onContact }) {
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
   // the Gallery tab (and the camera) sends photos and videos made lighter; the File tab sends anything exactly as it is,
@@ -307,6 +309,9 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const [libPicked, setLibPicked] = useState([])
   const [libBusy, setLibBusy] = useState(false)
   const [fileQ, setFileQ] = useState(null) // the File tab's search, null while closed
+  const [pollOut, setPollOut] = useState(null) // the poll editor's finished poll, null while it is not complete
+  const [pollBusy, setPollBusy] = useState(false)
+  const sendPoll = async () => { if (!pollOut || pollBusy) return; setPollBusy(true); const ok = await onPoll(pollOut()); setPollBusy(false); if (ok !== false) onClose() }
   const pickLib = (a) => setLibPicked((l) => (l.some((x) => x.identifier === a.identifier) ? l.filter((x) => x.identifier !== a.identifier) : [...l, a]))
   const sendLib = async () => {
     if (libBusy || !libPicked.length) return
@@ -324,7 +329,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const [who, setWho] = useState('')
   // the tab bar is the chat's own menu at the foot: its glass, icon over word, the lens in GLASS TRAVEL (Alex, 15 Nov)
   const tabsLens = useLens(`${tab}|${files.length > 0}`)
-  useTabSwipe(bodyRef, ['gallery', 'file', onLocation && 'location', 'audio', onContact && 'contact', onTransfer && 'transfer'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
+  useTabSwipe(bodyRef, ['gallery', 'file', onLocation && 'location', onPoll && 'poll', 'audio', onContact && 'contact', onTransfer && 'transfer'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
@@ -365,6 +370,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
     ['gallery', 'Gallery', AS_I.gallery],
     ['file', 'File', AS_I.file],
     onLocation && ['location', 'Location', AS_I.location],
+    onPoll && ['poll', 'Poll', AS_I.poll],
     ['audio', 'Audio', AS_I.audio],
     onContact && ['contact', 'Contact', AS_I.contact],
     onTransfer && ['transfer', 'Transfer', AS_I.transfer],
@@ -372,19 +378,21 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const go = (k) => setTab(k)
   // RoarTransfer opens in the sheet's body when its tab is chosen
   useEffect(() => { if (tab === 'transfer' && !files.length) onTransfer?.() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
-  const title = files.length ? `${files.length} selected` : TABS.find(([k]) => k === tab)?.[1] || 'Send'
+  const title = files.length ? `${files.length} selected` : tab === 'poll' ? 'New Poll' : TABS.find(([k]) => k === tab)?.[1] || 'Send'
   const asFile = pickedRaw || (tab === 'file' && files.length > 0) // anything picked while on the File tab goes raw
   const big = files.filter((f) => f.size > 50e6 && !(!asFile && /^video\//.test(f.type)))
   const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
   if (edit >= 0 && files[edit]) return <Suspense fallback={null}><PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} /></Suspense>
   return createPortal(
     <div className="as-back" onClick={onClose}>
-      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${(tab === 'transfer' || (tab === 'gallery' && lib)) && !files.length ? ' as-tall' : ''}${tab === 'gallery' && lib && !files.length ? ' as-lib' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${(tab === 'transfer' || tab === 'poll' || (tab === 'gallery' && lib)) && !files.length ? ' as-tall' : ''}${tab === 'gallery' && lib && !files.length ? ' as-lib' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <i className="as-grab" data-grab="" aria-hidden="true" />
-        <div className="as-head" data-grab="">
+        <div className={`as-head${tab === 'poll' && !files.length ? ' pl-head' : ''}`} data-grab="">
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
           <b>{title}</b>
-          {tab === 'file' && !files.length
+          {tab === 'poll' && !files.length
+            ? <button type="button" className={`pill-btn pl-send${pollOut ? ' on' : ''}`} disabled={!pollOut || pollBusy} onClick={sendPoll}>Send</button>
+            : tab === 'file' && !files.length
             ? <button type="button" className="round" onClick={() => setFileQ((q) => (q === null ? '' : null))} aria-label="Search files">{fileQ === null ? I.search : I.x}</button>
             : <span className="as-head-pad" />}
         </div>
@@ -425,6 +433,8 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
           ) : tab === 'location' && onLocation ? (
             // Location is a tab of the sheet like the others (Alex, 14 Nov: it popped a window of its own and the sheet was gone)
             <Suspense fallback={<div className="loc loc-inline" />}><LocationPicker inline onSend={onLocation} onLive={onLive} onClose={onClose} /></Suspense>
+          ) : tab === 'poll' && onPoll ? (
+            <Suspense fallback={null}><PollEditor onReady={(fn) => setPollOut(() => fn)} /></Suspense>
           ) : tab === 'gallery' && lib ? (
             <LibraryGrid picked={libPicked} onPick={pickLib} onCamera={() => cam.current?.click()} onFail={() => setLib(false)} />
           ) : tab === 'gallery' ? (

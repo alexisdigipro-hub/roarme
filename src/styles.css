@@ -4907,7 +4907,6 @@ html button.link.danger-link { color: var(--danger, #e5484d) !important; }
 .pf:has(.pf-menu, .pf-mute-menu) :is(.pf-tabs, .pf-dock) { z-index: 1; }
 .pf:has(.pf-menu, .pf-mute-menu) .pf-head { position: relative; z-index: 50; }
 /* a profile never slides sideways (Alex, 15 Nov: "it spills over"): nothing in it may be wider than the window */
-.modal:has(.pf) .modal-body { overflow-x: hidden; }
 .pf { min-width: 0; max-width: 100%; }
 .pf-row { min-width: 0; }
 .pf-row .pf-row-text { min-width: 0; flex: 1; }
@@ -4923,3 +4922,8 @@ html button.link.danger-link { color: var(--danger, #e5484d) !important; }
 .ns-row:active:not(:disabled) { background: rgba(127, 127, 140, .12); }
 .ns-row > i { display: grid; color: var(--halo, var(--accent)); }
 .ns-note { margin: 8px 8px 18px; font-size: 13px; color: var(--muted); line-height: 1.4; }
+
+/* the profile's picture has no ring (Alex, 15 Nov: "it has a frame, we did not have it like this"): only its soft
+   shadow, and the camera badge without the white rim */
+html[data-skin='halo'] .pf-head .pf-top .av { box-shadow: 0 10px 26px rgba(0, 0, 0, .3) !important; }
+html[data-skin='halo'] .pf-head .pf-pic-cam { box-shadow: 0 4px 12px rgba(0, 0, 0, .3) !important; }

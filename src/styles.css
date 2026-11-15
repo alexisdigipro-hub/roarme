@@ -4723,7 +4723,7 @@ html.kb .findfoot { padding-bottom: 8px; }
 .pf-dock { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 10px; height: 64px; margin-bottom: -78px; padding: 0 4px;
   opacity: 0; transform: translateY(-8px); pointer-events: none; transition: opacity .2s ease, transform .26s cubic-bezier(.25, 1.35, .45, 1); }
 .pf.pf-docked .pf-dock { opacity: 1; transform: none; pointer-events: auto; }
-.pf-dock::before { content: ''; position: absolute; inset: -12px -40px -6px; z-index: -1; background: var(--bg, #f2f2f6); background: color-mix(in srgb, var(--bg, #f2f2f6) 82%, transparent); -webkit-backdrop-filter: blur(var(--blur, 10px)); backdrop-filter: blur(var(--blur, 10px)); -webkit-mask: linear-gradient(#000 80%, transparent); mask: linear-gradient(#000 80%, transparent); }
+.pf-dock::before { content: ''; position: absolute; inset: -12px -16px -6px; z-index: -1; background: var(--bg, #f2f2f6); background: color-mix(in srgb, var(--bg, #f2f2f6) 82%, transparent); -webkit-backdrop-filter: blur(var(--blur, 10px)); backdrop-filter: blur(var(--blur, 10px)); -webkit-mask: linear-gradient(#000 80%, transparent); mask: linear-gradient(#000 80%, transparent); }
 .pf-dock .round { flex: none; }
 .pf-dock-title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; line-height: 1.2; }
 .pf-dock-title b { max-width: 100%; font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

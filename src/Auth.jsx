@@ -50,8 +50,8 @@ export function Auth() {
   // email and password, as RoarMe began (Alex, 14 Nov: the sign-in by a 6-digit email code is gone again)
   return (
     <div className="auth">
-      {/* with the keyboard up the whole form stays in sight (Alex, 15 Nov: the keyboard covered Sign in): the card moves
-          to the top and gets compact (styles.css, html.kb .auth), and its last row is scrolled into view once it settles */}
+      {/* with the keyboard up the whole form stays in sight (Alex, 15 Nov: the keyboard covered Sign in): the whole
+          card sits just over the keyboard (styles.css, html.kb .auth), and its last row is scrolled into view once it settles */}
       <form className="auth-card" onSubmit={submit} onFocus={(e) => { const f = e.currentTarget; if (e.target.tagName === 'INPUT') setTimeout(() => f.lastElementChild?.scrollIntoView({ block: 'end', behavior: 'smooth' }), 380) }}>
         <Brand />
         {invitedBy && mode !== 'forgot' && <p className="auth-invite"><b>@{invitedBy}</b> invited you to RoarMe. {mode === 'up' ? 'Create your account and your chat opens.' : 'Sign in and your chat opens.'}</p>}

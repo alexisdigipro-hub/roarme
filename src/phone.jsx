@@ -53,6 +53,16 @@ export async function sha256hex(s) {
 
 // is Supabase's phone sign-in on? (its public settings; asked once)
 let phoneOn = null
+// what went wrong with an SMS code, in plain words (Alex, 15 Nov: Twilio's own long English text with links showed)
+export function smsErr(error) {
+  const m = String(error?.message || error || '')
+  if (/already|registered|exists/i.test(m)) return 'This number is already on another account.'
+  if (/rate|too many|seconds|limit/i.test(m)) return 'Too many tries. Wait a minute and try again.'
+  if (/invalid.*(phone|number)|not a valid/i.test(m)) return 'Check the number.'
+  if (/token|otp|expired|code/i.test(m) && !/provider|sending/i.test(m)) return 'That code is not right. Check the SMS and try again.'
+  return 'Couldn\'t send the SMS right now. Try again later.'
+}
+
 export function phoneAuthOn() {
   if (!phoneOn) {
     phoneOn = fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_KEY } })

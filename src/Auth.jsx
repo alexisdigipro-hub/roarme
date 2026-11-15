@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
 import { Wordmark } from './ui.jsx'
 import { pendingInvite } from './invite.jsx'
-import { COUNTRIES, PhoneField, toE164, usePhoneAuth } from './phone.jsx'
+import { COUNTRIES, PhoneField, smsErr, toE164, usePhoneAuth } from './phone.jsx'
 
 function Brand() {
   return (
@@ -162,7 +162,7 @@ export function Onboarding({ user, onDone }) {
     setErr(''); setBusy(true)
     const { error } = await supabase.auth.updateUser({ phone })
     setBusy(false)
-    if (error) setErr(/already|registered|exists/i.test(error.message || '') ? 'This number is already on another account.' : errText(error))
+    if (error) setErr(smsErr(error))
     else setStep('code')
   }
   const checkCode = async (e) => {

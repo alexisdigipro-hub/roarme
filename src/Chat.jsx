@@ -41,6 +41,7 @@ const LiveCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.Live
 const LocationCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationCard })))
 const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationPicker })))
 const LocationView = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationView })))
+const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.PdfView })))
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
 const LOC_WAIT = <span className="locc"><span className="locc-map" /></span>
 import { resumeLive, startLive } from './live.js'
@@ -2015,6 +2016,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }, [backTick, find, wallPick, schedOpen, rolesOpen, sealAsk])
   const [locOpen, setLocOpen] = useState(false)
   const [locView, setLocView] = useState(null)
+  const [pdfView, setPdfView] = useState(null) // a PDF opened inside RoarMe
   // the message box grows with what is written, wrapped lines too; past a few lines a corner button makes it big
   // (Alex, 17 Oct, as on Telegram) and it shrinks back once the message is sent
   const [bigBox] = useState(false)
@@ -3102,7 +3104,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : isVideo && m.file?.round ? <NoteTile file={m.file} />
                       : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />
                       : m.kind === 'file' && isAudioFile(m.file) && !m.file?.asFile ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
-                      : m.kind === 'file' ? <FileTile file={m.file} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name, who: mine ? 'You' : nameOf(who), at: m.created_at, m }], index: 0 })} />
+                      : m.kind === 'file' ? <FileTile file={m.file} onPdf={(url) => setPdfView({ url, name: m.file?.name })} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name, who: mine ? 'You' : nameOf(who), at: m.created_at, m }], index: 0 })} />
                       : null}
                     {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && !m.file?.contact && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
@@ -3534,6 +3536,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         </Modal>
       )}
       {forward && <Forward msgs={forward} me={me} rooms={rooms} titleOf={titleOf} fromRoom={room.room_id} onClose={() => setForward(null)} onDone={(n) => { setForward(null); setPicked(null); toast(n > 1 ? `${n} messages forwarded` : 'Forwarded') }} />}
+      {pdfView && <OnTop><Suspense fallback={null}><PdfView url={pdfView.url} name={pdfView.name} onClose={() => setPdfView(null)} /></Suspense></OnTop>}
       {viewer && <OnTop><MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)}
         onShow={(m) => { setViewer(null); setTimeout(() => hands.current.goTo(m.id), 60) }}
         onReply={(m) => { setViewer(null); setReplyTo(m); requestAnimationFrame(() => inputRef.current?.focus()) }}
@@ -3631,7 +3634,7 @@ function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
 const FT_EXT = { pdf: '#ff3b30', doc: '#2f7cf6', docx: '#2f7cf6', xls: '#34c759', xlsx: '#34c759', csv: '#34c759', ppt: '#ff9500', pptx: '#ff9500', zip: '#8e8e93', rar: '#8e8e93', '7z': '#8e8e93', mov: '#5856d6', mp4: '#5856d6', png: '#af52de', jpg: '#af52de', jpeg: '#af52de', heic: '#af52de', tif: '#af52de', tiff: '#af52de', dng: '#af52de', mp3: '#ff2d55', wav: '#ff2d55', m4a: '#ff2d55', drp: '#00a1e4' }
 const fileDone = new Map() // path -> a link to the downloaded copy, for this visit
 const FT_DOWN = <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v13M6 12.5l6 6 6-6" /></svg>
-function FileTile({ file, onView }) {
+function FileTile({ file, onView, onPdf }) {
   const key = file?.path || ''
   const [thumb, setThumb] = useState('')
   const [p, setP] = useState(fileDone.has(key) ? 1 : -1) // -1 not downloaded, 0..1 downloading, 1 here
@@ -3641,6 +3644,7 @@ function FileTile({ file, onView }) {
   useEffect(() => { if (!file?.thumb) return undefined; let alive = true; fileLink(thumbOf(file)).then((u) => { if (alive) setThumb(u) }); return () => { alive = false } }, [file?.thumb])
   const open = async (url) => {
     if (media && onView) { onView(url); return }
+    if (onPdf && (ext === 'pdf' || file?.type === 'application/pdf')) { onPdf(url); return } // opens inside RoarMe (pdfview.jsx)
     // on a phone the file goes to the phone's own share sheet (Save to Files, AirDrop, another app) instead of a page
     // that shows the website's address (Alex, 15 Nov)
     try {

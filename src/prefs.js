@@ -263,6 +263,21 @@ export const HALO_ACCENTS = [
 ]
 const hexA = (h, a) => `rgba(${parseInt(h.slice(1, 3), 16)}, ${parseInt(h.slice(3, 5), 16)}, ${parseInt(h.slice(5, 7), 16)}, ${a})`
 export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#d40000'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57'], ['white', 'White', '#ffffff'], ['black', 'Black', '#111111']]
+// the faces Google serves, fetched only when one is picked (15 Nov: the start asked for all thirteen); Inter and the
+// code face come with index.html
+const FONT_FILES = {
+  manrope: 'Manrope:wght@400;500;600;700', dm: 'DM+Sans:wght@400;500;600;700', grotesk: 'Space+Grotesk:wght@400;500;600;700',
+  roboto: 'Roboto:wght@400;500;700', opensans: 'Open+Sans:wght@400;500;600;700', fira: 'Fira+Sans:wght@400;500;600;700',
+  plex: 'IBM+Plex+Sans:wght@400;500;600;700', ubuntu: 'Ubuntu:wght@400;500;700', commissioner: 'Commissioner:wght@400;500;600;700',
+  comfortaa: 'Comfortaa:wght@400;500;600;700', notoserif: 'Noto+Serif:wght@400;500;600;700',
+}
+function loadFont(key) {
+  const f = FONT_FILES[key]
+  if (!f || typeof document === 'undefined' || document.getElementById(`font-${key}`)) return
+  const l = document.createElement('link')
+  l.id = `font-${key}`; l.rel = 'stylesheet'; l.href = `https://fonts.googleapis.com/css2?family=${f}&display=swap`
+  document.head.appendChild(l)
+}
 export const FONTS = [
   ['system', 'SF Pro / System', "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif"],
   ['inter', 'Inter', "'Inter', -apple-system, sans-serif"],
@@ -335,7 +350,7 @@ export function applyLook(p0) {
   const cs = p.contactShape || 'plain'
   if (['card', 'inset', 'plain'].includes(cs)) r.dataset.contacts = cs; else delete r.dataset.contacts
   const f = FONTS.find(([k]) => k === p.font)
-  if (f && p.font !== 'system') { r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
+  if (f && p.font !== 'system') { loadFont(p.font); r.style.setProperty('--font', f[2]); r.dataset.font = p.font } else { r.style.removeProperty('--font'); delete r.dataset.font }
   r.dataset.density = p.density || 'standard'
   r.style.setProperty('--r', `${Number(p.radius) || 12}px`)
   if (p.motion === false) r.dataset.still = '1'; else delete r.dataset.still

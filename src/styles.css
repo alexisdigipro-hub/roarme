@@ -4997,3 +4997,5 @@ html:root:root:root:root .bubble :is(.locc-text small, .file .file-text small, .
   font-size: calc(var(--fs, 14.5px) * .86) !important;
 }
 html:root:root:root:root .bubble :is(.poll-kind, .poll-foot small) { font-size: calc(var(--fs, 14.5px) * .8) !important; }
+html:root:root:root:root .bubble :is(.trx-size.evc-text b, .gc-card-text b, .rt-card-title, .trx-name, .trx-size b) { font-size: var(--fs, 14.5px) !important; font-weight: 500 !important; line-height: 1.3; }
+html:root:root:root:root .bubble :is(.trx-size.evc-text small, .gc-card-text small, .trx-size small) { font-size: calc(var(--fs, 14.5px) * .86) !important; }

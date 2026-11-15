@@ -7,6 +7,7 @@ import { CopyLink } from './transfer.jsx'
 import { locale } from './i18n.js'
 import { ContactEdit } from './contactCard.jsx'
 import { useNameMarks } from './fancy.jsx'
+import { startGroupCall } from './groupcall.jsx'
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
 const monthOf = (iso) => new Date(iso).toLocaleDateString(locale(), { month: 'long', year: 'numeric' }).toUpperCase()
@@ -63,6 +64,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const [adding, setAdding] = useState(false)
   // the Mute button's menu (Alex, 15 Nov, from Telegram's): for a while, quiet, this chat's own sound, for ever
   const [muteOpen, setMuteOpen] = useState(false)
+  const [vcOpen, setVcOpen] = useState(false) // a group's Video Chat: start one now, or schedule one
   const [muteSub, setMuteSub] = useState('')
   const [own, setOwn] = useState({})
   useEffect(() => {
@@ -295,8 +297,17 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
 
         <div className="pf-acts">
           <button type="button" className="pf-a-msg" onClick={onMessage}>{I.chats}<span>Message</span></button>
-          <button type="button" onClick={() => (onCall ? onCall(false) : toast('Calls are for chats between two people'))}>{I.phone}<span>Call</span></button>
-          <button type="button" onClick={() => (onCall ? onCall(true) : toast('Calls are for chats between two people'))}>{I.video}<span>Video</span></button>
+          <button type="button" onClick={() => (group ? (onClose(), startGroupCall(room.room_id, false)) : onCall ? onCall(false) : toast('Calls are for chats between two people'))}>{I.phone}<span>Call</span></button>
+          <button type="button" className={vcOpen ? 'on' : ''} onClick={() => (group ? setVcOpen((v) => !v) : onCall ? onCall(true) : toast('Calls are for chats between two people'))} aria-haspopup={group ? 'menu' : undefined}>{I.video}<span>{group ? 'Video Chat' : 'Video'}</span></button>
+          {group && vcOpen && (
+            <>
+              <button type="button" className="scrim" aria-label="Close" onClick={() => setVcOpen(false)} />
+              <div className="menu pf-mute-menu" role="menu">
+                <button type="button" onClick={() => { setVcOpen(false); onClose(); startGroupCall(room.room_id, true) }}>{I.video}<span>Start Video Chat</span></button>
+                <button type="button" onClick={() => { setVcOpen(false); toChat('schedule') }}>{I.timer}<span>Schedule Video Chat</span></button>
+              </div>
+            </>
+          )}
           {/* muted, it shows so (Alex, 14 Nov: "a little red, and not the same sign"): the bell crossed out on a red tint, Muted */}
           <>
             <button type="button" className={`pf-a-mute${room.muted ? ' on' : ''}`} onClick={() => { setMuteSub(''); setMuteOpen((v) => !v) }} aria-pressed={!!room.muted} aria-haspopup="menu" title={room.muted ? 'Muted' : 'Mute'}>{room.muted ? I.bellOff : I.bell}<span>{room.muted ? 'Muted' : 'Mute'}</span></button>

@@ -2,6 +2,7 @@
 // meet in a LiveKit room, which gets through any network (office Wi-Fi, 4G, firewalls). The ringing and the call log
 // stay as they are (src/calls.jsx, roar_calls); this hands each of the two a pass for that call's room.
 //   POST {callId} + the user's sign-in  ->  {url, token}   only the caller and the callee of that call, while it is on
+//   POST {groupCallId} + the user's sign-in  ->  {url, token}   a group's video chat: any member of the group, while it is on
 //   GET  ?check   is LiveKit set up and do its keys work? (asks LiveKit for its room list; says only ok or the error)
 // The LiveKit project is set in Supabase > Edge Functions > Secrets: LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET.
 // Without them it answers 503 and the app calls the old way.
@@ -47,7 +48,19 @@ Deno.serve(async (req) => {
   const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer /, '')
   const { data: { user } } = await sb.auth.getUser(jwt)
   if (!user) return json({ error: 'Sign in first' }, 401)
-  const { callId } = await req.json().catch(() => ({}))
+  const { callId, groupCallId } = await req.json().catch(() => ({}))
+  // a video chat in a group (supabase/group-calls.sql, Alex, 15 Nov): any member of that group, while it is on
+  if (typeof groupCallId === 'string') {
+    if (!/^[0-9a-f-]{36}$/i.test(groupCallId)) return json({ error: 'No call' }, 400)
+    const { data: g } = await sb.from('roar_group_calls').select('room_id, ended_at').eq('id', groupCallId).maybeSingle()
+    if (!g) return json({ error: 'No call' }, 404)
+    if (g.ended_at) return json({ error: 'This video chat has ended' }, 410)
+    const { data: mem } = await sb.from('roar_members').select('user_id').eq('room_id', g.room_id).eq('user_id', user.id).maybeSingle()
+    if (!mem) return json({ error: 'Not your group' }, 403)
+    const { data: gp } = await sb.from('roar_profiles').select('display_name, username').eq('id', user.id).maybeSingle()
+    const gname = gp?.display_name || (gp?.username ? `@${gp.username}` : '')
+    return json({ url: url.replace(/^http/, 'ws'), token: await pass(key, secret, user.id, gname, `roar-gcall-${groupCallId}`) })
+  }
   if (typeof callId !== 'string' || !/^[0-9a-f-]{36}$/i.test(callId)) return json({ error: 'No call' }, 400)
   const { data: c } = await sb.from('roar_calls').select('caller, callee, started_at, ended_at').eq('id', callId).maybeSingle()
   // only the two people of the call, and only while it is on (it rings for under a minute, so an hour is plenty)

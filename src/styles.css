@@ -4745,3 +4745,58 @@ html.kb .findfoot { padding-bottom: 8px; }
 .pf-mute-menu .pf-m-sub { padding-left: 50px !important; height: 40px !important; min-height: 40px !important; }
 .pf-mute-menu .pf-m-sub > i { margin-left: auto; display: grid; color: var(--halo, var(--accent)); }
 .pf-mute-menu button.danger { color: var(--danger, #e5484d); }
+
+/* Video chats in groups (groupcall.jsx; Alex, 15 Nov, from Telegram's) */
+.gc-bar { display: flex; align-items: center; gap: 10px; margin: 0 14px 6px; padding: 7px 7px 7px 10px; border-radius: 22px; background: var(--glass); border: 1px solid var(--edge); -webkit-backdrop-filter: blur(var(--blur, 10px)); backdrop-filter: blur(var(--blur, 10px)); cursor: pointer; position: relative; z-index: 5; animation: drop-in .3s var(--ease) both; }
+.gc-bar-faces { display: flex; flex: none; }
+.gc-bar-faces > * + * { margin-left: -8px; }
+.gc-bar-faces .av { box-shadow: 0 0 0 2px var(--bg, #fff); border-radius: 50%; }
+.gc-bar-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); }
+.gc-bar-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.gc-bar-text b { font-size: 14.5px; font-weight: 600; }
+.gc-bar-text small { font-size: 12.5px; color: var(--muted); }
+.gc-join { flex: none; height: 34px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); font: inherit; font-size: 14px; font-weight: 600; }
+.gc-card { display: flex; align-items: center; gap: 10px; min-width: 230px; padding: 4px 2px; }
+.gc-card-ico { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: rgba(127, 127, 140, .18); }
+.gc-card.live .gc-card-ico { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); }
+.gc-card-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.gc-card-text b { font-weight: 600; }
+.gc-card-text small { font-size: 12.5px; opacity: .7; }
+
+.gc-screen { position: fixed; inset: 0; z-index: 96; display: flex; flex-direction: column; background: #0d0d11; color: #fff;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px calc(env(safe-area-inset-bottom, 0px) + 14px); animation: gl-morph-in .3s cubic-bezier(.25, 1.2, .45, 1) both; }
+@keyframes gl-morph-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+.gc-screen.small { inset: auto 12px calc(env(safe-area-inset-bottom, 0px) + 86px) 12px; padding: 0; background: none; animation: none; }
+.gc-pill { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 420px; margin: 0 auto; padding: 8px 8px 8px 12px; border: 0; border-radius: 26px; background: rgba(22, 22, 28, .92); color: #fff; box-shadow: 0 14px 40px rgba(0, 0, 0, .35); text-align: left; font: inherit; }
+.gc-pill > i { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #34c759; }
+.gc-pill > span:not(.gc-pill-go) { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.gc-pill small { opacity: .7; font-size: 12.5px; }
+.gc-pill-go { height: 32px; padding: 0 14px; border-radius: 999px; background: rgba(255, 255, 255, .16); display: grid; place-items: center; font-weight: 600; font-size: 13.5px; }
+.gc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.gc-top .round { background: rgba(255, 255, 255, .12) !important; color: #fff !important; border-color: rgba(255, 255, 255, .14) !important; }
+.gc-title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; line-height: 1.2; }
+.gc-title b { font-size: 17px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-title small { font-size: 13px; opacity: .65; }
+.gc-top-gap { width: 44px; flex: none; }
+.gc-endall { flex: none; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(255, 69, 58, .22); color: #ff6b61; font: inherit; font-size: 13.5px; font-weight: 600; }
+.gc-grid { flex: 1; min-height: 0; display: grid; gap: 8px; grid-template-columns: 1fr; grid-auto-rows: 1fr; }
+.gc-screen[data-n='2'] .gc-grid { grid-template-rows: 1fr 1fr; }
+.gc-screen:is([data-n='3'], [data-n='4']) .gc-grid { grid-template-columns: 1fr 1fr; }
+.gc-screen:is([data-n='5'], [data-n='6']) .gc-grid { grid-template-columns: 1fr 1fr; }
+.gc-screen:is([data-n='7'], [data-n='8'], [data-n='9']) .gc-grid { grid-template-columns: 1fr 1fr 1fr; }
+@media (min-width: 821px) { .gc-screen[data-n='2'] .gc-grid { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; } .gc-screen:is([data-n='5'], [data-n='6']) .gc-grid { grid-template-columns: 1fr 1fr 1fr; } }
+.gc-tile { position: relative; min-height: 0; border-radius: 22px; overflow: hidden; background: #1c1c22; display: grid; place-items: center; box-shadow: inset 0 0 0 0 transparent; transition: box-shadow .15s; }
+.gc-tile.speaking { box-shadow: inset 0 0 0 3px #34c759; }
+.gc-tile video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.gc-tile.screen video { object-fit: contain; background: #000; }
+.gc-tile video.mirror { transform: scaleX(-1); }
+.gc-name { position: absolute; left: 10px; bottom: 9px; display: inline-flex; align-items: center; gap: 4px; max-width: calc(100% - 20px); padding: 4px 10px; border-radius: 999px; background: rgba(0, 0, 0, .45); font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gc-name i svg { width: 14px; height: 14px; color: #ff6b61; }
+.gc-acts { display: flex; justify-content: center; gap: 14px; padding-top: 14px; }
+.gc-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px; border: 0; background: none; color: #fff; font: inherit; }
+.gc-btn > svg { box-sizing: content-box; width: 26px; height: 26px; padding: 15px; border-radius: 50%; background: rgba(255, 255, 255, .14); transition: transform .1s, background .15s; }
+.gc-btn:active > svg { transform: scale(.92); }
+.gc-btn.off > svg { background: #fff; color: #111; }
+.gc-btn.on > svg { background: #34c759; }
+.gc-btn.leave > svg { background: #ff3b30; }
+.gc-btn small { font-size: 11.5px; opacity: .85; }

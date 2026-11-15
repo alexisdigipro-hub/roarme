@@ -39,6 +39,7 @@ import { PhoneFriends, contactsAvailable } from './phone.jsx'
 import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
 import { taskNotice, useTasks } from './taskCore.js'
 import { useNameMarks } from './fancy.jsx'
+import { GroupCallBar, GroupCallCard, GroupCallHost, startGroupCall, useGroupCall } from './groupcall.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
 import { ReportHost, report } from './report.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
@@ -1531,6 +1532,7 @@ export default function Chat({ me, setMe }) {
       </main>
 
       <ReportHost me={me} people={people} blocks={[...blocks]} onBlocks={loadBlocks} toast={toast} />
+      <GroupCallHost me={me} people={people} rooms={rooms} toast={toast} />
       <ReminderCards me={me} rooms={rooms} titleOf={titleOf} onOpen={libChat}
         onDue={(r, m) => {
           if (prefsRef.current.sound) chime()
@@ -1876,6 +1878,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [flash, setFlash] = useState('')
   const [find, setFind] = useState(null) // null, or the words looked for in this chat
   const [findAt, setFindAt] = useState(0)
+  // a group's video chat (groupcall.jsx): the bar over the chat and the cards it left
+  const gc = useGroupCall(room.room_id, me.id, room.kind === 'group')
+  const gcLive = gc.call?.id || ''
+  const gcHere = gc.here.length
+  const joinGc = () => gc.call && window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: room.room_id, id: gc.call.id, video: false } }))
   // Telegram's way (Alex, 15 Nov): the search takes the head's place; under it, over the keyboard, a date to jump to and a person to look in
   const [findWho, setFindWho] = useState('') // only this person's messages
   const [whoOpen, setWhoOpen] = useState(false)
@@ -2942,7 +2949,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       const quoted = m.reply_to ? byId[m.reply_to] : null
       const rx = reactsOf[m.id]
       const key = [m, prev?.user_id, prev?.created_at, quoted, rx ? JSON.stringify(rx) : '', m.user_id === me.id ? seenBy(m).join() : '',
-        !!picked?.includes(m.id), wideIds.has(m.id), hits?.has(m.id) ? `${find}${nowId === m.id ? '*' : ''}` : '', flash === m.id, pinnedSet.has(m.id), replyCount[m.id] || 0]
+        !!picked?.includes(m.id), wideIds.has(m.id), hits?.has(m.id) ? `${find}${nowId === m.id ? '*' : ''}` : '', flash === m.id, pinnedSet.has(m.id), replyCount[m.id] || 0, m.file?.groupcall ? `${gcLive === m.file.groupcall.id}|${gcHere}` : '']
       const had = c.rows.get(m.id)
       const el = had && key.every((x, j) => x === had.key[j]) ? had.el : drawMsg(m, i)
       rows.set(m.id, { key, el })
@@ -2950,7 +2957,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     })
     c.rows = rows
     return list
-  }, [shownMsgs, peopleLook, picked, prefs, byId, reactsOf, reads, wideIds, find, found, nowId, flash, rolesLook, room.kind, room.room_id, title, autoDl, pinnedSet, replyCount, me]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shownMsgs, peopleLook, picked, prefs, byId, reactsOf, reads, wideIds, find, found, nowId, flash, rolesLook, room.kind, room.room_id, title, autoDl, pinnedSet, replyCount, me, gcLive, gcHere]) // eslint-disable-line react-hooks/exhaustive-deps
   function drawMsg(m, i) {
           const prev = shownMsgs[i - 1]
           const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
@@ -2999,7 +3006,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
                       : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => hands.current.setArtView(m)} />
                       : m.file?.roartransfer ? <BundleCard t={m.file.roartransfer} />
-                      : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} canJoin={room.kind !== 'group'} onJoin={(v) => hands.current.onCall(v)} />
+                      : m.file?.groupcall ? <GroupCallCard who={mine ? 'You' : nameOf(who)} live={gcLive === m.file.groupcall.id} here={gcLive === m.file.groupcall.id ? gcHere : 0} onJoin={() => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: room.room_id, id: m.file.groupcall.id, video: false } }))} />
+                      : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} onJoin={(v) => (room.kind === 'group' ? startGroupCall(room.room_id, v) : hands.current.onCall(v))} />
                       : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : hands.current.openPhoto(m))} />
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
                       : isTransfer ? <TransferTile file={m.file} onCinema={hands.current.setCinema} />
@@ -3122,6 +3130,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           <button type="button" className="round" onClick={() => setFind(null)} aria-label="Close">{I.x}</button>
         </div>
       )}
+
+      {room.kind === 'group' && find === null && <GroupCallBar call={gc.call} here={gc.here} people={people} me={me} inIt={gc.here.includes(me.id)} onJoin={joinGc} />}
 
       {pinned && !picked && (
         <div className="pinbar" role="button" tabIndex={0} onClick={() => setPinView(true)} title="All pinned messages">

@@ -12,6 +12,37 @@ final class Session: ObservableObject {
     var signedIn: Bool { stored != nil }
     var email: String { stored?.email ?? "" }
     var name: String { stored?.name ?? "" }
+    // the account's id, read from the access token (its "sub")
+    var userId: String? {
+        guard let a = stored?.access else { return nil }
+        let parts = a.split(separator: ".")
+        guard parts.count == 3 else { return nil }
+        var b = String(parts[1]).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while b.count % 4 != 0 { b += "=" }
+        guard let d = Data(base64Encoded: b), let j = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] else { return nil }
+        return j["sub"] as? String
+    }
+
+    // Create account and Forgot password, through RoarTransfer's own emails (roartransfer-auth), as the website
+    func signUp(name: String, email: String, password: String) async throws {
+        let d = try await API.auth(["action": "signup", "email": email, "password": password, "name": name])
+        if d["ok"] as? Bool == true { return }
+        let e = d["error"] as? String ?? ""
+        throw APIError(message: e == "taken" ? "There is already an account with this email. Sign in instead." : e == "wait" ? "Wait a minute and try again." : e == "email" ? "This does not look like an email." : (e.isEmpty ? "Could not create the account. Try again." : e))
+    }
+    func reset(email: String) async throws {
+        let d = try await API.auth(["action": "reset", "email": email])
+        if d["ok"] as? Bool == true { return }
+        throw APIError(message: d["error"] as? String == "wait" ? "Wait a minute and try again." : "Could not reach RoarTransfer. Check the connection and try again.")
+    }
+
+    // Studio runs the website inside the app: it gets this session, and hands back any newer one it makes
+    func adopt(access: String, refresh: String, expiresAt: Double) {
+        guard var s = stored, refresh != s.refresh || access != s.access else { return }
+        s.access = access; s.refresh = refresh; s.expires = expiresAt
+        stored = s
+        if let d = try? JSONEncoder().encode(s) { keychainWrite(d) }
+    }
 
     private let account = "roartransfer.session"
 

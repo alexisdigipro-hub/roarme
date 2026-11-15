@@ -69,7 +69,7 @@ struct LinkInfo: Codable {
 struct Upload: Codable { var key: String; var uploadId: String }
 struct Signed: Codable { var urls: [String: String] }
 struct Completed: Codable { var token: String; var size: Double?; var expires: String? }
-struct Bundled: Codable { var token: String; var mailed: Int? }
+struct Bundled: Codable { var token: String; var mailed: Int?; var payLock: Bool? }
 
 // a row of My transfers (roar_my_transfers)
 struct MyTransfer: Codable, Identifiable, Hashable {

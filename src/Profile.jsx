@@ -238,6 +238,9 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     ['voice', 'Voice', sets.voice.length],
     !group && ['groups', 'Groups', common.length],
   ].filter(Boolean)
+    // only the tabs with something in them (Alex, 15 Nov: "when there is no content, they should not show"); Members
+    // always, and all of them while the chat's things are still loading
+    .filter(([k, , n]) => k === 'members' || items === null || n > 0)
 
   const DOCK_WORDS = { members: ['member', 'members'], media: ['photo or video', 'photos and videos'], transfers: ['transfer', 'transfers'], files: ['file', 'files'], links: ['link', 'links'], music: ['music file', 'music files'], voice: ['voice message', 'voice messages'], gifs: ['GIF', 'GIFs'], groups: ['group in common', 'groups in common'] }
   const dockN = tabs.find(([k]) => k === tab)?.[2] || 0
@@ -262,6 +265,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   )
   const when = (iso) => `${new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })} · ${timeOf(iso)}`
 
+  // the chosen tab was empty and is gone: the first that has something
+  useEffect(() => { if (tabs.length && !tabs.some(([k]) => k === tab)) setTab(tabs[0][0]) }, [tabs.map(([k]) => k).join(), tab]) // eslint-disable-line react-hooks/exhaustive-deps
   useTabSwipe(bodyRef, tabs.map(([k]) => k), tab, setTab)
   return (
     <Modal title="" onClose={onClose} wide>

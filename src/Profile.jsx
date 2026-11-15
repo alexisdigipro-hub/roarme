@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
-import { Avatar, CropModal, I, Modal, OnTop, useSeen, useTabSwipe } from './ui.jsx'
+import { Avatar, CropModal, I, Modal, OnTop, svg, useSeen, useTabSwipe } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
-import { usePrefs } from './prefs.js'
+import { SOUNDS, chime, usePrefs } from './prefs.js'
 import { CopyLink } from './transfer.jsx'
 import { locale } from './i18n.js'
 import { ContactEdit } from './contactCard.jsx'
@@ -16,6 +16,12 @@ const isAudio = (m) => m.kind === 'file' && isAudioFile(m.file)
 
 /* A chat's card, as in Telegram (Alex, 16 Oct): the big picture, the name, last seen, Message · Call ·
    Video · More, what we know about the person, and everything shared in the chat by kind. */
+// the Mute menu's signs (Alex, 15 Nov, from Telegram's): a bell with a z, a speaker crossed or sounding, two sliders
+const MUTE_FOR_I = svg(<><path d="M6 16V11a6 6 0 0 1 9-5.2M18 11v5l1.5 2h-15" /><path d="M10 20a2 2 0 0 0 4 0M15.5 3h4l-4 4.5h4" /></>, 22)
+const SOUND_OFF_I = svg(<><path d="M4 9.5h3l4.5-4v13L7 14.5H4z" /><path d="M3 3l18 18" /></>, 22)
+const SOUND_ON_I = svg(<><path d="M4 9.5h3l4.5-4v13L7 14.5H4z" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" /></>, 22)
+const CUSTOM_I = svg(<><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></>, 22)
+
 export default function Profile({ room, me, people, title, other, rooms, titleOf, toast, onClose, onChanged, onLeft, onMessage, onOpenRoom, loadPeople, blocked, onBlocks, onCall }) {
   const group = room.kind === 'group'
   const showIds = usePrefs().peerIds
@@ -55,6 +61,21 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const [name, setName] = useState(room.title)
   const marks = useNameMarks(name, setName)
   const [adding, setAdding] = useState(false)
+  // the Mute button's menu (Alex, 15 Nov, from Telegram's): for a while, quiet, this chat's own sound, for ever
+  const [muteOpen, setMuteOpen] = useState(false)
+  const [muteSub, setMuteSub] = useState('')
+  const [own, setOwn] = useState({})
+  useEffect(() => {
+    supabase.from('roar_members').select('*').eq('room_id', room.room_id).eq('user_id', me.id).maybeSingle().then(({ data }) => setOwn(data || {}))
+  }, [room.room_id, room.muted, me.id])
+  const closeMute = () => { setMuteOpen(false); setMuteSub('') }
+  const muteFor = (hours, off = false) => { closeMute(); window.dispatchEvent(new CustomEvent('roarme-mute', { detail: { room_id: room.room_id, hours, off } })); setTimeout(onChanged, 400) }
+  const setOwnPref = async (patch, done) => {
+    const { error } = await supabase.from('roar_members').update(patch).eq('room_id', room.room_id).eq('user_id', me.id)
+    if (error) { setErr(/column/i.test(error.message || '') ? 'This needs one more step on the server (supabase/mute-more.sql).' : errText(error)); return }
+    setOwn((o) => ({ ...o, ...patch })); onChanged(); toast(done)
+  }
+  const mutedTill = room.muted && own.muted_until && new Date(own.muted_until) > new Date() ? new Date(own.muted_until) : null
   const [q, setQ] = useState('')
   const [hits, setHits] = useState([])
   const [err, setErr] = useState('')
@@ -277,7 +298,26 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
           <button type="button" onClick={() => (onCall ? onCall(false) : toast('Calls are for chats between two people'))}>{I.phone}<span>Call</span></button>
           <button type="button" onClick={() => (onCall ? onCall(true) : toast('Calls are for chats between two people'))}>{I.video}<span>Video</span></button>
           {/* muted, it shows so (Alex, 14 Nov: "a little red, and not the same sign"): the bell crossed out on a red tint, Muted */}
-          <button type="button" className={`pf-a-mute${room.muted ? ' on' : ''}`} onClick={() => setMine({ muted: !room.muted }, room.muted ? 'Sounds on' : 'Muted')} aria-pressed={!!room.muted} title={room.muted ? 'Unmute' : 'Mute'}>{room.muted ? I.bellOff : I.bell}<span>{room.muted ? 'Muted' : 'Mute'}</span></button>
+          <>
+            <button type="button" className={`pf-a-mute${room.muted ? ' on' : ''}`} onClick={() => { setMuteSub(''); setMuteOpen((v) => !v) }} aria-pressed={!!room.muted} aria-haspopup="menu" title={room.muted ? 'Muted' : 'Mute'}>{room.muted ? I.bellOff : I.bell}<span>{room.muted ? 'Muted' : 'Mute'}</span></button>
+            {muteOpen && (
+              <>
+                <button type="button" className="scrim" aria-label="Close" onClick={closeMute} />
+                <div className="menu pf-mute-menu" role="menu">
+                  {room.muted && <button type="button" onClick={() => muteFor(0, true)}>{I.bell}<span>Unmute<small className="pf-m-note">{mutedTill ? `Muted until ${mutedTill.toLocaleString(locale(), { weekday: mutedTill - Date.now() > 864e5 ? 'short' : undefined, hour: '2-digit', minute: '2-digit' })}` : 'Muted forever'}</small></span></button>}
+                  <button type="button" onClick={() => setMuteSub((v) => (v === 'for' ? '' : 'for'))}>{MUTE_FOR_I}<span>Mute for…</span><i className="pf-m-arrow">{I.right}</i></button>
+                  {muteSub === 'for' && [[1, 'For 1 hour'], [8, 'For 8 hours'], [24, 'For 1 day'], [168, 'For 7 days']].map(([h, l]) => <button key={h} type="button" className="pf-m-sub" onClick={() => muteFor(h)}><span>{l}</span></button>)}
+                  <hr />
+                  <button type="button" onClick={() => setOwnPref({ silent: !own.silent }, own.silent ? 'Sound on for this chat' : 'Notifications come quietly')}>{own.silent ? SOUND_ON_I : SOUND_OFF_I}<span>{own.silent ? 'Enable Sound' : 'Disable Sound'}</span></button>
+                  <button type="button" onClick={() => setMuteSub((v) => (v === 'sound' ? '' : 'sound'))}>{CUSTOM_I}<span>Customize<small className="pf-m-note">{own.sound ? SOUNDS.find(([k]) => k === own.sound)?.[1] || 'Default' : 'Default sound'}</small></span><i className="pf-m-arrow">{I.right}</i></button>
+                  {muteSub === 'sound' && [['', 'Default'], ...SOUNDS.map(([k, l]) => [k, l])].map(([k, l]) => (
+                    <button key={k || 'def'} type="button" className="pf-m-sub" onClick={() => { if (k) chime(k); setOwnPref({ sound: k || null }, k ? `${l} for this chat` : 'Default sound for this chat') }}><span>{l}</span>{(own.sound || '') === k && <i>{I.check}</i>}</button>
+                  ))}
+                  {!room.muted && <button type="button" className="danger" onClick={() => muteFor(0)}>{I.bellOff}<span>Mute Forever</span></button>}
+                </div>
+              </>
+            )}
+          </>
           <button type="button" className="pf-a-find" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('roarme-find')) }}>{I.search}<span>Search</span></button>
           <span className="pf-more">
             <button type="button" className={more ? 'on' : ''} onClick={() => setMore((v) => !v)}>{I.more}<span>More</span></button>
@@ -292,7 +332,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   {!group && other && <button type="button" onClick={shareContact}>{I.forward}<span>Share Contact</span></button>}
                   {!group && other && <button type="button" onClick={() => toChat('group')}>{I.people}<span>Create Group</span></button>}
                   {!group && <button type="button" onClick={() => toChat('schedule')}>{I.timer}<span>Schedule Call</span></button>}
-                  {group && admin && <button type="button" onClick={() => { setMore(false); setTab('members'); setAdding(true) }}>{I.people}<span>Add people</span></button>}
+                  {group && <button type="button" onClick={() => { setMore(false); setTab('members'); setAdding(true) }}>{I.people}<span>Add people</span></button>}
                   <button type="button" onClick={() => toChat('export')}>{I.file}<span>Export Chat History…</span></button>
                   <hr />
                   <button type="button" onClick={() => setAutoOpen((v) => !v)}>{I.timer}<span>Auto-Delete Messages</span><small className="pf-m-val">{AUTO.find(([h]) => h === (room.auto_delete_hours || null))?.[1] || 'Off'}</small></button>
@@ -333,7 +373,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
 
           {tab === 'members' && (
             <div className="people">
-              {admin && (adding
+              {(adding
                 ? <label className="search">{I.search}<input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by @username or name" /><button type="button" className="link" onClick={() => { setAdding(false); setQ('') }}>Done</button></label>
                 : <button type="button" className="pf-row" onClick={() => setAdding(true)}><span className="pf-row-ico add">{I.plus}</span><span className="pf-row-text"><b>Add people</b></span></button>)}
               {hits.map((p) => (

@@ -38,6 +38,7 @@ self.addEventListener('push', (e) => {
       body: d.body || 'New message',
       tag: d.tag || 'roarme',
       renotify: true,
+      silent: !!d.silent, // the chat's Disable Sound (Alex, 15 Nov)
       icon: 'icon-512.png',
       badge: 'icon-512.png',
       data: { room: d.room || '' },

@@ -442,6 +442,15 @@ export default function Chat({ me, setMe }) {
     }
   }, [me.id, loadPeople])
 
+  // each chat's own sound settings (Profile's Mute menu, supabase/mute-more.sql): Disable Sound, Customize
+  const chatPrefs = useRef({})
+  useEffect(() => {
+    supabase.from('roar_members').select('*').eq('user_id', me.id).then(({ data }) => {
+      const o = {}
+      ;(data || []).forEach((x) => { o[x.room_id] = { silent: !!x.silent, sound: x.sound || '' } })
+      chatPrefs.current = o
+    })
+  }, [rooms, me.id])
   // a sound and a desktop notification when the window is not looking at that chat
   const notifyRef = useRef(null)
   notifyRef.current = (m) => {
@@ -450,7 +459,8 @@ export default function Chat({ me, setMe }) {
     // a muted chat stays quiet, unless the message mentions you (@you, @all, @here or a role of yours)
     if (room?.muted && !atMe) return
     if (!document.hidden && activeRef.current === m.room_id) return
-    if (prefsRef.current.sound) chime()
+    const own = chatPrefs.current[m.room_id]
+    if (prefsRef.current.sound && !own?.silent) chime(own?.sound || undefined)
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     const who = peopleRef.current[m.user_id]
     const title = room?.kind === 'group' ? `${room.title}` : nameOf(who)
@@ -963,6 +973,26 @@ export default function Chat({ me, setMe }) {
   const openRoom = (id) => { setTab('chats'); setActiveId(id); setModal(''); loadRooms() }
   useEffect(() => { if (activeId && marked.includes(activeId)) setMarked((l) => l.filter((x) => x !== activeId)) }, [activeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // the profile's Mute menu (Alex, 15 Nov): mute for a while or for ever, or unmute, while the profile stays open
+  useEffect(() => {
+    const f = async (e) => {
+      const { room_id: rid, hours = 0, off = false } = e.detail || {}
+      if (!rid) return
+      const mine = (patch) => supabase.from('roar_members').update(patch).eq('room_id', rid).eq('user_id', me.id)
+      if (off) {
+        await mine({ muted: false }); mine({ muted_until: null }).then(() => {})
+        setMuteUntil((m) => { const n = { ...m }; delete n[rid]; return n }); toast('Sounds on')
+      } else {
+        await mine({ muted: true }); mine({ muted_until: hours ? new Date(Date.now() + hours * 3600e3).toISOString() : null }).then(() => {})
+        setMuteUntil((m) => ({ ...m, [rid]: hours ? Date.now() + hours * 3600e3 : 0 }))
+        toast(hours ? `Muted for ${hours >= 24 ? `${hours / 24} day${hours > 24 ? 's' : ''}` : `${hours} hour${hours > 1 ? 's' : ''}`}` : 'Muted forever')
+      }
+      loadRooms()
+    }
+    window.addEventListener('roarme-mute', f)
+    return () => window.removeEventListener('roarme-mute', f)
+  }, [me.id, loadRooms]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // a mute for a while ends by itself
   useEffect(() => {
     const check = () => {
@@ -1062,8 +1092,8 @@ export default function Chat({ me, setMe }) {
     if (what === 'window') window.open(`${window.location.origin}${window.location.pathname}#c=${r.room_id}`, `roarme-${r.room_id}`, 'popup,width=900,height=780')
     if (what === 'pin') { const on = pins.includes(r.room_id); setPins((l) => (on ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); toast(on ? 'Unpinned' : 'Pinned to the top') }
     if (what === 'mute') {
-      if (r.muted) { await mine({ muted: false }); setMuteUntil((m) => { const n = { ...m }; delete n[r.room_id]; return n }); toast('Sounds on') }
-      else { await mine({ muted: true }); setMuteUntil((m) => ({ ...m, [r.room_id]: arg ? Date.now() + arg * 3600e3 : 0 })); toast(arg ? `Muted for ${arg >= 24 ? `${arg / 24} day${arg > 24 ? 's' : ''}` : `${arg} hour${arg > 1 ? 's' : ''}`}` : 'Muted') }
+      if (r.muted) { await mine({ muted: false }); mine({ muted_until: null }).then(() => {}); setMuteUntil((m) => { const n = { ...m }; delete n[r.room_id]; return n }); toast('Sounds on') }
+      else { await mine({ muted: true }); mine({ muted_until: arg ? new Date(Date.now() + arg * 3600e3).toISOString() : null }).then(() => {}); setMuteUntil((m) => ({ ...m, [r.room_id]: arg ? Date.now() + arg * 3600e3 : 0 })); toast(arg ? `Muted for ${arg >= 24 ? `${arg / 24} day${arg > 24 ? 's' : ''}` : `${arg} hour${arg > 1 ? 's' : ''}`}` : 'Muted') }
       loadRooms()
     }
     if (what === 'unread') {

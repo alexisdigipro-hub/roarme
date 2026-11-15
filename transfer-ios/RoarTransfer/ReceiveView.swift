@@ -160,23 +160,23 @@ struct ReceiveView: View {
     // ---- actions ----
     private func tryOpen(_ s: String) {
         problem = ""
-        guard let t = API.token(from: s) else { problem = t("This does not look like a RoarTransfer link."); return }
-        openLink(t)
+        guard let tok = API.token(from: s) else { problem = t("This does not look like a RoarTransfer link."); return }
+        openLink(tok)
     }
     private func openLink(_ t: String) {
         token = t; info = nil; password = ""; pwError = ""; problem = ""
         load()
     }
     private func load() {
-        guard let t = token else { return }
+        guard let tok = token else { return }
         loading = true
         Task {
             do {
-                let i = try await API.link(t, password: password)
+                let i = try await API.link(tok, password: password)
                 if i.error == "password" && !password.isEmpty { pwError = t(i.slow == true ? "Too many wrong tries. Wait 15 minutes and try again." : "Wrong password, try again.") }
                 else { pwError = "" }
                 if i.error == "password", let old = info, old.error == "password" { info = old } else { info = i }
-                if i.error == nil { API.hit(t) }
+                if i.error == nil { API.hit(tok) }
             } catch {
                 info = LinkInfo(error: t("Could not reach RoarTransfer. Check the connection and try again."))
             }
@@ -262,4 +262,4 @@ struct DownloadRow: View {
     }
 }
 
-extension URL: Identifiable { public var id: String { absoluteString } }
+extension URL: @retroactive Identifiable { public var id: String { absoluteString } }

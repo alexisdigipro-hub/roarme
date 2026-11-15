@@ -4902,3 +4902,7 @@ html button.link.danger-link { color: var(--danger, #e5484d) !important; }
 .pf-row .pf-row-adm svg { width: 17px; height: 17px; }
 .pf-row .pf-row-adm.on { color: var(--halo, var(--accent)); }
 .pf-row .pf-row-adm + .pf-row-del { margin-left: 6px; }
+/* while a menu of the profile is open (More, Mute, Video Chat), the held tabs and the folded bar go under it and its veil
+   (Alex, 15 Nov: the tabs showed through the menu) */
+.pf:has(.pf-menu, .pf-mute-menu) :is(.pf-tabs, .pf-dock) { z-index: 1; }
+.pf:has(.pf-menu, .pf-mute-menu) .pf-head { position: relative; z-index: 50; }

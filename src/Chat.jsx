@@ -35,7 +35,7 @@ import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
 import { ContactCard } from './contactCard.jsx'
-import { PhoneFriends, contactsAvailable } from './phone.jsx'
+import { PhoneContactsTail, PhoneFriends, contactsAvailable } from './phone.jsx'
 // the map and everything about places load only when one is shown (lighter start, 15 Nov)
 const LiveCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.LiveCard })))
 const LocationCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationCard })))
@@ -1490,6 +1490,7 @@ export default function Chat({ me, setMe }) {
               </div>
             ))}
             </div>
+            <PhoneContactsTail q={cq} />
             {!contacts.length && <div className="calls-empty"><span className="side-panel-ico">{I.person}</span><b>No contacts yet</b><p>People you chat with show up here.</p><button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find people</button></div>}
           </div>
         )}

@@ -5,7 +5,8 @@
   "ios": {
     "contentInset": "never",
     "backgroundColor": "#f1f1f6",
-    "allowsLinkPreview": false
+    "allowsLinkPreview": false,
+    "scrollEnabled": false
   },
   "plugins": {
     "PushNotifications": {
@@ -13,6 +14,10 @@
         "sound",
         "alert"
       ]
+    },
+    "Keyboard": {
+      "resize": "none",
+      "resizeOnFullScreen": false
     }
   }
 }

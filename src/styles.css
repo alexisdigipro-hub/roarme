@@ -4862,3 +4862,9 @@ html.kb .bw { bottom: auto; height: var(--vvh, 100dvh); top: var(--vvt, 0px); pa
 .ob-field.ob-phone .phone-field { flex: 1; min-width: 0; display: flex; gap: 6px; }
 .ob-field.ob-phone .phone-cc { flex: none; width: 92px; padding: 0 6px; border: 0; background: none; }
 .ob-field.ob-phone .phone-field .input { border: 0; background: none; min-width: 0; flex: 1; }
+
+/* Inside the iPhone app the page no longer shrinks for the keyboard (main.jsx kb-native, Alex, 15 Nov): the app takes
+   the keyboard's height off its own, on the keyboard's own curve, so the writing box rises with it; under the
+   keyboard's round corners the page's own colour shows, not black */
+html.in-shell { background: var(--kb-bg, var(--bg)); }
+html.in-shell #root { height: calc(100% - var(--kbh, 0px)); overflow-y: auto; transition: height .28s cubic-bezier(.2, .8, .2, 1); }

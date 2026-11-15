@@ -769,3 +769,19 @@ html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu .pf-m-val { 
 /* The writing box keeps the rounding it has on one line as it grows taller (Alex, 15 Nov: "keep the curve it has from
    the start, only let its sides grow"): a fixed 26px instead of a full pill, which turned it into an oval */
 html:root:root[data-glass][data-skin='halo'] .compose-box { border-radius: 26px; }
+
+/* The attach sheet's tab bar is the chat's own menu at the foot (Alex, 15 Nov: "make that bar like our main bar"):
+   the same thick glass capsule, our filled icon over its word, the chosen one in the theme's colour on the soft grey
+   lens, which moves in GLASS TRAVEL (extras.jsx: .lens with data-travel). Frost keeps its own (themes-frost.css) */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-sheet .as-tabs {
+  gap: 2px; padding: 5px; border-radius: 999px !important; background: var(--lg) !important; border: 1px solid var(--lg-rim) !important; box-shadow: var(--lg-shadow) !important;
+  -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important;
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-sheet .as-tabs > button {
+  flex: 1 0 auto; min-width: 62px; height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 0 8px; border: 0; border-radius: 999px !important; background: none !important; box-shadow: none !important; color: var(--lg-ink);
+}
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-sheet .as-tabs > button svg { width: 24px; height: 24px; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-sheet .as-tabs > button > span { font-size: 10.5px; font-weight: 600; letter-spacing: 0; line-height: 1.1; white-space: nowrap; }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-sheet .as-tabs > button.on { color: var(--halo); }
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-sheet .as-tabs.lens::before { border: 0; border-radius: 999px !important; background: var(--lg-chip); box-shadow: none; }

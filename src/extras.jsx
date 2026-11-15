@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { errText, fileLink, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
-import { Avatar, I, Modal, Slide, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
+import { Avatar, I, Modal, Slide, useLens, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 import { PhotoEdit } from './photoEdit.jsx'
@@ -219,6 +219,8 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const bodyRef = useRef(null)
   useSwipeClose(sheetRef, onClose, 'y', edit)
   const [who, setWho] = useState('')
+  // the tab bar is the chat's own menu at the foot: its glass, icon over word, the lens in GLASS TRAVEL (Alex, 15 Nov)
+  const tabsLens = useLens(`${tab}|${files.length > 0}`)
   useTabSwipe(bodyRef, ['gallery', 'file', onLocation && 'location', 'audio', onContact && 'contact', onTransfer && 'transfer'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
@@ -362,7 +364,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
             <button type="button" className="round send ready attach-send" onClick={() => { setPrefs({ compress }); onSend(files, caption.trim(), compress) }} aria-label="Send" title="Send">{I.send}</button>
           </div>
         ) : (
-          <nav className="as-tabs">
+          <nav ref={tabsLens} className="as-tabs lens" data-travel="">
             {TABS.map(([k, label, ico]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => go(k)}>{ico}<span>{label}</span></button>)}
           </nav>
         )}

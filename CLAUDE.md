@@ -122,3 +122,4 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - While a profile menu is open (More, Mute, Video Chat), .pf-tabs and .pf-dock drop to z-index 1 and .pf-head rises to 50, so the held tabs no longer show through the menu (styles.css, end).
 - The profile's Mute and Video Chat menus live inside .pf-acts and caught the round buttons' look: themes-glass.css (last block) gives their rows back the menu look and the veil a plain full-screen one.
 - No GIFs tab in a profile (Alex, 15 Nov); its rendering is still there, unreachable.
+- A profile shows only the tabs that have something in them (Alex, 15 Nov): Members always, all while loading (items null); if the chosen one is gone, the first that has something. The profile's sideways guard is on .modal-body only (on .pf it made the profile scroll inside itself and cut the tabs).

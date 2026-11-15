@@ -4907,7 +4907,8 @@ html button.link.danger-link { color: var(--danger, #e5484d) !important; }
 .pf:has(.pf-menu, .pf-mute-menu) :is(.pf-tabs, .pf-dock) { z-index: 1; }
 .pf:has(.pf-menu, .pf-mute-menu) .pf-head { position: relative; z-index: 50; }
 /* a profile never slides sideways (Alex, 15 Nov: "it spills over"): nothing in it may be wider than the window */
-.modal:has(.pf) .modal-body, .pf { overflow-x: hidden; }
+.modal:has(.pf) .modal-body { overflow-x: hidden; }
+.pf { min-width: 0; max-width: 100%; }
 .pf-row { min-width: 0; }
 .pf-row .pf-row-text { min-width: 0; flex: 1; }
 .pf-row .pf-row-text small, .pf-row .pf-row-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

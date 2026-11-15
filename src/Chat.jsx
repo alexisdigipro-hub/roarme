@@ -3134,17 +3134,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
       <header className={`room-head${callsOpen ? ' calls-open' : ''}`}>
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
-        {picked ? (
-          <div className="head-card head-pick">
-            <button type="button" className="link" onClick={() => setPicked(null)}>Cancel</button>
-            <strong>{picked.length} selected</strong>
-            <span className="head-pick-acts">
-              <button type="button" className="round" disabled={!picked.length} onClick={() => copy(pickedMsgs.map(textOf).join('\n'), 'Copied')} title="Copy">{I.copy}</button>
-              <button type="button" className="round" disabled={!picked.length || pickedMsgs.some((m) => m.sealed)} onClick={() => setForward(pickedMsgs)} title="Forward">{I.forward}</button>
-              <button type="button" className="round danger" disabled={!pickedMsgs.some((m) => m.user_id === me.id)} onClick={() => { remove(pickedMsgs); setPicked(null) }} title="Delete yours">{I.trash}</button>
-            </span>
-          </div>
-        ) : (
+        {(
           <>
             <button type="button" className="head-card" onClick={onInfo} title="Info">
               {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
@@ -3294,7 +3284,21 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         </div>
       )}
 
-      {blocked ? (
+      {picked ? (
+        // while selecting, the bar of what to do with the picked messages stands at the foot, in the writing box's
+        // place, with room for its buttons (Alex, 15 Nov: "put it at the bottom, make it fit")
+        <footer className="compose-wrap pick-foot">
+          <div className="pick-bar">
+            <button type="button" className="pill-btn" onClick={() => setPicked(null)}>Cancel</button>
+            <strong>{picked.length} selected</strong>
+            <span className="head-pick-acts">
+              <button type="button" className="round" disabled={!picked.length} onClick={() => copy(pickedMsgs.map(textOf).join('\n'), 'Copied')} title="Copy">{I.copy}</button>
+              <button type="button" className="round" disabled={!picked.length || pickedMsgs.some((m) => m.sealed)} onClick={() => setForward(pickedMsgs)} title="Forward">{I.forward}</button>
+              <button type="button" className="round danger" disabled={!pickedMsgs.some((m) => m.user_id === me.id)} onClick={() => { remove(pickedMsgs); setPicked(null) }} title="Delete yours">{I.trash}</button>
+            </span>
+          </div>
+        </footer>
+      ) : blocked ? (
         <footer className="compose-wrap"><div className="bar blocked-bar"><span>You blocked {title}. They cannot message or call you.</span><button type="button" className="link" onClick={onUnblock}>Unblock</button></div></footer>
       ) : (
       <footer className="compose-wrap">

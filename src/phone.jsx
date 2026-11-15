@@ -206,3 +206,38 @@ export function PhoneFriends({ onClose, onOpen }) {
     </Modal>
   )
 }
+
+/* The phone's own contacts under RoarMe's, on the Contacts tab (Alex, 15 Nov: "after our contacts, a line, the phone's
+   contacts a little fainter, each with a small Invite"): only inside the iPhone app. The first time a pill asks to show
+   them (the iPhone then asks for the permission); after that they come by themselves. Found from friendsFromContacts
+   (kept ten minutes), only the ones not on RoarMe, 40 at a time. Invite opens Messages with the invitation. */
+const SHOW_KEY = 'roarme-phone-contacts'
+export function PhoneContactsTail({ q = '' }) {
+  const [on, setOn] = useState(() => { try { return localStorage.getItem(SHOW_KEY) === '1' } catch { return false } })
+  const [st, setSt] = useState(() => (lastFriends && Date.now() - lastFriends.at < 600000 ? { busy: false, list: lastFriends.r.invite } : { busy: false, list: null }))
+  const [n, setN] = useState(40)
+  useEffect(() => {
+    if (!on || st.list || st.busy) return
+    setSt({ busy: true, list: null })
+    friendsFromContacts().then((r) => { lastFriends = { at: Date.now(), r }; setSt({ busy: false, list: r.invite }) }).catch((e) => setSt({ busy: false, list: [], err: errText(e) }))
+  }, [on]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!contactsAvailable()) return null
+  if (!on) return <div className="pct"><button type="button" className="pill-btn pct-show" onClick={() => { try { localStorage.setItem(SHOW_KEY, '1') } catch { /* private */ } setOn(true) }}>Show Contacts From Your Phone</button></div>
+  const t = q.trim().toLowerCase()
+  const list = (st.list || []).filter((p) => !t || `${p.name} ${p.number}`.toLowerCase().includes(t))
+  return (
+    <div className="pct">
+      <div className="pct-line"><span>From Your Phone</span></div>
+      {st.busy && <p className="pct-note">Looking through your contacts…</p>}
+      {st.err && <p className="pct-note">{st.err}</p>}
+      {list.slice(0, n).map((p, k) => (
+        <div key={`${p.number}-${k}`} className="pct-row">
+          <span className="pct-av">{(p.name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</span>
+          <span className="pct-text"><b>{p.name}</b><small>{showPhone(p.number)}</small></span>
+          <a className="pill-btn pct-inv" href={`sms:${p.number}&body=${encodeURIComponent(INVITE_TEXT)}`}>Invite</a>
+        </div>
+      ))}
+      {list.length > n && <button type="button" className="pill-btn pct-more" onClick={() => setN((x) => x + 40)}>Show More</button>}
+    </div>
+  )
+}

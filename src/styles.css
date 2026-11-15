@@ -4733,3 +4733,15 @@ html.kb .findfoot { padding-bottom: 8px; }
   .pf-dock { height: calc(64px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); margin-bottom: calc(-78px - env(safe-area-inset-top, 0px)); }
   .pf-tabs { top: calc(66px + env(safe-area-inset-top, 0px)); }
 }
+
+/* the profile's Mute menu (Alex, 15 Nov, from Telegram's): under the buttons, in the middle, the menus' own glass */
+.pf-acts { position: relative; }
+.pf-acts > .scrim { z-index: 59; }
+.pf-mute-menu { position: absolute; top: calc(100% + 10px); left: 50%; translate: -50% 0; z-index: 60; width: max-content; min-width: 250px; max-width: calc(100vw - 32px); max-height: min(70vh, 560px); overflow-y: auto; }
+.pf-mute-menu > button > span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; }
+.pf-mute-menu .pf-m-note { font-size: 12.5px; color: var(--muted); font-weight: 400; }
+.pf-mute-menu .pf-m-arrow { margin-left: auto; display: grid; opacity: .45; }
+.pf-mute-menu .pf-m-arrow svg { width: 16px !important; height: 16px !important; }
+.pf-mute-menu .pf-m-sub { padding-left: 50px !important; height: 40px !important; min-height: 40px !important; }
+.pf-mute-menu .pf-m-sub > i { margin-left: auto; display: grid; color: var(--halo, var(--accent)); }
+.pf-mute-menu button.danger { color: var(--danger, #e5484d); }

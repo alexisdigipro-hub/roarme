@@ -174,21 +174,32 @@ async function notify(id: string) {
     const { data: rows } = await sb.from('roar_push_subs').select('*').in('endpoint', phones)
     for (const x of rows || []) sounds.set(x.endpoint, x.sound ?? null)
   }
+  // each person's own settings for this chat (supabase/mute-more.sql; select * keeps working before it is run):
+  // Disable Sound -> no sound, Customize -> this chat's sound over the device's
+  const chat = new Map<string, { silent?: boolean; sound?: string | null }>()
+  {
+    const ids = [...new Set((targets as { user_id: string }[]).map((t) => t.user_id))]
+    const { data: rows } = await sb.from('roar_members').select('*').eq('room_id', m.room_id).in('user_id', ids)
+    for (const x of rows || []) chat.set(x.user_id, x)
+  }
   const name = who?.display_name || (who?.username ? `@${who.username}` : 'Someone')
   const group = room?.kind === 'group'
   const text = preview(m)
   let sent = 0
   const gone: string[] = []
-  await Promise.all((targets as { endpoint: string; p256dh: string; auth: string; preview: boolean; unread: number; mention?: boolean }[]).map(async (t) => {
+  await Promise.all((targets as { endpoint: string; p256dh: string; auth: string; preview: boolean; unread: number; mention?: boolean; user_id: string }[]).map(async (t) => {
+    const own = chat.get(t.user_id)
     const note = {
       title: group ? room?.title || 'Group' : name,
       body: t.preview ? (group ? `${name}${t.mention ? ' mentioned you' : ''}: ${text}` : text).slice(0, 180) : t.mention ? `${name} mentioned you` : 'New message',
       room: m.room_id,
       tag: `room-${m.room_id}`,
       count: t.unread,
+      silent: !!own?.silent,
     }
     try {
-      const r = await push({ ...t, sound: sounds.get(t.endpoint) }, note)
+      const dev = sounds.get(t.endpoint)
+      const r = await push({ ...t, sound: own?.silent || dev === 'off' ? 'off' : own?.sound || dev }, note)
       if (r.ok) sent++
       else if (r.status === 404 || r.status === 410) gone.push(t.endpoint)
       else console.log('push', r.status, (await r.text()).slice(0, 200))

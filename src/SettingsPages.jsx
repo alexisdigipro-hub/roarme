@@ -1268,10 +1268,6 @@ function FolderEdit({ id, kit, onDone, toast }) {
         {types.groups && typeRow('groups', 'Groups', I.people)}
         {draft.rooms.map((rid) => chatRow(rid, 'in'))}
       </Box>
-      <Box title="Excluded chats" note="Chats that never appear in this folder.">
-        <button type="button" className="set-row set-pick set-add" onClick={() => { setQ(''); setPick('out') }}><i className="fold-plus">{I.plus}</i><span className="set-text">Add Chats</span></button>
-        {draft.exclude.map((rid) => chatRow(rid, 'out'))}
-      </Box>
       <Box>
         <button type="button" className="set-row set-pick danger" onClick={remove}><span className="set-text">{saved ? 'Delete Folder' : 'Cancel'}</span></button>
       </Box>

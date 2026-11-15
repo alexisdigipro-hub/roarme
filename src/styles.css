@@ -4885,3 +4885,16 @@ html.in-shell #root { height: calc(100% - var(--kbh, 0px)); overflow-y: auto; tr
 .pfr .phone-person .av { background-image: none !important; }
 .pfr .phone-person .av::after, .pfr .phone-person .av::before { display: none !important; }
 .modal:has(.pfr) .modal-body { overflow: hidden; }
+
+/* Never a word with an underline as a button (Alex, 5 Nov, said again 15 Nov: "I don't want buttons with little words
+   like these, they are 1990"): every .link button is a flat matte glass pill, the red ones red; the group's members get
+   a pill (Make Admin) and a round glass bin (Remove) */
+html button.link, html a.link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px !important;
+  background: var(--glass, rgba(127, 127, 140, .12)) !important; border: 1px solid var(--edge, rgba(127, 127, 140, .2)) !important; color: var(--text) !important;
+  font-size: 13.5px; font-weight: 600; text-decoration: none !important; white-space: nowrap; }
+html button.link:active, html a.link:active { transform: scale(.96); }
+html button.link.danger-link { color: var(--danger, #e5484d) !important; }
+.pf-row .pf-row-btn { flex: none; height: 32px; padding: 0 12px; font-size: 12.5px; margin-left: auto; }
+.pf-row .pf-row-del { flex: none; width: 34px; height: 34px; min-width: 34px; }
+.pf-row .pf-row-del svg { width: 16px; height: 16px; }
+.people .pf-row { flex-wrap: nowrap; }

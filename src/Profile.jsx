@@ -399,9 +399,9 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   <Avatar src={p.avatar_url} name={nameOf(p)} size={40} />
                   <span className="pf-row-text"><b>{p.id === me.id ? 'You' : nameOf(p)}{roles[p.id] === 'admin' && <span className="pf-tag pf-admin">Admin</span>}</b><small>{p.username !== '…' ? `@${p.username} · ${lastSeenText(p)}` : ''}</small></span>
                   {admin && (roles[p.id] === 'admin'
-                    ? (p.id !== me.id || Object.values(roles).filter((x) => x === 'admin').length > 1) && <button type="button" className="link" onClick={() => setAdmin(p, false)}>{p.id === me.id ? 'Step Down' : 'Remove Admin'}</button>
-                    : <button type="button" className="link" onClick={() => setAdmin(p, true)}>Make Admin</button>)}
-                  {admin && p.id !== me.id && <button type="button" className="link danger-link" onClick={() => removeMember(p)}>Remove</button>}
+                    ? (p.id !== me.id || Object.values(roles).filter((x) => x === 'admin').length > 1) && <button type="button" className="btn btn-sm pf-row-btn" onClick={() => setAdmin(p, false)}>{p.id === me.id ? 'Step Down' : 'Remove Admin'}</button>
+                    : <button type="button" className="btn btn-sm pf-row-btn" onClick={() => setAdmin(p, true)}>Make Admin</button>)}
+                  {admin && p.id !== me.id && <button type="button" className="round danger pf-row-del" onClick={() => removeMember(p)} aria-label={`Remove ${nameOf(p)}`} title="Remove from the group">{I.trash}</button>}
                 </div>
               ))}
             </div>

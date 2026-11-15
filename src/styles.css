@@ -5030,3 +5030,14 @@ html:root:root:root:root[data-frost] .contacts-list .contact .room-prev { color:
 .pct-text small { font-size: 12.5px; color: color-mix(in srgb, var(--text) 55%, transparent); }
 .pct-inv { flex: none; height: 30px; padding: 0 12px; font-size: 13px; text-decoration: none; }
 .pct-more { align-self: center; margin-top: 10px; height: 34px; padding: 0 14px; font-size: 13px; }
+
+/* the caption and Send over the photo library are solid, not see-through (Alex, 15 Nov, TestFlight 44: "too
+   transparent, the message and Send do not show"): a solid field in the sheet's colour with a rim and a shadow, Send
+   in its full colour, and a soft fade of the sheet's colour behind both so the photos do not show through */
+.as-sheet.as-lib .as-send::before { content: ''; position: absolute; left: -12px; right: -12px; top: -28px; bottom: calc(-12px - env(safe-area-inset-bottom, 0px)); z-index: -1; pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--float, #f4f4f8) 45%); }
+.as-sheet.as-lib .as-send { z-index: 5; }
+html:root:root:root:root .as-sheet.as-lib .as-send .attach-caption { background: #fff !important; color: #15151b !important; border: 1px solid rgba(0, 0, 0, .1) !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .12) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; opacity: 1 !important; }
+html:root:root:root:root[data-mode='dark'] .as-sheet.as-lib .as-send .attach-caption { background: #2c2c31 !important; color: #f3f3f6 !important; border-color: rgba(255, 255, 255, .14) !important; }
+html:root:root:root:root .as-sheet.as-lib .as-send .attach-caption::placeholder { color: rgba(120, 120, 130, .9) !important; }
+html:root:root:root:root .as-sheet.as-lib .as-send .attach-send { background: var(--halo-mine, #222) !important; color: var(--halo-ink, #fff) !important; opacity: 1 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .25) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }

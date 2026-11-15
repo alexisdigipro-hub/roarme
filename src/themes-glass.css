@@ -765,3 +765,7 @@ html:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu .pf-m-val { 
 @media (prefers-reduced-motion: no-preference) {
   html:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .pf-more .pf-menu { transform-origin: 50% 50%; animation: gl-morph .34s cubic-bezier(.25, 1.35, .45, 1) backwards; }
 }
+
+/* The writing box keeps the rounding it has on one line as it grows taller (Alex, 15 Nov: "keep the curve it has from
+   the start, only let its sides grow"): a fixed 26px instead of a full pill, which turned it into an oval */
+html:root:root[data-glass][data-skin='halo'] .compose-box { border-radius: 26px; }

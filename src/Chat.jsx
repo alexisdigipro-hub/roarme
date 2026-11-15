@@ -1983,6 +1983,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   useLayoutEffect(() => {
     const el = inputRef.current
     if (!el) return
+    // the corner button shows from the third line (Alex, 15 Nov: "after two lines, at the third")
+    const pastTwo = (t, full) => { const cs = getComputedStyle(t); const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.35 || 20; return full > lh * 2 + (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0) + 4 }
     const was = sized.current
     const lines = (s) => s.split('\n').length
     const grew = was.big === bigBox && was.text !== null && text.length >= was.text.length && lines(text) >= lines(was.text)
@@ -1991,13 +1993,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     if (grew) {
       const full = el.scrollHeight
       if (!bigBox && full > el.clientHeight) el.style.height = `${Math.min(max, full)}px`
-      setTall(full > 90)
+      setTall(pastTwo(el, full))
       return
     }
     el.style.height = 'auto'
     const full = el.scrollHeight
     el.style.height = `${bigBox ? max : Math.min(max, full)}px`
-    setTall(full > 90)
+    setTall(pastTwo(el, full))
   }, [text, bigBox])
   const [pinExtra, setPinExtra] = useState({})
   const loadPins = useCallback(() => supabase.from('roar_pins').select('message_id, pinned_by, pinned_at').eq('room_id', room.room_id).order('pinned_at').then(({ data }) => setPinRows(data || [])), [room.room_id])

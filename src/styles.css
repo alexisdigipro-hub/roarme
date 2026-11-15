@@ -4873,3 +4873,25 @@ html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relati
    glass pill in the message's own ink, no red */
 html:root:root:root .locc.live-c .live-stop { background: color-mix(in srgb, currentColor 14%, transparent); color: inherit; font-weight: 600; }
 html:root:root:root .locc.live-c .live-stop:active { background: color-mix(in srgb, currentColor 22%, transparent); }
+
+/* reactions inside the bubble, on its outer side, never towards the middle (Alex, 15 Nov): a small chip over the time
+   row; the heart takes the colour of one's own messages at that moment (the chat theme's colour, or the accent) */
+html:root { --rx-accent: color-mix(in srgb, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); }
+html[data-my-bubble]:root { --rx-accent: var(--my-bubble); }
+html:root:root:root:root .bubble > .rx.rx-in { position: static !important; inset: auto !important; transform: none !important; display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start; margin: 6px 0 0 !important; padding: 0 !important; }
+html:root:root:root:root .msg.mine .bubble > .rx.rx-in { justify-content: flex-end; }
+html:root:root:root:root .bubble > .rx.rx-in > button { display: inline-flex; align-items: center; gap: 3px; height: 24px; min-width: 0; padding: 0 8px; margin: 0 !important; border: 0 !important; border-radius: 999px; box-shadow: none !important; background: color-mix(in srgb, currentColor 10%, transparent) !important; color: inherit; font-size: 13px; line-height: 1; }
+html:root:root:root:root .msg.mine .bubble > .rx.rx-in > button { background: rgba(255, 255, 255, .9) !important; color: #222; }
+html:root:root:root:root .bubble > .rx.rx-in > button.on { box-shadow: inset 0 0 0 1.5px var(--rx-accent) !important; }
+html:root:root:root:root .bubble > .rx.rx-in > button small { font-size: 11.5px; font-weight: 600; }
+html:root:root:root:root .bubble > .rx.rx-in .rx-heart { width: 14px; height: 14px; fill: var(--rx-accent); }
+
+/* a shared contact as a proper card (Alex, 15 Nov): the picture and the name with room, a fine line, View Contact */
+.sc-card.sc2 { display: flex; flex-direction: column; align-items: stretch; gap: 0; min-width: min(250px, 66vw); padding: 4px 2px 0; cursor: pointer; }
+.sc2-top { display: flex; align-items: center; gap: 12px; padding: 4px 6px 12px 2px; }
+.sc2-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sc2-text b { font-size: 16px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc2-text small { font-size: 13px; opacity: .65; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc2-go { display: flex; align-items: center; justify-content: center; height: 40px; border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); font-size: 14.5px; font-weight: 600; color: inherit; }
+.msg:not(.mine) .sc2-go { color: var(--rx-accent); }
+.sc-card.sc2:active .sc2-go { opacity: .6; }

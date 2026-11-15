@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { errText, fileLink, foldHas, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
+import { errText, fileLink, fold, foldHas, lastSeenText, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { Avatar, I, Modal, Slide, useLens, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
@@ -295,6 +295,40 @@ const FT_I = {
   scan: <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 8V6.5A2.5 2.5 0 0 1 6.5 4H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V8M20 16v1.5a2.5 2.5 0 0 1-2.5 2.5H16M8 20H6.5A2.5 2.5 0 0 1 4 17.5V16" /><path d="M9 7.5h4l2.5 2.5v6.5H9z" /><path d="M13 7.5V10h2.5" /></svg>,
 }
 
+function ContactPick({ contacts, who, setWho, searching, onContact }) {
+  const box = useRef(null)
+  const name = (p) => p.display_name || `@${p.username}`
+  const q = who.trim()
+  const list = (contacts || []).filter((p) => !q || foldHas(`${p.display_name || ''} ${p.username || ''}`, q))
+  const groups = []
+  list.forEach((p) => {
+    const l = (fold(name(p).replace(/^@/, '')).charAt(0) || '#').toUpperCase()
+    const g = groups[groups.length - 1]
+    if (g && g.l === l) g.list.push(p); else groups.push({ l, list: [p] })
+  })
+  const jump = (l) => box.current?.querySelector(`[data-letter="${CSS.escape(l)}"]`)?.scrollIntoView({ block: 'start' })
+  return (
+    <div className="cp" ref={box}>
+      {searching && <label className="search as-search">{I.search}<input autoFocus value={who} onChange={(e) => setWho(e.target.value)} placeholder="Search contacts" /></label>}
+      {!q && groups.length > 1 && <div className="cp-index"><div>{groups.map((g) => <button key={g.l} type="button" onClick={() => jump(g.l)}>{g.l}</button>)}</div></div>}
+      {!list.length && <p className="as-empty"><span>{q ? 'No one by that name.' : 'No contacts yet.'}</span></p>}
+      {groups.map((g) => (
+        <div key={g.l} className="cp-group">
+          <small className="cp-letter" data-letter={g.l}>{g.l}</small>
+          <div className="as-card cp-card">
+            {g.list.map((p) => (
+              <button key={p.id} type="button" className="cp-row" onClick={() => onContact(p)}>
+                <Avatar src={p.avatar_url} name={name(p)} size={40} />
+                <span className="cp-text"><span className="cp-name">{name(p)}</span><small>{lastSeenText(p) || `@${p.username}`}</small></span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, onPoll, transferSlot, contacts, onContact }) {
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
@@ -327,6 +361,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const bodyRef = useRef(null)
   useSwipeClose(sheetRef, onClose, 'y', edit)
   const [who, setWho] = useState('')
+  const [whoOpen, setWhoOpen] = useState(false)
   // the tab bar is the chat's own menu at the foot: its glass, icon over word, the lens in GLASS TRAVEL (Alex, 15 Nov)
   const tabsLens = useLens(`${tab}|${files.length > 0}`)
   useTabSwipe(bodyRef, ['gallery', 'file', onLocation && 'location', onPoll && 'poll', 'audio', onContact && 'contact', onTransfer && 'transfer'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
@@ -392,6 +427,8 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
           <b>{title}</b>
           {tab === 'poll' && !files.length
             ? <button type="button" className={`pill-btn pl-send${pollOut ? ' on' : ''}`} disabled={!pollOut || pollBusy} onClick={sendPoll}>Send</button>
+            : tab === 'contact' && !files.length
+            ? <button type="button" className="round" onClick={() => { setWhoOpen((v) => !v); setWho('') }} aria-label="Search contacts">{whoOpen ? I.x : I.search}</button>
             : tab === 'file' && !files.length
             ? <button type="button" className="round" onClick={() => setFileQ((q) => (q === null ? '' : null))} aria-label="Search files">{fileQ === null ? I.search : I.x}</button>
             : <span className="as-head-pad" />}
@@ -417,19 +454,9 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
           ) : tab === 'transfer' && onTransfer ? (
             <div className="as-transfer" ref={transferSlot} />
           ) : tab === 'contact' && onContact ? (
-            <>
-              <label className="search as-search">{I.search}<input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Search contacts" /></label>
-              <div className="as-card as-people">
-                {(contacts || []).filter((p) => !who.trim() || `${p.display_name || ''} ${p.username || ''}`.toLowerCase().includes(who.trim().toLowerCase())).map((p) => (
-                  <button key={p.id} type="button" className="as-row as-person" onClick={() => onContact(p)}>
-                    <Avatar src={p.avatar_url} name={p.display_name || p.username} size={40} />
-                    <span className="as-person-text"><b>{p.display_name || `@${p.username}`}</b><small>@{p.username}</small></span>
-                    <i className="as-person-go">{I.send}</i>
-                  </button>
-                ))}
-                {!(contacts || []).length && <span className="as-row as-wait">No contacts yet.</span>}
-              </div>
-            </>
+            // as Telegram's (Alex, 15 Nov: "thin, small letters, not chunky"): people under their letter, each group a
+            // card of slim rows (picture, name, last seen), the letters down the right side to jump; a tap sends
+            <ContactPick contacts={contacts} who={who} setWho={setWho} searching={whoOpen} onContact={onContact} />
           ) : tab === 'location' && onLocation ? (
             // Location is a tab of the sheet like the others (Alex, 14 Nov: it popped a window of its own and the sheet was gone)
             <Suspense fallback={<div className="loc loc-inline" />}><LocationPicker inline onSend={onLocation} onLive={onLive} onClose={onClose} /></Suspense>

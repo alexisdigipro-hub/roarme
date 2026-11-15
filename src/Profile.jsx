@@ -362,12 +362,11 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                       the note and the photo are there) or the buttons beside it (mute, search) */}
                   <button type="button" onClick={() => { setMore(false); setSoundsOpen(true) }}>{CUSTOM_I}<span>Notifications and Sounds</span></button>
                   <button type="button" onClick={() => toChat('wallpaper')}>{I.brush}<span>Change Wallpaper</span></button>
-                  <button type="button" onClick={() => toChat('seal')}>{I.lock}<span>Encrypted Chat</span></button>
                   {!group && other && <button type="button" onClick={shareContact}>{I.forward}<span>Share Contact</span></button>}
                   {!group && other && <button type="button" onClick={() => toChat('group')}>{I.people}<span>Create Group</span></button>}
                   {!group && <button type="button" onClick={() => toChat('schedule')}>{I.timer}<span>Schedule Call</span></button>}
                   {group && <button type="button" onClick={() => { setMore(false); setTab('members'); setAdding(true) }}>{I.people}<span>Add people</span></button>}
-                  <button type="button" onClick={() => toChat('export')}>{I.file}<span>Export Chat History…</span></button>
+                  <button type="button" onClick={() => toChat('export')}>{I.file}<span>Export Chat History</span></button>
                   <hr />
                   <button type="button" onClick={() => setAutoOpen((v) => !v)}>{I.timer}<span>Auto-Delete Messages</span><small className="pf-m-val">{AUTO.find(([h]) => h === (room.auto_delete_hours || null))?.[1] || 'Off'}</small></button>
                   {autoOpen && AUTO.map(([h, l]) => <button key={l} type="button" className="pf-m-sub" onClick={() => toChat('auto', h)}><span>{l}</span>{(room.auto_delete_hours || null) === h && <i>{I.check}</i>}</button>)}

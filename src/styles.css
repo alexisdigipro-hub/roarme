@@ -4895,3 +4895,9 @@ html:root:root:root:root .bubble > .rx.rx-in .rx-heart { width: 14px; height: 14
 .sc2-go { display: flex; align-items: center; justify-content: center; height: 40px; border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); font-size: 14.5px; font-weight: 600; color: inherit; }
 .msg:not(.mine) .sc2-go { color: var(--rx-accent); }
 .sc-card.sc2:active .sc2-go { opacity: .6; }
+/* the reaction's chip round and lighter (Alex, 15 Nov: "at least round, and a little more see-through"): a circle when
+   it holds only the emoji, a pill only when a count rides beside it */
+html:root:root:root:root .bubble > .rx.rx-in > button { width: 24px; padding: 0; justify-content: center; border-radius: 50%; }
+html:root:root:root:root .bubble > .rx.rx-in > button:has(small) { width: auto; padding: 0 8px; border-radius: 999px; }
+html:root:root:root:root .bubble > .rx.rx-in > button { background: color-mix(in srgb, currentColor 7%, transparent) !important; }
+html:root:root:root:root .msg.mine .bubble > .rx.rx-in > button { background: rgba(255, 255, 255, .45) !important; }

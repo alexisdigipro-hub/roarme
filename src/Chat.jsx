@@ -1187,6 +1187,8 @@ export default function Chat({ me, setMe }) {
   // a tap on someone in Contacts opens their card (Alex, 21 Oct, like the iPhone's Contacts); favourites come first
   const [card, setCard] = useState('')
   useEffect(() => { const f = (e) => { const id = e.detail?.id; if (!id) return; loadPeople([id]); setCard(id) }; window.addEventListener('roarme-card', f); return () => window.removeEventListener('roarme-card', f) }, [loadPeople])
+  // back to the chat's profile after a search or an action asked from it
+  useEffect(() => { const f = () => setModal((m) => (m ? m : 'info')); window.addEventListener('roarme-profile', f); return () => window.removeEventListener('roarme-profile', f) }, [])
   const [favs, setFavs] = useLocal('roarme-fav', [])
   const [contactSort, setContactSort] = useLocal('roarme-contacts-sort', 'seen') // Contacts: 'seen' (last seen first) or 'name'
   const [contactsMenu, setContactsMenu] = useState('') // Contacts' ⋯ ('sort') or + ('add') menu open
@@ -1906,10 +1908,14 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [headSub, setHeadSub] = useState('') // Mute › or Auto-Delete › open in the ⋯ menu
   // the profile's Search and Chat Options (Halo, whose head has no ⋯) reach this chat's search and menu
   const roomActs = useRef({}) // what the profile's More menu asks of this chat, filled before it is drawn
+  const backToPf = useRef(false) // a search or an action asked from the profile: reopen the profile once it is done
+  const [backTick, setBackTick] = useState(0)
   useEffect(() => {
-    const f = () => { setFind(''); setFindAt(0) }
+    // what came from the profile goes back to it when done (Alex, 15 Nov: X on the search, or a More item, landed in the chat)
+    const fromPf = (e) => { if (e.detail?.fromProfile) { backToPf.current = true; setBackTick((n) => n + 1) } }
+    const f = (e) => { fromPf(e); setFind(''); setFindAt(0) }
     const m = () => { setHeadSub(''); setHeadMenu(true) }
-    const a = (e) => roomActs.current[e.detail?.what]?.(e.detail?.arg)
+    const a = (e) => { if (!['delete', 'group'].includes(e.detail?.what)) fromPf(e); roomActs.current[e.detail?.what]?.(e.detail?.arg) }
     window.addEventListener('roarme-find', f); window.addEventListener('roarme-headmenu', m); window.addEventListener('roarme-roomact', a)
     return () => { window.removeEventListener('roarme-find', f); window.removeEventListener('roarme-headmenu', m); window.removeEventListener('roarme-roomact', a) }
   }, [])
@@ -1967,6 +1973,12 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [pinRows, setPinRows] = useState([])
   const [pinView, setPinView] = useState(false)
   const [schedOpen, setSchedOpen] = useState(false)
+  useEffect(() => {
+    if (!backToPf.current) return undefined
+    if (find !== null || wallPick || schedOpen || rolesOpen || sealAsk) return undefined
+    const t = setTimeout(() => { if (backToPf.current) { backToPf.current = false; window.dispatchEvent(new Event('roarme-profile')) } }, 420)
+    return () => clearTimeout(t)
+  }, [backTick, find, wallPick, schedOpen, rolesOpen, sealAsk])
   const [locOpen, setLocOpen] = useState(false)
   const [locView, setLocView] = useState(null)
   // the message box grows with what is written, wrapped lines too; past a few lines a corner button makes it big

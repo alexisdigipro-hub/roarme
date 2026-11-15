@@ -53,7 +53,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const [autoOpen, setAutoOpen] = useState(false)
   const AUTO = [[null, 'Off'], [24, 'After 1 day'], [168, 'After 1 week'], [720, 'After 1 month']]
   // the chat does these itself (Chat.jsx listens for roarme-roomact): the profile closes and hands them over
-  const toChat = (what, arg) => { setMore(false); onClose(); setTimeout(() => window.dispatchEvent(new CustomEvent('roarme-roomact', { detail: { what, arg } })), 80) }
+  const toChat = (what, arg) => { setMore(false); onClose(); setTimeout(() => window.dispatchEvent(new CustomEvent('roarme-roomact', { detail: { what, arg, fromProfile: true } })), 80) }
   const shareContact = async () => {
     setMore(false)
     const text = `${title} is on RoarMe: @${other.username}`
@@ -275,7 +275,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
         <div className="pf-dock" aria-hidden={!docked}>
           <button type="button" className="round" onClick={onClose} aria-label="Back" tabIndex={docked ? 0 : -1}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg></button>
           <span className="pf-dock-title"><b>{title}</b><small>{dockSub}</small></span>
-          <button type="button" className="round" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('roarme-find')) }} aria-label="Search" tabIndex={docked ? 0 : -1}>{I.search}</button>
+          <button type="button" className="round" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('roarme-find', { detail: { fromProfile: true } })) }} aria-label="Search" tabIndex={docked ? 0 : -1}>{I.search}</button>
         </div>
         {/* Halo shows the head as Telegram's (Alex, 12 Nov): the picture large, the name over it, the buttons under it;
             elsewhere pf-head is display: contents and the hero, back and Edit are hidden */}
@@ -326,7 +326,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
         <div className="pf-acts">
           <button type="button" className="pf-a-msg" onClick={onMessage}>{I.chats}<span>Message</span></button>
           <button type="button" onClick={() => (group ? (onClose(), startGroupCall(room.room_id, false)) : onCall ? onCall(false) : toast('Calls are for chats between two people'))}>{I.phone}<span>Call</span></button>
-          <button type="button" className={vcOpen ? 'on' : ''} onClick={() => (group ? setVcOpen((v) => !v) : onCall ? onCall(true) : toast('Calls are for chats between two people'))} aria-haspopup={group ? 'menu' : undefined}>{I.video}<span>{group ? 'Video Chat' : 'Video'}</span></button>
+          <button type="button" className={vcOpen ? 'on' : ''} onClick={() => (group ? setVcOpen((v) => !v) : onCall ? onCall(true) : toast('Calls are for chats between two people'))} aria-haspopup={group ? 'menu' : undefined}>{I.video}<span>Video</span></button>
           {group && vcOpen && (
             <>
               <button type="button" className="scrim" aria-label="Close" onClick={() => setVcOpen(false)} />
@@ -351,7 +351,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
               </>
             )}
           </>
-          <button type="button" className="pf-a-find" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('roarme-find')) }}>{I.search}<span>Search</span></button>
+          <button type="button" className="pf-a-find" onClick={() => { onClose(); window.dispatchEvent(new CustomEvent('roarme-find', { detail: { fromProfile: true } })) }}>{I.search}<span>Search</span></button>
           <span className="pf-more">
             <button type="button" className={more ? 'on' : ''} onClick={() => setMore((v) => !v)}>{I.more}<span>More</span></button>
             {more && (

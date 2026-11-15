@@ -5008,3 +5008,7 @@ html:root:root:root:root .vrec.flash .vrec-tools .round.on { color: #c98a00 !imp
 html:root:root:root:root .vrec.flash .vrec-tools .round svg { stroke: currentColor; }
 html:root:root:root:root .vrec.flash .vrec-bar { background: rgba(28, 28, 32, .92) !important; color: #fff !important; }
 html:root:root:root:root .vrec.flash .vrec-hold { background: linear-gradient(170deg, var(--halo-mine-top, #333), var(--halo-mine, #111)) !important; color: var(--halo-ink, #fff) !important; box-shadow: 0 6px 18px rgba(0, 0, 0, .25) !important; opacity: 1 !important; }
+/* on one's own message the heart cannot wear the message's own colour (it vanished on Frost's light bubbles; Alex,
+   15 Nov): there it takes the message's ink, on a faint chip of the same ink, so it always stands out */
+html:root:root:root:root:root .msg.mine .bubble > .rx.rx-in > button { background: color-mix(in srgb, currentColor 12%, transparent) !important; color: inherit !important; }
+html:root:root:root:root:root .msg.mine .bubble > .rx.rx-in .rx-heart { fill: currentColor; }

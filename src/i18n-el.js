@@ -417,6 +417,7 @@ export const EL = {
   'Enter your passcode': 'Πληκτρολόγησε τον κωδικό κλειδώματος',
   'Everybody': 'Όλοι',
   'Export Chat History…': 'Εξαγωγή ιστορικού συνομιλίας…',
+  'Export Chat History': 'Εξαγωγή ιστορικού συνομιλίας',
   'Faces Next to Messages in Groups': 'Πρόσωπα δίπλα στα μηνύματα στις ομάδες',
   'File': 'Αρχείο',
   'Files': 'Αρχεία',

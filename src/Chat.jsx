@@ -3118,7 +3118,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                     {!sealOn && !editing && <button type="button" onClick={() => { setHeadMenu(false); setSchedNew(true) }}>{I.timer}<span>Schedule Message</span></button>}
                     {room.kind === 'group' && <button type="button" onClick={() => { setHeadMenu(false); setRolesOpen(true) }}>{I.people}<span>Roles for @mentions</span></button>}
                     <button type="button" onClick={() => { setHeadMenu(false); setWallPick(true) }}>{I.brush}<span>Change Wallpaper</span></button>
-                    <button type="button" onClick={exportChat} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.file}<span>Export Chat History…</span></button>
+                    <button type="button" onClick={exportChat} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('') }}>{I.file}<span>Export Chat History</span></button>
                     <hr />
                     <div className={`has-sub${headSub === 'auto' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHeadSub('auto') }}>
                       <button type="button" onClick={() => setHeadSub((s) => (s === 'auto' ? '' : 'auto'))}>{I.timer}<span>Auto-Delete Messages</span><i className="sub-arrow">{I.right}</i></button>

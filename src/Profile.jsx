@@ -360,23 +360,26 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                 <div className="menu pf-menu">
                   {/* what can be done with the chat (Alex, 12 Nov, after Telegram's): nothing here repeats Edit (the name,
                       the note and the photo are there) or the buttons beside it (mute, search) */}
+                  {/* grouped (Alex, 15 Nov: "group them right"): this chat's own settings · people and calls · keep or
+                      archive · what removes, in red, last */}
                   <button type="button" onClick={() => { setMore(false); setSoundsOpen(true) }}>{CUSTOM_I}<span>Notifications and Sounds</span></button>
                   <button type="button" onClick={() => toChat('wallpaper')}>{I.brush}<span>Change Wallpaper</span></button>
-                  <button type="button" onClick={() => toChat('seal')}>{I.lock}<span>Encrypted Chat</span></button>
+                  <button type="button" onClick={() => setAutoOpen((v) => !v)}>{I.timer}<span>Auto-Delete Messages</span><small className="pf-m-val">{AUTO.find(([h]) => h === (room.auto_delete_hours || null))?.[1] || 'Off'}</small></button>
+                  {autoOpen && AUTO.map(([h, l]) => <button key={l} type="button" className="pf-m-sub" onClick={() => toChat('auto', h)}><span>{l}</span>{(room.auto_delete_hours || null) === h && <i>{I.check}</i>}</button>)}
+                  {group && room.avatar_url && <button type="button" onClick={dropGroupPhoto}>{I.x}<span>Remove Group Photo</span></button>}
+                  <hr />
                   {!group && other && <button type="button" onClick={shareContact}>{I.forward}<span>Share Contact</span></button>}
                   {!group && other && <button type="button" onClick={() => toChat('group')}>{I.people}<span>Create Group</span></button>}
                   {!group && <button type="button" onClick={() => toChat('schedule')}>{I.timer}<span>Schedule Call</span></button>}
-                  {group && <button type="button" onClick={() => { setMore(false); setTab('members'); setAdding(true) }}>{I.people}<span>Add people</span></button>}
-                  <button type="button" onClick={() => toChat('export')}>{I.file}<span>Export Chat History…</span></button>
-                  <hr />
-                  <button type="button" onClick={() => setAutoOpen((v) => !v)}>{I.timer}<span>Auto-Delete Messages</span><small className="pf-m-val">{AUTO.find(([h]) => h === (room.auto_delete_hours || null))?.[1] || 'Off'}</small></button>
-                  {autoOpen && AUTO.map(([h, l]) => <button key={l} type="button" className="pf-m-sub" onClick={() => toChat('auto', h)}><span>{l}</span>{(room.auto_delete_hours || null) === h && <i>{I.check}</i>}</button>)}
-                  <button type="button" onClick={() => setMine({ archived: !room.archived }, room.archived ? 'Unarchived' : 'Archived')}>{I.archive}<span>{room.archived ? 'Unarchive' : 'Archive'}</span></button>
-                  <button type="button" onClick={() => toChat('clear')}>{I.clear}<span>Clear Chat History</span></button>
-                  {group && room.avatar_url && <button type="button" onClick={dropGroupPhoto}>{I.x}<span>Remove group photo</span></button>}
-                  {group && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave group</span></button>}
-                  {group && admin && <button type="button" className="danger" onClick={deleteGroup}>{I.trash}<span>Delete group</span></button>}
+                  {group && <button type="button" onClick={() => { setMore(false); setTab('members'); setAdding(true) }}>{I.people}<span>Add People</span></button>}
                   {group && <button type="button" onClick={() => toChat('roles')}>{I.people}<span>Roles for @mentions</span></button>}
+                  <hr />
+                  <button type="button" onClick={() => toChat('export')}>{I.file}<span>Export Chat History</span></button>
+                  <button type="button" onClick={() => setMine({ archived: !room.archived }, room.archived ? 'Unarchived' : 'Archived')}>{I.archive}<span>{room.archived ? 'Unarchive' : 'Archive'}</span></button>
+                  <hr />
+                  <button type="button" className="danger" onClick={() => toChat('clear')}>{I.clear}<span>Clear Chat History</span></button>
+                  {group && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave Group</span></button>}
+                  {group && admin && <button type="button" className="danger" onClick={deleteGroup}>{I.trash}<span>Delete Group</span></button>}
                   {!group && <button type="button" className="danger" onClick={() => toChat('delete')}>{I.trash}<span>Delete Chat</span></button>}
                 </div>
               </>

@@ -99,11 +99,11 @@ struct RootView: View {
             .padding(.top, 6)
 
             FootMenu(items: [
-                (Router.Tab.send, t("Send"), "arrow.up.circle"),
-                (.mine, t("My transfers"), "tray.full"),
-                (.receive, t("Receive"), "arrow.down.circle"),
-                (.studio, "Studio", "film.stack"),
-                (.settings, t("Settings"), "gearshape"),
+                (Router.Tab.send, t("Send"), "foot-send"),
+                (.mine, t("My transfers"), "foot-mine"),
+                (.receive, t("Receive"), "foot-receive"),
+                (.studio, "Studio", "foot-studio"),
+                (.settings, t("Settings"), "foot-settings"),
             ], value: $router.tab)
             .padding(.horizontal, 12)
             .padding(.bottom, 4)

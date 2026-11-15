@@ -7,7 +7,7 @@ import { Avatar, I, Modal, Slide, useSeen, useSwipeClose, useTabSwipe } from './
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 import { PhotoEdit } from './photoEdit.jsx'
-import { ArticleEditor, LocationPicker } from './share.jsx'
+import { LocationPicker } from './share.jsx'
 
 /* ---------- emoji grid ---------- */
 export function EmojiPicker({ onPick, onClose }) {
@@ -191,9 +191,21 @@ function AsThumb({ m, busy, onPick }) {
     </button>
   )
 }
-// Article, Transfer and Contact stand inside the sheet as tabs too (Alex, 15 Nov, as Telegram's): onArticle(sends an
-// article), transferSlot (a ref callback: RoarTransfer's window stands in it), onContact(person) with contacts
-export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onArticle, transferSlot, contacts, onContact }) {
+// Transfer and Contact stand inside the sheet as tabs too (Alex, 15 Nov, as Telegram's; Article was taken out of the
+// app the same night): transferSlot (a ref callback: RoarTransfer's window stands in it), onContact(person) with contacts
+// the sheet's tabs in the same hand as the chat's own foot menu (Alex, 15 Nov: "make them beautiful, like our chat"):
+// filled shapes, the holes cut out (even-odd), 22px
+const asSolid = (d) => <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" fillRule="evenodd" clipRule="evenodd" aria-hidden="true"><path d={d} /></svg>
+const AS_I = {
+  gallery: asSolid('M6.5 3.5h11a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3zM15.6 7a1.9 1.9 0 1 0 0 3.8 1.9 1.9 0 0 0 0-3.8zM5.5 17.2l3.9-4.6a1.2 1.2 0 0 1 1.8 0l2.4 2.7 1.3-1.4a1.2 1.2 0 0 1 1.8 0l2.8 3.1V17.5a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1z'),
+  file: asSolid('M7 2.5h6.4c.5 0 1 .2 1.4.6l4.6 4.6c.4.4.6.9.6 1.4V19a2.5 2.5 0 0 1-2.5 2.5H7A2.5 2.5 0 0 1 4.5 19V5A2.5 2.5 0 0 1 7 2.5zM13.5 4v3.6c0 .6.5 1.1 1.1 1.1h3.6zM8 13h8v1.6H8zM8 16.4h5.5V18H8z'),
+  location: asSolid('M12 2.2a7.6 7.6 0 0 1 7.6 7.6c0 5.3-6.1 11.2-6.9 11.9a1 1 0 0 1-1.4 0c-.8-.7-6.9-6.6-6.9-11.9A7.6 7.6 0 0 1 12 2.2zM12 6.9a2.9 2.9 0 1 0 0 5.8 2.9 2.9 0 0 0 0-5.8z'),
+  audio: asSolid('M19.5 3.2v12.3a3.2 3.2 0 1 1-1.8-2.9V7.4l-8.4 1.9v8.3a3.2 3.2 0 1 1-1.8-2.9V6.3c0-.6.4-1.1 1-1.2l9.8-2.3c.6-.1 1.2.3 1.2.9z'),
+  contact: asSolid('M12 3a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zM3 21a9 9 0 0 1 18 0z'),
+  transfer: asSolid('M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19zM11.2 7.2l-4 4a1.1 1.1 0 0 0 1.6 1.6l2.1-2.1V16a1.1 1.1 0 0 0 2.2 0v-5.3l2.1 2.1a1.1 1.1 0 0 0 1.6-1.6l-4-4a1.1 1.1 0 0 0-1.6 0z'),
+}
+
+export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, transferSlot, contacts, onContact }) {
   const prefs = usePrefs()
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
@@ -207,7 +219,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const bodyRef = useRef(null)
   useSwipeClose(sheetRef, onClose, 'y', edit)
   const [who, setWho] = useState('')
-  useTabSwipe(bodyRef, ['gallery', 'file', onLocation && 'location', 'audio', onContact && 'contact', onArticle && 'article', onTransfer && 'transfer'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
+  useTabSwipe(bodyRef, ['gallery', 'file', onLocation && 'location', 'audio', onContact && 'contact', onTransfer && 'transfer'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
@@ -240,13 +252,12 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   }, [tab, recent, meId])
   const pick = async (m) => { if (!onResend || sending) return; setSending(m.id); const ok = await onResend(m); setSending(''); if (ok !== false) onClose() }
   const TABS = [
-    ['gallery', 'Gallery', I.image],
-    ['file', 'File', I.file],
-    onLocation && ['location', 'Location', I.place],
-    ['audio', 'Audio', I.play],
-    onContact && ['contact', 'Contact', I.person],
-    onArticle && ['article', 'Article', I.article],
-    onTransfer && ['transfer', 'Transfer', I.transfer],
+    ['gallery', 'Gallery', AS_I.gallery],
+    ['file', 'File', AS_I.file],
+    onLocation && ['location', 'Location', AS_I.location],
+    ['audio', 'Audio', AS_I.audio],
+    onContact && ['contact', 'Contact', AS_I.contact],
+    onTransfer && ['transfer', 'Transfer', AS_I.transfer],
   ].filter(Boolean)
   const go = (k) => setTab(k)
   // RoarTransfer opens in the sheet's body when its tab is chosen
@@ -258,7 +269,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   if (edit >= 0 && files[edit]) return <PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} />
   return createPortal(
     <div className="as-back" onClick={onClose}>
-      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${['article', 'transfer'].includes(tab) && !files.length ? ' as-tall' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${tab === 'transfer' && !files.length ? ' as-tall' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <i className="as-grab" data-grab="" aria-hidden="true" />
         <div className="as-head" data-grab="">
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
@@ -291,8 +302,6 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
               )}
               {big.length > 0 && <small className="attach-transfer">{big.length === 1 ? 'Over 50 MB: it goes by RoarTransfer, up to 3 GB, kept 3 days.' : `${big.length} files over 50 MB go by RoarTransfer, kept 3 days.`}</small>}
             </>
-          ) : tab === 'article' && onArticle ? (
-            <ArticleEditor inline onSend={onArticle} onClose={onClose} />
           ) : tab === 'transfer' && onTransfer ? (
             <div className="as-transfer" ref={transferSlot} />
           ) : tab === 'contact' && onContact ? (

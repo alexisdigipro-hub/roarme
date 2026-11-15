@@ -36,7 +36,7 @@ import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
 import { ContactCard } from './contactCard.jsx'
 import { PhoneFriends, contactsAvailable } from './phone.jsx'
-import { ArticleCard, ArticleEditor, ArticleReader, LocationCard, LocationPicker, LocationView, articleOf } from './share.jsx'
+import { LocationCard, LocationPicker, LocationView } from './share.jsx'
 import { taskNotice, useTasks } from './taskCore.js'
 import { useNameMarks } from './fancy.jsx'
 import { GroupCallBar, GroupCallCard, GroupCallHost, LinkCallCard, joinCall, startGroupCall, useGroupCall } from './groupcall.jsx'
@@ -1969,8 +1969,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [schedOpen, setSchedOpen] = useState(false)
   const [locOpen, setLocOpen] = useState(false)
   const [locView, setLocView] = useState(null)
-  const [artOpen, setArtOpen] = useState(null) // true for a new one, or the message being edited
-  const [artView, setArtView] = useState(null)
   // the message box grows with what is written, wrapped lines too; past a few lines a corner button makes it big
   // (Alex, 17 Oct, as on Telegram) and it shrinks back once the message is sent
   const [bigBox] = useState(false)
@@ -2832,7 +2830,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   /* The messages, drawn again only when something they show changes (Alex, 21 Oct: RoarMe lighter): typing in the box
      below no longer redraws every message. Their buttons call the newest handlers through `hands`. */
   const hands = useRef({})
-  hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setArtView, setCinema, byId, picked, setReplyTo }
+  hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setCinema, byId, picked, setReplyTo }
   // Holding a message on a phone (Alex, 8 Nov: "when I hold it, a small pop-up so I know it took it"): the bubble gives
   // under the finger at once, and after 420 ms it pops, the phone ticks and the menu opens while the finger is still down.
   // Moving the finger (a scroll, a swipe to reply) lets it go. A short tap opens nothing (11 Nov).
@@ -3020,12 +3018,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.article && !m.deleted_at ? ' art-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
                       : m.file?.location ? <LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} />
-                      : m.file?.article ? <ArticleCard {...articleOf(m.body)} onOpen={() => hands.current.setArtView(m)} />
                       : m.file?.roartransfer ? <BundleCard t={m.file.roartransfer} />
                       : m.file?.contact ? <SharedContact c={m.file.contact} person={people[m.file.contact.id]} />
                       : m.file?.groupcall?.link ? <LinkCallCard id={m.file.groupcall.id} who={mine ? 'You' : nameOf(who)} onJoin={() => joinCall(m.file.groupcall.id, false, 'Call')} />
@@ -3039,7 +3036,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'file' && isAudioFile(m.file) ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} />
                       : null}
-                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.article && !m.file?.roartransfer && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
+                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
                     <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
@@ -3348,7 +3345,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
               <hr />
-              {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && !menu.m.file?.roartransfer && <button type="button" onClick={() => { if (menu.m.file?.article) setArtOpen(menu.m); else { setEditing(menu.m); setText(textOf(menu.m)) } setMenu(null) }}>{I.edit}<span>Edit</span></button>}
+              {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && !menu.m.file?.roartransfer && <button type="button" onClick={() => { setEditing(menu.m); setText(textOf(menu.m)); setMenu(null) }}>{I.edit}<span>Edit</span></button>}
               <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
               <button type="button" onClick={() => { setRemindFor(menu.m); setMenu(null) }}>{I.bell}<span>Remind Me</span></button>
               {!menu.m.sealed && <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>}
@@ -3409,7 +3406,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={sendFiles}
         onTransfer={() => { setTransferHidden(false); setTransferOpen(true) }} transferSlot={setTransferSlot}
         onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))}
-        onArticle={({ title: t, text: x }) => sendCard(`${t}\n\n${x}`, { article: { v: 1 } }, '', () => setAttach(null))}
         contacts={shareable} onContact={(p) => sendCard(nameOf(p), { contact: { id: p.id, username: p.username, name: nameOf(p), avatar: p.avatar_url || '' } }, '', () => setAttach(null))} />}
       {transferOpen && (
         <TransferWindow title={title} hidden={transferHidden} slot={transferSlot} onHide={() => { setTransferHidden(true); if (transferSlot) setAttach(null) }} onProgress={setTransferPct}
@@ -3435,21 +3431,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       {schedOpen && <ScheduleCall who={title} onClose={() => setSchedOpen(false)} onSend={(event) => sendCard(event.title, { event }, 'Call scheduled', () => setSchedOpen(false))} />}
       {locOpen && <LocationPicker onClose={() => setLocOpen(false)} onSend={(location) => sendCard(location.name, { location }, '', () => setLocOpen(false))} />}
       {locView && <LocationView loc={locView} onClose={() => setLocView(null)} />}
-      {artOpen && (
-        <ArticleEditor initial={artOpen === true ? null : articleOf(artOpen.body)}
-          onClose={() => setArtOpen(null)}
-          onSend={async ({ title: t, text: x }) => {
-            const body = `${t}\n\n${x}`
-            if (artOpen === true) return sendCard(body, { article: { v: 1 } }, '', () => setArtOpen(null))
-            const edited = (await amAdmin()) ? artOpen.edited_at || null : new Date().toISOString()
-            const { error } = await supabase.from('roar_messages').update({ body, edited_at: edited }).eq('id', artOpen.id)
-            if (error) { setErr(errText(error)); return false }
-            setMsgs((list) => list.map((y) => (y.id === artOpen.id ? { ...y, body, edited_at: edited } : y)))
-            setArtOpen(null)
-            return true
-          }} />
-      )}
-      {artView && <ArticleReader {...articleOf(artView.body)} who={artView.user_id === me.id ? 'You' : nameOf(people[artView.user_id])} at={artView.created_at} plain={withMentions} onClose={() => setArtView(null)} />}
       {pinView && (
         <Modal title={pinnedList.length === 1 ? '1 pinned message' : `${pinnedList.length} pinned messages`} onClose={() => setPinView(false)}
           foot={pinnedList.length > 1 ? <button type="button" className="btn btn-danger pins-all" onClick={unpinAll}>{I.pin}<span>Unpin all</span></button> : null}>

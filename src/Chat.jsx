@@ -1945,6 +1945,22 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [holdDx, setHoldDx] = useState(0)
   const stopRef = useRef({})
   const scrollRef = useRef(null)
+  // the keyboard comes up or goes down (main.jsx roarme-kb-move): the messages keep their distance from the bottom while
+  // the page changes height, so the last one rises with the writing box over the keyboard (Alex, 15 Nov)
+  useEffect(() => {
+    let raf = 0
+    const f = () => {
+      const el = scrollRef.current
+      if (!el) return
+      const fromBottom = Math.max(0, el.scrollHeight - el.scrollTop - el.clientHeight)
+      const until = performance.now() + 520
+      cancelAnimationFrame(raf)
+      const hold = () => { el.scrollTop = el.scrollHeight - el.clientHeight - fromBottom; if (performance.now() < until) raf = requestAnimationFrame(hold) }
+      raf = requestAnimationFrame(hold)
+    }
+    window.addEventListener('roarme-kb-move', f)
+    return () => { window.removeEventListener('roarme-kb-move', f); cancelAnimationFrame(raf) }
+  }, [])
   const inputRef = useRef(null)
   const [transferOpen, setTransferOpen] = useState(false)
   // RoarTransfer stands in the attach sheet's Transfer tab (Alex, 15 Nov): the sheet hands its place here

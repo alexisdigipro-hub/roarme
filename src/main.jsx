@@ -91,6 +91,7 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
     const kbOn = (info) => {
       const h = Math.round(info?.keyboardHeight || 0)
       if (!h) return
+      window.dispatchEvent(new Event('roarme-kb-move')) // the open chat keeps its last message in sight (Chat.jsx)
       root.style.setProperty('--kbh', `${h}px`)
       root.style.setProperty('--vvh', `${window.innerHeight - h}px`)
       root.style.setProperty('--vvt', '0px')
@@ -98,6 +99,7 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
       if (window.scrollY) window.scrollTo(0, 0)
     }
     const kbOff = () => {
+      window.dispatchEvent(new Event('roarme-kb-move'))
       root.style.setProperty('--kbh', '0px')
       root.style.setProperty('--vvh', `${window.innerHeight}px`)
       root.classList.remove('kb-native')
@@ -117,7 +119,7 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
   // "when you write you see nothing")
   const vv = window.visualViewport
   if (vv) {
-    const fit = () => { if (document.documentElement.classList.contains('kb-native')) return; const r = document.documentElement.style; r.setProperty('--vvh', `${Math.round(vv.height)}px`); r.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`) }
+    const fit = () => { if (document.documentElement.classList.contains('kb-native')) return; window.dispatchEvent(new Event('roarme-kb-move')); const r = document.documentElement.style; r.setProperty('--vvh', `${Math.round(vv.height)}px`); r.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`) }
     vv.addEventListener('resize', fit)
     vv.addEventListener('scroll', fit)
     fit()

@@ -785,3 +785,25 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-sheet .as-tabs > button > span { font-size: 10.5px; font-weight: 600; letter-spacing: 0; line-height: 1.1; white-space: nowrap; }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-sheet .as-tabs > button.on { color: var(--halo); }
 html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .as-sheet .as-tabs.lens::before { border: 0; border-radius: 999px !important; background: var(--lg-chip); box-shadow: none; }
+
+/* The Mute and Video Chat menus sit inside the profile's row of round buttons (.pf-acts) and caught those buttons' look
+   (a column, the icon in a glass circle, small white words): Alex, 15 Nov, "everything breaks, nothing shows". Their
+   rows are menu rows again, and their veil a plain full-screen veil */
+html:root:root:root .pf-acts > .scrim { position: fixed !important; inset: 0 !important; width: auto !important; height: auto !important; padding: 0 !important; margin: 0 !important;
+  border: 0 !important; border-radius: 0 !important; background: rgba(12, 12, 20, .32) !important; box-shadow: none !important; z-index: 59 !important; }
+html:root:root:root .pf-acts .menu > button {
+  display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: flex-start !important;
+  width: 100% !important; height: 46px !important; min-height: 46px !important; padding: 0 18px 0 14px !important; gap: 14px !important;
+  border: 0 !important; border-radius: 24px !important; background: none !important; box-shadow: none !important; color: inherit !important;
+  font-size: 16px !important; font-weight: 400 !important; text-align: left !important;
+}
+html:root:root:root .pf-acts .menu > button.pf-m-sub { height: 40px !important; min-height: 40px !important; padding-left: 50px !important; }
+html:root:root:root .pf-acts .menu > button.danger { color: var(--danger, #e5484d) !important; }
+html:root:root:root .pf-acts .menu > button:active { background: rgba(127, 127, 140, .15) !important; }
+html:root:root:root .pf-acts .menu > button > svg { flex: none !important; width: 22px !important; height: 22px !important; padding: 0 !important; margin: 0 !important;
+  border: 0 !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; box-sizing: content-box !important; transform: none !important; }
+html:root:root:root .pf-acts .menu > button > span { display: flex !important; flex-direction: column !important; align-items: flex-start !important; color: inherit !important;
+  font-size: 16px !important; font-weight: 400 !important; text-transform: none !important; letter-spacing: 0 !important; line-height: 1.2 !important; }
+html:root:root:root .pf-acts .menu > button .pf-m-note { color: var(--muted) !important; font-size: 12.5px !important; }
+html:root:root:root .pf-acts .menu > button > .pf-m-arrow { margin-left: auto !important; }
+html:root:root:root .pf-acts .menu { color: var(--text); }

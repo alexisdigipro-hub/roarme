@@ -5082,6 +5082,6 @@ html.kb .auth .auth-card { padding-top: 14px; padding-bottom: 14px; gap: 8px; ma
 html.kb .auth .wordmark.with-by .rm-mark { display: none; }
 html.kb .auth .wordmark.with-by { gap: 2px; }
 html.kb .auth .brand { margin: 0 0 4px; }
-html.kb .auth :is(.auth-sub, .auth-legal, .auth-invite) { display: none; }
+html.kb .auth :is(.auth-sub, .auth-invite) { display: none; }
 html.kb .auth .auth-card :is(input, .input) { height: 44px; }
 html.kb .auth .auth-card .btn-main { height: 46px; min-height: 0; }

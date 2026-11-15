@@ -4856,3 +4856,9 @@ html.kb .bw { bottom: auto; height: var(--vvh, 100dvh); top: var(--vvt, 0px); pa
 .sc-text b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-text small { font-size: 12.5px; opacity: .7; }
 .sc-go { flex: none; height: 30px; padding: 0 14px; border-radius: 999px; background: rgba(127, 127, 140, .18); display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+
+/* the first time: the optional phone step (Auth.jsx Onboarding; Alex, 15 Nov) */
+.ob-field.ob-phone { gap: 6px; }
+.ob-field.ob-phone .phone-field { flex: 1; min-width: 0; display: flex; gap: 6px; }
+.ob-field.ob-phone .phone-cc { flex: none; width: 92px; padding: 0 6px; border: 0; background: none; }
+.ob-field.ob-phone .phone-field .input { border: 0; background: none; min-width: 0; flex: 1; }

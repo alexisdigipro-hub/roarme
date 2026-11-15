@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
 import { Wordmark } from './ui.jsx'
 import { pendingInvite } from './invite.jsx'
+import { COUNTRIES, PhoneField, toE164, usePhoneAuth } from './phone.jsx'
 
 function Brand() {
   return (
@@ -113,7 +114,14 @@ export function NewPassword({ onDone }) {
 const GO = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
 
 export function Onboarding({ user, onDone }) {
-  const [step, setStep] = useState('user') // user | name
+  const [step, setStep] = useState('user') // user | name | phone | code
+  // a third step, optional (Alex, 15 Nov, as WhatsApp's): the mobile number, so friends find you from their contacts;
+  // shown while Supabase's phone sign-in is on (Twilio Verify), checked with an SMS code, skippable
+  const phoneOn = usePhoneAuth()
+  const [made, setMade] = useState(null) // the profile, once written
+  const [cc, setCc] = useState(COUNTRIES[0][0])
+  const [num, setNum] = useState('')
+  const [code, setCode] = useState('')
   const [username, setUsername] = useState(() => cleanUsername((user.email || '').split('@')[0]))
   const [free, setFree] = useState(null) // null not checked · true · false (taken)
   const [name, setName] = useState('')
@@ -144,7 +152,26 @@ export function Onboarding({ user, onDone }) {
     const { data } = error ? {} : await supabase.from('roar_people').select('*').eq('id', user.id).single()
     setBusy(false)
     if (error) { setErr(/duplicate|unique/i.test(error.message || '') ? 'That username was just taken. Pick another.' : errText(error)); if (/duplicate|unique/i.test(error.message || '')) setStep('user') }
+    else if (phoneOn) { setMade(data); setStep('phone') }
     else onDone(data)
+  }
+  const sendCode = async (e) => {
+    e.preventDefault()
+    const phone = toE164(cc, num)
+    if (!phone) { setErr('Check the number.'); return }
+    setErr(''); setBusy(true)
+    const { error } = await supabase.auth.updateUser({ phone })
+    setBusy(false)
+    if (error) setErr(/already|registered|exists/i.test(error.message || '') ? 'This number is already on another account.' : errText(error))
+    else setStep('code')
+  }
+  const checkCode = async (e) => {
+    e.preventDefault()
+    setErr(''); setBusy(true)
+    const { error } = await supabase.auth.verifyOtp({ phone: toE164(cc, num), token: code.trim(), type: 'phone_change' })
+    setBusy(false)
+    if (error) setErr('That code is not right. Check the SMS and try again.')
+    else onDone(made)
   }
   return (
     <div className="auth ob">
@@ -159,6 +186,31 @@ export function Onboarding({ user, onDone }) {
           </div>
           <p className={`ob-hint${free === false || err ? ' bad' : free ? ' good' : ''}`}>{err || (free === false ? 'That username is taken. Try another.' : free && okShape ? 'Free ✓' : '3 to 24 characters. a to z, 0 to 9 and _ only.')}</p>
           <div className="ob-links"><button type="button" className="btn btn-sm" onClick={() => supabase.auth.signOut()}>Sign out</button></div>
+        </form>
+      ) : step === 'phone' ? (
+        <form className="ob-step" onSubmit={sendCode}>
+          <h1>Your phone number</h1>
+          <p className="ob-sub">Add your number and you will find more of your friends on RoarMe, and they will find you. It stays private: only people who already have your number can find you by it.</p>
+          <div className="ob-field ob-phone">
+            <PhoneField cc={cc} setCc={setCc} num={num} setNum={setNum} autoFocus />
+            <button type="submit" className={`ob-go${num.replace(/\D/g, '').length >= 6 ? ' on' : ''}`} disabled={busy} aria-label="Send code">{busy ? '…' : GO}</button>
+          </div>
+          <p className={`ob-hint${err ? ' bad' : ''}`}>{err || 'We send a 6-digit code by SMS.'}</p>
+          <div className="ob-links"><button type="button" className="btn btn-sm" onClick={() => onDone(made)}>Not now</button></div>
+        </form>
+      ) : step === 'code' ? (
+        <form className="ob-step" onSubmit={checkCode}>
+          <h1>The code</h1>
+          <p className="ob-sub">Type the 6 digits we sent by SMS to <b>{toE164(cc, num)}</b>.</p>
+          <div className="ob-field">
+            <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="123456" autoFocus aria-label="Code" />
+            <button type="submit" className={`ob-go${code.length === 6 ? ' on' : ''}`} disabled={busy || code.length < 6} aria-label="Continue">{busy ? '…' : GO}</button>
+          </div>
+          <p className={`ob-hint${err ? ' bad' : ''}`}>{err || ' '}</p>
+          <div className="ob-links">
+            <button type="button" className="btn btn-sm" onClick={() => { setErr(''); setCode(''); setStep('phone') }}>Change Number</button>
+            <button type="button" className="btn btn-sm" onClick={() => onDone(made)}>Not now</button>
+          </div>
         </form>
       ) : (
         <form className="ob-step" onSubmit={finish}>

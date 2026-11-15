@@ -4963,3 +4963,4 @@ html:root:root:root:root .bubble.loc-b .meta { padding: 0 12px 7px 0; margin-rig
 html:root:root:root:root .bubble.loc-b .live-stop { margin: 6px 10px 4px; }
 html:root:root:root:root .bubble.loc-b > .rx.rx-in { margin-left: 10px !important; margin-bottom: 7px !important; }
 html:root:root:root:root .msg.mine .bubble.loc-b > .rx.rx-in { margin-right: 10px !important; margin-left: 4px !important; }
+.viewer.v2 .vw-menu button.danger { color: #ff6b5e; }

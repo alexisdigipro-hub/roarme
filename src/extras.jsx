@@ -31,7 +31,8 @@ export function EmojiPicker({ onPick, onClose }) {
 /* ---------- a photo or video full screen (Alex, 12 Nov: "as the iPhone's Photos"): the whole screen, black; on top
    back, who sent it and when, ⋯ (Save, Share, Open); at the foot Share, the count, Save. Pinch or double tap to zoom,
    drag to move it when zoomed; slide sideways for the next, down to close; a tap hides and shows the bars. ---------- */
-export function MediaViewer({ items, index, onClose, onDelete }) {
+const SHOW_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.5V16h-.5A2.5 2.5 0 0 1 4 13.5z" /><path d="M9 10h6M12.5 7.5 15 10l-2.5 2.5" /></svg>
+export function MediaViewer({ items, index, onClose, onDelete, onShow, onReply }) {
   const [i, setI] = useState(index)
   const [bars, setBars] = useState(true)
   const [menu, setMenu] = useState(false)
@@ -124,6 +125,17 @@ export function MediaViewer({ items, index, onClose, onDelete }) {
     window.open(it.url, '_blank', 'noopener')
   }
   const fade = Math.max(0.25, 1 - d.y / 420)
+  // save: on a phone through its share sheet (Save Image / Save to Files), on a computer as a download with its name
+  const saveIt = async () => {
+    try {
+      const blob = await (await fetch(it.url)).blob()
+      const f = new File([blob], it.name || (/^video\//.test(it.type || '') ? 'video.mp4' : 'photo.jpg'), { type: it.type || blob.type })
+      if (navigator.canShare?.({ files: [f] }) && window.matchMedia?.('(pointer: coarse)').matches) { await navigator.share({ files: [f] }); return }
+      const u = URL.createObjectURL(f)
+      const a = document.createElement('a'); a.href = u; a.download = f.name; document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(u), 4000)
+    } catch (e) { if (e?.name !== 'AbortError') window.open(it.url, '_blank', 'noopener') }
+  }
   return (
     <div className={`viewer v2${bars ? '' : ' bare'}`} style={{ '--vw-fade': fade }}>
       <div className="vw-stage" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onWheel={wheel}>
@@ -139,8 +151,11 @@ export function MediaViewer({ items, index, onClose, onDelete }) {
           <button type="button" className={`round${menu ? ' on' : ''}`} onClick={() => setMenu((m) => !m)} aria-label="More">{I.more}</button>
           {menu && (
             <div className="vw-menu">
-              <a href={it.url} download={it.name || true} target="_blank" rel="noreferrer" onClick={() => setMenu(false)}>{I.download}<span>Save</span></a>
-              <a href={it.url} target="_blank" rel="noreferrer" onClick={() => setMenu(false)}>{I.link}<span>Open in a New Tab</span></a>
+              {/* as Telegram's (Alex, 15 Nov): Show in Chat, Save, Reply, Delete; nothing that shows the file's address */}
+              {onShow && it.m && <button type="button" onClick={() => { setMenu(false); onShow(it.m) }}>{SHOW_I}<span>Show in Chat</span></button>}
+              <button type="button" onClick={() => { setMenu(false); saveIt() }}>{I.download}<span>{/^video\//.test(it.type || '') ? 'Save Video' : 'Save Image'}</span></button>
+              {onReply && it.m && <button type="button" onClick={() => { setMenu(false); onReply(it.m) }}>{I.reply}<span>Reply</span></button>}
+              {onDelete && it.m && <button type="button" className="danger" onClick={() => { setMenu(false); onDelete(it) }}>{I.trash}<span>Delete</span></button>}
             </div>
           )}
         </span>

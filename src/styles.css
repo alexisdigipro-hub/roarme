@@ -4901,3 +4901,20 @@ html:root:root:root:root .bubble > .rx.rx-in > button { width: 24px; padding: 0;
 html:root:root:root:root .bubble > .rx.rx-in > button:has(small) { width: auto; padding: 0 8px; border-radius: 999px; }
 html:root:root:root:root .bubble > .rx.rx-in > button { background: color-mix(in srgb, currentColor 7%, transparent) !important; }
 html:root:root:root:root .msg.mine .bubble > .rx.rx-in > button { background: rgba(255, 255, 255, .45) !important; }
+
+/* the picture in the chat's head turns into Call and Video (Alex, 15 Nov, from Telegram's head): a tap and the picture
+   flips away while a glass capsule with the handset and the camera grows in its place, pushing the name's pill to the
+   left (the pill gives up width on its right); a tap anywhere else, a call, or six seconds turn it back */
+.room-head .plus-wrap { display: flex; align-items: center; justify-content: flex-end; flex: none; width: 44px; transition: width .42s cubic-bezier(.25, 1.25, .45, 1); }
+.room-head.calls-open .plus-wrap { width: 112px; }
+.room-head .plus-wrap > .head-ava { transition: transform .32s cubic-bezier(.25, 1.25, .45, 1), opacity .2s; }
+.room-head.calls-open .plus-wrap > .head-ava { transform: perspective(300px) rotateY(-90deg) scale(.7); opacity: 0; pointer-events: none; }
+.room-head .head-calls { position: absolute; top: 50%; right: 0; display: flex; align-items: center; justify-content: space-around; width: 112px; height: 44px; margin-top: -22px; padding: 0 6px; border-radius: 999px;
+  background: var(--lg, rgba(255, 255, 255, .8)); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .6)); box-shadow: var(--lg-shadow, 0 6px 16px rgba(70, 70, 110, .14));
+  -webkit-backdrop-filter: var(--blur, blur(10px)); backdrop-filter: var(--blur, blur(10px));
+  transform: perspective(300px) rotateY(90deg) scale(.7); transform-origin: right center; opacity: 0; pointer-events: none; transition: transform .38s cubic-bezier(.25, 1.25, .45, 1) .06s, opacity .2s .06s; }
+.room-head.calls-open .head-calls { transform: none; opacity: 1; pointer-events: auto; }
+.room-head .head-calls > button { display: grid; place-items: center; width: 44px; height: 40px; padding: 0; border: 0; border-radius: 999px; background: none; color: var(--text); cursor: pointer; }
+.room-head .head-calls > button svg { width: 24px; height: 24px; }
+.room-head .head-calls > button:active { background: color-mix(in srgb, var(--text) 8%, transparent); }
+@media (prefers-reduced-motion: reduce) { .room-head .plus-wrap, .room-head .plus-wrap > .head-ava, .room-head .head-calls { transition: none; } }

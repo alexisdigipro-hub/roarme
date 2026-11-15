@@ -47,8 +47,9 @@ export const I = {
   file: svg(<><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5" /></>, 22),
   bell: svg(<><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></>, 16),
   archive: svg(<><rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v11h14V8M10 12h4" /></>, 16),
-  phone: svg(<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />),
-  video: svg(<><rect x="3" y="6" width="13" height="12" rx="2.5" /><path d="m16 10.5 5-3v9l-5-3" /></>),
+  // the handset and the camera in a fine line, as Telegram's (Alex, 15 Nov: "I like these icons very much")
+  phone: <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8.4 3.6 6.3 3.2c-.7-.1-1.4.2-1.8.8L3.4 5.6c-.6.9-.7 2-.3 3 1.6 4.4 5.9 9.4 11.6 11.9 1 .4 2.1.3 3-.3l1.6-1.1c.6-.4.9-1.1.8-1.8l-.4-2.1c-.1-.6-.6-1.1-1.2-1.3l-2.6-.7c-.6-.2-1.2 0-1.6.4l-1 1c-2.3-1.1-4.2-3-5.3-5.3l1-1c.4-.4.6-1 .4-1.6l-.7-2.6c-.2-.6-.7-1.1-1.3-1.2z" /></svg>,
+  video: <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2.8" y="6.2" width="12.6" height="11.6" rx="3.2" /><path d="M15.4 10.3l4.3-2.6c.6-.4 1.5.1 1.5.9v6.8c0 .8-.9 1.3-1.5.9l-4.3-2.6" /></svg>,
   more: svg(<><circle cx="5" cy="12" r="1.2" fill="currentColor" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /><circle cx="19" cy="12" r="1.2" fill="currentColor" /></>),
   mic: svg(<><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>),
   translate: svg(<><path d="M4 5h8M8 3v2M6 5c0 4 2.5 7 5 8M10 5c-.5 3-2.5 6-6 8" /><path d="m13 21 4-9 4 9M14.5 18h5" /></>, 16),

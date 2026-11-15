@@ -851,3 +851,8 @@ html:root:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu > butto
 html:root:root:root:root[data-glass][data-skin='halo'] .pf-more .pf-menu > button span { font-size: 14px !important; }
 html:root:root:root:root .pf-acts .menu > button { height: 36px !important; min-height: 36px !important; padding: 0 14px 0 10px !important; gap: 10px !important; border-radius: 16px !important; font-size: 14px !important; }
 html:root:root:root:root .pf-acts .menu > button.pf-m-sub { height: 32px !important; min-height: 32px !important; padding-left: 40px !important; }
+
+/* Every menu solid, nothing showing through (Alex, 15 Nov: "all the menus, when you long press, with no transparency"):
+   white by Day, dark grey by Night, the same corners, rim and shadow; the reaction bar over the message menu too */
+html:root:root:root:root[data-glass][data-skin='halo'][data-mode='light'] :is(.menu, .menu-list, .rx-pick) { background: #ffffff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark'] :is(.menu, .menu-list, .rx-pick) { background: #2c2c31 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }

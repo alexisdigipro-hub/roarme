@@ -14,14 +14,103 @@ enum Theme {
     static let edge = Color.white.opacity(0.12)
 }
 
+// one of Alex's stills behind everything, a new one each launch, darkened at the foot (as the website)
+enum Stills {
+    static let names = ["salon", "shoes", "tartan", "corridor", "sunflower", "silhouette"]
+    static let pick = names.randomElement()!
+}
+
 struct Backdrop: View {
     var body: some View {
-        ZStack {
-            Theme.bg
-            RadialGradient(colors: [Theme.red.opacity(0.16), .clear], center: .init(x: 0.5, y: -0.05), startRadius: 0, endRadius: 520)
-            RadialGradient(colors: [Color.white.opacity(0.05), .clear], center: .init(x: 0.1, y: 1.1), startRadius: 0, endRadius: 500)
+        GeometryReader { g in
+            ZStack {
+                Theme.bg
+                if let img = UIImage(named: "still-\(Stills.pick).jpg") {
+                    Image(uiImage: img).resizable().scaledToFill()
+                        .frame(width: g.size.width, height: g.size.height).clipped()
+                }
+                LinearGradient(colors: [Color.black.opacity(0.25), Color.black.opacity(0.15), Theme.bg.opacity(0.85)], startPoint: .top, endPoint: .bottom)
+            }
         }
         .ignoresSafeArea()
+    }
+}
+
+// the website's big glass card the content sits in
+struct Card<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View {
+        content
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.ultraThinMaterial)
+                    .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(Color(red: 0.09, green: 0.09, blue: 0.1).opacity(0.55)))
+            )
+            .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).stroke(Color.white.opacity(0.16), lineWidth: 1))
+            .shadow(color: .black.opacity(0.35), radius: 30, y: 16)
+    }
+}
+
+// SEND BIG FILES / ΣΤΕΙΛΕ ΜΕΓΑΛΑ ΑΡΧΕΙΑ, thin, bold, thin
+struct BigTitle: View {
+    var a: String; var b: String; var c: String
+    var body: some View {
+        (Text(a).font(.system(size: 30, weight: .light)) + Text(b).font(.system(size: 30, weight: .heavy)) + Text(c).font(.system(size: 30, weight: .light)))
+            .foregroundStyle(Theme.text).lineLimit(1).minimumScaleFactor(0.6)
+    }
+}
+
+// "My transfers." as the website writes it
+struct LightBoldTitle: View {
+    var light: String; var bold: String
+    var body: some View {
+        (Text(light).font(.system(size: 34, weight: .light)) + Text(bold).font(.system(size: 34, weight: .bold)))
+            .foregroundStyle(Theme.text).lineLimit(1).minimumScaleFactor(0.6)
+    }
+}
+
+// a row of choices in one glass pill, the chosen one lit (Email | Link, the tabs, All | Active | Expired)
+struct Segments<T: Hashable>: View {
+    var items: [(T, String, String?)]   // value, title, optional second line or SF Symbol name prefixed "sf:"
+    @Binding var value: T
+    var height: CGFloat = 46
+    @Namespace private var ns
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(items.enumerated()), id: \.offset) { _, it in
+                Button { withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) { value = it.0 } } label: {
+                    VStack(spacing: 1) {
+                        if let sub = it.2, sub.hasPrefix("sf:") {
+                            Label(it.1, systemImage: String(sub.dropFirst(3))).font(.system(size: 15, weight: value == it.0 ? .semibold : .regular))
+                        } else {
+                            Text(it.1).font(.system(size: 15, weight: value == it.0 ? .semibold : .regular))
+                            if let sub = it.2 { Text(sub).font(.system(size: 11)).foregroundStyle(Theme.muted) }
+                        }
+                    }
+                    .foregroundStyle(value == it.0 ? Theme.text : Theme.muted)
+                    .frame(maxWidth: .infinity, minHeight: height - 8)
+                    .background {
+                        if value == it.0 {
+                            Capsule().fill(Color.white.opacity(0.16)).overlay(Capsule().stroke(Color.white.opacity(0.22), lineWidth: 1))
+                                .matchedGeometryEffect(id: "lens", in: ns)
+                        }
+                    }
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(Capsule().fill(Color.black.opacity(0.28)))
+        .overlay(Capsule().stroke(Theme.edge, lineWidth: 1))
+    }
+}
+
+struct StepLabel: View {
+    var text: String
+    var body: some View {
+        Text(text).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.text).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

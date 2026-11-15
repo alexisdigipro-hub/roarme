@@ -12,6 +12,8 @@ struct RoarTransferApp: App {
                 .environmentObject(router)
                 .environmentObject(Session.shared)
                 .environmentObject(Downloads.shared)
+                .environmentObject(Lang.shared)
+                .environmentObject(Uploader.shared)
                 .preferredColorScheme(.dark)
                 .tint(Theme.redHi)
                 // a RoarTransfer link (roartransfer.com/<token>, or roartransfer://<token>) opens it here
@@ -50,8 +52,8 @@ enum UIApplicationBackground {
 
 @MainActor
 final class Router: ObservableObject {
-    enum Tab: Hashable { case receive, send, mine }
-    @Published var tab: Tab = .receive
+    enum Tab: Hashable { case send, mine, receive }
+    @Published var tab: Tab = .send
     @Published var openToken: String?
     func open(_ text: String) {
         guard let t = API.token(from: text) else { return }
@@ -60,21 +62,38 @@ final class Router: ObservableObject {
     }
 }
 
+// As roartransfer.com: the wordmark, Settings and EN | GR at the top, the switch Send | My transfers (and Receive,
+// the app's own) under it, the page in the website's glass card on one of Alex's stills.
 struct RootView: View {
     @EnvironmentObject var router: Router
-    init() {
-        let a = UITabBarAppearance()
-        a.configureWithTransparentBackground()
-        a.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
-        a.backgroundColor = UIColor(white: 0.08, alpha: 0.6)
-        UITabBar.appearance().standardAppearance = a
-        UITabBar.appearance().scrollEdgeAppearance = a
-    }
+    @EnvironmentObject var lang: Lang
+    @State private var settings = false
+
     var body: some View {
-        TabView(selection: $router.tab) {
-            ReceiveView().tabItem { Label("Receive", systemImage: "arrow.down.circle") }.tag(Router.Tab.receive)
-            SendView().tabItem { Label("Send", systemImage: "arrow.up.circle") }.tag(Router.Tab.send)
-            MineView().tabItem { Label("My Transfers", systemImage: "tray.full") }.tag(Router.Tab.mine)
+        ZStack {
+            Backdrop()
+            VStack(spacing: 12) {
+                HStack(spacing: 10) {
+                    Wordmark()
+                    Spacer()
+                    Button { settings = true } label: { Image(systemName: "gearshape") }.buttonStyle(RoundStyle(size: 38))
+                    Segments(items: [("en", "EN", nil), ("el", "GR", nil)], value: $lang.code, height: 38)
+                        .frame(width: 96)
+                }
+                .padding(.horizontal, 16)
+                Segments(items: [(Router.Tab.send, t("Send"), nil), (.mine, t("My transfers"), nil), (.receive, t("Receive"), nil)], value: $router.tab, height: 44)
+                    .padding(.horizontal, 16)
+                ZStack {
+                    switch router.tab {
+                    case .send: SendView()
+                    case .mine: MineView()
+                    case .receive: ReceiveView()
+                    }
+                }
+                .frame(maxHeight: .infinity, alignment: .top)
+            }
+            .padding(.top, 6)
         }
+        .sheet(isPresented: $settings) { SettingsSheet().presentationDetents([.medium, .large]) }
     }
 }

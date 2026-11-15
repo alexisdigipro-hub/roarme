@@ -14,22 +14,18 @@ struct ReceiveView: View {
     @State private var pwError = ""
     @State private var problem = ""
 
+    @EnvironmentObject var lang: Lang
+
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Backdrop()
-                ScrollView {
-                    VStack(spacing: 16) {
-                        HStack { Wordmark(); Spacer() }.padding(.top, 8)
-                        if token == nil { start } else { linkPage }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 30)
+        ScrollView {
+            Card {
+                VStack(spacing: 16) {
+                    if token == nil { start } else { linkPage }
                 }
-                .scrollDismissesKeyboard(.interactively)
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 30)
         }
+        .scrollDismissesKeyboard(.interactively)
         .onChange(of: router.openToken) { t in if let t { openLink(t); router.openToken = nil } }
         .onAppear { if let t = router.openToken { openLink(t); router.openToken = nil } }
     }
@@ -37,19 +33,19 @@ struct ReceiveView: View {
     // ---- no link yet ----
     private var start: some View {
         VStack(spacing: 16) {
-            PageTitle(text: "Open a link")
+            LightBoldTitle(light: lang.el ? "Άνοιξε ένα " : "Open a ", bold: "link.")
             Tile {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Tap a RoarTransfer link anywhere and it opens here. Or paste it:")
+                    Text(t("Tap a RoarTransfer link anywhere and it opens here. Or paste it:"))
                         .font(.system(size: 15)).foregroundStyle(Theme.muted)
                     GlassField(placeholder: "roartransfer.com/…", text: $pasted, keyboard: .URL)
                         .submitLabel(.go)
                         .onSubmit { tryOpen(pasted) }
                     HStack(spacing: 10) {
                         Button { if let s = UIPasteboard.general.string { pasted = s; tryOpen(s) } } label: {
-                            Label("Paste", systemImage: "doc.on.clipboard")
+                            Label(t("Paste"), systemImage: "doc.on.clipboard")
                         }.buttonStyle(PillStyle())
-                        Button { tryOpen(pasted) } label: { Label("Open", systemImage: "arrow.right") }
+                        Button { tryOpen(pasted) } label: { Label(t("Open"), systemImage: "arrow.right") }
                             .buttonStyle(PillStyle(main: true))
                             .disabled(API.token(from: pasted) == nil)
                             .opacity(API.token(from: pasted) == nil ? 0.5 : 1)
@@ -59,9 +55,9 @@ struct ReceiveView: View {
             }
             Tile {
                 VStack(alignment: .leading, spacing: 10) {
-                    feature("photo.on.rectangle.angled", "Straight to Photos", "Videos and photos go into your Photos in their full size, however big.")
-                    feature("lock.iphone", "Keeps going", "Downloads carry on with the screen locked or the app closed.")
-                    feature("folder", "Everything else in Files", "Find them in Files > On My iPhone > RoarTransfer.")
+                    feature("photo.on.rectangle.angled", t("Straight to Photos"), t("Videos and photos go into your Photos in their full size, however big."))
+                    feature("lock.iphone", t("Keeps going"), t("Downloads carry on with the screen locked or the app closed."))
+                    feature("folder", t("Everything else in Files"), t("Find them in Files > On My iPhone > RoarTransfer."))
                 }
             }
             if !downloads.items.isEmpty { recent }
@@ -80,7 +76,7 @@ struct ReceiveView: View {
 
     private var recent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("DOWNLOADS").font(.system(size: 12, weight: .semibold)).kerning(1.5).foregroundStyle(Theme.dim).padding(.leading, 6)
+            Text(t("Downloads").uppercased()).font(.system(size: 12, weight: .semibold)).kerning(1.5).foregroundStyle(Theme.dim).padding(.leading, 6)
             ForEach(Array(downloads.items.values).sorted(by: { $0.name < $1.name })) { it in
                 DownloadRow(name: it.name, size: it.size, type: nil, item: it, onSave: nil)
             }
@@ -105,11 +101,11 @@ struct ReceiveView: View {
     private func passwordTile(_ i: LinkInfo) -> some View {
         Tile {
             VStack(alignment: .leading, spacing: 12) {
-                if let f = i.from, !f.isEmpty { Text("\(f) sent you").font(.system(size: 15)).foregroundStyle(Theme.muted) }
-                Text("This transfer has a password").font(.system(size: 22, weight: .bold)).foregroundStyle(Theme.text)
-                GlassField(placeholder: "Password", text: $password, secure: true).submitLabel(.go).onSubmit { unlock() }
+                if let f = i.from, !f.isEmpty { Text("\(f) \(t("sent you"))").font(.system(size: 15)).foregroundStyle(Theme.muted) }
+                Text(t("This transfer has a password")).font(.system(size: 22, weight: .bold)).foregroundStyle(Theme.text)
+                GlassField(placeholder: t("Password"), text: $password, secure: true).submitLabel(.go).onSubmit { unlock() }
                 if !pwError.isEmpty { Text(pwError).font(.system(size: 14)).foregroundStyle(Theme.redHi) }
-                Button { unlock() } label: { Text("Open").frame(maxWidth: .infinity) }.buttonStyle(PillStyle(main: true)).disabled(password.isEmpty || loading)
+                Button { unlock() } label: { Text(t("Open")).frame(maxWidth: .infinity) }.buttonStyle(PillStyle(main: true)).disabled(password.isEmpty || loading)
             }
         }
     }
@@ -119,9 +115,9 @@ struct ReceiveView: View {
             VStack(spacing: 12) {
                 Image(systemName: e == "payment" ? "lock.fill" : "xmark").font(.system(size: 28)).foregroundStyle(Theme.muted)
                     .frame(width: 70, height: 70).background(Circle().fill(Theme.glass)).overlay(Circle().stroke(Theme.edge))
-                Text(e == "expired" ? "This transfer has ended" : e == "payment" ? "Locked until paid" : e == "not_found" ? "This link does not work" : "Something went wrong")
+                Text(t(e == "expired" ? "This transfer has ended" : e == "payment" ? "Locked until paid" : e == "not_found" ? "This link does not work" : "Something went wrong"))
                     .font(.system(size: 22, weight: .bold)).foregroundStyle(Theme.text).multilineTextAlignment(.center)
-                Text(e == "expired" ? "Its files are no longer here. Ask the sender for a new link." : e == "payment" ? "The sender will unlock these files once they are paid for." : e == "not_found" ? "Check that the whole link was copied." : e)
+                Text(t(e == "expired" ? "Its files are no longer here. Ask the sender for a new link." : e == "payment" ? "The sender will unlock these files once they are paid for." : e == "not_found" ? "Check that the whole link was copied." : e))
                     .font(.system(size: 15)).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
                 if e == "payment", !i.allFiles.isEmpty {
                     VStack(spacing: 6) { ForEach(i.allFiles) { f in Text(f.displayName).font(.system(size: 14)).foregroundStyle(Theme.dim) } }
@@ -136,21 +132,21 @@ struct ReceiveView: View {
         return VStack(spacing: 14) {
             Tile {
                 VStack(alignment: .leading, spacing: 6) {
-                    if let f = i.from, !f.isEmpty { Text("\(f) sent you").font(.system(size: 15)).foregroundStyle(Theme.muted) }
-                    Text((i.title ?? "").isEmpty ? (i.allFiles.count == 1 ? i.allFiles[0].displayName : "\(i.allFiles.count) files") : i.title!)
+                    if let f = i.from, !f.isEmpty { Text("\(f) \(t("sent you"))").font(.system(size: 15)).foregroundStyle(Theme.muted) }
+                    Text((i.title ?? "").isEmpty ? (i.allFiles.count == 1 ? i.allFiles[0].displayName : "\(i.allFiles.count) \(t("files"))") : i.title!)
                         .font(.system(size: 24, weight: .bold)).foregroundStyle(Theme.text)
-                    Text([sizeText(total), i.expires.map { "until " + Dates.short($0) } ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
+                    Text([sizeText(total), i.expires.map { t("until") + " " + Dates.short($0) } ?? ""].filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(.system(size: 13, design: .monospaced)).foregroundStyle(Theme.dim)
                     if let m = i.message, !m.isEmpty { Text(m).font(.system(size: 15)).foregroundStyle(Theme.text).padding(.top, 6) }
                 }
             }
             if !all.isEmpty {
                 Button { all.forEach { save($0) } } label: {
-                    Label(all.allSatisfy { $0.isMedia } ? "Save All to Photos" : all.contains { $0.isMedia } ? "Save All" : "Download All", systemImage: "arrow.down")
+                    Label(t(all.allSatisfy { $0.isMedia } ? "Save All to Photos" : all.contains { $0.isMedia } ? "Save All" : "Download All"), systemImage: "arrow.down")
                         .frame(maxWidth: .infinity)
                 }.buttonStyle(PillStyle(main: true))
                 if all.contains(where: { $0.isMedia }) && !all.allSatisfy({ $0.isMedia }) {
-                    Text("Videos and photos go to Photos, the rest to Files.").font(.system(size: 13)).foregroundStyle(Theme.dim)
+                    Text(t("Videos and photos go to Photos, the rest to Files.")).font(.system(size: 13)).foregroundStyle(Theme.dim)
                 }
             }
             VStack(spacing: 8) {
@@ -164,25 +160,25 @@ struct ReceiveView: View {
     // ---- actions ----
     private func tryOpen(_ s: String) {
         problem = ""
-        guard let t = API.token(from: s) else { problem = "This does not look like a RoarTransfer link."; return }
-        openLink(t)
+        guard let tok = API.token(from: s) else { problem = t("This does not look like a RoarTransfer link."); return }
+        openLink(tok)
     }
     private func openLink(_ t: String) {
         token = t; info = nil; password = ""; pwError = ""; problem = ""
         load()
     }
     private func load() {
-        guard let t = token else { return }
+        guard let tok = token else { return }
         loading = true
         Task {
             do {
-                let i = try await API.link(t, password: password)
-                if i.error == "password" && !password.isEmpty { pwError = i.slow == true ? "Too many wrong tries. Wait 15 minutes and try again." : "Wrong password, try again." }
+                let i = try await API.link(tok, password: password)
+                if i.error == "password" && !password.isEmpty { pwError = t(i.slow == true ? "Too many wrong tries. Wait 15 minutes and try again." : "Wrong password, try again.") }
                 else { pwError = "" }
                 if i.error == "password", let old = info, old.error == "password" { info = old } else { info = i }
-                if i.error == nil { API.hit(t) }
+                if i.error == nil { API.hit(tok) }
             } catch {
-                info = LinkInfo(error: "Could not reach RoarTransfer. Check the connection and try again.")
+                info = LinkInfo(error: t("Could not reach RoarTransfer. Check the connection and try again."))
             }
             loading = false
         }
@@ -226,12 +222,12 @@ struct DownloadRow: View {
 
     private var line: String {
         switch item?.state {
-        case .loading(let p): return "\(Int(p * 100))% of \(sizeText(size))"
-        case .saving: return "Saving to Photos…"
-        case .inPhotos: return "Saved to Photos"
-        case .inFiles: return "Saved in Files"
-        case .failed(let m): return m
-        default: return used ? "Already downloaded" : sizeText(size)
+        case .loading(let p): return "\(Int(p * 100))% · \(sizeText(size))"
+        case .saving: return t("Saving to Photos…")
+        case .inPhotos: return t("Saved to Photos")
+        case .inFiles: return t("Saved in Files")
+        case .failed(let m): return t(m)
+        default: return used ? t("Already downloaded") : sizeText(size)
         }
     }
     private var stateColor: Color {
@@ -254,8 +250,8 @@ struct DownloadRow: View {
             if let onSave, !used {
                 if media {
                     Menu {
-                        Button { onSave(false) } label: { Label("Save to Photos", systemImage: "photo.on.rectangle") }
-                        Button { onSave(true) } label: { Label("Save to Files", systemImage: "folder") }
+                        Button { onSave(false) } label: { Label(t("Save to Photos"), systemImage: "photo.on.rectangle") }
+                        Button { onSave(true) } label: { Label(t("Save to Files"), systemImage: "folder") }
                     } label: { Image(systemName: "arrow.down").font(.system(size: 16, weight: .medium)).foregroundStyle(Theme.text)
                         .frame(width: 38, height: 38).background(Circle().fill(Theme.glass)).overlay(Circle().stroke(Theme.edge)) }
                 } else {
@@ -266,4 +262,4 @@ struct DownloadRow: View {
     }
 }
 
-extension URL: Identifiable { public var id: String { absoluteString } }
+extension URL: @retroactive Identifiable { public var id: String { absoluteString } }

@@ -41,6 +41,7 @@ const LiveCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.Live
 const LocationCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationCard })))
 const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationPicker })))
 const LocationView = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationView })))
+const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
 const LOC_WAIT = <span className="locc"><span className="locc-map" /></span>
 import { resumeLive, startLive } from './live.js'
 import { taskNotice, useTasks } from './taskCore.js'
@@ -2569,6 +2570,17 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     return true
   }
   // a message that shows as a card (a scheduled call, a place, an article): its text in body, the card's details in file
+  // a poll (Alex, 15 Nov): the message (its words are the question, for the list and notifications), then the poll's row
+  const sendPoll = async (poll) => {
+    if (sealOn) { setAttach(null); setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return false }
+    const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'text', body: `📊 ${poll.question}`, file: { poll: true } }).select().single()
+    if (error) { setErr(errText(error)); return false }
+    const { error: e2 } = await supabase.from('roar_polls').insert({ message_id: data.id, room_id: room.room_id, created_by: me.id, ...poll })
+    if (e2) { await supabase.from('roar_messages').delete().eq('id', data.id); setErr(/roar_polls/.test(e2.message || '') ? 'Polls are not ready yet (supabase/polls.sql).' : errText(e2)); return false }
+    stick.current = true
+    setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+    return true
+  }
   // a live location (Alex, 15 Nov): the message, then its row in roar_live that this phone keeps moving (live.js)
   const sendLive = async ({ lat, lng, acc, hours }) => {
     if (sealOn) { setAttach(null); setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
@@ -3046,10 +3058,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
                 <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.poll && !m.deleted_at ? ' poll-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
+                      : m.file?.poll ? <Suspense fallback={<div className="poll pl-wait"><b>Poll</b></div>}><PollCard id={m.id} me={me.id} people={people} canStop={room.kind === 'group' && room.role === 'admin'} onError={(t) => setErr(t)} /></Suspense>
                       : m.file?.live ? <Suspense fallback={LOC_WAIT}><LiveCard id={m.id} first={m.file.location} mine={mine} onOpen={(loc) => hands.current.setLocView(loc)} /></Suspense>
                       : m.file?.location ? <Suspense fallback={LOC_WAIT}><LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} /></Suspense>
                       : m.file?.roartransfer ? <BundleCard t={m.file.roartransfer} />
@@ -3065,7 +3078,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'file' && isAudioFile(m.file) && !m.file?.asFile ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name }], index: 0 })} />
                       : null}
-                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
+                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
                     <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
@@ -3436,6 +3449,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         onTransfer={() => { setTransferHidden(false); setTransferOpen(true) }} transferSlot={setTransferSlot}
         onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))}
         onLive={sendLive}
+        onPoll={sendPoll}
         contacts={shareable} onContact={(p) => sendCard(nameOf(p), { contact: { id: p.id, username: p.username, name: nameOf(p), avatar: p.avatar_url || '' } }, '', () => setAttach(null))} />}
       {transferOpen && (
         <TransferWindow title={title} hidden={transferHidden} slot={transferSlot} onHide={() => { setTransferHidden(true); if (transferSlot) setAttach(null) }} onProgress={setTransferPct}

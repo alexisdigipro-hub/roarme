@@ -4780,3 +4780,75 @@ html:root:root:root:root .loc-live-back > .menu.loc-live-menu { position: relati
 .as-card.as-ways .as-way + .as-way { background: linear-gradient(color-mix(in srgb, var(--text) 10%, transparent), color-mix(in srgb, var(--text) 10%, transparent)) 58px 0 / calc(100% - 58px) 1px no-repeat; }
 .as-ext.as-rthumb { overflow: hidden; background: color-mix(in srgb, var(--text) 8%, transparent); }
 .as-ext.as-rthumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Polls (Alex, 15 Nov, from Telegram's New Poll; src/poll.jsx). The editor, a tab of the attach sheet: cards of soft
+   rows like Settings, an empty dot before each option, a coloured rounded sign before each setting, Send in the head */
+.as-head.pl-head { grid-template-columns: 76px 1fr 76px; }
+.as-head .pl-send { justify-self: end; height: 40px; padding: 0 18px; font-weight: 650; }
+.as-head .pl-send:disabled { opacity: .45; }
+.as-head .pl-send.on { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.pl-ed { display: flex; flex-direction: column; padding-bottom: 104px; }
+.pl-card { padding: 0 0 0 16px; }
+.pl-in { width: 100%; min-width: 0; height: 52px; padding: 0 16px 0 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 16px; outline: none; }
+.pl-in::placeholder { color: var(--muted); }
+.pl-card > .pl-in + .pl-in, .pl-card > .pl-opt + .pl-opt, .pl-card > .pl-set + .pl-set { border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
+.pl-q { font-weight: 600; }
+.pl-opt { display: flex; align-items: center; gap: 12px; padding-right: 8px; }
+.pl-dot { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.6px solid color-mix(in srgb, var(--text) 25%, transparent); }
+.pl-mark { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 1.8px solid color-mix(in srgb, var(--text) 30%, transparent); background: none; color: #fff; cursor: pointer; }
+.pl-mark.on { background: #34c759; border-color: #34c759; }
+.pl-mark svg { width: 14px; height: 14px; }
+.pl-del { flex: none; width: 28px !important; height: 28px !important; min-width: 0; }
+.pl-del svg { width: 13px; height: 13px; }
+.pl-note { margin: 8px 18px 0; color: var(--muted); font-size: 12.5px; }
+.pl-set { display: flex; align-items: center; gap: 14px; min-height: 62px; padding: 8px 14px 8px 0; cursor: pointer; }
+.pl-ico { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3); }
+.pl-set-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pl-set-t b { font-size: 15.5px; font-weight: 500; }
+.pl-set-t small { color: var(--muted); font-size: 12.5px; line-height: 1.3; }
+.pl-set .switch input:checked + span { background: #34c759; }
+.pl-dur { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 14px 14px 46px; }
+.pl-dur .pill-btn { height: 32px; padding: 0 12px; font-size: 13px; }
+.pl-dur .pill-btn.on { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+
+/* the poll in a chat: the question, the kind of poll, the options as rows (a circle, or a square when several answers
+   are allowed), then the results as bars with the share, a tick on mine, green and red for a quiz, faces of voters */
+.poll { display: flex; flex-direction: column; gap: 4px; min-width: min(280px, 70vw); max-width: 340px; padding: 4px 2px 2px; }
+.poll-q { font-size: 15.5px; font-weight: 650; line-height: 1.3; }
+.poll-d { font-size: 14px; opacity: .85; }
+.poll-kind { font-size: 12px; opacity: .65; margin-bottom: 4px; }
+.poll-opts { display: flex; flex-direction: column; gap: 2px; }
+.poll-opt { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 8px 2px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 12px; }
+.poll-opt:disabled { cursor: default; opacity: 1; }
+.poll:not(.res) .poll-opt:active { background: color-mix(in srgb, currentColor 8%, transparent); }
+.poll-box { flex: none; display: grid; place-items: center; width: 22px; height: 22px; margin-top: 1px; border-radius: 50%; border: 1.6px solid color-mix(in srgb, currentColor 40%, transparent); font-style: normal; }
+.poll-box.sq { border-radius: 7px; }
+.poll-opt.picked .poll-box { background: var(--halo, var(--accent)); border-color: var(--halo, var(--accent)); color: var(--halo-ink, #fff); }
+.msg.mine .poll-opt.picked .poll-box { background: currentColor; }
+.msg.mine .poll-opt.picked .poll-box svg { color: var(--halo, #000); }
+.poll-box svg { width: 13px; height: 13px; }
+.poll-pc { flex: none; width: 40px; padding-top: 1px; font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.poll-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.poll-line { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.poll-label { min-width: 0; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.poll-tick { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); font-style: normal; }
+.msg.mine .poll-tick { background: currentColor; }
+.msg.mine .poll-tick svg { color: var(--halo, #000); }
+.poll-tick svg { width: 10px; height: 10px; }
+.poll-faces { display: inline-flex; margin-left: auto; }
+.poll-faces > * { margin-left: -5px; box-shadow: 0 0 0 1.5px var(--bubble-bg, #fff); border-radius: 50%; }
+.poll-bar { display: block; height: 5px; border-radius: 999px; background: color-mix(in srgb, currentColor 12%, transparent); overflow: hidden; }
+.poll-bar i { display: block; height: 100%; border-radius: inherit; background: var(--halo, var(--accent)); transition: width .45s cubic-bezier(.25, 1.2, .45, 1); }
+.msg.mine .poll-bar i { background: currentColor; }
+.poll-opt.right .poll-bar i, .poll-opt.right .poll-tick { background: #34c759 !important; color: #fff; }
+.poll-opt.wrong .poll-bar i, .poll-opt.wrong .poll-tick { background: #ff3b30 !important; color: #fff; }
+.poll-add { display: flex; gap: 8px; align-items: center; padding: 4px 0; }
+.poll-add .pl-in { height: 40px; padding: 0 12px; border-radius: 999px; background: color-mix(in srgb, currentColor 8%, transparent); color: inherit; font-size: 14.5px; }
+.poll-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 4px; padding-top: 8px; border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+.poll-foot small { font-size: 12.5px; opacity: .7; }
+.poll-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.poll-acts .pill-btn, .poll-add .pill-btn { height: 32px; padding: 0 12px; font-size: 13px; }
+.poll-acts .pill-btn.on, .poll-add .pill-btn.on { background: var(--halo, var(--accent)); color: var(--halo-ink, #fff); border-color: transparent; }
+.msg.mine .poll-acts .pill-btn.on { background: currentColor; color: var(--halo, #000); }
+.poll-acts .pill-btn.danger { color: #ff3b30; }
+.poll.pl-wait { min-height: 80px; justify-content: center; opacity: .7; }

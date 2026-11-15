@@ -18,6 +18,9 @@ struct SettingsView: View {
     @State private var pageName = ""
     @State private var pageErr = ""
     @State private var copied = false
+    @State private var askDelete = false
+    @State private var deleting = false
+    @State private var deleteErr = ""
 
     var body: some View {
         ZStack {
@@ -34,6 +37,9 @@ struct SettingsView: View {
                             if session.signedIn {
                                 Button { session.signOut(); Task { await pro.load() } } label: { Label(t("Sign out"), systemImage: "rectangle.portrait.and.arrow.right").frame(maxWidth: .infinity) }
                                     .buttonStyle(PillStyle(danger: true))
+                                Button { askDelete = true } label: { Label(deleting ? t("Deleting…") : t("Delete account"), systemImage: "trash").font(.system(size: 14, weight: .medium)).frame(maxWidth: .infinity) }
+                                    .buttonStyle(PillStyle(danger: true)).opacity(0.8).disabled(deleting)
+                                if !deleteErr.isEmpty { Text(deleteErr).font(.system(size: 13)).foregroundStyle(Theme.redHi) }
                             }
                             footer
                         }
@@ -55,6 +61,18 @@ struct SettingsView: View {
             }
         }
         .task(id: session.signedIn) { await pro.load() }
+        .alert(t("Delete your account?"), isPresented: $askDelete) {
+            Button(t("Delete account"), role: .destructive) {
+                deleting = true; deleteErr = ""
+                Task {
+                    do { try await session.deleteAccount(); await pro.load() } catch { deleteErr = t(error.localizedDescription) }
+                    deleting = false
+                }
+            }
+            Button(t("Cancel"), role: .cancel) {}
+        } message: {
+            Text(t("This deletes your account at once: your transfers and their links, your brand and your Receive files page. It is the same account as RoarMe and the other apps of The Mad Lions Lab, so it is deleted there too. This cannot be undone."))
+        }
     }
 
     private func pageTitle(_ p: String) -> String {

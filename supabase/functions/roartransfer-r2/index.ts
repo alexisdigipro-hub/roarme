@@ -29,7 +29,10 @@ const FREE_DOWNLOADS = 5
 // a Free account sends up to 15 GB in 24 hours (Alex, 26 Oct); Pro and the admins without a daily limit
 const FREE_PER_DAY = 15 * GB
 // emails to the people a transfer is for, in 24 hours (security check, Alex 26 Oct: so nobody uses us to send spam)
-const MAILS_PER_DAY = { free: 50, pro: 200 }
+const MAILS_PER_DAY = { free: 50, pro: 200, fresh: 10 }
+// an account younger than this sends at most MAILS_PER_DAY.fresh (security check, 15 Nov 2026: no spam or phishing from
+// noreply@themadlions.com through new accounts)
+const FRESH_DAYS = 7
 // the page sends files in 16 MB pieces; a file is never more pieces than its largest allowed size needs
 const PART = 16 * 1024 * 1024
 // Pro "Receive files" (Alex, 23 Oct; supabase/transfer-pro.sql): roartransfer.com/u/<slug> takes files for a Pro from
@@ -391,7 +394,8 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
     if (recipients.length) {
       const { data: sentToday } = await sb.from('roar_transfer_bundles').select('recipients').eq('created_by', uid).gte('created_at', dayAgo)
       const used = (sentToday || []).reduce((a: number, r: any) => a + ((r.recipients || []).length), 0)
-      const capMail = (await isPro(uid)) ? MAILS_PER_DAY.pro : MAILS_PER_DAY.free
+      const young = Date.now() - new Date(who?.user?.created_at || 0).getTime() < FRESH_DAYS * 864e5
+      const capMail = (await isPro(uid)) ? MAILS_PER_DAY.pro : young ? MAILS_PER_DAY.fresh : MAILS_PER_DAY.free
       const left = Math.max(0, capMail - used)
       if (recipients.length > left) {
         mailErrors.push(`daily limit of ${capMail} emails reached, not sent to ${recipients.slice(left).join(', ')}`)
@@ -433,7 +437,7 @@ ${message ? `<tr><td style="padding-bottom:18px"><div style="color:#d9dde2;font-
       const { data: files } = await sb.from('roar_transfer_links').select('token, name, size').in('token', tokens)
       const ordered = (files || []).sort((a: any, z: any) => tokens.indexOf(a.token) - tokens.indexOf(z.token))
       const from = await senderName(uid as string, who?.user?.user_metadata?.name || who?.user?.email || '')
-      const mail = invite({ from, title, message, files: ordered, expires, url: PAGE + token, locked: !!password })
+      const mail = invite({ from, email: who?.user?.email || '', title, message, files: ordered, expires, url: PAGE + token, locked: !!password })
       for (const to of recipients) {
         const r = await sendMail({ to, subject: mail.subject, html: mail.html, text: mail.text, reply_to: who?.user?.email || undefined })
         if (r === true) mailed++; else mailErrors.push(`${to}: ${r}`)
@@ -509,7 +513,7 @@ ${rows}
 }
 const button = (href: string, label: string, bg = '#d40000', fg = '#ffffff') =>
   `<a href="${href}" style="display:inline-block;background:${bg};color:${fg};text-decoration:none;font-weight:700;font-size:15px;padding:14px 34px;border-radius:999px">${label}</a>`
-function invite(v: { from: string, title: string, message: string, files: any[], expires: string, url: string, locked: boolean }) {
+function invite(v: { from: string, email?: string, title: string, message: string, files: any[], expires: string, url: string, locked: boolean }) {
   const n = v.files.length
   const total = v.files.reduce((a, f) => a + Number(f.size || 0), 0)
   // no title: the heading is just how many files (Alex, 21 Oct: a long file name is not a heading); the names are in the list
@@ -518,7 +522,7 @@ function invite(v: { from: string, title: string, message: string, files: any[],
   const list = v.files.slice(0, 8).map((f) => `<tr><td style="padding:11px 0;border-top:1px solid rgba(255,255,255,.08);color:#e9ebee;font-size:14px;word-break:break-all">${esc(f.name)}</td><td style="padding:11px 0 11px 12px;border-top:1px solid rgba(255,255,255,.08);color:#8b929b;font-size:12px;text-align:right;white-space:nowrap">${fmtSize(Number(f.size || 0))}</td></tr>`).join('')
     + (n > 8 ? `<tr><td colspan="2" style="padding:11px 0;border-top:1px solid rgba(255,255,255,.08);color:#8b929b;font-size:12px">and ${n - 8} more</td></tr>` : '')
   const html = frame(`
-<tr><td style="color:#8b929b;font-size:14px;padding-bottom:6px">${esc(v.from)} sent you</td></tr>
+<tr><td style="color:#8b929b;font-size:14px;padding-bottom:6px">${esc(v.from)}${v.email && v.email.toLowerCase() !== v.from.toLowerCase() ? ` <span style="color:#6b717a">(${esc(v.email)})</span>` : ''} sent you</td></tr>
 <tr><td style="color:#ffffff;font-size:26px;font-weight:700;line-height:1.2;padding-bottom:20px;word-break:break-word">${v.title ? esc(v.title) : `${what} · ${fmtSize(total)}`}</td></tr>
 ${v.message ? `<tr><td style="padding-bottom:20px"><div style="color:#d9dde2;font-size:15px;line-height:1.55;padding:14px 18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);border-radius:18px;white-space:pre-wrap">${esc(v.message)}</div></td></tr>` : ''}
 <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${list}</table></td></tr>
@@ -526,7 +530,8 @@ ${v.title ? `<tr><td style="color:#8b929b;font-size:12px;padding-top:8px;border-
 <tr><td align="center" style="padding:30px 0 14px">${button(v.url, 'Open', '#2b2f36', '#ffffff')}&nbsp;&nbsp;${button(v.url + '#dl', n > 1 ? 'Download all' : 'Download')}</td></tr>
 <tr><td align="center"><span style="display:inline-block;padding:6px 14px;border-radius:999px;background:rgba(126,226,160,.12);color:#7ee2a0;font-size:12.5px;font-weight:700">Available until ${fmtDate(v.expires)}</span></td></tr>
 ${v.locked ? `<tr><td align="center" style="color:#8b929b;font-size:12px;padding-top:12px">Protected with a password: ask ${esc(v.from)} for it.</td></tr>` : ''}
-<tr><td align="center" style="padding-top:26px"><div style="border-top:1px solid rgba(255,255,255,.08);padding-top:18px;color:#8b929b;font-size:12.5px">Sent with RoarTransfer · <a href="${PAGE}" style="color:#ffffff;text-decoration:none;font-weight:700">send yours free, up to 5 GB &rarr;</a></div></td></tr>`)
-  const text = `${v.from} sent you ${v.title || what}\n\n${v.message ? v.message + '\n\n' : ''}${v.files.map((f) => `- ${f.name} (${fmtSize(Number(f.size || 0))})`).join('\n')}\n\nOpen: ${v.url}\nDownload: ${v.url}#dl\nAvailable until ${fmtDate(v.expires)}${v.locked ? '\nIt is protected with a password: ask the sender for it.' : ''}\n\nSent with RoarTransfer. Send yours free, up to 5 GB: ${PAGE}\nPowered by The Mad Lions`
+<tr><td align="center" style="padding-top:26px"><div style="border-top:1px solid rgba(255,255,255,.08);padding-top:18px;color:#8b929b;font-size:12.5px">Sent with RoarTransfer · <a href="${PAGE}" style="color:#ffffff;text-decoration:none;font-weight:700">send yours free, up to 5 GB &rarr;</a></div></td></tr>
+<tr><td align="center" style="padding-top:12px;color:#6b717a;font-size:11.5px">Not expecting this${v.email ? ` from ${esc(v.email)}` : ''}? You can <a href="${v.url}" style="color:#8b929b">report it</a> from its page.</td></tr>`)
+  const text = `${v.from}${v.email && v.email.toLowerCase() !== v.from.toLowerCase() ? ` (${v.email})` : ''} sent you ${v.title || what}\n\n${v.message ? v.message + '\n\n' : ''}${v.files.map((f) => `- ${f.name} (${fmtSize(Number(f.size || 0))})`).join('\n')}\n\nOpen: ${v.url}\nDownload: ${v.url}#dl\nAvailable until ${fmtDate(v.expires)}${v.locked ? '\nIt is protected with a password: ask the sender for it.' : ''}\n\nSent with RoarTransfer. Send yours free, up to 5 GB: ${PAGE}\nPowered by The Mad Lions`
   return { subject, html, text }
 }

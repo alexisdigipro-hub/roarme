@@ -326,7 +326,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
         <div className="pf-acts">
           <button type="button" className="pf-a-msg" onClick={onMessage}>{I.chats}<span>Message</span></button>
           <button type="button" onClick={() => (group ? (onClose(), startGroupCall(room.room_id, false)) : onCall ? onCall(false) : toast('Calls are for chats between two people'))}>{I.phone}<span>Call</span></button>
-          <button type="button" className={vcOpen ? 'on' : ''} onClick={() => (group ? setVcOpen((v) => !v) : onCall ? onCall(true) : toast('Calls are for chats between two people'))} aria-haspopup={group ? 'menu' : undefined}>{I.video}<span>{group ? 'Video Chat' : 'Video'}</span></button>
+          <button type="button" className={vcOpen ? 'on' : ''} onClick={() => (group ? setVcOpen((v) => !v) : onCall ? onCall(true) : toast('Calls are for chats between two people'))} aria-haspopup={group ? 'menu' : undefined}>{I.video}<span>Video</span></button>
           {group && vcOpen && (
             <>
               <button type="button" className="scrim" aria-label="Close" onClick={() => setVcOpen(false)} />

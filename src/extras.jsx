@@ -210,7 +210,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const [caption, setCaption] = useState('')
   // the Gallery tab (and the camera) sends photos and videos made lighter; the File tab sends anything exactly as it is,
   // shown in the chat as a file to download (Alex, 15 Nov). asFile is set by where the first ones were picked
-  const [asFile, setAsFile] = useState(false)
+  const [pickedRaw, setAsFile] = useState(false)
   const [tab, setTab] = useState('gallery')
   const [recent, setRecent] = useState(null)
   const [sending, setSending] = useState('')
@@ -267,6 +267,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   // RoarTransfer opens in the sheet's body when its tab is chosen
   useEffect(() => { if (tab === 'transfer' && !files.length) onTransfer?.() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
   const title = files.length ? `${files.length} selected` : TABS.find(([k]) => k === tab)?.[1] || 'Send'
+  const asFile = pickedRaw || (tab === 'file' && files.length > 0) // anything picked while on the File tab goes raw
   const big = files.filter((f) => f.size > 50e6 && !(!asFile && /^video\//.test(f.type)))
   const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
   if (edit >= 0 && files[edit]) return <PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} />

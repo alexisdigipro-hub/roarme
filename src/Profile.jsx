@@ -236,7 +236,6 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     ['links', 'Links', links.length],
     ['music', 'Music', sets.music.length],
     ['voice', 'Voice', sets.voice.length],
-    ['gifs', 'GIFs', sets.gifs.length],
     !group && ['groups', 'Groups', common.length],
   ].filter(Boolean)
 

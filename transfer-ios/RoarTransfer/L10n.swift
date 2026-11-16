@@ -105,7 +105,7 @@ let EL: [String: String] = [
     "Videos and photos go straight to Photos; other files to Files > On My iPhone > RoarTransfer.": "Βίντεο και φωτογραφίες πάνε κατευθείαν στις Φωτογραφίες· τα άλλα αρχεία στα Αρχεία > Στο iPhone μου > RoarTransfer.",
     // receive
     "Open a link": "Άνοιξε ένα link",
-    "Tap a RoarTransfer link anywhere and it opens here. Or paste it:": "Πάτα ένα link του RoarTransfer οπουδήποτε και ανοίγει εδώ. Ή κόλλησέ το:",
+    "Paste your RoarTransfer Link": "Κόλλησε το RoarTransfer link σου",
     "Paste": "Επικόλληση",
     "Open": "Άνοιγμα",
     "This does not look like a RoarTransfer link.": "Αυτό δεν μοιάζει με link του RoarTransfer.",

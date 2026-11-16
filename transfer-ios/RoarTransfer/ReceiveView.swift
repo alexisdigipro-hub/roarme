@@ -47,7 +47,7 @@ struct ReceiveView: View {
             Tile {
                 // symmetric (Alex, 16 Nov): the line centred, the two buttons the same size side by side
                 VStack(spacing: 14) {
-                    Text(t("Tap a RoarTransfer link anywhere and it opens here. Or paste it:"))
+                    Text(t("Paste your RoarTransfer Link"))
                         .font(.system(size: 15)).foregroundStyle(Theme.muted)
                         .multilineTextAlignment(.center).frame(maxWidth: .infinity)
                     GlassField(placeholder: "roartransfer.com/…", text: $pasted, keyboard: .URL)

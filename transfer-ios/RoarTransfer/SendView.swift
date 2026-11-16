@@ -50,9 +50,8 @@ struct SendView: View {
                     }
                 }
                 Spacer(minLength: 4)
-                SiteFooter()
             }
-            .padding(.horizontal, 16).padding(.bottom, 6)
+            .padding(.horizontal, 16).padding(.bottom, SiteFooter.room)
             .frame(maxWidth: .infinity, minHeight: g.size.height)
         }
         }

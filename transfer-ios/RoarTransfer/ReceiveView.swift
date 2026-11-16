@@ -24,9 +24,8 @@ struct ReceiveView: View {
                         if token == nil { start } else { linkPage }
                     }
                 }
-                SiteFooter()
             }
-            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 20)
+            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, SiteFooter.room)
         }
         .scrollDismissesKeyboard(.interactively)
         // pull down: the open link asked again (what is left, what was downloaded)

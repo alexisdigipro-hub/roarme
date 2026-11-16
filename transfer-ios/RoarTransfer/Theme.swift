@@ -207,12 +207,12 @@ func kindIcon(_ name: String, type: String?) -> String {
 struct SiteFooter: View {
     @EnvironmentObject var router: Router
     // the room a page leaves at its end, so its last row can be scrolled clear of the foot
-    static let room: CGFloat = 120
+    static let room: CGFloat = 104
     var body: some View {
         // fixed at the very foot of the screen (Alex, 16 Nov): the pages scroll and pass behind it; POWERED BY sits
         // close over the address
-        VStack(spacing: 2) {
-            Text(verbatim: "POWERED BY").font(jost(10.5, 600)).kerning(3.2).foregroundStyle(Theme.muted)
+        VStack(spacing: 1) {
+            Text(verbatim: "POWERED BY").font(jost(9.5, 600)).kerning(3).foregroundStyle(Theme.muted)
             // verbatim: as a plain string it was read as a link and took the red tint
             Text(verbatim: "www.themadlions.com").font(jost(16, 500)).kerning(0.6).foregroundStyle(Theme.text)
             HStack(spacing: 5) {
@@ -221,10 +221,11 @@ struct SiteFooter: View {
                         .buttonStyle(SmallPill(tiny: true))
                 }
             }
-            .padding(.top, 8)
+            .padding(.top, 5)
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 12)
+        // a low bar (Alex, 16 Nov): the two lines sit close over the small chips
+        .padding(.horizontal, 12).padding(.top, 9).padding(.bottom, 9)
         // the very same glass as the card in the middle (Card above): its material, its dark wash, its rim, its shadow
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.ultraThinMaterial)

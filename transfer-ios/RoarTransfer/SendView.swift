@@ -120,9 +120,6 @@ struct SendView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(PillStyle(main: true)).disabled(over).opacity(over ? 0.5 : 1)
-        } else {
-            Text(t("Videos go in their original quality, exactly as they are on your iPhone."))
-                .font(.system(size: 12)).foregroundStyle(Theme.dim).multilineTextAlignment(.center)
         }
     }
 

@@ -39,26 +39,28 @@ struct ReceiveView: View {
         VStack(spacing: 16) {
             LightBoldTitle(light: lang.el ? "Άνοιξε ένα " : "Open a ", bold: "link.")
             Tile {
-                VStack(alignment: .leading, spacing: 12) {
+                // symmetric (Alex, 16 Nov): the line centred, the two buttons the same size side by side
+                VStack(spacing: 14) {
                     Text(t("Tap a RoarTransfer link anywhere and it opens here. Or paste it:"))
                         .font(.system(size: 15)).foregroundStyle(Theme.muted)
+                        .multilineTextAlignment(.center).frame(maxWidth: .infinity)
                     GlassField(placeholder: "roartransfer.com/…", text: $pasted, keyboard: .URL)
                         .submitLabel(.go)
                         .onSubmit { tryOpen(pasted) }
                     HStack(spacing: 10) {
                         Button { if let s = UIPasteboard.general.string { pasted = s; tryOpen(s) } } label: {
-                            Label(t("Paste"), systemImage: "doc.on.clipboard")
+                            Label(t("Paste"), systemImage: "doc.on.clipboard").frame(maxWidth: .infinity, minHeight: 54)
                         }.buttonStyle(PillStyle())
-                        Button { tryOpen(pasted) } label: { Label(t("Open"), systemImage: "arrow.right") }
+                        Button { tryOpen(pasted) } label: { Label(t("Open"), systemImage: "arrow.right").frame(maxWidth: .infinity) }
                             .buttonStyle(PillStyle(main: true))
                             .disabled(API.token(from: pasted) == nil)
                             .opacity(API.token(from: pasted) == nil ? 0.5 : 1)
                     }
-                    if !problem.isEmpty { Text(problem).font(.system(size: 14)).foregroundStyle(Theme.redHi) }
+                    if !problem.isEmpty { Text(problem).font(.system(size: 14)).foregroundStyle(Theme.redHi).multilineTextAlignment(.center) }
                 }
             }
             Tile {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 14) {
                     feature("photo.on.rectangle.angled", t("Straight to Photos"), t("Videos and photos go into your Photos in their full size, however big."))
                     feature("lock.iphone", t("Keeps going"), t("Downloads carry on with the screen locked or the app closed."))
                     feature("folder", t("Everything else in Files"), t("Find them in Files > On My iPhone > RoarTransfer."))
@@ -69,12 +71,15 @@ struct ReceiveView: View {
     }
 
     private func feature(_ icon: String, _ title: String, _ line: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon).font(.system(size: 18)).foregroundStyle(Theme.redHi).frame(width: 26)
+        HStack(alignment: .center, spacing: 14) {
+            Image(systemName: icon).font(.system(size: 17)).foregroundStyle(Theme.redHi)
+                .frame(width: 42, height: 42)
+                .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(Theme.red.opacity(0.18)))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text)
-                Text(line).font(.system(size: 13)).foregroundStyle(Theme.muted)
+                Text(line).font(.system(size: 13)).foregroundStyle(Theme.muted).fixedSize(horizontal: false, vertical: true)
             }
+            Spacer(minLength: 0)
         }
     }
 

@@ -147,5 +147,17 @@ struct RootView: View {
             }
         }
         .task(id: session.signedIn) { await pro.load() }
+        // the App Store's screenshots (transfer-ios.yml, mode screenshots): `-shot <page>` opens that page at start
+        .onAppear {
+            let a = ProcessInfo.processInfo.arguments
+            guard let i = a.firstIndex(of: "-shot"), i + 1 < a.count else { return }
+            switch a[i + 1] {
+            case "mine": router.tab = .mine
+            case "receive": router.tab = .receive
+            case "settings": router.tab = .settings
+            case "pricing": router.page = "pricing"
+            default: router.tab = .send
+            }
+        }
     }
 }

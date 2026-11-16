@@ -59,6 +59,8 @@ struct Segments<T: Hashable>: View {
     var items: [(T, String, String?)]   // value, title, a second line, or an SF Symbol as "sf:name"
     @Binding var value: T
     var height: CGFloat = 46
+    // the menu at the top stands on the picture itself: a darker, frosted bar so its words always read (Alex, 16 Nov)
+    var solid = false
     @Namespace private var ns
     @State private var going = false
 
@@ -75,7 +77,7 @@ struct Segments<T: Hashable>: View {
                         }
                     }
                     .lineLimit(1).minimumScaleFactor(0.75)
-                    .foregroundStyle(value == it.0 ? Theme.text : Theme.muted)
+                    .foregroundStyle(value == it.0 ? Theme.text : (solid ? Theme.text.opacity(0.78) : Theme.muted))
                     .frame(maxWidth: .infinity, minHeight: height - 8)
                     .background {
                         if value == it.0 { Lens(going: going).matchedGeometryEffect(id: "lens", in: ns) }
@@ -86,7 +88,11 @@ struct Segments<T: Hashable>: View {
             }
         }
         .padding(4)
-        .background(Capsule().fill(Color.black.opacity(0.28)))
+        .background {
+            if solid {
+                ZStack { Capsule().fill(.ultraThinMaterial); Capsule().fill(Color(red: 0.07, green: 0.08, blue: 0.09).opacity(0.65)) }
+            } else { Capsule().fill(Color.black.opacity(0.28)) }
+        }
         .overlay(Capsule().stroke(Theme.edge, lineWidth: 1))
     }
 

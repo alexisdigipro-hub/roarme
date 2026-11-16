@@ -25,9 +25,8 @@ struct MineView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     if session.signedIn { Card { mine } } else { AuthCard() }
-                    SiteFooter()
                 }
-                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 20)
+                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, SiteFooter.room)
             }
             .refreshable { await load() }
             .scrollDismissesKeyboard(.interactively)

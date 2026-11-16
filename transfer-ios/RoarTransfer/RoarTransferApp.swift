@@ -118,6 +118,10 @@ struct RootView: View {
             }
             .padding(.top, 6)
 
+            // the site's foot, fixed low on the screen; it stays put under the keyboard
+            VStack { Spacer(); SiteFooter().padding(.bottom, 2) }
+                .ignoresSafeArea(.keyboard)
+
             if let p = router.page {
                 GlassWindow(title: pageTitle(p), close: { router.page = nil }) {
                     if p == "pricing" { PricingView() } else { WebPage(path: p, lang: lang.code).frame(height: 560) }

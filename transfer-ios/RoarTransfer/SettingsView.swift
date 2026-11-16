@@ -42,9 +42,8 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    SiteFooter()
                 }
-                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 20)
+                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, SiteFooter.room)
             }
             .scrollDismissesKeyboard(.interactively)
             .refreshable { await pro.load() }

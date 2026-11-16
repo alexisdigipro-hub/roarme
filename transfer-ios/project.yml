@@ -26,6 +26,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.themadlions.roartransfer
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone only; XcodeGen's iOS preset would put 1,2 here
         PRODUCT_NAME: RoarTransfer
         INFOPLIST_FILE: RoarTransfer/Info.plist
         GENERATE_INFOPLIST_FILE: NO
@@ -39,6 +40,7 @@ targets:
         UILaunchScreen:
           UIColorName: LaunchBack
         UIUserInterfaceStyle: Dark
+        UIRequiresFullScreen: true
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
         UIAppFonts: [Jost.ttf]

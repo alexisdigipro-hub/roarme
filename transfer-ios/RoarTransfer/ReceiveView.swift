@@ -18,12 +18,15 @@ struct ReceiveView: View {
 
     var body: some View {
         ScrollView {
-            Card {
-                VStack(spacing: 16) {
-                    if token == nil { start } else { linkPage }
+            VStack(spacing: 0) {
+                Card {
+                    VStack(spacing: 16) {
+                        if token == nil { start } else { linkPage }
+                    }
                 }
+                SiteFooter()
             }
-            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 120)
+            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 20)
         }
         .scrollDismissesKeyboard(.interactively)
         // pull down: the open link asked again (what is left, what was downloaded)

@@ -1,4 +1,15 @@
 import SwiftUI
+import CoreText
+
+// Jost, the website's display face (Jost.ttf, the variable file, in the app): any weight from 100 to 900. Greek letters
+// fall to the system face by themselves, as on the site.
+func jost(_ size: CGFloat, _ weight: CGFloat) -> Font {
+    let d = UIFontDescriptor(fontAttributes: [
+        .family: "Jost",
+        UIFontDescriptor.AttributeName(rawValue: kCTFontVariationAttribute as String): [2003265652: weight],   // 'wght'
+    ])
+    return Font(UIFont(descriptor: d, size: size) as CTFont)
+}
 
 // roartransfer.com's look: graphite, soft glass tiles, red that glows, round glass buttons and pills.
 // Never a word with an underline as a button: every action is a pill or a round glass icon.
@@ -56,7 +67,7 @@ struct Card<Content: View>: View {
 struct BigTitle: View {
     var a: String; var b: String; var c: String
     var body: some View {
-        (Text(a).font(.system(size: 24, weight: .light)) + Text(b).font(.system(size: 24, weight: .heavy)) + Text(c).font(.system(size: 24, weight: .light)))
+        (Text(a).font(jost(31, 250)) + Text(b).font(jost(31, 800)) + Text(c).font(jost(31, 250)))
             .foregroundStyle(Theme.text).lineLimit(1).minimumScaleFactor(0.6)
     }
 }
@@ -65,8 +76,9 @@ struct BigTitle: View {
 struct LightBoldTitle: View {
     var light: String; var bold: String
     var body: some View {
-        (Text(light).font(.system(size: 34, weight: .light)) + Text(bold).font(.system(size: 34, weight: .bold)))
+        (Text(light).font(jost(38, 300)) + Text(bold).font(jost(38, 700)))
             .foregroundStyle(Theme.text).lineLimit(1).minimumScaleFactor(0.6)
+            .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 
@@ -145,10 +157,10 @@ struct GlassField: View {
 struct Wordmark: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            (Text("ROAR").font(.system(size: 24, weight: .light)) + Text("TRANSFER").font(.system(size: 24, weight: .heavy)))
-                .foregroundStyle(Theme.text).kerning(0.5)
-            (Text("BY THE").font(.system(size: 9, weight: .regular)) + Text("MAD").font(.system(size: 9, weight: .heavy)) + Text("LIONS").font(.system(size: 9, weight: .regular)))
-                .foregroundStyle(Theme.muted).kerning(3)
+            (Text("ROAR").font(jost(24, 200)) + Text("TRANSFER").font(jost(24, 800)))
+                .foregroundStyle(Theme.text).kerning(0.5).lineLimit(1).minimumScaleFactor(0.7)
+            (Text("BY  THE").font(jost(9.5, 300)) + Text("MAD").font(jost(9.5, 800)) + Text("LIONS").font(jost(9.5, 300)))
+                .foregroundStyle(Color.white.opacity(0.72)).kerning(2.6).lineLimit(1)
         }
     }
 }
@@ -185,4 +197,28 @@ func kindIcon(_ name: String, type: String?) -> String {
     if ["zip", "rar", "7z"].contains(e) { return "doc.zipper" }
     if e == "pdf" { return "doc.richtext" }
     return "doc"
+}
+
+// the website's foot under every page: POWERED BY, www.themadlions.com, About Us · Pricing · Privacy Policy · Terms of Service
+// (each a small glass pill: never a bare word as a button)
+func pageTitle(_ p: String) -> String {
+    p == "about" ? t("About Us") : p == "pricing" ? t("Pricing") : p == "privacy" ? t("Privacy Policy") : t("Terms of Service")
+}
+struct SiteFooter: View {
+    @EnvironmentObject var router: Router
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("POWERED BY").font(jost(10.5, 600)).kerning(3.2).foregroundStyle(Theme.muted)
+            Text("www.themadlions.com").font(jost(16, 500)).kerning(0.6).foregroundStyle(Theme.text)
+            HStack(spacing: 6) {
+                ForEach(["about", "pricing", "privacy", "terms"], id: \.self) { p in
+                    Button { router.page = p } label: { Text(pageTitle(p)).font(.system(size: 12, weight: .medium)).lineLimit(1).minimumScaleFactor(0.8) }
+                        .buttonStyle(SmallPill())
+                }
+            }
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 22).padding(.bottom, 14)
+    }
 }

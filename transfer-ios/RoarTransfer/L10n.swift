@@ -23,6 +23,7 @@ let EL: [String: String] = [
     "Receive": "Λήψη",
     "Drop your files here": "Διάλεξε τα αρχεία σου",
     "Tap to choose them": "Πάτα για να τα διαλέξεις",
+    "or tap to choose them": "ή πάτα για να τα διαλέξεις",
     "Add more": "Πρόσθεσε κι άλλα",
     "Photos & Videos": "Φωτογραφίες & Βίντεο",
     "Files": "Αρχεία",

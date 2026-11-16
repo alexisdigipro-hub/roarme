@@ -17,15 +17,21 @@ struct ReceiveView: View {
     @EnvironmentObject var lang: Lang
 
     var body: some View {
+        // the card in the middle of the room between the menu and the foot (Alex, 16 Nov: "symmetric, all centred")
+        GeometryReader { g in
         ScrollView {
             VStack(spacing: 0) {
+                Spacer(minLength: 4)
                 Card {
                     VStack(spacing: 16) {
                         if token == nil { start } else { linkPage }
                     }
                 }
+                Spacer(minLength: 4)
             }
-            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, SiteFooter.room)
+            .padding(.horizontal, 16).padding(.bottom, SiteFooter.room)
+            .frame(maxWidth: .infinity, minHeight: g.size.height)
+        }
         }
         .scrollDismissesKeyboard(.interactively)
         // pull down: the open link asked again (what is left, what was downloaded)
@@ -60,7 +66,7 @@ struct ReceiveView: View {
                 }
             }
             Tile {
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(spacing: 18) {
                     feature("photo.on.rectangle.angled", t("Straight to Photos"), t("Videos and photos go into your Photos in their full size, however big."))
                     feature("lock.iphone", t("Keeps going"), t("Downloads carry on with the screen locked or the app closed."))
                     feature("folder", t("Everything else in Files"), t("Find them in Files > On My iPhone > RoarTransfer."))
@@ -70,17 +76,17 @@ struct ReceiveView: View {
         }
     }
 
+    // each point centred: its sign in a tile, the title, the line
     private func feature(_ icon: String, _ title: String, _ line: String) -> some View {
-        HStack(alignment: .center, spacing: 14) {
+        VStack(spacing: 6) {
             Image(systemName: icon).font(.system(size: 17)).foregroundStyle(Theme.redHi)
                 .frame(width: 42, height: 42)
                 .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(Theme.red.opacity(0.18)))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text)
-                Text(line).font(.system(size: 13)).foregroundStyle(Theme.muted).fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
+            Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text)
+            Text(line).font(.system(size: 13)).foregroundStyle(Theme.muted)
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var recent: some View {

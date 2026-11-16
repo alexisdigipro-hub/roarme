@@ -207,7 +207,7 @@ func kindIcon(_ name: String, type: String?) -> String {
 struct SiteFooter: View {
     @EnvironmentObject var router: Router
     // the room a page leaves at its end, so its last row can be scrolled clear of the foot
-    static let room: CGFloat = 112
+    static let room: CGFloat = 128
     var body: some View {
         // fixed at the very foot of the screen (Alex, 16 Nov): the pages scroll and pass behind it; POWERED BY sits
         // close over the address
@@ -224,6 +224,17 @@ struct SiteFooter: View {
             .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 12)
+        .background {
+            ZStack {
+                RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 28, style: .continuous).fill(Color(red: 0.07, green: 0.08, blue: 0.09).opacity(0.38))
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(LinearGradient(colors: [Color.white.opacity(0.1), Color.white.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+            }
+        }
+        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous)
+            .stroke(LinearGradient(colors: [Color.white.opacity(0.34), Color.white.opacity(0.08), Color.white.opacity(0.18)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
+        .shadow(color: .black.opacity(0.35), radius: 18, y: 8)
     }
 }

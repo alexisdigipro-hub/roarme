@@ -3637,7 +3637,7 @@ html[data-theme='stone'] .set-head > .round.set-done { color: #1f1f20; }
 @media (max-width: 760px) {
   html.kb .app, html.kb .app > .main, html.kb .app > .side { padding-bottom: 0 !important; }
   html.kb:not([data-theme='aura']) .compose-wrap { padding-bottom: 6px; }
-  html.kb, html.kb body { background: var(--kb-bg, var(--bg)); }
+  html.kb, html.kb:not(.in-shell) body { background: var(--kb-bg, var(--bg)); }
 }
 
 /* RoarMe lighter on a phone (Alex, 21 Oct: "a bit laggy, not so smooth"). The glass blur is the heaviest thing an
@@ -5079,7 +5079,7 @@ html:root:root:root:root:root:not([data-frost])[data-mode='dark'] .as-sheet.as-l
    screen in Glass, so its own foot is lifted by the keyboard's height (--kbh). If a small phone has no room for all of
    it, the top stays reachable by scrolling (margin-top auto, not a centred grid). The mark is a
    little smaller there so the card clears the clock */
-html.kb .auth, html:root:root[data-glass][data-theme].kb .auth { display: flex; flex-direction: column; align-items: center; min-height: 0; box-sizing: border-box; padding: calc(env(safe-area-inset-top, 0px) + 6px) 24px 12px; bottom: var(--kbh, 0px); transition: bottom .28s cubic-bezier(.2, .8, .2, 1); }
+html.kb .auth, html:root:root[data-glass][data-theme].kb .auth { display: flex; flex-direction: column; align-items: center; min-height: 0; box-sizing: border-box; padding: calc(env(safe-area-inset-top, 0px) + 6px) 24px 12px; padding-bottom: calc(var(--kbh, 0px) + 12px); transition: padding-bottom .28s cubic-bezier(.2, .8, .2, 1); }
 html.kb .auth .auth-card { margin-top: auto; margin-bottom: 0; flex: none; }
 html.kb .auth .wordmark.with-by .rm-mark { width: 48px; height: 48px; }
 /* a regular iPhone has about 430px between the clock and the keyboard and the card is 484: only there, a little less
@@ -5091,3 +5091,27 @@ html.kb .auth .wordmark.with-by .rm-mark { width: 48px; height: 48px; }
   html.kb .auth .auth-card .field { margin-bottom: 10px !important; }
   html.kb .auth .auth-card .btn-main { margin-top: 4px !important; }
 }
+
+/* Around the keyboard in the iPhone app (Alex, 16 Nov: "lines round it, background missing, cut off sharply"): there the
+   keyboard lies over the page (resize none), and whatever stopped at its top edge showed as a hard line with a flat
+   colour under the keyboard's round corners. Nothing ends at the keyboard any more: every full-screen layer keeps the
+   whole screen, so its veil or background runs on under the keyboard, and only its inside steps up by the keyboard's
+   height (--kbh), on the keyboard's own curve. The page keeps its wallpaper while a field has the focus (the
+   html.kb body rule above no longer flattens it in the app). */
+html.kb-native:root:root .modal-back { inset: 0 !important; top: 0 !important; height: auto !important; padding-bottom: calc(var(--kbh, 0px) + 10px) !important; }
+html.kb-native:root:root .modal-back > .modal { max-height: calc(100dvh - var(--kbh, 0px) - 20px - env(safe-area-inset-top, 0px)) !important; }
+html.kb-native:root:root .bw { top: 0 !important; bottom: 0 !important; height: auto !important; padding-bottom: calc(var(--kbh, 0px) + 8px) !important; }
+/* a sheet that stands on the screen's foot (attach, theme editor) keeps standing there: its own glass runs on under the
+   keyboard and only what is in it steps up, so there is no edge over the keyboard at all; it is tall while one types */
+html.kb-native:root:root .as-back > .as-sheet { box-sizing: border-box; height: calc(100dvh - 8px - env(safe-area-inset-top, 0px)) !important; max-height: none !important; padding-bottom: var(--kbh, 0px) !important; }
+html.kb-native:root:root .as-sheet .as-send { bottom: calc(var(--kbh, 0px) + 8px) !important; transition: bottom .28s cubic-bezier(.2, .8, .2, 1); }
+html.kb-native:root:root .te-back > .te-sheet { box-sizing: border-box; max-height: calc(100dvh - 8px - env(safe-area-inset-top, 0px)) !important; padding-bottom: calc(var(--kbh, 0px) + 14px) !important; }
+html.kb-native:root:root .lock { padding-bottom: calc(var(--kbh, 0px) + 24px) !important; }
+html.in-shell :is(.modal-back, .bw, .as-sheet, .te-sheet, .lock) { transition: padding-bottom .28s cubic-bezier(.2, .8, .2, 1); }
+/* a chat with a wallpaper of its own: the same wallpaper also lies behind the whole screen, so under the keyboard it is
+   the chat's wallpaper that shows, not the app's (a phone only: on a wide screen the chat is one column of two) */
+@media (max-width: 760px) {
+  html.in-shell .room-view:not(.same-wall):not(.ctx-wall) { isolation: isolate; }
+  html.in-shell .room-view:not(.same-wall):not(.ctx-wall)::before { content: ''; position: fixed; inset: 0; z-index: -1; background: inherit; box-shadow: inherit; pointer-events: none; }
+}
+

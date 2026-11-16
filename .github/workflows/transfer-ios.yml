@@ -4,6 +4,8 @@ name: RoarTransfer for iPhone
 # It lives in this repository because the App Store Connect key is here (the same four secrets as ios.yml).
 #  - A pull request that touches transfer-ios/ or this file, and Run workflow with "check": builds for the simulator
 #    with no signing. Needs nothing from Apple.
+#  - Run workflow with "screenshots": builds for an iPhone Pro Max simulator (the App Store's 6.9" size), opens each
+#    page with -shot <page> and pushes the pictures to the branch appstore-screens (transfer-ios/screens/).
 #  - Run workflow with "testflight": registers the app's bundle id (com.themadlions.roartransfer) with its Associated
 #    Domains, checks that the app exists in App Store Connect, then archives, signs and sends it to TestFlight.
 on:
@@ -13,13 +15,13 @@ on:
         description: check (no signing) or testflight
         default: check
         type: choice
-        options: [check, testflight]
+        options: [check, testflight, screenshots]
   pull_request:
     branches: [main]
     paths: ['transfer-ios/**', '.github/workflows/transfer-ios.yml']
 
 permissions:
-  contents: read
+  contents: write   # only the screenshots mode writes, to its own branch appstore-screens
 
 concurrency:
   group: transfer-ios-${{ github.ref }}
@@ -39,8 +41,42 @@ jobs:
           brew install xcodegen >/dev/null 2>&1 || brew install xcodegen
           xcodegen generate
           xcodebuild -version
+      - name: Screenshots for the App Store (6.9 inch iPhone)
+        if: inputs.mode == 'screenshots'
+        run: |
+          set -e
+          DEV=$(xcrun simctl list devices available | grep -E "iPhone 1[6-9] Pro Max" | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+          [ -n "$DEV" ] || { xcrun simctl list devices available; echo "::error::no Pro Max simulator"; exit 1; }
+          xcrun simctl list devices available | grep "$DEV"
+          xcodebuild -project RoarTransfer.xcodeproj -scheme RoarTransfer -configuration Release -sdk iphonesimulator \
+            -destination "id=$DEV" -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/build.log" 2>&1 || { tail -40 "$RUNNER_TEMP/build.log"; exit 1; }
+          APP=$(find "$RUNNER_TEMP/dd/Build/Products" -name "RoarTransfer.app" -maxdepth 3 | head -1)
+          xcrun simctl boot "$DEV" || true
+          xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl ui "$DEV" appearance dark
+          xcrun simctl status_bar "$DEV" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularMode active --cellularBars 4
+          xcrun simctl install "$DEV" "$APP"
+          mkdir -p screens
+          n=1
+          for p in send receive mine pricing settings; do
+            xcrun simctl terminate "$DEV" com.themadlions.roartransfer || true
+            xcrun simctl launch "$DEV" com.themadlions.roartransfer -shot "$p"
+            sleep 9
+            xcrun simctl io "$DEV" screenshot "screens/$n-$p.png"
+            n=$((n+1))
+          done
+          sips -g pixelWidth -g pixelHeight screens/*.png
+      - name: Keep the screenshots on the branch appstore-screens
+        if: inputs.mode == 'screenshots'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+          git checkout -B appstore-screens
+          git add transfer-ios/screens/*.png
+          git commit -m "App Store screenshots (run ${{ github.run_number }})"
+          git push -f origin appstore-screens
       - name: Build for the simulator, unsigned
-        if: inputs.mode != 'testflight'
+        if: inputs.mode != 'testflight' && inputs.mode != 'screenshots'
         run: |
           ok=0
           xcodebuild -project RoarTransfer.xcodeproj -scheme RoarTransfer -configuration Release -sdk iphonesimulator \

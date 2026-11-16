@@ -201,7 +201,7 @@ func kindIcon(_ name: String, type: String?) -> String {
 
 // the website's foot under every page: POWERED BY, www.themadlions.com, About Us · Pricing · Privacy Policy · Terms of Service
 // (each a small glass pill: never a bare word as a button)
-func pageTitle(_ p: String) -> String {
+@MainActor func pageTitle(_ p: String) -> String {
     p == "about" ? t("About Us") : p == "pricing" ? t("Pricing") : p == "privacy" ? t("Privacy Policy") : t("Terms of Service")
 }
 struct SiteFooter: View {

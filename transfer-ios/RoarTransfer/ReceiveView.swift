@@ -65,10 +65,7 @@ struct ReceiveView: View {
                     if !problem.isEmpty { Text(problem).font(.system(size: 14)).foregroundStyle(Theme.redHi).multilineTextAlignment(.center) }
                 }
             }
-            // what the app does with a download, then Pro in a few words (Alex, 16 Nov)
-            Tile {
-                feature("photo.on.rectangle.angled", t("Saved to your Photo Library"), t("Videos and photos go straight into your iPhone's Photo Library, in their full size."))
-            }
+            // Pro in a few words (Alex, 16 Nov; the Photo Library tile came out the same day)
             Tile {
                 VStack(spacing: 12) {
                     HStack(spacing: 8) {
@@ -94,19 +91,6 @@ struct ReceiveView: View {
             Image(systemName: "checkmark.circle.fill").font(.system(size: 15)).foregroundStyle(Color(red: 0.98, green: 0.66, blue: 0.16))
             Text(text).font(.system(size: 14)).foregroundStyle(Theme.text.opacity(0.9)).multilineTextAlignment(.center)
         }
-    }
-
-    // each point centred: its sign in a tile, the title, the line
-    private func feature(_ icon: String, _ title: String, _ line: String) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 17)).foregroundStyle(Theme.redHi)
-                .frame(width: 42, height: 42)
-                .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(Theme.red.opacity(0.18)))
-            Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text)
-            Text(line).font(.system(size: 13)).foregroundStyle(Theme.muted)
-                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     private var recent: some View {

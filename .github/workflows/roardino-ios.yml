@@ -56,6 +56,11 @@ jobs:
           npx cap add ios
           npx cap sync ios
           cat ios/App/App/capacitor.config.json
+          # behind the keyboard's round corners the window itself showed, black (Alex, 16 Nov: "something happens round the
+          # keyboard"): the window takes the keyboard's own grey, light or dark with the phone
+          AD=ios/App/App/AppDelegate.swift
+          perl -0pi -e 's/(didFinishLaunchingWithOptions[^\{]*\{\n)/$1        window?.backgroundColor = UIColor { \$0.userInterfaceStyle == .dark ? UIColor(red: 0.17, green: 0.17, blue: 0.18, alpha: 1) : UIColor(red: 0.82, green: 0.83, blue: 0.86, alpha: 1) }\n/' "$AD"
+          grep -n "window?.backgroundColor" "$AD" || echo "::warning::the window colour line was not added"
       - name: Permission texts, name and version
         working-directory: roardino-ios
         run: |

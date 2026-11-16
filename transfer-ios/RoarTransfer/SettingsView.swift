@@ -177,9 +177,10 @@ struct SettingsView: View {
 
 // a small glass pill (the footer's pages)
 struct SmallPill: ButtonStyle {
+    var tiny = false      // the foot's chips, 30% smaller (Alex, 16 Nov)
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.foregroundStyle(Theme.text.opacity(0.85))
-            .padding(.horizontal, 10).frame(height: 32)
+            .padding(.horizontal, tiny ? 8 : 10).frame(height: tiny ? 23 : 32)
             .background(Capsule().fill(Theme.glass)).overlay(Capsule().stroke(Theme.edge))
             .glassPress(configuration.isPressed, shape: Capsule())
     }

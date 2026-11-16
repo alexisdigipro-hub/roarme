@@ -45,7 +45,7 @@ struct SendView: View {
                 Spacer(minLength: 4)
                 Card {
                     VStack(spacing: 16) {
-                        BigTitle(a: lang.el ? "ΣΤΕΙΛΕ" : "SEND", b: lang.el ? "ΜΕΓΑΛΑ" : "BIG", c: lang.el ? "ΑΡΧΕΙΑ" : "FILES")
+                        BigTitle(a: "send", b: "BIG", c: "files")
                         if up.busy { sending } else if let l = up.link { done(l) } else { pick }
                     }
                 }

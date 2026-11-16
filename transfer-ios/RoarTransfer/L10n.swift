@@ -106,6 +106,12 @@ let EL: [String: String] = [
     // receive
     "Open a link": "Άνοιξε ένα link",
     "Paste your RoarTransfer Link": "Κόλλησε το RoarTransfer link σου",
+    "Saved to your Photo Library": "Αποθηκεύεται στη Βιβλιοθήκη φωτογραφιών σου",
+    "Videos and photos go straight into your iPhone's Photo Library, in their full size.": "Τα βίντεο και οι φωτογραφίες πάνε κατευθείαν στη Βιβλιοθήκη φωτογραφιών του iPhone σου, στο πλήρες μέγεθός τους.",
+    "Up to 50 GB a transfer": "Ως 50 GB ανά αποστολή",
+    "Links up to 30 days, unlimited downloads": "Links ως 30 μέρες, απεριόριστες λήψεις",
+    "Your brand and your own Receive files page": "Το brand σου και η δική σου σελίδα Λήψης αρχείων",
+    "See Pro": "Δες το Pro",
     "Paste": "Επικόλληση",
     "Open": "Άνοιγμα",
     "This does not look like a RoarTransfer link.": "Αυτό δεν μοιάζει με link του RoarTransfer.",

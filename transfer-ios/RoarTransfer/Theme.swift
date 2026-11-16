@@ -207,7 +207,7 @@ func kindIcon(_ name: String, type: String?) -> String {
 struct SiteFooter: View {
     @EnvironmentObject var router: Router
     // the room a page leaves at its end, so its last row can be scrolled clear of the foot
-    static let room: CGFloat = 128
+    static let room: CGFloat = 120
     var body: some View {
         // fixed at the very foot of the screen (Alex, 16 Nov): the pages scroll and pass behind it; POWERED BY sits
         // close over the address
@@ -215,10 +215,10 @@ struct SiteFooter: View {
             Text(verbatim: "POWERED BY").font(jost(10.5, 600)).kerning(3.2).foregroundStyle(Theme.muted)
             // verbatim: as a plain string it was read as a link and took the red tint
             Text(verbatim: "www.themadlions.com").font(jost(16, 500)).kerning(0.6).foregroundStyle(Theme.text)
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 ForEach(["about", "pricing", "privacy", "terms"], id: \.self) { p in
-                    Button { router.page = p } label: { Text(pageTitle(p)).font(.system(size: 12, weight: .medium)).lineLimit(1).minimumScaleFactor(0.8) }
-                        .buttonStyle(SmallPill())
+                    Button { router.page = p } label: { Text(pageTitle(p)).font(.system(size: 9.5, weight: .medium)).lineLimit(1) }
+                        .buttonStyle(SmallPill(tiny: true))
                 }
             }
             .padding(.top, 8)

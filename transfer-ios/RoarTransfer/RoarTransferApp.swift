@@ -136,7 +136,7 @@ struct RootView: View {
             // the site's foot, fixed low on the screen; it stays put under the keyboard
             // the site's foot as a floating pane of frosted glass (Alex, 16 Nov: the dark fade was not nice, "glassmorphism"):
             // what scrolls behind it shows blurred through the glass; it stays put under the keyboard
-            VStack { Spacer(); SiteFooter().padding(.horizontal, 12).padding(.bottom, 2) }
+            VStack { Spacer(); SiteFooter().padding(.horizontal, 16).padding(.bottom, 2) }
                 .ignoresSafeArea(.keyboard)
 
             if let p = router.page {

@@ -225,16 +225,12 @@ struct SiteFooter: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 12)
-        .background {
-            ZStack {
-                RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.ultraThinMaterial)
-                RoundedRectangle(cornerRadius: 28, style: .continuous).fill(Color(red: 0.07, green: 0.08, blue: 0.09).opacity(0.38))
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(LinearGradient(colors: [Color.white.opacity(0.1), Color.white.opacity(0.02)], startPoint: .top, endPoint: .bottom))
-            }
-        }
-        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous)
-            .stroke(LinearGradient(colors: [Color.white.opacity(0.34), Color.white.opacity(0.08), Color.white.opacity(0.18)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
-        .shadow(color: .black.opacity(0.35), radius: 18, y: 8)
+        // the very same glass as the card in the middle (Card above): its material, its dark wash, its rim, its shadow
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.ultraThinMaterial)
+                .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(Color(red: 0.09, green: 0.09, blue: 0.1).opacity(0.55)))
+        )
+        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).stroke(Color.white.opacity(0.16), lineWidth: 1))
+        .shadow(color: .black.opacity(0.35), radius: 30, y: 16)
     }
 }

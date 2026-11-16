@@ -8,9 +8,9 @@ final class Lang: ObservableObject {
     @Published var code: String {
         didSet { UserDefaults.standard.set(code, forKey: "lang") }
     }
-    init() {
-        code = UserDefaults.standard.string(forKey: "lang") ?? (Locale.preferredLanguages.contains { $0.hasPrefix("el") } || TimeZone.current.identifier == "Europe/Athens" || TimeZone.current.identifier == "Asia/Nicosia" ? "el" : "en")
-    }
+    // English only (Alex, 16 Nov: "no Greek in the app, only English"): no EN | GR switch, and a Greek choice saved by
+    // an earlier build is let go. The Greek table below stays, unused, for the day it is wanted again.
+    init() { code = "en" }
     var el: Bool { code == "el" }
 }
 

@@ -97,7 +97,6 @@ struct RootView: View {
                     .padding(.horizontal, 5).frame(height: 38)
                     .background(ZStack { Capsule().fill(.ultraThinMaterial); Capsule().fill(Color(red: 0.07, green: 0.08, blue: 0.09).opacity(0.65)) })
                     .overlay(Capsule().stroke(Theme.edge, lineWidth: 1))
-                    Segments(items: [("en", "EN", nil), ("el", "GR", nil)], value: $lang.code, height: 38, solid: true).frame(width: 84)
                 }
                 .padding(.horizontal, 16)
 

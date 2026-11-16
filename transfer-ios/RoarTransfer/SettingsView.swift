@@ -31,7 +31,6 @@ struct SettingsView: View {
                         VStack(spacing: 14) {
                             LightBoldTitle(light: "", bold: t("Settings") + ".")
                             if session.signedIn { account }
-                            language
                             downloads
                             if session.signedIn {
                                 Button { session.signOut(); Task { await pro.load() } } label: { Label(t("Sign out"), systemImage: "rectangle.portrait.and.arrow.right").frame(maxWidth: .infinity) }
@@ -160,10 +159,6 @@ struct SettingsView: View {
     }
 
     // ---- for everyone ----
-    @ViewBuilder private var language: some View {
-        SectionHead(text: t("Language"))
-        Segments(items: [("en", "English", nil), ("el", "Ελληνικά", nil)], value: $lang.code)
-    }
     @ViewBuilder private var downloads: some View {
         SectionHead(text: t("Downloads"))
         RowBox {

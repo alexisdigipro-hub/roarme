@@ -56,11 +56,21 @@ jobs:
           npx cap add ios
           npx cap sync ios
           cat ios/App/App/capacitor.config.json
-          # behind the keyboard's round corners the window itself showed, black (Alex, 16 Nov: "something happens round the
-          # keyboard"): the window takes the keyboard's own grey, light or dark with the phone
+          # behind the keyboard's glass and round corners the app's own window shows (Alex, 16 Nov: "round the keyboard
+          # there are lines, the background is missing, things are cut"): it takes the page's theme-color, which the site
+          # sets to the colour that is on screen right over the keyboard (the page's, black in Reels, a window's)
           AD=ios/App/App/AppDelegate.swift
-          perl -0pi -e 's/(didFinishLaunchingWithOptions[^\{]*\{\n)/$1        window?.backgroundColor = UIColor { \$0.userInterfaceStyle == .dark ? UIColor(red: 0.17, green: 0.17, blue: 0.18, alpha: 1) : UIColor(red: 0.82, green: 0.83, blue: 0.86, alpha: 1) }\n/' "$AD"
-          grep -n "window?.backgroundColor" "$AD" || echo "::warning::the window colour line was not added"
+          cat > /tmp/tint.swift <<'SWIFT'
+                  window?.backgroundColor = UIColor(red: 0.93, green: 0.93, blue: 0.93, alpha: 1)
+                  Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+                      guard let w = self?.window, let vc = w.rootViewController as? CAPBridgeViewController, let wv = vc.webView else { return }
+                      if #available(iOS 15.0, *), let c = wv.themeColor, w.backgroundColor != c { w.backgroundColor = c }
+                  }
+          SWIFT
+          sed -i '' 's/^        //' /tmp/tint.swift
+          perl -0pi -e 'BEGIN { local $/; open(F, "<", "/tmp/tint.swift"); $t = <F>; close(F) } s/(didFinishLaunchingWithOptions[^\{]*\{\n)/$1$t/; s/import Capacitor\n/import Capacitor\nimport WebKit\n/' "$AD"
+          cat "$AD" | head -30
+          grep -n "wv.themeColor" "$AD" || echo "::warning::the window colour lines were not added"
       - name: Permission texts, name and version
         working-directory: roardino-ios
         run: |

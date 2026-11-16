@@ -56,6 +56,7 @@ final class Router: ObservableObject {
     enum Tab: Hashable { case send, mine, receive, settings }
     static weak var shared: Router?
     @Published var tab: Tab = .send
+    @Published var page: String?          // about, pricing, privacy, terms: the footer's pages, in a window
     init() { Router.shared = self }
     @Published var openToken: String?
     func open(_ text: String) {
@@ -65,8 +66,10 @@ final class Router: ObservableObject {
     }
 }
 
-// As roartransfer.com: the wordmark (with PRO for a Pro) and EN | GR at the top, the page in the website's glass card
-// on one of Alex's stills, and at the foot RoarMe's menu: Send · My transfers · Receive · Settings (Studio left on 15 Nov: it becomes an app of its own).
+// Exactly as roartransfer.com on a phone (Alex, 16 Nov: "make the app exactly as the web app"): the wordmark, then PRO
+// with the Settings gear in one glass capsule and EN | GR; under them the site's menu Send · My transfers · Receive
+// (Receive stands where the site has Admin, which the app does not carry); the page in the glass card on one of Alex's
+// stills; and the site's foot under every page. No menu at the foot of the screen any more.
 struct RootView: View {
     @EnvironmentObject var router: Router
     @EnvironmentObject var lang: Lang
@@ -74,16 +77,34 @@ struct RootView: View {
     @EnvironmentObject var session: Session
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             Backdrop()
-            VStack(spacing: 10) {
-                HStack(spacing: 10) {
+            VStack(spacing: 12) {
+                HStack(spacing: 8) {
                     Wordmark()
-                    if pro.isPro { ProBadge().transition(.glassDrop) }
-                    Spacer()
-                    Segments(items: [("en", "EN", nil), ("el", "GR", nil)], value: $lang.code, height: 38).frame(width: 96)
+                    Spacer(minLength: 4)
+                    HStack(spacing: 6) {
+                        if pro.isPro { ProBadge().transition(.glassDrop) }
+                        Button { Glass.tap(.soft); withAnimation(Glass.spring) { router.tab = router.tab == .settings ? .send : .settings } } label: {
+                            Image(systemName: "gearshape").font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(router.tab == .settings ? Theme.text : Theme.text.opacity(0.8))
+                                .frame(width: 28, height: 28)
+                                .background(Circle().fill(Color.white.opacity(router.tab == .settings ? 0.2 : 0.08)))
+                        }
+                        .buttonStyle(FootPress())
+                        .accessibilityLabel(t("Settings"))
+                    }
+                    .padding(.horizontal, 5).frame(height: 38)
+                    .background(Capsule().fill(Color.black.opacity(0.28)))
+                    .overlay(Capsule().stroke(Theme.edge, lineWidth: 1))
+                    Segments(items: [("en", "EN", nil), ("el", "GR", nil)], value: $lang.code, height: 38).frame(width: 84)
                 }
                 .padding(.horizontal, 16)
+
+                Segments(items: [(Router.Tab.send, t("Send"), nil), (.mine, t("My transfers"), nil), (.receive, t("Receive"), nil)], value: $router.tab, height: 46)
+                    .frame(maxWidth: 330)
+                    .padding(.horizontal, 30)
+
                 ZStack {
                     switch router.tab {
                     case .send: SendView().transition(.glassDrop)
@@ -97,15 +118,12 @@ struct RootView: View {
             }
             .padding(.top, 6)
 
-            FootMenu(items: [
-                (Router.Tab.send, t("Send"), "arrow.up.circle"),
-                (.mine, t("My transfers"), "tray.full"),
-                (.receive, t("Receive"), "arrow.down.circle"),
-                (.settings, t("Settings"), "gearshape"),
-            ], value: $router.tab)
-            .frame(maxWidth: 330)
-            .padding(.horizontal, 28)
-            .padding(.bottom, 6)
+            if let p = router.page {
+                GlassWindow(title: pageTitle(p), close: { router.page = nil }) {
+                    if p == "pricing" { PricingView() } else { WebPage(path: p, lang: lang.code).frame(height: 560) }
+                }
+                .transition(.opacity).zIndex(9)
+            }
         }
         .task(id: session.signedIn) { await pro.load() }
     }

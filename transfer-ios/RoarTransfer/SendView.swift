@@ -41,15 +41,19 @@ struct SendView: View {
         // the card in the very middle of the screen, between the top and the menu (Alex, 15 Nov); a longer one scrolls
         GeometryReader { g in
         ScrollView {
-            Card {
-                VStack(spacing: 16) {
-                    BigTitle(a: lang.el ? "ΣΤΕΙΛΕ" : "SEND", b: lang.el ? "ΜΕΓΑΛΑ" : "BIG", c: lang.el ? "ΑΡΧΕΙΑ" : "FILES")
-                    if up.busy { sending } else if let l = up.link { done(l) } else { pick }
+            VStack(spacing: 0) {
+                Spacer(minLength: 4)
+                Card {
+                    VStack(spacing: 16) {
+                        BigTitle(a: lang.el ? "ΣΤΕΙΛΕ" : "SEND", b: lang.el ? "ΜΕΓΑΛΑ" : "BIG", c: lang.el ? "ΑΡΧΕΙΑ" : "FILES")
+                        if up.busy { sending } else if let l = up.link { done(l) } else { pick }
+                    }
                 }
+                Spacer(minLength: 4)
+                SiteFooter()
             }
-            .padding(.horizontal, 16)
-            .frame(maxWidth: .infinity, minHeight: max(0, g.size.height - 72), alignment: .center)
-            .padding(.bottom, 72)
+            .padding(.horizontal, 16).padding(.bottom, 6)
+            .frame(maxWidth: .infinity, minHeight: g.size.height)
         }
         }
         .scrollDismissesKeyboard(.interactively)
@@ -132,16 +136,14 @@ struct SendView: View {
         let empty = picked.isEmpty
         return Group {
             if empty {
-                // compact (Alex, 15 Nov: "the window is huge"): the icon beside its two lines, as the website's Add more
-                HStack(spacing: 14) {
-                    upIcon(46)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(t("Drop your files here")).font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.text)
-                        Text(t("Tap to choose them")).font(.system(size: 13)).foregroundStyle(Theme.muted)
-                    }
-                    Spacer()
+                // as the website (Alex, 16 Nov): the red sign in the middle, its two lines under it
+                VStack(spacing: 6) {
+                    upIcon(64).padding(.bottom, 10)
+                    Text(t("Drop your files here")).font(.system(size: 20, weight: .semibold)).foregroundStyle(Theme.text)
+                    Text(t("or tap to choose them")).font(.system(size: 15)).foregroundStyle(Theme.muted)
                 }
-                .padding(14)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
             } else {
                 HStack(spacing: 14) {
                     upIcon(44)

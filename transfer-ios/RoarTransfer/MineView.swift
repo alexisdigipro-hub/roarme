@@ -23,10 +23,11 @@ struct MineView: View {
     var body: some View {
         ZStack {
             ScrollView {
-                Group {
+                VStack(spacing: 0) {
                     if session.signedIn { Card { mine } } else { AuthCard() }
+                    SiteFooter()
                 }
-                .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 120)
+                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 20)
             }
             .refreshable { await load() }
             .scrollDismissesKeyboard(.interactively)
@@ -62,12 +63,10 @@ struct MineView: View {
 
     private var mine: some View {
         VStack(spacing: 14) {
-            HStack(spacing: 8) {
-                LightBoldTitle(light: lang.el ? "Οι " : "My ", bold: lang.el ? "αποστολές μου." : "transfers.")
-                if pro.isPro { ProBadge() }
-            }
+            LightBoldTitle(light: lang.el ? "Οι " : "My ", bold: lang.el ? "αποστολές μου." : "transfers.")
             if pro.isPro {
-                Segments(items: [("sent", t("Sent"), nil), ("got", t("Received") + ((pro.info?.received?.count ?? 0) > 0 ? " \(pro.info!.received!.count)" : ""), nil)], value: $side, height: 42)
+                Segments(items: [("sent", t("Sent"), nil), ("got", t("Received") + ((pro.info?.received?.count ?? 0) > 0 ? " \(pro.info!.received!.count)" : ""), nil)], value: $side, height: 44)
+                    .frame(maxWidth: 230)
             }
             if side == "got" && pro.isPro { received } else { sent }
         }
@@ -79,6 +78,7 @@ struct MineView: View {
         Segments(items: [(0, t("All"), nil), (1, t("Active"), nil), (2, t("Expired"), nil)], value: $filter)
         HStack(spacing: 8) {
             GlassField(placeholder: t("Search by file"), text: $query)
+                .frame(maxWidth: .infinity)
             if shown.contains(where: pickable) || picking {
                 Button { withAnimation(Glass.spring) { picking.toggle(); picked = [] } } label: {
                     Label(picking ? t("Cancel") : t("Select"), systemImage: picking ? "xmark" : "checkmark")

@@ -42,6 +42,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         ITSAppUsesNonExemptEncryption: false
+        UIAppFonts: [Jost.ttf]
         # what is downloaded also shows in Files > On My iPhone > RoarTransfer
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true

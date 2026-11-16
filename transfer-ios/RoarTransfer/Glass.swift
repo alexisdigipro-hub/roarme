@@ -260,9 +260,10 @@ struct SectionHead: View {
 
 struct ProBadge: View {
     var body: some View {
-        Text("PRO").font(.system(size: 11, weight: .heavy)).kerning(1).foregroundStyle(.white)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(LinearGradient(colors: [Theme.redHi, Theme.red], startPoint: .top, endPoint: .bottom)))
-            .shadow(color: Theme.red.opacity(0.5), radius: 8, y: 3)
+        // the website's chip: amber, dark letters
+        Text("PRO").font(.system(size: 10.5, weight: .heavy)).kerning(1.2).foregroundStyle(Color(red: 0.2, green: 0.12, blue: 0))
+            .padding(.horizontal, 8).padding(.vertical, 3.5)
+            .background(Capsule().fill(LinearGradient(colors: [Color(red: 1, green: 0.76, blue: 0.3), Color(red: 0.96, green: 0.6, blue: 0.1)], startPoint: .top, endPoint: .bottom)))
+            .shadow(color: Color(red: 0.96, green: 0.6, blue: 0.1).opacity(0.4), radius: 6, y: 2)
     }
 }

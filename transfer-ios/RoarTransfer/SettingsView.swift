@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 import PhotosUI
 
-// Settings, a tab of the menu at the foot (as the website's Settings window, laid out as a page): the account and its
+// Settings, opened by the gear at the top (as the website's Settings window, laid out as a page): the account and its
 // plan with PRO, the emails, for a Pro their Receive-files page, their brand and what Pro gives, the language,
 // where downloads go, Sign out, and at the foot About Us · Pricing · Privacy Policy · Terms of Service.
 // Signed out: Sign in, Create account and Forgot password, as the website.
@@ -10,7 +10,6 @@ struct SettingsView: View {
     @EnvironmentObject var session: Session
     @EnvironmentObject var lang: Lang
     @EnvironmentObject var pro: ProStore
-    @State private var page: String?          // about, pricing, privacy, terms
     @State private var perks = false
     @State private var brandOpen = false
     @State private var editPage = false
@@ -41,21 +40,15 @@ struct SettingsView: View {
                                     .buttonStyle(PillStyle(danger: true)).opacity(0.8).disabled(deleting)
                                 if !deleteErr.isEmpty { Text(deleteErr).font(.system(size: 13)).foregroundStyle(Theme.redHi) }
                             }
-                            footer
                         }
                     }
+                    SiteFooter()
                 }
-                .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 120)
+                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 20)
             }
             .scrollDismissesKeyboard(.interactively)
             .refreshable { await pro.load() }
 
-            if let p = page {
-                GlassWindow(title: pageTitle(p), close: { page = nil }) {
-                    if p == "pricing" { PricingView() } else { WebPage(path: p, lang: lang.code).frame(height: 560) }
-                }
-                .transition(.opacity).zIndex(5)
-            }
             if brandOpen {
                 GlassWindow(title: t("Your brand"), close: { brandOpen = false }) { BrandEditor() }.zIndex(5)
             }
@@ -73,10 +66,6 @@ struct SettingsView: View {
         } message: {
             Text(t("This deletes your account at once: your transfers and their links, your brand and your Receive files page. It is the same account as RoarMe and the other apps of The Mad Lions Lab, so it is deleted there too. This cannot be undone."))
         }
-    }
-
-    private func pageTitle(_ p: String) -> String {
-        p == "about" ? t("About Us") : p == "pricing" ? t("Pricing") : p == "privacy" ? t("Privacy Policy") : t("Terms of Service")
     }
 
     // ---- signed in ----
@@ -182,20 +171,6 @@ struct SettingsView: View {
             Text(t("Videos and photos go straight to Photos; other files to Files > On My iPhone > RoarTransfer."))
                 .font(.system(size: 13)).foregroundStyle(Theme.muted).frame(maxWidth: .infinity, alignment: .leading).padding(14)
         }
-    }
-
-    private var footer: some View {
-        VStack(spacing: 10) {
-            Text("POWERED BY").font(.system(size: 10, weight: .semibold)).kerning(3).foregroundStyle(Theme.muted)
-            Text("www.themadlions.com").font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.text)
-            HStack(spacing: 6) {
-                ForEach(["about", "pricing", "privacy", "terms"], id: \.self) { p in
-                    Button { page = p } label: { Text(pageTitle(p)).font(.system(size: 12, weight: .medium)).lineLimit(1).minimumScaleFactor(0.8) }
-                        .buttonStyle(SmallPill())
-                }
-            }
-        }
-        .padding(.top, 18)
     }
 
     private func row(_ k: String, _ v: String) -> some View {

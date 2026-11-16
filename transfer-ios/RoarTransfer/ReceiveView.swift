@@ -65,14 +65,34 @@ struct ReceiveView: View {
                     if !problem.isEmpty { Text(problem).font(.system(size: 14)).foregroundStyle(Theme.redHi).multilineTextAlignment(.center) }
                 }
             }
+            // what the app does with a download, then Pro in a few words (Alex, 16 Nov)
             Tile {
-                VStack(spacing: 18) {
-                    feature("photo.on.rectangle.angled", t("Straight to Photos"), t("Videos and photos go into your Photos in their full size, however big."))
-                    feature("lock.iphone", t("Keeps going"), t("Downloads carry on with the screen locked or the app closed."))
-                    feature("folder", t("Everything else in Files"), t("Find them in Files > On My iPhone > RoarTransfer."))
+                feature("photo.on.rectangle.angled", t("Saved to your Photo Library"), t("Videos and photos go straight into your iPhone's Photo Library, in their full size."))
+            }
+            Tile {
+                VStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Text(verbatim: "RoarTransfer").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.text)
+                        ProBadge()
+                    }
+                    VStack(spacing: 8) {
+                        proPoint(t("Up to 50 GB a transfer"))
+                        proPoint(t("Links up to 30 days, unlimited downloads"))
+                        proPoint(t("Your brand and your own Receive files page"))
+                    }
+                    Button { router.page = "pricing" } label: { Text(t("See Pro")).frame(maxWidth: .infinity) }
+                        .buttonStyle(PillStyle())
                 }
+                .frame(maxWidth: .infinity)
             }
             if !downloads.items.isEmpty { recent }
+        }
+    }
+
+    private func proPoint(_ text: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill").font(.system(size: 15)).foregroundStyle(Color(red: 0.98, green: 0.66, blue: 0.16))
+            Text(text).font(.system(size: 14)).foregroundStyle(Theme.text.opacity(0.9)).multilineTextAlignment(.center)
         }
     }
 

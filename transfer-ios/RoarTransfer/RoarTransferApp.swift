@@ -119,6 +119,18 @@ struct RootView: View {
             .padding(.top, 6)
 
             // the site's foot, fixed low on the screen; it stays put under the keyboard
+            // what scrolls behind it fades out into a dark frost, so the foot always reads (Alex, 16 Nov)
+            VStack(spacing: 0) {
+                Spacer()
+                ZStack(alignment: .bottom) {
+                    Rectangle().fill(.ultraThinMaterial)
+                        .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.38), .init(color: .black, location: 1)], startPoint: .top, endPoint: .bottom))
+                    LinearGradient(stops: [.init(color: Theme.bg.opacity(0), location: 0), .init(color: Theme.bg.opacity(0.82), location: 0.42), .init(color: Theme.bg.opacity(0.94), location: 1)], startPoint: .top, endPoint: .bottom)
+                }
+                .frame(height: 170)
+                .allowsHitTesting(false)
+            }
+            .ignoresSafeArea()
             VStack { Spacer(); SiteFooter().padding(.bottom, 2) }
                 .ignoresSafeArea(.keyboard)
 

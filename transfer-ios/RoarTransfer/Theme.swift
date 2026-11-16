@@ -159,7 +159,7 @@ struct Wordmark: View {
         VStack(alignment: .leading, spacing: 2) {
             (Text("ROAR").font(jost(24, 200)) + Text("TRANSFER").font(jost(24, 800)))
                 .foregroundStyle(Theme.text).kerning(0.5).lineLimit(1).minimumScaleFactor(0.7)
-            (Text("BY  THE").font(jost(9.5, 300)) + Text("MAD").font(jost(9.5, 800)) + Text("LIONS").font(jost(9.5, 300)))
+            (Text("BY THE").font(jost(9.5, 300)) + Text("MAD").font(jost(9.5, 800)) + Text("LIONS").font(jost(9.5, 300)))
                 .foregroundStyle(Color.white.opacity(0.72)).kerning(2.6).lineLimit(1)
         }
     }
@@ -207,7 +207,7 @@ func kindIcon(_ name: String, type: String?) -> String {
 struct SiteFooter: View {
     @EnvironmentObject var router: Router
     // the room a page leaves at its end, so its last row can be scrolled clear of the foot
-    static let room: CGFloat = 96
+    static let room: CGFloat = 112
     var body: some View {
         // fixed at the very foot of the screen (Alex, 16 Nov): the pages scroll and pass behind it; POWERED BY sits
         // close over the address

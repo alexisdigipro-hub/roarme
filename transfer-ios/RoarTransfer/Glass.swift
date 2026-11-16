@@ -14,6 +14,8 @@ enum Glass {
     static let land = Animation.timingCurve(0.25, 1.45, 0.45, 1, duration: 0.3)
     static let spring = Animation.spring(response: 0.42, dampingFraction: 0.68)
     static var calm: Bool { UIAccessibility.isReduceMotionEnabled }
+    // how many windows are open: a sideways slide turns no page while one is
+    static var windows = 0
     static func tap(_ s: UIImpactFeedbackGenerator.FeedbackStyle = .light) { UIImpactFeedbackGenerator(style: s).impactOccurred() }
 }
 
@@ -219,7 +221,8 @@ struct GlassWindow<Content: View>: View {
             .scaleEffect(shown || Glass.calm ? 1 : 0.6)
             .opacity(shown ? 1 : 0)
         }
-        .onAppear { withAnimation(.spring(response: 0.34, dampingFraction: 0.72)) { shown = true } }
+        .onAppear { Glass.windows += 1; withAnimation(.spring(response: 0.34, dampingFraction: 0.72)) { shown = true } }
+        .onDisappear { Glass.windows = max(0, Glass.windows - 1) }
     }
 
     private func dismiss() {

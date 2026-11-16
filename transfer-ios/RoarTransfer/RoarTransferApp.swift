@@ -115,6 +115,22 @@ struct RootView: View {
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 .animation(Glass.spring, value: router.tab)
+                // a slide to the left or right turns the page: Send · My transfers · Receive (Alex, 16 Nov); only a
+                // clearly sideways one, so scrolling up and down is left alone, and never with a window open
+                .simultaneousGesture(DragGesture(minimumDistance: 28).onEnded { g in
+                    let w = g.translation.width, h = g.translation.height
+                    guard Glass.windows == 0, router.page == nil, abs(w) > 70, abs(w) > abs(h) * 2 else { return }
+                    let order: [Router.Tab] = [.send, .mine, .receive]
+                    guard let i = order.firstIndex(of: router.tab) else {
+                        // Settings: a slide to the right goes back to Send
+                        if w > 0 { Glass.tap(.soft); withAnimation(Glass.spring) { router.tab = .send } }
+                        return
+                    }
+                    let n = i + (w < 0 ? 1 : -1)
+                    guard order.indices.contains(n) else { return }
+                    Glass.tap(.soft)
+                    withAnimation(Glass.spring) { router.tab = order[n] }
+                })
             }
             .padding(.top, 6)
 

@@ -65,12 +65,15 @@ jobs:
                   Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
                       guard let w = self?.window, let vc = w.rootViewController as? CAPBridgeViewController, let wv = vc.webView else { return }
                       if #available(iOS 15.0, *), let c = wv.themeColor, w.backgroundColor != c { w.backgroundColor = c }
+                      // swipe from the screen's edge goes back and forward, as in Safari (Alex, 17 Nov), and the page never slides sideways
+                      if !wv.allowsBackForwardNavigationGestures { wv.allowsBackForwardNavigationGestures = true; wv.scrollView.alwaysBounceHorizontal = false }
                   }
           SWIFT
           sed -i '' 's/^        //' /tmp/tint.swift
           perl -0pi -e 'BEGIN { local $/; open(F, "<", "/tmp/tint.swift"); $t = <F>; close(F) } s/(didFinishLaunchingWithOptions[^\{]*\{\n)/$1$t/; s/import Capacitor\n/import Capacitor\nimport WebKit\n/' "$AD"
           cat "$AD" | head -30
           grep -n "wv.themeColor" "$AD" || echo "::warning::the window colour lines were not added"
+          grep -n "allowsBackForwardNavigationGestures" "$AD" || echo "::warning::the swipe back line was not added"
       - name: Permission texts, name and version
         working-directory: qubi-ios
         run: |

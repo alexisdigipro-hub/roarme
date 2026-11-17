@@ -9,14 +9,16 @@ name: RoarRef for iPhone
 #    App Store Connect (Apps > + > New App), then builds for a real iPhone, signs it and sends it to App Store Connect,
 #    where it shows under TestFlight after Apple's processing. Reads the repository secrets ASC_KEY_ID, ASC_ISSUER_ID,
 #    ASC_KEY_P8 and APPLE_TEAM_ID (the same ones RoarMe uses).
+#  - Run workflow with "testers": puts the account holder in RoarRef's internal TestFlight groups (Alex, 17 Nov: App
+#    Store Connect on a phone would not let him tick himself). The email is read from Apple and never printed.
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: check (no signing) or testflight
+        description: check (no signing), testflight, or testers (puts the account holder in the internal TestFlight groups)
         default: check
         type: choice
-        options: [check, testflight]
+        options: [check, testflight, testers]
   pull_request:
     branches: [main]
     paths: ['roarref-ios/**', '.github/workflows/roarref-ios.yml']
@@ -31,6 +33,7 @@ concurrency:
 jobs:
   check:
     name: ${{ inputs.mode == 'testflight' && 'testflight' || 'check' }}
+    if: inputs.mode != 'testers'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -152,3 +155,52 @@ jobs:
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/RoarRef.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
             -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" 2>&1 | tail -60
           echo "Sent. Build ${{ github.run_number }} shows in App Store Connect > RoarRef > TestFlight once Apple has processed it."
+
+  testers:
+    name: testers
+    if: inputs.mode == 'testers'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Put the account holder in the internal TestFlight groups
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          K="$RUNNER_TEMP/AuthKey.p8"; export K
+          printf '%s\n' "$ASC_KEY_P8" > "$K"
+          trap 'rm -f "$K"' EXIT
+          ruby -ropenssl -rjson -rnet/http -rbase64 -e '
+            key = OpenSSL::PKey::EC.new(File.read(ENV["K"]))
+            b64 = ->(s) { Base64.urlsafe_encode64(s, padding: false) }
+            now = Time.now.to_i
+            data = b64.(JSON.dump({alg: "ES256", kid: ENV["ASC_KEY_ID"], typ: "JWT"})) + "." + b64.(JSON.dump({iss: ENV["ASC_ISSUER_ID"], iat: now, exp: now + 900, aud: "appstoreconnect-v1"}))
+            asn = OpenSSL::ASN1.decode(key.sign(OpenSSL::Digest::SHA256.new, data))
+            sig = asn.value.map { |i| i.value.to_s(2).rjust(32, "\x00")[-32, 32] }.join
+            http = Net::HTTP.new("api.appstoreconnect.apple.com", 443); http.use_ssl = true
+            hd = {"Authorization" => "Bearer #{data}.#{b64.(sig)}", "Content-Type" => "application/json"}
+            get = ->(u) { r = http.get(u, hd); abort("#{u.split("?")[0]}: #{r.code}") unless r.code == "200"; JSON.parse(r.body)["data"] || [] }
+            app = get.("/v1/apps?filter[bundleId]=com.themadlions.roarref")[0] or abort("RoarRef is not in App Store Connect")
+            groups = get.("/v1/apps/#{app["id"]}/betaGroups?limit=50").select { |g| g["attributes"]["isInternalGroup"] }
+            abort("RoarRef has no internal TestFlight group") if groups.empty?
+            holder = get.("/v1/users?limit=200").find { |u| (u["attributes"]["roles"] || []).include?("ACCOUNT_HOLDER") } or abort("no account holder found")
+            a = holder["attributes"]; mail = a["username"]
+            puts "::add-mask::#{mail}"
+            groups.each do |g|
+              name = g["attributes"]["name"]
+              r = http.post("/v1/betaTesters", JSON.dump({data: {type: "betaTesters", attributes: {email: mail, firstName: a["firstName"], lastName: a["lastName"]},
+                relationships: {betaGroups: {data: [{type: "betaGroups", id: g["id"]}]}}}}), hd)
+              if r.code == "201"
+                puts "Added to #{name}"
+              else
+                # already a tester of another app or group: join this group by the tester id
+                t = get.("/v1/betaTesters?filter[email]=#{URI.encode_www_form_component(mail)}&limit=5")[0]
+                abort("#{name}: #{r.code} #{r.body[0, 300].gsub(mail, "***")}") unless t
+                r2 = http.post("/v1/betaGroups/#{g["id"]}/relationships/betaTesters", JSON.dump({data: [{type: "betaTesters", id: t["id"]}]}), hd)
+                abort("#{name}: #{r.code}, then #{r2.code} #{r2.body[0, 300].gsub(mail, "***")}") unless %w[204 409].include?(r2.code)
+                puts "In #{name} (#{r2.code})"
+              end
+              n = get.("/v1/betaGroups/#{g["id"]}/betaTesters?limit=50").size
+              puts "#{name}: #{n} tester(s) now"
+            end
+          '

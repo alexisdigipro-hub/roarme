@@ -1,0 +1,24 @@
+{
+  "appId": "com.themadlions.qubi",
+  "appName": "Qubi",
+  "webDir": "www",
+  "server": {
+    "url": "https://qubi.gr",
+    "errorPath": "offline.html"
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0a0a0d",
+    "allowsLinkPreview": false
+  },
+  "plugins": {
+    "Keyboard": {
+      "resize": "native",
+      "resizeOnFullScreen": true
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "overlaysWebView": true
+    }
+  }
+}

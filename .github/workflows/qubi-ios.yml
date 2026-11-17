@@ -1,0 +1,181 @@
+name: Qubi for iPhone
+
+# Builds Qubi for iPhone from qubi-ios/ (a Capacitor shell that opens qubi.gr). The Xcode project is made
+# fresh here each time, nothing of it is kept in the repository. It lives in RoarMe's repository only because the
+# App Store Connect key is in this repository's secrets; nothing of it touches RoarMe. Qubi's own source is the repository qubi-site.
+#  - A pull request that touches qubi-ios/ or this file, and Run workflow with "check": builds for the simulator
+#    with no signing, to prove the shell still builds. Needs nothing from Apple.
+#  - Run workflow with "testflight": registers the bundle id (com.themadlions.qubi), needs the app made once in
+#    App Store Connect (Apps > + > New App), then builds for a real iPhone, signs it and sends it to App Store Connect,
+#    where it shows under TestFlight after Apple's processing. Reads the repository secrets ASC_KEY_ID, ASC_ISSUER_ID,
+#    ASC_KEY_P8 and APPLE_TEAM_ID (the same ones RoarMe uses).
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: check (no signing) or testflight
+        default: check
+        type: choice
+        options: [check, testflight]
+  pull_request:
+    branches: [main]
+    paths: ['qubi-ios/**', '.github/workflows/qubi-ios.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qubi-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: ${{ inputs.mode == 'testflight' && 'testflight' || 'check' }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Make the Xcode project
+        working-directory: qubi-ios
+        run: |
+          npm install --no-audit --no-fund
+          # the page stretches past its ends and springs back, as an iPhone's own lists do (Alex, 15 Nov: "more elastic,
+          # no click at the end"): Capacitor turns the web view's bounce off in its own source, which is built from here
+          F=$(grep -rl "scrollView.bounces" node_modules/@capacitor/ios --include=*.swift || true)
+          if [ -n "$F" ]; then perl -pi -e 's/(scrollView\.bounces\s*=\s*)false/${1}true/' $F; fi
+          grep -rn "scrollView.bounces" node_modules/@capacitor/ios --include=*.swift || echo "::warning::Capacitor's bounce line was not found; the page will not spring"
+          # past the page's ends the web view showed the shell's one fixed colour, light even on the dark theme (Alex,
+          # 15 Nov: "it spills"). Capacitor paints the scroll view itself; with that line gone WebKit paints it in the
+          # page's own background colour, which follows the theme
+          G=$(grep -rl "scrollView.backgroundColor" node_modules/@capacitor/ios --include=*.swift || true)
+          echo "before:"; grep -rn -B3 -A3 "scrollView.backgroundColor" node_modules/@capacitor/ios --include=*.swift || true
+          if [ -n "$G" ]; then perl -ni -e 'print unless /scrollView\.backgroundColor\s*=/' $G; fi
+          echo "after:"; grep -rn "backgroundColor" node_modules/@capacitor/ios/Capacitor/Capacitor/CAPBridgeViewController.swift || true
+          npx cap add ios
+          npx cap sync ios
+          cat ios/App/App/capacitor.config.json
+          # behind the keyboard's glass and round corners the app's own window shows (Alex, 16 Nov: "round the keyboard
+          # there are lines, the background is missing, things are cut"): it takes the page's theme-color, which the site
+          # sets to the colour that is on screen right over the keyboard (the page's, black in Reels, a window's)
+          AD=ios/App/App/AppDelegate.swift
+          cat > /tmp/tint.swift <<'SWIFT'
+                  window?.backgroundColor = UIColor(red: 0.04, green: 0.04, blue: 0.05, alpha: 1)
+                  Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+                      guard let w = self?.window, let vc = w.rootViewController as? CAPBridgeViewController, let wv = vc.webView else { return }
+                      if #available(iOS 15.0, *), let c = wv.themeColor, w.backgroundColor != c { w.backgroundColor = c }
+                  }
+          SWIFT
+          sed -i '' 's/^        //' /tmp/tint.swift
+          perl -0pi -e 'BEGIN { local $/; open(F, "<", "/tmp/tint.swift"); $t = <F>; close(F) } s/(didFinishLaunchingWithOptions[^\{]*\{\n)/$1$t/; s/import Capacitor\n/import Capacitor\nimport WebKit\n/' "$AD"
+          cat "$AD" | head -30
+          grep -n "wv.themeColor" "$AD" || echo "::warning::the window colour lines were not added"
+      - name: Permission texts, name and version
+        working-directory: qubi-ios
+        run: |
+          P=ios/App/App/Info.plist
+          set_key() { /usr/libexec/PlistBuddy -c "Delete :$1" "$P" 2>/dev/null || true; /usr/libexec/PlistBuddy -c "Add :$1 string $2" "$P"; }
+          set_key NSCameraUsageDescription "Qubi uses the camera only when you take a photo to add to a page you edit."
+          set_key NSPhotoLibraryUsageDescription "Qubi opens your photos only to add the ones you choose."
+          set_key NSPhotoLibraryAddUsageDescription "Qubi saves the pictures you choose to keep."
+          V=$(node -p "require('./package.json').version")
+          # only the standard encryption of HTTPS and the system: no "Missing Compliance" question in TestFlight
+          /usr/libexec/PlistBuddy -c "Delete :ITSAppUsesNonExemptEncryption" "$P" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$P"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" "$P"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" "$P"
+          /usr/libexec/PlistBuddy -c "Print" "$P"
+      - name: Icon
+        working-directory: qubi-ios
+        run: |
+          # the App Store wants one 1024px picture with no see-through parts
+          D=ios/App/App/Assets.xcassets/AppIcon.appiconset
+          ls -la "$D"; cat "$D/Contents.json"
+          sips -s format jpeg -s formatOptions 100 icon-1024.png --out /tmp/icon.jpg >/dev/null
+          sips -s format png /tmp/icon.jpg --out "$D/AppIcon-512@2x.png" >/dev/null
+          sips -g pixelWidth -g pixelHeight -g hasAlpha "$D/AppIcon-512@2x.png"
+      - name: Build for the simulator, unsigned
+        if: inputs.mode != 'testflight'
+        working-directory: qubi-ios/ios/App
+        run: |
+          xcodebuild -version
+          W=App.xcworkspace; [ -d "$W" ] && T="-workspace $W" || T="-project App.xcodeproj"
+          set -o pipefail
+          xcodebuild $T -scheme App -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -60
+      - name: Apple's side (bundle id, the app in App Store Connect, old development certificates)
+        if: inputs.mode == 'testflight'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 APPLE_TEAM_ID; do
+            [ -n "${!v}" ] || { echo "::error::The repository secret $v is missing"; exit 1; }
+          done
+          K="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"; export K
+          printf '%s\n' "$ASC_KEY_P8" > "$K"
+          trap 'rm -f "$K"' EXIT
+          ruby -ropenssl -rjson -rnet/http -rbase64 -e '
+            key = OpenSSL::PKey::EC.new(File.read(ENV["K"]))
+            b64 = ->(s) { Base64.urlsafe_encode64(s, padding: false) }
+            now = Time.now.to_i
+            data = b64.(JSON.dump({alg: "ES256", kid: ENV["ASC_KEY_ID"], typ: "JWT"})) + "." + b64.(JSON.dump({iss: ENV["ASC_ISSUER_ID"], iat: now, exp: now + 900, aud: "appstoreconnect-v1"}))
+            asn = OpenSSL::ASN1.decode(key.sign(OpenSSL::Digest::SHA256.new, data))
+            sig = asn.value.map { |i| i.value.to_s(2).rjust(32, "\x00")[-32, 32] }.join
+            jwt = data + "." + b64.(sig)
+            http = Net::HTTP.new("api.appstoreconnect.apple.com", 443); http.use_ssl = true
+            hd = {"Authorization" => "Bearer #{jwt}", "Content-Type" => "application/json"}
+            bid = "com.themadlions.qubi"
+            res = http.get("/v1/bundleIds?filter[identifier]=#{bid}&limit=5", hd)
+            abort("bundleIds: #{res.code} #{res.body[0, 300]}") unless res.code == "200"
+            found = (JSON.parse(res.body)["data"] || []).find { |b| b["attributes"]["identifier"] == bid }
+            unless found
+              res = http.post("/v1/bundleIds", JSON.dump({data: {type: "bundleIds", attributes: {identifier: bid, name: "Qubi", platform: "IOS"}}}), hd)
+              abort("register bundle id: #{res.code} #{res.body[0, 400]}") unless res.code == "201"
+              puts "Registered #{bid}"
+            end
+            res = http.get("/v1/apps?filter[bundleId]=#{bid}", hd)
+            apps = res.code == "200" ? (JSON.parse(res.body)["data"] || []) : []
+            if apps.empty?
+              puts "::error::Qubi is not in App Store Connect yet. Make it once: Apps > + > New App, iOS, a name (e.g. Qubi), bundle ID #{bid}, SKU qubi. Then run this again."
+              exit 1
+            end
+            puts "App Store Connect app: #{apps[0]["id"]}"
+            # each fresh Mac makes a new development certificate and Apple allows only a few (as ios.yml, Alex 15 Nov)
+            res = http.get("/v1/certificates?filter[certificateType]=DEVELOPMENT,IOS_DEVELOPMENT&limit=200", hd)
+            (res.code == "200" ? (JSON.parse(res.body)["data"] || []) : []).each { |c| r = http.delete("/v1/certificates/#{c["id"]}", hd); puts "revoked #{c["attributes"]["name"]} (#{r.code})" }
+          '
+      - name: Sign and send to TestFlight
+        if: inputs.mode == 'testflight'
+        working-directory: qubi-ios/ios/App
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          K="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
+          printf '%s\n' "$ASC_KEY_P8" > "$K"
+          trap 'rm -f "$K"' EXIT
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$K" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          W=App.xcworkspace; [ -d "$W" ] && T=(-workspace "$W") || T=(-project App.xcodeproj)
+          set -o pipefail
+          xcodebuild "${T[@]}" -scheme App -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Qubi.xcarchive" DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            "${AUTH[@]}" archive 2>&1 | tail -80
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Qubi.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" 2>&1 | tail -60
+          echo "Sent. Build ${{ github.run_number }} shows in App Store Connect > Qubi > TestFlight once Apple has processed it."

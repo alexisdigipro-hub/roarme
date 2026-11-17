@@ -1,0 +1,14 @@
+{
+  "appId": "com.themadlions.roarref",
+  "appName": "RoarRef",
+  "webDir": "www",
+  "server": {
+    "url": "https://themadlions.com/lab/roarref/app/",
+    "errorPath": "offline.html"
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#141415",
+    "allowsLinkPreview": false
+  }
+}

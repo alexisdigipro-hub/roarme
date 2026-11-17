@@ -3,8 +3,12 @@
   "appName": "Qubi",
   "webDir": "www",
   "server": {
-    "url": "https://qubi.gr",
-    "errorPath": "offline.html"
+    "url": "https://www.qubi.gr",
+    "errorPath": "offline.html",
+    "allowNavigation": [
+      "qubi.gr",
+      "www.qubi.gr"
+    ]
   },
   "ios": {
     "contentInset": "never",

@@ -5458,3 +5458,13 @@ html:root:root:root:root:root:root .bubble.pic.solo.note-b > .rx.rx-in { inset: 
 /* the time on a photo or video reads white on its dark chip, on anyone's message (it took the others' grey ink and
    vanished on the chip) */
 html:root:root:root:root:root:root .bubble.pic.solo > .meta, html:root:root:root:root:root:root .bubble.pic.solo > .meta :is(small, .ticks, i) { color: #fff !important; }
+
+/* A submenu beside its row (Alex, 18 Nov: "not under it in the same menu, at the side"): Chat.jsx SubFly puts Mute's
+   and Add to folder's choices on the page, fixed beside the row (right, or left where the right has no room), over the
+   long-press view (z-index 61 over .ctx's 60). It wears the menus' own look (.menu-list); hidden until placed. */
+html:root:root:root .sub-menu.sub-fly { position: fixed; z-index: 61; min-width: 190px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); overflow-y: auto; margin: 0; visibility: hidden; }
+html:root:root:root .sub-menu.sub-fly.on { visibility: visible; animation: sub-fly-in .2s cubic-bezier(.25, 1.3, .45, 1) both; }
+@keyframes sub-fly-in { from { opacity: 0; transform: scale(.94); } }
+html:root:root:root .sub-menu.sub-fly .sub-check { margin-left: auto; display: inline-flex; color: var(--muted); }
+html:is([data-lite], [data-still]) .sub-menu.sub-fly.on { animation: none; }
+@media (prefers-reduced-motion: reduce) { .sub-menu.sub-fly.on { animation: none; } }

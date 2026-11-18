@@ -5445,3 +5445,16 @@ html:root:root:root:root .rps .rps-act svg { width: 16px; height: 16px; flex: no
 html:root:root:root:root .rps .rps-act span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 html:root:root:root:root .rps .rps-act:active { transform: scale(.96); }
 html:root:root:root:root .rps .rps-act:disabled { opacity: .4; }
+
+/* Reactions on a photo or video lie on the picture itself (Alex, 18 Nov: "the hearts on photos and videos should not
+   make an extra frame; put them on the photo, inside"): on a .bubble.pic with no caption (.solo) the reaction chips
+   sit at the picture's bottom-left corner as small dark glass chips, level with the time's chip at the right, so no
+   band is added under the picture. A photo with a caption keeps them by the caption as before. */
+html:root:root:root:root:root:root .bubble.pic.solo > .rx.rx-in, html:root:root:root:root:root:root .msg.mine .bubble.pic.solo > .rx.rx-in { position: absolute !important; inset: auto auto 7px 8px !important; z-index: 2; float: none; display: inline-flex; flex-wrap: nowrap; gap: 4px; max-width: calc(100% - 96px); margin: 0 !important; }
+html:root:root:root:root:root:root .bubble.pic.solo > .rx.rx-in > button, html:root:root:root:root:root:root .msg.mine .bubble.pic.solo > .rx.rx-in > button { height: 24px; background: rgba(0, 0, 0, .45) !important; color: #fff !important; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+html:root:root:root:root:root:root .bubble.pic.solo > .rx.rx-in .rx-heart { fill: #ff3b30 !important; }
+html:root:root:root:root:root:root .bubble.pic.solo > .rx.rx-in > button.on { box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .7) !important; }
+html:root:root:root:root:root:root .bubble.pic.solo.note-b > .rx.rx-in { inset: auto auto 2px 2px !important; }
+/* the time on a photo or video reads white on its dark chip, on anyone's message (it took the others' grey ink and
+   vanished on the chip) */
+html:root:root:root:root:root:root .bubble.pic.solo > .meta, html:root:root:root:root:root:root .bubble.pic.solo > .meta :is(small, .ticks, i) { color: #fff !important; }

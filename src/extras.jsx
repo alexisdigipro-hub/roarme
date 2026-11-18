@@ -563,7 +563,7 @@ export function MusicTile({ file, from = '', roomId = '' }) {
   const bad = mine && p.bad
   const title = (file?.name || 'Audio').replace(AUDIO_EXT, '')
   const ext = ((file?.name || '').match(AUDIO_EXT) || [])[1]?.toUpperCase() || 'AUDIO'
-  const toggle = (e) => { e.stopPropagation(); if (url) player.toggle({ key, url, title, from, roomId }) }
+  const toggle = (e) => { e.stopPropagation(); if (url) player.toggle({ key, url, title, from, roomId, file }) }
   const seek = (e) => {
     e.stopPropagation()
     if (!mine || !dur) return

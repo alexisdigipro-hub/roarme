@@ -575,6 +575,7 @@ export default function Chat({ me, setMe }) {
 
   const listen = useCallback((fn) => { listeners.current.add(fn); return () => listeners.current.delete(fn) }, [])
 
+  const [songShare, setSongShare] = useState(null) // the song being shared from the big player
   const titleOf = useCallback((r) => {
     if (!r) return ''
     if (r.kind === 'group') return r.title
@@ -1562,7 +1563,8 @@ export default function Chat({ me, setMe }) {
 
       <ReportHost me={me} people={people} blocks={[...blocks]} onBlocks={loadBlocks} toast={toast} />
       <GroupCallHost me={me} people={people} rooms={rooms} toast={toast} />
-      <PlayerSheet onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} />
+      <PlayerSheet onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} onShare={setSongShare} />
+      {songShare && <ShareSong file={songShare} me={me} rooms={rooms} titleOf={titleOf} toast={toast} onClose={() => setSongShare(null)} />}
       <ReminderCards me={me} rooms={rooms} titleOf={titleOf} onOpen={libChat}
         onDue={(r, m) => {
           if (prefsRef.current.sound) chime()
@@ -3583,6 +3585,80 @@ async function copyMessageTo(m, roomId, meId) {
     }
   }
   return supabase.from('roar_messages').insert({ room_id: roomId, user_id: meId, kind: m.kind === 'system' ? 'text' : m.kind, body: m.body, file }).select().single()
+}
+
+/* Share a song from the big player (Alex, 18 Nov, from Telegram's Share with): a sheet over the player with the chats
+   as round pictures to tick (a search over them), Send puts a copy of the song in each ticked chat, and the round
+   button at the top hands the file to the phone's own share sheet (Mail, Messages, AirDrop, Save to Files); on a
+   computer it downloads it. */
+const RPS_OUT = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 15V4M8 7.5 12 3.5l4 4M6.5 11H6a2 2 0 0 0-2 2v5.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V13a2 2 0 0 0-2-2h-.5" /></svg>
+const RPS_TICK = <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+function ShareSong({ file, me, rooms, titleOf, toast, onClose }) {
+  const [q, setQ] = useState('')
+  const [picked, setPicked] = useState([])
+  const [busy, setBusy] = useState('') // 'send' | 'out'
+  const [err, setErr] = useState('')
+  useEffect(() => {
+    const k = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', k)
+    return () => document.removeEventListener('keydown', k)
+  }, [onClose])
+  const list = rooms.filter((r) => !q.trim() || foldHas(titleOf(r), q.trim()))
+  const tick = (id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+  const send = async () => {
+    if (!picked.length || busy) return
+    setBusy('send'); setErr('')
+    let n = 0
+    for (const id of picked) {
+      const { error } = await copyMessageTo({ kind: 'file', body: '', file }, id, me.id)
+      if (error) setErr(errText(error)); else n += 1
+    }
+    setBusy('')
+    if (n) { toast?.(n > 1 ? `Sent to ${n} chats` : 'Sent'); onClose() }
+  }
+  // to another app: the file itself through the phone's share sheet; a computer saves it
+  const out = async () => {
+    if (busy) return
+    setBusy('out'); setErr('')
+    try {
+      const url = await fileLink(file)
+      const blob = await (await fetch(url)).blob()
+      const f = new File([blob], file?.name || 'audio', { type: file?.type || blob.type || 'application/octet-stream' })
+      if (navigator.canShare?.({ files: [f] })) { await navigator.share({ files: [f] }) } else {
+        const u = URL.createObjectURL(f)
+        const a = document.createElement('a'); a.href = u; a.download = f.name; document.body.appendChild(a); a.click(); a.remove()
+        setTimeout(() => URL.revokeObjectURL(u), 4000)
+      }
+    } catch (e) { if (e?.name !== 'AbortError') setErr("Couldn't share the file. Try again.") }
+    setBusy('')
+  }
+  return createPortal(
+    <div className="rps-back" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="rps" role="dialog" aria-label="Share with">
+        <div className="rps-head">
+          <button type="button" className="round" onClick={onClose} aria-label="Close" title="Close">{I.x}</button>
+          <span className="rps-title"><b>Share with</b><small>{picked.length ? `${picked.length} selected` : 'Select chats'}</small></span>
+          <button type="button" className={`round${busy === 'out' ? ' rps-wait' : ''}`} onClick={out} disabled={!!busy} aria-label="Share to Another App" title="Share to Another App">{RPS_OUT}</button>
+        </div>
+        <label className="search rps-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" autoCorrect="off" spellCheck={false} /></label>
+        {err && <p className="auth-err">{err}</p>}
+        <div className="rps-grid">
+          {list.map((r) => {
+            const on = picked.includes(r.room_id)
+            return (
+              <button key={r.room_id} type="button" className={`rps-chat${on ? ' on' : ''}`} aria-pressed={on} onClick={() => tick(r.room_id)}>
+                <span className="rps-face"><Avatar src={r.avatar_url} name={titleOf(r)} size={58} group={r.kind === 'group'} />{on && <i className="rps-tick">{RPS_TICK}</i>}</span>
+                <small>{titleOf(r)}</small>
+              </button>
+            )
+          })}
+          {!list.length && <p className="rps-none">No chats found</p>}
+        </div>
+        <button type="button" className="rps-send" disabled={!picked.length || !!busy} onClick={send}>{busy === 'send' ? 'Sending…' : picked.length > 1 ? `Send to ${picked.length} Chats` : 'Send'}</button>
+      </div>
+    </div>,
+    document.body,
+  )
 }
 
 function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {

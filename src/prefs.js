@@ -6,7 +6,7 @@ export const DEFAULTS = {
   mode: 'light', // dark | light | auto (follows the computer); a first start opens Stone in light (Alex, 21 Oct)
   lang: 'en', // en | el, the interface language (i18n.js)
   theme: 'glass', // Glass is the main theme since 12 Nov (Alex: "this will be the app's main theme"); Stone was since 21 Oct. Whoever chose a theme keeps it
-  accent: 'h-cyan', // Cyan on a first start and after Reset Appearance (Alex, 18 Nov, his own look; Onyx since 14 Nov before); '' is the orange, or one of ACCENTS / HALO_ACCENTS
+  accent: 'h-custom', // a colour of one's own, DEFAULTS.accentHex #1bb4fb, on a first start and after Reset Appearance (Alex, 18 Nov: "#1BB4FB"; Onyx since 14 Nov before); '' is the orange, or one of ACCENTS / HALO_ACCENTS
   density: 'standard', // relaxed | standard | tight
   font: 'dm', // one of FONTS; DM Sans is how RoarMe starts (Alex, 18 Nov, his own look; the system's face before)
   radius: 12, // corners of the Ember theme, 4 to 16
@@ -68,7 +68,7 @@ export const DEFAULTS = {
   wallStrength: 100, // 10 to 100: how strong RoarMe's wallpapers and a colour show (one's own photo keeps its own)
   // one's own chat theme (Alex, 9 Nov, "as a feature in Settings"): '' each = the theme's own
   chatTheme: '', // one of CHAT_THEMES, or '' when built by hand
-  accentHex: '', // any accent colour, over the ready-made ones
+  accentHex: '#1bb4fb', // any accent colour, over the ready-made ones; this light blue from the start (Alex, 18 Nov)
   myBubble: '#1bb4fb', // the colour of one's own messages; this light blue from the start (Alex, 18 Nov, his own look)
   theirBubble: '', // the colour of the others' messages
   bubbleR: 0, // Message Corners in px (0 = the theme's own)
@@ -308,7 +308,7 @@ export function applyLook(p0) {
   // built from the defaults plus Frost's own three choices; one's own colours, wallpaper and the rest stay saved for Glass
   const frost = !!p0.frost
   const p = frost
-    ? { ...DEFAULTS, accent: '', myBubble: '', font: 'system', background: 'soft', mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite } // no frame round the chats or the contacts (Alex, 14 Nov)
+    ? { ...DEFAULTS, accent: '', accentHex: '', myBubble: '', font: 'system', background: 'soft', mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite } // no frame round the chats or the contacts (Alex, 14 Nov)
     : p0
   // Frost is round capsules only (Alex, 14 Nov: "only capsule")
   if (frost) r.dataset.frost = '1'; else delete r.dataset.frost

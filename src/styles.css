@@ -5115,3 +5115,40 @@ html.in-shell :is(.modal-back, .bw, .as-sheet, .te-sheet, .lock) { transition: p
   html.in-shell .room-view:not(.same-wall):not(.ctx-wall)::before { content: ''; position: fixed; inset: 0; z-index: -1; background: inherit; box-shadow: inherit; pointer-events: none; }
 }
 
+
+/* The heart under a message is red (Alex, 18 Nov: "make the hearts red after all"), on anyone's message, in every theme */
+html:root:root:root:root:root:root .bubble > .rx.rx-in .rx-heart, html:root:root:root .rx .rx-heart { fill: #ff3b30 !important; }
+
+/* New group, in the newer hand of the attach sheet and the poll (Alex, 18 Nov: "things are missing, like setting a
+   picture; make it fresher, as our other windows"): the group's picture as a round button beside its name, the name in a
+   soft card, a small label over the people, then the search and the list as before */
+.ng { display: flex; flex-direction: column; gap: 10px; }
+.ng-top { display: flex; align-items: center; gap: 12px; }
+.ng-pic { flex: none; width: 64px; height: 64px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; overflow: hidden; cursor: pointer; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); box-shadow: 0 6px 16px rgba(0, 0, 0, .12); transition: transform .3s cubic-bezier(.25, 1.45, .45, 1); }
+.ng-pic:active { transform: scale(.94); transition-duration: .07s; }
+.ng-pic svg { width: 26px; height: 26px; }
+.ng-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ng-name { flex: 1; min-width: 0; padding: 0 0 0 16px; background: color-mix(in srgb, var(--text) 5%, transparent); border: 1px solid color-mix(in srgb, var(--text) 8%, transparent); }
+.ng-name .pl-in { height: 54px; font-size: 17px; }
+.ng .as-label { margin: 6px 6px 0; }
+.ng .name-marks { margin: -2px 0 0 76px; }
+.ng-chips { margin: 0 2px; }
+
+/* a poll's options are put in order by their grip; the held one lifts */
+.pl-grip { flex: none; display: grid; place-items: center; width: 34px; height: 44px; margin-right: -2px; color: var(--muted); cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+.pl-opt.drag { position: relative; z-index: 2; background: var(--float, #fff); border-radius: 14px; box-shadow: 0 10px 26px rgba(0, 0, 0, .18); border-top-color: transparent !important; }
+.pl-opt.drag + .pl-opt { border-top-color: transparent !important; }
+.pl-opt.drag .pl-grip { cursor: grabbing; color: var(--text); }
+html[data-mode='dark'] .pl-opt.drag { background: #3a3a40; }
+
+/* my own vote shows (Alex, 18 Nov, from Telegram's poll): a tick in a small box under the share, and the number of
+   votes at the right of each option */
+.poll-pc { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.poll-me { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 6px; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); color: var(--halo-ink, #fff); animation: poll-me-in .34s cubic-bezier(.25, 1.45, .45, 1) both; }
+.poll-me svg { width: 12px; height: 12px; stroke-width: 2.6; }
+.msg.mine .poll-me { background: currentColor; }
+.msg.mine .poll-me svg { color: var(--halo-mine, #000); }
+@keyframes poll-me-in { from { transform: scale(.3); opacity: 0; } }
+.poll-opt.mine .poll-label { font-weight: 600 !important; }
+.poll-n { margin-left: auto; padding-left: 8px; font-size: calc(var(--fs, 14.5px) * .86); font-variant-numeric: tabular-nums; opacity: .75; }
+.poll-n + .poll-faces { margin-left: 6px; }

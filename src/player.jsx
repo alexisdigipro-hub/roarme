@@ -56,7 +56,7 @@ export function NowPlaying({ onOpen, className = '' }) {
   if (!p.key) return null
   const seek = (e) => { const r = e.currentTarget.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width) }
   return (
-    <div className={`nowbar${p.playing ? ' on' : ''} ${className}`}>
+    <div className={`nowbar${p.playing ? ' on' : ''} ${className}`} style={{ '--np': p.dur ? Math.min(1, p.at / p.dur) : 0 }}>
       <button type="button" className="nowbar-btn" onClick={() => (p.playing ? player.pause() : player.resume())} aria-label={p.playing ? 'Pause' : 'Play'} title={p.playing ? 'Pause' : 'Play'}>{p.playing ? I.pause : I.play}</button>
       <button type="button" className="nowbar-main" onClick={() => p.roomId && onOpen?.(p.roomId)} title={p.from ? `Open ${p.from}` : undefined}>
         <span className="nowbar-eq" aria-hidden="true"><i /><i /><i /></span>

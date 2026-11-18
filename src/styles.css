@@ -5210,3 +5210,36 @@ html:root:root:root .main > .nowbar { margin: 10px 14px 0; }
 }
 html:root:root:root[data-mode='dark'] .nowbar { background: rgba(44, 44, 49, .96) !important; border-color: rgba(255, 255, 255, .1) !important; box-shadow: 0 6px 18px rgba(0, 0, 0, .4) !important; color: #f3f3f6; }
 html:root:root:root .nowbar .nowbar-text small, html:root:root:root .nowbar .nowbar-x, html:root:root:root .nowbar .nowbar-time { color: color-mix(in srgb, currentColor 55%, transparent); }
+
+/* Now playing, third pass (Alex, 18 Nov, from Telegram's: "it rides over things and is not pretty; it must stand in its
+   own place on every page and never over anything"). It is in the flow everywhere: in a chat right under the chat's
+   head (over the pinned message), in the list under the folders, on the other tabs at the top of the list. One glass
+   bar in the head's own glass: pause / play at the left with no disc, the song and where it is from in the middle on
+   two lines, the X at the right, and the song's progress as a line along its foot edge. */
+html:root:root:root:root .nowbar { position: relative !important; top: auto; left: auto; right: auto; z-index: auto; display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; gap: 0; height: 46px; margin: 0 0 8px; padding: 0 4px; border-radius: 23px; overflow: hidden; box-sizing: border-box; background: var(--lg, rgba(255, 255, 255, .72)) !important; border: 1px solid var(--lg-rim, rgba(255, 255, 255, .8)) !important; box-shadow: var(--lg-shadow, 0 6px 18px rgba(40, 40, 70, .1)) !important; color: var(--text); animation: nowbar-in .32s cubic-bezier(.25, 1.35, .45, 1) both; }
+@keyframes nowbar-in { from { opacity: 0; transform: translateY(-8px) scale(.97); } }
+html:root:root:root:root[data-mode='dark'] .nowbar { background: var(--lg, rgba(44, 44, 49, .8)) !important; border-color: var(--lg-rim, rgba(255, 255, 255, .1)) !important; color: var(--text); }
+html:root:root:root:root:root:root:root:root:root:root .nowbar .nowbar-btn:is(button) { width: 36px !important; height: 36px !important; min-width: 0; margin: 0 auto; background: none !important; border: 0 !important; box-shadow: none !important; color: inherit !important; }
+html:root:root:root:root .nowbar .nowbar-btn svg { width: 17px; height: 17px; }
+html:root:root:root:root .nowbar .nowbar-btn:active { transform: scale(.88); }
+html:root:root:root:root .nowbar .nowbar-main { display: block; min-width: 0; height: 100%; padding: 0 4px; text-align: center; color: inherit; }
+html:root:root:root:root .nowbar .nowbar-eq, html:root:root:root:root .nowbar .nowbar-time { display: none; }
+html:root:root:root:root .nowbar .nowbar-text { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1px; height: 100%; min-width: 0; white-space: nowrap; overflow: hidden; line-height: 1.15; }
+html:root:root:root:root .nowbar .nowbar-text b { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-size: 13.5px; font-weight: 600; }
+html:root:root:root:root .nowbar .nowbar-text small { display: block; max-width: 100%; margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; color: var(--muted); }
+html:root:root:root:root .nowbar .nowbar-x { width: 36px; height: 36px; margin: 0 auto; background: none !important; border: 0 !important; box-shadow: none !important; color: var(--muted); }
+html:root:root:root:root .nowbar .nowbar-x svg { width: 15px; height: 15px; }
+html:root:root:root:root .nowbar .nowbar-line { left: 0; right: 0; bottom: 0; height: 3px; border-radius: 0; background: color-mix(in srgb, var(--text) 8%, transparent); }
+html:root:root:root:root .nowbar .nowbar-line i { border-radius: 0 3px 3px 0; background: linear-gradient(90deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); transition: width .25s linear; }
+html:root:root:root:root .nowbar.in-room { flex: none; margin: 0 14px 6px; }
+html:root:root:root:root .nowbar.under-tabs { flex: none; margin: 6px 0; }
+html:root:root:root:root .side .nowbar.in-side { display: grid; }
+html:root:root:root:root .main > .nowbar { margin: 10px 14px 0; }
+/* inside a chat the bar is the chat's own (under its head); the page's bar at the top stands only where no chat is open */
+html:root:root:root:root .main:has(.room-view) > .nowbar { display: none; }
+@media (max-width: 760px) { html:root:root:root:root .main > .nowbar { position: relative !important; margin: calc(env(safe-area-inset-top, 0px) + 8px) 14px 0; } }
+
+/* one's own messages fall a little further (Alex, 18 Nov: "a little more gradient on the bubbles"): lighter at the top
+   left, the colour itself through the middle, a shade deeper at the foot */
+html:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: var(--grain-min), linear-gradient(165deg, color-mix(in srgb, var(--halo-mine-top), #fff 20%) 0%, var(--halo-mine) 58%, color-mix(in srgb, var(--halo-mine), #000 12%) 100%) !important; }
+html:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles][data-my-bubble] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: linear-gradient(165deg, color-mix(in srgb, var(--my-bubble), #fff 26%) 0%, var(--my-bubble) 58%, color-mix(in srgb, var(--my-bubble), #000 12%) 100%) !important; }

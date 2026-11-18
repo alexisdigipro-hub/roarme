@@ -29,7 +29,7 @@ import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
-import { NowPlaying, PlayerSheet } from './player.jsx'
+import { NowPlaying, PlayerSheet, player } from './player.jsx'
 import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
@@ -575,7 +575,8 @@ export default function Chat({ me, setMe }) {
 
   const listen = useCallback((fn) => { listeners.current.add(fn); return () => listeners.current.delete(fn) }, [])
 
-  const [songShare, setSongShare] = useState(null) // the song being shared from the big player
+  const [songShare, setSongShare] = useState(null) // the song being shared from the big player: { file, roomId, pre }
+  const songHold = useRef(null) // that song, kept while New Group is open, so the sheet comes back with the new group ticked
   const titleOf = useCallback((r) => {
     if (!r) return ''
     if (r.kind === 'group') return r.title
@@ -1563,8 +1564,10 @@ export default function Chat({ me, setMe }) {
 
       <ReportHost me={me} people={people} blocks={[...blocks]} onBlocks={loadBlocks} toast={toast} />
       <GroupCallHost me={me} people={people} rooms={rooms} toast={toast} />
-      <PlayerSheet onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} onShare={setSongShare} />
-      {songShare && <ShareSong file={songShare} me={me} rooms={rooms} titleOf={titleOf} toast={toast} onClose={() => setSongShare(null)} />}
+      <PlayerSheet onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} onShare={(file, roomId) => setSongShare({ file, roomId })} />
+      {songShare && <ShareSong file={songShare.file} pre={songShare.pre} me={me} rooms={rooms} titleOf={titleOf} toast={toast} onClose={() => setSongShare(null)}
+        onNewGroup={() => { songHold.current = songShare; setSongShare(null); player.close(); setGroupWith(null); setModal('newgroup') }}
+        onShowChat={songShare.roomId ? () => { const id = songShare.roomId; setSongShare(null); player.close(); window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id })) } : null} />}
       <ReminderCards me={me} rooms={rooms} titleOf={titleOf} onOpen={libChat}
         onDue={(r, m) => {
           if (prefsRef.current.sound) chime()
@@ -1582,7 +1585,7 @@ export default function Chat({ me, setMe }) {
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'phonefriends' && <PhoneFriends onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'newcall' && <NewCall me={me} people={calls} toast={toast} onClose={() => setModal('')} onCall={(p, v) => { setModal(''); startCall(p, directWith(p), v) }} />}
-      {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null) }} onOpen={(id) => { setGroupWith(null); openRoom(id) }} />}
+      {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null); if (songHold.current) { setSongShare(songHold.current); songHold.current = null } }} onOpen={(id) => { setGroupWith(null); const h = songHold.current; songHold.current = null; if (h) { setModal(''); loadRooms(); setSongShare({ ...h, pre: [id] }) } else openRoom(id) }} />}
       {modal === 'info' && active && <Suspense fallback={null}><Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
         onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople}
@@ -3592,10 +3595,11 @@ async function copyMessageTo(m, roomId, meId) {
    button at the top hands the file to the phone's own share sheet (Mail, Messages, AirDrop, Save to Files); on a
    computer it downloads it. */
 const RPS_OUT = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 15V4M8 7.5 12 3.5l4 4M6.5 11H6a2 2 0 0 0-2 2v5.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V13a2 2 0 0 0-2-2h-.5" /></svg>
+const RPS_CHAT = <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.2 3.4V16A2.5 2.5 0 0 1 5 13.5z" /></svg>
 const RPS_TICK = <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-function ShareSong({ file, me, rooms, titleOf, toast, onClose }) {
+function ShareSong({ file, pre, me, rooms, titleOf, toast, onClose, onNewGroup, onShowChat }) {
   const [q, setQ] = useState('')
-  const [picked, setPicked] = useState([])
+  const [picked, setPicked] = useState(pre || [])
   const [busy, setBusy] = useState('') // 'send' | 'out'
   const [err, setErr] = useState('')
   useEffect(() => {
@@ -3641,6 +3645,10 @@ function ShareSong({ file, me, rooms, titleOf, toast, onClose }) {
           <button type="button" className={`round${busy === 'out' ? ' rps-wait' : ''}`} onClick={out} disabled={!!busy} aria-label="Share to Another App" title="Share to Another App">{RPS_OUT}</button>
         </div>
         <label className="search rps-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" autoCorrect="off" spellCheck={false} /></label>
+        <div className="rps-acts">
+          <button type="button" className="rps-act" onClick={onNewGroup} disabled={!!busy}>{I.people}<span>New Group</span></button>
+          <button type="button" className="rps-act" onClick={onShowChat} disabled={!onShowChat || !!busy}>{RPS_CHAT}<span>Show in Chat</span></button>
+        </div>
         {err && <p className="auth-err">{err}</p>}
         <div className="rps-grid">
           {list.map((r) => {

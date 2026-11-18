@@ -16,7 +16,7 @@ const nameOf = (f) => (f?.name || 'Audio').replace(AUDIO_EXT, '')
    are its list (queue, newest first), with next / previous, repeat (off, all, one) and shuffle; a song that ends goes
    on to the next. `big` is the window being open. */
 let audio = null
-let state = { key: '', title: '', file: null, from: '', roomId: '', url: '', playing: false, at: 0, dur: 0, bad: false, queue: [], repeat: 'off', shuffle: false, big: false }
+let state = { key: '', title: '', file: null, from: '', roomId: '', url: '', playing: false, at: 0, dur: 0, bad: false, queue: [], repeat: 'off', shuffle: false, big: false, rate: 1, peaks: null }
 let queueFor = ''
 const subs = new Set()
 const set = (patch) => { state = { ...state, ...patch }; subs.forEach((fn) => fn()) }
@@ -47,13 +47,52 @@ async function loadQueue(roomId) {
     .filter((q) => q.key && !seen.has(q.key) && seen.add(q.key))
   set({ queue })
 }
-const start = (a, url) => { a.src = url; window.dispatchEvent(new CustomEvent('roarme-play', { detail: a })); a.play().catch(() => set({ bad: true })) }
+const start = (a, url) => { a.src = url; a.defaultPlaybackRate = state.rate; a.playbackRate = state.rate; window.dispatchEvent(new CustomEvent('roarme-play', { detail: a })); a.play().catch(() => set({ bad: true })) }
+/* The song's shape for the big player's line (Alex, 18 Nov: "a waveform in place of the plain line"): WAVE levels. From the
+   sound itself when the file is small enough to open whole on a phone (up to WAVE_MAX), else a calm shape of its own,
+   the same every time for the same file. Kept for the visit; asked only while the big player is open. */
+export const WAVE = 56
+const WAVE_MAX = 12e6
+const waves = new Map()
+const shapeOf = (key) => {
+  let h = 2166136261
+  for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619) }
+  const rnd = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 1000) / 1000 }
+  const out = []
+  let v = 0.5
+  for (let i = 0; i < WAVE; i++) { v = Math.min(1, Math.max(0.16, v + (rnd() - 0.5) * 0.5)); out.push(0.25 + v * 0.75 * (0.75 + 0.25 * Math.sin((i / WAVE) * Math.PI))) }
+  return out
+}
+async function loadWave(key, file) {
+  if (!key || !file) return
+  if (waves.has(key)) { if (state.key === key) set({ peaks: waves.get(key) }); return }
+  const calm = shapeOf(key)
+  waves.set(key, calm)
+  if (state.key === key) set({ peaks: calm })
+  const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext
+  if (!Ctx || !(file.size > 0) || file.size > WAVE_MAX) return
+  try {
+    const url = await fileLink(file)
+    const data = await (await fetch(url)).arrayBuffer()
+    const ac = new Ctx(1, 1, 44100)
+    const buf = await new Promise((ok, bad) => { const pr = ac.decodeAudioData(data, ok, bad); if (pr?.then) pr.then(ok, bad) })
+    const ch = buf.getChannelData(0)
+    const step = Math.max(1, Math.floor(ch.length / WAVE))
+    const raw = []
+    for (let i = 0; i < WAVE; i++) { let m = 0; for (let j = i * step, e = Math.min(ch.length, j + step); j < e; j += 64) { const a = Math.abs(ch[j]); if (a > m) m = a } raw.push(m) }
+    const top = Math.max(...raw, 0.01)
+    const real = raw.map((x) => 0.14 + 0.86 * (x / top))
+    waves.set(key, real)
+    if (state.key === key) set({ peaks: real })
+  } catch { /* the calm shape stays */ }
+}
+
 /* play a song of the list */
 async function playItem(q) {
   if (!q) return
   const a = el()
   a.pause()
-  set({ key: q.key, title: q.title, file: q.file, url: '', at: 0, dur: 0, bad: false, playing: false })
+  set({ key: q.key, title: q.title, file: q.file, peaks: null, url: '', at: 0, dur: 0, bad: false, playing: false })
   const url = await fileLink(q.file)
   if (state.key !== q.key) return
   if (!url) { set({ bad: true }); return }
@@ -86,7 +125,7 @@ export const player = {
       return
     }
     const sameRoom = roomId && roomId === state.roomId
-    set({ key, url, title, file, from, roomId, at: 0, dur: 0, bad: false, playing: false, queue: sameRoom ? state.queue : [] })
+    set({ key, url, title, file, peaks: null, from, roomId, at: 0, dur: 0, bad: false, playing: false, queue: sameRoom ? state.queue : [] })
     if (!sameRoom) queueFor = ''
     start(a, url)
     loadQueue(roomId)
@@ -97,13 +136,18 @@ export const player = {
   prev() { const q = audio && audio.currentTime > 3 ? null : step(-1, true); if (q) playItem(q); else if (audio) { audio.currentTime = 0; set({ at: 0 }) } },
   repeat() { set({ repeat: { off: 'all', all: 'one', one: 'off' }[state.repeat] }) },
   shuffle() { set({ shuffle: !state.shuffle }) },
+  // the speed: 1x, 1.5x, 2x, 0.5x, round again; it stays for the songs that follow
+  speed() { const r = { 1: 1.5, 1.5: 2, 2: 0.5, 0.5: 1 }[state.rate] || 1; if (audio) { audio.defaultPlaybackRate = r; audio.playbackRate = r } set({ rate: r }) },
+  // 15 seconds back or on
+  skip(d) { if (audio && state.dur) { audio.currentTime = Math.max(0, Math.min(state.dur - 0.2, audio.currentTime + d)); set({ at: audio.currentTime }) } },
+  wave(file) { loadWave(state.key, file) },
   open() { if (state.key) { set({ big: true }); loadQueue(state.roomId) } },
   // it leaves with a short slide; `big` is 'out' while it does
   close() { if (state.big !== true) return; if (calm()) { set({ big: false }); return } set({ big: 'out' }); setTimeout(() => { if (state.big === 'out') set({ big: false }) }, 230) },
   pause() { if (audio && !audio.paused) audio.pause() },
   resume() { if (audio && audio.paused && state.key) { window.dispatchEvent(new CustomEvent('roarme-play', { detail: audio })); audio.play().catch(() => set({ bad: true })) } },
   seek(frac) { if (audio && state.dur) audio.currentTime = Math.max(0, Math.min(1, frac)) * state.dur },
-  stop() { if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load() } queueFor = ''; set({ key: '', title: '', file: null, from: '', roomId: '', url: '', playing: false, at: 0, dur: 0, bad: false, queue: [], big: false }) },
+  stop() { if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load() } queueFor = ''; set({ key: '', title: '', file: null, peaks: null, from: '', roomId: '', url: '', playing: false, at: 0, dur: 0, bad: false, queue: [], big: false }) },
 }
 
 export const usePlayer = () => useSyncExternalStore(player.subscribe, player.get)
@@ -133,6 +177,8 @@ export function NowPlaying({ onOpen, className = '' }) {
 const ln = (d, w = 22) => <svg viewBox="0 0 24 24" width={w} height={w} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
 const RPL_I = {
   down: ln(<path d="M6 9.5l6 6 6-6" />),
+  back15: ln(<path d="M4.5 12a7.5 7.5 0 1 0 2.6-5.7M4 3.5v4h4" />, 30),
+  fwd15: ln(<path d="M19.5 12a7.5 7.5 0 1 1-2.6-5.7M20 3.5v4h-4" />, 30),
   share: ln(<path d="M12 15V4M8 7.5 12 3.5l4 4M6.5 11H6a2 2 0 0 0-2 2v5.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V13a2 2 0 0 0-2-2h-.5" />, 20),
   chat: ln(<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.2 3.4V16A2.5 2.5 0 0 1 5 13.5z" />, 20),
   prev: <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M6 5.5h2.2v13H6zM19 6.2v11.6a.8.8 0 0 1-1.25.66L9.6 12.66a.8.8 0 0 1 0-1.32l8.15-5.8A.8.8 0 0 1 19 6.2z" /></svg>,
@@ -142,6 +188,8 @@ const RPL_I = {
   shuffle: ln(<path d="M4 7h3.2c2 0 3.2 1 4.3 2.6l1 1.6c1.1 1.7 2.3 2.8 4.3 2.8H20M17.5 4.5 20 7l-2.5 2.5M4 17h3.2c1.3 0 2.3-.5 3.1-1.3M17.5 14.5 20 17l-2.5 2.5M20 17h-3.2M13.6 8.4C14.4 7.5 15.4 7 16.8 7H20" />),
   repeat: ln(<path d="M17 3.5 20 6.5 17 9.5M4 11.5V10a3.5 3.5 0 0 1 3.5-3.5H20M7 20.5 4 17.5l3-3M20 12.5V14a3.5 3.5 0 0 1-3.5 3.5H4" />),
 }
+
+const FLAT = Array.from({ length: WAVE }, () => 0.3)
 
 /* the big player: what is on, a line to move through it, the buttons, and the chat's songs under them */
 export function PlayerSheet({ onOpen, onShare }) {
@@ -167,6 +215,9 @@ export function PlayerSheet({ onOpen, onShare }) {
   const up = () => { drag.current = false }
   const many = p.queue.length > 1
   const nowFile = p.file || p.queue.find((q) => q.key === p.key)?.file || null
+  // the song's shape, asked once the window is open
+  useEffect(() => { if (open && nowFile) player.wave(nowFile) }, [open, p.key, nowFile?.path])
+  const peaks = p.peaks || FLAT
   const goChat = () => { const id = p.roomId; player.close(); if (id) onOpen?.(id) }
   return createPortal(
     <div className={`rpl-back${p.big === 'out' ? ' out' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) player.close() }}>
@@ -174,7 +225,7 @@ export function PlayerSheet({ onOpen, onShare }) {
         <div className="rpl-head" data-grab="">
           <button type="button" className="rpl-round" onClick={() => player.close()} aria-label="Close" title="Close">{RPL_I.down}</button>
           <button type="button" className="rpl-from" onClick={goChat} disabled={!p.roomId} title="Show in Chat"><small>Playing from</small><b>{p.from || 'RoarMe'}</b></button>
-          <button type="button" className="rpl-round" onClick={() => nowFile && onShare?.(nowFile)} disabled={!nowFile} aria-label="Share" title="Share">{RPL_I.share}</button>
+          <button type="button" className="rpl-round" onClick={() => nowFile && onShare?.(nowFile, p.roomId)} disabled={!nowFile} aria-label="Share" title="Share">{RPL_I.share}</button>
         </div>
         <div className="rpl-art" aria-hidden="true" key={p.key}>
           <i className="rpl-glow a" /><i className="rpl-glow b" /><i className="rpl-glow c" />
@@ -182,7 +233,9 @@ export function PlayerSheet({ onOpen, onShare }) {
         </div>
         <div className="rpl-title" key={p.key}><b>{p.title}</b><small>{p.bad ? 'Cannot play here' : many ? `${p.queue.findIndex((q) => q.key === p.key) + 1} of ${p.queue.length}` : 'Now playing'}</small></div>
         <div className="rpl-seek">
-          <span ref={line} className="rpl-line" style={{ '--rp': frac }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} role="slider" aria-label="Position" aria-valuemin={0} aria-valuemax={Math.round(p.dur)} aria-valuenow={Math.round(p.at)}><i /><em /></span>
+          <span ref={line} className="rpl-wave" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} role="slider" aria-label="Position" aria-valuemin={0} aria-valuemax={Math.round(p.dur)} aria-valuenow={Math.round(p.at)}>
+            {peaks.map((v, i) => <i key={i} className={(i + 0.5) / WAVE <= frac ? 'on' : undefined} style={{ '--h': v }} />)}
+          </span>
           <span className="rpl-times"><small>{mmss(p.at)}</small><small>{p.dur ? `-${mmss(p.dur - p.at)}` : '–:––'}</small></span>
         </div>
         <div className="rpl-ctl">
@@ -191,6 +244,11 @@ export function PlayerSheet({ onOpen, onShare }) {
           <button type="button" className="rpl-play" onClick={() => (p.playing ? player.pause() : player.resume())} aria-label={p.playing ? 'Pause' : 'Play'} title={p.playing ? 'Pause' : 'Play'}><i className="rpl-sign" key={p.playing ? 'a' : 'b'}>{p.playing ? RPL_I.pause : RPL_I.play}</i></button>
           <button type="button" className="rpl-skip next" onClick={() => player.next()} disabled={!many} aria-label="Next" title="Next">{RPL_I.next}</button>
           <button type="button" className={`rpl-opt${p.repeat !== 'off' ? ' on' : ''}`} onClick={() => player.repeat()} aria-label={p.repeat === 'one' ? 'Repeat One' : p.repeat === 'all' ? 'Repeat All' : 'Repeat'} title={p.repeat === 'one' ? 'Repeat One' : p.repeat === 'all' ? 'Repeat All' : 'Repeat'}><i className="rpl-sign" key={p.repeat}>{RPL_I.repeat}</i>{p.repeat === 'one' && <em>1</em>}</button>
+        </div>
+        <div className="rpl-more">
+          <button type="button" className="rpl-jump" onClick={() => player.skip(-15)} aria-label="Back 15 Seconds" title="Back 15 Seconds">{RPL_I.back15}<em>15</em></button>
+          <button type="button" className={`rpl-rate${p.rate !== 1 ? ' on' : ''}`} onClick={() => player.speed()} aria-label={`Speed ${p.rate}x`} title="Speed"><b key={p.rate}>{p.rate}x</b></button>
+          <button type="button" className="rpl-jump" onClick={() => player.skip(15)} aria-label="Forward 15 Seconds" title="Forward 15 Seconds">{RPL_I.fwd15}<em>15</em></button>
         </div>
         {many && (
           <div className="rpl-list">

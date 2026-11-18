@@ -5360,3 +5360,40 @@ html:is([data-lite], [data-still]) :is(.rpl-back, .nowbar .nowbar-text) { animat
    smaller and minimal"): 8px letters, no rim, no shadow, no blur, only a faint wash so it reads on any wallpaper. */
 html:root:root:root:root:root:root .day span { padding: 2px 8px !important; border: 0 !important; border-radius: 999px; background: color-mix(in srgb, var(--text) 5%, transparent) !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; font-size: 8px !important; font-weight: 600 !important; letter-spacing: .1em !important; line-height: 1.5; color: var(--muted) !important; }
 html:root:root:root:root:root:root .day { margin: 10px 0 0 !important; padding: 0 0 10px !important; }
+
+/* Share a song (Alex, 18 Nov, from Telegram's Share with): the player's head has a Share button beside Show in Chat;
+   it opens Chat.jsx ShareSong, a sheet over the player (a window on a computer): close, Share with, the round button
+   to another app, a search, the chats as round pictures to tick, Send. Inside the iPhone app its inside steps up
+   with the keyboard (the sheet keeps the foot of the screen). */
+html:root:root:root:root .rpl .rpl-head { grid-template-columns: 88px minmax(0, 1fr) 88px; }
+html:root:root:root:root .rpl .rpl-head-end { display: flex; justify-content: flex-end; gap: 8px; }
+.rps-back { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 24px; background: rgba(5, 8, 14, .45); animation: rpl-veil .22s ease both; }
+html:root:root:root:root .rps { display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; width: min(430px, 100%); max-height: min(640px, calc(100dvh - 48px)); padding: 16px 16px 16px; border-radius: 30px; background: #fff; border: 1px solid rgba(255, 255, 255, .9); box-shadow: 0 30px 80px rgba(20, 24, 40, .3); color: var(--text); animation: rpl-in .3s cubic-bezier(.25, 1.2, .45, 1) both; }
+html:root:root:root:root[data-mode='dark'] .rps { background: #26262b; border-color: rgba(255, 255, 255, .1); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); }
+html:root:root:root:root .rps .rps-head { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 8px; flex: none; }
+html:root:root:root:root .rps .rps-title { display: flex; flex-direction: column; align-items: center; line-height: 1.25; min-width: 0; }
+html:root:root:root:root .rps .rps-title b { font-size: 16px; font-weight: 650; }
+html:root:root:root:root .rps .rps-title small { font-size: 12.5px; color: var(--muted); }
+html:root:root:root:root .rps .rps-wait svg { animation: rps-wait 1s ease-in-out infinite alternate; }
+@keyframes rps-wait { to { opacity: .25; transform: translateY(-3px); } }
+html:root:root:root:root:root:root:root:root .rps .rps-search { flex: none; margin: 0; border: 0 !important; background: color-mix(in srgb, var(--text) 6%, transparent) !important; box-shadow: none !important; }
+html:root:root:root:root .rps .rps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); align-content: start; gap: 14px 4px; flex: 1 1 auto; min-height: 120px; padding: 4px 0 6px; overflow-y: auto; overscroll-behavior: contain; }
+html:root:root:root:root:root:root:root:root:root:root .rps .rps-chat:is(button) { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--text); cursor: pointer; transition: transform .18s cubic-bezier(.25, 1.45, .45, 1); }
+html:root:root:root:root .rps .rps-chat:active { transform: scale(.93); }
+html:root:root:root:root .rps .rps-face { position: relative; display: block; border-radius: 50%; transition: transform .22s cubic-bezier(.25, 1.45, .45, 1), box-shadow .18s ease; }
+html:root:root:root:root .rps .rps-chat.on .rps-face { transform: scale(.9); box-shadow: 0 0 0 3px var(--rps-bg, #fff), 0 0 0 5.5px var(--halo-mine, var(--accent)); }
+html:root:root:root:root[data-mode='dark'] .rps { --rps-bg: #26262b; }
+html:root:root:root:root .rps .rps-tick { position: absolute; right: -3px; bottom: -3px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(170deg, var(--halo-mine-top, #fa8e3e), var(--halo-mine, #f47318)), var(--rps-bg, #fff); box-shadow: 0 0 0 2px var(--rps-bg, #fff); color: var(--halo-ink, #fff); animation: rpl-pop .28s cubic-bezier(.25, 1.45, .45, 1) both; }
+html:root:root:root:root .rps .rps-chat small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-width: 100%; padding: 0 2px; font-size: 11.5px; line-height: 1.25; text-align: center; overflow-wrap: anywhere; }
+html:root:root:root:root .rps .rps-chat.on small { font-weight: 650; }
+html:root:root:root:root .rps .rps-none { grid-column: 1 / -1; margin: 18px 0; text-align: center; color: var(--muted); font-size: 13.5px; }
+html:root:root:root:root:root:root:root:root:root:root .rps .rps-send:is(button) { flex: none; height: 50px; border: 0 !important; border-radius: 999px; background: linear-gradient(170deg, var(--halo-mine-top, #fa8e3e), var(--halo-mine, #f47318)), var(--rps-bg, #fff) !important; box-shadow: none !important; color: var(--halo-ink, #fff) !important; font-size: 15.5px; font-weight: 650; cursor: pointer; transition: transform .18s cubic-bezier(.25, 1.45, .45, 1), opacity .18s ease; }
+html:root:root:root:root .rps .rps-send:active { transform: scale(.97); }
+html:root:root:root:root .rps .rps-send:disabled { opacity: .4; }
+@media (max-width: 760px) {
+  .rps-back { padding: 0; place-items: end stretch; }
+  html:root:root:root:root .rps { width: 100%; max-height: min(78dvh, calc(100dvh - 60px)); padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 14px); border-radius: 30px 30px 0 0; border-bottom: 0; animation: rpl-up .32s cubic-bezier(.25, 1.1, .45, 1) both; transition: padding-bottom .28s cubic-bezier(.2, .8, .2, 1); }
+  html.kb-native:root:root:root:root .rps { max-height: calc(100dvh - 8px - env(safe-area-inset-top, 0px)); padding-bottom: calc(var(--kbh, 0px) + 12px); }
+}
+html:is([data-lite], [data-still]) :is(.rps-back, .rps, .rps *) { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { .rps-back, .rps, .rps * { animation: none !important; transition: none !important; } }

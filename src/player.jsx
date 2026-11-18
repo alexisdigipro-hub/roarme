@@ -16,7 +16,7 @@ const nameOf = (f) => (f?.name || 'Audio').replace(AUDIO_EXT, '')
    are its list (queue, newest first), with next / previous, repeat (off, all, one) and shuffle; a song that ends goes
    on to the next. `big` is the window being open. */
 let audio = null
-let state = { key: '', title: '', from: '', roomId: '', url: '', playing: false, at: 0, dur: 0, bad: false, queue: [], repeat: 'off', shuffle: false, big: false }
+let state = { key: '', title: '', file: null, from: '', roomId: '', url: '', playing: false, at: 0, dur: 0, bad: false, queue: [], repeat: 'off', shuffle: false, big: false }
 let queueFor = ''
 const subs = new Set()
 const set = (patch) => { state = { ...state, ...patch }; subs.forEach((fn) => fn()) }
@@ -53,7 +53,7 @@ async function playItem(q) {
   if (!q) return
   const a = el()
   a.pause()
-  set({ key: q.key, title: q.title, url: '', at: 0, dur: 0, bad: false, playing: false })
+  set({ key: q.key, title: q.title, file: q.file, url: '', at: 0, dur: 0, bad: false, playing: false })
   const url = await fileLink(q.file)
   if (state.key !== q.key) return
   if (!url) { set({ bad: true }); return }
@@ -79,14 +79,14 @@ export const player = {
   get: () => state,
   subscribe: (fn) => { subs.add(fn); return () => subs.delete(fn) },
   // play this song (or pause it, if it is the one playing)
-  toggle({ key, url, title, from = '', roomId = '' }) {
+  toggle({ key, url, title, from = '', roomId = '', file = null }) {
     const a = el()
     if (state.key === key) {
       if (a.paused) { window.dispatchEvent(new CustomEvent('roarme-play', { detail: a })); a.play().catch(() => set({ bad: true })) } else a.pause()
       return
     }
     const sameRoom = roomId && roomId === state.roomId
-    set({ key, url, title, from, roomId, at: 0, dur: 0, bad: false, playing: false, queue: sameRoom ? state.queue : [] })
+    set({ key, url, title, file, from, roomId, at: 0, dur: 0, bad: false, playing: false, queue: sameRoom ? state.queue : [] })
     if (!sameRoom) queueFor = ''
     start(a, url)
     loadQueue(roomId)
@@ -103,7 +103,7 @@ export const player = {
   pause() { if (audio && !audio.paused) audio.pause() },
   resume() { if (audio && audio.paused && state.key) { window.dispatchEvent(new CustomEvent('roarme-play', { detail: audio })); audio.play().catch(() => set({ bad: true })) } },
   seek(frac) { if (audio && state.dur) audio.currentTime = Math.max(0, Math.min(1, frac)) * state.dur },
-  stop() { if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load() } queueFor = ''; set({ key: '', title: '', from: '', roomId: '', url: '', playing: false, at: 0, dur: 0, bad: false, queue: [], big: false }) },
+  stop() { if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load() } queueFor = ''; set({ key: '', title: '', file: null, from: '', roomId: '', url: '', playing: false, at: 0, dur: 0, bad: false, queue: [], big: false }) },
 }
 
 export const usePlayer = () => useSyncExternalStore(player.subscribe, player.get)
@@ -133,6 +133,7 @@ export function NowPlaying({ onOpen, className = '' }) {
 const ln = (d, w = 22) => <svg viewBox="0 0 24 24" width={w} height={w} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
 const RPL_I = {
   down: ln(<path d="M6 9.5l6 6 6-6" />),
+  share: ln(<path d="M12 15V4M8 7.5 12 3.5l4 4M6.5 11H6a2 2 0 0 0-2 2v5.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V13a2 2 0 0 0-2-2h-.5" />, 20),
   chat: ln(<path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.2 3.4V16A2.5 2.5 0 0 1 5 13.5z" />, 20),
   prev: <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M6 5.5h2.2v13H6zM19 6.2v11.6a.8.8 0 0 1-1.25.66L9.6 12.66a.8.8 0 0 1 0-1.32l8.15-5.8A.8.8 0 0 1 19 6.2z" /></svg>,
   next: <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M15.8 5.5H18v13h-2.2zM5 6.2v11.6a.8.8 0 0 0 1.25.66l8.15-5.8a.8.8 0 0 0 0-1.32l-8.15-5.8A.8.8 0 0 0 5 6.2z" /></svg>,
@@ -143,7 +144,7 @@ const RPL_I = {
 }
 
 /* the big player: what is on, a line to move through it, the buttons, and the chat's songs under them */
-export function PlayerSheet({ onOpen }) {
+export function PlayerSheet({ onOpen, onShare }) {
   const p = usePlayer()
   const box = useRef(null)
   const line = useRef(null)
@@ -165,6 +166,7 @@ export function PlayerSheet({ onOpen }) {
   const move = (e) => { if (drag.current) at(e) }
   const up = () => { drag.current = false }
   const many = p.queue.length > 1
+  const nowFile = p.file || p.queue.find((q) => q.key === p.key)?.file || null
   const goChat = () => { const id = p.roomId; player.close(); if (id) onOpen?.(id) }
   return createPortal(
     <div className={`rpl-back${p.big === 'out' ? ' out' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) player.close() }}>
@@ -172,7 +174,10 @@ export function PlayerSheet({ onOpen }) {
         <div className="rpl-head" data-grab="">
           <button type="button" className="rpl-round" onClick={() => player.close()} aria-label="Close" title="Close">{RPL_I.down}</button>
           <span className="rpl-from"><small>Playing from</small><b>{p.from || 'RoarMe'}</b></span>
-          <button type="button" className="rpl-round" onClick={goChat} disabled={!p.roomId} aria-label="Show in Chat" title="Show in Chat">{RPL_I.chat}</button>
+          <span className="rpl-head-end">
+            <button type="button" className="rpl-round" onClick={() => nowFile && onShare?.(nowFile)} disabled={!nowFile} aria-label="Share" title="Share">{RPL_I.share}</button>
+            <button type="button" className="rpl-round" onClick={goChat} disabled={!p.roomId} aria-label="Show in Chat" title="Show in Chat">{RPL_I.chat}</button>
+          </span>
         </div>
         <div className="rpl-art" aria-hidden="true" key={p.key}>
           <i className="rpl-glow a" /><i className="rpl-glow b" /><i className="rpl-glow c" />

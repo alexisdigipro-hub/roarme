@@ -5,7 +5,7 @@ import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { ColorPick } from './themeEditor.jsx'
 import { Avatar, I, Modal, Slide, useLens, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
-import { mmss, player, usePlayer } from './player.jsx'
+import { AUDIO_EXT, isAudioFile, mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 // the photo editor and the map load only when they are opened (lighter start, 15 Nov)
 const PollEditor = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollEditor })))
@@ -549,8 +549,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
 }
 
 /* ---------- a song or any sound file (mp3, wav, m4a…): a small player in the message (Alex, 16 Oct) ---------- */
-export const AUDIO_EXT = /\.(mp3|wav|m4a|aac|ogg|oga|opus|flac|aif|aiff|weba)$/i
-export const isAudioFile = (f) => !!f && (/^audio\//.test(f.type || '') || AUDIO_EXT.test(f.name || ''))
+export { AUDIO_EXT, isAudioFile }
 /* a song in a chat plays in the app's one player (player.jsx), so it goes on when you change chat */
 export function MusicTile({ file, from = '', roomId = '' }) {
   const [url, setUrl] = useState('')

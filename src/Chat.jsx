@@ -29,7 +29,7 @@ import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
-import { NowPlaying } from './player.jsx'
+import { NowPlaying, PlayerSheet } from './player.jsx'
 import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
@@ -1562,6 +1562,7 @@ export default function Chat({ me, setMe }) {
 
       <ReportHost me={me} people={people} blocks={[...blocks]} onBlocks={loadBlocks} toast={toast} />
       <GroupCallHost me={me} people={people} rooms={rooms} toast={toast} />
+      <PlayerSheet onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} />
       <ReminderCards me={me} rooms={rooms} titleOf={titleOf} onOpen={libChat}
         onDue={(r, m) => {
           if (prefsRef.current.sound) chime()

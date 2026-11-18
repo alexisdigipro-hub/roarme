@@ -5243,3 +5243,80 @@ html:root:root:root:root .main:has(.room-view) > .nowbar { display: none; }
    left, the colour itself through the middle, a shade deeper at the foot */
 html:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: var(--grain-min), linear-gradient(165deg, color-mix(in srgb, var(--halo-mine-top), #fff 20%) 0%, var(--halo-mine) 58%, color-mix(in srgb, var(--halo-mine), #000 12%) 100%) !important; }
 html:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles][data-my-bubble] .msg.mine .bubble:not(.pic):not(.big-emoji):not(.note-b) { background: linear-gradient(165deg, color-mix(in srgb, var(--my-bubble), #fff 26%) 0%, var(--my-bubble) 58%, color-mix(in srgb, var(--my-bubble), #000 12%) 100%) !important; }
+
+/* ---------- The big player (Alex, 18 Nov: "a player with a bigger window, more 2026"). player.jsx PlayerSheet, opened
+   by a tap on the Now playing bar: a window on a computer, the whole screen on a phone (pulled down by its head).
+   A living tile in the accent's pair in place of a cover, the song's name large, a thick line to move through it,
+   previous / play / next with shuffle and repeat at the sides, and the chat's songs under them. Only transform and
+   opacity move; still with Power Saving, Motion off and reduced motion. ---------- */
+.rpl-back { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: rgba(5, 8, 14, .5); -webkit-backdrop-filter: var(--blur-veil); backdrop-filter: var(--blur-veil); }
+html[data-mode='light'] .rpl-back { background: rgba(20, 30, 50, .22); }
+html:root:root:root:root .rpl { position: relative; display: flex; flex-direction: column; box-sizing: border-box; width: min(400px, 100%); max-height: min(780px, calc(100dvh - 48px)); padding: 14px 22px 18px; overflow: hidden; border-radius: 30px; background: rgba(255, 255, 255, .92); border: 1px solid rgba(255, 255, 255, .9); box-shadow: 0 30px 80px rgba(20, 24, 40, .28); color: var(--text); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); animation: rpl-in .3s cubic-bezier(.25, 1.2, .45, 1) both; }
+html:root:root:root:root[data-mode='dark'] .rpl { background: rgba(34, 34, 39, .94); border-color: rgba(255, 255, 255, .1); box-shadow: 0 30px 80px rgba(0, 0, 0, .6); }
+@keyframes rpl-in { from { opacity: 0; transform: translateY(26px) scale(.97); } }
+html:root:root:root:root .rpl .rpl-head { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; gap: 8px; flex: none; }
+html:root:root:root:root:root:root:root:root:root:root .rpl .rpl-round:is(button) { display: grid; place-items: center; width: 40px !important; height: 40px !important; min-width: 0; padding: 0; border: 0 !important; border-radius: 50%; background: color-mix(in srgb, var(--text) 7%, transparent) !important; box-shadow: none !important; color: var(--text); cursor: pointer; }
+html:root:root:root:root .rpl .rpl-round:disabled { opacity: .35; }
+html:root:root:root:root .rpl .rpl-round:active, html:root:root:root:root .rpl .rpl-opt:active, html:root:root:root:root .rpl .rpl-skip:active { transform: scale(.88); }
+html:root:root:root:root .rpl .rpl-from { display: flex; flex-direction: column; align-items: center; min-width: 0; line-height: 1.25; }
+html:root:root:root:root .rpl .rpl-from small { font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+html:root:root:root:root .rpl .rpl-from b { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13.5px; font-weight: 600; }
+html:root:root:root:root .rpl .rpl-art { position: relative; flex: none; align-self: center; width: min(210px, 56%); aspect-ratio: 1; margin: 20px 0 22px; overflow: hidden; border-radius: 34px; background: linear-gradient(165deg, var(--halo-mine-top, #fa8e3e), var(--halo-mine, #f47318)); box-shadow: 0 22px 44px -14px var(--halo-mine, rgba(244, 115, 24, .7)), inset 0 1px 0 rgba(255, 255, 255, .45); transform: scale(.92); transition: transform .5s cubic-bezier(.25, 1.3, .45, 1); }
+html:root:root:root:root .rpl.on .rpl-art { transform: none; }
+html:root:root:root:root .rpl .rpl-glow { position: absolute; width: 90%; aspect-ratio: 1; border-radius: 50%; opacity: .75; }
+html:root:root:root:root .rpl .rpl-glow.a { left: -30%; top: -30%; background: radial-gradient(circle, rgba(255, 255, 255, .55), transparent 62%); animation: rpl-drift-a 9s ease-in-out infinite alternate; }
+html:root:root:root:root .rpl .rpl-glow.b { right: -35%; bottom: -35%; background: radial-gradient(circle, rgba(0, 0, 0, .3), transparent 62%); animation: rpl-drift-b 11s ease-in-out infinite alternate; }
+html:root:root:root:root .rpl .rpl-glow.c { right: -20%; top: 5%; width: 60%; background: radial-gradient(circle, rgba(255, 255, 255, .3), transparent 65%); animation: rpl-drift-b 7s ease-in-out infinite alternate-reverse; }
+@keyframes rpl-drift-a { to { transform: translate(34%, 26%) scale(1.15); } }
+@keyframes rpl-drift-b { to { transform: translate(-30%, -24%) scale(1.2); } }
+html:root:root:root:root .rpl:not(.on) .rpl-glow, html:root:root:root:root .rpl:not(.on) .rpl-bars i { animation-play-state: paused; }
+html:root:root:root:root .rpl .rpl-bars { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 5%; }
+html:root:root:root:root .rpl .rpl-bars i { width: 5.5%; height: 46%; border-radius: 999px; background: var(--halo-ink, #fff); opacity: .92; transform: scaleY(.3); animation: rpl-bar 1.1s ease-in-out infinite alternate; animation-delay: calc(var(--n) * -0.37s); }
+html:root:root:root:root .rpl .rpl-bars i:nth-child(2n) { animation-duration: .8s; }
+html:root:root:root:root .rpl .rpl-bars i:nth-child(3n) { animation-duration: 1.4s; }
+@keyframes rpl-bar { from { transform: scaleY(.18); } to { transform: scaleY(1); } }
+html:root:root:root:root .rpl .rpl-title { display: flex; flex-direction: column; gap: 3px; flex: none; min-width: 0; text-align: center; }
+html:root:root:root:root .rpl .rpl-title b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 21px; font-weight: 700; letter-spacing: -.01em; }
+html:root:root:root:root .rpl .rpl-title small { font-size: 13px; color: var(--muted); }
+html:root:root:root:root .rpl .rpl-seek { flex: none; margin-top: 16px; }
+html:root:root:root:root .rpl .rpl-line { position: relative; display: block; height: 26px; cursor: pointer; touch-action: none; }
+html:root:root:root:root .rpl .rpl-line::before { content: ''; position: absolute; left: 0; right: 0; top: 10px; height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--text) 11%, transparent); }
+html:root:root:root:root .rpl .rpl-line i { position: absolute; left: 0; top: 10px; width: calc(var(--rp) * 100%); height: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); }
+html:root:root:root:root .rpl .rpl-line em { position: absolute; top: 5px; left: calc(var(--rp) * (100% - 16px)); width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .28); }
+html:root:root:root:root .rpl .rpl-line:active em { transform: scale(1.25); }
+html:root:root:root:root .rpl .rpl-times { display: flex; justify-content: space-between; font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--muted); }
+html:root:root:root:root .rpl .rpl-ctl { display: flex; align-items: center; justify-content: space-between; flex: none; margin-top: 8px; }
+html:root:root:root:root:root:root:root:root:root:root .rpl :is(.rpl-opt, .rpl-skip):is(button) { position: relative; display: grid; place-items: center; width: 46px !important; height: 46px !important; min-width: 0; padding: 0; border: 0 !important; border-radius: 50%; background: none !important; box-shadow: none !important; color: var(--text); cursor: pointer; }
+html:root:root:root:root:root:root:root:root:root:root .rpl .rpl-opt:is(button) { color: var(--muted); }
+html:root:root:root:root:root:root:root:root:root:root .rpl .rpl-opt.on:is(button) { background: color-mix(in srgb, var(--text) 9%, transparent) !important; color: var(--text); }
+html:root:root:root:root .rpl .rpl-opt em { position: absolute; right: 6px; top: 5px; font-size: 9.5px; font-style: normal; font-weight: 700; }
+html:root:root:root:root .rpl .rpl-skip:disabled { opacity: .3; }
+html:root:root:root:root:root:root:root:root:root:root .rpl .rpl-play:is(button) { display: grid; place-items: center; width: 70px !important; height: 70px !important; min-width: 0; padding: 0; border: 0 !important; border-radius: 50%; background: linear-gradient(170deg, var(--halo-mine-top, #fa8e3e), var(--halo-mine, #f47318)) !important; box-shadow: 0 14px 28px -10px var(--halo-mine, rgba(244, 115, 24, .7)), inset 0 1px 0 rgba(255, 255, 255, .4) !important; color: var(--halo-ink, #fff) !important; cursor: pointer; transition: transform .18s cubic-bezier(.25, 1.45, .45, 1); }
+html:root:root:root:root .rpl .rpl-play:active { transform: scale(.9); }
+html:root:root:root:root .rpl .rpl-list { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-height: 0; margin: 16px -10px 0; padding: 0 0 2px; overflow-y: auto; overscroll-behavior: contain; }
+html:root:root:root:root .rpl .rpl-label { flex: none; padding: 0 10px 6px; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+html:root:root:root:root:root:root:root:root:root:root .rpl .rpl-row:is(button) { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 12px; flex: none; width: 100%; min-height: 54px; padding: 8px 10px; border: 0 !important; border-radius: 18px; background: none !important; box-shadow: none !important; color: var(--text); text-align: left; cursor: pointer; }
+html:root:root:root:root:root:root:root:root:root:root .rpl .rpl-row.on:is(button) { background: color-mix(in srgb, var(--text) 7%, transparent) !important; }
+html:root:root:root:root .rpl .rpl-dot { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 13px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); }
+html:root:root:root:root .rpl .rpl-dot svg { width: 15px; height: 15px; }
+html:root:root:root:root .rpl .rpl-row.on .rpl-dot { background: linear-gradient(170deg, var(--halo-mine-top, #fa8e3e), var(--halo-mine, #f47318)); color: var(--halo-ink, #fff); }
+html:root:root:root:root .rpl .rpl-name { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+html:root:root:root:root .rpl .rpl-name b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14.5px; font-weight: 500; }
+html:root:root:root:root .rpl .rpl-row.on .rpl-name b { font-weight: 650; }
+html:root:root:root:root .rpl .rpl-name small { font-size: 12px; color: var(--muted); }
+html:root:root:root:root .rpl .rpl-eq { display: flex; align-items: center; gap: 2.5px; height: 14px; }
+html:root:root:root:root .rpl .rpl-eq i { width: 3px; height: 100%; border-radius: 2px; background: currentColor; animation: rpl-bar .7s ease-in-out infinite alternate; }
+html:root:root:root:root .rpl .rpl-eq i:nth-child(2) { animation-delay: -.3s; }
+html:root:root:root:root .rpl .rpl-eq i:nth-child(3) { animation-delay: -.55s; }
+@media (max-width: 760px) {
+  .rpl-back { padding: 0; place-items: stretch; background: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html:root:root:root:root .rpl { width: 100%; max-height: none; height: 100%; padding: calc(env(safe-area-inset-top, 0px) + 10px) 24px calc(env(safe-area-inset-bottom, 0px) + 14px); border: 0; border-radius: 0; background: #fff; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; animation: rpl-up .32s cubic-bezier(.25, 1.1, .45, 1) both; }
+  html:root:root:root:root[data-mode='dark'] .rpl { background: #1b1b1f; }
+  html:root:root:root:root .rpl .rpl-art { width: min(250px, 64%); margin: 24px 0 26px; border-radius: 40px; }
+  html:root:root:root:root .rpl .rpl-title b { font-size: 23px; }
+  html:root:root:root:root .rpl .rpl-ctl { margin-top: 12px; }
+}
+@keyframes rpl-up { from { transform: translateY(100%); } }
+@media (max-height: 760px) { html:root:root:root:root .rpl .rpl-art { width: min(150px, 40%); margin: 14px 0 16px; border-radius: 28px; } }
+html:is([data-lite], [data-still]) .rpl, html:is([data-lite], [data-still]) .rpl * { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { .rpl, .rpl * { animation: none !important; transition: none !important; } }

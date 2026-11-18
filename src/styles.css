@@ -5406,3 +5406,15 @@ html:root:root:root:root:root .rpl .rpl-from:active { transform: scale(.96); }
 html:root:root:root:root:root .rpl .rpl-from:disabled { opacity: 1; cursor: default; }
 html:root:root:root:root:root .rpl .rpl-from small { font-size: 9px; letter-spacing: .1em; }
 html:root:root:root:root:root .rpl .rpl-from b { font-size: 13px; }
+
+/* Messages wider on a phone (Alex, 18 Nov: "all the chat's elements wider: of the whole width of the screen, 10% stays
+   empty at the left"): one's own messages and cards (poll, song, contact, video, file, map, photo) start a tenth of
+   the screen from the left and run to the right edge; the others' mirror it, a tenth empty at the right. The row keeps
+   the gap (a padding of 10vw less the list's own side room), the column and the cards fill the rest. A computer is
+   untouched. */
+@media (max-width: 760px) {
+  html:root:root:root:root { --media-w: 90vw; }
+  html:root:root:root:root .scroll:not(.picking) .msg.mine { padding-left: calc(10vw - var(--msg-side, 22px)); }
+  html:root:root:root:root .scroll:not(.picking) .msg:not(.mine) { padding-right: calc(10vw - var(--msg-side, 22px)); }
+  html:root:root:root:root .msg .bubble-col, html:root:root:root:root .msg:has(.bubble:is(.event-b, .transfer-b, .pic)) .bubble-col, html:root:root:root:root .msg:has(:is(.locc, .artc)) .bubble-col { max-width: 100%; }
+}

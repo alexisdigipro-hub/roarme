@@ -5355,3 +5355,24 @@ html:root:root:root:root .nowbar .nowbar-text { animation: rpl-rise .26s ease bo
 @keyframes rpl-down { to { transform: translateY(100%); } }
 html:is([data-lite], [data-still]) :is(.rpl-back, .nowbar .nowbar-text) { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .rpl-back, .nowbar .nowbar-text { animation: none !important; } }
+
+/* Glass buttons, version B (Alex, 18 Nov, from a picture of thick glass buttons, picked from three on a sample page:
+   "B"): previous, play and next of the big player. A thick rim of clear glass with the colours split in it, a core in
+   the accent's pair inside the rim, the sign in the accent's ink. Under a finger the button sinks and the light in the
+   core turns. Softer rim on screens of ordinary sharpness. */
+html:root:root:root:root:root:root:root:root:root:root .rpl :is(.rpl-play, .rpl-skip):is(button) { position: relative; border-radius: 50%; overflow: visible; background: conic-gradient(from 215deg, #fff 0, #e3e9f0 9%, #fff 17%, #9db6ff 22%, #fff 26%, #f5f7fa 45%, #ffcf9a 50%, #fff 54%, #c9d0d9 72%, #7fe0d0 77%, #fff 82%, #fff 100%) !important; box-shadow: 0 12px 20px -8px rgba(30, 38, 55, .5), 0 2px 3px rgba(30, 38, 55, .26), inset 0 0 0 1px rgba(255, 255, 255, .95), inset 0 -2px 3px rgba(50, 60, 80, .26) !important; color: var(--halo-ink, #fff) !important; transition: transform .3s cubic-bezier(.25, 1.45, .45, 1); }
+html:root:root:root:root:root:root:root:root:root:root[data-mode='dark'] .rpl :is(.rpl-play, .rpl-skip):is(button) { box-shadow: 0 12px 22px -8px rgba(0, 0, 0, .8), 0 2px 3px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(255, 255, 255, .9), inset 0 -2px 3px rgba(50, 60, 80, .35) !important; }
+html:root:root:root:root:root:root:root:root:root:root .rpl .rpl-skip:is(button) { width: 56px !important; height: 56px !important; }
+html:root:root:root:root:root:root:root:root:root:root .rpl .rpl-play:is(button) { width: 80px !important; height: 80px !important; }
+html:root:root:root:root .rpl :is(.rpl-play, .rpl-skip)::before { content: ''; position: absolute; inset: 8.5%; border-radius: 50%; background: conic-gradient(from 125deg, transparent 0 7%, rgba(255, 255, 255, .34) 13%, transparent 21% 45%, rgba(255, 255, 255, .2) 52%, transparent 63% 100%), linear-gradient(165deg, var(--halo-mine-top, #fa8e3e), var(--halo-mine, #f47318)), #fff; box-shadow: inset 0 3px 8px rgba(0, 0, 0, .28), inset 0 -1px 1px rgba(255, 255, 255, .4); transition: transform .5s cubic-bezier(.25, 1.2, .45, 1); }
+html:root:root:root:root[data-mode='dark'] .rpl :is(.rpl-play, .rpl-skip)::before { background: conic-gradient(from 125deg, transparent 0 7%, rgba(255, 255, 255, .3) 13%, transparent 21% 45%, rgba(255, 255, 255, .16) 52%, transparent 63% 100%), linear-gradient(165deg, var(--halo-mine-top, #fa8e3e), var(--halo-mine, #f47318)), #26262b; }
+html:root:root:root:root .rpl :is(.rpl-play, .rpl-skip) > * { position: relative; }
+html:root:root:root:root .rpl :is(.rpl-play, .rpl-skip) svg { filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .22)); }
+html:root:root:root:root .rpl .rpl-skip svg { width: 24px; height: 24px; }
+html:root:root:root:root .rpl :is(.rpl-play, .rpl-skip):active { transform: scale(.92); transition-duration: .07s; }
+html:root:root:root:root .rpl :is(.rpl-play, .rpl-skip):active::before { transform: rotate(70deg); }
+html:root:root:root:root .rpl .rpl-skip:disabled { opacity: .45; }
+@media (max-resolution: 1.5dppx) {
+  html:root:root:root:root:root:root:root:root:root:root .rpl :is(.rpl-play, .rpl-skip):is(button) { background: conic-gradient(from 215deg, #fff 0, #e9edf2 9%, #fff 17%, #c4d2fb 22%, #fff 26%, #f5f7fa 45%, #fbe2c6 50%, #fff 54%, #d9dee5 72%, #bdeae2 77%, #fff 82%, #fff 100%) !important; }
+}
+html:is([data-lite], [data-still]) .rpl :is(.rpl-play, .rpl-skip)::before { transition: none !important; }

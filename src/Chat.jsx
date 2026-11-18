@@ -1199,6 +1199,7 @@ export default function Chat({ me, setMe }) {
   useEffect(() => { const f = (e) => { const id = e.detail?.id; if (!id) return; loadPeople([id]); setCard(id) }; window.addEventListener('roarme-card', f); return () => window.removeEventListener('roarme-card', f) }, [loadPeople])
   useEffect(() => { resumeLive() }, []) // live locations still running carry on (live.js)
   // back to the chat's profile after a search or an action asked from it
+  useEffect(() => { const f = (e) => { if (e.detail) { setTab('chats'); setActiveId(e.detail) } }; window.addEventListener('roarme-goroom', f); return () => window.removeEventListener('roarme-goroom', f) }, [])
   useEffect(() => { const f = () => setModal((m) => (m ? m : 'info')); window.addEventListener('roarme-profile', f); return () => window.removeEventListener('roarme-profile', f) }, [])
   const [favs, setFavs] = useLocal('roarme-fav', [])
   const [contactSort, setContactSort] = useLocal('roarme-contacts-sort', 'seen') // Contacts: 'seen' (last seen first) or 'name'
@@ -1378,7 +1379,7 @@ export default function Chat({ me, setMe }) {
           )}
         </div>
         {/* on a phone the list and a chat are separate screens: the bar shows on the list too */}
-        <NowPlaying className="in-side" onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
+        {(tab !== 'chats' || !!q.trim()) && <NowPlaying className="in-side" onOpen={(id) => { setTab('chats'); setActiveId(id) }} />}
         {tab === 'chats' && (
           <>
             <div className={`search-wrap${searchOpen || q.trim() ? ' open' : ''}`}><div>
@@ -1402,6 +1403,8 @@ export default function Chat({ me, setMe }) {
               </div>
             )}
             {pull > 0 && <div className={`ptr${pull >= 1 ? ' ready' : ''}${pull === 2 ? ' spin' : ''}`} style={{ '--p': Math.min(pull, 1) }} aria-hidden="true">{svg(<><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></>, 20)}</div>}
+            {/* the song that is playing, under the folders as Telegram has it (Alex, 18 Nov): in the flow, never over anything */}
+            {!q.trim() && <NowPlaying className="in-side under-tabs" onOpen={(id) => { setTab('chats'); setActiveId(id) }} />}
             <div className="rooms-pager" ref={pagerRef}>
             <div className="rooms-track" ref={trackRef}>
             <div className={`rooms${swipedTo === folder ? '' : ' stagger'}${prefs.listPreview ? '' : ' no-prev'}`} key={folder}>
@@ -3219,6 +3222,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
       {room.kind === 'group' && find === null && <GroupCallBar call={gc.call} here={gc.here} people={people} me={me} inIt={gc.here.includes(me.id)} onJoin={joinGc} />}
 
+      {/* the song that is playing: under the chat's head, in the flow (Alex, 18 Nov, from Telegram's); a tap on its name
+          goes to the chat it came from */}
+      {find === null && <NowPlaying className="in-room" onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} />}
       {pinned && !picked && (
         <div className="pinbar" role="button" tabIndex={0} onClick={() => setPinView(true)} title="All pinned messages">
           <span className="pinbar-main"><b>{pinnedList.length > 1 ? `Pinned messages · ${pinnedList.length}` : 'Pinned message'}</b><span>{textOf(pinned)}</span></span>

@@ -207,6 +207,11 @@ export function PlayerSheet({ onOpen, onShare }) {
   }, [open])
   // the song that is on stays in sight in the list
   useEffect(() => { if (open) box.current?.querySelector('.rpl-row.on')?.scrollIntoView({ block: 'nearest' }) }, [open, p.key, p.queue.length])
+  // every hook stands before the early return below: one after it made React fail and the page went white when the
+  // player opened (18 Nov)
+  const nowFile = p.file || p.queue.find((q) => q.key === p.key)?.file || null
+  // the song's shape, asked once the window is open
+  useEffect(() => { if (open && nowFile) player.wave(nowFile) }, [open, p.key, nowFile?.path])
   if (!open) return null
   const frac = p.dur ? Math.min(1, p.at / p.dur) : 0
   const at = (e) => { const r = line.current.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width) }
@@ -214,9 +219,6 @@ export function PlayerSheet({ onOpen, onShare }) {
   const move = (e) => { if (drag.current) at(e) }
   const up = () => { drag.current = false }
   const many = p.queue.length > 1
-  const nowFile = p.file || p.queue.find((q) => q.key === p.key)?.file || null
-  // the song's shape, asked once the window is open
-  useEffect(() => { if (open && nowFile) player.wave(nowFile) }, [open, p.key, nowFile?.path])
   const peaks = p.peaks || FLAT
   const goChat = () => { const id = p.roomId; player.close(); if (id) onOpen?.(id) }
   return createPortal(

@@ -100,14 +100,16 @@ export function PollEditor({ onReady }) {
       <small className="as-label">{set.correct ? 'Options · tap the circle of the right answer' : 'Options'}</small>
       <div className="as-card pl-card" ref={listRef}>
         {opts.map((o, n) => (
-          <div key={o.id} className={`pl-opt${dragId === o.id ? ' drag' : ''}`} data-id={o.id} data-fill={o.text.trim() ? '' : undefined}>
+          // the whole row is the field's own label (Alex, 18 Nov: "Add an Option does not take the tap easily"): a touch on
+          // the circle or on the empty end of the row puts the cursor in it too
+          <label key={o.id} htmlFor={`plo-${o.id}`} className={`pl-opt${dragId === o.id ? ' drag' : ''}`} data-id={o.id} data-fill={o.text.trim() ? '' : undefined}>
             {set.correct
               ? <button type="button" className={`pl-mark${right.includes(o.id) ? ' on' : ''}`} onClick={() => mark(o.id)} aria-label="Right answer" disabled={!o.text.trim()}>{right.includes(o.id) ? I.check : null}</button>
               : <span className="pl-dot" />}
-            <input className="pl-in" value={o.text} onChange={(e) => edit(o.id, e.target.value)} placeholder={n === opts.length - 1 && n >= 2 ? 'Add an Option' : 'Option'} maxLength={100} />
+            <input id={`plo-${o.id}`} className="pl-in" value={o.text} onChange={(e) => edit(o.id, e.target.value)} placeholder={n === opts.length - 1 && n >= 2 ? 'Add an Option' : 'Option'} maxLength={100} />
             {o.text && <button type="button" className="round pl-del" onClick={() => drop(o.id)} aria-label="Remove option">{I.x}</button>}
-            {o.text.trim() && filled.length > 1 && <span className="pl-grip" role="button" aria-label="Move option" title="Hold and move" {...grip(o.id)}>{GRIP_I}</span>}
-          </div>
+            {o.text.trim() && filled.length > 1 && <span className="pl-grip" role="button" aria-label="Move option" title="Hold and move" {...grip(o.id)} onClick={(e) => e.preventDefault()}>{GRIP_I}</span>}
+          </label>
         ))}
       </div>
       <small className="pl-note">{left > 0 ? `You can add ${left} more option${left === 1 ? '' : 's'}.` : 'You have added the most options a poll can have.'}</small>
@@ -212,7 +214,7 @@ export function PollCard({ id, me, people = {}, canStop = false, onError }) {
         <small>{total === 0 ? 'No votes yet' : `${total} vote${total === 1 ? '' : 's'}`}</small>
         <span className="poll-acts">
           {!showRes && p.multiple && <button type="button" className="pill-btn on" disabled={busy || !pick.length} onClick={() => vote(pick)}>Vote</button>}
-          {voted && !closed && p.revote && <button type="button" className="pill-btn" disabled={busy} onClick={() => vote([])}>Retract Vote</button>}
+          {voted && !closed && p.revote && <button type="button" className="pill-btn" disabled={busy} onClick={() => vote([])}>Revote</button>}
           {!closed && p.add_options && adding === null && (p.options || []).length < MAX && <button type="button" className="pill-btn" onClick={() => setAdding('')}>Add an Option</button>}
           {!closed && (canStop || p.created_by === me) && <button type="button" className="pill-btn danger" disabled={busy} onClick={() => { if (window.confirm('Stop this poll? Nobody can vote after this.')) run(() => supabase.rpc('roar_poll_stop', { m: id })) }}>Stop Poll</button>}
         </span>

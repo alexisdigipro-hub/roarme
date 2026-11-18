@@ -5173,3 +5173,40 @@ html:root:root:root[data-skin='halo'] body.app-wall .room-view.same-wall { backg
 .cpick .te-field { height: 200px; }
 /* the accent's rainbow dot, until a colour is chosen */
 .acc.acc-any:not(.on) { background: conic-gradient(from 210deg, #ff3b30, #ff9500, #ffcc00, #34c759, #32ade6, #5856d6, #af52de, #ff2d55, #ff3b30) !important; }
+
+/* 18 Nov, second round (Alex). A poll's option row is one target: a tap anywhere on it writes in it */
+label.pl-opt { cursor: text; min-height: 52px; }
+/* Buttons in the accent whose words did not show (the poll's Send: white words on white glass, since the glass rule for
+   pills won over the accent's fill and only the ink came through): the accent's fill is forced wherever it is meant */
+html:root:root:root:root :is(.as-head .pl-send.on, .pl-dur .pill-btn.on, .poll-add .pill-btn.on, .msg:not(.mine) .poll-acts .pill-btn.on, .name-marks .round.on, .gc-join, .nc-link-ico, .gc-bar-ico) { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; color: var(--halo-ink, #fff) !important; border-color: transparent !important; box-shadow: none !important; }
+html:root:root:root:root .as-head .pl-send:not(.on) { color: var(--muted) !important; opacity: .7; }
+/* a poll's own buttons are quiet (Alex: "they need not be so strong"): a faint wash of the message's own ink, no rim, no
+   shadow; Stop Poll the same, a touch fainter, never a loud red on a coloured message */
+html:root:root:root:root .bubble .poll-acts .pill-btn:not(.on) { height: 30px; padding: 0 12px; background: color-mix(in srgb, currentColor 10%, transparent) !important; color: inherit !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; font-size: calc(var(--fs, 14.5px) * .86) !important; font-weight: 500 !important; }
+html:root:root:root:root .bubble .poll-acts .pill-btn.danger { opacity: .75; }
+html:root:root:root:root .msg.mine .bubble .poll-acts .pill-btn.on { background: currentColor !important; color: var(--halo-mine, #000) !important; border: 0 !important; box-shadow: none !important; }
+
+/* Now playing, slim (Alex, 18 Nov: "it breaks the chat's layout, it is too high and hides; thinner, minimal, in our
+   look, playing on as you go to other chats"): one glass capsule 38px tall: a small round play, the song and where it is
+   from on one line, the X, and its progress as a hair along the foot. On a phone, inside a chat, it floats just under
+   the chat's head and takes no room of its own, so the head stays where it always is. */
+html:root:root:root .nowbar { gap: 8px; height: 38px; margin: 0 0 8px; padding: 0 4px 0 4px; border-radius: 999px; box-sizing: border-box; background: rgba(255, 255, 255, .95) !important; border: 1px solid rgba(255, 255, 255, .9) !important; box-shadow: 0 6px 18px rgba(40, 40, 70, .14) !important; color: #1d1d24; -webkit-backdrop-filter: none; backdrop-filter: none; }
+html:root:root:root:root:root .nowbar .nowbar-btn { width: 30px !important; height: 30px !important; min-width: 0; box-shadow: none !important; }
+html:root:root:root .nowbar .nowbar-btn svg { width: 13px; height: 13px; }
+html:root:root:root .nowbar .nowbar-main { gap: 8px; height: 100%; color: inherit; }
+html:root:root:root .nowbar .nowbar-text { display: block; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+html:root:root:root .nowbar .nowbar-text b { display: inline; overflow: visible; font-size: 13px; font-weight: 600; }
+html:root:root:root .nowbar .nowbar-text small { display: inline; overflow: visible; margin-left: 7px; font-size: 12px; }
+html:root:root:root .nowbar .nowbar-eq i { background: var(--halo-mine, var(--accent)); }
+html:root:root:root .nowbar .nowbar-time { font-size: 11.5px; }
+html:root:root:root .nowbar .nowbar-x { width: 30px; height: 30px; background: none !important; border: 0 !important; box-shadow: none !important; }
+html:root:root:root .nowbar .nowbar-x svg { width: 13px; height: 13px; }
+html:root:root:root .nowbar .nowbar-line { left: 40px; right: 36px; bottom: 4px; height: 2px; }
+html:root:root:root .nowbar .nowbar-line i { background: var(--halo-mine, var(--accent)); }
+html:root:root:root .main > .nowbar { margin: 10px 14px 0; }
+@media (max-width: 760px) {
+  html:root:root:root .main > .nowbar { position: fixed; z-index: 30; top: calc(env(safe-area-inset-top, 0px) + 52px); left: 14px; right: 14px; margin: 0; }
+  html:root:root:root .side .nowbar.in-side { margin: 0 0 8px; }
+}
+html:root:root:root[data-mode='dark'] .nowbar { background: rgba(44, 44, 49, .96) !important; border-color: rgba(255, 255, 255, .1) !important; box-shadow: 0 6px 18px rgba(0, 0, 0, .4) !important; color: #f3f3f6; }
+html:root:root:root .nowbar .nowbar-text small, html:root:root:root .nowbar .nowbar-x, html:root:root:root .nowbar .nowbar-time { color: color-mix(in srgb, currentColor 55%, transparent); }

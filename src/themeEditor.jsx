@@ -44,7 +44,7 @@ function useDrag(onAt) {
   }
 }
 
-function ColorField({ value, onChange }) {
+export function ColorField({ value, onChange }) {
   const [pos, setPos] = useState(() => toPos(value))
   const [typed, setTyped] = useState(value || '')
   const set = (p) => { setPos(p); const h = fromPos(p); setTyped(h); onChange(h) }
@@ -65,6 +65,25 @@ function ColorField({ value, onChange }) {
         <i className="te-knob" style={{ left: `${(1 - pos.v) * 100}%`, top: '50%', background: fromPos(pos) }} />
       </div>
     </div>
+  )
+}
+
+/* Any colour, in a window of its own (Alex, 18 Nov: "a picker where you choose whatever colour you want", for a chat's
+   wallpaper and for the accent): the same field as Edit Your Theme. Nothing changes until Set. */
+export function ColorPick({ title = 'Colour', value, onSet, onClose }) {
+  const [hex, setHex] = useState(value || '#3AA7E8')
+  return createPortal(
+    <div className="modal-back cpick-back" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="modal cpick" role="dialog" aria-label={title}>
+        <div className="cpick-head"><b>{title}</b></div>
+        <ColorField value={hex} onChange={setHex} />
+        <div className="cpick-foot">
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn btn-main" onClick={() => { onSet(hex); onClose() }}>Set</button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }
 

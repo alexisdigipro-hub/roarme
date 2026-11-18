@@ -296,6 +296,8 @@ export const FONTS = [
   ['serif', 'Serif', "Georgia, 'Times New Roman', serif"],
   ['mono', 'Mono', "'JetBrains Mono', ui-monospace, Menlo, monospace"],
 ]
+const mixWhite = (hex, t) => { const n = parseInt(hex.slice(1), 16); const c = [n >> 16, (n >> 8) & 255, n & 255].map((x) => Math.round(x + (255 - x) * t)); return `#${c.map((x) => x.toString(16).padStart(2, '0')).join('')}` }
+export const customAccent = (p) => (p.accent === 'h-custom' && /^#[0-9a-f]{6}$/i.test(p.accentHex || '') ? ['h-custom', 'Your Colour', p.accentHex, mixWhite(p.accentHex, 0.35), [mixWhite(p.accentHex, 0.2), p.accentHex], inkOn(p.accentHex)] : null)
 export const inkOn = (hex) => {
   const n = parseInt(hex.slice(1), 16)
   return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) > 160 ? '#111111' : '#ffffff'
@@ -314,7 +316,9 @@ export function applyLook(p0) {
   const hex = (/^#[0-9a-f]{6}$/i.test(p.accentHex || '') && p.accentHex) || ACCENTS.find(([k]) => k === p.accent)?.[2]
   if (hex) { r.style.setProperty('--accent', hex); r.style.setProperty('--accent-2', hex); r.style.setProperty('--accent-ink', inkOn(hex)) } else { ['--accent', '--accent-2', '--accent-ink'].forEach((v) => r.style.removeProperty(v)) }
   // in Halo one of its own colours stands in for the orange: on your messages, Send, the chosen things
-  const ha = haloish(p.theme) && HALO_ACCENTS.find(([k]) => k === p.accent)
+  // or any colour of one's own (Alex, 18 Nov: "a spectrum, to pick whatever colour we want"): accent 'h-custom' with
+  // accentHex; its lighter top, its light form for the dark and its ink are worked out from it
+  const ha = haloish(p.theme) && (HALO_ACCENTS.find(([k]) => k === p.accent) || customAccent(p))
   // Accent Opacity (Alex, 12 Nov): how see-through the accent's fill is on your messages and the coloured buttons
   const so = Math.min(100, Math.max(30, Number(p.accentOpacity) || 100)) / 100
   if (ha) {

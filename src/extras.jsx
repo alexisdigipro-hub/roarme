@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { errText, fileLink, fold, foldHas, lastSeenText, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
+import { ColorPick } from './themeEditor.jsx'
 import { Avatar, I, Modal, Slide, useLens, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
 import { mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
@@ -860,11 +861,17 @@ function MediaThumb({ m, onClick }) {
 /* in Halo the built-in washes wear its own palette (Alex, 12 Nov): Night, Ocean, Dusk, Forest and Ember are drawn in
    Navy, Blue, Lilac, Pink and Rose by themes-halo.css and named so here */
 const HALO_WALLS = { night: 'Navy', ocean: 'Blue', dusk: 'Lilac', forest: 'Pink', ember: 'Rose' }
-const HALO_HIDE = ['dots', 'grid'] // Pattern and Grid are not offered in Halo (Alex, 12 Nov)
+// Pattern and Grid are not offered in Halo (Alex, 12 Nov); nor, since 18 Nov ("take the similar colours out"), the
+// blends that look like another one: Blue and Lilac (as Navy), Rose, Twilight and Candy (as Pink). Whoever wears one of
+// them keeps it and still sees its tile.
+const HALO_HIDE = ['dots', 'grid', 'ocean', 'dusk', 'ember', 'halo-twilight', 'halo-candy']
 // Halo's own orange as a wallpaper too (Alex, 12 Nov), before the other colours; drawn by themes-halo.css, plain elsewhere
 // three more blends of the palette (Alex, 12 Nov) go after its colours
-const HALO_MORE = [{ key: 'halo-sunset', name: 'Sunset', path: null }, { key: 'halo-twilight', name: 'Twilight', path: null }, { key: 'halo-candy', name: 'Candy', path: null }]
+const HALO_MORE = [{ key: 'halo-sunset', name: 'Sunset', path: null }, { key: 'halo-twilight', name: 'Twilight', path: null }, { key: 'halo-candy', name: 'Candy', path: null }, { key: 'halo-sky', name: 'Sky', path: null }]
+// plain white, right after Plain (Alex, 18 Nov); black by Night, where white would blind
+const WHITE = { key: 'white', name: 'White', path: null }
 const withOrange = (walls) => {
+  if (!walls.some((w) => w.key === 'white')) { const s = walls.findIndex((w) => w.key === 'soft'); walls = [...walls.slice(0, s + 1), WHITE, ...walls.slice(s + 1)] }
   const i = walls.findIndex((w) => HALO_WALLS[w.key])
   const o = { key: 'halo-orange', name: 'Orange', path: null }
   if (i < 0) return [...walls, o, ...HALO_MORE]
@@ -882,6 +889,7 @@ export function WallTiles({ value, onPick, toast, strength: own, onStrength }) {
   const photo = ownPhoto(value)
   const fileRef = useRef(null)
   const [busy, setBusy] = useState(false)
+  const [picking, setPicking] = useState(false)
   // one's own photo (Alex, 8 Nov): made lighter, kept in one's own folder of roar-avatars, chosen at once at full strength
   const upload = async (f) => {
     if (!f) return
@@ -900,23 +908,23 @@ export function WallTiles({ value, onPick, toast, strength: own, onStrength }) {
   return (
     <>
       <div className="walls">
-        {(halo ? withOrange(walls) : walls).filter(({ key: k }) => !halo || !HALO_HIDE.includes(k)).map(({ key: k, name: l, path }) => (
+        {(halo ? withOrange(walls) : walls).filter(({ key: k }) => !halo || k === value || !HALO_HIDE.includes(k)).map(({ key: k, name: l, path }) => (
           <button key={k} type="button" className={`wall-tile${value === k ? ' on' : ''}${path ? ' img' : ''}`} data-bg={k} style={path ? { backgroundImage: `url("${wallUrl(path)}")` } : undefined} onClick={() => onPick(k)}>
             <i className="wall-b">Hi!</i><i className="wall-b mine">Hello 👋</i><small>{(halo && HALO_WALLS[k]) || l}</small>
           </button>
         ))}
         {/* any colour: the tile itself opens the colour picker */}
-        <label className={`wall-tile wall-own${color ? ' on' : ''}`} style={color ? { background: color } : undefined}>
-          <input type="color" value={color || '#3a3a3d'} onChange={(e) => onPick(`color:${e.target.value}`)} />
+        <button type="button" className={`wall-tile wall-own${color ? ' on' : ''}`} style={color ? { background: color } : undefined} onClick={() => setPicking(true)}>
           {!color && <span className="wall-own-ico">{I.brush}</span>}
           <small>Colour</small>
-        </label>
+        </button>
         <button type="button" className={`wall-tile wall-own${photo ? ' on img' : ''}`} style={photo ? { backgroundImage: `url("${photo.url}")` } : undefined} onClick={() => fileRef.current?.click()} disabled={busy}>
           {!photo && <span className="wall-own-ico">{busy ? '…' : I.image}</span>}
           <small>{busy ? 'Uploading…' : photo ? 'Change Photo' : 'Your Photo'}</small>
         </button>
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { upload(e.target.files?.[0]); e.target.value = '' }} />
       </div>
+      {picking && <ColorPick title="Wallpaper Colour" value={color ? color.toUpperCase() : '#BFE6FA'} onSet={(h) => onPick(`color:${h.toLowerCase()}`)} onClose={() => setPicking(false)} />}
       {/* one strength for every wallpaper (Alex, 12 Nov): a photo of one's own keeps it in its value, the rest in prefs */}
       {(photo || (value && value !== 'soft')) && (
         <div className="wall-op">

@@ -3,7 +3,7 @@ import { errText, foldHas, nameOf, supabase } from './lib.js'
 import { Avatar, FOOT_I, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, haloish, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
-import { ThemeEditor } from './themeEditor.jsx'
+import { ColorPick, ThemeEditor } from './themeEditor.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
@@ -936,6 +936,7 @@ function AppTextSize({ p }) {
 }
 
 function Appearance({ p, toast, me, setMe }) {
+  const [accentPick, setAccentPick] = useState(false)
   const look = wallLook(p.background, useWalls(true), p.wallStrength)
   const listLook = wallLook(p.appBackground || p.background, useWalls(true), p.appBackground ? p.appWallStrength ?? p.wallStrength : p.wallStrength)
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
@@ -1018,13 +1019,16 @@ function Appearance({ p, toast, me, setMe }) {
         {colourPv}
         {modeRow}
         <div className="set-row set-col">
-          <span className="set-text">Accent Colour<small>{p.accent ? (haloish(p.theme) ? HALO_ACCENTS : ACCENTS).find(([k]) => k === p.accent)?.[1] || "The theme's own colour" : "The theme's own colour"}</small></span>
+          <span className="set-text">Accent Colour<small>{p.accent === 'h-custom' && p.accentHex ? 'Your Colour' : p.accent ? (haloish(p.theme) ? HALO_ACCENTS : ACCENTS).find(([k]) => k === p.accent)?.[1] || "The theme's own colour" : "The theme's own colour"}</small></span>
           {haloish(p.theme)
             ? (
               // Halo's own palette (Alex, 12 Nov): the orange it is made with and five colours, each with its gradient
               <div className="accents halo-accents">
-                <button type="button" className={`acc acc-halo${!HALO_ACCENTS.some(([k]) => k === p.accent) ? ' on' : ''}`} style={{ '--c': '#f47318', background: 'linear-gradient(135deg, #ff9a3c, #f47318)' }} title="Orange" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Orange</small></button>
+                <button type="button" className={`acc acc-halo${!HALO_ACCENTS.some(([k]) => k === p.accent) && !(p.accent === 'h-custom' && p.accentHex) ? ' on' : ''}`} style={{ '--c': '#f47318', background: 'linear-gradient(135deg, #ff9a3c, #f47318)' }} title="Orange" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Orange</small></button>
                 {HALO_ACCENTS.map(([k, l, c, , [a, b]]) => <button key={k} type="button" className={`acc acc-halo${p.accent === k ? ' on' : ''}`} style={{ '--c': c, background: `linear-gradient(135deg, ${a}, ${b})` }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
+                {/* any colour (Alex, 18 Nov): the rainbow tile opens the colour window */}
+                <button type="button" className={`acc acc-halo acc-any${p.accent === 'h-custom' && p.accentHex ? ' on' : ''}`} style={p.accent === 'h-custom' && p.accentHex ? { '--c': p.accentHex, background: p.accentHex } : { '--c': '#8a8a96' }} title="Any colour" onClick={() => setAccentPick(true)}><small>Any colour</small></button>
+                {accentPick && <ColorPick title="Accent Colour" value={p.accent === 'h-custom' && p.accentHex ? p.accentHex.toUpperCase() : '#3AA7E8'} onSet={(h) => setPrefs({ accent: 'h-custom', accentHex: h })} onClose={() => setAccentPick(false)} />}
               </div>
             )
             : (

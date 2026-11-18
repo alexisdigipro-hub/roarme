@@ -5152,3 +5152,24 @@ html[data-mode='dark'] .pl-opt.drag { background: #3a3a40; }
 .poll-opt.mine .poll-label { font-weight: 600 !important; }
 .poll-n { margin-left: auto; padding-left: 8px; font-size: calc(var(--fs, 14.5px) * .86); font-variant-numeric: tabular-nums; opacity: .75; }
 .poll-n + .poll-faces { margin-left: 6px; }
+
+/* Wallpapers, 18 Nov (Alex). A colour of one's own did nothing: the rule that gives every wallpaper its base grey was
+   more specific than the colour's own and won. The colour now wins, on the page and in a chat. */
+html:root:root:root[data-skin='halo'][data-mode] :is(body.app-wall, .room-view, .set-preview, .te-preview)[data-bg='color'] { background: var(--wall-color) !important; }
+/* White: plain white by Day; by Night plain black, where white would blind */
+html:root:root:root[data-skin='halo'][data-theme] :is(.room-view, .wall-tile, .set-preview, .te-preview, body.app-wall)[data-bg='white'] { background: #fff !important; }
+html:root:root:root[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile, .set-preview, .te-preview, body.app-wall)[data-bg='white'] { background: #08080a !important; }
+/* Sky: a light blue that falls into a paler one (from the blue he picked as a colour); a deep blue by Night */
+html:root:root:root[data-skin='halo'][data-theme] :is(.room-view, .wall-tile, .set-preview, .te-preview, body.app-wall)[data-bg='halo-sky'] { background: linear-gradient(168deg, #a9dcf7 0%, #c6ebfb 42%, #e3f6fe 100%) fixed !important; }
+html:root:root:root[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile, .set-preview, .te-preview, body.app-wall)[data-bg='halo-sky'] { background: linear-gradient(168deg, #14415c 0%, #0f2f45 45%, #0a1c2b 100%) fixed !important; }
+html:root:root:root[data-skin='halo'] .wall-tile:is([data-bg='halo-sky'], [data-bg='white']) { background-attachment: scroll !important; }
+html:root:root:root[data-skin='halo'] body.app-wall .room-view.same-wall { background: none !important; }
+
+/* any colour: its own small window (themeEditor.jsx ColorPick), for a wallpaper and for the accent */
+.cpick-back { z-index: 80; }
+.cpick { width: min(380px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 18px; box-sizing: border-box; }
+.cpick-head b { font-size: 18px; font-weight: 600; }
+.cpick-foot { display: flex; justify-content: space-between; gap: 10px; }
+.cpick .te-field { height: 200px; }
+/* the accent's rainbow dot, until a colour is chosen */
+.acc.acc-any:not(.on) { background: conic-gradient(from 210deg, #ff3b30, #ff9500, #ffcc00, #34c759, #32ade6, #5856d6, #af52de, #ff2d55, #ff3b30) !important; }

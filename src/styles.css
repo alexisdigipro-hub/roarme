@@ -5320,3 +5320,38 @@ html:root:root:root:root .rpl .rpl-eq i:nth-child(3) { animation-delay: -.55s; }
 @media (max-height: 760px) { html:root:root:root:root .rpl .rpl-art { width: min(150px, 40%); margin: 14px 0 16px; border-radius: 28px; } }
 html:is([data-lite], [data-still]) .rpl, html:is([data-lite], [data-still]) .rpl * { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { .rpl, .rpl * { animation: none !important; transition: none !important; } }
+
+/* The player's motion (Alex, 18 Nov: "add animations where we have none"): the window leaves with a slide (player.close,
+   big 'out'), a new song's tile and name come in, the play sign and the shuffle / repeat signs pop as they change,
+   previous and next nudge their way, the chosen song's square pops, the list comes in as one piece, the bar's words
+   change with a short rise. Transform and opacity only; all off with Power Saving, Motion off and reduced motion. */
+.rpl-back { animation: rpl-veil .25s ease both; }
+@keyframes rpl-veil { from { opacity: 0; } }
+html:root:root:root:root .rpl-back.out { animation: rpl-veil .22s ease reverse both; pointer-events: none; }
+html:root:root:root:root .rpl-back.out .rpl { animation: rpl-out .22s cubic-bezier(.4, 0, .8, .4) both; }
+@keyframes rpl-out { to { opacity: 0; transform: translateY(26px) scale(.97); } }
+html:root:root:root:root .rpl .rpl-art { animation: rpl-art-in .42s cubic-bezier(.25, 1.35, .45, 1) both; }
+@keyframes rpl-art-in { from { opacity: 0; transform: scale(.78) rotate(-4deg); } }
+html:root:root:root:root .rpl .rpl-title { animation: rpl-rise .3s cubic-bezier(.25, 1.2, .45, 1) both; }
+@keyframes rpl-rise { from { opacity: 0; transform: translateY(10px); } }
+html:root:root:root:root .rpl .rpl-sign { display: grid; place-items: center; animation: rpl-pop .3s cubic-bezier(.25, 1.45, .45, 1) both; }
+@keyframes rpl-pop { from { opacity: 0; transform: scale(.55) rotate(-18deg); } }
+html:root:root:root:root .rpl .rpl-skip svg { transition: transform .22s cubic-bezier(.25, 1.45, .45, 1); }
+html:root:root:root:root .rpl .rpl-skip.next:active svg { transform: translateX(7px); transition-duration: .07s; }
+html:root:root:root:root .rpl .rpl-skip.prev:active svg { transform: translateX(-7px); transition-duration: .07s; }
+html:root:root:root:root .rpl .rpl-opt { transition: transform .18s cubic-bezier(.25, 1.45, .45, 1), color .18s ease; }
+html:root:root:root:root .rpl .rpl-round { transition: transform .18s cubic-bezier(.25, 1.45, .45, 1); }
+html:root:root:root:root .rpl .rpl-line em { transition: transform .18s cubic-bezier(.25, 1.45, .45, 1); }
+html:root:root:root:root .rpl .rpl-list { animation: rpl-rise .32s cubic-bezier(.25, 1.2, .45, 1) both; }
+html:root:root:root:root .rpl .rpl-row { transition: transform .16s ease; }
+html:root:root:root:root .rpl .rpl-row:active { transform: scale(.975); }
+html:root:root:root:root .rpl .rpl-row.on .rpl-dot { animation: rpl-pop .32s cubic-bezier(.25, 1.45, .45, 1) both; }
+html:root:root:root:root .nowbar .nowbar-text { animation: rpl-rise .26s ease both; }
+@media (max-width: 760px) {
+  .rpl-back { animation: none; }
+  html:root:root:root:root .rpl-back.out { animation: none; }
+  html:root:root:root:root .rpl-back.out .rpl { animation: rpl-down .23s cubic-bezier(.4, 0, .9, .5) both; }
+}
+@keyframes rpl-down { to { transform: translateY(100%); } }
+html:is([data-lite], [data-still]) :is(.rpl-back, .nowbar .nowbar-text) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .rpl-back, .nowbar .nowbar-text { animation: none !important; } }

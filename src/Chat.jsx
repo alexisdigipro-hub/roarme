@@ -1628,26 +1628,26 @@ export default function Chat({ me, setMe }) {
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
               : (
-                <div className={`has-sub${roomMenu.sub === 'mute' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: 'mute' })) }}>
-                  <button type="button" onClick={() => setRoomMenu((m) => ({ ...m, sub: m.sub === 'mute' ? '' : 'mute' }))}>{I.bellOff}<span>Mute</span><i className="sub-arrow">{I.right}</i></button>
+                <div className={`has-sub${roomMenu.sub === 'mute' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') { const at = e.currentTarget.getBoundingClientRect(); setRoomMenu((m) => ({ ...m, sub: 'mute', subAt: at })) } }}>
+                  <button type="button" onClick={(e) => { const at = e.currentTarget.parentElement.getBoundingClientRect(); setRoomMenu((m) => ({ ...m, sub: m.sub === 'mute' ? '' : 'mute', subAt: at })) }}>{I.bellOff}<span>Mute</span><i className="sub-arrow">{I.right}</i></button>
                   {roomMenu.sub === 'mute' && (
-                    <div className="sub-menu menu-list">
+                    <SubFly at={roomMenu.subAt}>
                       <button type="button" onClick={() => roomAct('mute', 1)}><span>For 1 hour</span></button>
                       <button type="button" onClick={() => roomAct('mute', 8)}><span>For 8 hours</span></button>
                       <button type="button" onClick={() => roomAct('mute', 24)}><span>For 1 day</span></button>
                       <button type="button" onClick={() => roomAct('mute', 168)}><span>For 7 days</span></button>
                       <button type="button" onClick={() => roomAct('mute', 0)}><span>Forever</span></button>
-                    </div>
+                    </SubFly>
                   )}
                 </div>
               )}
             <button type="button" onClick={() => roomAct('unread')} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: '' })) }}>{I.unread}<span>{roomMenu.r.unread > 0 || marked.includes(roomMenu.r.room_id) ? 'Mark As Read' : 'Mark As Unread'}</span></button>
             <hr />
             <button type="button" onClick={() => roomAct('archive')}>{I.archive}<span>{roomMenu.r.archived ? 'Unarchive' : 'Archive'}</span></button>
-            <div className={`has-sub${roomMenu.sub === 'folder' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: 'folder' })) }}>
-              <button type="button" onClick={() => setRoomMenu((m) => ({ ...m, sub: m.sub === 'folder' ? '' : 'folder' }))}>{I.folder}<span>Add to folder…</span><i className="sub-arrow">{I.right}</i></button>
+            <div className={`has-sub${roomMenu.sub === 'folder' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') { const at = e.currentTarget.getBoundingClientRect(); setRoomMenu((m) => ({ ...m, sub: 'folder', subAt: at })) } }}>
+              <button type="button" onClick={(e) => { const at = e.currentTarget.parentElement.getBoundingClientRect(); setRoomMenu((m) => ({ ...m, sub: m.sub === 'folder' ? '' : 'folder', subAt: at })) }}>{I.folder}<span>Add to folder…</span><i className="sub-arrow">{I.right}</i></button>
               {roomMenu.sub === 'folder' && (
-                <div className="sub-menu menu-list">
+                <SubFly at={roomMenu.subAt}>
                   {/* every folder in the tabs, the ready-made ones too (Alex, 19 Oct); All holds every chat already */}
                   {allFolders.filter((f) => f.id !== 'all').map((f) => {
                     const r = roomMenu.r
@@ -1657,7 +1657,7 @@ export default function Chat({ me, setMe }) {
                   })}
                   <hr />
                   <button type="button" onClick={() => roomAct('newfolder')}>{I.plus}<span>New folder</span></button>
-                </div>
+                </SubFly>
               )}
             </div>
             <hr />
@@ -3664,6 +3664,34 @@ function ShareSong({ file, pre, me, rooms, titleOf, toast, onClose, onNewGroup, 
         </div>
         <button type="button" className="rps-send" disabled={!picked.length || !!busy} onClick={send}>{busy === 'send' ? 'Sending…' : picked.length > 1 ? `Send to ${picked.length} Chats` : 'Send'}</button>
       </div>
+    </div>,
+    document.body,
+  )
+}
+
+/* A submenu that opens beside its row, not inside the menu (Alex, 18 Nov: "not under it in the same menu, at the side"):
+   it stands on the page itself (the menu scrolls and would cut it), at the row's right, or at its left where the right
+   has no room (a phone, where the menu sits at the screen's right edge), and stays inside the screen. */
+function SubFly({ at, children }) {
+  const ref = useRef(null)
+  const [pos, setPos] = useState(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || !at) return
+    const w = el.offsetWidth, h = el.offsetHeight, vw = window.innerWidth, vh = window.innerHeight, gap = 6
+    const right = at.right + gap + w <= vw - 8, leftSide = !right && at.left - gap - w >= 8
+    if (right || leftSide) {
+      const left = right ? at.right + gap : at.left - gap - w
+      setPos({ left, top: Math.max(8, Math.min(at.top - 6, vh - 8 - h)), origin: `${right ? 'left' : 'right'} top` })
+      return
+    }
+    // no room at either side (a phone): it floats just under the row, its right edge on the row's arrow, so the row stays seen
+    const below = at.bottom + 4 + h <= vh - 8
+    setPos({ left: Math.max(8, Math.min(at.right - w, vw - 8 - w)), top: below ? at.bottom + 4 : Math.max(8, at.top - 4 - h), origin: `right ${below ? 'top' : 'bottom'}` })
+  }, [at?.top, at?.left])
+  return createPortal(
+    <div ref={ref} className={`sub-menu menu-list sub-fly${pos ? ' on' : ''}`} style={pos ? { left: pos.left, top: pos.top, transformOrigin: pos.origin } : undefined} onClick={(e) => e.stopPropagation()}>
+      {children}
     </div>,
     document.body,
   )

@@ -4090,24 +4090,49 @@ function NewGroup({ me, start, onClose, onOpen }) {
   const [q, setQ, hits] = usePeopleSearch(me.id)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  // the group's picture, chosen before the group exists (Alex, 18 Nov): adjusted as any picture, put on once it is made
+  const [pic, setPic] = useState(null)
+  const [cropFile, setCropFile] = useState(null)
+  const picRef = useRef(null)
+  const picUrl = useMemo(() => (pic ? URL.createObjectURL(pic) : ''), [pic])
+  useEffect(() => () => { if (picUrl) URL.revokeObjectURL(picUrl) }, [picUrl])
   const toggle = (p) => setPicked((list) => (list.some((x) => x.id === p.id) ? list.filter((x) => x.id !== p.id) : [...list, p]))
   const create = async () => {
     if (!title.trim()) { setErr('Give the group a name.'); return }
     setBusy(true)
     const { data, error } = await supabase.rpc('roar_create_group', { group_title: title.trim(), people: picked.map((p) => p.id) })
+    if (error) { setBusy(false); setErr(errText(error)); return }
+    if (pic) {
+      // a picture that fails to go up does not hold the group back
+      try {
+        const path = `${me.id}/group-${data}-${Date.now()}.jpg`
+        const up = await supabase.storage.from('roar-avatars').upload(path, pic, { contentType: 'image/jpeg' })
+        if (!up.error) await supabase.rpc('roar_set_group_photo', { r: data, url: supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl })
+      } catch { /* the group is made; the picture can be set from its profile */ }
+    }
     setBusy(false)
-    if (error) setErr(errText(error))
-    else onOpen(data)
+    onOpen(data)
   }
   return (
     <Modal title="New group" onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={create} disabled={busy}>{busy ? '…' : 'Create group'}</button></>}>
-      <label className="field name-row"><span>Group name</span><input {...marks.inputProps} className="input" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekend shoot" />{marks.bar}</label>
-      {picked.length > 0 && <div className="chips">{picked.map((p) => <button key={p.id} type="button" className="chip" onClick={() => toggle(p)}>{nameOf(p)} {I.x}</button>)}</div>}
-      <label className="search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by @username or name" /></label>
-      {err && <p className="auth-err">{err}</p>}
-      <div className="people">
-        {hits.map((p) => <PersonRow key={p.id} p={p} onClick={() => toggle(p)} right={<span className={`tick${picked.some((x) => x.id === p.id) ? ' on' : ''}`} />} />)}
+      <div className="ng">
+        <div className="ng-top">
+          <button type="button" className={`ng-pic${pic ? ' has' : ''}`} onClick={() => picRef.current?.click()} aria-label={pic ? 'Change the group photo' : 'Add a group photo'} title={pic ? 'Change the group photo' : 'Add a group photo'}>
+            {pic ? <img src={picUrl} alt="" /> : I.camera}
+          </button>
+          <input ref={picRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setCropFile(f) }} />
+          <label className="as-card ng-name name-row"><input {...marks.inputProps} className="pl-in" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Group Name" maxLength={80} aria-label="Group name" /></label>
+        </div>
+        {marks.bar}
+        <small className="as-label">{picked.length ? `Members · ${picked.length}` : 'Members'}</small>
+        {picked.length > 0 && <div className="chips ng-chips">{picked.map((p) => <button key={p.id} type="button" className="chip" onClick={() => toggle(p)}>{nameOf(p)} {I.x}</button>)}</div>}
+        <label className="search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by @username or name" /></label>
+        {err && <p className="auth-err">{err}</p>}
+        <div className="people">
+          {hits.map((p) => <PersonRow key={p.id} p={p} onClick={() => toggle(p)} right={<span className={`tick${picked.some((x) => x.id === p.id) ? ' on' : ''}`} />} />)}
+        </div>
       </div>
+      {cropFile && <CropModal file={cropFile} title="Group photo" onDone={(f) => { setCropFile(null); if (f) setPic(f) }} onClose={() => setCropFile(null)} />}
     </Modal>
   )
 }

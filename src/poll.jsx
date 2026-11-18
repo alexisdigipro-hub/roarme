@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, supabase } from './lib.js'
 import { Avatar, I } from './ui.jsx'
 
@@ -29,6 +29,7 @@ const SETTINGS = [
   ['correct', 'Set Correct Answer', 'Mark one or more options as the right answer'],
   ['limit', 'Limit Duration', 'Automatically close the poll at a set time'],
 ]
+const GRIP_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M5 9h14M5 15h14" /></svg>
 const DURATIONS = [[1, '1 hour'], [3, '3 hours'], [8, '8 hours'], [24, '1 day'], [72, '3 days'], [168, '1 week']]
 
 /* the editor; onReady(fn | null) hands the sheet the Send it shows in its head, null while the poll is not complete */
@@ -60,6 +61,30 @@ export function PollEditor({ onReady }) {
   })
   const drop = (id) => { setOpts((l) => (l.length > 2 ? l.filter((o) => o.id !== id) : l.map((o) => (o.id === id ? { ...o, text: '' } : o)))); setRight((r) => r.filter((x) => x !== id)) }
   const mark = (id) => setRight((r) => (r.includes(id) ? r.filter((x) => x !== id) : set.multiple ? [...r, id] : [id]))
+  // the options are put in order by their grip (Alex, 18 Nov: "reorder them, up and down"): the held one follows the
+  // finger, changing places with the option it passes; the empty line at the end stays last
+  const [dragId, setDragId] = useState(null)
+  const listRef = useRef(null)
+  const dragMove = (e) => {
+    if (!dragId) return
+    const rows = [...(listRef.current?.querySelectorAll('.pl-opt[data-fill]') || [])]
+    const to = rows.findIndex((r) => { const b = r.getBoundingClientRect(); return e.clientY >= b.top && e.clientY <= b.bottom })
+    if (to < 0) return
+    setOpts((l) => {
+      const from = l.findIndex((o) => o.id === dragId)
+      const target = l.findIndex((o) => o.id === rows[to].dataset.id)
+      if (from < 0 || target < 0 || from === target) return l
+      const next = [...l]; const [it] = next.splice(from, 1); next.splice(target, 0, it)
+      return next
+    })
+  }
+  const grip = (id) => ({
+    onPointerDown: (e) => { e.preventDefault(); e.currentTarget.setPointerCapture?.(e.pointerId); setDragId(id) },
+    onPointerMove: dragMove,
+    onPointerUp: () => setDragId(null),
+    onPointerCancel: () => setDragId(null),
+    onTouchStart: (e) => e.stopPropagation(), // the sheet's own slides stay out of it
+  })
   const flip = (k) => setSet((s) => {
     const n = { ...s, [k]: !s[k] }
     if (k === 'multiple' && !n.multiple) setRight((r) => r.slice(0, 1))
@@ -73,14 +98,15 @@ export function PollEditor({ onReady }) {
         <input className="pl-in" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Add Description (optional)" maxLength={500} />
       </div>
       <small className="as-label">{set.correct ? 'Options · tap the circle of the right answer' : 'Options'}</small>
-      <div className="as-card pl-card">
+      <div className="as-card pl-card" ref={listRef}>
         {opts.map((o, n) => (
-          <div key={o.id} className="pl-opt">
+          <div key={o.id} className={`pl-opt${dragId === o.id ? ' drag' : ''}`} data-id={o.id} data-fill={o.text.trim() ? '' : undefined}>
             {set.correct
               ? <button type="button" className={`pl-mark${right.includes(o.id) ? ' on' : ''}`} onClick={() => mark(o.id)} aria-label="Right answer" disabled={!o.text.trim()}>{right.includes(o.id) ? I.check : null}</button>
               : <span className="pl-dot" />}
             <input className="pl-in" value={o.text} onChange={(e) => edit(o.id, e.target.value)} placeholder={n === opts.length - 1 && n >= 2 ? 'Add an Option' : 'Option'} maxLength={100} />
             {o.text && <button type="button" className="round pl-del" onClick={() => drop(o.id)} aria-label="Remove option">{I.x}</button>}
+            {o.text.trim() && filled.length > 1 && <span className="pl-grip" role="button" aria-label="Move option" title="Hold and move" {...grip(o.id)}>{GRIP_I}</span>}
           </div>
         ))}
       </div>
@@ -163,10 +189,11 @@ export function PollCard({ id, me, people = {}, canStop = false, onError }) {
           return (
             <button key={o.id} type="button" className={`poll-opt${isMine ? ' mine' : ''}${pick.includes(o.id) ? ' picked' : ''}${showRes && quiz ? (isRight ? ' right' : isMine ? ' wrong' : '') : ''}`} disabled={busy || showRes} onClick={() => tap(o.id)}>
               {showRes
-                ? <span className="poll-pc">{share}%</span>
+                ? <span className="poll-pc">{share}%{isMine && <i className="poll-me" title="Your vote">{I.check}</i>}</span>
                 : <i className={`poll-box${p.multiple ? ' sq' : ''}`}>{pick.includes(o.id) ? I.check : null}</i>}
               <span className="poll-txt">
-                <span className="poll-line"><span className="poll-label">{o.text}</span>{showRes && (isMine || isRight) && <i className="poll-tick">{isRight || !quiz ? I.check : I.x}</i>}
+                <span className="poll-line"><span className="poll-label">{o.text}</span>{showRes && quiz && (isMine || isRight) && <i className="poll-tick">{isRight ? I.check : I.x}</i>}
+                  {showRes && n > 0 && <span className="poll-n">{n}</span>}
                   {showRes && who.length > 0 && <span className="poll-faces">{who.map((u) => <Avatar key={u} src={people[u]?.avatar_url} name={people[u]?.display_name || people[u]?.username || ''} size={18} />)}</span>}
                 </span>
                 {showRes && <span className="poll-bar"><i style={{ width: `${Math.max(share, n ? 3 : 0)}%` }} /></span>}

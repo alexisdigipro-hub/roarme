@@ -5468,3 +5468,19 @@ html:root:root:root .sub-menu.sub-fly.on { visibility: visible; animation: sub-f
 html:root:root:root .sub-menu.sub-fly .sub-check { margin-left: auto; display: inline-flex; color: var(--muted); }
 html:is([data-lite], [data-still]) .sub-menu.sub-fly.on { animation: none; }
 @media (prefers-reduced-motion: reduce) { .sub-menu.sub-fly.on { animation: none; } }
+
+/* The profile as a page (Alex, 18 Nov: "a tap on the name's bar slides it in to the right, in the same window where
+   the chat was, using the whole window, not a small pop-up"): ui.jsx Modal page puts the window inside the chat's own
+   pane (.app > .main) instead of over the whole app. It fills the pane, no corners, no rim, no shadow, no veil behind,
+   and slides in from the right; a slide to the right still closes it. */
+html:root:root:root:root .app > .main { position: relative; }
+html:root:root:root:root:root:root .modal-back.as-page { position: absolute !important; inset: 0 !important; top: 0 !important; height: auto !important; z-index: 30; display: flex; padding: 0 !important; background: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; animation: none !important; overflow: hidden; }
+html:root:root:root:root:root:root .modal-back.as-page > .modal { position: relative; flex: 1; width: 100% !important; max-width: none !important; height: 100% !important; max-height: none !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; animation: page-in .34s cubic-bezier(.2, .8, .2, 1) both !important; transform-origin: 50% 50%; }
+html:root:root:root:root:root:root .modal-back.as-page > .modal .modal-body { flex: 1; min-height: 0; overflow-y: auto; }
+html:root:root:root:root:root:root .modal-back.as-page > .modal:has(.pf) .pf { max-width: 640px; margin: 0 auto; width: 100%; }
+@keyframes page-in { from { transform: translateX(100%); } }
+html:is([data-lite], [data-still]) .modal-back.as-page > .modal { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .modal-back.as-page > .modal { animation: none !important; } }
+html:root:root:root:root:root:root .modal-back.as-page { border-radius: inherit; background: #f2f5fa !important; }
+html:root:root:root:root:root:root[data-mode='dark'] .modal-back.as-page { background: #1c1d22 !important; }
+html:root:root:root:root:root:root .modal-back.as-page > .modal { background: inherit !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }

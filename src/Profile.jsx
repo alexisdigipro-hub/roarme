@@ -270,7 +270,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   useEffect(() => { if (tabs.length && !tabs.some(([k]) => k === tab)) setTab(tabs[0][0]) }, [tabs.map(([k]) => k).join(), tab]) // eslint-disable-line react-hooks/exhaustive-deps
   useTabSwipe(bodyRef, tabs.map(([k]) => k), tab, setTab)
   return (
-    <Modal title="" onClose={onClose} wide>
+    <Modal title="" onClose={onClose} wide page>
       <div className={`pf${docked ? ' pf-docked' : ''}`} ref={pfRef}>
         <div className="pf-dock" aria-hidden={!docked}>
           <button type="button" className="round" onClick={onClose} aria-label="Back" tabIndex={docked ? 0 : -1}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg></button>

@@ -206,7 +206,7 @@ export function useTabSwipe(ref, keys, current, setCurrent, dep = 0) {
   }, [ref, dep])
 }
 
-export function Modal({ title, onClose, children, foot, wide = false }) {
+export function Modal({ title, onClose, children, foot, wide = false, page = false }) {
   useEffect(() => {
     const k = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', k)
@@ -215,15 +215,18 @@ export function Modal({ title, onClose, children, foot, wide = false }) {
   const box = useRef(null)
   useSwipeClose(box, onClose)
   // on the page itself, not inside a glass panel (a panel's blur would hold it inside the panel)
+  // page: the window takes the chat's own pane and slides in from the right, as a page, not a small window over it
+  // (Alex, 18 Nov, the profile); with no pane in sight it is the usual window
+  const pane = page ? [...document.querySelectorAll('.app > .main')].find((m) => m.offsetWidth > 0) : null
   return createPortal(
-    <div className="modal-back" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
+    <div className={`modal-back${pane ? ' as-page' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div ref={box} className={`modal${wide ? ' modal-wide' : ''}`} role="dialog" aria-label={title}>
         <div className="modal-head"><h2>{title}</h2><button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button></div>
         <div className="modal-body">{children}</div>
         {foot && <div className="modal-foot">{foot}</div>}
       </div>
     </div>,
-    document.body,
+    pane || document.body,
   )
 }
 

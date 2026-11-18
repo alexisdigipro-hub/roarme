@@ -5376,3 +5376,8 @@ html:root:root:root:root .rpl .rpl-skip:disabled { opacity: .45; }
   html:root:root:root:root:root:root:root:root:root:root .rpl :is(.rpl-play, .rpl-skip):is(button) { background: conic-gradient(from 215deg, #fff 0, #e9edf2 9%, #fff 17%, #c4d2fb 22%, #fff 26%, #f5f7fa 45%, #fbe2c6 50%, #fff 54%, #d9dee5 72%, #bdeae2 77%, #fff 82%, #fff 100%) !important; }
 }
 html:is([data-lite], [data-still]) .rpl :is(.rpl-play, .rpl-skip)::before { transition: none !important; }
+
+/* The day's chip in a chat (TODAY, MONDAY 16 NOVEMBER) 30% smaller and minimal (Alex, 18 Nov: "these texts always 30%
+   smaller and minimal"): 8px letters, no rim, no shadow, no blur, only a faint wash so it reads on any wallpaper. */
+html:root:root:root:root:root:root .day span { padding: 2px 8px !important; border: 0 !important; border-radius: 999px; background: color-mix(in srgb, var(--text) 5%, transparent) !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; font-size: 8px !important; font-weight: 600 !important; letter-spacing: .1em !important; line-height: 1.5; color: var(--muted) !important; }
+html:root:root:root:root:root:root .day { margin: 10px 0 0 !important; padding: 0 0 10px !important; }

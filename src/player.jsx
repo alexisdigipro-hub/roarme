@@ -1,6 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
-import { I, useSwipeClose } from './ui.jsx'
+import { I, calm, useSwipeClose } from './ui.jsx'
 import { fileLink, fmtBytes, supabase } from './lib.js'
 
 /* One music player for the whole app (Alex, 17 Oct): a song started in a chat keeps playing when you move to another
@@ -98,7 +98,8 @@ export const player = {
   repeat() { set({ repeat: { off: 'all', all: 'one', one: 'off' }[state.repeat] }) },
   shuffle() { set({ shuffle: !state.shuffle }) },
   open() { if (state.key) { set({ big: true }); loadQueue(state.roomId) } },
-  close() { set({ big: false }) },
+  // it leaves with a short slide; `big` is 'out' while it does
+  close() { if (state.big !== true) return; if (calm()) { set({ big: false }); return } set({ big: 'out' }); setTimeout(() => { if (state.big === 'out') set({ big: false }) }, 230) },
   pause() { if (audio && !audio.paused) audio.pause() },
   resume() { if (audio && audio.paused && state.key) { window.dispatchEvent(new CustomEvent('roarme-play', { detail: audio })); audio.play().catch(() => set({ bad: true })) } },
   seek(frac) { if (audio && state.dur) audio.currentTime = Math.max(0, Math.min(1, frac)) * state.dur },
@@ -119,7 +120,7 @@ export function NowPlaying({ onOpen, className = '' }) {
       <button type="button" className="nowbar-btn" onClick={() => (p.playing ? player.pause() : player.resume())} aria-label={p.playing ? 'Pause' : 'Play'} title={p.playing ? 'Pause' : 'Play'}>{p.playing ? I.pause : I.play}</button>
       <button type="button" className="nowbar-main" onClick={() => player.open()} title="Open Player">
         <span className="nowbar-eq" aria-hidden="true"><i /><i /><i /></span>
-        <span className="nowbar-text"><b>{p.title}</b><small>{p.bad ? 'Cannot play here' : p.from || 'Now playing'}</small></span>
+        <span className="nowbar-text" key={p.key}><b>{p.title}</b><small>{p.bad ? 'Cannot play here' : p.from || 'Now playing'}</small></span>
       </button>
       <small className="nowbar-time">{mmss(p.at)}{p.dur ? ` / ${mmss(p.dur)}` : ''}</small>
       <button type="button" className="nowbar-x" onClick={() => player.stop()} aria-label="Stop" title="Stop">{I.x}</button>
@@ -166,35 +167,35 @@ export function PlayerSheet({ onOpen }) {
   const many = p.queue.length > 1
   const goChat = () => { const id = p.roomId; player.close(); if (id) onOpen?.(id) }
   return createPortal(
-    <div className="rpl-back" onMouseDown={(e) => { if (e.target === e.currentTarget) player.close() }}>
+    <div className={`rpl-back${p.big === 'out' ? ' out' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) player.close() }}>
       <div ref={box} className={`rpl${p.playing ? ' on' : ''}`} role="dialog" aria-label="Player">
         <div className="rpl-head" data-grab="">
           <button type="button" className="rpl-round" onClick={() => player.close()} aria-label="Close" title="Close">{RPL_I.down}</button>
           <span className="rpl-from"><small>Playing from</small><b>{p.from || 'RoarMe'}</b></span>
           <button type="button" className="rpl-round" onClick={goChat} disabled={!p.roomId} aria-label="Show in Chat" title="Show in Chat">{RPL_I.chat}</button>
         </div>
-        <div className="rpl-art" aria-hidden="true">
+        <div className="rpl-art" aria-hidden="true" key={p.key}>
           <i className="rpl-glow a" /><i className="rpl-glow b" /><i className="rpl-glow c" />
           <span className="rpl-bars">{[0, 1, 2, 3, 4, 5, 6].map((n) => <i key={n} style={{ '--n': n }} />)}</span>
         </div>
-        <div className="rpl-title"><b>{p.title}</b><small>{p.bad ? 'Cannot play here' : many ? `${p.queue.findIndex((q) => q.key === p.key) + 1} of ${p.queue.length}` : 'Now playing'}</small></div>
+        <div className="rpl-title" key={p.key}><b>{p.title}</b><small>{p.bad ? 'Cannot play here' : many ? `${p.queue.findIndex((q) => q.key === p.key) + 1} of ${p.queue.length}` : 'Now playing'}</small></div>
         <div className="rpl-seek">
           <span ref={line} className="rpl-line" style={{ '--rp': frac }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} role="slider" aria-label="Position" aria-valuemin={0} aria-valuemax={Math.round(p.dur)} aria-valuenow={Math.round(p.at)}><i /><em /></span>
           <span className="rpl-times"><small>{mmss(p.at)}</small><small>{p.dur ? `-${mmss(p.dur - p.at)}` : '–:––'}</small></span>
         </div>
         <div className="rpl-ctl">
-          <button type="button" className={`rpl-opt${p.shuffle ? ' on' : ''}`} onClick={() => player.shuffle()} aria-pressed={p.shuffle} aria-label="Shuffle" title="Shuffle">{RPL_I.shuffle}</button>
-          <button type="button" className="rpl-skip" onClick={() => player.prev()} aria-label="Previous" title="Previous">{RPL_I.prev}</button>
-          <button type="button" className="rpl-play" onClick={() => (p.playing ? player.pause() : player.resume())} aria-label={p.playing ? 'Pause' : 'Play'} title={p.playing ? 'Pause' : 'Play'}>{p.playing ? RPL_I.pause : RPL_I.play}</button>
-          <button type="button" className="rpl-skip" onClick={() => player.next()} disabled={!many} aria-label="Next" title="Next">{RPL_I.next}</button>
-          <button type="button" className={`rpl-opt${p.repeat !== 'off' ? ' on' : ''}`} onClick={() => player.repeat()} aria-label={p.repeat === 'one' ? 'Repeat One' : p.repeat === 'all' ? 'Repeat All' : 'Repeat'} title={p.repeat === 'one' ? 'Repeat One' : p.repeat === 'all' ? 'Repeat All' : 'Repeat'}>{RPL_I.repeat}{p.repeat === 'one' && <em>1</em>}</button>
+          <button type="button" className={`rpl-opt${p.shuffle ? ' on' : ''}`} onClick={() => player.shuffle()} aria-pressed={p.shuffle} aria-label="Shuffle" title="Shuffle"><i className="rpl-sign" key={p.shuffle ? 'a' : 'b'}>{RPL_I.shuffle}</i></button>
+          <button type="button" className="rpl-skip prev" onClick={() => player.prev()} aria-label="Previous" title="Previous">{RPL_I.prev}</button>
+          <button type="button" className="rpl-play" onClick={() => (p.playing ? player.pause() : player.resume())} aria-label={p.playing ? 'Pause' : 'Play'} title={p.playing ? 'Pause' : 'Play'}><i className="rpl-sign" key={p.playing ? 'a' : 'b'}>{p.playing ? RPL_I.pause : RPL_I.play}</i></button>
+          <button type="button" className="rpl-skip next" onClick={() => player.next()} disabled={!many} aria-label="Next" title="Next">{RPL_I.next}</button>
+          <button type="button" className={`rpl-opt${p.repeat !== 'off' ? ' on' : ''}`} onClick={() => player.repeat()} aria-label={p.repeat === 'one' ? 'Repeat One' : p.repeat === 'all' ? 'Repeat All' : 'Repeat'} title={p.repeat === 'one' ? 'Repeat One' : p.repeat === 'all' ? 'Repeat All' : 'Repeat'}><i className="rpl-sign" key={p.repeat}>{RPL_I.repeat}</i>{p.repeat === 'one' && <em>1</em>}</button>
         </div>
         {many && (
           <div className="rpl-list">
             <small className="rpl-label">Songs in this chat</small>
             {p.queue.map((q) => (
               <button type="button" key={q.key} className={`rpl-row${q.key === p.key ? ' on' : ''}`} onClick={() => player.play(q)}>
-                <i className="rpl-dot">{q.key === p.key && p.playing ? <span className="rpl-eq"><i /><i /><i /></span> : I.play}</i>
+                <i className="rpl-dot" key={q.key === p.key ? 'on' : 'off'}>{q.key === p.key && p.playing ? <span className="rpl-eq"><i /><i /><i /></span> : I.play}</i>
                 <span className="rpl-name"><b>{q.title}</b><small>{(((q.file?.name || '').match(AUDIO_EXT) || [])[1] || 'audio').toUpperCase()} · {fmtBytes(q.file?.size)}</small></span>
               </button>
             ))}

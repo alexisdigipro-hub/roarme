@@ -5523,3 +5523,13 @@ html:root:root:root:root:root:root .modal-back.as-page > .modal { background: in
   html:root:root:root:root:root:root:root:root:root:root .as-page :is(.pf-acts > button, .pf-more > button:not(.scrim)) { width: 100% !important; min-width: 0; }
   html:root:root:root:root:root:root:root:root:root:root .as-page :is(.pf-acts > button, .pf-more > button:not(.scrim)) svg { box-sizing: content-box; width: 22px !important; height: 22px !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: none !important; animation: none; }
 }
+
+/* The banner rounded on a phone too (Alex, 18 Nov: "the banner rounded at the edges"): in the page on a phone the
+   head no longer bleeds to the screen's edges; it is a card with 26px corners, under the clock, as wide as the cards
+   below it; the photo stays its full picture, clipped to the corners. */
+@media (max-width: 760px) {
+  html:root:root:root:root:root:root .as-page .pf-head { margin: calc(env(safe-area-inset-top, 0px) + 8px) 0 0 !important; padding-top: 58px !important; border-radius: 26px; }
+  html:root:root:root:root:root:root .as-page .pf-head .pf-hero { clip-path: inset(0 round 26px); }
+  html:root:root:root:root:root:root .as-page .pf-head::after { border-radius: inherit; }
+  html:root:root:root:root:root:root .as-page .pf-head :is(.pf-back, .pf-edit) { top: 12px !important; }
+}

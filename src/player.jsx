@@ -173,11 +173,8 @@ export function PlayerSheet({ onOpen, onShare }) {
       <div ref={box} className={`rpl${p.playing ? ' on' : ''}`} role="dialog" aria-label="Player">
         <div className="rpl-head" data-grab="">
           <button type="button" className="rpl-round" onClick={() => player.close()} aria-label="Close" title="Close">{RPL_I.down}</button>
-          <span className="rpl-from"><small>Playing from</small><b>{p.from || 'RoarMe'}</b></span>
-          <span className="rpl-head-end">
-            <button type="button" className="rpl-round" onClick={() => nowFile && onShare?.(nowFile)} disabled={!nowFile} aria-label="Share" title="Share">{RPL_I.share}</button>
-            <button type="button" className="rpl-round" onClick={goChat} disabled={!p.roomId} aria-label="Show in Chat" title="Show in Chat">{RPL_I.chat}</button>
-          </span>
+          <button type="button" className="rpl-from" onClick={goChat} disabled={!p.roomId} title="Show in Chat"><small>Playing from</small><b>{p.from || 'RoarMe'}</b></button>
+          <button type="button" className="rpl-round" onClick={() => nowFile && onShare?.(nowFile)} disabled={!nowFile} aria-label="Share" title="Share">{RPL_I.share}</button>
         </div>
         <div className="rpl-art" aria-hidden="true" key={p.key}>
           <i className="rpl-glow a" /><i className="rpl-glow b" /><i className="rpl-glow c" />

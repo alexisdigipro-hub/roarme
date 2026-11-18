@@ -5484,3 +5484,42 @@ html:is([data-lite], [data-still]) .modal-back.as-page > .modal { animation: non
 html:root:root:root:root:root:root .modal-back.as-page { border-radius: inherit; background: #f2f5fa !important; }
 html:root:root:root:root:root:root[data-mode='dark'] .modal-back.as-page { background: #1c1d22 !important; }
 html:root:root:root:root:root:root .modal-back.as-page > .modal { background: inherit !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* The profile page's head as a banner (Alex, 18 Nov, from Telegram's desktop profile: "like this, in our colours, keep
+   the banner, and whatever we need"). On a computer, in the page (.modal-back.as-page): the page's column is 640px;
+   the head is a card with 26px corners in the accent's pair, the photo (when there is one) blurred under it as a
+   texture; the picture round in the middle, the name and last seen under it, then every action we have (Call, Video,
+   Mute, Search, More) as even tiles of light glass, sign over word; Back and Edit at the card's top corners. The tabs
+   stand as a pill only as wide as they are. A phone keeps its own full-bleed head. */
+@media (min-width: 761px) {
+  html:root:root:root:root:root:root .modal-back.as-page .pf { padding-top: 18px; }
+  html:root:root:root:root:root:root .as-page .pf-head { min-height: 0; margin: 0; padding: 30px 16px 16px; gap: 18px; justify-content: flex-start; border-radius: 26px; background: linear-gradient(165deg, var(--halo-mine-top, #49c3fc), var(--halo-mine, #1bb4fb)); box-shadow: 0 14px 34px -16px var(--halo-mine, rgba(27, 180, 251, .6)); }
+  html:root:root:root:root:root:root .as-page .pf-head .pf-hero { inset: -40px; filter: blur(34px) saturate(1.2); opacity: .55; }
+  html:root:root:root:root:root:root .as-page .pf-head::after { background: linear-gradient(165deg, color-mix(in srgb, var(--halo-mine-top, #49c3fc) 70%, transparent), color-mix(in srgb, var(--halo-mine, #1bb4fb) 82%, transparent)); }
+  html:root:root:root:root:root:root .as-page .pf-head :is(.pf-back, .pf-edit) { top: 14px; height: 38px; background: rgba(255, 255, 255, .2); border: 1px solid rgba(255, 255, 255, .26); }
+  html:root:root:root:root:root:root .as-page .pf-head .pf-back { left: 14px; width: 38px; }
+  html:root:root:root:root:root:root .as-page .pf-head .pf-edit { right: 14px; padding: 0 16px; font-size: 14.5px; }
+  html:root:root:root:root:root:root .as-page .pf-head .pf-top { align-items: center; text-align: center; gap: 3px; padding: 0; }
+  html:root:root:root:root:root:root .as-page .pf-head .pf-top > :is(.av, .pf-pic) { display: grid !important; align-self: center; margin: 0 0 12px; }
+  html:root:root:root:root:root:root .as-page .pf-head .pf-top .av { width: 110px !important; height: 110px !important; border-radius: 50% !important; box-shadow: 0 0 0 3px rgba(255, 255, 255, .35), 0 12px 30px rgba(0, 0, 0, .25) !important; }
+  html:root:root:root:root:root:root .as-page .pf-head :is(.pf-name, .pf-name-edit) { font-size: 22px; font-weight: 650; text-align: center; color: var(--halo-ink, #fff); }
+  html:root:root:root:root:root:root .as-page .pf-head .pf-sub { font-size: 13.5px; color: color-mix(in srgb, var(--halo-ink, #fff) 78%, transparent); }
+  html:root:root:root:root:root:root .as-page .pf-acts { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  html:root:root:root:root:root:root:root:root:root:root .as-page :is(.pf-acts > button, .pf-more > button:not(.scrim)) { height: 64px; padding: 0 4px; gap: 5px; justify-content: center; border-radius: 16px; background: rgba(255, 255, 255, .2) !important; border: 1px solid rgba(255, 255, 255, .28) !important; box-shadow: none !important; color: var(--halo-ink, #fff); }
+  html:root:root:root:root:root:root:root:root:root:root .as-page :is(.pf-acts > button, .pf-more > button:not(.scrim)):hover { background: rgba(255, 255, 255, .3) !important; }
+  html:root:root:root:root:root:root .as-page :is(.pf-acts > button, .pf-more > button:not(.scrim)) span { color: var(--halo-ink, #fff); font-size: 12.5px; font-weight: 550; text-transform: none; }
+  html:root:root:root:root:root:root .as-page :is(.pf-acts > button, .pf-more > button:not(.scrim)) svg { width: 22px; height: 22px; }
+  html:root:root:root:root:root:root .as-page :is(.pf-acts > button, .pf-more > button:not(.scrim)) > .ic-mask { width: 22px; height: 22px; border: 0; border-radius: 0; background: none; }
+  html:root:root:root:root:root:root .as-page .pf-acts .pf-a-mute.on { background: rgba(255, 59, 48, .32) !important; }
+  html:root:root:root:root:root:root .as-page .pf-card { margin-top: 2px; }
+  html:root:root:root:root:root:root .as-page .pf-tabs { width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; }
+}
+@media (min-width: 761px) {
+  /* the head keeps overflow visible (Mute's and More's menus open from it), so only the blurred photo is clipped */
+  html:root:root:root:root:root:root .as-page .pf-head .pf-hero { inset: 0 !important; transform: none; border-radius: inherit; clip-path: inset(0 round 26px); }
+  html:root:root:root:root:root:root .as-page .pf-head::after { border-radius: inherit; }
+  html:root:root:root:root:root:root .as-page .pf-acts { display: grid !important; width: 100%; justify-content: stretch; }
+  html:root:root:root:root:root:root .as-page .pf-acts > .pf-more { display: block; min-width: 0; }
+  html:root:root:root:root:root:root:root:root:root:root .as-page :is(.pf-acts > button, .pf-more > button:not(.scrim)) { width: 100% !important; min-width: 0; }
+  html:root:root:root:root:root:root:root:root:root:root .as-page :is(.pf-acts > button, .pf-more > button:not(.scrim)) svg { box-sizing: content-box; width: 22px !important; height: 22px !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: none !important; animation: none; }
+}

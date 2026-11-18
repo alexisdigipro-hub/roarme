@@ -895,8 +895,10 @@ function ChatTheme({ p }) {
   return (
     <Box title="Chat theme" note="Your own colours for the messages. The wallpaper is below.">
       {/* the ready-made chat themes are gone (Alex, 12 Nov); one's own colours stay, and one tap goes back to the theme's */}
-      {(p.chatTheme || p.myBubble || p.theirBubble || p.accentHex) && (
-        <button type="button" className="set-row set-pick" onClick={() => setPrefs({ chatTheme: '', myBubble: '', theirBubble: '', accentHex: '' })}>
+      {/* an accent of one's own (accent 'h-custom') also lives in accentHex: it is not a message colour, so it neither
+          shows this row nor is cleared by it (18 Nov: the row wiped the colour picked in Accent Colour) */}
+      {(p.chatTheme || p.myBubble || p.theirBubble || (p.accentHex && p.accent !== 'h-custom')) && (
+        <button type="button" className="set-row set-pick" onClick={() => setPrefs({ chatTheme: '', myBubble: '', theirBubble: '', ...(p.accent === 'h-custom' ? {} : { accentHex: '' }) })}>
           <span className="set-text">Back to the Theme's Own<small>The theme's own colours for the messages</small></span>
         </button>
       )}

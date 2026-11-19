@@ -5589,3 +5589,12 @@ html:is([data-lite], [data-still]) .apx-pane { animation: none; }
 html:root:root .apx-name .accents { gap: 8px; margin-top: 8px; }
 html:root:root .apx-name .accents .acc { width: 28px; height: 28px; min-width: 28px; }
 html:root:root .apx-name .accents .acc small { display: none; }
+
+/* Media's five tabs fit the phone's width (Alex, 19 Nov: "something is off up there"): the bar scrolled sideways and
+   faded at its right edge, so Music and its glass stood cut at the edge. Under 760px no scroll and no fade: each tab
+   takes an even share, the count a small chip beside the word */
+@media (max-width: 760px) {
+  html:root:root:root .lib-seg { overflow: visible; -webkit-mask-image: none; mask-image: none; gap: 2px; }
+  html:root:root:root .lib-seg > button { flex: 1 1 0; min-width: 0; padding: 0 2px; gap: 4px; justify-content: center; font-size: 13px; white-space: nowrap; }
+  html:root:root:root .lib-seg > button i { font-size: 9.5px; padding: 0 5px; line-height: 16px; }
+}

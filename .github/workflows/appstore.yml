@@ -14,7 +14,7 @@ on:
         description: listing, screenshots or upload-screenshots
         default: listing
         type: choice
-        options: [listing, screenshots, upload-screenshots]
+        options: [listing, screenshots, upload-screenshots, status]
       build:
         description: TestFlight build number to put on the version (listing; empty = leave it)
         default: ''
@@ -25,14 +25,14 @@ permissions:
 
 jobs:
   listing:
-    if: inputs.mode == 'listing'
+    if: inputs.mode == 'listing' || inputs.mode == 'status'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node scripts/appstore.mjs
+      - run: node scripts/${{ inputs.mode == 'status' && 'appstore-status.mjs' || 'appstore.mjs' }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -40,7 +40,7 @@ jobs:
           BUILD: ${{ inputs.build }}
 
   screenshots:
-    if: inputs.mode != 'listing'
+    if: inputs.mode == 'screenshots' || inputs.mode == 'upload-screenshots'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

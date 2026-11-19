@@ -30,7 +30,7 @@ const api = async (method, path, body) => {
 const done = []
 const failed = []
 const step = async (name, fn) => {
-  try { const note = await fn(); done.push(name); console.log(`OK    ${name}${note ? ` (${note})` : ''}`) }
+  try { const r = await fn(); const note = typeof r === 'string' ? r : ''; done.push(name); console.log(`OK    ${name}${note ? ` (${note})` : ''}`) }
   catch (e) { failed.push(name); console.log(`::warning title=${name}::${e.message}`); console.log(`FAIL  ${name}: ${e.message}`) }
 }
 const editable = (s) => !/READY_FOR_DISTRIBUTION|READY_FOR_SALE|REPLACED|REMOVED|PROCESSING_FOR_DISTRIBUTION/.test(s || '')
@@ -62,7 +62,7 @@ await step('Age rating', async () => {
     'violenceRealistic', 'violenceRealisticProlongedGraphicOrSadistic']
   const base = Object.fromEntries(none.map((k) => [k, 'NONE']))
   Object.assign(base, { gambling: false, unrestrictedWebAccess: false })
-  const full = { ...base, gunsOrOtherWeapons: 'NONE', lootBox: false, messagingAndChat: true, userGeneratedContent: true, advertising: false, ageAssurance: false, healthOrWellnessTopics: false, parentalControls: false }
+  const full = { ...base, gunsOrOtherWeapons: 'NONE', lootBox: false, messagingAndChat: true, userGeneratedContent: true, advertising: false, ageAssurance: false, healthOrWellnessTopics: false, parentalControls: false, socialMedia: false }
   try { await api('PATCH', `/v1/ageRatingDeclarations/${d.id}`, { data: { type: 'ageRatingDeclarations', id: d.id, attributes: full } }); return 'with Messaging and Chat, User-Generated Content' }
   catch (e) { console.log(`  the newer questions were refused (${e.message}); sending the older set`); await api('PATCH', `/v1/ageRatingDeclarations/${d.id}`, { data: { type: 'ageRatingDeclarations', id: d.id, attributes: base } }); return 'older set: check Messaging and Chat and User-Generated Content by hand' }
 })

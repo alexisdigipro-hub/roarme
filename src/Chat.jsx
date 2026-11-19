@@ -30,7 +30,7 @@ import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { NowPlaying, PlayerSheet, player } from './player.jsx'
-import { keepMsgs, keptMsgs, lsGet, lsSet, readMsgs } from './cache.js'
+import { fixKept, keepMsgs, keptMsgs, lsGet, lsSet, readMsgs } from './cache.js'
 import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
@@ -560,6 +560,7 @@ export default function Chat({ me, setMe }) {
         listeners.current.forEach((fn) => fn(ev))
         reloadSoon()
         const m = ev.new
+        if (ev.eventType === 'UPDATE' && m) fixKept(m)
         if (ev.eventType === 'INSERT' && m && m.user_id !== me.id) notifyRef.current(m)
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_members', filter: `user_id=eq.${me.id}` }, reloadSoon)
@@ -1870,12 +1871,14 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const holdT = useRef(null)
   const held = useRef(false)
   // Delete for Me, and asking someone to delete what they wrote (Alex, 18 Oct; supabase/delete-asks.sql)
-  const [hidden, setHidden] = useState(() => new Set())
+  // what I deleted for myself is kept on the device too, so a kept copy of the chat never flashes it (Alex, 19 Nov)
+  const [hidden, setHidden] = useState(() => new Set(lsGet(`hides-${room.room_id}`) || []))
   const [asks, setAsks] = useState([])
+  useEffect(() => { lsSet(`hides-${room.room_id}`, [...hidden], 200) }, [hidden, room.room_id])
   useEffect(() => {
     let alive = true
-    setHidden(new Set()); setAsks([])
-    supabase.from('roar_msg_hides').select('message_id').eq('room_id', room.room_id).then(({ data }) => { if (alive) setHidden(new Set((data || []).map((x) => x.message_id))) })
+    setAsks([])
+    supabase.from('roar_msg_hides').select('message_id').eq('room_id', room.room_id).then(({ data }) => { if (alive && data) setHidden(new Set(data.map((x) => x.message_id))) })
     supabase.from('roar_delete_asks').select('*').eq('room_id', room.room_id).eq('status', 'pending').then(({ data }) => { if (alive) setAsks(data || []) })
     const ch = supabase.channel(`roar-asks-${room.room_id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_delete_asks', filter: `room_id=eq.${room.room_id}` }, (ev) => {
@@ -2028,7 +2031,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     return () => { alive = false }
   }, [load]) // eslint-disable-line react-hooks/exhaustive-deps
   // what the chat shows is kept on the device for next time (its last 60)
-  useEffect(() => { if (rawMsgs.length) keepMsgs(room.room_id, rawMsgs) }, [rawMsgs, room.room_id])
+  useEffect(() => { if (rawMsgs.length) keepMsgs(room.room_id, rawMsgs.filter((m) => !hidden.has(m.id))) }, [rawMsgs, hidden, room.room_id])
 
   // reactions and how far each person has read
   const loadReacts = useCallback(() => supabase.from('roar_reactions').select('message_id, user_id, emoji').eq('room_id', room.room_id).then(({ data }) => setReacts(data || [])), [room.room_id])

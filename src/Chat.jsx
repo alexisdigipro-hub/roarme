@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -1660,7 +1660,7 @@ export default function Chat({ me, setMe }) {
             <hr />
             <button type="button" onClick={() => roomAct('archive')}>{I.archive}<span>{roomMenu.r.archived ? 'Unarchive' : 'Archive'}</span></button>
             <div className={`has-sub${roomMenu.sub === 'folder' ? ' open' : ''}`} onPointerEnter={(e) => { if (e.pointerType === 'mouse') { const at = e.currentTarget.getBoundingClientRect(); setRoomMenu((m) => ({ ...m, sub: 'folder', subAt: at })) } }}>
-              <button type="button" onClick={(e) => { const at = e.currentTarget.parentElement.getBoundingClientRect(); setRoomMenu((m) => ({ ...m, sub: m.sub === 'folder' ? '' : 'folder', subAt: at })) }}>{I.folder}<span>Add to folder…</span><i className="sub-arrow">{I.right}</i></button>
+              <button type="button" onClick={(e) => { const at = e.currentTarget.parentElement.getBoundingClientRect(); setRoomMenu((m) => ({ ...m, sub: m.sub === 'folder' ? '' : 'folder', subAt: at })) }}>{I.folder}<span>Add to Folder</span><i className="sub-arrow">{I.right}</i></button>
               {roomMenu.sub === 'folder' && (
                 <SubFly at={roomMenu.subAt}>
                   {/* every folder in the tabs, the ready-made ones too (Alex, 19 Oct); All holds every chat already */}
@@ -1818,6 +1818,22 @@ function vanish(ids) {
   requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => el.classList.add('msg-out-go'))))
   return { done: new Promise((r) => setTimeout(r, 430)), back }
 }
+// a fresh list of messages, with every one that did not change kept as the object already on screen
+function sameMsgs(prev, got) {
+  if (!prev?.length) return got
+  const had = new Map(prev.map((m) => [m.id, m]))
+  let all = prev.length === got.length
+  const out = got.map((m, i) => {
+    const o = had.get(m.id)
+    if (o && JSON.stringify(o) === JSON.stringify(m)) { if (prev[i] !== o) all = false; return o }
+    all = false
+    return m
+  })
+  // a message that came live while the fresh copy was on its way stays
+  const ids = new Set(got.map((m) => m.id)), lastAt = got[got.length - 1]?.created_at
+  const extra = lastAt ? prev.filter((m) => !ids.has(m.id) && m.created_at > lastAt) : []
+  return all && !extra.length ? prev : [...out, ...extra]
+}
 const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [] }) {
   const [rawMsgs, setMsgs] = useState(() => keptMsgs(room.room_id) || []) // the chat's last messages kept on the device show at once (cache.js)
   // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
@@ -1877,7 +1893,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   useEffect(() => {
     let alive = true
     setAsks([])
-    supabase.from('roar_msg_hides').select('message_id').eq('room_id', room.room_id).then(({ data }) => { if (alive && data) setHidden(new Set(data.map((x) => x.message_id))) })
+    supabase.from('roar_msg_hides').select('message_id').eq('room_id', room.room_id).then(({ data }) => { if (alive && data) setHidden((h) => { const n = new Set(data.map((x) => x.message_id)); return n.size === h.size && [...n].every((x) => h.has(x)) ? h : n }) })
     supabase.from('roar_delete_asks').select('*').eq('room_id', room.room_id).eq('status', 'pending').then(({ data }) => { if (alive) setAsks(data || []) })
     const ch = supabase.channel(`roar-asks-${room.room_id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_delete_asks', filter: `room_id=eq.${room.room_id}` }, (ev) => {
@@ -2026,8 +2042,17 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     let alive = true
     let fresh = false
     if (!keptMsgs(room.room_id)) readMsgs(room.room_id).then((c) => { if (alive && !fresh && c?.length) setMsgs((m) => (m.length ? m : c)) })
-    load().then((got) => { fresh = true; if (alive) setMsgs(got) })
-    return () => { alive = false }
+    // the fresh copy keeps every message that did not change as the same object, so those rows are not drawn again,
+    // and it lands after the chat's slide in, not in the middle of it (Alex, 19 Nov: "the animations stick as I go in")
+    const born = performance.now()
+    let wait = 0
+    load().then((got) => {
+      fresh = true
+      const put = () => { if (alive) setMsgs((prev) => sameMsgs(prev, got)) }
+      const left = 360 - (performance.now() - born)
+      if (left > 0 && keptMsgs(room.room_id)) wait = setTimeout(put, left); else put()
+    })
+    return () => { alive = false; clearTimeout(wait) }
   }, [load]) // eslint-disable-line react-hooks/exhaustive-deps
   // what the chat shows is kept on the device for next time (its last 60)
   useEffect(() => { if (rawMsgs.length) keepMsgs(room.room_id, rawMsgs.filter((m) => !hidden.has(m.id))) }, [rawMsgs, hidden, room.room_id])
@@ -3697,25 +3722,35 @@ function ShareSong({ file, pre, me, rooms, titleOf, toast, onClose, onNewGroup, 
 /* A submenu that opens beside its row, not inside the menu (Alex, 18 Nov: "not under it in the same menu, at the side"):
    it stands on the page itself (the menu scrolls and would cut it), at the row's right, or at its left where the right
    has no room (a phone, where the menu sits at the screen's right edge), and stays inside the screen. */
-function SubFly({ at, children }) {
+function SubFly({ at: at0, children }) {
   const ref = useRef(null)
   const [pos, setPos] = useState(null)
   useLayoutEffect(() => {
     const el = ref.current
+    let at = at0
     if (!el || !at) return
     const w = el.offsetWidth, h = el.offsetHeight, vw = window.innerWidth, vh = window.innerHeight, gap = 6
+    // sides from the whole menu (a row's own box may be narrower than the menu), the height from the row
+    const mb = document.querySelector('.ctx .ctx-menu')?.getBoundingClientRect()
+    at = mb ? { top: at.top, bottom: at.bottom, left: mb.left, right: mb.right } : at
     const right = at.right + gap + w <= vw - 8, leftSide = !right && at.left - gap - w >= 8
     if (right || leftSide) {
       const left = right ? at.right + gap : at.left - gap - w
       setPos({ left, top: Math.max(8, Math.min(at.top - 6, vh - 8 - h)), origin: `${right ? 'left' : 'right'} top` })
       return
     }
+    // a phone: the menu stands at the left, so the choices come out at its right, as narrow as the room there (Alex, 19 Nov)
+    const room = vw - 8 - (at.right + gap)
+    if (room >= 120) {
+      setPos({ left: at.right + gap, width: room, top: Math.max(8, Math.min(at.top - 6, vh - 8 - h)), origin: 'left top' })
+      return
+    }
     // no room at either side (a phone): it floats just under the row, its right edge on the row's arrow, so the row stays seen
     const below = at.bottom + 4 + h <= vh - 8
     setPos({ left: Math.max(8, Math.min(at.right - w, vw - 8 - w)), top: below ? at.bottom + 4 : Math.max(8, at.top - 4 - h), origin: `right ${below ? 'top' : 'bottom'}` })
-  }, [at?.top, at?.left])
+  }, [at0?.top, at0?.left])
   return createPortal(
-    <div ref={ref} className={`sub-menu menu-list sub-fly${pos ? ' on' : ''}`} style={pos ? { left: pos.left, top: pos.top, transformOrigin: pos.origin } : undefined} onClick={(e) => e.stopPropagation()}>
+    <div ref={ref} className={`sub-menu menu-list sub-fly${pos ? ' on' : ''}`} style={pos ? { left: pos.left, top: pos.top, transformOrigin: pos.origin, ...(pos.width ? { width: pos.width, minWidth: 0 } : {}) } : undefined} onClick={(e) => e.stopPropagation()}>
       {children}
     </div>,
     document.body,
@@ -3767,10 +3802,11 @@ function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
 }
 
 /* a photo or GIF in a message; with automatic download off (or a GIF set not to move) it waits for a tap */
+const url0 = (go, file) => (go ? picNow(thumbOf(file)) : '')
 function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
   const [go, setGo] = useState(auto && !still)
-  const [url, setUrl] = useState('')
-  const [ready, setReady] = useState(false)
+  const [url, setUrl] = useState(() => (auto && !still ? picNow(thumbOf(file)) : ''))
+  const [ready, setReady] = useState(() => !!url0(auto && !still, file))
   const [tall, setTall] = useState(false) // taller than 4:5: shown as 4:5, cut at top and bottom (Alex, 15 Nov)
   useEffect(() => { if (!go) return undefined; let alive = true; picLink(thumbOf(file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>

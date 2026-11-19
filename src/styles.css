@@ -5556,3 +5556,12 @@ html:root:root:root:root .foot button .ic-mask.fi-phone { width: 24px; height: 2
 @media (prefers-reduced-motion: no-preference) {
   html:root:root:root:root:not([data-still]):not([data-lite]) .foot > button.foot-calls.on .ic-mask.fi-phone { animation: gi-ring .56s cubic-bezier(.3, .7, .4, 1) backwards; }
 }
+
+/* The chat's long-press menu on a phone (Alex, 19 Nov: "a little narrower, aligned left, so the submenus come out at
+   its right"): 220px at the left under the preview; Mute's and Add to Folder's choices stand at its right, as wide as
+   the room there, a long name ending in dots. */
+@media (max-width: 760px) {
+  html:root:root:root:root .ctx .ctx-menu { align-self: flex-start; width: min(220px, 58%); transform-origin: 0 0 !important; }
+}
+html:root:root:root .sub-menu.sub-fly > button { min-width: 0; }
+html:root:root:root .sub-menu.sub-fly > button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

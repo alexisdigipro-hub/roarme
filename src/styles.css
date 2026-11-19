@@ -5632,3 +5632,4 @@ html:is([data-lite], [data-still]) .compose-wrap > .to-latest { animation: none;
 .msg > .who-ava { flex: none; align-self: flex-end; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; line-height: 0; }
 .msg .who[role='button'] { cursor: pointer; }
 .msg .who[role='button']:active, .msg > .who-ava:active { opacity: .6; }
+html:root:root:root:root .compose-wrap > .round.to-latest { left: auto !important; right: var(--tl-r, 14px) !important; width: var(--tl-d, 44px) !important; height: var(--tl-d, 44px) !important; min-width: 0 !important; max-width: none !important; aspect-ratio: 1; border-radius: 50% !important; }

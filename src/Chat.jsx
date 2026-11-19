@@ -2037,6 +2037,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const transferHiddenRef = useRef(false)
   transferHiddenRef.current = transferHidden
   const stick = useRef(true)
+  const holdNew = useRef({ until: 0, user: false }) // the first moments of a chat stay at its newest message (see below)
+  const holdingNew = () => !holdNew.current.user && performance.now() < holdNew.current.until
   const PAGE = 60
 
   const load = useCallback(async (before) => {
@@ -2168,16 +2170,22 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const el = scrollRef.current
     if (!el || typeof ResizeObserver === 'undefined') return
     let last = el.scrollHeight
+    // the first moments of a chat (Alex, 19 Nov: "it opened up there, not at the bottom"): while photos load and grow,
+    // the chat stays at its newest message until the finger or the wheel moves it
+    holdNew.current = { until: performance.now() + 2500, user: false }
+    const mine = () => { holdNew.current.user = true }
+    el.addEventListener('touchstart', mine, { passive: true })
+    el.addEventListener('wheel', mine, { passive: true })
     const ro = new ResizeObserver(() => {
       const h = el.scrollHeight
-      if (h > last && stick.current) el.scrollTop = h
+      if (h > last && (stick.current || holdingNew())) { stick.current = true; el.scrollTop = h }
       last = h
     })
     const watch = () => { for (const c of el.children) ro.observe(c) }
     watch()
     const mo = new MutationObserver(watch)
     mo.observe(el, { childList: true })
-    return () => { ro.disconnect(); mo.disconnect() }
+    return () => { ro.disconnect(); mo.disconnect(); el.removeEventListener('touchstart', mine); el.removeEventListener('wheel', mine) }
   }, [room.room_id])
   const [down, setDown] = useState(false)
   const downRef = useRef(false)
@@ -2185,6 +2193,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const olderBusy = useRef(false) // one page of older messages at a time, however fast the scroll events come
   const onScroll = async (e) => {
     const el = e.currentTarget
+    if (holdingNew()) { stick.current = true; if (el.scrollHeight - el.scrollTop - el.clientHeight > 2) el.scrollTop = el.scrollHeight; return }
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
     // far enough up, the round arrow back to the newest messages shows over the microphone (Alex, 19 Nov)
     const far = el.scrollHeight - el.scrollTop - el.clientHeight > 600
@@ -2209,6 +2218,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
   // to a message: from the pinned bar, a quote, a search hit or a copied link
   const goTo = useCallback(async (id) => {
+    holdNew.current.user = true // going to one message: the newest no longer holds the chat
     let el = document.getElementById(`m-${id}`)
     if (!el) {
       const at = (await supabase.from('roar_messages').select('created_at').eq('id', id).maybeSingle()).data?.created_at
@@ -3745,13 +3755,23 @@ function ShareSong({ file, pre, me, rooms, titleOf, toast, onClose, onNewGroup, 
 function ToLatest({ onGo }) {
   const ref = useRef(null)
   useLayoutEffect(() => {
+    const place = () => {
     const el = ref.current
     const f = el?.parentElement
     const b = f?.querySelector('.rec-btn, .compose .send, .send')
     if (!el || !f || !b) return
+    // as variables the stylesheet uses with !important, since the glass rules for round buttons outrank inline sizes
+    // (Alex, 19 Nov: the arrow came out squashed and cut at the edge)
+    // its own size, not what shows while it pops back after a send (a scale), and its centre, which a scale keeps
     const fr = f.getBoundingClientRect(), br = b.getBoundingClientRect()
-    el.style.left = `${br.left - fr.left}px`; el.style.right = 'auto'
-    el.style.width = `${br.width}px`; el.style.height = `${br.height}px`
+    const d = Math.round(Math.min(b.offsetWidth, b.offsetHeight)) || 44
+    const mid = br.left + br.width / 2
+    el.style.setProperty('--tl-d', `${d}px`)
+    el.style.setProperty('--tl-r', `${Math.round(fr.right - mid - d / 2)}px`)
+    }
+    place()
+    const t = setTimeout(place, 450) // once more, after the microphone's own pop has settled
+    return () => clearTimeout(t)
   }, [])
   return <button ref={ref} type="button" className="round to-latest" onClick={onGo} aria-label="Go to the newest messages" title="Go to the newest messages">{I.down}</button>
 }

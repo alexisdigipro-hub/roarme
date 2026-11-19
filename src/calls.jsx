@@ -391,10 +391,30 @@ function CallScreen({ call, local, remote, onAccept, onDecline, onHangup, onMute
 // filter ('all' | 'missed'), editing and clearTick come from the head of Calls (Alex, 14 Nov, from the iPhone's Phone app):
 // while editing a red minus stands left of every call; a tap on it uncovers a red Delete at the row's right, as the
 // Phone app does (Alex, 14 Nov evening: "the red minus left of the name, not the bin on the right"); Delete All bumps clearTick
-export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toast, filter = 'all', editing = false, clearTick = 0 }) {
+export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = null, toast, filter = 'all', editing = false, clearTick = 0 }) {
   const [list, setList] = useState(null)
   const [busy, setBusy] = useState(false)
   const [armed, setArmed] = useState(null) // the call whose Delete is showing
+  // a call slid to the left shows its Delete (Alex, 19 Nov: "on the phone, a slide to the left brings out delete"):
+  // the row follows the finger; let go past 44px and Delete stays out; a slide back, or a tap, puts it away
+  const slide = useRef(null)
+  const [drag, setDrag] = useState(null) // { id, dx } while the finger moves
+  const tStart = (r) => (e) => { if (editing || e.touches.length !== 1) return; slide.current = { id: r.id, x: e.touches[0].clientX, y: e.touches[0].clientY, on: false, open: armed === r.id } }
+  const tMove = (e) => {
+    const s = slide.current
+    if (!s) return
+    const dx = e.touches[0].clientX - s.x, dy = e.touches[0].clientY - s.y
+    if (!s.on) { if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { slide.current = null; return } if (Math.abs(dx) < 10) return; s.on = true }
+    s.dx = Math.max(-110, Math.min(0, dx + (s.open ? -84 : 0)))
+    setDrag({ id: s.id, dx: s.dx })
+  }
+  const tEnd = () => {
+    const s = slide.current
+    slide.current = null
+    if (!s || !s.on) return
+    setDrag(null)
+    setArmed(s.dx < -44 ? s.id : null)
+  }
   useEffect(() => { if (!editing) setArmed(null) }, [editing])
   useEffect(() => {
     let alive = true
@@ -442,16 +462,21 @@ export function RecentCalls({ me, people, loadPeople, onCall, empty = null, toas
         const dur = r.answered_at && r.ended_at ? mmss(new Date(r.ended_at) - new Date(r.answered_at)) : ''
         const label = missed ? 'Missed' : out ? (r.status === 'answered' ? 'Outgoing' : r.status === 'declined' ? 'Declined' : r.status === 'busy' ? 'Busy' : 'No answer') : r.status === 'declined' ? 'Declined' : 'Incoming'
         return (
-          <div key={r.id} className={`call-row${editing ? ' editing' : ''}${armed === r.id ? ' armed' : ''}`}>
+          <div key={r.id} className={`call-row${editing ? ' editing' : ''}${armed === r.id ? ' armed' : ''}${!editing && (armed === r.id || drag?.id === r.id) ? ' slid' : ''}${drag?.id === r.id ? ' dragging' : ''}`}
+            style={!editing ? { '--slide': `${drag?.id === r.id ? drag.dx : armed === r.id ? -84 : 0}px` } : undefined}
+            onTouchStart={tStart(r)} onTouchMove={tMove} onTouchEnd={tEnd} onTouchCancel={tEnd}>
           {editing && <button type="button" className="call-minus" onClick={() => setArmed((a) => (a === r.id ? null : r.id))} aria-label="Delete this call" title="Delete this call"><i /></button>}
-          <button type="button" className="room call-log" onClick={() => (editing ? setArmed(null) : onCall(other, r.room_id, r.video))} title={r.video ? 'Video call back' : 'Call back'}>
+          <button type="button" className="room call-log" onClick={() => (editing || armed ? setArmed(null) : onCall(other, r.room_id, r.video))} title={r.video ? 'Video call back' : 'Call back'}>
             <Avatar src={other.avatar_url} name={nameOf(other)} size={48} />
             <span className="room-main">
               <span className="room-top"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong><small>{new Date(r.started_at).toLocaleDateString(locale(), { day: 'numeric', month: 'numeric', year: '2-digit' })}</small></span>
               <span className="room-bottom"><span className="room-prev"><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}{dur && ` (${dur})`}</span></span>
             </span>
           </button>
-          {armed === r.id && <button type="button" className="call-del-go" disabled={busy} onClick={() => { setArmed(null); hide([r.id]) }}>Delete</button>}
+          {/* the person's page (Alex, 19 Nov, from the iPhone's Phone app: an (i) at the right of each call) */}
+          {!editing && onInfo && <button type="button" className="call-info" onClick={() => { setArmed(null); onInfo(other, r.room_id) }} aria-label={`About ${nameOf(other)}`} title="Info"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25" /><path d="M12 10.8v6M12 7.6v.1" strokeWidth="1.9" /></svg></button>}
+          {editing && armed === r.id && <button type="button" className="call-del-go" disabled={busy} onClick={() => { setArmed(null); hide([r.id]) }}>Delete</button>}
+          {!editing && (armed === r.id || drag?.id === r.id) && <button type="button" className="call-swipe-del" disabled={busy} onClick={() => { setArmed(null); hide([r.id]) }}>Delete</button>}
           </div>
         )
       })}

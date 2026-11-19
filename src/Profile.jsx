@@ -25,6 +25,7 @@ const SOUND_OFF_I = svg(<><path d="M4 9.5h3l4.5-4v13L7 14.5H4z" /><path d="M3 3l
 const SOUND_ON_I = svg(<><path d="M4 9.5h3l4.5-4v13L7 14.5H4z" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" /></>, 22)
 const CUSTOM_I = svg(<><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></>, 22)
 
+const BAN_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M6 6l12 12" /></svg>
 export default function Profile({ room, me, people, title, other, rooms, titleOf, toast, onClose, onChanged, onLeft, onMessage, onOpenRoom, loadPeople, blocked, onBlocks, onCall }) {
   const group = room.kind === 'group'
   const showIds = usePrefs().peerIds
@@ -377,6 +378,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   <button type="button" onClick={() => toChat('export')}>{I.file}<span>Export Chat History</span></button>
                   <button type="button" onClick={() => setMine({ archived: !room.archived }, room.archived ? 'Unarchived' : 'Archived')}>{I.archive}<span>{room.archived ? 'Unarchive' : 'Archive'}</span></button>
                   <hr />
+                  {/* Block User above the chat's own deletes (Alex, 19 Nov) */}
+                  {!group && other && <button type="button" className="danger" onClick={block}>{BAN_I}<span>{blocked ? 'Unblock User' : 'Block User'}</span></button>}
                   <button type="button" className="danger" onClick={() => toChat('clear')}>{I.clear}<span>Clear Chat History</span></button>
                   {group && <button type="button" className="danger" onClick={leave}>{I.trash}<span>Leave Group</span></button>}
                   {group && admin && <button type="button" className="danger" onClick={deleteGroup}>{I.trash}<span>Delete Group</span></button>}

@@ -391,6 +391,8 @@ function CallScreen({ call, local, remote, onAccept, onDecline, onHangup, onMute
 // filter ('all' | 'missed'), editing and clearTick come from the head of Calls (Alex, 14 Nov, from the iPhone's Phone app):
 // while editing a red minus stands left of every call; a tap on it uncovers a red Delete at the row's right, as the
 // Phone app does (Alex, 14 Nov evening: "the red minus left of the name, not the bin on the right"); Delete All bumps clearTick
+// where a call's slide to Delete starts: this far from the screen's right edge (Alex, 19 Nov: "from the edge only")
+export const CALL_EDGE = 72
 export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = null, toast, filter = 'all', editing = false, clearTick = 0 }) {
   const [list, setList] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -399,7 +401,8 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
   // the row follows the finger; let go past 44px and Delete stays out; a slide back, or a tap, puts it away
   const slide = useRef(null)
   const [drag, setDrag] = useState(null) // { id, dx } while the finger moves
-  const tStart = (r) => (e) => { if (editing || e.touches.length !== 1) return; slide.current = { id: r.id, x: e.touches[0].clientX, y: e.touches[0].clientY, on: false, open: armed === r.id } }
+  // only from the screen's right edge (Alex, 19 Nov), unless this call's Delete is already out
+  const tStart = (r) => (e) => { if (editing || e.touches.length !== 1) return; if (armed !== r.id && e.touches[0].clientX <= window.innerWidth - CALL_EDGE) { slide.current = null; return } slide.current = { id: r.id, x: e.touches[0].clientX, y: e.touches[0].clientY, on: false, open: armed === r.id } }
   const tMove = (e) => {
     const s = slide.current
     if (!s) return

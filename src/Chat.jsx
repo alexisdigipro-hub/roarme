@@ -4,7 +4,7 @@ import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusU
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
-import { RecentCalls, useCalls } from './calls.jsx'
+import { RecentCalls, useCalls, CALL_EDGE } from './calls.jsx'
 import { tr } from './i18n.js'
 import { E2E_OFF, E2E_ON, endEncrypted, hasStretchKey, isSealed, myDevice, openText, previewText, sealText, startEncrypted, systemText, useEncrypted, useOpened, withoutDevice } from './e2e.js'
 // Settings and a profile load only when opened (Alex, 21 Oct: RoarMe lighter at start)
@@ -824,6 +824,9 @@ export default function Chat({ me, setMe }) {
       const n = pagerNow.current
       if (e.touches.length !== 1) { g = null; return }
       if (e.target.closest?.('.row-acts')) { g = null; return } // a tap on Mute, Delete, Unread or Pin
+      // a call's own slide to Delete starts only at the screen's right edge (Alex, 19 Nov: "from the edge only; in the
+      // middle the whole screen moves to another tab"); there the page stays put, and an open Delete is shut first
+      if (e.target.closest?.('.call-row') && (e.touches[0].clientX > window.innerWidth - CALL_EDGE || e.target.closest('.call-row.slid, .call-row.armed'))) { g = null; return }
       if (rowNow.current) { shutRow(); rowSkip.current = Date.now(); g = null; return } // a touch anywhere closes the open chat first
       const phone = window.matchMedia('(max-width: 760px)').matches
       g = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', dx: 0, t: Date.now(), lx: e.touches[0].clientX, lt: Date.now(), v: 0,
@@ -2168,10 +2171,16 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     mo.observe(el, { childList: true })
     return () => { ro.disconnect(); mo.disconnect() }
   }, [room.room_id])
+  const [down, setDown] = useState(false)
+  const downRef = useRef(false)
+  const toLatest = () => { const el = scrollRef.current; if (!el) return; stick.current = true; el.scrollTo({ top: el.scrollHeight, behavior: calm() ? 'auto' : 'smooth' }) }
   const olderBusy = useRef(false) // one page of older messages at a time, however fast the scroll events come
   const onScroll = async (e) => {
     const el = e.currentTarget
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    // far enough up, the round arrow back to the newest messages shows over the microphone (Alex, 19 Nov)
+    const far = el.scrollHeight - el.scrollTop - el.clientHeight > 600
+    if (far !== downRef.current) { downRef.current = far; setDown(far) }
     if (menu) setMenu(null)
     if (selBar) setSelBar(null)
     // back at the bottom of a long chat: the oldest pages read on the way up are let go, and come back if needed
@@ -3364,6 +3373,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         <footer className="compose-wrap"><div className="bar blocked-bar"><span>You blocked {title}. They cannot message or call you.</span><button type="button" className="link" onClick={onUnblock}>Unblock</button></div></footer>
       ) : (
       <footer className="compose-wrap">
+        {down && <ToLatest onGo={toLatest} />}
         {(busy || err) && <div className={`bar${err ? ' bar-err' : ''}`}><span>{err || busy}</span>{err && <button type="button" onClick={() => setErr('')} aria-label="Close">{I.x}</button>}</div>}
         {sealOn && (
           <div className={`e2e-bar${keyOk ? '' : ' no-key'}`}>
@@ -3481,7 +3491,6 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>
-              {menu.m.kind === 'text' && textOf(menu.m) && <button type="button" onClick={() => { setQuotePick(menu.m); setMenu(null) }}>{I.qmark}<span>Quote</span></button>}
               {menu.m.body && <button type="button" onClick={() => { const b = textOf(menu.m); copy(prefs.copyFormat === false ? plainText(b) : b, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
               {urlIn(menu.m) && <button type="button" onClick={() => { copy(urlIn(menu.m), 'Link copied'); setMenu(null) }}>{I.link}<span>Copy Link</span></button>}
               {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
@@ -3492,13 +3501,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               <button type="button" onClick={() => { setRemindFor(menu.m); setMenu(null) }}>{I.bell}<span>Remind Me</span></button>
               {!menu.m.sealed && <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>}
               <button type="button" onClick={() => { setPicked([menu.m.id]); setMenu(null) }}>{I.select}<span>Select</span></button>
-              <hr />
-              <button type="button" onClick={() => hideForMe(menu.m)}>{I.trash}<span>Delete for Me</span></button>
-              {menu.m.user_id && menu.m.user_id !== me.id && (askedByMe.has(menu.m.id)
-                ? <button type="button" disabled>{I.timer}<span>Waiting for {nameOf(people[menu.m.user_id])}</span></button>
-                : <button type="button" className="danger" onClick={() => askDelete(menu.m)}>{I.trash}<span>Ask to Delete for Everyone</span></button>)}
-              {menu.m.user_id && menu.m.user_id !== me.id && menu.m.kind !== 'system' && <button type="button" className="danger" onClick={() => { report({ message: menu.m }); setMenu(null) }}>{I.flag}<span>Report</span></button>}
-              {admin && menu.m.user_id && menu.m.user_id !== me.id && menu.m.kind !== 'system' && <button type="button" className="danger" onClick={() => adminRemove(menu.m)}>{I.trash}<span>Delete for Everyone (Admin)</span></button>}
+              {/* who has seen one's own message, then the deletes in one order (Alex, 19 Nov): Report above them,
+                  Delete for Me, Delete for Everyone (one's own, or anyone's for an admin), Ask to Delete */}
               {menu.m.user_id === me.id && (
                 <>
                   <hr />
@@ -3507,10 +3511,16 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                     <span>{room.kind === 'direct' ? (seenBy(menu.m).length ? 'Seen' : 'Not seen yet') : `${seenBy(menu.m).length} Seen`}</span>
                     <span className="menu-faces">{seenBy(menu.m).slice(0, 3).map((u) => <Avatar key={u} src={people[u]?.avatar_url} name={nameOf(people[u])} size={22} />)}</span>
                   </div>
-                  <hr />
-                  <button type="button" className="danger" onClick={() => { if (window.confirm('Delete this message for everyone?')) remove([menu.m]); setMenu(null) }}>{I.trash}<span>Delete for Everyone</span></button>
                 </>
               )}
+              <hr />
+              {menu.m.user_id && menu.m.user_id !== me.id && menu.m.kind !== 'system' && <button type="button" className="danger" onClick={() => { report({ message: menu.m }); setMenu(null) }}>{I.flag}<span>Report</span></button>}
+              <button type="button" onClick={() => hideForMe(menu.m)}>{I.trash}<span>Delete for Me</span></button>
+              {menu.m.user_id === me.id && <button type="button" className="danger" onClick={() => { if (window.confirm('Delete this message for everyone?')) remove([menu.m]); setMenu(null) }}>{I.trash}<span>Delete for Everyone</span></button>}
+              {admin && menu.m.user_id && menu.m.user_id !== me.id && menu.m.kind !== 'system' && <button type="button" className="danger" onClick={() => adminRemove(menu.m)}>{I.trash}<span>Delete for Everyone</span></button>}
+              {menu.m.user_id && menu.m.user_id !== me.id && (askedByMe.has(menu.m.id)
+                ? <button type="button" disabled>{I.timer}<span>Waiting for {nameOf(people[menu.m.user_id])}</span></button>
+                : <button type="button" className="danger" onClick={() => askDelete(menu.m)}>{I.trash}<span>Ask to Delete</span></button>)}
             </div>
           </div>
         </OnTop>
@@ -3722,6 +3732,22 @@ function ShareSong({ file, pre, me, rooms, titleOf, toast, onClose, onNewGroup, 
 /* A submenu that opens beside its row, not inside the menu (Alex, 18 Nov: "not under it in the same menu, at the side"):
    it stands on the page itself (the menu scrolls and would cut it), at the row's right, or at its left where the right
    has no room (a phone, where the menu sits at the screen's right edge), and stays inside the screen. */
+/* the round arrow back to the newest messages (Alex, 19 Nov: "as big as the microphone, right above it"): it takes the
+   microphone's (or Send's) own place and size, measured, so it stands exactly over it */
+function ToLatest({ onGo }) {
+  const ref = useRef(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    const f = el?.parentElement
+    const b = f?.querySelector('.rec-btn, .compose .send, .send')
+    if (!el || !f || !b) return
+    const fr = f.getBoundingClientRect(), br = b.getBoundingClientRect()
+    el.style.left = `${br.left - fr.left}px`; el.style.right = 'auto'
+    el.style.width = `${br.width}px`; el.style.height = `${br.height}px`
+  }, [])
+  return <button ref={ref} type="button" className="round to-latest" onClick={onGo} aria-label="Go to the newest messages" title="Go to the newest messages">{I.down}</button>
+}
+
 function SubFly({ at: at0, children }) {
   const ref = useRef(null)
   const [pos, setPos] = useState(null)

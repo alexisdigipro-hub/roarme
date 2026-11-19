@@ -916,3 +916,34 @@ html:root:root:root:root:root:root[data-glass][data-theme][data-mode='dark']:not
   }
   html:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-still]):not([data-lite]) :is(.rooms-pager .rooms > .room, .contacts-list .contact, .calls-list .call-row):active { background-color: rgba(255, 255, 255, .1); box-shadow: var(--gx-split), 0 8px 20px rgba(0, 0, 0, .4); }
 }
+
+/* LIQUID POP (Alex, 19 Nov: "a nice animation when I tap a contact, not the usual ones, a pop-up but liquid"; and the
+   long press on a chat and the message's menu "more fresh, more liquid glass, more elastic"): what opens comes out as a
+   drop of glass that overshoots and wobbles, wider then taller then wider, settling in about half a second, the split
+   colours at its rim fading as it lands. transform, opacity and box-shadow only; off with Power Saving, Motion off and
+   reduced motion. Used on the contact's card, the chat's long-press preview and menu, and the message's reactions and
+   menu (each part a beat after the one before). */
+@keyframes gx-liquid {
+  0% { transform: scale(.42, .3); opacity: 0; box-shadow: var(--gx-split); }
+  30% { transform: scale(1.07, .93); opacity: 1; box-shadow: var(--gx-split); }
+  50% { transform: scale(.95, 1.06); }
+  68% { transform: scale(1.025, .98); }
+  84% { transform: scale(.993, 1.008); box-shadow: var(--gx-none); }
+  100% { transform: none; box-shadow: var(--gx-none); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .modal:has(> .modal-body > .cc) { animation: gx-liquid .6s cubic-bezier(.2, .9, .3, 1) backwards !important; transform-origin: 50% 40%; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .ctx .ctx-card { animation: gx-liquid .58s cubic-bezier(.2, .9, .3, 1) backwards !important; transform-origin: 50% 100%; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .ctx .ctx-menu { animation: gx-liquid .56s cubic-bezier(.2, .9, .3, 1) .07s backwards !important; transform-origin: 0 0; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu { animation: none !important; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu > .rx-pick { animation: gx-liquid .52s cubic-bezier(.2, .9, .3, 1) backwards !important; transform-origin: 50% 100%; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu > .menu-list { animation: gx-liquid .56s cubic-bezier(.2, .9, .3, 1) .06s backwards !important; transform-origin: 50% 0; }
+  /* the reactions in the bar each pop in a hair after the one before, as drops */
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu > .rx-pick > button { animation: gx-bead .42s cubic-bezier(.25, 1.6, .45, 1) backwards !important; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu > .rx-pick > button:nth-child(2) { animation-delay: .03s !important; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu > .rx-pick > button:nth-child(3) { animation-delay: .06s !important; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu > .rx-pick > button:nth-child(4) { animation-delay: .09s !important; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu > .rx-pick > button:nth-child(5) { animation-delay: .12s !important; }
+  html:root:root:root:root[data-glass][data-skin='halo']:not([data-still]):not([data-lite]) .msg-menu > .rx-pick > button:nth-child(n+6) { animation-delay: .15s !important; }
+}
+@keyframes gx-bead { from { transform: scale(.2) translateY(10px); opacity: 0; } }

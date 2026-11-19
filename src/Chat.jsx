@@ -2037,8 +2037,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const transferHiddenRef = useRef(false)
   transferHiddenRef.current = transferHidden
   const stick = useRef(true)
-  const pin = useRef({ until: 0, user: false }) // the first moments of a chat stay at its newest message (see below)
-  const pinned = () => !pin.current.user && performance.now() < pin.current.until
+  const holdNew = useRef({ until: 0, user: false }) // the first moments of a chat stay at its newest message (see below)
+  const holdingNew = () => !holdNew.current.user && performance.now() < holdNew.current.until
   const PAGE = 60
 
   const load = useCallback(async (before) => {
@@ -2172,13 +2172,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     let last = el.scrollHeight
     // the first moments of a chat (Alex, 19 Nov: "it opened up there, not at the bottom"): while photos load and grow,
     // the chat stays at its newest message until the finger or the wheel moves it
-    pin.current = { until: performance.now() + 2500, user: false }
-    const mine = () => { pin.current.user = true }
+    holdNew.current = { until: performance.now() + 2500, user: false }
+    const mine = () => { holdNew.current.user = true }
     el.addEventListener('touchstart', mine, { passive: true })
     el.addEventListener('wheel', mine, { passive: true })
     const ro = new ResizeObserver(() => {
       const h = el.scrollHeight
-      if (h > last && (stick.current || pinned())) { stick.current = true; el.scrollTop = h }
+      if (h > last && (stick.current || holdingNew())) { stick.current = true; el.scrollTop = h }
       last = h
     })
     const watch = () => { for (const c of el.children) ro.observe(c) }
@@ -2193,7 +2193,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const olderBusy = useRef(false) // one page of older messages at a time, however fast the scroll events come
   const onScroll = async (e) => {
     const el = e.currentTarget
-    if (pinned()) { stick.current = true; if (el.scrollHeight - el.scrollTop - el.clientHeight > 2) el.scrollTop = el.scrollHeight; return }
+    if (holdingNew()) { stick.current = true; if (el.scrollHeight - el.scrollTop - el.clientHeight > 2) el.scrollTop = el.scrollHeight; return }
     stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
     // far enough up, the round arrow back to the newest messages shows over the microphone (Alex, 19 Nov)
     const far = el.scrollHeight - el.scrollTop - el.clientHeight > 600
@@ -2218,7 +2218,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
   // to a message: from the pinned bar, a quote, a search hit or a copied link
   const goTo = useCallback(async (id) => {
-    pin.current.user = true // going to one message: the newest no longer holds the chat
+    holdNew.current.user = true // going to one message: the newest no longer holds the chat
     let el = document.getElementById(`m-${id}`)
     if (!el) {
       const at = (await supabase.from('roar_messages').select('created_at').eq('id', id).maybeSingle()).data?.created_at

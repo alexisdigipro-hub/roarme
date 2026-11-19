@@ -113,6 +113,83 @@ const signed = new Map()
 export const TRANSFER_BUCKET = 'roar-transfers'
 // a photo's small copy, for the chat and the media grids; the whole photo opens full screen (Alex, 21 Oct: lighter)
 export const thumbOf = (file) => (file?.thumb ? { path: file.thumb, bucket: file.bucket } : file)
+/* Pictures kept on the device (Alex, 19 Nov: "the pictures are slow to load"): a file's signed link changes every time,
+   so neither the browser nor the iPhone app ever found a picture it had already fetched, and every chat fetched its
+   photos again. picLink(file) keeps each small picture (a photo's thumb, a video's frame, any photo) in IndexedDB under
+   its own place in storage, which never changes, and hands back a local link to it; only the first time it is fetched.
+   At most PIC_MAX pictures stay; the oldest go first. Settings > Data and Storage > Clear Cache empties it (dropPics),
+   and Storage Usage counts it. Where IndexedDB is missing it falls back to the signed link. */
+const PIC_DB = 'roarme-pics'
+const PIC_MAX = 2000
+const picMem = new Map() // key -> local link, for this visit
+const picWait = new Map() // key -> the fetch under way
+let picDb = null
+const openPics = () => {
+  if (picDb) return picDb
+  picDb = new Promise((ok, bad) => {
+    try {
+      const rq = indexedDB.open(PIC_DB, 1)
+      rq.onupgradeneeded = () => { const os = rq.result.createObjectStore('pics'); os.createIndex('at', 'at') }
+      rq.onsuccess = () => ok(rq.result)
+      rq.onerror = () => bad(rq.error)
+    } catch (e) { bad(e) }
+  }).catch(() => { picDb = null; return null })
+  return picDb
+}
+const picTx = (db, mode, fn) => new Promise((ok) => {
+  try {
+    const tx = db.transaction('pics', mode)
+    const out = fn(tx.objectStore('pics'))
+    tx.oncomplete = () => ok(out?.result ?? out)
+    tx.onerror = tx.onabort = () => ok(null)
+  } catch { ok(null) }
+})
+let picPuts = 0
+async function trimPics(db) {
+  const n = await picTx(db, 'readonly', (os) => os.count())
+  if (!(n > PIC_MAX)) return
+  let drop = n - Math.round(PIC_MAX * 0.85)
+  await picTx(db, 'readwrite', (os) => { const c = os.index('at').openCursor(); c.onsuccess = () => { const cur = c.result; if (cur && drop-- > 0) { cur.delete(); cur.continue() } } })
+}
+export async function picLink(file) {
+  const path = typeof file === 'string' ? file : file?.path
+  if (!path) return ''
+  const bucket = (typeof file === 'object' && file?.bucket) || 'roar-files'
+  const key = `${bucket}|${path}`
+  // only pictures: a video or a sound handed over (an old message with no frame of its own) or a big file keeps its link
+  if (typeof file === 'object' && (/^(video|audio)\//.test(file.type || '') || file.size > 8e6)) return fileLink(file)
+  if (picMem.has(key)) return picMem.get(key)
+  if (picWait.has(key)) return picWait.get(key)
+  const job = (async () => {
+    const db = typeof indexedDB !== 'undefined' ? await openPics() : null
+    if (!db) return fileLink(file)
+    const hit = await picTx(db, 'readonly', (os) => os.get(key))
+    if (hit?.blob) { const u = URL.createObjectURL(hit.blob); picMem.set(key, u); return u }
+    const url = await fileLink(file)
+    if (!url) return ''
+    try {
+      const res = await fetch(url)
+      if (!res.ok) return url
+      const blob = await res.blob()
+      await picTx(db, 'readwrite', (os) => os.put({ blob, at: Date.now() }, key))
+      if (++picPuts % 40 === 0) trimPics(db)
+      const u = URL.createObjectURL(blob)
+      picMem.set(key, u)
+      return u
+    } catch { return url }
+  })()
+  picWait.set(key, job)
+  try { return await job } finally { picWait.delete(key) }
+}
+export async function dropPics() {
+  picMem.forEach((u) => { try { URL.revokeObjectURL(u) } catch { /* gone */ } })
+  picMem.clear()
+  const db = picDb ? await picDb : null
+  try { db?.close() } catch { /* closed */ }
+  picDb = null
+  await new Promise((ok) => { try { const rq = indexedDB.deleteDatabase(PIC_DB); rq.onsuccess = rq.onerror = rq.onblocked = () => ok() } catch { ok() } })
+}
+
 export async function fileLink(file, download = '') {
   const path = typeof file === 'string' ? file : file?.path
   if (!path) return ''

@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -3757,7 +3757,7 @@ function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
   const [url, setUrl] = useState('')
   const [ready, setReady] = useState(false)
   const [tall, setTall] = useState(false) // taller than 4:5: shown as 4:5, cut at top and bottom (Alex, 15 Nov)
-  useEffect(() => { if (!go) return undefined; let alive = true; fileLink(thumbOf(file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
+  useEffect(() => { if (!go) return undefined; let alive = true; picLink(thumbOf(file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>
   return url ? <img className={`pic-img${ready ? ' ready' : ''}${tall ? ' tall' : ''}`} src={url} alt={file?.name || ''} loading="lazy" decoding="async" onLoad={(e) => { const t = e.currentTarget; setTall(t.naturalHeight > t.naturalWidth * 1.25); setReady(true) }} draggable={false} onClick={(e) => { e.stopPropagation(); if (Date.now() - (window.roarHeldAt || 0) < 800) return; onOpen(url) }} /> : <span className="pic-wait" />
 }
@@ -3775,7 +3775,7 @@ function FileTile({ file, onView, onPdf }) {
   const [got, setGot] = useState(0)
   const ext = (/\.([a-z0-9]{1,5})$/i.exec(file?.name || '')?.[1] || '').toLowerCase()
   const media = /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/)/.test(file?.type || '') || /^(jpe?g|png|webp|gif|heic|heif|mov|mp4|m4v)$/.test(ext)
-  useEffect(() => { if (!file?.thumb) return undefined; let alive = true; fileLink(thumbOf(file)).then((u) => { if (alive) setThumb(u) }); return () => { alive = false } }, [file?.thumb])
+  useEffect(() => { if (!file?.thumb) return undefined; let alive = true; picLink(thumbOf(file)).then((u) => { if (alive) setThumb(u) }); return () => { alive = false } }, [file?.thumb])
   const open = async (url) => {
     if (media && onView) { onView(url); return }
     if (onPdf && (ext === 'pdf' || file?.type === 'application/pdf')) { onPdf(url); return } // opens inside RoarMe (pdfview.jsx)

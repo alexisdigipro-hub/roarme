@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { errText, fileLink, fold, foldHas, lastSeenText, thumbOf, fmtBytes, shrinkImage, supabase, timeOf } from './lib.js'
+import { errText, fileLink, fold, foldHas, lastSeenText, thumbOf, fmtBytes, shrinkImage, supabase, timeOf, picLink } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { ColorPick } from './themeEditor.jsx'
@@ -201,7 +201,7 @@ function AsThumb({ m, busy, onPick }) {
   const [ref, seen] = useSeen()
   const [url, setUrl] = useState('')
   const vid = /^video\//.test(m.file?.type || '')
-  useEffect(() => { if (!seen) return undefined; let alive = true; fileLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path, seen])
+  useEffect(() => { if (!seen) return undefined; let alive = true; picLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path, seen])
   return (
     <button ref={ref} type="button" className={`as-thumb${busy ? ' busy' : ''}`} onClick={() => onPick(m)} aria-label={m.file?.name || 'Photo'}>
       {url && (vid && !m.file?.thumb ? <video src={url} muted playsInline preload="metadata" /> : <img src={url} alt="" loading="lazy" />)}
@@ -295,7 +295,7 @@ function RecentFile({ m, onPick }) {
   const [ref, seen] = useSeen()
   const [url, setUrl] = useState('')
   const ext = extOf(f.name) || ''
-  useEffect(() => { if (!seen || !f.thumb) return undefined; let alive = true; fileLink(thumbOf(f)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [seen, f.thumb])
+  useEffect(() => { if (!seen || !f.thumb) return undefined; let alive = true; picLink(thumbOf(f)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [seen, f.thumb])
   return (
     <button ref={ref} type="button" className="as-row as-recent" onClick={() => onPick(m)}>
       {url ? <i className="as-ext as-rthumb"><img src={url} alt="" loading="lazy" /></i>
@@ -694,7 +694,7 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
   // the video itself is fetched when it is tapped (unless videos are set to play by themselves)
   const [poster, setPoster] = useState('')
   const [tapped, setTapped] = useState(false)
-  useEffect(() => { if (!file?.thumb) return undefined; let alive = true; fileLink(thumbOf(file)).then((u) => { if (alive) setPoster(u) }); return () => { alive = false } }, [file?.thumb])
+  useEffect(() => { if (!file?.thumb) return undefined; let alive = true; picLink(thumbOf(file)).then((u) => { if (alive) setPoster(u) }); return () => { alive = false } }, [file?.thumb])
   if (file?.thumb && !play && !tapped) {
     return (
       <span className="vid-box vid-poster" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setGo(true); setTapped(true) }}>
@@ -847,7 +847,7 @@ export function SharedMedia({ roomId, onOpen, onClose }) {
 function MediaThumb({ m, onClick }) {
   const [ref, seen] = useSeen()
   const [url, setUrl] = useState('')
-  useEffect(() => { if (!seen) return undefined; let alive = true; fileLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path, seen])
+  useEffect(() => { if (!seen) return undefined; let alive = true; picLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path, seen])
   return (
     <button ref={ref} type="button" className="media-thumb" onClick={onClick}>
       {url && (/^video\//.test(m.file?.type || '') ? <video src={url} muted preload="metadata" /> : <img src={url} alt="" loading="lazy" decoding="async" />)}

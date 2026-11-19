@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, supabase, timeOf } from './lib.js'
+import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, supabase, timeOf, picLink } from './lib.js'
 import { Avatar, CropModal, I, Modal, OnTop, svg, useSeen, useTabSwipe } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { SOUNDS, chime, usePrefs } from './prefs.js'
@@ -496,7 +496,7 @@ function Thumb({ m, onClick }) {
   const [ref, seen] = useSeen()
   const [url, setUrl] = useState('')
   const [dur, setDur] = useState(0)
-  useEffect(() => { if (!seen) return undefined; let alive = true; fileLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path, seen])
+  useEffect(() => { if (!seen) return undefined; let alive = true; picLink(thumbOf(m.file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [m.file?.path, seen])
   const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
   return (
     <button ref={ref} type="button" className="pf-thumb" onClick={onClick}>

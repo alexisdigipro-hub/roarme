@@ -5636,3 +5636,8 @@ html:root:root:root:root .compose-wrap > .round.to-latest { left: auto !importan
 
 /* The contact card's window clips what scrolls inside it to its own round corners (Alex, 19 Nov: lines spilled below the bottom) */
 .modal:has(> .modal-body > .cc) { overflow: hidden; }
+
+/* The lock on a phone is one surface: no card on the wallpaper, its contents straight on the whole screen (Alex, 19 Nov) */
+@media (max-width: 760px) {
+  html:root:root .lock-card { background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}

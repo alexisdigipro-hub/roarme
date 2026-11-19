@@ -1256,6 +1256,10 @@ export default function Chat({ me, setMe }) {
     const { data, error } = await supabase.rpc('roar_open_direct', { other: p.id })
     if (error) toast(errText(error)); else openRoom(data)
   }
+  // a tap on someone's picture or name in a group goes to my chat with them, made if there is none (Alex, 19 Nov)
+  const chatWithRef = useRef(chatWith)
+  chatWithRef.current = chatWith
+  useEffect(() => { const f = (e) => { const id = e.detail?.id; if (id && id !== me.id) chatWithRef.current(peopleRef.current[id] || { id }) }; window.addEventListener('roarme-dm', f); return () => window.removeEventListener('roarme-dm', f) }, [me.id])
   // voice and video calls (round 3): one call at a time, two people
   const { startCall, screen: callScreen } = useCalls({ me, people: peopleRef, loadPeople, toast })
   const directWith = (p) => rooms.find((r) => r.kind === 'direct' && (r.members || []).includes(p.id))?.room_id || null
@@ -1823,6 +1827,8 @@ function vanish(ids) {
   requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => el.classList.add('msg-out-go'))))
   return { done: new Promise((r) => setTimeout(r, 430)), back }
 }
+// a group's sender: their picture or name opens my chat with them (the main Chat answers roarme-dm)
+const toDm = (id) => { if (id) window.dispatchEvent(new CustomEvent('roarme-dm', { detail: { id } })) }
 // a fresh list of messages, with every one that did not change kept as the object already on screen
 function sameMsgs(prev, got) {
   if (!prev?.length) return got
@@ -3155,10 +3161,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (hands.current.onBubble(e)) hands.current.onDouble(m, e) }}
                 onContextMenu={(e) => { if (hands.current.onBubble(e)) hands.current.openMenu(e, m) }}>
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
-                {!mine && room.kind === 'group' && prefs.faces && (first ? <Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /> : <span className="av-gap" />)}
+                {!mine && room.kind === 'group' && prefs.faces && (first ? <button type="button" className="who-ava" aria-label={`Chat with ${nameOf(who)}`} onClick={(e) => { e.stopPropagation(); toDm(m.user_id) }}><Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /></button> : <span className="av-gap" />)}
                 <div className="bubble-col">
                   <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.poll && !m.deleted_at ? ' poll-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
-                    {!mine && room.kind === 'group' && first && !big && <b className="who" style={{ '--who': colorOf(m.user_id) }}>{nameOf(who)}</b>}
+                    {!mine && room.kind === 'group' && first && !big && <b className="who" role="button" tabIndex={0} style={{ '--who': colorOf(m.user_id) }} onClick={(e) => { e.stopPropagation(); toDm(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
                       : m.file?.poll ? <Suspense fallback={<div className="poll pl-wait"><b>Poll</b></div>}><PollCard id={m.id} me={me.id} people={people} canStop={room.kind === 'group' && room.role === 'admin'} onError={(t) => setErr(t)} /></Suspense>

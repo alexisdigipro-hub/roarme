@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { errText, foldHas, nameOf, supabase } from './lib.js'
+import { dropPics, errText, foldHas, nameOf, supabase } from './lib.js'
 import { Avatar, FOOT_I, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, haloish, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
@@ -787,6 +787,7 @@ function Storage({ toast }) {
   const clear = async () => {
     try { const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))) } catch { /* no cache storage here */ }
     try { sessionStorage.clear() } catch { /* private window */ }
+    await dropPics() // the pictures kept on the device (lib.js picLink)
     await look()
     toast?.('Cache cleared')
   }

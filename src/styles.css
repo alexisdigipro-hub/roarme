@@ -5548,3 +5548,11 @@ html:root:root:root:root:root:root:root:root .calls-list .call-row > .call-swipe
 html:root:root:root:root .calls-list .call-row.slid > :is(.call-log, .call-info) { position: relative; z-index: 1; }
 html:root:root:root:root .calls-list .call-row.dragging > .call-swipe-del { transition: none; }
 html:is([data-lite], [data-still]) .calls-list .call-row > :is(.call-log, .call-info) { transition: none; }
+
+/* The main bar's Calls sign is the profile's handset (Alex, 19 Nov): the same drawing (ui.jsx FOOT_I.calls, the phone
+   mask), 24px so its fine line stands as large as the bar's other signs, in the words' colour (the accent when chosen);
+   it rings once when Calls is chosen, as the old handset did. */
+html:root:root:root:root .foot button .ic-mask.fi-phone { width: 24px; height: 24px; margin: -1px 0; transform-origin: 30% 70%; }
+@media (prefers-reduced-motion: no-preference) {
+  html:root:root:root:root:not([data-still]):not([data-lite]) .foot > button.foot-calls.on .ic-mask.fi-phone { animation: gi-ring .56s cubic-bezier(.3, .7, .4, 1) backwards; }
+}

@@ -856,3 +856,27 @@ html:root:root:root:root .pf-acts .menu > button.pf-m-sub { height: 32px !import
    white by Day, dark grey by Night, the same corners, rim and shadow; the reaction bar over the message menu too */
 html:root:root:root:root[data-glass][data-skin='halo'][data-mode='light'] :is(.menu, .menu-list, .rx-pick) { background: #ffffff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark'] :is(.menu, .menu-list, .rx-pick) { background: #2c2c31 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* Night without blue (Alex, 19 Nov: "the dark should not go blue; a very dark grey"). In Roar by Night every ground and
+   glass is a neutral grey: the page (#121214 into #0e0e10, the clouds of Plain as faint white glows, not lilac), Sky by
+   Night (it was a deep blue), the veil a wallpaper's strength lays over the page, the bars' glass, panels and windows.
+   The accent keeps its colour; wallpapers that are a colour of their own (Navy, Pink…) keep theirs. Frost keeps its own. */
+html:root:root:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark']:not([data-frost]) {
+  --bg: #121214; --panel: rgba(40, 40, 42, .6); --panel-2: rgba(52, 52, 55, .7); --float: rgba(30, 30, 32, .96);
+  --text: #f2f2f3; --muted: #9d9da3;
+  --lg: rgba(64, 64, 68, .42);
+}
+html:root:root:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode='dark']:not([data-frost]) body {
+  background:
+    radial-gradient(380px 300px at 8% 22%, rgba(255, 255, 255, .035), transparent 70%),
+    radial-gradient(420px 340px at 92% 8%, rgba(255, 255, 255, .03), transparent 70%),
+    radial-gradient(460px 360px at 70% 92%, rgba(255, 255, 255, .025), transparent 70%),
+    linear-gradient(180deg, #151517, #0e0e10);
+  background-attachment: fixed;
+}
+html:root:root:root:root:root:root[data-glass][data-skin='halo'][data-theme][data-mode='dark']:not([data-frost]) :is(.room-view, .wall-tile, .set-preview, .te-preview, body.app-wall)[data-bg='halo-sky'] { background: linear-gradient(168deg, #1d1d20 0%, #151517 45%, #0e0e10 100%) fixed !important; }
+html:root:root:root:root:root:root[data-glass][data-skin='halo'][data-theme][data-mode='dark']:not([data-frost]) .wall-tile[data-bg='halo-sky'] { background-attachment: scroll !important; }
+html:root:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-frost]) body.app-wall[data-bg]:not([data-bg='soft']) { background-color: #121214 !important; }
+html:root:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-frost]) body.app-wall[data-wop] { box-shadow: inset 0 0 0 200vmax color-mix(in srgb, #121214 calc((1 - var(--wop, 1)) * 100%), transparent); }
+html:root:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-frost]) .modal-back.as-page { background: #161618 !important; }
+html:root:root:root:root:root:root[data-glass][data-theme][data-mode='dark']:not([data-frost]) .auth { background-color: #121214; }

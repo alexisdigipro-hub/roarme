@@ -142,6 +142,19 @@ export function LockScreen({ onUnlock, onSignOut }) {
     if (await checkCode(c)) onUnlock()
     else { setBad(true); setCode(''); setTimeout(() => setBad(false), 600) }
   }
+  // no field of its own (Alex, 19 Nov: "no need for two keyboards"): a phone's own keyboard no longer comes up under
+  // the keypad; a computer's keys still type, Backspace takes one off and Enter tries the code
+  const codeRef = useRef('')
+  codeRef.current = code
+  useEffect(() => {
+    const k = (e) => {
+      if (/^\d$/.test(e.key)) { e.preventDefault(); setCode((c) => (c + e.key).slice(0, 8)) }
+      else if (e.key === 'Backspace') { e.preventDefault(); setCode((c) => c.slice(0, -1)) }
+      else if (e.key === 'Enter') { e.preventDefault(); if (codeRef.current.length >= 4) try1(codeRef.current) }
+    }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const press = (d) => {
     const c = (code + d).slice(0, 8)
     setCode(c)
@@ -151,9 +164,6 @@ export function LockScreen({ onUnlock, onSignOut }) {
       <div className={`lock-card${bad ? ' shake' : ''}`}>
         <Wordmark by />
         <p>Enter your passcode</p>
-        <form onSubmit={(e) => { e.preventDefault(); try1(code) }}>
-          <input className="lock-input" type="password" inputMode="numeric" autoFocus value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))} aria-label="Passcode" />
-        </form>
         <div className="lock-dots">{Array.from({ length: Math.max(4, code.length) }).map((_, i) => <i key={i} className={i < code.length ? 'on' : ''} />)}</div>
         <div className="lock-pad">
           {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => <button key={d} type="button" onClick={() => press(d)}>{d}</button>)}

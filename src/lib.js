@@ -151,6 +151,12 @@ async function trimPics(db) {
   let drop = n - Math.round(PIC_MAX * 0.85)
   await picTx(db, 'readwrite', (os) => { const c = os.index('at').openCursor(); c.onsuccess = () => { const cur = c.result; if (cur && drop-- > 0) { cur.delete(); cur.continue() } } })
 }
+// a picture already opened in this visit, at once (no wait, so a chat that opens again draws it in the first frame)
+export function picNow(file) {
+  const path = typeof file === 'string' ? file : file?.path
+  if (!path) return ''
+  return picMem.get(`${(typeof file === 'object' && file?.bucket) || 'roar-files'}|${path}`) || ''
+}
 export async function picLink(file) {
   const path = typeof file === 'string' ? file : file?.path
   if (!path) return ''

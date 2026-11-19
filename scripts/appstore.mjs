@@ -81,6 +81,21 @@ await step('Price: Free', async () => {
   })
 })
 
+await step('Availability: every country', async () => {
+  const cur = await api('GET', `/v1/apps/${app.id}/appAvailabilityV2`).catch(() => null)
+  if (cur?.data) return 'already set'
+  const terr = (await api('GET', '/v1/territories?limit=200')).data || []
+  const lid = (t) => `\${${t.id}}`
+  await api('POST', '/v2/appAvailabilities', {
+    data: { type: 'appAvailabilities', attributes: { availableInNewTerritories: true }, relationships: {
+      app: { data: { type: 'apps', id: app.id } },
+      territoryAvailabilities: { data: terr.map((t) => ({ type: 'territoryAvailabilities', id: lid(t) })) },
+    } },
+    included: terr.map((t) => ({ type: 'territoryAvailabilities', id: lid(t), attributes: { available: true }, relationships: { territory: { data: { type: 'territories', id: t.id } } } })),
+  })
+  return `${terr.length} countries`
+})
+
 const versions = (await api('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=IOS&limit=20`)).data || []
 const ver = versions.find((v) => editable(v.attributes.appVersionState || v.attributes.appStoreState))
 if (!ver) { console.log('::error::No iOS version waiting to be filled (Prepare for Submission)'); process.exit(1) }

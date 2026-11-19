@@ -1,0 +1,13 @@
+{
+  "bundleId": "com.themadlions.roarme",
+  "subtitle": "Chats, calls and voice notes",
+  "privacyPolicyUrl": "https://alexisdigipro-hub.github.io/roarme/?legal=privacy",
+  "primaryCategory": "SOCIAL_NETWORKING",
+  "secondaryCategory": "PRODUCTIVITY",
+  "copyright": "2026 THEMADLIONS",
+  "supportUrl": "https://themadlions.com/",
+  "promotionalText": "Chat, call and share with the people you care about. Voice and video messages, group video chats, polls and live location, in a calm glass design.",
+  "keywords": "chat,messenger,messages,calls,video call,group chat,voice message,secure,encrypted,polls,location",
+  "description": "RoarMe is a simple, beautiful place to talk.\n\nChats\nWrite, reply, react and forward. Send photos, videos, files, voice messages and round video messages. Pin chats, sort them into folders and find any message in seconds.\n\nCalls\nVoice and video calls with one person, group video chats, and call links anyone you invite can join.\n\nGroups\nCreate groups with a photo and a name, add people, make polls and quizzes, mention everyone with @all.\n\nShare more\nSend your location or share it live, share contacts and music, and play songs from any chat in a full player.\n\nPrivate by choice\nTurn on Encrypted Chat with the lock in the writing box, lock RoarMe with a passcode and Face ID, choose who can find you and who can add you to groups. Report or block anyone, right from a message or their profile.\n\nYour look\nDay and Night, your own colour, wallpapers and text sizes.",
+  "reviewNotes": "RoarMe is a chat app. Sign in with the demo account above; it already has a chat with photos, a place, a contact and a poll.\n\nSafety: any message can be reported from its menu (long press > Report); any person can be reported or blocked from their profile or contact card. Reports reach our moderation queue and are reviewed within 24 hours; abusive accounts are removed. Accounts can be deleted inside the app (Settings > Privacy and Security > Delete My Account).\n\nCamera and microphone are used for calls and video/voice messages, Photos for sending pictures, Location only when the user sends a place or shares live location, Contacts only to find friends (only coded hashes leave the phone), Face ID only to unlock the app when the user turns it on."
+}

@@ -1,0 +1,31 @@
+name: RoarMe App Store listing
+
+# Fills RoarMe's App Store page for iPhone (subtitle, categories, age rating, free price, description, keywords,
+# support and privacy links, copyright, the build, the notes for App Review) from mobile/appstore/listing.json,
+# through the App Store Connect API with the same key the TestFlight builds use. Run workflow and give the build
+# number. App Privacy, the review contact with the demo login and the screenshots stay for App Store Connect itself.
+on:
+  workflow_dispatch:
+    inputs:
+      build:
+        description: TestFlight build number to put on the version (empty = leave it)
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/appstore.mjs
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          BUILD: ${{ inputs.build }}

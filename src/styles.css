@@ -5598,3 +5598,6 @@ html:root:root .apx-name .accents .acc small { display: none; }
   html:root:root:root .lib-seg > button { flex: 1 1 0; min-width: 0; padding: 0 2px; gap: 4px; justify-content: center; font-size: 13px; white-space: nowrap; }
   html:root:root:root .lib-seg > button i { font-size: 9.5px; padding: 0 5px; line-height: 16px; }
 }
+
+/* Face ID / Touch ID on the lock (19 Nov 2026) */
+.lock-bio { min-width: 160px; }

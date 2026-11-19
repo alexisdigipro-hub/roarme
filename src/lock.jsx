@@ -29,6 +29,51 @@ export function clearLock() {
 }
 export const lockNow = () => window.dispatchEvent(new Event('roarme-lock-now'))
 
+/* Face ID / Touch ID (Alex, 19 Nov 2026): the phone's or computer's own unlock opens the lock instead of the code.
+   A passkey made on this device only to ask for the face or the finger; nothing is sent anywhere, and the passcode
+   stays as the way in when it does not work. */
+const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
+const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
+export async function bioAvailable() {
+  try { return !!window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable() } catch { return false }
+}
+export const bioName = () => (/iPhone|iPad/.test(navigator.userAgent) ? 'Face ID' : /Mac/.test(navigator.userAgent) ? 'Touch ID' : 'Face or fingerprint')
+export async function bioOn() {
+  const l = getLock()
+  if (!l) return false
+  const cred = await navigator.credentials.create({ publicKey: {
+    challenge: crypto.getRandomValues(new Uint8Array(32)),
+    rp: { name: 'RoarMe' },
+    user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'RoarMe lock', displayName: 'RoarMe lock' },
+    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+    authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
+    timeout: 60000,
+  } })
+  if (!cred) return false
+  localStorage.setItem(KEY, JSON.stringify({ ...l, bio: b64(cred.rawId) }))
+  window.dispatchEvent(new Event('roarme-lock'))
+  return true
+}
+export function bioOff() {
+  const l = getLock()
+  if (!l) return
+  const { bio: _b, ...rest } = l
+  localStorage.setItem(KEY, JSON.stringify(rest))
+  window.dispatchEvent(new Event('roarme-lock'))
+}
+export async function bioCheck() {
+  const l = getLock()
+  if (!l?.bio) return false
+  try {
+    const got = await navigator.credentials.get({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{ type: 'public-key', id: unb64(l.bio), transports: ['internal'] }],
+      userVerification: 'required', timeout: 60000,
+    } })
+    return !!got
+  } catch { return false }
+}
+
 /* locked when the app opens, after the chosen minutes away or idle, or by Lock Now */
 export function useAutoLock() {
   const [locked, setLocked] = useState(() => !!getLock())
@@ -65,6 +110,10 @@ export function useAutoLock() {
 export function LockScreen({ onUnlock, onSignOut }) {
   const [code, setCode] = useState('')
   const [bad, setBad] = useState(false)
+  const bio = !!getLock()?.bio
+  const face = async () => { if (await bioCheck()) onUnlock() }
+  // asked at once when the lock shows; the button asks again (some browsers want a tap first)
+  useEffect(() => { if (bio) face() }, [])
   const try1 = async (c) => {
     if (await checkCode(c)) onUnlock()
     else { setBad(true); setCode(''); setTimeout(() => setBad(false), 600) }
@@ -88,6 +137,7 @@ export function LockScreen({ onUnlock, onSignOut }) {
           <button type="button" onClick={() => press('0')}>0</button>
           <button type="button" className="lock-go" onClick={() => try1(code)} disabled={code.length < 4}>OK</button>
         </div>
+        {bio && <button type="button" className="btn lock-bio" onClick={face}>{bioName()}</button>}
         <button type="button" className="link" onClick={onSignOut}>Forgot it? Sign out</button>
       </div>
     </div>

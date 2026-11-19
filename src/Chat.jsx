@@ -30,6 +30,7 @@ import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { NowPlaying, PlayerSheet, player } from './player.jsx'
+import { keepMsgs, keptMsgs, lsGet, lsSet, readMsgs } from './cache.js'
 import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
@@ -89,8 +90,10 @@ function usePeopleSearch(meId) {
 /* ---------- the app ---------- */
 export default function Chat({ me, setMe }) {
   const prefs = usePrefs()
-  const [rooms, setRooms] = useState([])
-  const [people, setPeople] = useState({}) // id -> profile
+  // the chat list and the people kept on the device show at once; the cloud's copy follows (cache.js, Alex, 19 Nov)
+  const [rooms, setRooms] = useState(() => lsGet(`rooms-${me.id}`) || [])
+  const [people, setPeople] = useState(() => { const p = lsGet(`people-${me.id}`) || {}; Object.values(p).forEach((x) => x?.id && setNameColor(x.id, x.name_color)); return p }) // id -> profile
+  useEffect(() => { if (Object.keys(people).length) lsSet(`people-${me.id}`, people, 1500) }, [people, me.id])
   const [blocks, setBlocks] = useState(() => new Set()) // the people I blocked
   const loadBlocks = useCallback(async () => {
     const { data } = await supabase.from('roar_blocks').select('blocked')
@@ -405,6 +408,7 @@ export default function Chat({ me, setMe }) {
       list.forEach((r) => { r.pinned_message_id = pin[r.room_id]?.pinned_message_id || null; r.auto_delete_hours = pin[r.room_id]?.auto_delete_hours || null; r.mentions = at[r.room_id] || 0 })
       setRoles(rl || [])
     }
+    lsSet(`rooms-${me.id}`, list)
     // chats that did not change keep the same object, and an unchanged list leaves the screen alone
     setRooms((old) => {
       const was = Object.fromEntries(old.map((r) => [r.room_id, r]))
@@ -1815,7 +1819,7 @@ function vanish(ids) {
   return { done: new Promise((r) => setTimeout(r, 430)), back }
 }
 const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [] }) {
-  const [rawMsgs, setMsgs] = useState([])
+  const [rawMsgs, setMsgs] = useState(() => keptMsgs(room.room_id) || []) // the chat's last messages kept on the device show at once (cache.js)
   // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
   const [sealOn, reloadSeal] = useEncrypted(room.room_id)
   const msgs = useOpened(rawMsgs, room.room_id, me.id, sealOn?.id)
@@ -2015,7 +2019,16 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     return got
   }, [room.room_id])
 
-  useEffect(() => { stick.current = true; load().then(setMsgs) }, [load])
+  useEffect(() => {
+    stick.current = true
+    let alive = true
+    let fresh = false
+    if (!keptMsgs(room.room_id)) readMsgs(room.room_id).then((c) => { if (alive && !fresh && c?.length) setMsgs((m) => (m.length ? m : c)) })
+    load().then((got) => { fresh = true; if (alive) setMsgs(got) })
+    return () => { alive = false }
+  }, [load]) // eslint-disable-line react-hooks/exhaustive-deps
+  // what the chat shows is kept on the device for next time (its last 60)
+  useEffect(() => { if (rawMsgs.length) keepMsgs(room.room_id, rawMsgs) }, [rawMsgs, room.room_id])
 
   // reactions and how far each person has read
   const loadReacts = useCallback(() => supabase.from('roar_reactions').select('message_id, user_id, emoji').eq('room_id', room.room_id).then(({ data }) => setReacts(data || [])), [room.room_id])

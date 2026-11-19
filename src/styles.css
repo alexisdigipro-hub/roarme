@@ -5622,3 +5622,7 @@ html:is([data-lite], [data-still]) .compose-wrap > .to-latest { animation: none;
   html:root:root .lock-pad .lock-go { font-size: 18px; }
   html:root:root .lock-dots { gap: 16px; }
 }
+
+/* The contact card keeps every piece whole when the window is short (Alex, 19 Nov: with the keyboard up for Notes the
+   boxes were squeezed into each other): nothing in it shrinks; the window scrolls inside instead */
+.modal-body > .cc, .cc > * { flex-shrink: 0; }

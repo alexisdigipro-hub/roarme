@@ -1249,6 +1249,16 @@ export default function Chat({ me, setMe }) {
   // voice and video calls (round 3): one call at a time, two people
   const { startCall, screen: callScreen } = useCalls({ me, people: peopleRef, loadPeople, toast })
   const directWith = (p) => rooms.find((r) => r.kind === 'direct' && (r.members || []).includes(p.id))?.room_id || null
+  // the (i) of a call (Alex, 19 Nov): the person's page, the same as a tap on the name in a chat. The chat opens under it
+  // (so everything the page does works) and Back from the page comes back to Calls; with no chat with them, their card
+  const infoBack = useRef(false)
+  const infoFromCalls = (p, roomId) => {
+    const id = (roomId && rooms.some((r) => r.room_id === roomId) && roomId) || directWith(p)
+    if (!id) { window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: p.id } })); return }
+    infoBack.current = true
+    setActiveId(id)
+    setTimeout(() => setModal('info'), 40) // after the chat's pane is on screen, so the page slides into it
+  }
   const callRoom = (r, video) => {
     if (!r || r.kind !== 'direct') { toast('Group calls come later; for now calls are between two people'); return }
     startCall(otherOf(r), r.room_id, video)
@@ -1502,7 +1512,7 @@ export default function Chat({ me, setMe }) {
         {tab === 'calls' && prefs.callsTab && (
           <>
           <div className="side-scroll calls">
-            <RecentCalls me={me} people={people} loadPeople={loadPeople} toast={toast} filter={callsFilter} editing={callsEdit} clearTick={callsClear} onCall={(p, roomId, video) => startCall(p, roomId || directWith(p), video)}
+            <RecentCalls me={me} people={people} loadPeople={loadPeople} toast={toast} filter={callsFilter} editing={callsEdit} clearTick={callsClear} onCall={(p, roomId, video) => startCall(p, roomId || directWith(p), video)} onInfo={infoFromCalls}
               empty={<div className="calls-empty"><span className="side-panel-ico">{I.calls}</span><b>No calls yet</b><p>Call someone with + at the top, or from the phone and camera buttons in a chat.</p></div>} />
           </div>
           </>
@@ -1587,7 +1597,7 @@ export default function Chat({ me, setMe }) {
       {modal === 'newcall' && <NewCall me={me} people={calls} toast={toast} onClose={() => setModal('')} onCall={(p, v) => { setModal(''); startCall(p, directWith(p), v) }} />}
       {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null); if (songHold.current) { setSongShare(songHold.current); songHold.current = null } }} onOpen={(id) => { setGroupWith(null); const h = songHold.current; songHold.current = null; if (h) { setModal(''); loadRooms(); setSongShare({ ...h, pre: [id] }) } else openRoom(id) }} />}
       {modal === 'info' && active && <Suspense fallback={null}><Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
-        onClose={() => setModal('')} onMessage={() => setModal('')} onOpenRoom={(id) => { setModal(''); setActiveId(id) }}
+        onClose={() => { setModal(''); if (infoBack.current) { infoBack.current = false; setActiveId('') } }} onMessage={() => { infoBack.current = false; setModal('') }} onOpenRoom={(id) => { infoBack.current = false; setModal(''); setActiveId(id) }}
         onChanged={loadRooms} onLeft={() => { setActiveId(''); setModal(''); loadRooms() }} loadPeople={loadPeople}
         blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={active.kind === 'direct' ? (v) => { setModal(''); callRoom(active, v) } : null} /></Suspense>}
       {cardPerson && (

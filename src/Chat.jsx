@@ -1676,8 +1676,7 @@ export default function Chat({ me, setMe }) {
               )}
             </div>
             <hr />
-            <button type="button" onClick={() => roomAct('clear')} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: '' })) }}>{I.clear}<span>Clear History</span></button>
-            <button type="button" className="danger" onClick={() => roomAct('delete')}>{I.trash}<span>{roomMenu.r.kind === 'group' ? 'Delete and Leave' : 'Delete Chat'}</span></button>
+            <button type="button" className="danger" onClick={() => roomAct('delete')} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: '' })) }}>{I.trash}<span>{roomMenu.r.kind === 'group' ? 'Delete and Leave' : 'Delete Chat'}</span></button>
           </div>
           </div>
           </div>

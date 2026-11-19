@@ -5603,3 +5603,11 @@ html:root:root .apx-name .accents .acc small { display: none; }
 .lock-bio { min-width: 160px; }
 
 .apx-swipe { display: contents; }
+
+/* The round arrow back to the newest messages (Alex, 19 Nov): over the microphone, its size, 10px above the writing
+   box; it rises in like a drop when one has scrolled up far enough */
+.compose-wrap { position: relative; }
+.compose-wrap > .to-latest { position: absolute; right: 14px; bottom: calc(100% + 10px); z-index: 3; display: grid; place-items: center; padding: 0; animation: tl-in .32s cubic-bezier(.25, 1.45, .45, 1) both; }
+.compose-wrap > .to-latest svg { width: 22px; height: 22px; }
+@keyframes tl-in { from { opacity: 0; transform: translateY(10px) scale(.7); } }
+html:is([data-lite], [data-still]) .compose-wrap > .to-latest { animation: none; }

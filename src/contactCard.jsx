@@ -14,24 +14,47 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
   const [nick, setNick] = useState('')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
-  const startEdit = () => { setNick(p.nickname || ''); setNote(p.my_note || ''); setErr(''); setEditing(true) }
+  const startEdit = () => { setNick(p.nickname || ''); setNote(noteHere); setErr(''); setEditing(true) }
   const saveEdit = async () => {
     setSaving(true); setErr('')
     const { error } = await supabase.from('roar_contacts').upsert({ owner: me.id, person: p.id, nickname: nick.trim(), note: note.trim(), updated_at: new Date().toISOString() })
     setSaving(false)
     if (error) { setErr(errText(error)); return }
-    setEditing(false); loadPeople([p.id]); toast('Saved, only you see it')
+    setEditing(false); setNoteHere(note.trim()); loadPeople([p.id]); toast('Saved, only you see it')
   }
   const [cropFile, setCropFile] = useState(null)
   const [err, setErr] = useState('')
   const picRef = useRef(null)
   const name = nameOf(p)
 
-  const copy = async (text, done) => { try { await navigator.clipboard.writeText(text); toast(done) } catch { toast(text) } }
+  // copy that works inside the iPhone app too (Alex, 19 Nov: "the link does nothing, at least tell me it copied"):
+  // the clipboard, else a hidden field and the old copy command; the notice says what happened
+  const copy = async (text, done) => {
+    try { await navigator.clipboard.writeText(text); toast(done); return } catch { /* not allowed here */ }
+    try {
+      const t = document.createElement('textarea'); t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0'
+      document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove()
+      toast(ok ? done : text)
+    } catch { toast(text) }
+  }
+  const link = () => inviteLink(p.username)
+  // Share Contact: the phone's share sheet where there is one; where it fails or is missing, the link is copied
   const share = async () => {
-    const url = inviteLink(p.username)
-    if (navigator.share) { try { await navigator.share({ title: name, text: `${name} on RoarMe (@${p.username})`, url }) } catch { /* closed */ } return }
+    const url = link()
+    if (navigator.share) {
+      try { await navigator.share({ title: name, text: `${name} on RoarMe (@${p.username})`, url }); return } catch (e) { if (e?.name === 'AbortError') return }
+    }
     copy(url, 'Contact link copied')
+  }
+  // my notes for them are written straight in the card (Alex, 19 Nov: "no Edit needed to write the notes"), kept
+  // when the field lets go
+  const [noteHere, setNoteHere] = useState(p.my_note || '')
+  const saveNote = async () => {
+    const v = noteHere.trim()
+    if (v === (p.my_note || '').trim()) return
+    const { error } = await supabase.from('roar_contacts').upsert({ owner: me.id, person: p.id, note: v, updated_at: new Date().toISOString() })
+    if (error) { setErr(errText(error)); return }
+    loadPeople([p.id]); toast('Notes saved, only you see them')
   }
   const block = async () => {
     setErr('')
@@ -89,7 +112,7 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
           <button type="button" onClick={onMessage} aria-label="Message" title="Message">{I.chats}</button>
           <button type="button" onClick={() => onCall(false)} aria-label="Call" title="Call">{I.phone}</button>
           <button type="button" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>
-          <button type="button" onClick={share} aria-label="Share Contact" title="Share Contact">{I.link}</button>
+          <button type="button" onClick={() => copy(link(), 'Contact link copied')} aria-label="Copy Link" title="Copy Link">{I.link}</button>
         </div>
 
         <div className="cc-card">
@@ -105,10 +128,10 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
             <textarea className="cc-note-in" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Where you met, what they do, anything" maxLength={500} />
           </label>
         ) : (
-          <button type="button" className="cc-card cc-notes" onClick={startEdit}>
+          <label className="cc-card cc-notes">
             <small>Notes</small>
-            <span className="cc-text">{p.my_note || ''}</span>
-          </button>
+            <textarea className="cc-note-in" rows={2} value={noteHere} onChange={(e) => setNoteHere(e.target.value)} onBlur={saveNote} placeholder="Add notes, only you see them" maxLength={500} />
+          </label>
         )}
         {editing && <p className="muted cc-hint">Only you see these. They keep their own name and photo for everyone else.</p>}
 

@@ -5626,3 +5626,9 @@ html:is([data-lite], [data-still]) .compose-wrap > .to-latest { animation: none;
 /* The contact card keeps every piece whole when the window is short (Alex, 19 Nov: with the keyboard up for Notes the
    boxes were squeezed into each other): nothing in it shrinks; the window scrolls inside instead */
 .modal-body > .cc, .cc > * { flex-shrink: 0; }
+
+/* In a group, the sender's picture and name open my chat with them (Alex, 19 Nov): the picture a bare round button,
+   the name pressable */
+.msg > .who-ava { flex: none; align-self: flex-end; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; line-height: 0; }
+.msg .who[role='button'] { cursor: pointer; }
+.msg .who[role='button']:active, .msg > .who-ava:active { opacity: .6; }

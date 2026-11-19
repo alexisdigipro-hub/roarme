@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { dropPics, errText, foldHas, nameOf, supabase } from './lib.js'
-import { Avatar, FOOT_I, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
-import { ACCENTS, HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, haloish, inThemeLab, setPrefs, usePrefs } from './prefs.js'
+import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
+import { HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
-import { ColorPick, ThemeEditor } from './themeEditor.jsx'
+import { ColorPick } from './themeEditor.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode } from './lock.jsx'
@@ -890,36 +890,6 @@ function Sessions({ me, setMe, toast }) {
 // what Reset Appearance puts back
 const LOOK_KEYS = ['theme', 'mode', 'accent', 'accentHex', 'myBubble', 'theirBubble', 'bubbleR', 'chatTheme', 'font', 'textSize', 'uiText', 'listPanel', 'listPanelOp', 'listPanelFill', 'listPanelGrain', 'contactShape', 'listShape', 'density', 'radius', 'compact', 'background', 'appBackground', 'appWallStrength', 'accentOpacity', 'wallStrength', 'glassBubbles', 'motion', 'focusRings', 'lite']
 const hasChatWalls = () => { try { return Object.keys(JSON.parse(localStorage.getItem('roarme-walls') || '{}')).length > 0 } catch { return false } }
-/* Chat Theme (Alex, 9 Nov): ready-made ones, one's own colours for the messages and the accent, and the message corners */
-function ChatTheme({ p }) {
-  const [editing, setEditing] = useState(false)
-  return (
-    <Box title="Chat theme" note="Your own colours for the messages. The wallpaper is below.">
-      {/* the ready-made chat themes are gone (Alex, 12 Nov); one's own colours stay, and one tap goes back to the theme's */}
-      {/* an accent of one's own (accent 'h-custom') also lives in accentHex: it is not a message colour, so it neither
-          shows this row nor is cleared by it (18 Nov: the row wiped the colour picked in Accent Colour) */}
-      {(p.chatTheme || p.myBubble || p.theirBubble || (p.accentHex && p.accent !== 'h-custom')) && (
-        <button type="button" className="set-row set-pick" onClick={() => setPrefs({ chatTheme: '', myBubble: '', theirBubble: '', ...(p.accent === 'h-custom' ? {} : { accentHex: '' }) })}>
-          <span className="set-text">Back to the Theme's Own<small>The theme's own colours for the messages</small></span>
-        </button>
-      )}
-      <button type="button" className="set-row set-pick set-nav" onClick={() => setEditing(true)}>
-        <span className="set-text">{haloish(p.theme) ? 'Message Colours' : 'Edit Your Theme'}<small>{haloish(p.theme) ? 'Your own colours for your messages and theirs' : 'Background, accent and the colour of the messages'}</small></span>
-        <span className="te-dots"><i style={{ background: p.myBubble || '#2a2a2c' }} /><i style={{ background: p.theirBubble || '#ffffff' }} /><i style={{ background: p.accentHex || 'var(--accent)' }} /></span>
-        <i className="set-chev">{I.right}</i>
-      </button>
-      {editing && <ThemeEditor p={p} onClose={() => setEditing(false)} />}
-      <div className="set-row set-col">
-        <span className="set-text">Message Corners<small>{p.bubbleR ? (p.bubbleR <= 1 ? 'Square' : `${p.bubbleR} px`) : "The theme's own"}</small></span>
-        {/* square at the left end, round at the right (Alex, 12 Nov); the theme's own corners are a button of their own */}
-        <Slide min={1} max={25} step={1} value={p.bubbleR || 17} onChange={(n) => setPrefs({ bubbleR: n })} aria-label="Message Corners" />
-        <span className="range-labels"><small>Square</small><small>Round</small></span>
-        {!!p.bubbleR && <button type="button" className="pill-btn corners-own" onClick={() => setPrefs({ bubbleR: 0 })}>Theme's Own</button>}
-      </div>
-    </Box>
-  )
-}
-
 // the size of every letter in RoarMe (Alex, 13 Nov): the number follows the hand, the app changes when the hand lets go,
 // so the slider does not move under the finger while it is dragged
 function AppTextSize({ p }) {
@@ -940,21 +910,21 @@ function AppTextSize({ p }) {
 
 function Appearance({ p, toast, me, setMe }) {
   const [accentPick, setAccentPick] = useState(false)
+  // three tabs instead of one long page (Alex, 19 Nov: "tabs where needed, not many boxes downwards")
+  const [tab, setTab] = useState(() => { try { return sessionStorage.getItem('roarme-look-tab') || 'colours' } catch { return 'colours' } })
+  const goTab = (t) => { setTab(t); try { sessionStorage.setItem('roarme-look-tab', t) } catch { /* private */ } }
   const look = wallLook(p.background, useWalls(true), p.wallStrength)
-  const listLook = wallLook(p.appBackground || p.background, useWalls(true), p.appBackground ? p.appWallStrength ?? p.wallStrength : p.wallStrength)
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
-  const menuPv = <div className="pv-menu" aria-hidden="true"><span>{FOOT_I.contacts}<b>Contacts</b></span><span>{FOOT_I.calls}<b>Calls</b></span><span className="on">{FOOT_I.messages}<b>Messages</b></span><span>{FOOT_I.settings}<b>Settings</b></span></div>
-  // Colours: one message of yours, the Send button and the menu, the three places the accent shows
+  // Colours: one message of yours and the writing box with Send, where the colour shows
   const colourPv = (
     <div className="pv-wrap" aria-hidden="true">
       <div className="set-preview live pv-short" data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={look.style}>
         <span className="pv mine">Yes, on set at 10 👍</span>
         <span className="pv-compose"><span>Write a message…</span><i /></span>
       </div>
-      {menuPv}
     </div>
   )
-  // Messages: a little chat with the wallpaper, the message colours and corners, the text size and Compact Messages
+  // Chats: a little chat with the wallpaper, the text size and Compact Messages
   const chatPv = (
     <div className={`set-preview live${p.compact ? ' compact' : ''}`} aria-hidden="true" data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...look.style }}>
       <span className="pv-head"><i className="pv-ava">GK</i><span><b>Giorgos</b><small>online</small></span></span>
@@ -964,201 +934,119 @@ function Appearance({ p, toast, me, setMe }) {
       <span className="pv-compose"><span>Write a message…</span><i /></span>
     </div>
   )
-  // the chat list on the app's background, with the real rows' classes so the panel's own rules draw it; with the
-  // menu under it, it is the whole app in small
-  const listPv = (n, menu) => (
-    <div className="set-preview lp-prev" aria-hidden="true" data-bg={listLook['data-bg']} data-img={listLook['data-img']} data-own={listLook['data-own']} data-wop={listLook['data-wop']} style={listLook.style}>
-      <div className="rooms-pager"><div className="rooms">
-        {[['Giorgos Kanellos', '10:42', 'On set at 10, bring the lights', 2], ['Film Crew', '09:15', 'Maria: the call sheet is ready', 0], ['Eleni Marou', 'Tue', 'See you at the edit', 0]].slice(0, n).map(([nm, tm, m, u]) => (
-          <div key={nm} className="room">
-            <Avatar name={nm} size={54} />
-            <span className="room-main">
-              <span className="room-top"><strong>{nm}</strong><small data-raw="">{tm}</small></span>
-              <span className="room-bottom"><span className="room-prev">{m}</span>{u > 0 && <span className="badge">{u}</span>}</span>
-            </span>
-          </div>
-        ))}
-      </div></div>
-      {menu && menuPv}
-    </div>
-  )
   const modeRow = (
-    <div className="set-row set-col">
-      <span className="set-text">Day and Night<small>Auto follows the device: light by day, dark at night if the device does so</small></span>
+    <div className="set-row apx-line">
+      <span className="set-text">Day and Night</span>
       <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
     </div>
   )
-  // Glass or Frost (Alex, 14 Nov). Frost brings its own palette and wall; while it is on, only its three choices show,
-  // and every other look setting waits, saved, for Glass
-  const themeBox = (
-    <Box note={p.frost ? 'Frost has its own colours and wall. Your colours, wallpapers and the rest come back when you choose Roar.' : ''}>
-      <div className="set-row set-col">
-        <span className="set-text">Theme<small>{p.frost ? 'Frosted glass on a warm stone wall' : 'Liquid glass with your own colours'}</small></span>
-        <Lens className="seg" dep={p.frost ? 'frost' : 'glass'}>{[[false, 'Roar'], [true, 'Frost']].map(([v, l]) => <button key={l} type="button" className={!!p.frost === v ? 'on' : ''} onClick={(e) => revealFrom(e, () => setPrefs({ frost: v }))}>{l}</button>)}</Lens>
-      </div>
-    </Box>
+  // Roar or Frost (Alex, 14 Nov). Frost brings its own palette and wall; while it is on, only Theme and Day and Night show
+  const themeRow = (
+    <div className="set-row apx-line">
+      <span className="set-text">Theme</span>
+      <Lens className="seg" dep={p.frost ? 'frost' : 'glass'}>{[[false, 'Roar'], [true, 'Frost']].map(([v, l]) => <button key={l} type="button" className={!!p.frost === v ? 'on' : ''} onClick={(e) => revealFrom(e, () => setPrefs({ frost: v }))}>{l}</button>)}</Lens>
+    </div>
   )
   if (p.frost) {
     return (
-      <>
-        <h3 className="set-group">Theme</h3>
-        {themeBox}
-        <h3 className="set-group">Frost</h3>
-        <Box>
-          {modeRow}
-        </Box>
-      </>
+      <Box note="Frost has its own colours and wall. Your colour, wallpaper and the rest come back when you choose Roar.">
+        {themeRow}
+        {modeRow}
+      </Box>
     )
   }
+  const tabs = (
+    <div className="apx-tabs">
+      <Lens className="seg" dep={tab}>{[['colours', 'Colours'], ['chats', 'Chats'], ['app', 'App']].map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => goTab(k)}>{l}</button>)}</Lens>
+    </div>
+  )
   return (
     <>
-      {/* grouped by what is being changed, each group with its own preview right where the hand is (Alex, 13 Nov:
-          "group everything as it should be, and whatever I change I see a preview at the place I change it"); the one
-          preview stuck to the top of the page (12 Nov) is gone */}
-      <h3 className="set-group">Theme</h3>
-      {themeBox}
-      <h3 className="set-group">Colours</h3>
-      <Box>
-        {colourPv}
-        {modeRow}
-        <div className="set-row set-col">
-          <span className="set-text">Accent Colour<small>{p.accent === 'h-custom' && p.accentHex ? 'Your Colour' : p.accent ? (haloish(p.theme) ? HALO_ACCENTS : ACCENTS).find(([k]) => k === p.accent)?.[1] || "The theme's own colour" : "The theme's own colour"}</small></span>
-          {haloish(p.theme)
-            ? (
-              // Halo's own palette (Alex, 12 Nov): the orange it is made with and five colours, each with its gradient
+      {tabs}
+      {tab === 'colours' && (
+        <div className="apx-pane" key="colours">
+          <Box>
+            {colourPv}
+            {themeRow}
+            {modeRow}
+            {/* one colour (Alex, 19 Nov): it paints one's own messages, Send and the buttons; Message Colours, Accent
+                Opacity and Glass Look are gone */}
+            <div className="set-row set-col">
+              <span className="set-text">Colour<small>Your messages, Send and the buttons</small></span>
               <div className="accents halo-accents">
                 <button type="button" className={`acc acc-halo${!HALO_ACCENTS.some(([k]) => k === p.accent) && !(p.accent === 'h-custom' && p.accentHex) ? ' on' : ''}`} style={{ '--c': '#f47318', background: 'linear-gradient(135deg, #ff9a3c, #f47318)' }} title="Orange" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Orange</small></button>
-                {HALO_ACCENTS.map(([k, l, c, , [a, b]]) => <button key={k} type="button" className={`acc acc-halo${p.accent === k ? ' on' : ''}`} style={{ '--c': c, background: `linear-gradient(135deg, ${a}, ${b})` }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
-                {/* any colour (Alex, 18 Nov): the rainbow tile opens the colour window */}
+                {HALO_ACCENTS.map(([k, l, c, , [x, y]]) => <button key={k} type="button" className={`acc acc-halo${p.accent === k ? ' on' : ''}`} style={{ '--c': c, background: `linear-gradient(135deg, ${x}, ${y})` }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
                 <button type="button" className={`acc acc-halo acc-any${p.accent === 'h-custom' && p.accentHex ? ' on' : ''}`} style={p.accent === 'h-custom' && p.accentHex ? { '--c': p.accentHex, background: p.accentHex } : { '--c': '#8a8a96' }} title="Any colour" onClick={() => setAccentPick(true)}><small>Any colour</small></button>
-                {accentPick && <ColorPick title="Accent Colour" value={p.accent === 'h-custom' && p.accentHex ? p.accentHex.toUpperCase() : '#3AA7E8'} onSet={(h) => setPrefs({ accent: 'h-custom', accentHex: h })} onClose={() => setAccentPick(false)} />}
+                {accentPick && <ColorPick title="Colour" value={p.accent === 'h-custom' && p.accentHex ? p.accentHex.toUpperCase() : '#3AA7E8'} onSet={(h) => setPrefs({ accent: 'h-custom', accentHex: h })} onClose={() => setAccentPick(false)} />}
               </div>
-            )
-            : (
-              <div className="accents">
-                <button type="button" className={`acc acc-auto${!p.accent ? ' on' : ''}`} title="Theme colour" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Theme</small></button>
-                {ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`acc${p.accent === k ? ' on' : ''}${k === 'white' ? ' acc-white' : k === 'black' ? ' acc-black' : ''}`} style={{ '--c': c }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
-              </div>
-            )}
-        </div>
-        <div className="set-row set-col">
-          <span className="set-text">Accent Opacity<small>{`${Math.min(100, Math.max(30, Number(p.accentOpacity) || 100))}%`}</small><small>Lower lets the wallpaper through your messages and the coloured buttons</small></span>
-          <Slide min={30} max={100} step={1} value={Math.min(100, Math.max(30, Number(p.accentOpacity) || 100))} onChange={(n) => setPrefs({ accentOpacity: n })} aria-label="Accent Opacity" />
-        </div>
-        <Switch on={p.glassBubbles !== false} set={(v) => setPrefs({ glassBubbles: v })} hint="Your messages and the buttons see-through, with a thin edge in your colour. Off: filled with your colour">Glass Look</Switch>
-      </Box>
-      <h3 className="set-group">Messages</h3>
-      {chatPv}
-      <ChatTheme p={p} />
-      <Box title="Text and spacing">
-        <div className="set-row set-col">
-          <span className="set-text">Message Text Size<small>{`${TEXT_SIZES[p.textSize] || 14.5} px`}</small></span>
-          <div className="set-size">
-            <small>A</small>
-            <Slide min={0} max={TEXT_SIZES.length - 1} step={1} value={p.textSize} onChange={(n) => setPrefs({ textSize: n })} aria-label="Text Size" />
-            <b>A</b>
-          </div>
-        </div>
-        <Switch on={p.compact} set={(v) => setPrefs({ compact: v })} hint="Messages in a chat sit closer together">Compact Messages</Switch>
-      </Box>
-      <Box title="Chat wallpaper" note="Pick one, any colour, or a photo of your own. One chat can have its own from its ⋯ menu > Change Wallpaper.">
-        <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
-      </Box>
-      <h3 className="set-group">Chat List</h3>
-      <Box title="Panel" note="The sheet of glass the chats stand on in the list.">
-        {listPv(3, false)}
-        <Switch on={p.listPanel !== false} set={(v) => setPrefs({ listPanel: v })} hint="Off, the chats stand straight on the background">Panel Behind the Chats</Switch>
-        {p.listPanel !== false && (
-          <div className="set-row set-col">
-            <span className="set-text">Shape<small>One sheet for all the chats, or each chat a capsule, a card, or glass pressed into the page</small></span>
-            <Lens className="seg" dep={p.listShape || 'panel'}>{[['panel', 'One Panel'], ['pill', 'Capsules'], ['card', 'Cards'], ['inset', 'Inset']].map(([k, l]) => <button key={k} type="button" className={(p.listShape || 'panel') === k ? 'on' : ''} onClick={() => setPrefs({ listShape: k })}>{l}</button>)}</Lens>
-          </div>
-        )}
-        {p.listPanel !== false && (
-          <div className="set-row set-col">
-            <span className="set-text">Panel Opacity<small>{`${Math.min(100, Math.max(0, Number(p.listPanelOp ?? 50)))}%`}</small></span>
-            <Slide min={0} max={100} step={1} value={Math.min(100, Math.max(0, Number(p.listPanelOp ?? 50)))} onChange={(n) => setPrefs({ listPanelOp: n })} aria-label="Panel Opacity" />
-          </div>
-        )}
-        {p.listPanel !== false && (
-          <div className="set-row set-col">
-            <span className="set-text">Panel Colour<small>{p.listPanelFill === 'orange' ? 'Orange' : HALO_ACCENTS.find(([k]) => k === p.listPanelFill)?.[1] || 'Plain glass'}</small></span>
-            <div className="accents halo-accents">
-              <button type="button" className={`acc acc-halo acc-plain${!p.listPanelFill ? ' on' : ''}`} style={{ '--c': '#b9b9c6', background: 'linear-gradient(135deg, #ffffff, #d9d9e2)' }} title="Plain glass" onClick={() => setPrefs({ listPanelFill: '' })}><small>Plain glass</small></button>
-              <button type="button" className={`acc acc-halo${p.listPanelFill === 'orange' ? ' on' : ''}`} style={{ '--c': '#f47318', background: 'linear-gradient(135deg, #ff9a3c, #f47318)' }} title="Orange" onClick={() => setPrefs({ listPanelFill: 'orange' })}><small>Orange</small></button>
-              {HALO_ACCENTS.map(([k, l, c, , [a, b]]) => <button key={k} type="button" className={`acc acc-halo${p.listPanelFill === k ? ' on' : ''}`} style={{ '--c': c, background: `linear-gradient(135deg, ${a}, ${b})` }} title={l} onClick={() => setPrefs({ listPanelFill: k })}><small>{l}</small></button>)}
             </div>
-          </div>
-        )}
-        {p.listPanel !== false && <Switch on={!!p.listPanelGrain} set={(v) => setPrefs({ listPanelGrain: v })} hint="A fine grain over the panel">Panel Texture</Switch>}
-        <div className="set-row set-col">
-          <span className="set-text">Spacing<small>How much room the chat list, menus and settings get</small></span>
-          <Lens className="seg" dep={p.density || 'standard'}>{[['relaxed', 'Relaxed'], ['standard', 'Standard'], ['tight', 'Tight']].map(([k, l]) => <button key={k} type="button" className={(p.density || 'standard') === k ? 'on' : ''} onClick={() => setPrefs({ density: k })}>{l}</button>)}</Lens>
+          </Box>
         </div>
-      </Box>
-      <Box title="Contacts" note="How each person stands in Contacts.">
-        <div className="set-preview lp-prev" aria-hidden="true" data-bg={listLook['data-bg']} data-img={listLook['data-img']} data-own={listLook['data-own']} data-wop={listLook['data-wop']} style={listLook.style}>
-          <div className="side-scroll"><div className="rooms contacts-list">
-            {[['Giorgos Kanellos', '@giorgos · online'], ['Eleni Marou', '@eleni · last seen Tue']].map(([nm, sub]) => (
-              <div key={nm} className="room contact">
-                <Avatar name={nm} size={54} />
-                <span className="room-main">
-                  <span className="room-top"><strong>{nm}</strong></span>
-                  <span className="room-bottom"><span className="room-prev" data-raw="">{sub}</span></span>
-                </span>
-              </div>
-            ))}
-          </div></div>
-        </div>
-        <div className="set-row set-col">
-          <span className="set-text">Shape<small>A capsule, a card like the rows of Settings, glass pressed into the page, or nothing at all, as in Calls</small></span>
-          <Lens className="seg" dep={p.contactShape || 'plain'}>{[['pill', 'Capsule'], ['card', 'Card'], ['inset', 'Inset'], ['plain', 'Plain']].map(([k, l]) => <button key={k} type="button" className={(p.contactShape || 'plain') === k ? 'on' : ''} onClick={() => setPrefs({ contactShape: k })}>{l}</button>)}</Lens>
-        </div>
-      </Box>
-      <h3 className="set-group">The Whole App</h3>
-      {haloish(p.theme) && (
-        <Box title="App background" note="What sits behind the chat list, Contacts, Calls and Settings: a wallpaper, any colour or your own photo, with a strength of its own.">
-          {listPv(2, true)}
-          <Switch on={!p.appBackground} set={(v) => setPrefs({ appBackground: v ? '' : p.background || 'soft' })} hint="The app wears the chat wallpaper above">Same as Chats</Switch>
-          {!!p.appBackground && <div className="set-row set-col"><WallTiles value={p.appBackground} toast={toast} onPick={(k) => setPrefs({ appBackground: k })} strength={p.appWallStrength ?? p.wallStrength} onStrength={(n) => setPrefs({ appWallStrength: n })} /></div>}
-        </Box>
       )}
-      <Box title="Text">
-        <AppTextSize p={p} />
-        <div className="set-row set-col">
-          <span className="set-text">Font<small>DM Sans and Space Grotesk have no Greek letters; Greek in them is shown in the device's own font</small></span>
-          <select className="input set-select" value={p.font || 'system'} onChange={(e) => setPrefs({ font: e.target.value })}>{FONTS.map(([k, l, f]) => <option key={k} value={k} style={{ fontFamily: f }}>{l}</option>)}</select>
+      {tab === 'chats' && (
+        <div className="apx-pane" key="chats">
+          <Box>
+            {chatPv}
+            <div className="set-row set-col">
+              <span className="set-text">Message Text Size<small>{`${TEXT_SIZES[p.textSize] || 14.5} px`}</small></span>
+              <div className="set-size">
+                <small>A</small>
+                <Slide min={0} max={TEXT_SIZES.length - 1} step={1} value={p.textSize} onChange={(n) => setPrefs({ textSize: n })} aria-label="Text Size" />
+                <b>A</b>
+              </div>
+            </div>
+            <Switch on={p.compact} set={(v) => setPrefs({ compact: v })}>Compact Messages</Switch>
+          </Box>
+          {/* one wallpaper for the chats and the whole app (Alex, 19 Nov); App background is gone */}
+          <Box title="Wallpaper" note="For the chats and the whole app. One chat can have its own from its ⋯ menu > Change Wallpaper.">
+            <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
+          </Box>
+          {/* Your name in groups (Alex, 19 Nov): one short row, the line beside its title, small dots */}
+          <Box>
+            <div className="set-row set-col apx-name">
+              <span className="set-text">Name Colour<small>How your name shows to others in groups</small></span>
+              <div className="accents">
+                <button type="button" className={`acc acc-auto${!me.name_color ? ' on' : ''}`} title="Automatic" onClick={() => pickName('')}><small>Auto</small></button>
+                {/* the second, lighter green is not offered (Alex, 12 Nov); names still take it by themselves */}
+                {NAME_COLORS.filter((c) => c !== '#aed581').map((c) => <button key={c} type="button" className={`acc${me.name_color === c ? ' on' : ''}`} style={{ '--c': c }} onClick={() => pickName(c)}><small>{c}</small></button>)}
+              </div>
+            </div>
+          </Box>
         </div>
-      </Box>
-      <h3 className="set-group">More</h3>
-      <Box title="Effects">
-        <Switch on={p.motion !== false} set={(v) => setPrefs({ motion: v })} hint={p.lite ? 'Off while Power Saving Mode is on' : 'Fluid transitions for messages, menus and windows'}>Smooth Animations</Switch>
-        <Switch on={p.focusRings} set={(v) => setPrefs({ focusRings: v })} hint="A clear ring around whatever the keyboard is on">Bold Focus Rings</Switch>
-        <Switch on={p.lite} set={(v) => setPrefs({ lite: v })} hint="No animations and no glass blur, easier on the battery">Power Saving Mode</Switch>
-      </Box>
-      <Box title="Your name in groups">
-        <div className="set-preview live pv-short pv-nocompose" aria-hidden="true" data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={look.style}>
-          <span className="pv"><b className="pv-name" data-raw="" style={{ color: me.name_color || colorOf(me.id) }}>{nameOf(me)}</b>Are we shooting at 10?</span>
+      )}
+      {tab === 'app' && (
+        <div className="apx-pane" key="app">
+          <Box>
+            <AppTextSize p={p} />
+            <div className="set-row apx-line">
+              <span className="set-text">Font</span>
+              <select className="input set-select" value={p.font || 'system'} onChange={(e) => setPrefs({ font: e.target.value })}>{FONTS.map(([k, l, f]) => <option key={k} value={k} style={{ fontFamily: f }}>{l}</option>)}</select>
+            </div>
+            <div className="set-row apx-line">
+              <span className="set-text">Spacing</span>
+              <Lens className="seg" dep={p.density || 'standard'}>{[['relaxed', 'Relaxed'], ['standard', 'Standard'], ['tight', 'Tight']].map(([k, l]) => <button key={k} type="button" className={(p.density || 'standard') === k ? 'on' : ''} onClick={() => setPrefs({ density: k })}>{l}</button>)}</Lens>
+            </div>
+            {/* Contacts: Plain or Capsule only (Alex, 19 Nov) */}
+            <div className="set-row apx-line">
+              <span className="set-text">Contacts</span>
+              <Lens className="seg" dep={p.contactShape === 'plain' || !p.contactShape ? 'plain' : 'pill'}>{[['plain', 'Plain'], ['pill', 'Capsule']].map(([k, l]) => <button key={k} type="button" className={((p.contactShape || 'plain') === 'plain' ? 'plain' : 'pill') === k ? 'on' : ''} onClick={() => setPrefs({ contactShape: k })}>{l}</button>)}</Lens>
+            </div>
+          </Box>
+          <Box title="Effects">
+            <Switch on={p.motion !== false} set={(v) => setPrefs({ motion: v })} hint={p.lite ? 'Off while Power Saving Mode is on' : 'Fluid transitions for messages, menus and windows'}>Smooth Animations</Switch>
+            <Switch on={p.lite} set={(v) => setPrefs({ lite: v })} hint="No animations and no glass blur, easier on the battery">Power Saving Mode</Switch>
+          </Box>
+          {/* the look back to how RoarMe starts (Alex, 9 Nov); every chat's own wallpaper goes too */}
+          <Box note="Theme, colour, text, wallpaper, layout and effects go back to how RoarMe starts. Each chat's own wallpaper goes too.">
+            <button type="button" className="set-row set-pick danger" disabled={LOOK_KEYS.every((k) => JSON.stringify(p[k]) === JSON.stringify(DEFAULTS[k])) && !hasChatWalls()} onClick={() => {
+              if (!window.confirm('Reset the look of RoarMe on this device?')) return
+              setPrefs(Object.fromEntries(LOOK_KEYS.map((k) => [k, DEFAULTS[k]])))
+              try { localStorage.removeItem('roarme-walls') } catch { /* private window */ }
+              toast('The look is back to how RoarMe starts')
+            }}><span className="set-text">Reset Appearance</span></button>
+          </Box>
         </div>
-        <div className="set-row set-col">
-          <span className="set-text">Name Colour<small>How your name shows to others in groups</small></span>
-          <div className="accents">
-            <button type="button" className={`acc acc-auto${!me.name_color ? ' on' : ''}`} title="Automatic" onClick={() => pickName('')}><small>Auto</small></button>
-            {/* the second, lighter green is not offered (Alex, 12 Nov); names still take it by themselves */}
-            {NAME_COLORS.filter((c) => c !== '#aed581').map((c) => <button key={c} type="button" className={`acc${me.name_color === c ? ' on' : ''}`} style={{ '--c': c }} onClick={() => pickName(c)}><small>{c}</small></button>)}
-          </div>
-        </div>
-      </Box>
-      {/* the look back to how RoarMe starts (Alex, 9 Nov): theme, day and night, accent, text, wallpaper, layout and
-          effects; every chat's own wallpaper goes too. Nothing else: chats, folders, sounds and the rest stay */}
-      <Box note="Theme, day and night, accent, text, wallpaper, layout and effects go back to how RoarMe starts. Each chat's own wallpaper goes too.">
-        <button type="button" className="set-row set-pick danger" disabled={LOOK_KEYS.every((k) => JSON.stringify(p[k]) === JSON.stringify(DEFAULTS[k])) && !hasChatWalls()} onClick={() => {
-          if (!window.confirm('Reset the look of RoarMe on this device?')) return
-          setPrefs(Object.fromEntries(LOOK_KEYS.map((k) => [k, DEFAULTS[k]])))
-          try { localStorage.removeItem('roarme-walls') } catch { /* private window */ }
-          toast('The look is back to how RoarMe starts')
-        }}><span className="set-text">Reset Appearance</span></button>
-      </Box>
+      )}
     </>
   )
 }

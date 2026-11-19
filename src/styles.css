@@ -5565,3 +5565,20 @@ html:root:root:root:root .foot button .ic-mask.fi-phone { width: 24px; height: 2
 }
 html:root:root:root .sub-menu.sub-fly > button { min-width: 0; }
 html:root:root:root .sub-menu.sub-fly > button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Appearance in three tabs (Alex, 19 Nov: "minimal, no titles twice, tabs where needed"): Colours · Chats · App on
+   one glass bar at the top of the page; a row whose control is short (Theme, Day and Night, Font, Spacing, Contacts)
+   holds its words and its control on one line; Name Colour has its line beside its title and small dots */
+.apx-tabs { position: sticky; top: 0; z-index: 5; display: flex; justify-content: center; padding: 2px 0 12px; }
+.apx-tabs .seg { width: 100%; max-width: 420px; }
+.apx-pane { animation: apx-in .22s ease-out both; }
+@keyframes apx-in { from { opacity: 0; transform: translateY(6px); } }
+html:is([data-lite], [data-still]) .apx-pane { animation: none; }
+.set-row.apx-line { display: flex; flex-direction: row; align-items: center; gap: 12px; }
+.set-row.apx-line > .set-text { flex: 1; min-width: 0; }
+.set-row.apx-line > .seg, .set-row.apx-line > .set-select { flex: none; width: auto; max-width: 62%; }
+.apx-name > .set-text { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 8px; }
+.apx-name > .set-text small { margin: 0; }
+html:root:root .apx-name .accents { gap: 8px; margin-top: 8px; }
+html:root:root .apx-name .accents .acc { width: 28px; height: 28px; min-width: 28px; }
+html:root:root .apx-name .accents .acc small { display: none; }

@@ -5611,3 +5611,14 @@ html:root:root .apx-name .accents .acc small { display: none; }
 .compose-wrap > .to-latest svg { width: 22px; height: 22px; }
 @keyframes tl-in { from { opacity: 0; transform: translateY(10px) scale(.7); } }
 html:is([data-lite], [data-still]) .compose-wrap > .to-latest { animation: none; }
+
+/* The lock fills the phone's screen (Alex, 19 Nov: "fill the screen, no gaps left and right, a little room all
+   round"): the card runs to 10px from every edge (past the clock and the home line), its keys grow with the width */
+@media (max-width: 760px) {
+  html:root:root .lock { padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px); place-items: stretch; }
+  html:root:root .lock-card { width: 100%; height: 100%; box-sizing: border-box; justify-content: center; gap: 18px; padding: 24px 16px; }
+  html:root:root .lock-pad { grid-template-columns: repeat(3, min(84px, 24vw)); gap: 16px 22px; margin: 10px 0 6px; }
+  html:root:root .lock-pad button { width: min(84px, 24vw); height: min(84px, 24vw); font-size: 30px; }
+  html:root:root .lock-pad .lock-go { font-size: 18px; }
+  html:root:root .lock-dots { gap: 16px; }
+}

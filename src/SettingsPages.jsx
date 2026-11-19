@@ -935,7 +935,7 @@ function Appearance({ p, toast, me, setMe }) {
     </div>
   )
   const modeRow = (
-    <div className="set-row apx-line">
+    <div className="set-row set-col">
       <span className="set-text">Day and Night</span>
       <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
     </div>
@@ -1022,7 +1022,7 @@ function Appearance({ p, toast, me, setMe }) {
               <span className="set-text">Font</span>
               <select className="input set-select" value={p.font || 'system'} onChange={(e) => setPrefs({ font: e.target.value })}>{FONTS.map(([k, l, f]) => <option key={k} value={k} style={{ fontFamily: f }}>{l}</option>)}</select>
             </div>
-            <div className="set-row apx-line">
+            <div className="set-row set-col">
               <span className="set-text">Spacing</span>
               <Lens className="seg" dep={p.density || 'standard'}>{[['relaxed', 'Relaxed'], ['standard', 'Standard'], ['tight', 'Tight']].map(([k, l]) => <button key={k} type="button" className={(p.density || 'standard') === k ? 'on' : ''} onClick={() => setPrefs({ density: k })}>{l}</button>)}</Lens>
             </div>

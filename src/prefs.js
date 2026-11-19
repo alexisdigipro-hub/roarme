@@ -100,6 +100,15 @@ export function getPrefs() {
     if (!p.prevOn) { p.listPreview = true; p.prevOn = true }
     // Calls back in the bar at the foot for whoever met the few minutes it was taken out (14 Nov, meant for another app)
     if (p.callsOff && !p.callsBack) { p.callsTab = true; p.callsBack = true }
+    // one colour and one wallpaper (Alex, 19 Nov: "one cancels the other, make it minimal"): the accent colours one's own
+    // messages too, the app wears the chat wallpaper, and the panel, focus rings, accent opacity, the see-through choice,
+    // the message corners and the others' bubble colour are gone. A message colour of one's own becomes the accent once
+    if (!p.oneColour) {
+      if (/^#[0-9a-f]{6}$/i.test(p.myBubble || '') && !p.accent) { p.accent = 'h-custom'; p.accentHex = p.myBubble }
+      p.oneColour = true
+    }
+    Object.assign(p, { appBackground: '', appWallStrength: null, listPanel: false, listShape: 'panel', focusRings: false, accentOpacity: 100, glassBubbles: true, theirBubble: '', bubbleR: 0, chatTheme: '' })
+    if (p.contactShape === 'card' || p.contactShape === 'inset') p.contactShape = 'pill'
     return p
   } catch { return { ...DEFAULTS } }
 }
@@ -309,7 +318,7 @@ export function applyLook(p0) {
   const frost = !!p0.frost
   const p = frost
     ? { ...DEFAULTS, accent: '', accentHex: '', myBubble: '', font: 'system', background: 'soft', wallStrength: 100, mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite } // no frame round the chats or the contacts (Alex, 14 Nov)
-    : p0
+    : { ...p0 }
   // Frost is round capsules only (Alex, 14 Nov: "only capsule")
   if (frost) r.dataset.frost = '1'; else delete r.dataset.frost
   delete r.dataset.frostShape
@@ -319,6 +328,8 @@ export function applyLook(p0) {
   // or any colour of one's own (Alex, 18 Nov: "a spectrum, to pick whatever colour we want"): accent 'h-custom' with
   // accentHex; its lighter top, its light form for the dark and its ink are worked out from it
   const ha = haloish(p.theme) && (HALO_ACCENTS.find(([k]) => k === p.accent) || customAccent(p))
+  // one's own messages wear the accent (Alex, 19 Nov): Colour is the one place they are coloured from
+  if (!frost) p.myBubble = ha ? ha[2] : ''
   // Accent Opacity (Alex, 12 Nov): how see-through the accent's fill is on your messages and the coloured buttons
   const so = Math.min(100, Math.max(30, Number(p.accentOpacity) || 100)) / 100
   if (ha) {

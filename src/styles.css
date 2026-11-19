@@ -5601,3 +5601,5 @@ html:root:root .apx-name .accents .acc small { display: none; }
 
 /* Face ID / Touch ID on the lock (19 Nov 2026) */
 .lock-bio { min-width: 160px; }
+
+.apx-swipe { display: contents; }

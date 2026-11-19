@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errText, fmtBytes, nameOf, shrinkImage, supabase } from './lib.js'
-import { Avatar, I, Lens, svg } from './ui.jsx'
+import { Avatar, I, Lens, svg, useTabSwipe } from './ui.jsx'
 import { locale } from './i18n.js'
 import { transferAlive, transferIcon } from './transfer.jsx'
 import { WALL_BUCKET, loadWalls, useWalls, wallUrl } from './walls.js'
@@ -25,6 +25,9 @@ const UNBLOCK_I = svg(<><circle cx="12" cy="12" r="8.5" /><path d="m8.5 12 2.5 2
 
 export function Admin() {
   const [tab, setTab] = useState('people')
+  // a slide left or right goes to the next tab (Alex, 19 Nov)
+  const admRef = useRef(null)
+  useTabSwipe(admRef, ['people', 'reports', 'files', 'transfer', 'walls'], tab, setTab)
   const [users, setUsers] = useState(null)
   const [files, setFiles] = useState(null)
   const [more, setMore] = useState(false)
@@ -81,7 +84,7 @@ export function Admin() {
   const totalFiles = (users || []).reduce((a, u) => a + Number(u.files || 0), 0)
 
   return (
-    <div className="adm">
+    <div className="adm" ref={admRef} data-tabs-swipe={tab === 'people' ? 'first' : 'mid'}>
       <div className="adm-stats">
         <span><b>{users ? users.length : '…'}</b><small>Accounts</small></span>
         <span><b>{users ? totalFiles : '…'}</b><small>Files sent</small></span>

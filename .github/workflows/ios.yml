@@ -61,6 +61,7 @@ jobs:
           set_key NSLocationWhenInUseUsageDescription "RoarMe uses your location only when you send a place or share your live location in a chat."
           set_key NSPhotoLibraryUsageDescription "RoarMe opens your photos only to send the ones you choose."
           set_key NSContactsUsageDescription "RoarMe checks which of your contacts are on RoarMe. Their numbers are coded on your iPhone and never stored."
+          set_key NSFaceIDUsageDescription "RoarMe uses Face ID to unlock the app when you turn on Unlock with Face ID."
           V=$(node -p "require('./package.json').version")
           # only the standard encryption of HTTPS and the system: every build reaches TestFlight without the "Missing Compliance" question (Alex, 15 Nov)
           /usr/libexec/PlistBuddy -c "Delete :ITSAppUsesNonExemptEncryption" "$P" 2>/dev/null || true

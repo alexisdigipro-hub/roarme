@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { dropPics, errText, foldHas, nameOf, supabase } from './lib.js'
-import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
+import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, useTabSwipe, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ColorPick } from './themeEditor.jsx'
@@ -919,6 +919,10 @@ function Appearance({ p, toast, me, setMe }) {
   // three tabs instead of one long page (Alex, 19 Nov: "tabs where needed, not many boxes downwards")
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem('roarme-look-tab') || 'colours' } catch { return 'colours' } })
   const goTab = (t) => { setTab(t); try { sessionStorage.setItem('roarme-look-tab', t) } catch { /* private */ } }
+  // a slide left or right on the page goes to the next tab (Alex, 19 Nov: "slide wherever there are pages"); on the
+  // first tab a slide to the right still goes back out of the page
+  const swipeRef = useRef(null)
+  useTabSwipe(swipeRef, ['colours', 'chats', 'app'], tab, goTab, p.frost ? 1 : 0)
   const look = wallLook(p.background, useWalls(true), p.wallStrength)
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
   // Colours: one message of yours and the writing box with Send, where the colour shows
@@ -969,6 +973,7 @@ function Appearance({ p, toast, me, setMe }) {
   return (
     <>
       {tabs}
+      <div ref={swipeRef} className="apx-swipe" data-tabs-swipe={tab === 'colours' ? 'first' : 'mid'}>
       {tab === 'colours' && (
         <div className="apx-pane" key="colours">
           <Box>
@@ -1053,6 +1058,7 @@ function Appearance({ p, toast, me, setMe }) {
           </Box>
         </div>
       )}
+      </div>
     </>
   )
 }

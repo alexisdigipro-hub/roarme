@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Wordmark } from './ui.jsx'
+import { inApp } from './push.js'
 
 /* Passcode Lock (Alex, 16 Oct): a code kept on this device that closes RoarMe after a while away.
    Only a salted SHA-256 of the code is stored, in this browser or app, never the code itself. */
@@ -34,13 +35,32 @@ export const lockNow = () => window.dispatchEvent(new Event('roarme-lock-now'))
    stays as the way in when it does not work. */
 const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
 const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
+// inside the iPhone app a passkey cannot be made (the app's page has no web address of its own), so there the phone's own
+// Face ID is asked through the native plugin @capgo/capacitor-native-biometric (mobile/; plugin NativeBiometric), reached
+// as Capacitor.Plugins or over the native bridge; the lock then keeps bio 'native' instead of a passkey's id
+const native = () => {
+  const C = typeof window !== 'undefined' ? window.Capacitor : null
+  if (!inApp() || !C) return null
+  const P = C.Plugins?.NativeBiometric
+  if (P?.verifyIdentity) return P
+  if (!C.nativePromise) return null
+  return { isAvailable: (o = {}) => C.nativePromise('NativeBiometric', 'isAvailable', o), verifyIdentity: (o = {}) => C.nativePromise('NativeBiometric', 'verifyIdentity', o) }
+}
+const nativeAsk = async () => { try { await native().verifyIdentity({ reason: 'Unlock RoarMe', title: 'Unlock RoarMe', useFallback: false }); return true } catch { return false } }
 export async function bioAvailable() {
+  if (inApp()) { try { return !!(await native()?.isAvailable({ useFallback: false }))?.isAvailable } catch { return false } }
   try { return !!window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable() } catch { return false }
 }
 export const bioName = () => (/iPhone|iPad/.test(navigator.userAgent) ? 'Face ID' : /Mac/.test(navigator.userAgent) ? 'Touch ID' : 'Face or fingerprint')
 export async function bioOn() {
   const l = getLock()
   if (!l) return false
+  if (inApp()) {
+    if (!(await nativeAsk())) return false
+    localStorage.setItem(KEY, JSON.stringify({ ...l, bio: 'native' }))
+    window.dispatchEvent(new Event('roarme-lock'))
+    return true
+  }
   const cred = await navigator.credentials.create({ publicKey: {
     challenge: crypto.getRandomValues(new Uint8Array(32)),
     rp: { name: 'RoarMe' },
@@ -64,6 +84,7 @@ export function bioOff() {
 export async function bioCheck() {
   const l = getLock()
   if (!l?.bio) return false
+  if (l.bio === 'native') return inApp() ? nativeAsk() : false
   try {
     const got = await navigator.credentials.get({ publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -113,7 +134,10 @@ export function LockScreen({ onUnlock, onSignOut }) {
   const bio = !!getLock()?.bio
   const face = async () => { if (await bioCheck()) onUnlock() }
   // asked at once when the lock shows; the button asks again (some browsers want a tap first)
-  useEffect(() => { if (bio) face() }, [])
+  useEffect(() => {
+    if (!bio) return
+    if (document.hidden) document.addEventListener('visibilitychange', () => face(), { once: true }); else face()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const try1 = async (c) => {
     if (await checkCode(c)) onUnlock()
     else { setBad(true); setCode(''); setTimeout(() => setBad(false), 600) }

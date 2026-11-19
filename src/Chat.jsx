@@ -1230,7 +1230,9 @@ export default function Chat({ me, setMe }) {
   pagerNow.current = { allFolders, folder, busy: picking || tabsEdit || !!q.trim(), picking, searchOpen: searchOpen || !!q.trim(), searchBusy, pull, goStop } // what the drags on the list read
   const stopSwipe = useRef(null)
   const onStopTouch = {
-    onTouchStart: (e) => { stopSwipe.current = tab !== 'chats' && tab !== 'media' && e.touches.length === 1 && !e.target.closest('.tabs, input, .seg') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
+    // a call's own slide to Delete (from the screen's right edge, or on a call whose Delete is out) is the call's alone:
+    // the screen does not turn under it (Alex, 19 Nov: "it neither deletes nor stays, it goes to the next page")
+    onTouchStart: (e) => { const callSlide = e.target.closest?.('.call-row') && (e.touches[0]?.clientX > window.innerWidth - CALL_EDGE || e.target.closest('.call-row.armed, .call-row.slid')); stopSwipe.current = tab !== 'chats' && tab !== 'media' && e.touches.length === 1 && !callSlide && !e.target.closest('.tabs, input, .seg') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
     onTouchEnd: (e) => {
       const st = stopSwipe.current
       stopSwipe.current = null

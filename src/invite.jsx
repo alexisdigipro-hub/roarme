@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { qrPath } from './qr.js'
 import { Avatar, I, Modal } from './ui.jsx'
-import { nameOf } from './lib.js'
+import { appUrl, nameOf } from './lib.js'
 
 /* Invite people (Alex, 17 Oct): everyone has a personal link (…/roarme/?u=username) and its QR code. Whoever opens it
    signs up if they have no account yet, and a chat with the person who invited them opens by itself. The QR is drawn
@@ -10,7 +10,9 @@ import { nameOf } from './lib.js'
 const KEY = 'roarme-invite'
 const NAME = /^[a-z0-9_]{3,24}$/
 
-export const inviteLink = (username) => `${window.location.origin}${window.location.pathname}?u=${username}`
+// the website's own address, also inside the iPhone app, whose page lives at capacitor://localhost and opened nothing
+// in Safari (Alex, 19 Nov: "I paste it in Safari and it goes nowhere")
+export const inviteLink = (username) => `${appUrl()}?u=${username}`
 
 /* on load: a ?u=username in the address is kept until the person is signed in, then taken out of the address */
 export function takeInvite() {

@@ -58,6 +58,16 @@ export function keepMsgs(roomId, list) {
   msgTimers[roomId] = setTimeout(() => kv('readwrite', (os) => os.put(last, `m:${roomId}`)), 900)
 }
 
+// a message deleted (or changed) while its chat is closed is put right in the kept copy at once, so it never flashes
+export function fixKept(m) {
+  if (!m?.room_id || !m.id) return
+  const run = (list) => {
+    if (!Array.isArray(list) || !list.some((x) => x.id === m.id)) return
+    keepMsgs(m.room_id, m.deleted_at ? list.filter((x) => x.id !== m.id) : list.map((x) => (x.id === m.id ? { ...x, ...m } : x)))
+  }
+  if (msgMem.has(m.room_id)) run(msgMem.get(m.room_id)); else readMsgs(m.room_id).then(run)
+}
+
 export async function dropKept() {
   msgMem.clear()
   try { Object.keys(localStorage).filter((k) => k.startsWith(PRE)).forEach((k) => localStorage.removeItem(k)) } catch { /* private */ }

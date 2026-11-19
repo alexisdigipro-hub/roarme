@@ -5576,7 +5576,14 @@ html:root:root:root .sub-menu.sub-fly > button > span { min-width: 0; overflow: 
 html:is([data-lite], [data-still]) .apx-pane { animation: none; }
 .set-row.apx-line { display: flex; flex-direction: row; align-items: center; gap: 12px; }
 .set-row.apx-line > .set-text { flex: 1; min-width: 0; }
-.set-row.apx-line > .seg, .set-row.apx-line > .set-select { flex: none; width: auto; max-width: 62%; }
+.set-row.apx-line > .seg, .set-row.apx-line > .set-select { flex: none; width: auto; }
+.set-row.apx-line > .seg > button { flex: none; padding: 0 16px; white-space: nowrap; }
+/* inside a tab the boxes keep the page's room between them, a title stands clear of the box above, and a preview at
+   the head of a box leaves a little air before the first row (Alex, 19 Nov: "close together, but not overdone") */
+.apx-pane { display: flex; flex-direction: column; gap: 18px; }
+.apx-pane > .set-sec { margin: 0; }
+.apx-pane > .set-sec > h4 { margin-top: 2px; }
+.apx-pane .set-box > .set-preview, .apx-pane .set-box > .pv-wrap { margin-bottom: 8px; }
 .apx-name > .set-text { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 8px; }
 .apx-name > .set-text small { margin: 0; }
 html:root:root .apx-name .accents { gap: 8px; margin-top: 8px; }

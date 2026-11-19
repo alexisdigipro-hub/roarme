@@ -1,22 +1,31 @@
 name: RoarMe App Store listing
 
-# Fills RoarMe's App Store page for iPhone (subtitle, categories, age rating, free price, description, keywords,
-# support and privacy links, copyright, the build, the notes for App Review) from mobile/appstore/listing.json,
-# through the App Store Connect API with the same key the TestFlight builds use. Run workflow and give the build
-# number. App Privacy, the review contact with the demo login and the screenshots stay for App Store Connect itself.
+# Fills RoarMe's App Store page for iPhone through the App Store Connect API, with the key the TestFlight builds use.
+#  - listing: subtitle, categories, age rating, free price, description, keywords, support and privacy links,
+#    copyright, the build (give its number) and the notes for App Review, from mobile/appstore/listing.json.
+#  - screenshots: builds the site and takes the 6.9" pictures with made-up chats (scripts/shots.mjs), then puts them on
+#    the branch appstore-screens-roarme to be looked at. Nothing goes to Apple.
+#  - upload-screenshots: the same pictures, sent to the version's 6.9" iPhone screenshots (the old ones replaced).
+# App Privacy and the review contact with the demo login stay for App Store Connect itself.
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: listing, screenshots or upload-screenshots
+        default: listing
+        type: choice
+        options: [listing, screenshots, upload-screenshots]
       build:
-        description: TestFlight build number to put on the version (empty = leave it)
+        description: TestFlight build number to put on the version (listing; empty = leave it)
         default: ''
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   listing:
+    if: inputs.mode == 'listing'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,3 +38,29 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           BUILD: ${{ inputs.build }}
+
+  screenshots:
+    if: inputs.mode != 'listing'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: npm install --no-save --no-audit --no-fund playwright@1.48.2 && npx playwright install --with-deps chromium
+      - run: node scripts/shots.mjs
+      - name: Keep them on a branch to look at
+        run: |
+          D=$RUNNER_TEMP/screens; rm -rf "$D"; mkdir -p "$D"; cp shots/*.png "$D"/
+          cd "$D"; git init -q -b appstore-screens-roarme
+          git -c user.name=roarme-bot -c user.email=roarme-bot@users.noreply.github.com add .
+          git -c user.name=roarme-bot -c user.email=roarme-bot@users.noreply.github.com commit -qm "App Store screenshots, run ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:appstore-screens-roarme
+      - if: inputs.mode == 'upload-screenshots'
+        run: node scripts/appstore-shots.mjs
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}

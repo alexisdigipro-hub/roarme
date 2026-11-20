@@ -1,0 +1,42 @@
+name: RoarMe's own address
+
+# Puts RoarMe's site on its own domain (roarme.app, bought by Alex at Cloudflare on 20 Nov), on GitHub Pages:
+# first it checks that the domain already points at GitHub (Cloudflare: CNAME @ and www -> alexisdigipro-hub.github.io,
+# DNS only), and stops if not, since the old address starts sending people to the new one the moment it is set;
+# then it sets the Pages custom domain, waits for GitHub's certificate and turns on Enforce HTTPS (.app opens only in https).
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: the domain
+        default: roarme.app
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+
+jobs:
+  domain:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      D: ${{ inputs.domain }}
+    steps:
+      - name: The domain points at GitHub
+        run: |
+          A=$(dig +short "$D" A | tr '\n' ' '); W=$(dig +short "www.$D" | tr '\n' ' ')
+          echo "$D -> $A"; echo "www.$D -> $W"
+          echo "$A" | grep -Eq '185\.199\.(108|109|110|111)\.153' || { echo "::error::$D does not point at GitHub Pages yet (add the CNAME in Cloudflare, DNS only)"; exit 1; }
+      - name: Set the custom domain
+        run: |
+          gh api -X PUT "repos/${{ github.repository }}/pages" -f cname="$D" && echo "custom domain set"
+          gh api "repos/${{ github.repository }}/pages" --jq '{cname, status, https_enforced, html_url}'
+      - name: Wait for the certificate, then enforce HTTPS
+        run: |
+          for i in $(seq 1 40); do
+            if gh api -X PUT "repos/${{ github.repository }}/pages" -f cname="$D" -F https_enforced=true 2>/dev/null; then echo "HTTPS enforced"; break; fi
+            echo "certificate not ready yet ($i)"; sleep 30
+          done
+          gh api "repos/${{ github.repository }}/pages" --jq '{cname, https_enforced, html_url, https_certificate}'
+          curl -sI "https://$D/" | head -5 || true

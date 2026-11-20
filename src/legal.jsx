@@ -36,6 +36,8 @@ const DOCS = {
         ]],
         ['Your location', [
           'Your location is read only when you open Location in a chat and allow it. Send Location sends one place, as a message like any other.',
+          'A Locked Message keeps its words on our servers until it opens: at the time you chose, or when a person in the chat is within the place you chose. To check the place, their phone sends its position once, when they press I’m Here; it is compared and not kept.',
+          'Your birthday (day and month, and the year if you add it) is kept only if you add it in your profile; your contacts see the day and month unless you choose Nobody, and the year is shown to nobody. Share Battery is off until you turn it on; then, while RoarMe is open, your battery level and whether it is charging are kept and shown on your profile to the people you chose.',
           'Live Location sends your position again and again for the time you choose (15 minutes, 1 hour, 8 hours or until you stop it), and only while RoarMe is open on your phone. The people in that chat see it move. It stops when the time ends or when you press Stop Sharing; the last position stays with the message until the message is deleted.',
         ]],
         ['Camera, microphone and photos', [
@@ -105,6 +107,8 @@ const DOCS = {
         ]],
         ['Η τοποθεσία σου', [
           'Η τοποθεσία σου διαβάζεται μόνο όταν ανοίξεις την Τοποθεσία σε μια συζήτηση και το επιτρέψεις. Το Send Location στέλνει ένα σημείο, ως μήνυμα όπως κάθε άλλο.',
+          'Το Κλειδωμένο Μήνυμα (Locked Message) κρατά τα λόγια του στους διακομιστές μας μέχρι να ανοίξει: την ώρα που διάλεξες, ή όταν κάποιος από τη συζήτηση βρεθεί μέσα στο μέρος που διάλεξες. Για τον έλεγχο του μέρους, το κινητό του στέλνει τη θέση του μία φορά, όταν πατήσει I’m Here· συγκρίνεται και δεν κρατιέται.',
+          'Τα γενέθλιά σου (μέρα και μήνας, και η χρονιά αν τη βάλεις) κρατιούνται μόνο αν τα προσθέσεις στο προφίλ σου· οι επαφές σου βλέπουν μέρα και μήνα εκτός αν διαλέξεις Nobody, και τη χρονιά δεν τη βλέπει κανείς. Το Share Battery είναι κλειστό μέχρι να το ανοίξεις· τότε, όσο το RoarMe είναι ανοιχτό, η στάθμη της μπαταρίας σου και αν φορτίζει κρατιούνται και φαίνονται στο προφίλ σου σε όσους διάλεξες.',
           'Η Ζωντανή τοποθεσία (Live Location) στέλνει τη θέση σου ξανά και ξανά για όσο διαλέξεις (15 λεπτά, 1 ώρα, 8 ώρες ή μέχρι να τη σταματήσεις), και μόνο όσο το RoarMe είναι ανοιχτό στο κινητό σου. Όσοι είναι στη συζήτηση τη βλέπουν να κινείται. Σταματά όταν λήξει ο χρόνος ή όταν πατήσεις Stop Sharing· η τελευταία θέση μένει με το μήνυμα μέχρι να σβηστεί το μήνυμα.',
         ]],
         ['Κάμερα, μικρόφωνο και φωτογραφίες', [

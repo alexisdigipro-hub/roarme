@@ -5721,3 +5721,24 @@ html:root:root:root:root .pill-btn.cap-go:disabled { opacity: .45; }
 @keyframes cap-pop { from { opacity: 0; transform: scale(.9) translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes cap-turn { 0% { transform: scale(1) rotate(0); } 40% { transform: scale(1.18) rotate(-12deg); } 100% { transform: scale(1) rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .cap-card.popped .cap-body, .cap-card.popped .cap-ico { animation: none; } }
+
+/* Birthdays, version B (Alex, 20 Nov; Chat.jsx BirthdayBar): a slim capsule under the folders, as Now Playing */
+.bday-pill { display: flex; align-items: center; gap: 10px; margin: 0 2px 10px; height: 46px; padding: 0 8px 0 12px; border-radius: 23px; background: var(--lg, rgba(255, 255, 255, .75)); box-shadow: var(--lg-shadow, 0 6px 18px rgba(0, 0, 0, .06)); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .6)); }
+.bday-ico { font-size: 20px; animation: bd-float 2.4s ease-in-out infinite; }
+.bday-t { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bday-t b { font-weight: 600; }
+html:root:root:root:root .bday-go { flex: none; height: 30px; padding: 0 12px; border: 0 !important; border-radius: 99px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  color: var(--halo-ink) !important; background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; }
+.bday-x { flex: none; width: 28px; height: 28px; border-radius: 50%; border: 0; display: grid; place-items: center; background: color-mix(in srgb, currentColor 7%, transparent); color: inherit; cursor: pointer; }
+.bday-x svg { width: 14px; height: 14px; }
+.bd-in { animation: bd-drop .5s cubic-bezier(.25, 1.35, .45, 1) both; }
+@keyframes bd-drop { 0% { opacity: 0; transform: translateY(-14px) scale(.96, .9); } 55% { opacity: 1; transform: translateY(2px) scale(1.02, .98); } 100% { transform: none; } }
+@keyframes bd-float { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-4px) rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .bd-in, .bday-ico { animation: none !important; } }
+html[data-lite] .bd-in, html[data-lite] .bday-ico, html[data-still] .bd-in, html[data-still] .bday-ico { animation: none !important; }
+.bday-field { display: flex; flex-direction: column; gap: 8px; }
+.bday-in { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 8px; }
+.bday-in .input { min-width: 0; }
+.bday-vis { display: flex; gap: 6px; }
+.bday-vis button { flex: 1; }
+.bday-note { font-size: 12px; opacity: .6; }

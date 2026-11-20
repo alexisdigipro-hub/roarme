@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { batteryText } from './battery.js'
 import { errText, lastSeenText, nameOf, onlineNow, dotOf, statusOf, supabase } from './lib.js'
 import { Avatar, CropModal, I, Modal } from './ui.jsx'
 import { inviteLink } from './invite.jsx'
@@ -105,7 +106,7 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
         {editing
           ? <input className="cc-name cc-name-in" value={nick} onChange={(e) => setNick(e.target.value)} placeholder={p.real_name || `@${p.username}`} maxLength={60} autoFocus aria-label="Name" />
           : <h2 className="cc-name">{name}</h2>}
-        <p className="cc-sub">{[statusOf(p), lastSeenText(p)].filter(Boolean).join(' · ') || `@${p.username}`}</p>
+        <p className="cc-sub">{[statusOf(p), lastSeenText(p), batteryText(p)].filter(Boolean).join(' · ') || `@${p.username}`}</p>
         {p.nickname && <p className="cc-sub cc-real">{`Their name: ${p.real_name || `@${p.username}`}`}</p>}
 
         <div className="cc-acts">

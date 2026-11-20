@@ -21,6 +21,7 @@ const env = (t, peak, up, len) => {
   return peak * Math.pow(0.0001 / peak, (t - up) / (len - up))
 }
 for (const [kind, , type, notes, mallet] of SOUNDS) {
+  if (kind === 'iphone') continue // Apple's own 'default' sound, no file of ours
   const voices = mallet
     ? notes.flatMap(([f, d]) => [[f, d, 'sine', 0.16, 0.003, 0.42], [f * 4, d, 'sine', 0.035, 0.003, 0.09]])
     : notes.map(([f, d]) => [f, d, type, type === 'sawtooth' ? 0.05 : 0.12, 0.02, type === 'sawtooth' ? 0.45 : 0.28])

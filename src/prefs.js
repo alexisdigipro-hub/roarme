@@ -162,6 +162,8 @@ export const SOUNDS = [
   ['drop', 'Drop', 'sine', [[1200, 0], [700, 0.09]]],
   ['bells', 'Bells', 'triangle', [[1047, 0], [1319, 0.1], [1568, 0.2]]],
   ['roar', 'Roar', 'sawtooth', [[110, 0], [165, 0.06], [220, 0.12]]],
+  // the iPhone's own notification sound (Alex, 20 Nov): Apple plays it for 'default'; inside RoarMe a short stand-in
+  ['iphone', 'iPhone', 'sine', [[1319, 0], [1760, 0.08], [1319, 0.16]], true],
 ]
 let ctx = null
 export function chime(kind) {

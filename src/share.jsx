@@ -157,7 +157,7 @@ const lastPlace = () => { try { const v = JSON.parse(localStorage.getItem(LAST) 
 const Pin = ({ lifted = false, small = false }) => <i className={`map-pin${lifted ? ' up' : ''}${small ? ' small' : ''}`}>{I.place}</i>
 const Me = () => <i className="map-me" />
 
-export function LocationPicker({ onSend, onClose, inline = false, onLive }) {
+export function LocationPicker({ onSend, onClose, inline = false, onLive, sendLabel = 'Send Location', title = 'Location' }) {
   const [liveAsk, setLiveAsk] = useState(false)
   const first = useRef(lastPlace())
   const [at, setAt] = useState(first.current ? { lat: first.current.lat, lng: first.current.lng } : HOME)
@@ -267,7 +267,7 @@ export function LocationPicker({ onSend, onClose, inline = false, onLive }) {
         <div className="loc-foot">
           <small className="loc-where">{isMine && acc ? `Your location · accurate to ${Math.max(1, Math.round(acc))} metres` : looking ? 'Finding the address…' : [place.name, place.addr].filter(Boolean).join(' · ') || coords(at)}</small>
           <div className="loc-acts">
-            <button type="button" className="loc-btn go" disabled={busy} onClick={send}>{I.place}<span>Send Location</span></button>
+            <button type="button" className="loc-btn go" disabled={busy} onClick={send}>{I.place}<span>{sendLabel}</span></button>
             {onLive && <button type="button" className="loc-btn live" disabled={busy} onClick={() => setLiveAsk(true)}>{LIVE_I}<span>Live Location</span></button>}
           </div>
           {/* over everything, in the middle of the screen (Alex, 15 Nov: inside the sheet it hid under the tab bar) */}
@@ -284,7 +284,7 @@ export function LocationPicker({ onSend, onClose, inline = false, onLive }) {
         </div>
       </div>
   )
-  return inline ? body : <Modal title="Location" onClose={onClose}>{body}</Modal>
+  return inline ? body : <Modal title={title} onClose={onClose}>{body}</Modal>
 }
 
 const mapsLinks = (l) => ({

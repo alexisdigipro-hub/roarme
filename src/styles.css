@@ -5675,3 +5675,49 @@ html:root:root .av-on.dnd::after { content: ''; position: absolute; left: 22%; r
 .st-acts { display: flex; justify-content: flex-end; gap: 8px; }
 html:root:root:root:root .st-pills .pill-btn.on, html:root:root:root:root .st-save:not(:disabled) { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink, #fff) !important; box-shadow: none !important; }
 .st-open .set-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Send's long press and slide (Alex, 20 Nov): a menu above Send (Send Without Sound, Schedule Message, Send Locked Message),
+   and a slide up that picks Normal, Important or Urgent; marks on the message's time row */
+.compose .round.send { touch-action: none; }
+html:root .menu.send-menu { position: fixed; right: var(--sm-r); bottom: var(--sm-b); top: auto; left: auto; z-index: 61; transform-origin: 100% 100%; }
+.send-lvl { position: fixed; left: var(--sl-x); top: var(--sl-y); transform: translate(-50%, calc(-100% - 10px)); z-index: 61; display: flex; flex-direction: column; gap: 4px; align-items: center; pointer-events: none; }
+.send-lvl-step { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; white-space: nowrap;
+  background: #fff; color: #1c1c1e; box-shadow: 0 6px 18px rgba(0, 0, 0, .14); opacity: .55; transform: scale(.92); transition: transform .18s cubic-bezier(.25, 1.45, .45, 1), opacity .15s; }
+.send-lvl-step i { font-style: normal; font-size: 12px; }
+.send-lvl-step.on { opacity: 1; transform: scale(1.06); }
+.send-lvl-step.l1.on { background: #ff9f0a; color: #fff; }
+.send-lvl-step.l2.on { background: #ff3b30; color: #fff; }
+html[data-mode='dark'] .send-lvl-step:not(.on) { background: #2c2c31; color: #f2f2f4; }
+html[data-mode='dark'] .send-lvl-step.l0.on { background: #2c2c31; color: #f2f2f4; }
+.meta .lvl-mark { font-style: normal; font-size: .9em; margin-right: 3px; }
+.meta .quiet-mark { display: inline-flex; vertical-align: -2px; margin-right: 3px; opacity: .7; }
+.meta .quiet-mark svg { width: 12px; height: 12px; }
+
+/* Locked Message (Alex, 20 Nov; src/capsule.jsx): the window to write it, and the card in the chat */
+.cap-new { display: flex; flex-direction: column; gap: 12px; }
+.cap-hint { margin: 0; font-size: 13px; opacity: .65; line-height: 1.4; }
+.cap-words { width: 100%; box-sizing: border-box; resize: none; border-radius: 18px; padding: 12px 14px; font: inherit; font-size: 15px; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); background: color-mix(in srgb, currentColor 5%, transparent); color: inherit; }
+.cap-seg { display: flex; gap: 6px; }
+.cap-seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.cap-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+.cap-field input { font: inherit; padding: 8px 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); background: color-mix(in srgb, currentColor 5%, transparent); color: inherit; }
+.cap-place { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; }
+.cap-radius { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+html:root:root:root:root .pill-btn.cap-go { align-self: stretch; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px;
+  background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink) !important; border: 0 !important; }
+html:root:root:root:root .pill-btn.cap-go:disabled { opacity: .45; }
+.cap-card { min-width: min(240px, var(--media-w, 240px)); display: flex; flex-direction: column; gap: 8px; padding: 2px 0; }
+.cap-top { display: flex; align-items: center; gap: 10px; }
+.cap-top > span { display: flex; flex-direction: column; min-width: 0; }
+.cap-top b { font-size: var(--fs, 15px); font-weight: 500; }
+.cap-top small { font-size: calc(var(--fs, 15px) * .8); opacity: .65; }
+.cap-ico { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; font-style: normal; background: color-mix(in srgb, currentColor 10%, transparent); }
+.cap-count { margin: 0; font-size: calc(var(--fs, 15px) * 1.5); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.cap-body { margin: 0; font-size: var(--fs, 15px); white-space: pre-wrap; word-break: break-word; }
+.cap-here { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; }
+.cap-far { font-size: calc(var(--fs, 15px) * .8); opacity: .7; }
+.cap-card.popped .cap-body { animation: cap-pop .5s cubic-bezier(.25, 1.45, .45, 1) both; }
+.cap-card.popped .cap-ico { animation: cap-turn .5s cubic-bezier(.25, 1.45, .45, 1) both; }
+@keyframes cap-pop { from { opacity: 0; transform: scale(.9) translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes cap-turn { 0% { transform: scale(1) rotate(0); } 40% { transform: scale(1.18) rotate(-12deg); } 100% { transform: scale(1) rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .cap-card.popped .cap-body, .cap-card.popped .cap-ico { animation: none; } }

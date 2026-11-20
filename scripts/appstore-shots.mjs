@@ -5,7 +5,9 @@ import { readFileSync, readdirSync } from 'node:fs'
 
 const BUNDLE = 'com.themadlions.roarme'
 // App Store Connect's slots: the 6.7" and 6.9" iPhones (1290 x 2796, 1320 x 2868), the 13" iPad (2064 x 2752); ipad-*.png go to the iPad
-const slotOf = (f) => (f.startsWith('ipad-') ? 'APP_IPAD_PRO_3GEN_129' : 'APP_IPHONE_67')
+const slotOf = (f) => (f.startsWith('mac-') ? 'APP_DESKTOP' : f.startsWith('ipad-') ? 'APP_IPAD_PRO_3GEN_129' : 'APP_IPHONE_67')
+// PLATFORM=MAC_OS sends mac-*.png to the Mac's page (2880 x 1800); otherwise the iPhone and iPad ones to the iPhone's
+const PLATFORM = process.env.PLATFORM === 'MAC_OS' ? 'MAC_OS' : 'IOS'
 const DIR = new URL('../shots/', import.meta.url).pathname
 const { ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 } = process.env
 
@@ -23,11 +25,11 @@ const api = async (method, path, body) => {
 }
 
 const app = (await api('GET', `/v1/apps?filter[bundleId]=${BUNDLE}`)).data[0]
-const ver = ((await api('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=IOS&limit=20`)).data || [])
+const ver = ((await api('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=${PLATFORM}&limit=20`)).data || [])
   .find((v) => /PREPARE_FOR_SUBMISSION|DEVELOPER_REJECTED|REJECTED|METADATA_REJECTED/.test(v.attributes.appVersionState || v.attributes.appStoreState))
 if (!ver) throw new Error('No iOS version open for changes')
 const locs = (await api('GET', `/v1/appStoreVersions/${ver.id}/appStoreVersionLocalizations`)).data
-const files = readdirSync(DIR).filter((f) => f.endsWith('.png')).sort()
+const files = readdirSync(DIR).filter((f) => f.endsWith('.png') && (PLATFORM === 'MAC_OS') === f.startsWith('mac-')).sort()
 console.log(`Version ${ver.attributes.versionString}, ${files.length} pictures, ${locs.length} language(s)`)
 
 for (const loc of locs) {

@@ -8,8 +8,10 @@ contextBridge.exposeInMainWorld('roarDesktop', {
   setBadge: (n) => ipcRenderer.send('roar:badge', Number(n) || 0),
   getSettings: () => ipcRenderer.invoke('roar:get'),
   setSetting: (key, value) => ipcRenderer.invoke('roar:set', key, value),
+  // the Mac App Store's copy: updates come from the App Store, so it has no update below and the page offers no downloads
+  store: !!process.mas,
   // updates (1.4.9 on): the app downloads a new version by itself; the page shows it and offers Restart
-  update: {
+  update: process.mas ? undefined : {
     state: () => ipcRenderer.invoke('roar:update-state'),
     check: () => ipcRenderer.invoke('roar:update-check'),
     install: () => ipcRenderer.invoke('roar:update-install'),

@@ -3,7 +3,7 @@
 // next start without a new install. Links that leave RoarMe open in the computer's own browser.
 // The app adds what a browser cannot: the unread count on its icon, a paw in the menu bar, opening at
 // login, and staying on (with notifications and calls) when its window is closed.
-const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, powerSaveBlocker, screen, shell, session } = require('electron')
+const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, net, powerSaveBlocker, protocol, screen, shell, session } = require('electron')
 // RoarMe is dark: the glass under the window is dark too, even when the Mac is in light mode (Alex, 16 Oct:
 // the strip while resizing came out white)
 nativeTheme.themeSource = 'dark'
@@ -14,7 +14,24 @@ const fs = require('fs')
 const path = require('path')
 const updater = require('./updater')
 
-const HOME = 'https://alexisdigipro-hub.github.io/roarme/'
+// The Mac App Store's copy (process.mas, Alex 20 Nov) carries the built site inside it (Resources/www, served as
+// app://roarme/), as the iPhone app does: Apple does not let an App Store app load its code from a website, and it
+// updates through the App Store, so it has no updater of its own.
+const MAS = !!process.mas
+const HOME = MAS ? 'app://roarme/' : 'https://alexisdigipro-hub.github.io/roarme/'
+if (MAS) protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }])
+const { pathToFileURL } = require('url')
+function serveSite() {
+  const root = path.join(process.resourcesPath, 'www')
+  protocol.handle('app', async (req) => {
+    let p = decodeURIComponent(new URL(req.url).pathname)
+    if (p.endsWith('/')) p += 'index.html'
+    const file = path.normalize(path.join(root, p))
+    if (!file.startsWith(root + path.sep)) return new Response('', { status: 404 })
+    const res = await net.fetch(pathToFileURL(file).toString()).catch(() => null)
+    return res && res.ok ? res : net.fetch(pathToFileURL(path.join(root, 'index.html')).toString())
+  })
+}
 const ALLOWED = ['media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'geolocation']
 
 let win = null
@@ -190,8 +207,8 @@ function updateTray() {
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: unread ? `Open RoarMe (${unread} unread)` : 'Open RoarMe', click: show },
       { type: 'separator' },
-      upd,
-      { label: `Version ${app.getVersion()} beta`, enabled: false },
+      ...(MAS ? [] : [upd]),
+      { label: MAS ? `Version ${app.getVersion()}` : `Version ${app.getVersion()} beta`, enabled: false },
       { type: 'separator' },
       { label: 'Quit RoarMe', click: () => { quitting = true; app.quit() } },
     ]))
@@ -212,6 +229,7 @@ ipcMain.handle('roar:set', (_e, key, value) => {
 })
 
 app.whenReady().then(async () => {
+  if (MAS) serveSite()
   loadSettings()
   // started by a roarme:// link (Windows)
   const startLink = process.argv.find((a) => /^roarme:/i.test(a))
@@ -227,7 +245,7 @@ app.whenReady().then(async () => {
   updateTray()
   app.on('activate', show)
   // new versions download by themselves; the page offers Restart to update (updater.js)
-  updater.start(ipcMain, () => { quitting = true }, updateTray)
+  if (!MAS) updater.start(ipcMain, () => { quitting = true }, updateTray)
 })
 
 app.on('before-quit', () => { quitting = true })

@@ -15,7 +15,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 // the address that goes into emails (confirm, reset) and invitations. Inside the iPhone app the page lives at
 // capacitor://localhost, which no email can open, so there it is the website's own address (Alex, 14 Nov)
 export const SITE_URL = 'https://alexisdigipro-hub.github.io/roarme/'
-export const appUrl = () => (window.Capacitor?.isNativePlatform?.() ? SITE_URL : window.location.origin + window.location.pathname)
+// inside the iPhone app (capacitor://) or the Mac App Store app (app://roarme) the page has no web address of its own
+export const appUrl = () => (window.Capacitor?.isNativePlatform?.() || !/^https?:$/.test(window.location.protocol) ? SITE_URL : window.location.origin + window.location.pathname)
 
 export const USERNAME_RE = /^[a-z0-9_]{3,24}$/
 export const cleanUsername = (v) => String(v || '').toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '').slice(0, 24)

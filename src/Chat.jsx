@@ -3439,7 +3439,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 <span className="rec-lock">{I.lock}{CHEV_U}</span>
               </div>
             )}
-            {!editing && !sealOn && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.clip}</button>}
+            {!editing && !sealOn && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.plus}</button>}
             {!editing && !sealOn && <button type="button" className={`round compose-transfer${transferHidden ? ' busy' : ''}`} onClick={() => { setTransferOpen(true); setTransferHidden(false) }} aria-label="RoarTransfer" title={transferHidden ? `RoarTransfer: uploading, ${Math.round(transferPct * 100)}%` : 'RoarTransfer: big files as they are, one link for all, 1 day up to 5 GB or 3 days up to 3 GB'}>{I.transfer}{transferHidden && <i className="rt-pct">{Math.round(transferPct * 100)}%</i>}</button>}
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
               {sel && (
@@ -4118,7 +4118,7 @@ function BigWriter({ text, setText, onClose, onSend, onAttach }) {
           <button type="button" onClick={() => mark('__')} aria-label="Underline"><u>U</u></button>
           <button type="button" onClick={() => mark('~~')} aria-label="Strikethrough"><s>S</s></button>
           <button type="button" onClick={list} aria-label="List">{BW_LIST}</button>
-          <button type="button" onClick={onAttach} aria-label="Photo, video or file">{I.clip}</button>
+          <button type="button" onClick={onAttach} aria-label="Photo, video or file">{I.plus}</button>
         </span>
         <button type="button" className="round send ready" onClick={onSend} disabled={!text.trim()} aria-label="Send">{I.send}</button>
       </div>

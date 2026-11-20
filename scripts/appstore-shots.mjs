@@ -4,7 +4,8 @@ import { createSign, createHash } from 'node:crypto'
 import { readFileSync, readdirSync } from 'node:fs'
 
 const BUNDLE = 'com.themadlions.roarme'
-const TYPE = 'APP_IPHONE_67' // App Store Connect's slot for the 6.7" and 6.9" iPhones (1290 x 2796, 1320 x 2868)
+// App Store Connect's slots: the 6.7" and 6.9" iPhones (1290 x 2796, 1320 x 2868), the 13" iPad (2064 x 2752); ipad-*.png go to the iPad
+const slotOf = (f) => (f.startsWith('ipad-') ? 'APP_IPAD_PRO_3GEN_129' : 'APP_IPHONE_67')
 const DIR = new URL('../shots/', import.meta.url).pathname
 const { ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 } = process.env
 
@@ -31,10 +32,11 @@ console.log(`Version ${ver.attributes.versionString}, ${files.length} pictures, 
 
 for (const loc of locs) {
   const sets = (await api('GET', `/v1/appStoreVersionLocalizations/${loc.id}/appScreenshotSets?limit=50`)).data || []
+  for (const TYPE of [...new Set(files.map(slotOf))]) {
   let set = sets.find((s) => s.attributes.screenshotDisplayType === TYPE)
   if (!set) set = (await api('POST', '/v1/appScreenshotSets', { data: { type: 'appScreenshotSets', attributes: { screenshotDisplayType: TYPE }, relationships: { appStoreVersionLocalization: { data: { type: 'appStoreVersionLocalizations', id: loc.id } } } } })).data
   for (const old of (await api('GET', `/v1/appScreenshotSets/${set.id}/appScreenshots?limit=50`)).data || []) await api('DELETE', `/v1/appScreenshots/${old.id}`)
-  for (const f of files) {
+  for (const f of files.filter((x) => slotOf(x) === TYPE)) {
     const buf = readFileSync(DIR + f)
     const shot = (await api('POST', '/v1/appScreenshots', { data: { type: 'appScreenshots', attributes: { fileName: f, fileSize: buf.length }, relationships: { appScreenshotSet: { data: { type: 'appScreenshotSets', id: set.id } } } } })).data
     for (const op of shot.attributes.uploadOperations) {
@@ -44,6 +46,7 @@ for (const loc of locs) {
     }
     await api('PATCH', `/v1/appScreenshots/${shot.id}`, { data: { type: 'appScreenshots', id: shot.id, attributes: { uploaded: true, sourceFileChecksum: createHash('md5').update(buf).digest('hex') } } })
     console.log(`${loc.attributes.locale}: ${f} sent`)
+  }
   }
 }
 console.log('Done. Apple checks each picture for a minute or two before it shows.')

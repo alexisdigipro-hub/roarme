@@ -19,3 +19,6 @@ const r = (await api(`/v1/appStoreVersions/${ver.id}/appStoreReviewDetail`)).dat
 const a = r?.attributes || {}
 console.log(`Sign-in required: ${a.demoAccountRequired}; user name filled: ${!!a.demoAccountName}${a.demoAccountName ? ` (${a.demoAccountName.replace(/(.).*(@.*)/, '$1…$2')})` : ''}; password filled: ${!!a.demoAccountPassword}`)
 console.log(`Contact: first name ${!!a.contactFirstName}, last name ${!!a.contactLastName}, phone ${!!a.contactPhone}, email ${!!a.contactEmail}; notes ${a.notes ? a.notes.length + ' characters' : 'empty'}`)
+const info = (await api(`/v1/apps/${app.id}/appInfos`)).data.find((i) => !/READY_FOR_DISTRIBUTION/.test(i.attributes.state || i.attributes.appStoreState)) 
+const ar = (await api(`/v1/appInfos/${info.id}/ageRatingDeclaration`)).data
+console.log(`Age rating answers: ${JSON.stringify(ar.attributes)}`)

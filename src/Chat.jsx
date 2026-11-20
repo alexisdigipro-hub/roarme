@@ -46,6 +46,7 @@ const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.Pdf
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
 const LOC_WAIT = <span className="locc"><span className="locc-map" /></span>
 import { resumeLive, startLive } from './live.js'
+import { startBattery, stopBattery } from './battery.js'
 import { taskNotice, useTasks } from './taskCore.js'
 import { useNameMarks } from './fancy.jsx'
 import { CAPSULE_BODY, CapsuleCard, CapsuleWindow } from './capsule.jsx'
@@ -361,7 +362,7 @@ export default function Chat({ me, setMe }) {
     const want = [...new Set(ids)].filter(Boolean)
     if (!want.length) return
     const [{ data }, { data: mine }] = await Promise.all([
-      supabase.from('roar_people').select('id, username, display_name, avatar_url, bio, last_seen, name_color').in('id', want),
+      supabase.from('roar_people').select('*').in('id', want),
       supabase.from('roar_contacts').select('person, photo_url, nickname, note').in('person', want),
     ])
     // what I set for someone, only for me (Alex, 19 Oct: "edit other people's profiles, shown only to them"):
@@ -1212,6 +1213,7 @@ export default function Chat({ me, setMe }) {
   const [card, setCard] = useState('')
   useEffect(() => { const f = (e) => { const id = e.detail?.id; if (!id) return; loadPeople([id]); setCard(id) }; window.addEventListener('roarme-card', f); return () => window.removeEventListener('roarme-card', f) }, [loadPeople])
   useEffect(() => { resumeLive() }, []) // live locations still running carry on (live.js)
+  useEffect(() => { startBattery(me); return stopBattery }, [me.id, me.privacy?.battery])
   // back to the chat's profile after a search or an action asked from it
   useEffect(() => { const f = (e) => { if (e.detail) { setTab('chats'); setActiveId(e.detail) } }; window.addEventListener('roarme-goroom', f); return () => window.removeEventListener('roarme-goroom', f) }, [])
   useEffect(() => { const f = () => setModal((m) => (m ? m : 'info')); window.addEventListener('roarme-profile', f); return () => window.removeEventListener('roarme-profile', f) }, [])
@@ -1259,6 +1261,15 @@ export default function Chat({ me, setMe }) {
     if (r) { setTab('chats'); setActiveId(r.room_id); return }
     const { data, error } = await supabase.rpc('roar_open_direct', { other: p.id })
     if (error) toast(errText(error)); else openRoom(data)
+  }
+  // Wish on the birthday bar: their chat opens with "Happy birthday! 🎂" waiting in the writing box (Alex, 20 Nov)
+  const wishBirthday = async (p) => {
+    const putDraft = (id) => { try { const d = JSON.parse(localStorage.getItem('roarme-drafts')) || {}; if (!d[id]) { d[id] = 'Happy birthday! 🎂'; localStorage.setItem('roarme-drafts', JSON.stringify(d)) } } catch { /* private window */ } }
+    const r = rooms.find((x) => x.kind === 'direct' && (x.members || []).includes(p.id))
+    if (r) { putDraft(r.room_id); setTab('chats'); setActiveId(r.room_id); return }
+    const { data, error } = await supabase.rpc('roar_open_direct', { other: p.id })
+    if (error) { toast(errText(error)); return }
+    putDraft(data); openRoom(data)
   }
   // a tap on someone's picture or name in a group goes to my chat with them, made if there is none (Alex, 19 Nov)
   const chatWithRef = useRef(chatWith)
@@ -1435,6 +1446,7 @@ export default function Chat({ me, setMe }) {
             {pull > 0 && <div className={`ptr${pull >= 1 ? ' ready' : ''}${pull === 2 ? ' spin' : ''}`} style={{ '--p': Math.min(pull, 1) }} aria-hidden="true">{svg(<><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></>, 20)}</div>}
             {/* the song that is playing, under the folders as Telegram has it (Alex, 18 Nov): in the flow, never over anything */}
             {!q.trim() && <NowPlaying className="in-side under-tabs" onOpen={(id) => { setTab('chats'); setActiveId(id) }} />}
+            {!q.trim() && <BirthdayBar people={people} me={me} onWish={wishBirthday} />}
             <div className="rooms-pager" ref={pagerRef}>
             <div className="rooms-track" ref={trackRef}>
             <div className={`rooms${swipedTo === folder ? '' : ' stagger'}${prefs.listPreview ? '' : ' no-prev'}`} key={folder}>
@@ -4425,11 +4437,14 @@ function NewGroup({ me, start, onClose, onOpen }) {
   )
 }
 
+const BD_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 /* ---------- you: picture, name, username, about ---------- */
 function Settings({ me, setMe, onClose, inline = false }) {
   const [name, setName] = useState(me.display_name)
   const [username, setUsername] = useState(me.username)
   const [bio, setBio] = useState(me.bio)
+  // Birthday (Alex, 20 Nov): day and month, the year only if one wants (shown to nobody else), seen by My Contacts or Nobody
+  const [bd, setBd] = useState(() => ({ d: me.birth_day || '', m: me.birth_month || '', y: me.birth_year || '', vis: me.birthday_vis || 'contacts' }))
   const [err, setErr] = useState('')
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -4446,7 +4461,10 @@ function Settings({ me, setMe, onClose, inline = false }) {
   const saveAll = async () => {
     if (!USERNAME_RE.test(username)) { setErr('Username: 3 to 24 characters, small letters, numbers and _.'); return }
     setBusy(true)
-    await save({ display_name: name.trim(), username, bio: bio.trim() })
+    const y = Number(bd.y) || null
+    if (y && (y < 1900 || y > new Date().getFullYear())) { setErr('Birthday: the year looks wrong.'); setBusy(false); return }
+    const both = bd.d && bd.m
+    await save({ display_name: name.trim(), username, bio: bio.trim(), birth_day: both ? Number(bd.d) : null, birth_month: both ? Number(bd.m) : null, birth_year: both ? y : null, birthday_vis: bd.vis })
     setBusy(false)
   }
   const [cropFile, setCropFile] = useState(null) // a picture being adjusted before it is saved
@@ -4470,6 +4488,19 @@ function Settings({ me, setMe, onClose, inline = false }) {
       <label className="field"><span>Name</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Shown on your messages" /></label>
       <label className="field"><span>Username</span><div className="input-at"><i>@</i><input className="input" value={username} onChange={(e) => setUsername(cleanUsername(e.target.value))} /></div></label>
       <label className="field"><span>About</span><textarea className="input" rows={3} value={bio} onChange={(e) => setBio(e.target.value)} placeholder="A line about you" /></label>
+      <div className="field bday-field">
+        <span>Birthday</span>
+        <div className="bday-in">
+          <select className="input" value={bd.d} onChange={(e) => setBd({ ...bd, d: e.target.value })} aria-label="Day"><option value="">Day</option>{Array.from({ length: 31 }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}</select>
+          <select className="input" value={bd.m} onChange={(e) => setBd({ ...bd, m: e.target.value })} aria-label="Month"><option value="">Month</option>{BD_MONTHS.map((n, i) => <option key={n} value={i + 1}>{n}</option>)}</select>
+          <input className="input" inputMode="numeric" maxLength={4} value={bd.y} onChange={(e) => setBd({ ...bd, y: e.target.value.replace(/\D/g, '') })} placeholder="Year" aria-label="Year (only you see it)" />
+        </div>
+        <div className="seg bday-vis">
+          <button type="button" className={bd.vis === 'contacts' ? 'on' : ''} onClick={() => setBd({ ...bd, vis: 'contacts' })}>My Contacts</button>
+          <button type="button" className={bd.vis === 'nobody' ? 'on' : ''} onClick={() => setBd({ ...bd, vis: 'nobody' })}>Nobody</button>
+        </div>
+        <small className="bday-note">Your contacts get a reminder on the day. The year is only for you.</small>
+      </div>
       {err && <p className="auth-err">{err}</p>}
     </>
   )
@@ -4500,5 +4531,25 @@ function QuotePick({ text, who, onQuote, onClose }) {
       <p className="quote-hint">Select the words to quote, or quote the whole message.</p>
       <div className="quote-pick" ref={box}><b>{who}</b><div className="quote-pick-text">{text}</div></div>
     </Modal>
+  )
+}
+
+/* Birthdays, version B (Alex, 20 Nov): a slim bar at the top of Messages on the day, "Today is X's birthday" with Wish.
+   Only people whose birthday roar_people shows me (they keep it for My Contacts, supabase/birthdays-battery.sql).
+   The X hides it until tomorrow (localStorage roarme-bday-seen). */
+function BirthdayBar({ people, me, onWish }) {
+  const today = new Date()
+  const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`
+  const [seen, setSeen] = useLocal('roarme-bday-seen', '')
+  const list = Object.values(people || {}).filter((p) => p && p.id !== me.id && p.birth_day === today.getDate() && p.birth_month === today.getMonth() + 1)
+  if (!list.length || seen === key) return null
+  const first = list[0]
+  return (
+    <div className="bday-pill bd-in">
+      <span className="bday-ico" aria-hidden="true">🎂</span>
+      <span className="bday-t">Today is <b>{nameOf(first)}</b>{list.length > 1 ? ` and ${list.length - 1} more` : ''}{list.length > 1 ? ' have birthdays' : '’s birthday'}</span>
+      <button type="button" className="bday-go" onClick={() => onWish(first)}>Wish</button>
+      <button type="button" className="bday-x" onClick={() => setSeen(key)} aria-label="Hide until tomorrow">{I.x}</button>
+    </div>
   )
 }

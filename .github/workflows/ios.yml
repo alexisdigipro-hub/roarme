@@ -68,15 +68,21 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$P"
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" "$P"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" "$P"
+          # a message notification may carry who sent it (Communication Notifications, Alex, 20 Nov)
+          /usr/libexec/PlistBuddy -c "Delete :NSUserActivityTypes" "$P" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSUserActivityTypes array" -c "Add :NSUserActivityTypes:0 string INSendMessageIntent" "$P"
           /usr/libexec/PlistBuddy -c "Print" "$P"
       - name: Apple's notifications
         working-directory: mobile/ios/App
         run: |
-          # the push entitlement (automatic signing turns it into production for the App Store and adds Push to the App ID)
+          # the push entitlement (automatic signing turns it into production for the App Store and adds Push to the App ID),
+          # time-sensitive for Important and Urgent messages, communication for the sender's picture (Alex, 20 Nov)
           cat > App/App.entitlements <<'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict><key>aps-environment</key><string>development</string></dict></plist>
+          <plist version="1.0"><dict><key>aps-environment</key><string>development</string>
+            <key>com.apple.developer.usernotifications.time-sensitive</key><true/>
+            <key>com.apple.developer.usernotifications.communication</key><true/></dict></plist>
           EOF
           P=App.xcodeproj/project.pbxproj
           grep -q CODE_SIGN_ENTITLEMENTS "$P" || perl -0pi -e 's#(INFOPLIST_FILE = App/Info.plist;)#$1\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;#g' "$P"
@@ -114,6 +120,47 @@ jobs:
             end
             p.save'
           grep -c "\.wav in Resources" App.xcodeproj/project.pbxproj
+      - name: The sender's picture in notifications
+        working-directory: mobile/ios/App
+        run: |
+          # a Notification Service Extension (mobile/ios-ext, Alex, 20 Nov): it fetches the sender's picture that roar-push
+          # names and shows the notification with it, as Messages does. Its own target, embedded in the app.
+          V=$(node -p "require('../../package.json').version")
+          mkdir -p NotificationService
+          cp ../../ios-ext/NotificationService.swift NotificationService/
+          cp ../../ios-ext/Info.plist NotificationService/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" NotificationService/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" NotificationService/Info.plist
+          gem list -i xcodeproj >/dev/null || sudo gem install xcodeproj --no-document
+          ruby -e '
+            require "xcodeproj"
+            p = Xcodeproj::Project.open("App.xcodeproj")
+            app = p.targets.find { |x| x.name == "App" }
+            exit 0 if p.targets.any? { |x| x.name == "NotificationService" }
+            min = app.build_configurations.first.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] || "14.0"
+            ext = p.new_target(:app_extension, "NotificationService", :ios, min)
+            g = p.main_group.new_group("NotificationService", "NotificationService")
+            ext.add_file_references([g.new_reference("NotificationService.swift")])
+            g.new_reference("Info.plist")
+            ext.build_configurations.each do |c|
+              s = c.build_settings
+              s["PRODUCT_BUNDLE_IDENTIFIER"] = "com.themadlions.roarme.NotificationService"
+              s["INFOPLIST_FILE"] = "NotificationService/Info.plist"
+              s["GENERATE_INFOPLIST_FILE"] = "NO"
+              s["SWIFT_VERSION"] = "5.0"
+              s["TARGETED_DEVICE_FAMILY"] = "1,2"
+              s["CODE_SIGN_STYLE"] = "Automatic"
+              s["SKIP_INSTALL"] = "YES"
+              s["PRODUCT_NAME"] = "$(TARGET_NAME)"
+              s["LD_RUNPATH_SEARCH_PATHS"] = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+            end
+            app.add_dependency(ext)
+            embed = app.new_copy_files_build_phase("Embed Foundation Extensions")
+            embed.symbol_dst_subfolder_spec = :plug_ins
+            bf = embed.add_file_reference(ext.product_reference)
+            bf.settings = { "ATTRIBUTES" => ["RemoveHeadersOnCopy"] }
+            p.save'
+          grep -c "NotificationService.appex" App.xcodeproj/project.pbxproj
       - name: Privacy manifest
         working-directory: mobile/ios/App
         run: |

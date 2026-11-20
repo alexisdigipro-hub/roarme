@@ -746,10 +746,11 @@ function Privacy({ me, setMe, toast }) {
   return (
     <>
       <Box title="Who can see and reach me" note="My contacts: people you have a chat with.">
-        {[['last_seen', 'Last Seen and Online'], ['photo', 'Profile Photo'], ['groups', 'Who Can Add Me to Groups'], ['calls', 'Who Can Call Me']].map(([k, l]) => (
+        {/* Share Battery (Alex, 20 Nov): off (Nobody) until one turns it on; others see it on the profile (src/battery.js) */}
+        {[['last_seen', 'Last Seen and Online'], ['photo', 'Profile Photo'], ['groups', 'Who Can Add Me to Groups'], ['calls', 'Who Can Call Me'], ['battery', 'Share Battery', 'nobody']].map(([k, l, def = 'everybody']) => (
           <div key={k} className="set-row set-col">
-            <span className="set-text">{l}</span>
-            <Lens className="seg" dep={priv[k] || 'everybody'}>{[['everybody', 'Everybody'], ['contacts', 'My contacts'], ['nobody', 'Nobody']].map(([v, t]) => <button key={v} type="button" className={(priv[k] || 'everybody') === v ? 'on' : ''} onClick={() => setPriv(k, v)}>{t}</button>)}</Lens>
+            <span className="set-text">{l}{k === 'battery' && <small>Your battery level on your profile, updated while RoarMe is open</small>}</span>
+            <Lens className="seg" dep={priv[k] || def}>{[['everybody', 'Everybody'], ['contacts', 'My contacts'], ['nobody', 'Nobody']].map(([v, t]) => <button key={v} type="button" className={(priv[k] || def) === v ? 'on' : ''} onClick={() => setPriv(k, v)}>{t}</button>)}</Lens>
           </div>
         ))}
       </Box>

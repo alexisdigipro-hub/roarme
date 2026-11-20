@@ -62,7 +62,7 @@ await step('Age rating', async () => {
     'violenceRealistic', 'violenceRealisticProlongedGraphicOrSadistic']
   const base = Object.fromEntries(none.map((k) => [k, 'NONE']))
   Object.assign(base, { gambling: false, unrestrictedWebAccess: false })
-  const full = { ...base, gunsOrOtherWeapons: 'NONE', lootBox: false, messagingAndChat: true, userGeneratedContent: true, advertising: false, ageAssurance: false, healthOrWellnessTopics: false, parentalControls: false, socialMedia: false }
+  const full = { ...base, gunsOrOtherWeapons: 'NONE', lootBox: false, messagingAndChat: true, userGeneratedContent: true, advertising: false, ageAssurance: false, healthOrWellnessTopics: false, parentalControls: false, socialMedia: false, sharedLocation: true, datingAndRelationships: false }
   try { await api('PATCH', `/v1/ageRatingDeclarations/${d.id}`, { data: { type: 'ageRatingDeclarations', id: d.id, attributes: full } }); return 'with Messaging and Chat, User-Generated Content' }
   catch (e) { console.log(`  the newer questions were refused (${e.message}); sending the older set`); await api('PATCH', `/v1/ageRatingDeclarations/${d.id}`, { data: { type: 'ageRatingDeclarations', id: d.id, attributes: base } }); return 'older set: check Messaging and Chat and User-Generated Content by hand' }
 })

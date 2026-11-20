@@ -5641,3 +5641,7 @@ html:root:root:root:root .compose-wrap > .round.to-latest { left: auto !importan
 @media (max-width: 760px) {
   html:root:root .lock-card { background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 }
+
+/* The attach sheet's inside ends above its tab bar (Alex, 20 Nov: Transfer's button stayed under the bar): room for the
+   bar (about 66px), its 12px off the foot, the phone's home line and some air, so the last button scrolls clear of it */
+html:root:root .as-sheet:not(.as-loc) .as-body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 108px); }

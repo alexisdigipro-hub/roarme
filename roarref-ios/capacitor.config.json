@@ -7,8 +7,9 @@
     "errorPath": "offline.html"
   },
   "ios": {
-    "contentInset": "always",
+    "contentInset": "never",
     "backgroundColor": "#141415",
-    "allowsLinkPreview": false
+    "allowsLinkPreview": false,
+    "scrollEnabled": false
   }
 }

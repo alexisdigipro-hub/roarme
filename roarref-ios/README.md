@@ -8,7 +8,9 @@ this repository's secrets (as roardino-ios/ and transfer-ios/). Nothing of it to
 
 - `capacitor.config.json`: bundle id `com.themadlions.roarref` (it can never change once the app is on the App
   Store), the name on the Home Screen, `server.url` (the page) and `errorPath` (what shows with no connection). The
-  page keeps clear of the clock and the home line by itself (`contentInset: always`).
+  page reaches every edge of the screen and keeps clear of the clock and the home line by itself (`contentInset: never`,
+  `env(safe-area-inset-*)` in the page), and the app itself does not scroll or bounce (`scrollEnabled: false`), only the
+  page's own lists do (Alex, 20 Nov: black pieces showed, and the app spilled over). The workflow sets light status bar text.
 - `www/offline.html`: that page, the only thing inside the app; `www/index.html` is a copy of it.
 - `icon-1024.png`: the app's icon (the Lab's three windows), no see-through parts.
 - `package.json`: Capacitor's version; `version` here is the version shown on the App Store.

@@ -55,6 +55,11 @@ jobs:
           set_key NSCameraUsageDescription "RoarRef uses the camera only when you choose to take a photo for a character sheet."
           set_key NSPhotoLibraryUsageDescription "RoarRef opens your photos only to put the ones you choose on a character sheet."
           set_key NSPhotoLibraryAddUsageDescription "RoarRef saves the character sheets you export."
+          # the page reaches every edge (contentInset never) and paints its own colour there, so the light status bar text is
+          # set here for the whole app (Alex, 20 Nov: "black pieces show"; "the app must not spill over")
+          set_key UIStatusBarStyle UIStatusBarStyleLightContent
+          /usr/libexec/PlistBuddy -c "Delete :UIViewControllerBasedStatusBarAppearance" "$P" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :UIViewControllerBasedStatusBarAppearance bool false" "$P"
           V=$(node -p "require('./package.json').version")
           # only the standard encryption of HTTPS and the system: no "Missing Compliance" question in TestFlight
           /usr/libexec/PlistBuddy -c "Delete :ITSAppUsesNonExemptEncryption" "$P" 2>/dev/null || true

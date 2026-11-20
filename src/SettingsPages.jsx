@@ -279,8 +279,12 @@ function General({ p, onKeys, toast }) {
       <Box title="RoarMe app" note={desk.on ? 'For this computer.' : 'The app keeps RoarMe on for messages and calls with the window closed, and always runs the newest version.'}>
         {desk.on ? (
           <>
+            {window.roarDesktop?.store ? (
+              <div className="set-row"><span className="set-text">Version {upd.installed || '–'}<small>Updates come from the App Store</small></span></div>
+            ) : (<>
             <div className="set-row"><span className="set-text">Version {upd.installed || '–'}<small>{upd.ready ? `RoarMe ${upd.latest} is out` : upd.latest ? 'Up to date' : 'The newest version is checked when RoarMe opens'}</small></span>{upd.ready && <button type="button" className="btn btn-main set-upd" onClick={() => get(thisComputer() || 'mac-arm')}>{I.download}<span>Download</span></button>}</div>
             <CheckUpdates onDownload={get} />
+            </>)}
             <Switch on={desk.s.openAtLogin} set={(v) => desk.set('openAtLogin', v)} hint="Starts quietly in the background">Open When the Computer Starts</Switch>
             <Switch on={desk.s.keepRunning} set={(v) => desk.set('keepRunning', v)} hint="Closing the window keeps RoarMe on for messages and calls">Keep Running When Closed</Switch>
           </>

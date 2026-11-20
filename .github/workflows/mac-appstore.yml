@@ -1,0 +1,65 @@
+name: RoarMe for the Mac App Store
+
+# Builds RoarMe for the Mac App Store from desktop/ (the Electron shell, mas.config.cjs) with the website inside it,
+# signs it with certificates and a profile made fresh through the App Store Connect key (scripts/mac-signing.mjs),
+# and sends the .pkg to App Store Connect, where it shows under the macOS platform's TestFlight once Apple has
+# processed it. Run workflow by hand. Reads ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 and APPLE_TEAM_ID.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mac-appstore
+  cancel-in-progress: true
+
+jobs:
+  upload:
+    runs-on: macos-latest
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # the website, as it goes online, then inside the app
+      - run: npm install --no-audit --no-fund
+      - run: |
+          mkdir -p public/fonts
+          curl -fsSL "https://cdn.jsdelivr.net/npm/@fontsource-variable/jost@5/files/jost-latin-wght-normal.woff2" -o public/fonts/jost.woff2 || echo "Jost not fetched"
+      - run: npm run build
+      - run: rm -rf desktop/www && cp -R dist desktop/www
+      - working-directory: desktop
+        run: npm install --no-audit --no-fund
+      - name: Certificates and profile
+        run: node scripts/mac-signing.mjs
+      - name: Build the App Store package
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'true'
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -o pipefail
+          export MAS_VERSION=$(node -p "require('../mobile/package.json').version")
+          npx electron-builder --config mas.config.cjs --mac --publish never 2>&1 | tail -60
+          ls -la out/*/ || true
+          P=$(ls out/mas*/*.pkg out/*.pkg 2>/dev/null | head -1)
+          [ -n "$P" ] || { echo "::error::No .pkg was made"; exit 1; }
+          echo "PKG=$PWD/$P" >> "$GITHUB_ENV"
+          pkgutil --check-signature "$P" | head -8
+      - name: Send to App Store Connect
+        run: |
+          set -o pipefail
+          mkdir -p ~/.appstoreconnect/private_keys
+          K=~/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8
+          printf '%s\n' "$ASC_KEY_P8" > "$K"
+          trap 'rm -f "$K"' EXIT
+          xcrun altool --upload-app -f "$PKG" -t macos --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tail -30
+          echo "Sent. Build ${{ github.run_number }} shows in App Store Connect > RoarMe > macOS once Apple has processed it."
+      - if: always()
+        run: security delete-keychain "$CSC_KEYCHAIN" 2>/dev/null || true

@@ -167,6 +167,8 @@ function WhatsNew() {
 
 /* the card in the app when a newer Mac or Windows app is out */
 export function UpdateCard() {
+  // the Mac App Store's copy is updated by the App Store: no offer to download (Alex, 20 Nov)
+  if (typeof window !== 'undefined' && window.roarDesktop?.store) return <WhatsNew />
   return <><WhatsNew /><UpdateOffer /></>
 }
 function UpdateOffer() {

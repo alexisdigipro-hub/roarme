@@ -37,7 +37,8 @@ final class NotificationService: UNNotificationServiceExtension {
             let interaction = INInteraction(intent: intent, response: nil)
             interaction.direction = .incoming
             interaction.donate(completion: nil)
-            if let updated = try? content.updating(from: intent) { self.finish(updated) } else { self.finish(content) }
+            // the sender's picture needs iOS 15; older phones keep the notification as it came
+            if #available(iOS 15.0, *), let updated = try? content.updating(from: intent) { self.finish(updated) } else { self.finish(content) }
         }
         guard let url = avatar else { build(nil); return }
         let task = URLSession.shared.dataTask(with: url) { data, response, _ in

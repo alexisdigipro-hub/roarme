@@ -137,7 +137,7 @@ jobs:
             p = Xcodeproj::Project.open("App.xcodeproj")
             app = p.targets.find { |x| x.name == "App" }
             exit 0 if p.targets.any? { |x| x.name == "NotificationService" }
-            min = app.build_configurations.first.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] || "14.0"
+            min = "15.0" # Communication Notifications start with iOS 15
             ext = p.new_target(:app_extension, "NotificationService", :ios, min)
             g = p.main_group.new_group("NotificationService", "NotificationService")
             ext.add_file_references([g.new_reference("NotificationService.swift")])

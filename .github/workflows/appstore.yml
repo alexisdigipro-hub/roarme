@@ -15,6 +15,11 @@ on:
         default: listing
         type: choice
         options: [listing, screenshots, upload-screenshots, status]
+      platform:
+        description: IOS (iPhone and iPad) or MAC_OS (the Mac App Store)
+        default: IOS
+        type: choice
+        options: [IOS, MAC_OS]
       build:
         description: TestFlight build number to put on the version (listing; empty = leave it)
         default: ''
@@ -38,6 +43,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           BUILD: ${{ inputs.build }}
+          PLATFORM: ${{ inputs.platform }}
 
   screenshots:
     if: inputs.mode == 'screenshots' || inputs.mode == 'upload-screenshots'
@@ -61,6 +67,7 @@ jobs:
       - if: inputs.mode == 'upload-screenshots'
         run: node scripts/appstore-shots.mjs
         env:
+          PLATFORM: ${{ inputs.platform }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}

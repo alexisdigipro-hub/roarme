@@ -8,6 +8,10 @@ import { readFileSync } from 'node:fs'
 
 const L = JSON.parse(readFileSync(new URL('../mobile/appstore/listing.json', import.meta.url), 'utf8'))
 const { ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8, BUILD } = process.env
+// IOS (the iPhone and iPad version) or MAC_OS (the Mac App Store's, 20 Nov): the app-wide answers are shared, the
+// version's page, build and review details are each platform's own; the Mac's texts come from listing.json's mac block
+const PLATFORM = process.env.PLATFORM === 'MAC_OS' ? 'MAC_OS' : 'IOS'
+const T = PLATFORM === 'MAC_OS' ? { ...L, ...L.mac } : L
 if (!ASC_KEY_ID || !ASC_ISSUER_ID || !ASC_KEY_P8) { console.log('::error::The ASC_* repository secrets are missing'); process.exit(1) }
 
 const b64 = (x) => Buffer.from(x).toString('base64url')
@@ -112,8 +116,9 @@ await step('Availability: not in mainland China (it asks for licences there)', a
   throw new Error('China not found in the list')
 })
 
-const versions = (await api('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=IOS&limit=20`)).data || []
-const ver = versions.find((v) => editable(v.attributes.appVersionState || v.attributes.appStoreState))
+console.log(`Platform: ${PLATFORM}`)
+const versions = (await api('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=${PLATFORM}&limit=20`)).data || []
+const ver = versions.find((v) => /PREPARE_FOR_SUBMISSION|REJECTED/.test(v.attributes.appVersionState || v.attributes.appStoreState))
 if (!ver) { console.log('::error::No iOS version waiting to be filled (Prepare for Submission)'); process.exit(1) }
 console.log(`Version: ${ver.attributes.versionString} (${ver.attributes.appVersionState || ver.attributes.appStoreState})`)
 
@@ -122,13 +127,13 @@ await step('Copyright', () => api('PATCH', `/v1/appStoreVersions/${ver.id}`, { d
 await step('Description, keywords, promotional text, support URL', async () => {
   const locs = (await api('GET', `/v1/appStoreVersions/${ver.id}/appStoreVersionLocalizations`)).data || []
   for (const l of locs) await api('PATCH', `/v1/appStoreVersionLocalizations/${l.id}`, { data: { type: 'appStoreVersionLocalizations', id: l.id, attributes: {
-    description: L.description, keywords: L.keywords, promotionalText: L.promotionalText, supportUrl: L.supportUrl,
+    description: T.description, keywords: T.keywords, promotionalText: T.promotionalText, supportUrl: T.supportUrl,
   } } })
   return locs.map((l) => l.attributes.locale).join(', ')
 })
 
 if (BUILD) await step(`Build ${BUILD}`, async () => {
-  const b = (await api('GET', `/v1/builds?filter[app]=${app.id}&filter[version]=${BUILD}&filter[preReleaseVersion.platform]=IOS&limit=5`)).data?.[0]
+  const b = (await api('GET', `/v1/builds?filter[app]=${app.id}&filter[version]=${BUILD}&filter[preReleaseVersion.platform]=${PLATFORM}&limit=5`)).data?.[0]
   if (!b) throw new Error(`build ${BUILD} not found (still processing?)`)
   if (b.attributes.processingState !== 'VALID') throw new Error(`build ${BUILD} is ${b.attributes.processingState}`)
   await api('PATCH', `/v1/appStoreVersions/${ver.id}/relationships/build`, { data: { type: 'builds', id: b.id } })
@@ -136,7 +141,13 @@ if (BUILD) await step(`Build ${BUILD}`, async () => {
 
 await step('App Review notes', async () => {
   const cur = (await api('GET', `/v1/appStoreVersions/${ver.id}/appStoreReviewDetail`).catch(() => ({ data: null }))).data
-  const attributes = { notes: L.reviewNotes, demoAccountRequired: true }
+  const attributes = { notes: T.reviewNotes, demoAccountRequired: true }
+  // the Mac's page takes the review contact and the demo login Alex typed on the iPhone's, copied over and never printed
+  if (PLATFORM === 'MAC_OS') {
+    const ios = ((await api('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=IOS&limit=5`)).data || [])[0]
+    const src = ios && (await api('GET', `/v1/appStoreVersions/${ios.id}/appStoreReviewDetail`).catch(() => ({ data: null }))).data
+    for (const k of ['contactFirstName', 'contactLastName', 'contactPhone', 'contactEmail', 'demoAccountName', 'demoAccountPassword']) if (src?.attributes?.[k]) attributes[k] = src.attributes[k]
+  }
   if (cur) await api('PATCH', `/v1/appStoreReviewDetails/${cur.id}`, { data: { type: 'appStoreReviewDetails', id: cur.id, attributes } })
   else await api('POST', '/v1/appStoreReviewDetails', { data: { type: 'appStoreReviewDetails', attributes, relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: ver.id } } } } })
 })

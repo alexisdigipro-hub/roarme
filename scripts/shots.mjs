@@ -178,10 +178,12 @@ await mkdir(OUT, { recursive: true })
 const browser = await chromium.launch()
 // iPhone 6.9" (1320 x 2868) and iPad 13" (2064 x 2752)
 const PHONE = { viewport: { width: 440, height: 956 }, deviceScaleFactor: 3, ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148' }
+// a Mac's window (1440 x 900 at 2x = 2880 x 1800, the Mac App Store's size), a computer: no touch
+const MAC = { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, desktop: true, ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' }
 const PAD = { viewport: { width: 1032, height: 1376 }, deviceScaleFactor: 2, ua: 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148' }
 async function shot(name, { hash = '', mode = 'light', go, dev = PHONE } = {}) {
   const ctx = await browser.newContext({
-    viewport: dev.viewport, deviceScaleFactor: dev.deviceScaleFactor, isMobile: true, hasTouch: true,
+    viewport: dev.viewport, deviceScaleFactor: dev.deviceScaleFactor, isMobile: !dev.desktop, hasTouch: !dev.desktop,
     userAgent: dev.ua,
     serviceWorkers: 'block',
   })
@@ -214,5 +216,9 @@ await shot('ipad-1-chat', { hash: `#c=${R(1)}`, dev: PAD })
 await shot('ipad-2-group', { hash: `#c=${R(2)}`, dev: PAD })
 await shot('ipad-3-calls', { dev: PAD, go: async (page) => { await page.locator('.foot-calls, [data-tab="calls"]').first().click().catch(() => tapText('Calls')(page)) } })
 await shot('ipad-4-chat-dark', { hash: `#c=${R(1)}`, mode: 'dark', dev: PAD })
+await shot('mac-1-chat', { hash: `#c=${R(1)}`, dev: MAC })
+await shot('mac-2-group', { hash: `#c=${R(2)}`, dev: MAC })
+await shot('mac-3-calls', { dev: MAC, go: async (page) => { await page.locator('.foot-calls, [data-tab="calls"]').first().click().catch(() => tapText('Calls')(page)) } })
+await shot('mac-4-chat-dark', { hash: `#c=${R(1)}`, mode: 'dark', dev: MAC })
 await browser.close()
 server.close()

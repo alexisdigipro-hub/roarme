@@ -22,3 +22,7 @@ console.log(`Contact: first name ${!!a.contactFirstName}, last name ${!!a.contac
 const info = (await api(`/v1/apps/${app.id}/appInfos`)).data.find((i) => !/READY_FOR_DISTRIBUTION/.test(i.attributes.state || i.attributes.appStoreState)) 
 const ar = (await api(`/v1/appInfos/${info.id}/ageRatingDeclaration`)).data
 console.log(`Age rating answers: ${JSON.stringify(ar.attributes)}`)
+for (const pf of ['IOS', 'MAC_OS']) {
+  const bs = (await api(`/v1/builds?filter[app]=${app.id}&filter[preReleaseVersion.platform]=${pf}&sort=-uploadedDate&limit=3`)).data || []
+  console.log(`${pf} builds: ${bs.map((x) => `${x.attributes.version} ${x.attributes.processingState}`).join(', ') || 'none'}`)
+}

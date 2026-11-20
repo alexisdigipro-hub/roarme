@@ -47,8 +47,7 @@ jobs:
           set -o pipefail
           export MAS_VERSION=$(node -p "require('../mobile/package.json').version")
           npx electron-builder --config mas.config.cjs --mac --publish never 2>&1 | tail -60
-          ls -la out/*/ || true
-          P=$(ls out/mas*/*.pkg out/*.pkg 2>/dev/null | head -1)
+          P=$(find out -maxdepth 2 -name "*.pkg" | head -1)
           [ -n "$P" ] || { echo "::error::No .pkg was made"; exit 1; }
           echo "PKG=$PWD/$P" >> "$GITHUB_ENV"
           pkgutil --check-signature "$P" | head -8

@@ -600,11 +600,12 @@ function Passcode({ toast }) {
     await setLockCode(form.a, lock?.after || 5)
     setForm(null); toast(lock ? 'Passcode changed' : 'Passcode on')
   }
+  // Turn Passcode Off asks for the code in a field of its own (Alex, 20 Nov: it did nothing in the Mac app, where
+  // window.prompt never opens)
+  const [offCode, setOffCode] = useState(null)
   const off = async () => {
-    const old = window.prompt('Your current passcode')
-    if (old === null) return
-    if (!(await checkCode(old))) { toast('The passcode is not right'); return }
-    clearLock(); toast('Passcode off')
+    if (!(await checkCode(offCode || ''))) { toast('The passcode is not right'); return }
+    setOffCode(null); clearLock(); toast('Passcode off')
   }
   return (
     <Box title="Passcode lock" note="Kept on this device only. If you forget it, sign out and in again.">
@@ -621,7 +622,14 @@ function Passcode({ toast }) {
           }}><span className="set-text">Unlock with {bioName()}<small>Instead of the code; the code still works</small></span><span className="set-val">{lock.bio ? 'On' : 'Off'}</span></button>}
           <button type="button" className="set-row set-pick" onClick={lockNow}><span className="set-text">Lock Now</span></button>
           <button type="button" className="set-row set-pick" onClick={() => setForm({ a: '', b: '', old: '' })}><span className="set-text">Change Passcode</span></button>
-          <button type="button" className="set-row set-pick danger" onClick={off}><span className="set-text">Turn Passcode Off</span></button>
+          {offCode === null
+            ? <button type="button" className="set-row set-pick danger" onClick={() => { setForm(null); setOffCode('') }}><span className="set-text">Turn Passcode Off</span></button>
+            : (
+              <div className="set-row set-col">
+                <input className="input" type="password" inputMode="numeric" autoFocus value={offCode} onChange={(e) => setOffCode(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="Current passcode" onKeyDown={(e) => e.key === 'Enter' && off()} />
+                <span className="set-acts"><button type="button" className="btn" onClick={() => setOffCode(null)}>Cancel</button><button type="button" className="btn btn-danger" onClick={off} disabled={!offCode}>Turn Off</button></span>
+              </div>
+            )}
         </>
       )}
       {form && (

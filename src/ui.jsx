@@ -114,7 +114,7 @@ export function Avatar({ src, name, size = 44, online = false, group = false }) 
   return (
     <span className={`av${group ? ' av-group' : ''}${src ? '' : ' av-init'}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.36), ...(src ? null : inkOf(name)) }}>
       {src ? <img src={src} alt="" loading="lazy" decoding="async" /> : <span>{initialsOf(name)}</span>}
-      {online && <i className="av-on" />}
+      {online && <i className={`av-on${online === 'dnd' ? ' dnd' : online === 'away' ? ' away' : ''}`} />}
     </span>
   )
 }

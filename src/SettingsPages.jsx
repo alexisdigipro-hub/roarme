@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { dropPics, errText, foldHas, nameOf, supabase } from './lib.js'
+import { dropPics, errText, foldHas, nameOf, statusOf, supabase } from './lib.js'
 import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, useTabSwipe, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
+import { PRESENCE, PresenceDot, StatusSheet } from './status.jsx'
 import { HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ColorPick } from './themeEditor.jsx'
@@ -115,8 +116,10 @@ function useDesktop() {
 }
 
 /* the list in the side panel */
-export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe, onInbox, inboxCount = 0 }) {
+export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInbox, inboxCount = 0 }) {
   const p = usePrefs()
+  const [statusOpen, setStatusOpen] = useState(false)
+  const pres = PRESENCE.find(([k]) => k === (me.presence || 'online')) || PRESENCE[0]
   return (
     <div className="side-scroll set-menu stagger">
       <button type="button" className={`set-me${page === 'profile' ? ' on' : ''}`} onClick={() => onPage('profile')}>
@@ -124,6 +127,13 @@ export function SettingsMenu({ me, page, onPage, onMedia, onRoarMe, onInbox, inb
         <span className="set-me-text"><b>{nameOf(me)}</b><small>@{me.username}</small>{me.bio && <small>{me.bio}</small>}</span>
         <i className="set-chev">{I.right}</i>
       </button>
+      {/* how I show to others (Alex, 20 Nov, from Discord's "Change online status"): status.jsx */}
+      {setMe && (
+        <div className="set-box">
+          <button type="button" className="set-row set-pick set-nav st-open" onClick={() => setStatusOpen(true)}><PresenceDot k={pres[0]} /><span className="set-text">{pres[1]}{statusOf(me) && <small>{statusOf(me)}</small>}</span><i className="set-chev">{I.right}</i></button>
+        </div>
+      )}
+      {statusOpen && <StatusSheet me={me} setMe={setMe} onClose={() => setStatusOpen(false)} />}
       {/* the RoarMe account, run from your own profile (Alex, 19 Oct: "here in my profile, no other profile"): the admins
           read who writes to RoarMe and answer as RoarMe. My Profile itself is the card above. */}
       {onInbox && (

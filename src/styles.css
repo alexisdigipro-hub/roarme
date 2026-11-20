@@ -5645,3 +5645,33 @@ html:root:root:root:root .compose-wrap > .round.to-latest { left: auto !importan
 /* The attach sheet's inside ends above its tab bar (Alex, 20 Nov: Transfer's button stayed under the bar): room for the
    bar (about 66px), its 12px off the foot, the phone's home line and some air, so the last button scrolls clear of it */
 html:root:root .as-sheet:not(.as-loc) .as-body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 108px); }
+
+/* Status (Alex, 20 Nov, from Discord's online status; status.jsx). The sign on a picture: Away a yellow moon (the green
+   dot with a bite taken out), Do Not Disturb a red dot with a white bar, Invisible / offline nothing */
+html:root:root .av-on.away { background: #f5b82e !important; -webkit-mask: radial-gradient(circle at 26% 26%, transparent 36%, #000 37%); mask: radial-gradient(circle at 26% 26%, transparent 36%, #000 37%); border-color: transparent !important; }
+html:root:root .av-on.dnd { background: #ff3b30 !important; }
+html:root:root .av-on.dnd::after { content: ''; position: absolute; left: 22%; right: 22%; top: 50%; height: 2px; margin-top: -1px; border-radius: 2px; background: #fff; }
+/* the same signs, bigger, in the Status window and on the Settings row */
+.st-dot { position: relative; flex: none; width: 16px; height: 16px; border-radius: 50%; margin: 0 4px; background: #34c759; }
+.st-dot.st-away { background: #f5b82e; -webkit-mask: radial-gradient(circle at 26% 26%, transparent 36%, #000 37%); mask: radial-gradient(circle at 26% 26%, transparent 36%, #000 37%); }
+.st-dot.st-dnd { background: #ff3b30; }
+.st-dot.st-dnd::after { content: ''; position: absolute; left: 22%; right: 22%; top: 50%; height: 2.5px; margin-top: -1.25px; border-radius: 2px; background: #fff; }
+.st-dot.st-invisible { background: transparent; box-shadow: inset 0 0 0 3.5px #8e8e93; }
+.st { display: flex; flex-direction: column; gap: 12px; }
+.st-box { margin: 0; }
+.st-row { align-items: center; gap: 10px; }
+.st-radio { flex: none; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; opacity: .35; margin-left: auto; }
+.st-radio.on { opacity: 1; box-shadow: inset 0 0 0 6px var(--halo-mine, #1bb4fb); background: #fff; }
+.st-h { margin: 6px 6px -4px; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; opacity: .55; }
+.st-custom { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.st-line { display: flex; gap: 8px; }
+.st-line input { height: 42px; border-radius: 21px; border: 0; padding: 0 14px; font: inherit; font-size: 15px; color: inherit; background: rgba(127, 127, 127, .12); outline: none; }
+.st-emoji { width: 54px; text-align: center; padding: 0 !important; font-size: 20px !important; }
+.st-text { flex: 1; min-width: 0; }
+.st-clear { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.st-clear > span { opacity: .6; }
+.st-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.st-pills .pill-btn { height: 32px; padding: 0 12px; font-size: 13px; }
+.st-acts { display: flex; justify-content: flex-end; gap: 8px; }
+html:root:root:root:root .st-pills .pill-btn.on, html:root:root:root:root .st-save:not(:disabled) { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink, #fff) !important; box-shadow: none !important; }
+.st-open .set-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

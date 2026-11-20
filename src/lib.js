@@ -25,6 +25,11 @@ export const nameOf = (p) => (p ? p.display_name || `@${p.username}` : 'Someone'
 export const initialsOf = (s) => String(s || '?').replace(/^@/, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?'
 
 export const onlineNow = (p) => !!p?.last_seen && Date.now() - new Date(p.last_seen).getTime() < 3 * 60 * 1000
+// the sign on someone's picture (Alex, 20 Nov, status.jsx): while they are here, a green dot, a moon (away) or a red sign
+// (do not disturb); nothing when they are offline or invisible (roar_people hides an invisible person's last seen)
+export const dotOf = (p) => (!onlineNow(p) ? false : p.presence === 'dnd' ? 'dnd' : p.presence === 'away' ? 'away' : true)
+// a custom status, as one line: "🎬 Shooting, answering tonight"
+export const statusOf = (p) => [p?.status_emoji, p?.status_text].filter(Boolean).join(' ').trim()
 
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 // one formatter per locale and style, kept: making a new one for every time on screen is slow, above all on an iPhone
@@ -56,7 +61,7 @@ export const dayLabel = (iso) => {
 }
 export const lastSeenText = (p) => {
   if (!p?.last_seen) return ''
-  if (onlineNow(p)) return 'online'
+  if (onlineNow(p)) return p.presence === 'dnd' ? 'do not disturb' : p.presence === 'away' ? 'away' : 'online'
   return `last seen ${listTime(p.last_seen).toLowerCase() === 'yesterday' ? 'yesterday' : listTime(p.last_seen)}`
 }
 

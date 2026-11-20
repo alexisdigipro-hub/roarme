@@ -112,7 +112,7 @@ async function apnsToken() {
 // (roar_push_subs.sound, supabase/push-sound.sql), none while its sound is off, Glass when nothing is known yet
 const SOUNDS = ['glass', 'chime', 'pop', 'ping', 'drop', 'bells', 'roar']
 const soundFile = (k?: string | null) => (k === 'off' ? undefined : `${SOUNDS.includes(k || '') ? k : 'glass'}.wav`)
-async function apns(endpoint: string, note: { title: string; body: string; room?: string; tag?: string }, sound?: string | null) {
+async function apns(endpoint: string, note: { title: string; body: string; room?: string; tag?: string; passive?: boolean }, sound?: string | null) {
   const jwt = await apnsToken()
   if (!jwt) return new Response('APNs key not set in Supabase (APNS_KEY_ID, APNS_TEAM_ID, APNS_KEY_P8)', { status: 503 })
   const r = await fetch(endpoint, {
@@ -122,7 +122,8 @@ async function apns(endpoint: string, note: { title: string; body: string; room?
       'apns-expiration': String(Math.floor(Date.now() / 1000) + 86400),
       ...(note.tag ? { 'apns-collapse-id': note.tag.slice(0, 64) } : {}),
     },
-    body: JSON.stringify({ aps: { alert: { title: note.title, body: note.body }, sound: soundFile(sound), 'thread-id': note.room || 'roarme' }, room: note.room || '' }),
+    // Do Not Disturb (supabase/status.sql): 'passive' lands quietly in the notification list, no sound, no banner
+    body: JSON.stringify({ aps: { alert: { title: note.title, body: note.body }, sound: note.passive ? undefined : soundFile(sound), 'thread-id': note.room || 'roarme', ...(note.passive ? { 'interruption-level': 'passive' } : {}) }, room: note.room || '' }),
   })
   if (r.status === 403) apnsJwt = null // a token Apple no longer takes: a fresh one next time
   // a token for an app that is gone: treated as gone, like Web Push's 410
@@ -130,7 +131,7 @@ async function apns(endpoint: string, note: { title: string; body: string; room?
   return r
 }
 
-async function push(t: { endpoint: string; p256dh: string; auth: string; sound?: string | null }, note: { title: string; body: string; room?: string; tag?: string }) {
+async function push(t: { endpoint: string; p256dh: string; auth: string; sound?: string | null }, note: { title: string; body: string; room?: string; tag?: string; silent?: boolean; passive?: boolean }) {
   if (t.endpoint.startsWith(APNS)) return apns(t.endpoint, note, t.sound)
   const r = await fetch(t.endpoint, {
     method: 'POST',
@@ -184,6 +185,13 @@ async function notify(id: string) {
     const { data: rows } = await sb.from('roar_members').select('*').eq('room_id', m.room_id).in('user_id', ids)
     for (const x of rows || []) chat.set(x.user_id, x)
   }
+  // who is on Do Not Disturb (Settings > Status, supabase/status.sql; select * keeps working before it is run)
+  const dnd = new Set<string>()
+  {
+    const ids = [...new Set((targets as { user_id: string }[]).map((t) => t.user_id))]
+    const { data: rows } = await sb.from('roar_profiles').select('*').in('id', ids)
+    for (const x of rows || []) if (x.presence === 'dnd') dnd.add(x.id)
+  }
   const name = who?.display_name || (who?.username ? `@${who.username}` : 'Someone')
   const group = room?.kind === 'group'
   const text = preview(m)
@@ -197,11 +205,12 @@ async function notify(id: string) {
       room: m.room_id,
       tag: `room-${m.room_id}`,
       count: t.unread,
-      silent: !!own?.silent,
+      silent: !!own?.silent || dnd.has(t.user_id),
+      passive: dnd.has(t.user_id),
     }
     try {
       const dev = sounds.get(t.endpoint)
-      const r = await push({ ...t, sound: own?.silent || dev === 'off' ? 'off' : own?.sound || dev }, note)
+      const r = await push({ ...t, sound: own?.silent || dnd.has(t.user_id) || dev === 'off' ? 'off' : own?.sound || dev }, note)
       if (r.ok) sent++
       else if (r.status === 404 || r.status === 410) gone.push(t.endpoint)
       else console.log('push', r.status, (await r.text()).slice(0, 200))

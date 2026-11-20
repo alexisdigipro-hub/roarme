@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
+import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, dotOf, statusOf, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -484,6 +484,8 @@ export default function Chat({ me, setMe }) {
     const atMe = mentionsMe(m.body, me, rolesRef.current.filter((g) => g.room_id === m.room_id))
     // a muted chat stays quiet, unless the message mentions you (@you, @all, @here or a role of yours)
     if (room?.muted && !atMe) return
+    // Do Not Disturb (Settings > Status, status.jsx): no sound and no banner while it is on
+    if (me.presence === 'dnd') return
     if (!document.hidden && activeRef.current === m.room_id) return
     const own = chatPrefs.current[m.room_id]
     if (prefsRef.current.sound && !own?.silent) chime(own?.sound || undefined)
@@ -529,6 +531,7 @@ export default function Chat({ me, setMe }) {
       return (r.kind === 'group' ? `${nameOf(people[r.last_user])}: ` : '') + tr(what)
     }
     const preview = prefsRef.current.notifyPreview
+    if (me.presence === 'dnd') return
     if (prefsRef.current.sound) chime()
     const show = (title, body, icon, roomId) => {
       try {
@@ -1288,7 +1291,7 @@ export default function Chat({ me, setMe }) {
   const roomRows = useRef(new Map())
   const roomRow = (r, ghost = false) => {
     const other = otherOf(r)
-    const key = [r, other, onlineNow(other), titleOf(r), picked.includes(r.room_id), picking, r.room_id === activeId, roomMenu?.r.room_id === r.room_id, prefs,
+    const key = [r, other, dotOf(other), other?.status_text, other?.status_emoji, titleOf(r), picked.includes(r.room_id), picking, r.room_id === activeId, roomMenu?.r.room_id === r.room_id, prefs,
       drafts[r.room_id], cleared[r.room_id], people[r.last_user] ? nameOf(people[r.last_user]) : '', officialIds.includes(other?.id),
       marked.includes(r.room_id), pins.includes(r.room_id), tagsOf(r).join('\n')]
     const id = `${r.room_id}${ghost ? ' ghost' : ''}`
@@ -1304,7 +1307,7 @@ export default function Chat({ me, setMe }) {
     if (ghost) {
       return (
         <div key={r.room_id} className="room" aria-hidden="true">
-          <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 54 : 48} />
+          <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={dotOf(other)} size={prefs.listPreview ? 54 : 48} />
           <span className="room-main">
             <span className="room-top"><strong>{titleOf(r)}</strong></span>
             <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.unread > 0 && <span className={`badge${r.muted ? ' quiet' : ''}`}>{r.unread}</span>}</span>
@@ -1316,7 +1319,7 @@ export default function Chat({ me, setMe }) {
       <button key={r.room_id} type="button" data-rid={r.room_id} className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (Date.now() - rowSkip.current < 450) return; if (Date.now() - closedAt.current < 500) return; if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
         onTouchStart={(e) => !picking && pressStart(e, r)} onTouchMove={pressMove} onTouchEnd={pressEnd} onTouchCancel={pressEnd}>
         {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
-        <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={onlineNow(other)} size={prefs.listPreview ? 54 : 48} />
+        <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={dotOf(other)} size={prefs.listPreview ? 54 : 48} />
         <span className="room-main">
           <span className="room-top"><strong>{titleOf(r)}{r.kind === 'direct' && officialIds.includes(otherOf(r)?.id) && OFFICIAL}</strong>{prefs.listPreview && r.last_message_at && <small data-raw="">{listTime(r.last_message_at)}</small>}</span>
           <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.mentions > 0 && <span className="badge at" title="You were mentioned">@</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
@@ -1502,7 +1505,7 @@ export default function Chat({ me, setMe }) {
                 <span className="contacts-favs-title">Favourites</span>
                 <div className="contacts-favs-row">
                   {contacts.filter((p) => favs.includes(p.id)).map((p) => (
-                    <button key={p.id} type="button" className="contacts-fav" onClick={() => setCard(p.id)}><Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} size={62} /><span>{nameOf(p).split(' ')[0]}</span></button>
+                    <button key={p.id} type="button" className="contacts-fav" onClick={() => setCard(p.id)}><Avatar src={p.avatar_url} name={nameOf(p)} online={dotOf(p)} size={62} /><span>{nameOf(p).split(' ')[0]}</span></button>
                   ))}
                 </div>
               </div>
@@ -1510,10 +1513,10 @@ export default function Chat({ me, setMe }) {
             <div className={`rooms contacts-list${cq.trim() ? ' searching' : ''}`}>
             {[...contacts].sort((a, b) => favs.includes(b.id) - favs.includes(a.id) || (contactSort === 'name' ? nameOf(a).localeCompare(nameOf(b), 'el', { sensitivity: 'base' }) : 0)).filter((p) => !cq.trim() || foldHas(`${nameOf(p)} ${p.username}`, cq.trim().replace(/^@/, ''))).map((p) => (
               <div key={p.id} className="room contact" role="button" tabIndex={0} onClick={() => setCard(p.id)} onKeyDown={(e) => { if (e.key === 'Enter') setCard(p.id) }}>
-                <Avatar src={p.avatar_url} name={nameOf(p)} online={onlineNow(p)} size={prefs.listPreview ? 54 : 48} />
+                <Avatar src={p.avatar_url} name={nameOf(p)} online={dotOf(p)} size={prefs.listPreview ? 54 : 48} />
                 <span className="room-main">
                   <span className="room-top"><strong>{nameOf(p)}</strong></span>
-                  <span className="room-bottom"><span className={`room-prev${onlineNow(p) ? ' is-online' : ''}`} data-raw="">{[p.username ? `@${p.username}` : '', lastSeenText(p)].filter(Boolean).join(' · ')}</span></span>
+                  <span className="room-bottom"><span className={`room-prev${onlineNow(p) ? ' is-online' : ''}`} data-raw="">{[p.username ? `@${p.username}` : '', statusOf(p) || lastSeenText(p)].filter(Boolean).join(' · ')}</span></span>
                 </span>
                 {favs.includes(p.id) && <span className="contact-fav" title="Favourite">{FAV_STAR}</span>}
               </div>
@@ -1531,7 +1534,7 @@ export default function Chat({ me, setMe }) {
           </div>
           </>
         )}
-        {tab === 'settings' && <Suspense fallback={<div className="side-scroll" />}><SettingsMenu me={me} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
+        {tab === 'settings' && <Suspense fallback={<div className="side-scroll" />}><SettingsMenu me={me} setMe={setMe} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
           onInbox={isAdmin && officialIds.length ? () => setInboxOpen(true) : null} inboxCount={inboxCount} /></Suspense>}
         {/* the bar above the rail on Settings, with only THEMADLIONS in it, MAD bold, a link to themadlions.com, so every page has the same two bars (Alex, 12 Nov; shown by Halo only) */}
         {tab === 'settings' && <a className="foot-bar-empty" href="https://www.themadlions.com" target="_blank" rel="noopener noreferrer" aria-label="THEMADLIONS website"><span>THE<b>MAD</b>LIONS</span></a>}
@@ -3225,7 +3228,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             <button type="button" className="head-card" onClick={onInfo} title="Info">
               {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
               {(room.kind === 'group' ? room.avatar_url : other?.avatar_url) && <i className="head-bg" aria-hidden="true" style={{ backgroundImage: `url("${room.kind === 'group' ? room.avatar_url : other?.avatar_url}")` }} />}
-              <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={onlineNow(other)} />
+              <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={dotOf(other)} />
               <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{title}{official && OFFICIAL}</strong>{sub && <small>{sub}</small>}</span>
             </button>
             <button type="button" className="round" onClick={() => onCall(false)} aria-label="Voice call" title="Voice call">{I.phone}</button>
@@ -4191,7 +4194,7 @@ const GROW_OFF = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" str
 function PersonRow({ p, right, onClick }) {
   return (
     <button type="button" className="person" onClick={onClick}>
-      <Avatar src={p.avatar_url} name={nameOf(p)} size={40} online={onlineNow(p)} />
+      <Avatar src={p.avatar_url} name={nameOf(p)} size={40} online={dotOf(p)} />
       <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
       {right}
     </button>
@@ -4290,7 +4293,7 @@ function NewCall({ me, people, toast, onClose, onCall }) {
                   <div className="nc-letter" data-letter={g.l}>{g.l}</div>
                   {g.list.map((p) => (
                     <div key={p.id} className={`person call-row${mode === 'pick' && picked.includes(p.id) ? ' on' : ''}`} onClick={mode === 'pick' ? () => toggle(p) : undefined}>
-                      <Avatar src={p.avatar_url} name={nameOf(p)} size={48} online={onlineNow(p)} />
+                      <Avatar src={p.avatar_url} name={nameOf(p)} size={48} online={dotOf(p)} />
                       <span className="person-text"><b>{nameOf(p)}</b><small>@{p.username}</small></span>
                       {mode === 'pick'
                         ? <i className={`nc-tick${picked.includes(p.id) ? ' on' : ''}`}>{picked.includes(p.id) && I.check}</i>

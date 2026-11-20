@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, supabase, timeOf, picLink } from './lib.js'
+import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, statusOf, supabase, timeOf, picLink } from './lib.js'
 import { Avatar, CropModal, I, Modal, OnTop, svg, useSeen, useTabSwipe } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { SOUNDS, chime, usePrefs } from './prefs.js'
@@ -320,7 +320,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
           {canName
             ? <span className="name-row pf-name-row"><input {...marks.inputProps} className="pf-name-edit" value={name} onChange={(e) => setName(e.target.value)} onBlur={(e) => { marks.inputProps.onBlur(e); rename() }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} title="Rename the group" />{marks.bar}</span>
             : <h2 className="pf-name">{title}</h2>}
-          <p className="pf-sub">{group ? `${members.length} members` : lastSeenText(other) || ' '}</p>
+          <p className="pf-sub">{group ? `${members.length} members` : [statusOf(other), lastSeenText(other)].filter(Boolean).join(' · ') || ' '}</p>
           {!group && other?.nickname && <p className="pf-sub pf-real">{`Their name: ${other.real_name || `@${other.username}`}`}</p>}
         </div>
 

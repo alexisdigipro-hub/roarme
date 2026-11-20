@@ -14,7 +14,7 @@ on:
         description: listing, screenshots or upload-screenshots
         default: listing
         type: choice
-        options: [listing, screenshots, upload-screenshots, status]
+        options: [listing, submit, screenshots, upload-screenshots, status]
       platform:
         description: IOS (iPhone and iPad) or MAC_OS (the Mac App Store)
         default: IOS
@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   listing:
-    if: inputs.mode == 'listing' || inputs.mode == 'status'
+    if: inputs.mode == 'listing' || inputs.mode == 'submit' || inputs.mode == 'status'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +44,7 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           BUILD: ${{ inputs.build }}
           PLATFORM: ${{ inputs.platform }}
+          SUBMIT: ${{ inputs.mode == 'submit' && '1' || '' }}
 
   screenshots:
     if: inputs.mode == 'screenshots' || inputs.mode == 'upload-screenshots'

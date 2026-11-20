@@ -141,7 +141,9 @@ if (BUILD) await step(`Build ${BUILD}`, async () => {
 
 await step('App Review notes', async () => {
   const cur = (await api('GET', `/v1/appStoreVersions/${ver.id}/appStoreReviewDetail`).catch(() => ({ data: null }))).data
-  const attributes = { notes: T.reviewNotes, demoAccountRequired: true }
+  // the screen recording App Review asked for (20 Nov 2026), filmed by Alex on his iPhone, linked at the end
+  const video = L.reviewVideo ? `\n\nSCREEN RECORDING: ${L.reviewVideo}` : ''
+  const attributes = { notes: (T.reviewNotes + video).slice(0, 4000), demoAccountRequired: true }
   // the Mac's page takes the review contact and the demo login Alex typed on the iPhone's, copied over and never printed
   if (PLATFORM === 'MAC_OS') {
     const ios = ((await api('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=IOS&limit=5`)).data || [])[0]
@@ -150,6 +152,24 @@ await step('App Review notes', async () => {
   }
   if (cur) await api('PATCH', `/v1/appStoreReviewDetails/${cur.id}`, { data: { type: 'appStoreReviewDetails', id: cur.id, attributes } })
   else await api('POST', '/v1/appStoreReviewDetails', { data: { type: 'appStoreReviewDetails', attributes, relationships: { appStoreVersion: { data: { type: 'appStoreVersions', id: ver.id } } } } })
+})
+
+// mode submit (20 Nov 2026): after the notes, the version goes back to App Review. A submission App Review sent back is
+// sent again; if Apple refuses that, it is cancelled and a fresh one is made.
+if (process.env.SUBMIT === '1') await step('Send for App Review', async () => {
+  const subs = (await api('GET', `/v1/reviewSubmissions?filter[app]=${app.id}&filter[platform]=${PLATFORM}&filter[state]=UNRESOLVED_ISSUES,READY_FOR_REVIEW&include=items`)).data || []
+  for (const sb of subs) {
+    try { await api('PATCH', `/v1/reviewSubmissions/${sb.id}`, { data: { type: 'reviewSubmissions', id: sb.id, attributes: { submitted: true } } }); return `sent again (${sb.id})` }
+    catch (e) {
+      console.log(`could not send ${sb.id} again (${e.message}); cancelling it`)
+      await api('PATCH', `/v1/reviewSubmissions/${sb.id}`, { data: { type: 'reviewSubmissions', id: sb.id, attributes: { canceled: true } } })
+      for (let i = 0; i < 36; i++) { const st = (await api('GET', `/v1/reviewSubmissions/${sb.id}`)).data.attributes.state; if (st !== 'CANCELING') break; await new Promise((ok) => setTimeout(ok, 5000)) }
+    }
+  }
+  const sub = (await api('POST', '/v1/reviewSubmissions', { data: { type: 'reviewSubmissions', attributes: { platform: PLATFORM }, relationships: { app: { data: { type: 'apps', id: app.id } } } } })).data
+  await api('POST', '/v1/reviewSubmissionItems', { data: { type: 'reviewSubmissionItems', relationships: { reviewSubmission: { data: { type: 'reviewSubmissions', id: sub.id } }, appStoreVersion: { data: { type: 'appStoreVersions', id: ver.id } } } } })
+  await api('PATCH', `/v1/reviewSubmissions/${sub.id}`, { data: { type: 'reviewSubmissions', id: sub.id, attributes: { submitted: true } } })
+  return `a fresh submission (${sub.id})`
 })
 
 console.log(`\nDone: ${done.length}. Failed: ${failed.length}${failed.length ? ` (${failed.join(', ')})` : ''}.`)

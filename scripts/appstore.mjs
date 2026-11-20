@@ -62,7 +62,7 @@ await step('Age rating', async () => {
     'violenceRealistic', 'violenceRealisticProlongedGraphicOrSadistic']
   const base = Object.fromEntries(none.map((k) => [k, 'NONE']))
   Object.assign(base, { gambling: false, unrestrictedWebAccess: false })
-  const full = { ...base, gunsOrOtherWeapons: 'NONE', lootBox: false, messagingAndChat: true, userGeneratedContent: true, advertising: false, ageAssurance: false, healthOrWellnessTopics: false, parentalControls: false, socialMedia: false }
+  const full = { ...base, gunsOrOtherWeapons: 'NONE', lootBox: false, messagingAndChat: true, userGeneratedContent: true, advertising: false, ageAssurance: false, healthOrWellnessTopics: false, parentalControls: false, socialMedia: false, sharedLocation: true, datingAndRelationships: false }
   try { await api('PATCH', `/v1/ageRatingDeclarations/${d.id}`, { data: { type: 'ageRatingDeclarations', id: d.id, attributes: full } }); return 'with Messaging and Chat, User-Generated Content' }
   catch (e) { console.log(`  the newer questions were refused (${e.message}); sending the older set`); await api('PATCH', `/v1/ageRatingDeclarations/${d.id}`, { data: { type: 'ageRatingDeclarations', id: d.id, attributes: base } }); return 'older set: check Messaging and Chat and User-Generated Content by hand' }
 })
@@ -94,6 +94,22 @@ await step('Availability: every country', async () => {
     included: terr.map((t) => ({ type: 'territoryAvailabilities', id: lid(t), attributes: { available: true }, relationships: { territory: { data: { type: 'territories', id: t.id } } } })),
   })
   return `${terr.length} countries`
+})
+
+await step('Availability: not in mainland China (it asks for licences there)', async () => {
+  const av = (await api('GET', `/v1/apps/${app.id}/appAvailabilityV2`)).data
+  let next = `/v2/appAvailabilities/${av.id}/territoryAvailabilities?limit=200`
+  while (next) {
+    const page = await api('GET', next)
+    const cn = (page.data || []).find((t) => t.relationships?.territory?.data?.id === 'CHN' || /CHN/.test(Buffer.from(t.id, 'base64').toString('latin1')))
+    if (cn) {
+      if (cn.attributes.available === false) return 'already off'
+      await api('PATCH', `/v1/territoryAvailabilities/${cn.id}`, { data: { type: 'territoryAvailabilities', id: cn.id, attributes: { available: false } } })
+      return 'China off'
+    }
+    next = page.links?.next ? page.links.next.replace('https://api.appstoreconnect.apple.com', '') : ''
+  }
+  throw new Error('China not found in the list')
 })
 
 const versions = (await api('GET', `/v1/apps/${app.id}/appStoreVersions?filter[platform]=IOS&limit=20`)).data || []

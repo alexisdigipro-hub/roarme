@@ -176,10 +176,13 @@ const server = createServer(async (q, s) => {
 
 await mkdir(OUT, { recursive: true })
 const browser = await chromium.launch()
-async function shot(name, { hash = '', mode = 'light', go } = {}) {
+// iPhone 6.9" (1320 x 2868) and iPad 13" (2064 x 2752)
+const PHONE = { viewport: { width: 440, height: 956 }, deviceScaleFactor: 3, ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148' }
+const PAD = { viewport: { width: 1032, height: 1376 }, deviceScaleFactor: 2, ua: 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148' }
+async function shot(name, { hash = '', mode = 'light', go, dev = PHONE } = {}) {
   const ctx = await browser.newContext({
-    viewport: { width: 440, height: 956 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true,
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+    viewport: dev.viewport, deviceScaleFactor: dev.deviceScaleFactor, isMobile: true, hasTouch: true,
+    userAgent: dev.ua,
     serviceWorkers: 'block',
   })
   await ctx.addInitScript(([s, m]) => {
@@ -207,5 +210,9 @@ await shot('2-chat', { hash: `#c=${R(1)}` })
 await shot('3-group', { hash: `#c=${R(2)}` })
 await shot('4-calls', { go: async (page) => { await page.locator('.foot-calls, [data-tab="calls"]').first().click().catch(() => tapText('Calls')(page)) } })
 await shot('5-chats-dark', { mode: 'dark' })
+await shot('ipad-1-chat', { hash: `#c=${R(1)}`, dev: PAD })
+await shot('ipad-2-group', { hash: `#c=${R(2)}`, dev: PAD })
+await shot('ipad-3-calls', { dev: PAD, go: async (page) => { await page.locator('.foot-calls, [data-tab="calls"]').first().click().catch(() => tapText('Calls')(page)) } })
+await shot('ipad-4-chat-dark', { hash: `#c=${R(1)}`, mode: 'dark', dev: PAD })
 await browser.close()
 server.close()

@@ -48,6 +48,7 @@ const LOC_WAIT = <span className="locc"><span className="locc-map" /></span>
 import { resumeLive, startLive } from './live.js'
 import { taskNotice, useTasks } from './taskCore.js'
 import { useNameMarks } from './fancy.jsx'
+import { CAPSULE_BODY, CapsuleCard, CapsuleWindow } from './capsule.jsx'
 import { GroupCallBar, GroupCallCard, GroupCallHost, LinkCallCard, joinCall, startGroupCall, useGroupCall } from './groupcall.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
 import { ReportHost, report } from './report.jsx'
@@ -488,7 +489,7 @@ export default function Chat({ me, setMe }) {
     if (me.presence === 'dnd') return
     if (!document.hidden && activeRef.current === m.room_id) return
     const own = chatPrefs.current[m.room_id]
-    if (prefsRef.current.sound && !own?.silent) chime(own?.sound || undefined)
+    if (prefsRef.current.sound && !own?.silent && !m.file?.quiet) chime(own?.sound || undefined)
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     const who = peopleRef.current[m.user_id]
     const title = room?.kind === 'group' ? `${room.title}` : nameOf(who)
@@ -1899,6 +1900,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [schedList, setSchedList] = useState(false)
   const holdT = useRef(null)
   const held = useRef(false)
+  // Send's long press opens a menu (Without Sound, Schedule, Locked); a slide up picks how important it is (Alex, 20 Nov)
+  const [sendMenu, setSendMenu] = useState(null)
+  const [capOpen, setCapOpen] = useState(false)
+  const [lvl, setLvl] = useState(null)
+  const slide = useRef(null)
+  const sendBtn = useRef(null)
+  const sendBtnRect = () => sendBtn.current?.getBoundingClientRect()
   // Delete for Me, and asking someone to delete what they wrote (Alex, 18 Oct; supabase/delete-asks.sql)
   // what I deleted for myself is kept on the device too, so a kept copy of the chat never flashes it (Alex, 19 Nov)
   const [hidden, setHidden] = useState(() => new Set(lsGet(`hides-${room.room_id}`) || []))
@@ -2266,7 +2274,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     setText(next)
     requestAnimationFrame(() => { const el = inputRef.current; if (el) { el.focus(); el.selectionStart = el.selectionEnd = before.length; setCaret(before.length) } })
   }
-  const send = async () => {
+  const send = async ({ quiet = false, level = 0 } = {}) => {
     const body = prefs.autoEmoji ? swapEmoji(text.trim()) : text.trim()
     if (!body) return
     setErr('')
@@ -2290,7 +2298,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     }
     setText('')
     stick.current = true
-    const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, body: out, reply_to: replyTo?.id || null }).select().single()
+    // Without Sound (file.quiet) and Important / Urgent (file.level 1 / 2) ride on the message; roar-push reads them
+    const extra = quiet || level ? { ...(quiet ? { quiet: true } : {}), ...(level ? { level } : {}) } : null
+    const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, body: out, reply_to: replyTo?.id || null, ...(extra ? { file: extra } : {}) }).select().single()
     setReplyTo(null)
     if (error) { setErr(errText(error)); setText(body); return }
     setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
@@ -2724,7 +2734,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     return true
   }
   // one's own text messages can be changed; a locked one only while its stretch of Encrypted Chat is still on
-  const canEdit = (m) => m.user_id === me.id && m.kind === 'text' && (!m.sealed || (m.sealed === sealOn?.id && keyOk && !m.locked))
+  const canEdit = (m) => m.user_id === me.id && m.kind === 'text' && !m.file?.capsule && (!m.sealed || (m.sealed === sealOn?.id && keyOk && !m.locked))
   const askSeal = async () => {
     setSealAsk({ missing: null })
     const missing = await withoutDevice(room.members || []).catch(() => [])
@@ -3180,6 +3190,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                     {!mine && room.kind === 'group' && first && !big && <b className="who" role="button" tabIndex={0} style={{ '--who': colorOf(m.user_id) }} onClick={(e) => { e.stopPropagation(); toDm(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
+                      : m.file?.capsule ? <CapsuleCard id={m.id} cap={m.file.capsule} mine={mine} />
                       : m.file?.poll ? <Suspense fallback={<div className="poll pl-wait"><b>Poll</b></div>}><PollCard id={m.id} me={me.id} people={people} canStop={room.kind === 'group' && room.role === 'admin'} onError={(t) => setErr(t)} /></Suspense>
                       : m.file?.live ? <Suspense fallback={LOC_WAIT}><LiveCard id={m.id} first={m.file.location} mine={mine} onOpen={(loc) => hands.current.setLocView(loc)} /></Suspense>
                       : m.file?.location ? <Suspense fallback={LOC_WAIT}><LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} /></Suspense>
@@ -3196,7 +3207,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'file' && isAudioFile(m.file) && !m.file?.asFile ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} onPdf={(url) => setPdfView({ url, name: m.file?.name })} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name, who: mine ? 'You' : nameOf(who), at: m.created_at, m }], index: 0 })} />
                       : null}
-                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && !m.file?.contact && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
+                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && !m.file?.capsule && !m.file?.contact && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
                     {/* reactions inside the bubble, on its outer side (Alex, 15 Nov: "never towards the middle, and inside the frame") */}
@@ -3206,7 +3217,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                         {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); hands.current.setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
                       </span>
                     )}
-                    <span className="meta">{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
+                    <span className="meta">{m.file?.level === 2 && !m.deleted_at && <i className="lvl-mark l2" title="Urgent">‼️</i>}{m.file?.level === 1 && !m.deleted_at && <i className="lvl-mark" title="Important">❗</i>}{m.file?.quiet && !m.deleted_at && <i className="quiet-mark" title="Sent without sound">{I.bellOff}</i>}{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
                 </div>
               </div>
@@ -3474,12 +3485,29 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               <button type="button" className={`emoji-btn seal-btn${sealOn ? ' on' : ''}`} onClick={() => (sealOn ? turnOff() : askSeal())} aria-label={sealOn ? 'Turn off Encrypted Chat' : 'Turn on Encrypted Chat'} title={sealOn ? 'Encrypted Chat is on' : 'Encrypted Chat'}>{sealOn ? I.lock : LOCK_OPEN}</button>
             </span>
             {text.trim() || editing || sealOn
-              ? <button key="send" type="button" className={`round send${text.trim() || editing ? ' ready' : ''}`}
+              ? <button key="send" ref={sendBtn} type="button" className={`round send${text.trim() || editing ? ' ready' : ''}`}
                   onClick={() => { if (held.current) { held.current = false; return } send() }}
-                  onContextMenu={(e) => { if (canSched) { e.preventDefault(); clearTimeout(holdT.current); setSchedNew(true) } }}
-                  onPointerDown={() => { held.current = false; clearTimeout(holdT.current); if (canSched) holdT.current = setTimeout(() => { held.current = true; setSchedNew(true) }, 450) }}
-                  onPointerUp={() => clearTimeout(holdT.current)} onPointerLeave={() => clearTimeout(holdT.current)}
-                  aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter) · hold to schedule'}>{editing ? I.check : I.send}</button>
+                  onContextMenu={(e) => { if (canSched) { e.preventDefault(); clearTimeout(holdT.current); slide.current = null; setLvl(null); setSendMenu(e.currentTarget.getBoundingClientRect()) } }}
+                  onPointerDown={(e) => {
+                    held.current = false; clearTimeout(holdT.current); slide.current = null
+                    if (!canSched) return
+                    const btn = e.currentTarget
+                    slide.current = { y: e.clientY, on: false, n: 0 }
+                    try { btn.setPointerCapture(e.pointerId) } catch { /* not this pointer */ }
+                    holdT.current = setTimeout(() => { if (slide.current?.on) return; slide.current = null; held.current = true; haptic(12); setSendMenu(btn.getBoundingClientRect()) }, 450)
+                  }}
+                  onPointerMove={(e) => {
+                    const s = slide.current
+                    if (!s) return
+                    const dy = s.y - e.clientY
+                    if (!s.on && dy > 16) { s.on = true; clearTimeout(holdT.current); setLvl(0) }
+                    if (!s.on) return
+                    const n = dy > 120 ? 2 : dy > 56 ? 1 : 0
+                    if (n !== s.n) { s.n = n; haptic(n ? 14 : 6); setLvl(n) }
+                  }}
+                  onPointerUp={() => { clearTimeout(holdT.current); const s = slide.current; slide.current = null; if (s?.on) { held.current = true; setLvl(null); send({ level: s.n }) } }}
+                  onPointerCancel={() => { clearTimeout(holdT.current); slide.current = null; setLvl(null) }}
+                  aria-label={editing ? 'Save' : 'Send'} title={editing ? 'Save (Enter)' : 'Send (Enter) · hold for more · slide up for Important'}>{editing ? I.check : I.send}</button>
               : <button key="rec" type="button" ref={noLoupe} className={`round rec-btn${recMode === 'video' ? ' vmode' : ''}${rec || vrec ? ' holding' : ''}`} onPointerDown={holdStart} onContextMenu={(e) => e.preventDefault()}
                   onClick={(e) => { if (e.detail === 0) (recMode === 'video' ? startVideo(true) : startVoice(true)) }}
                   aria-label={recMode === 'video' ? 'Video message: hold to record, tap for voice' : 'Voice message: hold to record, tap for video'}
@@ -3489,6 +3517,29 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       </footer>
       )}
 
+      {lvl !== null && sendBtnRect() && createPortal(
+        <div className="send-lvl" style={{ '--sl-x': `${sendBtnRect().left + sendBtnRect().width / 2}px`, '--sl-y': `${sendBtnRect().top}px` }} aria-hidden="true">
+          {[[2, '‼️', 'Urgent'], [1, '❗', 'Important'], [0, '', 'Normal']].map(([n, e, w]) => <span key={n} className={`send-lvl-step l${n}${lvl === n ? ' on' : ''}`}>{e && <i>{e}</i>}{w}</span>)}
+        </div>, document.body)}
+      {sendMenu && createPortal(
+        <>
+          <button type="button" className="scrim" style={{ zIndex: 60 }} aria-label="Close" onClick={() => setSendMenu(null)} />
+          <div className="menu send-menu" style={{ '--sm-r': `${Math.max(8, window.innerWidth - sendMenu.right)}px`, '--sm-b': `${Math.max(8, window.innerHeight - sendMenu.top + 8)}px` }}>
+            <button type="button" onClick={() => { setSendMenu(null); send({ quiet: true }) }}>{I.bellOff}<span>Send Without Sound</span></button>
+            <button type="button" onClick={() => { setSendMenu(null); setSchedNew(true) }}>{I.timer}<span>Schedule Message</span></button>
+            <button type="button" onClick={() => { setSendMenu(null); setCapOpen(true) }}>{I.lock}<span>Send Locked Message</span></button>
+          </div>
+        </>, document.body)}
+      {capOpen && <CapsuleWindow text={text.trim()} onClose={() => setCapOpen(false)} onSend={async ({ words, at, place }) => {
+        const capsule = at ? { at } : { place: { name: place.name || '', lat: place.lat, lng: place.lng, r: place.r } }
+        const { data, error } = await supabase.from('roar_messages').insert({ room_id: room.room_id, user_id: me.id, kind: 'text', body: CAPSULE_BODY, file: { capsule } }).select().single()
+        if (error) return errText(error)
+        const { error: e2 } = await supabase.rpc('roar_capsule_put', { msg: data.id, words, at, la: place?.lat ?? null, lo: place?.lng ?? null, r: place?.r ?? null })
+        if (e2) { await supabase.from('roar_messages').delete().eq('id', data.id); return errText(e2) }
+        setMsgs((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]))
+        stick.current = true; setText(''); setCapOpen(false)
+        return ''
+      }} />}
       {schedNew && <ScheduleMessage body={text.trim()} onClose={() => setSchedNew(false)} onSave={scheduleIt} />}
       {schedEdit && <ScheduleMessage item={schedEdit} onClose={() => setSchedEdit(null)} onSave={async (v) => { const e = await sched.move(schedEdit.id, v); if (!e) { setSchedEdit(null); toast(`Scheduled for ${whenText(v.at.toISOString())}`) } return e }} />}
       {remindFor && <RemindMe preview={textOf(remindFor)} onClose={() => setRemindFor(null)} onSave={async (at) => { const e = await addReminder(room.room_id, remindFor.id, at); if (!e) { setRemindFor(null); toast(`Reminder set for ${whenText(at.toISOString())}`) } return e }} />}

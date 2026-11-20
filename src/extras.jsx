@@ -380,7 +380,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const [whoOpen, setWhoOpen] = useState(false)
   // the tab bar is the chat's own menu at the foot: its glass, icon over word, the lens in GLASS TRAVEL (Alex, 15 Nov)
   const tabsLens = useLens(`${tab}|${files.length > 0}`)
-  useTabSwipe(bodyRef, ['gallery', 'file', onLocation && 'location', onPoll && 'poll', 'audio', onContact && 'contact', onTransfer && 'transfer'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
+  useTabSwipe(bodyRef, ['gallery', 'file', onTransfer && 'transfer', onLocation && 'location', onPoll && 'poll', 'audio', onContact && 'contact'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
   const doc = useRef(null)
@@ -420,11 +420,12 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const TABS = [
     ['gallery', 'Gallery', AS_I.gallery],
     ['file', 'File', AS_I.file],
+    // RoarTransfer third (Alex, 20 Nov)
+    onTransfer && ['transfer', 'Transfer', AS_I.transfer],
     onLocation && ['location', 'Location', AS_I.location],
     onPoll && ['poll', 'Poll', AS_I.poll],
     ['audio', 'Audio', AS_I.audio],
     onContact && ['contact', 'Contact', AS_I.contact],
-    onTransfer && ['transfer', 'Transfer', AS_I.transfer],
   ].filter(Boolean)
   const go = (k) => setTab(k)
   // RoarTransfer opens in the sheet's body when its tab is chosen

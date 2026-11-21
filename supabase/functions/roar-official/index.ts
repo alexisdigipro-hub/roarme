@@ -6,7 +6,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const EMAIL = 'roarme@themadlions.com'
-const ICON = 'https://alexisdigipro-hub.github.io/roarme/icon-512.png'
+const ICON = 'https://roarme.app/icon-512.png'
 const json = (v: unknown, status = 200) => new Response(JSON.stringify(v), { status, headers: { 'Content-Type': 'application/json' } })
 
 Deno.serve(async (req) => {

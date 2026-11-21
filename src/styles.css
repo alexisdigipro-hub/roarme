@@ -6102,3 +6102,6 @@ html:root:root .av-on.away, html:root:root .st-dot.st-away {
 /* in a message the time's chip sits at the foot's right: the line ends before it and the time left is not shown there */
 .bubble .mini-foot { padding-right: 78px; }
 .bubble .mini-foot small:last-child { display: none; }
+/* the three steps of a slide up on Send stand whole on the screen (Alex, 21 Nov: "Urgent does not show whole"): their
+   right edges line up with Send's, inside the screen, instead of being centred on it */
+.send-lvl { left: auto !important; right: var(--sl-r, 10px) !important; transform: translateY(calc(-100% - 10px)) !important; align-items: flex-end !important; }

@@ -6154,3 +6154,12 @@ html:root:root:root:root .as-sheet .menu.asx-more svg { width: 20px; height: 20p
 .lbc-chip { flex: none; height: 32px; padding: 0 14px; border-radius: 999px; border: 0; font: inherit; font-size: 13.5px; font-weight: 500; white-space: nowrap; color: var(--text); background: color-mix(in srgb, var(--text) 7%, transparent); cursor: pointer; }
 html:root:root:root:root .lbc-chip.on { background: linear-gradient(170deg, var(--halo-mine-top, var(--halo)), var(--halo-mine, var(--halo))) !important; color: var(--halo-ink, #fff) !important; }
 .lbc-empty { grid-column: 1 / -1; text-align: center; padding: 40px 0; margin: 0; font-size: 14px; opacity: .55; }
+
+/* "typing…" in the chat list (Alex, 21 Nov): the words in the accent with three dots that rise in turn */
+.room-prev .rty { color: var(--halo, var(--accent)); font-weight: 500; display: inline-flex; align-items: baseline; gap: 0; }
+.room-prev .rty i { display: inline-block; width: 4px; height: 4px; margin-left: 2.5px; border-radius: 50%; background: currentColor; animation: rty-hop 1.2s ease-in-out infinite; }
+.room-prev .rty i:first-of-type { margin-left: 4px; }
+.room-prev .rty i:nth-of-type(2) { animation-delay: .15s; }
+.room-prev .rty i:nth-of-type(3) { animation-delay: .3s; }
+@keyframes rty-hop { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-3px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .room-prev .rty i { animation: none; } }

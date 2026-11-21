@@ -27,7 +27,8 @@ export const initialsOf = (s) => String(s || '?').replace(/^@/, '').split(/\s+/)
 export const onlineNow = (p) => !!p?.last_seen && Date.now() - new Date(p.last_seen).getTime() < 3 * 60 * 1000
 // the sign on someone's picture (Alex, 20 Nov, status.jsx): while they are here, a green dot, a moon (away) or a red sign
 // (do not disturb); nothing when they are offline or invisible (roar_people hides an invisible person's last seen)
-export const dotOf = (p) => (!onlineNow(p) ? false : p.presence === 'dnd' ? 'dnd' : p.presence === 'away' ? 'away' : true)
+// Away and Do Not Disturb show always, even with Last Seen hidden; only the green dot follows Last Seen (Alex, 21 Nov, "2")
+export const dotOf = (p) => (p?.presence === 'dnd' ? 'dnd' : p?.presence === 'away' ? 'away' : onlineNow(p))
 // a custom status, as one line: "🎬 Shooting, answering tonight"
 export const statusOf = (p) => [p?.status_emoji, p?.status_text].filter(Boolean).join(' ').trim()
 
@@ -60,8 +61,10 @@ export const dayLabel = (iso) => {
   return fmt({ weekday: 'long', day: 'numeric', month: 'long', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) }).format(d)
 }
 export const lastSeenText = (p) => {
+  if (p?.presence === 'dnd') return 'do not disturb'
+  if (p?.presence === 'away') return 'away'
   if (!p?.last_seen) return ''
-  if (onlineNow(p)) return p.presence === 'dnd' ? 'do not disturb' : p.presence === 'away' ? 'away' : 'online'
+  if (onlineNow(p)) return 'online'
   return `last seen ${listTime(p.last_seen).toLowerCase() === 'yesterday' ? 'yesterday' : listTime(p.last_seen)}`
 }
 

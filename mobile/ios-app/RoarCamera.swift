@@ -74,6 +74,8 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     private var modeButtons: [Mode: UIButton] = [:]
     private let white = UIView()
 
+    deinit { NotificationCenter.default.removeObserver(self) }
+
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .portrait }
 
@@ -327,6 +329,32 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         s.startRunning()
     }
 
+    // a format both cameras can hold at once (Dual stays black without one): the largest that supports multi-camera and
+    // is at most maxWidth wide
+    private func multiFormat(_ d: AVCaptureDevice, maxWidth: Int32) -> AVCaptureDevice.Format? {
+        let ok = d.formats.filter { f in
+            let dim = CMVideoFormatDescriptionGetDimensions(f.formatDescription)
+            return f.isMultiCamSupported && dim.width <= maxWidth
+        }
+        return ok.max { a, b in
+            let x = CMVideoFormatDescriptionGetDimensions(a.formatDescription), y = CMVideoFormatDescriptionGetDimensions(b.formatDescription)
+            return Int(x.width) * Int(x.height) < Int(y.width) * Int(y.height)
+        }
+    }
+
+    private func useFormat(_ d: AVCaptureDevice, _ f: AVCaptureDevice.Format?) {
+        guard let f = f else { return }
+        do { try d.lockForConfiguration(); d.activeFormat = f; d.unlockForConfiguration() } catch {}
+    }
+
+    private func dualFailed() {
+        DispatchQueue.main.async { self.mode = .photo; self.refreshUI(); self.configure() }
+    }
+
+    @objc private func sessionError(_ n: Notification) {
+        if mode == .dual { dualFailed() }
+    }
+
     private func setupDual() {
         let s = AVCaptureMultiCamSession()
         s.beginConfiguration()
@@ -334,17 +362,19 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
               let bi = try? AVCaptureDeviceInput(device: back), let fi = try? AVCaptureDeviceInput(device: frontDev),
               s.canAddInput(bi), s.canAddInput(fi) else {
             s.commitConfiguration()
-            DispatchQueue.main.async { self.mode = .photo; self.refreshUI(); self.configure() }
+            dualFailed()
             return
         }
         s.addInputWithNoConnections(bi)
         s.addInputWithNoConnections(fi)
+        useFormat(back, multiFormat(back, maxWidth: 1920))
+        useFormat(frontDev, multiFormat(frontDev, maxWidth: 1920))
         let bo = AVCapturePhotoOutput(), fo = AVCapturePhotoOutput()
         guard s.canAddOutput(bo), s.canAddOutput(fo),
               let bp = bi.ports(for: .video, sourceDeviceType: back.deviceType, sourceDevicePosition: .back).first,
               let fp = fi.ports(for: .video, sourceDeviceType: frontDev.deviceType, sourceDevicePosition: .front).first else {
             s.commitConfiguration()
-            DispatchQueue.main.async { self.mode = .photo; self.refreshUI(); self.configure() }
+            dualFailed()
             return
         }
         s.addOutputWithNoConnections(bo)
@@ -367,6 +397,16 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         portrait(blc)
         portrait(flc)
         s.commitConfiguration()
+        // too much for this iPhone at once: smaller formats, else back to Photo
+        if s.hardwareCost > 1.0 {
+            s.beginConfiguration()
+            useFormat(back, multiFormat(back, maxWidth: 1280))
+            useFormat(frontDev, multiFormat(frontDev, maxWidth: 1280))
+            s.commitConfiguration()
+            if s.hardwareCost > 1.0 { dualFailed(); return }
+        }
+        NotificationCenter.default.removeObserver(self, name: .AVCaptureSessionRuntimeError, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(sessionError(_:)), name: .AVCaptureSessionRuntimeError, object: s)
         photoOut = bo
         frontOut = fo
         movieOut = nil
@@ -383,6 +423,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             self.pipLayer = fl
         }
         s.startRunning()
+        if !s.isRunning { dualFailed() }
     }
 
     // ---- the buttons ----

@@ -40,6 +40,7 @@ public class RoarCameraPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func open(_ call: CAPPluginCall) {
         let only = call.getString("only") ?? ""
+        let tabs = (call.getArray("tabs") as? [String]) ?? []
         var th = CamTheme()
         if let c = RoarCameraPlugin.color(call.getString("accent")) { th.accent = c }
         if let c = RoarCameraPlugin.color(call.getString("accentTop")) { th.accentTop = c }
@@ -51,6 +52,7 @@ public class RoarCameraPlugin: CAPPlugin, CAPBridgedPlugin {
             guard let host = self.bridge?.viewController else { call.reject("No screen to show the camera on"); return }
             let vc = RoarCameraController()
             vc.only = only
+            vc.tabKeys = tabs
             vc.modalPresentationStyle = .fullScreen
             vc.done = { result in call.resolve(result) }
             host.present(vc, animated: true)
@@ -64,6 +66,10 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     enum Format: Int { case jpeg = 0, heif = 1, raw = 2 }
 
     var only = ""
+    // the attach sheet's own bar, kept at the foot while the camera is up (Alex, 21 Nov: "the menu below must not go")
+    var tabKeys: [String] = []
+    private let tabBar = UIView()
+    private var tabButtons: [UIButton] = []
     var done: (([String: Any]) -> Void)?
 
     // ---- state ----
@@ -390,6 +396,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         white.isUserInteractionEnabled = false
         view.addSubview(white)
         buildSheet()
+        buildTabs()
 
         refreshUI()
         loadGalleryThumb()
@@ -398,6 +405,62 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         AVCaptureDevice.requestAccess(for: .video) { ok in
             DispatchQueue.main.async { if ok { self.configure() } else { self.finish(["error": "camera"]) } }
         }
+    }
+
+    // the sheet's bar: Camera lit; any other tab closes the camera and opens that tab in the sheet
+    private static let tabLook: [String: (String, String)] = [
+        "camera": ("Camera", "camera.fill"), "gallery": ("Gallery", "photo.fill"), "transfer": ("Transfer", "arrow.up.circle.fill"),
+        "location": ("Location", "mappin.circle.fill"), "audio": ("Audio", "music.note"), "more": ("More", "plus.circle.fill"),
+    ]
+    private func buildTabs() {
+        guard !tabKeys.isEmpty else { return }
+        glassify(tabBar, radius: 33)
+        view.addSubview(tabBar)
+        for (i, key) in tabKeys.enumerated() {
+            let look = RoarCameraController.tabLook[key] ?? (key.capitalized, "circle")
+            let b = UIButton(type: .system)
+            b.tag = i
+            let on = key == "camera"
+            let col = on ? camTheme.accent : camTheme.text
+            let img = UIImageView(image: UIImage(systemName: look.1, withConfiguration: UIImage.SymbolConfiguration(pointSize: 19, weight: .semibold)))
+            img.tintColor = col
+            img.contentMode = .center
+            img.isUserInteractionEnabled = false
+            img.tag = 101
+            let lab = UILabel()
+            lab.text = look.0
+            lab.font = .systemFont(ofSize: 10.5, weight: .semibold)
+            lab.textColor = col
+            lab.textAlignment = .center
+            lab.adjustsFontSizeToFitWidth = true
+            lab.minimumScaleFactor = 0.7
+            lab.isUserInteractionEnabled = false
+            lab.tag = 102
+            b.addSubview(img)
+            b.addSubview(lab)
+            if on { b.backgroundColor = camTheme.text.withAlphaComponent(camTheme.light ? 0.07 : 0.12) }
+            b.layer.cornerRadius = 27
+            b.addTarget(self, action: #selector(tabTapped(_:)), for: .touchUpInside)
+            tabBar.addSubview(b)
+            tabButtons.append(b)
+        }
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        for b in tabButtons {
+            b.viewWithTag(101)?.frame = CGRect(x: 0, y: 5, width: b.bounds.width, height: 26)
+            b.viewWithTag(102)?.frame = CGRect(x: 2, y: 32, width: b.bounds.width - 4, height: 16)
+        }
+    }
+
+    @objc private func tabTapped(_ b: UIButton) {
+        guard b.tag < tabKeys.count else { return }
+        let key = tabKeys[b.tag]
+        if key == "camera" { return }
+        if movieOut?.isRecording == true { finished = true; movieOut?.stopRecording() }
+        tick()
+        finish(key == "gallery" ? ["gallery": true] : ["tab": key])
     }
 
     private func buildSheet() {
@@ -464,7 +527,8 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             b.frame = CGRect(x: 5 + CGFloat(i) * pw, y: 5, width: pw, height: 30)
         }
         y += r + 10
-        let footH: CGFloat = pro ? 46 + 10 + 92 + 10 + 44 : 92 + 10 + 44
+        let barH: CGFloat = tabKeys.isEmpty ? 0 : 66 + 8
+        let footH: CGFloat = (pro ? 46 + 10 + 92 + 10 + 44 : 92 + 10 + 44) + barH
         var cardH = max(260, h - y - s.bottom - footH - 12)
         // in PHOTO the card is the photo's own 3:4, so the picture fills it with no black at the sides
         var cardW = w - 20
@@ -508,6 +572,12 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         }
         seg.viewWithTag(77)?.frame = CGRect(x: 5 + 2 * sw + 3.5, y: 12, width: 1, height: 20)
         seg.isHidden = !pro
+        if !tabKeys.isEmpty {
+            let bw = w - 28
+            tabBar.frame = CGRect(x: 14, y: h - max(s.bottom, 10) - 66, width: bw, height: 66)
+            let cw = (bw - 12) / CGFloat(max(1, tabButtons.count))
+            for (i, b) in tabButtons.enumerated() { b.frame = CGRect(x: 6 + CGFloat(i) * cw, y: 6, width: cw, height: 54) }
+        }
         white.frame = view.bounds
         sheetBack.frame = view.bounds
         let sh: CGFloat = 400 + s.bottom

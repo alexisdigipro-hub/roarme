@@ -41,6 +41,7 @@ export async function openCamera(opts = {}) {
   const r = await C.nativePromise('RoarCamera', 'open', { ...look(), ...opts }).catch(() => null)
   if (!r || r.cancelled || r.error) return null
   if (r.gallery) return 'gallery'
+  if (r.tab) return { tab: r.tab }
   // one file, or several from rapid fire; RAW (DNG) goes as a file, untouched
   const read = async (path, i) => {
     const src = C.convertFileSrc ? C.convertFileSrc(path) : path

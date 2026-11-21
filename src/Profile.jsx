@@ -3,7 +3,7 @@ import { batteryText } from './battery.js'
 import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, statusOf, supabase, timeOf, picLink } from './lib.js'
 import { Avatar, CropModal, I, Modal, OnTop, svg, useSeen, useTabSwipe } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
-import { SOUNDS, chime, usePrefs } from './prefs.js'
+import { SOUNDS, chime } from './prefs.js'
 import { CopyLink } from './transfer.jsx'
 import { locale } from './i18n.js'
 import { ContactEdit } from './contactCard.jsx'
@@ -29,7 +29,6 @@ const CUSTOM_I = svg(<><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" 
 const BAN_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M6 6l12 12" /></svg>
 export default function Profile({ room, me, people, title, other, rooms, titleOf, toast, onClose, onChanged, onLeft, onMessage, onOpenRoom, loadPeople, blocked, onBlocks, onCall }) {
   const group = room.kind === 'group'
-  const showIds = usePrefs().peerIds
   const admin = room.role === 'admin'
   const canName = group && admin
   const [items, setItems] = useState(null)
@@ -399,7 +398,6 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
             </button>
             {other.bio && <div className="pf-field"><small>about</small><span>{other.bio}</span></div>}
             {other.my_note && <button type="button" className="pf-field" onClick={() => setEditing(true)} title="Edit"><small>your note · only you see it</small><span className="pf-note">{other.my_note}</span><i>{I.edit}</i></button>}
-            {showIds && <button type="button" className="pf-field" onClick={() => copy(other.id, 'ID copied')} title="Copy"><small>user id</small><span className="pf-id">{other.id}</span><i>{I.copy}</i></button>}
           </div>
         )}
         {err && <p className="auth-err">{err}</p>}

@@ -465,8 +465,14 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         }
         y += r + 10
         let footH: CGFloat = pro ? 46 + 10 + 92 + 10 + 44 : 92 + 10 + 44
-        let cardH = max(260, h - y - s.bottom - footH - 12)
-        card.frame = CGRect(x: 10, y: y, width: w - 20, height: cardH)
+        var cardH = max(260, h - y - s.bottom - footH - 12)
+        // in PHOTO the card is the photo's own 3:4, so the picture fills it with no black at the sides
+        var cardW = w - 20
+        if pro {
+            cardH = min(cardH, cardW * 4 / 3)
+            cardW = min(cardW, cardH * 3 / 4)
+        }
+        card.frame = CGRect(x: (w - cardW) / 2, y: y, width: cardW, height: cardH)
         preview.frame = card.bounds
         previewLayer?.frame = preview.bounds
         bwView.frame = card.bounds
@@ -998,11 +1004,14 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         let best = d.formats.filter { f in
             let dim = CMVideoFormatDescriptionGetDimensions(f.formatDescription)
             let sub = CMFormatDescriptionGetMediaSubType(f.formatDescription)
-            return sub == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange && abs(Double(dim.width) / Double(max(1, dim.height)) - 4.0 / 3.0) < 0.02
+            return (sub == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange || sub == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange) && abs(Double(dim.width) / Double(max(1, dim.height)) - 4.0 / 3.0) < 0.02
                 && f.videoSupportedFrameRateRanges.contains { $0.maxFrameRate >= 30 }
         }.max { a, b in
             let x = area(a), y = area(b)
             if x != y { return x < y }
+            let fa = CMFormatDescriptionGetMediaSubType(a.formatDescription) == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+            let fb = CMFormatDescriptionGetMediaSubType(b.formatDescription) == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+            if fa != fb { return !fa }
             return CMVideoFormatDescriptionGetDimensions(a.formatDescription).width < CMVideoFormatDescriptionGetDimensions(b.formatDescription).width
         }
         guard let f = best, area(f) > now else { return }

@@ -6075,4 +6075,30 @@ html:root:root .av-on.away, html:root:root .st-dot.st-away {
    own width (container) and its picture or player is at most 1.25 times that tall, cropped to the middle; a tap still
    plays it whole in the full screen view */
 .bubble .vid-box { container-type: inline-size; width: var(--media-w, 300px); max-width: 100%; }
-.bubble .vid-box > :is(img.pic-img, video.pic-img) { width: 100% !important; max-height: 125cqw !important; object-fit: cover !important; object-position: center; }
+.bubble .vid-box :is(img.pic-img, video.pic-img) { width: 100% !important; max-height: 125cqw !important; object-fit: cover !important; object-position: center; }
+
+/* RoarMe's own small video player (Alex, 21 Nov: only play / pause and the line at the foot; extras.jsx MiniPlayer), in a
+   message and full screen: the play sign in a dark round in the middle while paused (and for a moment after a tap), the
+   time and a thin line at the foot on a soft dark fade, nothing else */
+.mini-vid { position: relative; display: block; line-height: 0; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.mini-vid > video { display: block; width: 100%; }
+.mini-pp { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; display: grid; place-items: center; border-radius: 50%; background: rgba(0, 0, 0, .42); color: #fff; pointer-events: none; opacity: 0; transform: scale(.9); transition: opacity .2s ease, transform .25s cubic-bezier(.25, 1.35, .45, 1); }
+.mini-pp svg { width: 24px; height: 24px; }
+.mini-vid:not(.on) .mini-pp svg { margin-left: 3px; }
+.mini-foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 8px; padding: 18px 12px 9px; background: linear-gradient(transparent, rgba(0, 0, 0, .45)); color: #fff; line-height: 1; opacity: 0; transition: opacity .2s ease; border-radius: 0 0 17px 17px; }
+.mini-foot small { flex: none; min-width: 30px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mini-foot small:last-child { text-align: right; }
+.mini-bar { position: relative; flex: 1; height: 18px; cursor: pointer; touch-action: none; }
+.mini-bar::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 2px; background: rgba(255, 255, 255, .35); }
+.mini-bar > i { position: absolute; left: 0; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 2px; background: #fff; }
+.mini-bar > i::after { content: ''; position: absolute; right: -6px; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
+.mini-vid.show .mini-pp, .mini-vid.show .mini-foot { opacity: 1; transform: none; }
+.mini-vid.on.show .mini-pp { opacity: .9; }
+/* full screen: the same player, as large as the screen allows, the line above the home bar */
+.cinema-vid { display: block; width: min(100vw, calc(100vh * 16 / 9)); }
+.cinema-vid .mini-vid > video { max-height: 100vh; object-fit: contain; background: #000; }
+.cinema-vid .mini-foot { border-radius: 0; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+.cinema-vid .mini-pp { width: 70px; height: 70px; margin: -35px 0 0 -35px; }
+/* in a message the time's chip sits at the foot's right: the line ends before it and the time left is not shown there */
+.bubble .mini-foot { padding-right: 78px; }
+.bubble .mini-foot small:last-child { display: none; }

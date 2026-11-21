@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState, Component } from 'react'
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, Component } from 'react'
 import { openCamera } from './camera.js'
 import { createPortal } from 'react-dom'
 import { errText, fileLink, fold, foldHas, lastSeenText, thumbOf, fmtBytes, shrinkImage, supabase, timeOf, picLink } from './lib.js'
@@ -303,12 +303,26 @@ const SMART = [
   ['portrait', /^(portraits?|πορτρέτο)$/i],
   ['pano', /^(panoramas?|πανοράματα)$/i],
 ]
+// pinch to zoom the library (Alex, 21 Nov, Telegram's "Zoom in the Media Picker"): two fingers apart for fewer and
+// larger, together for many and small, 2 to 13 across; the photo under the fingers stays under them; from 6 across a
+// month chip shows where one is, the rings and times step aside
+const LIB_COLS = [2, 3, 4, 5, 6, 8, 10, 13]
+const libColsKept = () => { try { const n = +localStorage.getItem('roarme-lib-cols'); return LIB_COLS.includes(n) ? n : 3 } catch { return 3 } }
+const thumbFor = (c) => (c <= 2 ? 480 : c <= 5 ? 300 : 150)
+const scrollerOf = (el) => { for (let n = el?.parentElement; n; n = n.parentElement) { const o = getComputedStyle(n).overflowY; if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight) return n } return null }
 function LibraryGrid({ picked, onPick, onOpen, onFail }) {
   const [items, setItems] = useState(null)
   const [want, setWant] = useState(LIB_STEP)
   const [cat, setCat] = useState('all')
   const [albums, setAlbums] = useState([])
+  const [cols, setCols] = useState(libColsKept)
+  const [month, setMonth] = useState('')
   const end = useRef(null)
+  const grid = useRef(null)
+  const anchor = useRef(null)
+  const pinch = useRef(null)
+  const monthT = useRef(0)
+  const tw = thumbFor(cols)
   // the albums once: the smart ones we know, only if not empty, then the person's own
   useEffect(() => {
     const call = mediaCall()
@@ -333,11 +347,102 @@ function LibraryGrid({ picked, onPick, onOpen, onFail }) {
     let alive = true
     const kind = cat === 'photos' ? 'photos' : cat === 'videos' ? 'videos' : 'all'
     const album = cat === 'all' || cat === 'photos' || cat === 'videos' ? undefined : cat
-    call('getMedias', { quantity: want, thumbnailWidth: 300, thumbnailHeight: 300, thumbnailQuality: 65, types: kind, ...(album ? { albumIdentifier: album } : {}) })
+    call('getMedias', { quantity: want, thumbnailWidth: tw, thumbnailHeight: tw, thumbnailQuality: 65, types: kind, ...(album ? { albumIdentifier: album } : {}) })
       .then((r) => { if (alive) setItems(r?.medias || []) })
       .catch(() => { if (alive) { if (album) setItems([]); else onFail() } })
     return () => { alive = false }
-  }, [want, cat]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [want, cat, tw]) // eslint-disable-line react-hooks/exhaustive-deps
+  // many across need many loaded: about 30 rows' worth
+  useEffect(() => { const need = Math.ceil((cols * 30) / LIB_STEP) * LIB_STEP; setWant((w) => Math.max(w, need)) }, [cols])
+  // the photo that was under the fingers comes back under them after the columns change
+  useLayoutEffect(() => {
+    const a = anchor.current
+    const g = grid.current
+    anchor.current = null
+    if (g) { g.classList.remove('lbz-in'); void g.offsetWidth; g.classList.add('lbz-in') }
+    if (!a || !g) return
+    const sc = scrollerOf(g)
+    if (!sc) return
+    const cell = g.children[Math.min(a.idx, g.children.length - 1)]
+    if (!cell || !cell.classList.contains('lib-cell')) return
+    sc.scrollTop += cell.getBoundingClientRect().top - a.y
+  }, [cols])
+  // two fingers: the grid follows the pinch a little, and steps through LIB_COLS as it passes each one
+  useEffect(() => {
+    const g = grid.current
+    if (!g) return undefined
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
+    const mid = (t) => ({ x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 })
+    const cellAt = (p) => {
+      const r = g.getBoundingClientRect()
+      const n = +g.dataset.cols
+      const size = r.width / n
+      const row = Math.max(0, Math.floor((p.y - r.top) / size))
+      const col = Math.min(n - 1, Math.max(0, Math.floor((p.x - r.left) / size)))
+      return { idx: row * n + col, y: r.top + row * size }
+    }
+    const start = (e) => {
+      if (e.touches.length !== 2) return
+      const m = mid(e.touches)
+      const r = g.getBoundingClientRect()
+      pinch.current = { d0: dist(e.touches), at: LIB_COLS.indexOf(+g.dataset.cols), ox: m.x - r.left, oy: m.y - r.top }
+      g.classList.add('lbz-live')
+    }
+    const move = (e) => {
+      const p = pinch.current
+      if (!p || e.touches.length !== 2) return
+      e.preventDefault()
+      e.stopPropagation()
+      const s = dist(e.touches) / p.d0
+      const r = g.getBoundingClientRect()
+      const m = mid(e.touches)
+      g.style.transformOrigin = `${m.x - r.left}px ${m.y - r.top}px`
+      // a step each time the fingers open or close by a quarter
+      const step = s > 1 ? -Math.floor(Math.log(s) / Math.log(1.25)) : Math.floor(Math.log(1 / s) / Math.log(1.25))
+      const at = Math.min(LIB_COLS.length - 1, Math.max(0, p.at + step))
+      const n = LIB_COLS[at]
+      // what is left of the pinch after the steps: the grid swells or shrinks by that much, never far
+      g.style.transform = `scale(${Math.min(1.12, Math.max(0.9, s * 1.25 ** step))})`
+      if (n !== +g.dataset.cols) {
+        anchor.current = cellAt(m)
+        try { navigator.vibrate?.(4) } catch { /* no buzz */ }
+        setCols(n)
+      }
+    }
+    const stop = (e) => {
+      if (!pinch.current || e.touches.length >= 2) return
+      pinch.current = null
+      g.classList.remove('lbz-live')
+      g.style.transform = ''
+      try { localStorage.setItem('roarme-lib-cols', g.dataset.cols) } catch { /* private */ }
+    }
+    g.addEventListener('touchstart', start, { passive: true })
+    g.addEventListener('touchmove', move, { passive: false })
+    g.addEventListener('touchend', stop)
+    g.addEventListener('touchcancel', stop)
+    return () => { g.removeEventListener('touchstart', start); g.removeEventListener('touchmove', move); g.removeEventListener('touchend', stop); g.removeEventListener('touchcancel', stop) }
+  }, [])
+  // the month chip while dense: the month of the row at the top of the view, shown while scrolling or pinching
+  useEffect(() => {
+    const g = grid.current
+    if (!g || cols < 6 || !items?.length) { setMonth(''); return undefined }
+    const sc = scrollerOf(g)
+    if (!sc) return undefined
+    const fmt = new Intl.DateTimeFormat(locale?.() || undefined, { month: 'long', year: 'numeric' })
+    const show = () => {
+      const r = g.getBoundingClientRect()
+      const top = sc.getBoundingClientRect().top + 60
+      const row = Math.max(0, Math.floor((top - r.top) / (r.width / cols)))
+      const a = items[Math.min(items.length - 1, row * cols)]
+      const d = a?.creationDate ? new Date(a.creationDate) : null
+      if (d && !isNaN(d)) setMonth(fmt.format(d))
+      clearTimeout(monthT.current)
+      monthT.current = setTimeout(() => setMonth(''), 1200)
+    }
+    show()
+    sc.addEventListener('scroll', show, { passive: true })
+    return () => { sc.removeEventListener('scroll', show); clearTimeout(monthT.current) }
+  }, [cols, items])
   // more as the end comes into sight
   useEffect(() => {
     const el = end.current
@@ -353,7 +458,8 @@ function LibraryGrid({ picked, onPick, onOpen, onFail }) {
       <div className="lbc-row" role="tablist">
         {chips.map(([k, label]) => <button key={k} type="button" role="tab" aria-selected={cat === k} className={`lbc-chip${cat === k ? ' on' : ''}`} onClick={() => pick(k)}>{label}</button>)}
       </div>
-      <div className="lib-grid">
+      {month && <div className="lbz-month" aria-hidden="true">{month}</div>}
+      <div ref={grid} data-cols={cols} className={`lib-grid lbz${cols >= 6 ? ' lbz-dense' : ''}`} style={{ '--lbz': cols }}>
         {(items || []).map((a) => {
           const n = picked.findIndex((p) => p.identifier === a.identifier)
           return (

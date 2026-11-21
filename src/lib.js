@@ -73,16 +73,24 @@ export const fmtBytes = (n) => (n > 1e9 ? `${(n / 1e9).toFixed(1)} GB` : n > 1e6
 // a photo made smaller before it is sent, as WhatsApp and Telegram do
 /* one frame of a video as a small JPEG, the poster the chat shows instead of the video itself (Alex, 15 Nov: "nothing
    heavy inside the messages, small pictures"); null when the device cannot read the video */
+/* One still of a video, for the chat (Alex, 15 Nov; 21 Nov: "still no thumbnail"). An iPhone loads nothing of a video
+   that is not in the page and never played, so the clip is put in the page unseen and played, muted, for an instant;
+   the frame is taken once one is really drawn (requestVideoFrameCallback where there is one). */
 export function videoPoster(file, max = 640, quality = 0.72) {
   return new Promise((resolve) => {
     let done = false
     const url = URL.createObjectURL(file)
     const v = document.createElement('video')
-    const end = (b) => { if (done) return; done = true; clearTimeout(t); v.removeAttribute('src'); v.load?.(); URL.revokeObjectURL(url); resolve(b) }
-    const t = setTimeout(() => end(null), 6000)
-    v.muted = true; v.playsInline = true; v.preload = 'auto'
-    v.onloadeddata = () => { try { v.currentTime = Math.min(0.5, (v.duration || 1) / 3) } catch { end(null) } }
-    v.onseeked = () => {
+    const end = (b) => {
+      if (done) return
+      done = true; clearTimeout(t)
+      try { v.pause(); v.removeAttribute('src'); v.load?.(); v.remove() } catch { /* gone */ }
+      URL.revokeObjectURL(url); resolve(b)
+    }
+    const t = setTimeout(() => end(null), 15000)
+    v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', ''); v.preload = 'auto'
+    v.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1'
+    const grab = () => {
       try {
         const w = v.videoWidth; const h = v.videoHeight
         if (!w || !h) { end(null); return }
@@ -92,7 +100,20 @@ export function videoPoster(file, max = 640, quality = 0.72) {
         c.toBlob((b) => end(b ? new File([b], 'poster.jpg', { type: 'image/jpeg' }) : null), 'image/jpeg', quality)
       } catch { end(null) }
     }
+    let seekedOnce = false
+    const whenDrawn = () => { if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(() => grab()); else setTimeout(grab, 120) }
+    v.onseeked = () => { if (seekedOnce) return; seekedOnce = true; v.pause(); whenDrawn() }
+    v.onloadedmetadata = () => {
+      const at = Math.min(0.5, (Number.isFinite(v.duration) ? v.duration : 1) / 3)
+      // played for an instant so the phone decodes it, then taken to the moment wanted
+      const p = v.play()
+      const go = () => { try { v.currentTime = at } catch { end(null) } }
+      if (p && p.then) p.then(go).catch(go); else go()
+      // a clip whose seek never answers: the frame it is on
+      setTimeout(() => { if (!seekedOnce && v.readyState >= 2) { seekedOnce = true; v.pause(); whenDrawn() } }, 2500)
+    }
     v.onerror = () => end(null)
+    document.body.appendChild(v)
     v.src = url
   })
 }

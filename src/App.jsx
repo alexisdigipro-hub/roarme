@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib.js'
+import { watchEmailLinks } from './emailLink.js'
 import { applyLook, applyMode, haloish, setPrefs, themeFor, usePrefs, wearTheme, dressTheme } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
 import Chat from './Chat.jsx'
@@ -45,6 +46,7 @@ export default function App() {
   useEffect(() => { if (lite) document.documentElement.dataset.lite = '1'; else delete document.documentElement.dataset.lite }, [lite])
 
   useEffect(() => {
+    watchEmailLinks()
     supabase.auth.getSession().then(({ data }) => setSession(data.session || null))
     const { data } = supabase.auth.onAuthStateChange((event, s) => {
       if (event === 'PASSWORD_RECOVERY') setRecovering(true)

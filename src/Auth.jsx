@@ -37,6 +37,12 @@ export function Auth() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [note, setNote] = useState('')
+  // a Confirm link from the email that could not be used (emailLink.js)
+  useEffect(() => {
+    const on = () => setErr('This link has expired or was used already. Sign in, or ask for a new email.')
+    window.addEventListener('roarme-email-link', on)
+    return () => window.removeEventListener('roarme-email-link', on)
+  }, [])
 
   const submit = async (e) => {
     e.preventDefault()

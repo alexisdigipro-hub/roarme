@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["U56B8UZ9SQ.com.themadlions.roarme"],
+        "components": [
+          { "?": { "token_hash": "*" }, "comment": "the Confirm and sign-in links from RoarMe's emails open the app" }
+        ]
+      }
+    ]
+  }
+}

@@ -2322,7 +2322,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           try { const small = await shrinkImage(file, 640, 0.72); if (small !== file) meta.thumb = (await upload(small)).path } catch { /* the whole photo shows */ }
         }
         if (/^video\//.test(file.type) && !meta.bucket) {
-          try { const poster = await videoPoster(file, 640); if (poster) meta.thumb = (await upload(poster)).path } catch { /* the first frame shows */ }
+          try { const poster = file.poster || raw.poster || await videoPoster(file, 640); if (poster) meta.thumb = (await upload(poster)).path } catch { /* the first frame shows */ }
         }
         const kind = /^image\//.test(file.type) && !/gif|svg/.test(file.type) && !meta.bucket ? 'image' : 'file'
         const { error } = await supabase.rpc('roar_replace_media', { msg: editing.id, f: meta, k: kind })
@@ -2442,7 +2442,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         // a video shows in the chat as one still frame; the video itself loads only when it is played (Alex, 15 Nov)
         if (/^video\//.test(file.type) && !meta.bucket) {
           try {
-            const poster = await videoPoster(raw, asFile ? 320 : 640)
+            const poster = raw.poster || file.poster || await videoPoster(raw, asFile ? 320 : 640)
             if (poster) meta.thumb = (await upload(poster)).path
           } catch { /* the chat reads the video's first frame itself */ }
         }

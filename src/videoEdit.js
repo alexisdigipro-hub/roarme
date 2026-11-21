@@ -54,6 +54,10 @@ export async function exportEdited(h, recipe, { hd = false, onProgress, stopped 
     const out = document.createElement('canvas'); out.width = W; out.height = H
     const g = out.getContext('2d')
     g.drawImage(first, 0, 0, W, H)
+    // the still the chat shows for it (Alex, 21 Nov: an edited video came with no picture): its first edited frame
+    const pk = Math.min(1, 640 / Math.max(W, H)), pc = document.createElement('canvas')
+    pc.width = Math.round(W * pk); pc.height = Math.round(H * pk); pc.getContext('2d').drawImage(out, 0, 0, pc.width, pc.height)
+    const poster = await new Promise((ok) => pc.toBlob((x) => ok(x), 'image/jpeg', 0.72))
     const perFrame = !!v.requestVideoFrameCallback && !!window.CanvasCaptureMediaStreamTrack && 'requestFrame' in window.CanvasCaptureMediaStreamTrack.prototype
     const stream = out.captureStream(perFrame ? 0 : 30)
     const vtrack = stream.getVideoTracks()[0]
@@ -96,7 +100,9 @@ export async function exportEdited(h, recipe, { hd = false, onProgress, stopped 
     const blob = new Blob(chunks, { type: mime })
     if (!blob.size) return null
     const base = (file.name || 'video').replace(/\.[^.]+$/, '')
-    return new File([blob], `${base}.${mime === 'video/mp4' ? 'mp4' : 'webm'}`, { type: mime, lastModified: Date.now() })
+    const nf = new File([blob], `${base}.${mime === 'video/mp4' ? 'mp4' : 'webm'}`, { type: mime, lastModified: Date.now() })
+    if (poster) nf.poster = new File([poster], `${base}-still.jpg`, { type: 'image/jpeg' })
+    return nf
   } catch (e) {
     console.warn('video edit', e)
     return null

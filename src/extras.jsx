@@ -739,7 +739,7 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
   if (!url) return poster ? <span className="vid-box vid-poster"><img className="pic-img ready" src={poster} alt="" draggable={false} /><i className="vid-play spin" /></span> : <span className="pic-wait" />
   return (
     <span className="vid-box">
-      <video ref={ref} className="pic-img ready" src={url} poster={poster || undefined} controls autoPlay={tapped} preload={tapped ? 'auto' : 'metadata'} muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} />
+      <video ref={ref} className="pic-img ready" src={poster || play ? url : `${url}#t=0.1`} poster={poster || undefined} controls autoPlay={tapped} preload={tapped ? 'auto' : 'metadata'} muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} />
       <VideoTools wide={wide} onWide={onWide} onCinema={onCinema && (() => { const v = ref.current; const at = v?.currentTime || 0; v?.pause(); onCinema({ kind: 'file', src: url, at }) })} />
     </span>
   )
@@ -811,10 +811,23 @@ export function Cinema({ item, onClose }) {
     document.addEventListener('keydown', k)
     return () => document.removeEventListener('keydown', k)
   }, [onClose])
+  // a slide down or to the right closes it, as every window (Alex, 21 Nov: "swipe down or right does not get me out");
+  // a touch near the foot is left to the video's own line
+  const touch = useRef(null)
+  const [off, setOff] = useState({ x: 0, y: 0 })
+  const tStart = (e) => { const p = e.touches[0]; touch.current = p.clientY > window.innerHeight - 120 ? null : { x: p.clientX, y: p.clientY } }
+  const tMove = (e) => {
+    if (!touch.current) return
+    const p = e.touches[0], dx = p.clientX - touch.current.x, dy = p.clientY - touch.current.y
+    if (dy > 0 && dy > Math.abs(dx)) setOff({ x: 0, y: dy }); else if (dx > 0 && dx > Math.abs(dy)) setOff({ x: dx, y: 0 }); else setOff({ x: 0, y: 0 })
+  }
+  const tEnd = () => { if (!touch.current) return; touch.current = null; if (off.y > 110 || off.x > 110) onClose(); else setOff({ x: 0, y: 0 }) }
+  const far = Math.max(off.x, off.y)
   return (
-    <div className="cinema" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="cinema" style={far ? { background: `rgba(0,0,0,${Math.max(0.3, 1 - far / 400)})` } : undefined} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      onTouchStart={tStart} onTouchMove={tMove} onTouchEnd={tEnd} onTouchCancel={tEnd}>
       {item.kind === 'file'
-        ? <video ref={ref} src={item.src} controls autoPlay playsInline onLoadedMetadata={() => { if (ref.current && item.at) ref.current.currentTime = item.at }} />
+        ? <video ref={ref} src={item.src} controls autoPlay playsInline style={far ? { transform: `translate(${off.x}px, ${off.y}px) scale(${Math.max(0.8, 1 - far / 1200)})`, transition: 'none' } : undefined} onLoadedMetadata={() => { if (ref.current && item.at) ref.current.currentTime = item.at }} />
         : <iframe src={item.src} title="Video" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen />}
       <button type="button" className="cinema-x" onClick={onClose} aria-label="Lights on" title="Lights on (Esc)">{I.x}</button>
     </div>

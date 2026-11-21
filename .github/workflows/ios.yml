@@ -71,6 +71,9 @@ jobs:
           # a message notification may carry who sent it (Communication Notifications, Alex, 20 Nov)
           /usr/libexec/PlistBuddy -c "Delete :NSUserActivityTypes" "$P" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :NSUserActivityTypes array" -c "Add :NSUserActivityTypes:0 string INSendMessageIntent" "$P"
+          # songs go on with the screen locked, with play / pause / next on the lock screen and AirPods (Alex, 21 Nov)
+          /usr/libexec/PlistBuddy -c "Delete :UIBackgroundModes" "$P" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" -c "Add :UIBackgroundModes:0 string audio" "$P"
           /usr/libexec/PlistBuddy -c "Print" "$P"
       - name: iOS 15 and later
         working-directory: mobile/ios/App

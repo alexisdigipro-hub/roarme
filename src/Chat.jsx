@@ -46,7 +46,7 @@ const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.Pdf
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
 const LOC_WAIT = <span className="locc"><span className="locc-map" /></span>
 import { resumeLive, startLive } from './live.js'
-import { startBattery, stopBattery } from './battery.js'
+import { startBattery, stopBattery, batteryText } from './battery.js'
 import { taskNotice, useTasks } from './taskCore.js'
 import { useNameMarks } from './fancy.jsx'
 import { CAPSULE_BODY, CapsuleCard, CapsuleWindow } from './capsule.jsx'
@@ -3252,7 +3252,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
               {(room.kind === 'group' ? room.avatar_url : other?.avatar_url) && <i className="head-bg" aria-hidden="true" style={{ backgroundImage: `url("${room.kind === 'group' ? room.avatar_url : other?.avatar_url}")` }} />}
               <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={dotOf(other)} />
-              <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{title}{official && OFFICIAL}</strong>{sub && <small>{sub}</small>}</span>
+              <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{title}{official && OFFICIAL}{room.kind !== 'group' && batteryText(other) && <i className={`head-batt${other?.battery_charging ? ' charging' : ''}`} title="Battery">{batteryText(other)}</i>}</strong>{sub && <small>{sub}</small>}</span>
             </button>
             <button type="button" className="round" onClick={() => onCall(false)} aria-label="Voice call" title="Voice call">{I.phone}</button>
             <button type="button" className="round head-video" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>

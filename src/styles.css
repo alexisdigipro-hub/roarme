@@ -6209,3 +6209,49 @@ html:root:root:root:root .as-sheet.as-lib .lib-grid.lbz.lbz-dense { gap: 1px !im
 .lib-grid.lbz[data-cols='2'] .lib-ring { width: 28px; height: 28px; top: 9px; right: 9px; font-size: 14px; }
 .lbz-month { position: sticky; top: 52px; z-index: 6; width: max-content; margin: 0 auto -30px; padding: 5px 12px; border-radius: 999px; background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px; font-weight: 600; pointer-events: none; animation: lbz-in .2s ease-out; }
 @media (prefers-reduced-motion: reduce) { .lib-grid.lbz.lbz-in { animation: none; } .lib-grid.lbz:not(.lbz-live) { transition: none; } }
+
+/* the sign-in page (Alex, 21 Nov, from a glass Login card and his own picture of blue light streaks, sample
+   https://claude.ai/artifact/RVnhe1u4wqkVEuMyFkNLyu, "B, Night, this blue, nothing else"): always this one look, by Day
+   and Night, whatever the app wears: the streaks (src/assets/auth-bg.jpg) fill the page under a soft dark veil; the card
+   one clear sheet of glass with a fine bright rim and white words, the mark and ROARME on top; fields as slim rounded
+   boxes with their sign inside at the right (the eye shows or hides the password); Sign in in the blue #1bb4fb;
+   Create an account and Forgot password as quiet glass pills. Not the first-time steps (.auth.ob) */
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) { background: #05070b !important; isolation: isolate; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob)::before { content: ''; position: fixed; inset: -4%; z-index: -2; background: url('./assets/auth-bg.jpg') center / cover no-repeat; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob)::after { content: ''; position: fixed; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(4, 6, 10, .25), rgba(4, 6, 10, .55)); pointer-events: none; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) { --text: #fff; --muted: rgba(255, 255, 255, .7); --halo: #1bb4fb; --halo-mine: #1bb4fb; --halo-mine-top: #6fd0ff; --halo-ink: #fff; color-scheme: dark; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card :is(h1, .auth-sub, .auth-legal) { color: var(--text) !important; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-sub, html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-legal { color: var(--muted) !important; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-err { color: #ffb3b3 !important; background: rgba(255, 107, 107, .16) !important; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-note { color: #b6f5cc !important; background: rgba(74, 222, 128, .14) !important; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .input:-webkit-autofill { -webkit-text-fill-color: #fff; -webkit-box-shadow: 0 0 0 40px rgba(20, 40, 60, .9) inset !important; caret-color: #fff; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card {
+  width: min(360px, 100%); padding: 34px 28px 26px; border-radius: 30px; color: var(--text);
+  background: linear-gradient(160deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04) 55%, rgba(255, 255, 255, .08)) !important;
+  border: 1px solid rgba(255, 255, 255, .28) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 30px 70px rgba(0, 0, 0, .45) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.3); backdrop-filter: blur(26px) saturate(1.3);
+}
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .brand { margin-bottom: 22px; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .rm-mark, html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .wordmark b.wm, html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .wordmark b.wm span, html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .by-tml, html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .by-tml b { color: var(--text) !important; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .field { position: relative; display: block; margin: 0 0 14px; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .field > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .input {
+  width: 100%; height: 52px; padding: 0 50px 0 18px; border-radius: 14px; font-size: 16px; color: var(--text) !important;
+  background: rgba(255, 255, 255, .06) !important; border: 1px solid rgba(255, 255, 255, .4) !important; box-shadow: none !important;
+}
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .input::placeholder { color: var(--muted) !important; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .input:focus { outline: none; border-color: var(--halo) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--halo) 28%, transparent) !important; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .lgx-ico { position: absolute; right: 6px; top: 6px; width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 12px; background: none; color: var(--text); opacity: .9; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .lgx-ico svg { width: 24px; height: 24px; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) button.lgx-ico { cursor: pointer; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .btn-main, html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .btn-main:not(:disabled), html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .btn-main:not(:disabled):hover {
+  width: 100%; height: 52px; margin-top: 14px; border-radius: 14px !important; font-size: 17px; font-weight: 600; color: var(--halo-ink, #fff) !important;
+  background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; border: 1px solid rgba(255, 255, 255, .35) !important;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--halo) 35%, transparent) !important;
+}
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-links { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 18px; }
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-links button {
+  flex: 0 1 auto; height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13.5px; font-weight: 500; white-space: nowrap; color: var(--text) !important;
+  background: rgba(255, 255, 255, .1) !important; border: 1px solid rgba(255, 255, 255, .22) !important;
+}

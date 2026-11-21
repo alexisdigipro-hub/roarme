@@ -777,7 +777,13 @@ export default function Chat({ me, setMe }) {
     if (has('groups') && fits(r, 'groups')) return 'groups'
     return 'all'
   }
-  const inFolder = (r, f) => (prefs.folderAlone ? homeOf(r) === f : fits(r, f))
+  // with each chat in one folder, Unread is the one folder whose chats All shows too (Alex, 21 Nov: "Unread will be the
+  // only folder that shows inside All"); a chat read again goes back to its own folder and leaves All
+  const inFolder = (r, f) => {
+    if (!prefs.folderAlone) return fits(r, f)
+    const home = homeOf(r)
+    return home === f || (f === 'all' && home === 'unread')
+  }
   // the pinned chats in the order they were pinned, then the rest
   const pinnedFirst = (list) => {
     const rest = list

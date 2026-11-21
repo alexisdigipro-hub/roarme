@@ -482,10 +482,14 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   const gal = useRef(null)
   const cam = useRef(null)
   // RoarMe's own camera in the iPhone app (camera.js), else the system's through the file input
+  // the bar's tabs, shown at the foot of the camera too (Alex, 21 Nov), and where a tap there leads back in the sheet
+  const camTabs = () => ['camera', 'gallery', onTransfer && 'transfer', onLocation && 'location', 'audio', (onContact || onPoll) && 'more'].filter(Boolean)
+  const goTab = (k) => { if (k === 'more') setMoreOpen(true); else setTab(k) }
   const camera = async (asScan = false) => {
-    const r = await openCamera(asScan ? { only: 'photo' } : {})
+    const r = await openCamera(asScan ? { only: 'photo' } : { tabs: camTabs() })
     if (r === undefined) { (asScan ? scan : cam).current?.click(); return }
     if (r === 'gallery') { if (lib) setTab('gallery'); else gal.current?.click(); return }
+    if (r?.tab) { goTab(r.tab); return }
     if (r?.files?.length) add(r.files, asScan || r.raw)
   }
   // the chat's + opens the camera first (Alex, 21 Nov): the sheet waits unseen behind it; the camera's library picture
@@ -494,8 +498,9 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   useEffect(() => {
     if (!camFirst) return
     (async () => {
-      const r = await openCamera({}).catch(() => null)
+      const r = await openCamera({ tabs: camTabs() }).catch(() => null)
       if (r === 'gallery') setTab('gallery')
+      else if (r?.tab) goTab(r.tab)
       else if (r?.files?.length) add(r.files, r.raw)
       setCamFirst(false)
     })()

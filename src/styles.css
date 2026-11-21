@@ -6255,3 +6255,13 @@ html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth
   flex: 0 1 auto; height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13.5px; font-weight: 500; white-space: nowrap; color: var(--text) !important;
   background: rgba(255, 255, 255, .1) !important; border: 1px solid rgba(255, 255, 255, .22) !important;
 }
+
+/* the Mac app's frame a quarter slimmer (Alex, 21 Nov: "the frame smaller, more at the top, 20 to 30% overall; mind where
+   the red, yellow and green buttons go"): the band for the window's buttons is 22px (main.js BAR) and the page's
+   room 8px above the panels, so the panels start 30px down (46 before); 12px at the sides and the foot (16 before) and
+   12px between the panels. The three buttons sit in the middle of that 30px strip, 18px from the left (main.js
+   trafficLightPosition x 18, y 9), above the list's own corner. Windows keeps its 32px strip. */
+html[data-desktop='darwin'] { --bar: 22px; }
+@media (min-width: 761px) {
+  html[data-desktop='darwin'][data-theme] .app { padding: 8px 12px 12px; gap: 12px; }
+}

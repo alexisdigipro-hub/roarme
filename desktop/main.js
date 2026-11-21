@@ -86,7 +86,7 @@ else app.setAsDefaultProtocolClient('roarme')
 // no white title bar (Alex, 16 Oct): on a Mac the three buttons sit on RoarMe's own dark band, on Windows the
 // window buttons sit on a dark strip; the site leaves room for them (html[data-desktop] in styles.css)
 const frame = process.platform === 'darwin'
-  ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 10 } }
+  ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 18, y: 9 } }
   : { titleBarStyle: 'hidden', titleBarOverlay: { color: '#1b1e23', symbolColor: '#eef0f3', height: 32 } }
 // An opaque window the colour of RoarMe's graphite: a see-through (vibrancy) window made resizing slower and showed
 // white on a light Mac (Alex, 16 Oct), so the window is solid and the page itself is kept light to repaint.
@@ -94,7 +94,7 @@ const glassy = { backgroundColor: '#24282f' }
 const look = { ...glassy, autoHideMenuBar: true, show: false, ...frame, webPreferences: { contextIsolation: true, sandbox: true, spellcheck: true, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') } }
 
 // the band for the window buttons, put in by the app itself so it never depends on what the browser kept
-const BAR = process.platform === 'darwin' ? 30 : 32
+const BAR = process.platform === 'darwin' ? 22 : 32
 const BAND_CSS = `html, body { overflow: hidden; overscroll-behavior: none; }
 #root { height: 100% !important; margin-top: 0 !important; padding-top: ${BAR}px !important; }
 body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: ${BAR}px; z-index: 999; -webkit-app-region: drag; }

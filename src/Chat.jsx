@@ -2835,7 +2835,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     return true
   }
   // one's own text messages can be changed; a locked one only while its stretch of Encrypted Chat is still on
-  const canEdit = (m) => m.user_id === me.id && m.kind === 'text' && !m.file?.capsule && (!m.sealed || (m.sealed === sealOn?.id && keyOk && !m.locked))
+  // a photo or video of one's own is edited too (its caption, and its picture through the button left of the box)
+  const canEdit = (m) => m.user_id === me.id && (m.kind === 'text' || mediaMsg(m)) && !m.file?.capsule && (!m.sealed || (m.sealed === sealOn?.id && keyOk && !m.locked))
   const askSeal = async () => {
     setSealAsk({ missing: null })
     const missing = await withoutDevice(room.members || []).catch(() => [])

@@ -975,30 +975,31 @@ html:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:no
 html:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > button:is(:hover, :active, .on) { background: rgba(255, 255, 255, .08) !important; }
 html:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > hr { background: rgba(255, 255, 255, .06) !important; }
 
-/* Every menu tighter and even (Alex, 21 Nov, two screenshots: "smaller gaps, aligned the same, even the ones with an arrow,
+/* Every menu tighter and even (second pass, Alex, 21 Nov: "even smaller, less height, a touch smaller letters": rows 34px, 14.5px words, 18px signs, 16px from the edge, 12px to the word, the band 3px)
+   Every menu tighter and even (Alex, 21 Nov, two screenshots: "smaller gaps, aligned the same, even the ones with an arrow,
    a touch smaller letters; the side menu does not even fit; the same gaps everywhere in every menu"): rows 40px, 15.5px
    words, 20px signs 18px from the edge and 14px before the word, in every row alike (with a side arrow, Seen, the side
    menus); the soft band between groups 4px; corners 22px. A side menu takes only the room it is given (SubFly sets its
    width). The reactions bar over a message wears the menus' own glass, corners and shadow. */
-html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) { min-width: 210px !important; padding: 5px 0 !important; border-radius: 22px !important; }
+html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) { min-width: 210px !important; padding: 4px 0 !important; border-radius: 20px !important; }
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) .sub-menu.sub-fly { min-width: 0 !important; max-width: calc(100vw - 16px) !important; }
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > button,
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .has-sub > button,
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .menu-seen {
   display: flex !important; align-items: center !important; width: 100% !important; box-sizing: border-box !important;
-  min-height: 40px !important; height: auto !important; gap: 14px !important; padding: 0 18px !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important;
-  background: none !important; box-shadow: none !important; font: 400 15.5px/1.2 -apple-system, 'SF Pro Text', system-ui, sans-serif !important; letter-spacing: -.01em; text-align: left !important;
+  min-height: 34px !important; height: auto !important; gap: 12px !important; padding: 0 16px !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important;
+  background: none !important; box-shadow: none !important; font: 400 14.5px/1.2 -apple-system, 'SF Pro Text', system-ui, sans-serif !important; letter-spacing: -.01em; text-align: left !important;
 }
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .has-sub { display: block !important; margin: 0 !important; padding: 0 !important; }
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > button > svg,
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .has-sub > button > svg,
-html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .menu-seen > .ticks { width: 20px !important; height: 20px !important; flex: none !important; margin: 0 !important; display: grid; place-items: center; }
-html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .menu-seen > .ticks svg { width: 20px !important; height: 20px !important; }
+html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .menu-seen > .ticks { width: 18px !important; height: 18px !important; flex: none !important; margin: 0 !important; display: grid; place-items: center; }
+html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .menu-seen > .ticks svg { width: 18px !important; height: 18px !important; }
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > :is(button, .has-sub > button, .menu-seen) > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) .sub-arrow { flex: none !important; margin: 0 0 0 auto !important; display: grid; place-items: center; opacity: .6; }
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) .sub-arrow svg { width: 14px !important; height: 14px !important; }
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .menu-seen .menu-faces { flex: none; margin-left: auto; display: flex; }
-html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > hr { height: 4px !important; margin: 3px 0 !important; }
+html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > hr { height: 3px !important; margin: 2px 0 !important; }
 /* the reactions bar: the menus' glass, by Day and by Night */
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) .rx-pick {
   padding: 5px 8px !important; gap: 2px !important; border: 0 !important; border-radius: 999px !important;

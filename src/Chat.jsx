@@ -2914,10 +2914,46 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const vh = window.visualViewport?.height || window.innerHeight
     const w = Math.max(el.offsetWidth, el.scrollWidth, ...[...el.children].map((c) => c.offsetWidth))
     const h = el.offsetHeight
-    const left = Math.max(8 + safe.l, Math.min(menu.x, vw - w - 8 - safe.r))
-    const top = Math.max(8 + safe.t, Math.min(menu.y, vh - h - 8 - safe.b))
+    let left = Math.max(8 + safe.l, Math.min(menu.x, vw - w - 8 - safe.r))
+    let top = Math.max(8 + safe.t, Math.min(menu.y, vh - h - 8 - safe.b))
+    // As Telegram's (Alex, 21 Nov): the pressed message stays sharp over the blurred chat (a copy of its row laid over
+    // the veil, under the menu, taking no touches), the reactions stand right over it and the menu right under it, on
+    // the message's own side; when they would not fit, the message moves up or down with them. A message too tall
+    // for that keeps its place and the menu stands where the finger was, as before.
+    let box = null
+    const rx = el.querySelector('.rx-pick')
+    if (rx) rx.style.marginBottom = ''
+    const row = document.getElementById(`m-${menu.m.id}`)?.querySelector('.msg')
+    if (row) {
+      const r = row.getBoundingClientRect()
+      const cs = getComputedStyle(row)
+      const c = row.cloneNode(true)
+      c.classList.remove('fresh', 'flash', 'hit', 'hit-now')
+      c.querySelectorAll('.held, .pressing').forEach((n) => n.classList.remove('held', 'pressing'))
+      c.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'))
+      c.querySelectorAll('video, audio').forEach((v) => { v.removeAttribute('autoplay'); v.muted = true })
+      c.style.paddingLeft = cs.paddingLeft
+      c.style.paddingRight = cs.paddingRight
+      c.style.margin = '0'
+      box = document.createElement('div')
+      box.className = 'msg-lift'
+      box.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px`
+      box.appendChild(c)
+      document.body.appendChild(box)
+      const b = (row.querySelector('.bubble') || row).getBoundingClientRect()
+      const room = vh - 24 - safe.t - safe.b
+      if (!mouse && rx && h + b.height + 8 <= room) {
+        rx.style.marginBottom = `${b.height + 8}px`
+        const mine = row.classList.contains('mine')
+        left = Math.max(8 + safe.l, Math.min(mine ? b.right - w : b.left, vw - w - 8 - safe.r))
+        const want = b.top - rx.offsetHeight - 8
+        top = Math.max(8 + safe.t, Math.min(want, vh - (h + b.height + 8) - 8 - safe.b))
+        if (top !== want) box.style.top = `${r.top + (top - want)}px`
+      }
+    }
     el.style.left = `${left}px`
     el.style.top = `${top}px`
+    return () => box?.remove()
   }, [menu])
   // The menu opens only on a message itself (Alex, 16 Oct): a right click on it with a mouse, a long press on it on a
   // touch screen (11 Nov: no longer a tap); a click on the empty space beside it does nothing. A double click is the quick reaction;
@@ -3725,8 +3761,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
       {menu && (
         <OnTop>
-          <button type="button" className="scrim blur" aria-label="Close" onClick={() => { if (!lifting()) setMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
-          <div ref={menuRef} className="msg-menu" style={{ left: menu.x, top: menu.y }} onClickCapture={(e) => { if (lifting()) { e.stopPropagation(); e.preventDefault() } }}>
+          <button type="button" className="scrim blur msg-veil" aria-label="Close" onClick={() => { if (!lifting()) setMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
+          <div ref={menuRef} className="msg-menu" style={{ left: menu.x, top: menu.y }} onClick={(e) => { if (e.target === e.currentTarget && !lifting()) setMenu(null) }} onClickCapture={(e) => { if (lifting()) { e.stopPropagation(); e.preventDefault() } }}>
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>

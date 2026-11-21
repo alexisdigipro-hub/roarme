@@ -1010,3 +1010,37 @@ html:root:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) .rx-pick > button { width: 40px !important; height: 40px !important; min-width: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 50% !important; background: none !important; box-shadow: none !important; font-size: 26px !important; line-height: 1 !important; display: grid !important; place-items: center !important; }
 html:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) .rx-pick > button.on { background: rgba(0, 0, 0, .07) !important; }
 html:root:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-frost]) .rx-pick > button.on { background: rgba(255, 255, 255, .1) !important; }
+
+/* Menus as liquid glass (Alex, 21 Nov, from WhatsApp's long-press menu: "ours is so dull; make all our long-press
+   menus the same: the transparency, the texture, the rounding, the design"): every menu a clear drop of glass that
+   lets the chat's colours through (a light wash, a strong blur with the colours kept), 34px corners, a bright rim
+   inside and a fine dark line outside, a soft sheen from the top left; rows 38px with 16px words and 22px signs,
+   the band between groups a hairline inset from both sides. The reactions bar wears the same glass. */
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu, .rx-pick) {
+  background: linear-gradient(140deg, rgba(255, 255, 255, .62), rgba(255, 255, 255, .34) 45%, rgba(255, 255, 255, .46)) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.06) !important; backdrop-filter: blur(22px) saturate(190%) brightness(1.06) !important;
+  border: 0 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .75), inset 0 1.5px 0 rgba(255, 255, 255, .9), 0 0 0 .5px rgba(0, 0, 0, .28), 0 22px 60px rgba(0, 0, 0, .24), 0 4px 14px rgba(0, 0, 0, .1) !important;
+}
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu, .rx-pick) {
+  background: linear-gradient(140deg, rgba(70, 70, 76, .58), rgba(34, 34, 38, .42) 45%, rgba(48, 48, 54, .5)) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(170%) !important; backdrop-filter: blur(22px) saturate(170%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16), inset 0 1.5px 0 rgba(255, 255, 255, .22), 0 0 0 .5px rgba(0, 0, 0, .6), 0 22px 60px rgba(0, 0, 0, .55) !important;
+}
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) { padding: 9px 0 !important; border-radius: 34px !important; min-width: 220px !important; }
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) .sub-menu.sub-fly { min-width: 0 !important; border-radius: 26px !important; }
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > button,
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .has-sub > button,
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .menu-seen {
+  min-height: 38px !important; gap: 14px !important; padding: 0 22px !important; font-size: 16px !important;
+}
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > button > svg,
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .has-sub > button > svg,
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .menu-seen > .ticks,
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > .menu-seen > .ticks svg { width: 22px !important; height: 22px !important; }
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > :is(button, .has-sub > button):active { background: rgba(0, 0, 0, .06) !important; }
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > :is(button, .has-sub > button):active { background: rgba(255, 255, 255, .1) !important; }
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > hr {
+  height: 1px !important; margin: 7px 22px !important; border: 0 !important; background: rgba(0, 0, 0, .14) !important; opacity: 1 !important;
+}
+html:root:root:root:root:root:root:root[data-glass][data-skin='halo'][data-mode='dark']:not([data-frost]) :is(.menu, .menu-list, .pf-menu, .sub-menu) > hr { background: rgba(255, 255, 255, .16) !important; }

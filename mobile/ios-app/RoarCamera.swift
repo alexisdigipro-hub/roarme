@@ -94,7 +94,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     private var focusIndex = 50
     private var wbManual = false
     private var wbIndex = 30
-    private var grid = true
+    private var grid = false
     private var histOn = false
     private var levelOn = false
     private var aspect = 0 // 0 4:3, 1 16:9, 2 1:1
@@ -108,11 +108,14 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     private var anamorphic = false
     private var bw = false
     private var orientLock = false
-    private var second = false
     private var rollAngle: CGFloat = 0
     private var shotAngle: CGFloat = 90
-    private var lensFactors: [(String, CGFloat)] = []
-    private var lensIndex = 0
+    // the back lenses as the real cameras they are (a virtual camera takes no manual exposure, focus or white balance,
+    // and no 48 MP): label, camera, zoom on it
+    private var lensFactors: [(String, AVCaptureDevice, CGFloat)] = []
+    private var lensIndex = -1
+    private var rotCoord: AnyObject?
+    private var dualCoords: [AnyObject] = []
     private var frameCount = 0
     private var shots: [String] = []
     private var pending = 0
@@ -173,7 +176,6 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     private let timeLabel = UILabel()
     private let countLabel = UILabel()
     private let toast = UILabel()
-    private let secondBtn = UIButton(type: .custom)
     private let white = UIView()
     private let sheetBack = UIControl()
     private let sheet = UIView()
@@ -305,13 +307,6 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         toast.clipsToBounds = true
         toast.alpha = 0
         card.addSubview(toast)
-        secondBtn.backgroundColor = UIColor(white: 1, alpha: 0.25)
-        secondBtn.layer.borderColor = UIColor.white.cgColor
-        secondBtn.layer.borderWidth = 3
-        secondBtn.layer.cornerRadius = 29
-        secondBtn.isHidden = true
-        secondBtn.addTarget(self, action: #selector(shoot), for: .touchUpInside)
-        card.addSubview(secondBtn)
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(focusTap(_:)))
         preview.addGestureRecognizer(tap)
@@ -432,11 +427,10 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         dots.pageIndicatorTintColor = camTheme.text.withAlphaComponent(0.25)
         sheet.addSubview(dots)
         let list: [(String, String, String?, String?)] = [
-            ("rapid", "Rapid Fire", "square.stack.3d.down.right", nil), ("fe", "F/E Lock", "lock.viewfinder", nil),
+            ("rapid", "Rapid Fire", "square.stack.3d.down.right", nil), ("fe", "F/E Lock", "lock", nil),
             ("grid", "Grids", "number", nil), ("level", "Tiltmeter", "level", nil),
             ("si", "Semi-Auto", nil, "SI"), ("hist", "Histogram", "chart.bar.xaxis", nil),
             ("aspect", "Aspect Ratio", nil, "4:3"), ("format", "Format", nil, "JPG"),
-            ("second", "2nd Shutter", "circle.circle", nil),
             ("orient", "Orientation", "lock.rotation", nil), ("mirror", "Mirroring", "arrow.left.and.right.righttriangle.left.righttriangle.right", nil),
             ("anam", "Anamorphic", nil, "1.33x"), ("raw", "RAW", nil, "RAW"), ("bw", "Black & White", nil, "BW"),
         ]
@@ -486,7 +480,6 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         timeLabel.frame = CGRect(x: (cwid - 78) / 2, y: 12, width: 78, height: 26)
         countLabel.frame = card.bounds
         toast.frame = CGRect(x: (cwid - 140) / 2, y: 14, width: 140, height: 28)
-        secondBtn.frame = CGRect(x: cwid - 80, y: cardH / 2 - 29, width: 58, height: 58)
         y += cardH + 10
         dialBox.frame = CGRect(x: 16, y: y, width: w - 32, height: 46)
         dial.frame = dialBox.bounds.insetBy(dx: 14, dy: 0)
@@ -516,10 +509,10 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         pages.frame = CGRect(x: 0, y: 34, width: sheet.bounds.width, height: 330)
         pages.contentSize = CGSize(width: pages.bounds.width * 2, height: 330)
         dots.frame = CGRect(x: 0, y: 364, width: sheet.bounds.width, height: 20)
-        let order = ["rapid", "fe", "grid", "level", "si", "hist", "aspect", "format", "second", "orient", "mirror", "anam", "raw", "bw"]
+        let order = ["rapid", "fe", "grid", "level", "si", "hist", "aspect", "format", "orient", "mirror", "anam", "raw", "bw"]
         let tw = (pages.bounds.width - 40) / 4
         for (i, key) in order.enumerated() {
-            let page = i < 9 ? 0 : 1, k = i < 9 ? i : i - 9
+            let page = i < 8 ? 0 : 1, k = i < 8 ? i : i - 8
             tiles[key]?.frame = CGRect(x: CGFloat(page) * pages.bounds.width + 20 + CGFloat(k % 4) * tw + 4, y: 8 + CGFloat(k / 4) * 104, width: tw - 8, height: 90)
         }
         fitGlass(view)
@@ -612,13 +605,11 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         bwView.isHidden = !(bw && pro)
         levelView.isHidden = !(levelOn && pro)
         histView.isHidden = !(histOn && pro)
-        secondBtn.isHidden = !(second && mode != .video)
         previewLayer?.setAffineTransform(anamorphic && pro ? CGAffineTransform(scaleX: 1.33, y: 1) : .identity)
         previewLayer?.videoGravity = pro ? .resizeAspect : .resizeAspectFill
         // the foot's choices
         inner(hdrBtn, hdr)
         let can48 = maxDims().1
-        mpBtn.isEnabled = can48
         mpBtn.alpha = can48 ? 1 : 0.35
         mpBtn.setTitle(big48 && can48 ? "48M" : "12M", for: .normal)
         inner(mpBtn, big48 && can48)
@@ -637,7 +628,6 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         tiles["aspect"]?.lit = aspect != 0
         tiles["format"]?.word.text = ["JPG", "HEIF", "RAW"][format.rawValue]
         tiles["format"]?.lit = format != .jpeg
-        tiles["second"]?.lit = second
         tiles["orient"]?.lit = orientLock
         tiles["mirror"]?.lit = mirror
         tiles["anam"]?.lit = anamorphic
@@ -883,13 +873,15 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         let s = AVCaptureSession()
         s.beginConfiguration()
         s.sessionPreset = m == .video ? .high : .photo
-        let dev = f ? bestDevice(.front) : (m == .photo || m == .video ? backCamera() : bestDevice(.back))
+        if lensIndex < 0 || lensFactors.isEmpty { findLenses() }
+        let dev = f ? bestDevice(.front) : (lensFactors.indices.contains(lensIndex) ? lensFactors[lensIndex].1 : bestDevice(.back))
         guard let dev = dev, let input = try? AVCaptureDeviceInput(device: dev), s.canAddInput(input) else {
             s.commitConfiguration(); return
         }
         s.addInput(input)
         device = dev
         frontOut = nil
+        if m == .photo { useBigFormat(dev) }
         if m == .video {
             if AVCaptureDevice.authorizationStatus(for: .audio) == .authorized, let mic = AVCaptureDevice.default(for: .audio),
                let mi = try? AVCaptureDeviceInput(device: mic), s.canAddInput(mi) { s.addInput(mi) }
@@ -937,6 +929,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             self.preview.layer.insertSublayer(layer, at: 0)
             self.previewLayer = layer
             self.portrait(layer.connection)
+            if #available(iOS 17.0, *) { self.rotCoord = AVCaptureDevice.RotationCoordinator(device: dev, previewLayer: layer) }
             self.buildLenses()
             self.refreshUI()
         }
@@ -946,24 +939,51 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         if wbManual { applyWB() }
     }
 
-    // .5 / 1 / 2-5x from the lenses the back camera has (the zoom where it moves to the next lens), or 1 / 2 on one lens
+    // .5 / 1 / 2-5x: the ultra wide, the wide (and its 2x where the telephoto is far or missing), the telephoto, each
+    // its own camera; the telephoto's number from how much narrower it sees than the wide
+    private func findLenses() {
+        let types: [AVCaptureDevice.DeviceType] = [.builtInUltraWideCamera, .builtInWideAngleCamera, .builtInTelephotoCamera]
+        let found = AVCaptureDevice.DiscoverySession(deviceTypes: types, mediaType: .video, position: .back).devices
+        let ultra = found.first { $0.deviceType == .builtInUltraWideCamera }
+        let tele = found.first { $0.deviceType == .builtInTelephotoCamera }
+        guard let wide = found.first(where: { $0.deviceType == .builtInWideAngleCamera }) else { lensFactors = []; return }
+        var list: [(String, AVCaptureDevice, CGFloat)] = []
+        if let u = ultra { list.append((".5", u, 1)) }
+        list.append(("1", wide, 1))
+        var teleX: CGFloat = 0
+        if let t = tele {
+            let a = tan(Double(wide.activeFormat.videoFieldOfView) * .pi / 360), b = tan(Double(t.activeFormat.videoFieldOfView) * .pi / 360)
+            teleX = b > 0 ? CGFloat(a / b) : 3
+        }
+        if tele == nil || teleX >= 3.5 { list.append(("2", wide, min(2, wide.maxAvailableVideoZoomFactor))) }
+        if let t = tele { list.append((fmtX(teleX > 1 ? teleX : 3), t, 1)) }
+        lensFactors = list
+        lensIndex = list.firstIndex { $0.0 == "1" } ?? 0
+    }
+
+    // the format that makes the largest photo (48 MP where the camera has it), so 12M / 48M can be chosen
+    private func useBigFormat(_ d: AVCaptureDevice) {
+        guard #available(iOS 16.0, *) else { return }
+        let area = { (f: AVCaptureDevice.Format) -> Int in f.supportedMaxPhotoDimensions.map { Int($0.width) * Int($0.height) }.max() ?? 0 }
+        let now = area(d.activeFormat)
+        let best = d.formats.filter { f in
+            let dim = CMVideoFormatDescriptionGetDimensions(f.formatDescription)
+            let sub = CMFormatDescriptionGetMediaSubType(f.formatDescription)
+            return sub == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange && abs(Double(dim.width) / Double(max(1, dim.height)) - 4.0 / 3.0) < 0.02
+                && f.videoSupportedFrameRateRanges.contains { $0.maxFrameRate >= 30 }
+        }.max { a, b in
+            let x = area(a), y = area(b)
+            if x != y { return x < y }
+            return CMVideoFormatDescriptionGetDimensions(a.formatDescription).width < CMVideoFormatDescriptionGetDimensions(b.formatDescription).width
+        }
+        guard let f = best, area(f) > now else { return }
+        do { try d.lockForConfiguration(); d.activeFormat = f; d.unlockForConfiguration() } catch {}
+    }
+
     private func buildLenses() {
         lensButtons.forEach { $0.removeFromSuperview() }
         lensButtons = []
-        lensFactors = []
-        guard let d = device else { return }
-        let sw = d.virtualDeviceSwitchOverVideoZoomFactors.map { CGFloat(truncating: $0) }
-        switch d.deviceType {
-        case .builtInTripleCamera where sw.count >= 2:
-            lensFactors = [(".5", 1), ("1", sw[0]), (fmtX(sw[1] / sw[0]), sw[1])]
-        case .builtInDualWideCamera where sw.count >= 1:
-            lensFactors = [(".5", 1), ("1", sw[0]), ("2", min(d.maxAvailableVideoZoomFactor, sw[0] * 2))]
-        case .builtInDualCamera where sw.count >= 1:
-            lensFactors = [("1", 1), (fmtX(sw[0]), sw[0])]
-        default:
-            lensFactors = front ? [] : [("1", 1), ("2", min(d.maxAvailableVideoZoomFactor, 2))]
-        }
-        lensIndex = lensFactors.firstIndex(where: { $0.0 == "1" }) ?? 0
+        guard !front, mode != .dual, lensFactors.count > 1 else { layoutLenses(); return }
         for (i, f) in lensFactors.enumerated() {
             let b = UIButton(type: .system)
             b.setTitle(f.0, for: .normal)
@@ -975,7 +995,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             lensButtons.append(b)
         }
         paintLenses()
-        if lensFactors.count > lensIndex { zoom(to: lensFactors[lensIndex].1, animated: false) }
+        if lensFactors.indices.contains(lensIndex) { zoom(to: lensFactors[lensIndex].2, animated: false) }
         layoutLenses()
     }
 
@@ -992,11 +1012,13 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     }
 
     @objc private func pickLens(_ b: UIButton) {
-        guard b.tag < lensFactors.count else { return }
+        guard b.tag < lensFactors.count, b.tag != lensIndex, movieOut?.isRecording != true else { return }
+        let same = lensIndex >= 0 && lensFactors[lensIndex].1 === lensFactors[b.tag].1
         lensIndex = b.tag
-        zoom(to: lensFactors[b.tag].1, animated: true)
         paintLenses()
         tick()
+        // the same camera only zooms; another camera is a new session, keeping what was set by hand
+        if same { zoom(to: lensFactors[b.tag].2, animated: true) } else { configure() }
     }
 
     private func zoom(to z: CGFloat, animated: Bool) {
@@ -1107,7 +1129,23 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             self.refreshUI()
         }
         s.startRunning()
-        if !s.isRunning { dualFailed() }
+        if !s.isRunning { dualFailed(); return }
+        // the pictures upright once running (the front one came out turned)
+        DispatchQueue.main.async {
+            if #available(iOS 17.0, *) {
+                let cb = AVCaptureDevice.RotationCoordinator(device: back, previewLayer: bl)
+                let cf = AVCaptureDevice.RotationCoordinator(device: frontDev, previewLayer: fl)
+                self.dualCoords = [cb, cf]
+                self.queue.async {
+                    self.setRotation(bl.connection, cb.videoRotationAngleForHorizonLevelPreview)
+                    self.setRotation(fl.connection, cf.videoRotationAngleForHorizonLevelPreview)
+                    self.setRotation(bc, cb.videoRotationAngleForHorizonLevelCapture)
+                    self.setRotation(fc, cf.videoRotationAngleForHorizonLevelCapture)
+                }
+            } else {
+                self.portrait(bl.connection); self.portrait(fl.connection); self.portrait(bc); self.portrait(fc)
+            }
+        }
     }
 
     // ---- the histogram, from every eighth frame ----
@@ -1143,7 +1181,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             self.rollAngle = CGFloat(atan2(g.x, -g.y))
             if self.levelOn { self.levelView.angle = self.rollAngle }
             // which way up the photo is (90 portrait, 0 / 180 sideways, 270 upside down)
-            if abs(g.x) > abs(g.y) + 0.2 { self.shotAngle = g.x > 0 ? 180 : 0 }
+            if abs(g.x) > abs(g.y) + 0.2 { self.shotAngle = g.x > 0 ? 0 : 180 }
             else if abs(g.y) > abs(g.x) + 0.2 { self.shotAngle = g.y > 0 ? 270 : 90 }
         }
     }
@@ -1211,7 +1249,13 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     }
 
     @objc private func toggleHDR() { hdr.toggle(); tick(); toastSay(hdr ? "HDR on" : "HDR off"); refreshUI() }
-    @objc private func toggle48() { guard maxDims().1 else { return }; big48.toggle(); tick(); refreshUI() }
+    @objc private func toggle48() {
+        guard maxDims().1 else { toastSay("48 MP is not on this lens"); return }
+        big48.toggle()
+        tick()
+        toastSay(big48 ? "48 MP" : "12 MP")
+        refreshUI()
+    }
 
     @objc private func pinched(_ g: UIPinchGestureRecognizer) {
         guard let d = device, mode != .dual else { return }
@@ -1290,7 +1334,6 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         case "format":
             let next = Format(rawValue: (format.rawValue + 1) % 3) ?? .jpeg
             setFormat(next == .raw && rawType() == nil && !rawPossible() ? .jpeg : next)
-        case "second": second.toggle()
         case "orient": orientLock.toggle(); toastSay(orientLock ? "Always upright" : "Follows the phone")
         case "mirror": mirror.toggle(); applyMirror()
         case "anam": anamorphic.toggle()
@@ -1408,7 +1451,8 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         guard let po = photoOut else { return }
         keepOpen = open
         dualParts = [:]
-        let angle: CGFloat = orientLock ? 90 : shotAngle
+        var angle: CGFloat = orientLock ? 90 : shotAngle
+        if #available(iOS 17.0, *), !orientLock, let rc = rotCoord as? AVCaptureDevice.RotationCoordinator { angle = rc.videoRotationAngleForHorizonLevelCapture }
         if mode == .photo { setRotation(po.connection(with: .video), angle) }
         let st = photoSettings()
         let take = {

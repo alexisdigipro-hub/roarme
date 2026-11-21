@@ -31,6 +31,7 @@ import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { NowPlaying, PlayerSheet, player } from './player.jsx'
 import { fixKept, keepMsgs, keptMsgs, lsGet, lsSet, readMsgs } from './cache.js'
+import { onTyping, sendTyping, watchTyping } from './typing.js'
 import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
@@ -429,6 +430,11 @@ export default function Chat({ me, setMe }) {
   const reloadSoon = useCallback(() => { clearTimeout(reloadTimer.current); reloadTimer.current = setTimeout(loadRooms, 600) }, [loadRooms])
 
   useEffect(() => { loadRooms() }, [loadRooms])
+  // who is writing in which chat, for the list
+  const [typingIn, setTypingIn] = useState({})
+  useEffect(() => onTyping(setTypingIn), [])
+  const roomIdsKey = rooms.map((r) => r.room_id).join(',')
+  useEffect(() => { watchTyping(roomIdsKey ? roomIdsKey.split(',') : [], me.id) }, [roomIdsKey, me.id])
   // opened from someone's invite link: their chat opens by itself, once
   useEffect(() => {
     const u = pendingInvite()
@@ -1182,6 +1188,9 @@ export default function Chat({ me, setMe }) {
   }
 
   const preview = (r) => {
+    // someone writing in this chat right now (Alex, 21 Nov), before anything else
+    const tw = typingIn[r.room_id]
+    if (tw && tw !== me.id) return <span className="rty">{r.kind === 'group' && people[tw] ? `${nameOf(people[tw]).split(' ')[0]} is typing` : 'typing'}<i /><i /><i /></span>
     if (drafts[r.room_id] && r.room_id !== activeId) return <><span className="draft">Draft:</span> {drafts[r.room_id]}</>
     if (!prefs.listPreview) return ''
     if (cleared[r.room_id] && r.last_message_at <= cleared[r.room_id]) return ''
@@ -1313,7 +1322,7 @@ export default function Chat({ me, setMe }) {
     const other = otherOf(r)
     const key = [r, other, dotOf(other), other?.status_text, other?.status_emoji, titleOf(r), picked.includes(r.room_id), picking, r.room_id === activeId, roomMenu?.r.room_id === r.room_id, prefs,
       drafts[r.room_id], cleared[r.room_id], people[r.last_user] ? nameOf(people[r.last_user]) : '', officialIds.includes(other?.id),
-      marked.includes(r.room_id), pins.includes(r.room_id), tagsOf(r).join('\n')]
+      marked.includes(r.room_id), pins.includes(r.room_id), tagsOf(r).join('\n'), typingIn[r.room_id] || '']
     const id = `${r.room_id}${ghost ? ' ghost' : ''}`
     const had = roomRows.current.get(id)
     if (had && key.every((x, j) => x === had.key[j])) return had.el
@@ -1888,6 +1897,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // an unsent message waits for you, per chat (shown in the list as Draft:)
   const [, setDrafts] = useLocal('roarme-drafts', {})
   const [text, setText] = useState(() => { try { return (JSON.parse(localStorage.getItem('roarme-drafts')) || {})[room.room_id] || '' } catch { return '' } })
+  // the others see "typing…" in their list until the box is empty again (sent, or wiped)
+  useEffect(() => { if (!text.trim()) sendTyping(room.room_id, me.id, false) }, [text, room.room_id, me.id])
+  useEffect(() => () => sendTyping(room.room_id, me.id, false), [room.room_id, me.id])
   // while typing it is kept quietly on the device (the list does not show this chat's own draft while it is open, so
   // nothing needs drawing again); on leaving the chat the list is told, and shows Draft: (Alex, 21 Oct: lighter)
   const withDraft = (d, t) => {
@@ -3570,7 +3582,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 </span>
               )}
               <textarea ref={inputRef} rows={1} value={text} enterKeyHint={onPhone() && !prefs.enterSendsPhone ? 'enter' : 'send'} spellCheck={prefs.spell} autoCorrect={prefs.spell ? 'on' : 'off'}
-                onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart) }} onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)} onClick={(e) => setCaret(e.currentTarget.selectionStart)} onKeyDown={onKey}
+                onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart); if (e.target.value.trim()) sendTyping(room.room_id, me.id) }} onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)} onClick={(e) => setCaret(e.currentTarget.selectionStart)} onKeyDown={onKey}
                 onSelect={(e) => readSel(e.currentTarget)} onBlur={() => setSel(null)}
                 onPaste={(e) => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { e.preventDefault(); if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach(f) } }}
                 disabled={!!sealOn && !keyOk} placeholder={sealOn ? 'Encrypted message…' : 'Write a message…'} />

@@ -6105,3 +6105,6 @@ html:root:root .av-on.away, html:root:root .st-dot.st-away {
 /* the three steps of a slide up on Send stand whole on the screen (Alex, 21 Nov: "Urgent does not show whole"): their
    right edges line up with Send's, inside the screen, instead of being centred on it */
 .send-lvl { left: auto !important; right: var(--sl-r, 10px) !important; transform: translateY(calc(-100% - 10px)) !important; align-items: flex-end !important; }
+/* PRO stands beside the mark, on its line, not under it (Alex, 21 Nov) */
+html:root:root .rt .rt-top { flex-direction: row !important; justify-content: center; align-items: center; gap: 10px; }
+html:root:root .rt .rt-top .rt-pro { margin-left: 0; height: 22px; padding: 0 9px; font-size: 11px; }

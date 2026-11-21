@@ -3998,7 +3998,7 @@ function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
     let alive = true
     picLink(file).then((u) => { if (alive && u) setUrl(u) })
     return () => { alive = false }
-  }, [sharp, file?.path]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sharp, file?.path])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>
   return url ? <img className={`pic-img${ready ? ' ready' : ''}${tall ? ' tall' : ''}`} src={url} alt={file?.name || ''} loading="lazy" decoding="async" onLoad={(e) => { const t = e.currentTarget; setTall(t.naturalHeight > t.naturalWidth * 1.25); setReady(true); setSharp(true) }} draggable={false} onClick={(e) => { e.stopPropagation(); if (Date.now() - (window.roarHeldAt || 0) < 800) return; onOpen(url) }} /> : <span className="pic-wait" />
 }

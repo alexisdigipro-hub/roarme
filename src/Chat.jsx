@@ -3585,7 +3585,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             {editMenu && (
               <OnTop>
                 <button type="button" className="scrim" aria-label="Close" onClick={() => setEditMenu(null)} />
-                <div className="menu edit-media-menu" style={{ position: 'fixed', left: Math.max(8, editMenu.left), bottom: editMenu.bottom }}>
+                <div className="menu edit-media-menu" style={{ position: 'fixed', left: Math.max(8, editMenu.left), bottom: editMenu.bottom, top: 'auto', right: 'auto', height: 'auto' }}>
                   <button type="button" onClick={async () => {
                     setEditMenu(null)
                     if (editFile) { setEditMedia([editFile.file]); return }

@@ -307,10 +307,11 @@ function General({ p, onKeys, toast }) {
         )}
       </Box>
       )}
-      <Box title="Advanced">
-        {!onPhone() && <Nav onClick={onKeys} value="⌘ /">Keyboard Shortcuts</Nav>}
-        <Switch on={p.peerIds} set={(v) => setPrefs({ peerIds: v })} hint="Each person's RoarMe ID at the foot of their profile">Show User IDs in Profile</Switch>
-      </Box>
+      {!onPhone() && (
+        <Box title="Advanced">
+          <Nav onClick={onKeys} value="⌘ /">Keyboard Shortcuts</Nav>
+        </Box>
+      )}
       <Box note="Everything on this page and on Features, Chats, Appearance, Notifications, Data and Folders goes back to how RoarMe starts. The language, your account and your chats stay as they are.">
         <button type="button" className="set-row set-pick danger" disabled={same} onClick={reset}><span className="set-text">Reset All Settings</span></button>
       </Box>

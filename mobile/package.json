@@ -7,6 +7,7 @@
   "dependencies": {
     "@capacitor-community/contacts": "^7.0.0",
     "@capacitor-community/media": "^8.0.1",
+    "@capacitor/app": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/device": "^7.0.0",
     "@capacitor/haptics": "^7.0.0",

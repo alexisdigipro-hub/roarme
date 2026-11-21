@@ -92,7 +92,8 @@ jobs:
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict><key>aps-environment</key><string>development</string>
             <key>com.apple.developer.usernotifications.time-sensitive</key><true/>
-            <key>com.apple.developer.usernotifications.communication</key><true/></dict></plist>
+            <key>com.apple.developer.usernotifications.communication</key><true/>
+            <key>com.apple.developer.associated-domains</key><array><string>applinks:roarme.app</string></array></dict></plist>
           EOF
           P=App.xcodeproj/project.pbxproj
           grep -q CODE_SIGN_ENTITLEMENTS "$P" || perl -0pi -e 's#(INFOPLIST_FILE = App/Info.plist;)#$1\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;#g' "$P"
@@ -266,6 +267,29 @@ jobs:
             puts "Development certificates found: #{list.size}"
             list.each { |c| r = http.delete("/v1/certificates/#{c["id"]}", {"Authorization" => "Bearer #{jwt}"}); puts "revoked #{c["attributes"]["name"]} #{c["attributes"]["certificateType"]} (#{r.code})" }
           ' || echo "::warning::Could not tidy the development certificates"
+          # Associated Domains on the App ID (Alex, 21 Nov: the email's Confirm opens the app, not the website): roarme.app's
+          # links with a token_hash (public/.well-known/apple-app-site-association) are handed to the app
+          ruby -ropenssl -rjson -rnet/http -rbase64 -e '
+            key = OpenSSL::PKey::EC.new(File.read(ENV["K"]))
+            b64 = ->(s) { Base64.urlsafe_encode64(s, padding: false) }
+            now = Time.now.to_i
+            data = b64.(JSON.dump({alg: "ES256", kid: ENV["ASC_KEY_ID"], typ: "JWT"})) + "." + b64.(JSON.dump({iss: ENV["ASC_ISSUER_ID"], iat: now, exp: now + 600, aud: "appstoreconnect-v1"}))
+            asn = OpenSSL::ASN1.decode(key.sign(OpenSSL::Digest::SHA256.new, data))
+            sig = asn.value.map { |i| i.value.to_s(2).rjust(32, "\x00")[-32, 32] }.join
+            jwt = data + "." + b64.(sig)
+            http = Net::HTTP.new("api.appstoreconnect.apple.com", 443); http.use_ssl = true
+            hd = {"Authorization" => "Bearer #{jwt}", "Content-Type" => "application/json"}
+            res = http.get("/v1/bundleIds?filter[identifier]=com.themadlions.roarme&limit=5", hd)
+            abort("bundleIds: #{res.code}") unless res.code == "200"
+            b = (JSON.parse(res.body)["data"] || []).find { |x| x["attributes"]["identifier"] == "com.themadlions.roarme" } or abort("no bundle id")
+            caps = http.get("/v1/bundleIds/#{b["id"]}/bundleIdCapabilities", hd)
+            have = caps.code == "200" ? (JSON.parse(caps.body)["data"] || []).map { |c| c["attributes"]["capabilityType"] } : []
+            if have.include?("ASSOCIATED_DOMAINS") then puts "Associated Domains already on"
+            else
+              r = http.post("/v1/bundleIdCapabilities", JSON.dump({data: {type: "bundleIdCapabilities", attributes: {capabilityType: "ASSOCIATED_DOMAINS"}, relationships: {bundleId: {data: {type: "bundleIds", id: b["id"]}}}}}), hd)
+              puts "Associated Domains: #{r.code}"
+            end
+          ' || echo "::warning::Could not turn on Associated Domains"
           W=App.xcworkspace; [ -d "$W" ] && T=(-workspace "$W") || T=(-project App.xcodeproj)
           set -o pipefail
           xcodebuild "${T[@]}" -scheme App -configuration Release -destination 'generic/platform=iOS' \

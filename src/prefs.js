@@ -12,7 +12,7 @@ export const DEFAULTS = {
   radius: 12, // corners of the Ember theme, 4 to 16
   motion: true, // smooth animations
   focusRings: false, // a bold ring around whatever has the keyboard
-  textSize: 2, // 0..4
+  textSize: 0, // 0..4 (TEXT_SIZES); 12.5 px is how RoarMe starts and what Reset goes back to (Alex, 21 Nov, his own settings; 14.5 before)
   bigEmoji: true,
   glassBubbles: true, // your own messages see-through with an accent edge, like a RoarTransfer (Alex, 17 Oct)
   listPreview: true, // the last message and its time in the chat list; on since 12 Nov, when Alex picked the list as a glass panel that shows them (it was off since 17 Oct)
@@ -65,13 +65,13 @@ export const DEFAULTS = {
   pauseOnRec: true, // a song or a voice message playing stops while a voice or video message is recorded
   callLessData: false, // video calls at 360p and 15 frames, for weak networks
   appWallStrength: null, // 10 to 100: the App background's own strength (Alex, 13 Nov); null = the chats' wallStrength
-  wallStrength: 60, // 60 is how RoarMe starts and what Reset goes back to (Alex's own settings, 18 Nov; 100 before) // 10 to 100: how strong RoarMe's wallpapers and a colour show (one's own photo keeps its own)
+  wallStrength: 31, // 31 is how RoarMe starts and what Reset goes back to (Alex's own settings, 21 Nov; 60 since 18 Nov, 100 before) // 10 to 100: how strong RoarMe's wallpapers and a colour show (one's own photo keeps its own)
   // one's own chat theme (Alex, 9 Nov, "as a feature in Settings"): '' each = the theme's own
   chatTheme: '', // one of CHAT_THEMES, or '' when built by hand
   accentHex: '#1bb4fb', // any accent colour, over the ready-made ones; this light blue from the start (Alex, 18 Nov)
   myBubble: '#1bb4fb', // the colour of one's own messages; this light blue from the start (Alex, 18 Nov, his own look)
   theirBubble: '', // the colour of the others' messages
-  bubbleR: 0, // Message Corners in px (0 = the theme's own)
+  bubbleR: 6, // Message Corners in px (0 = the theme's own); 6 px is how RoarMe starts and what Reset goes back to (Alex, 21 Nov)
 }
 export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], ['night', 'Night'], ['ocean', 'Ocean'], ['dusk', 'Dusk'], ['forest', 'Forest'], ['ember', 'Ember'], ['stone', 'Frost']]
 // a step smaller (Alex, 8 Nov: "the letters a little smaller"); the middle one, the default, is 14.5
@@ -319,7 +319,7 @@ export function applyLook(p0) {
   // built from the defaults plus Frost's own three choices; one's own colours, wallpaper and the rest stay saved for Glass
   const frost = !!p0.frost
   const p = frost
-    ? { ...DEFAULTS, accent: '', accentHex: '', myBubble: '', font: 'system', background: 'soft', wallStrength: 100, mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite } // no frame round the chats or the contacts (Alex, 14 Nov)
+    ? { ...DEFAULTS, accent: '', accentHex: '', myBubble: '', font: 'system', background: 'soft', wallStrength: 100, bubbleR: 0, mode: p0.mode, uiText: p0.uiText, motion: p0.motion, lite: p0.lite } // no frame round the chats or the contacts (Alex, 14 Nov)
     : { ...p0 }
   // Frost is round capsules only (Alex, 14 Nov: "only capsule")
   if (frost) r.dataset.frost = '1'; else delete r.dataset.frost

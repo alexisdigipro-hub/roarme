@@ -540,14 +540,17 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   }, [tab, recent, meId])
   const pick = async (m) => { if (!onResend || sending) return; setSending(m.id); const ok = await onResend(m); setSending(''); if (ok !== false) onClose() }
   // Camera first, then Gallery, Transfer, Location, Audio, and a + at the end that holds Contact and Poll (Alex, 21 Nov)
+  const wideBar = !touchOnly && typeof window !== 'undefined' && window.innerWidth >= 761
   const TABS = [
     ['camera', 'Camera', AS_I.camera],
     ['gallery', 'Gallery', AS_I.gallery],
     onTransfer && ['transfer', 'Transfer', AS_I.transfer],
     onLocation && ['location', 'Location', AS_I.location],
     ['audio', 'Audio', AS_I.audio],
+    // on a computer Contact and Poll are tabs of their own, no More (Alex, 21 Nov); the sheet is wider for them
+    ...(wideBar ? [onContact && ['contact', 'Contact', AS_I.contact], onPoll && ['poll', 'Poll', AS_I.poll]] : []),
   ].filter(Boolean)
-  const MORE = [onContact && ['contact', 'Contact', AS_I.contact], onPoll && ['poll', 'Poll', AS_I.poll]].filter(Boolean)
+  const MORE = wideBar ? [] : [onContact && ['contact', 'Contact', AS_I.contact], onPoll && ['poll', 'Poll', AS_I.poll]].filter(Boolean)
   const NAMES = [...TABS, ...MORE]
   const go = (k) => { if (k === 'camera') { camera(); return } setTab(k) }
   // RoarTransfer opens in the sheet's body when its tab is chosen
@@ -566,7 +569,7 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   if (edit >= 0 && files[edit]) return <Suspense fallback={null}><PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} /></Suspense>
   return createPortal(
     <div className={`as-back${camFirst ? ' asx-hide' : ''}`} onClick={onClose}>
-      <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${(tab === 'transfer' || tab === 'poll' || (tab === 'gallery' && lib)) && !files.length ? ' as-tall' : ''}${tab === 'gallery' && lib && !files.length ? ' as-lib' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <div ref={sheetRef} className={`as-sheet${wideBar ? ' as-wide' : ''}${tab === 'location' && !files.length ? ' as-loc' : ''}${(tab === 'transfer' || tab === 'poll' || (tab === 'gallery' && lib)) && !files.length ? ' as-tall' : ''}${tab === 'gallery' && lib && !files.length ? ' as-lib' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <i className="as-grab" data-grab="" aria-hidden="true" />
         <div className={`as-head${tab === 'poll' && !files.length ? ' pl-head' : ''}`} data-grab="">
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>

@@ -1316,6 +1316,25 @@ export default function Chat({ me, setMe }) {
   // the (i) of a call (Alex, 19 Nov): the person's page, the same as a tap on the name in a chat. The chat opens under it
   // (so everything the page does works) and Back from the page comes back to Calls; with no chat with them, their card
   const infoBack = useRef(false)
+  // the profile page goes by itself when one goes elsewhere (Alex, 21 Nov: "it stays wherever I go"): a copy of it slides
+  // out of the pane while the new place shows
+  const infoAt = useRef(null)
+  useEffect(() => {
+    if (modal !== 'info') { infoAt.current = null; return }
+    if (!infoAt.current) { infoAt.current = { id: activeId, tab }; return }
+    if (infoAt.current.id === activeId && infoAt.current.tab === tab) return
+    const page = document.querySelector('.modal-back.as-page')
+    if (page && page.parentNode) {
+      const ghost = page.cloneNode(true)
+      ghost.classList.add('pf-leave')
+      ghost.style.pointerEvents = 'none'
+      page.parentNode.appendChild(ghost)
+      setTimeout(() => ghost.remove(), 320)
+    }
+    infoBack.current = false
+    infoAt.current = null
+    setModal('')
+  }, [modal, activeId, tab])
   const infoFromCalls = (p, roomId) => {
     const id = (roomId && rooms.some((r) => r.room_id === roomId) && roomId) || directWith(p)
     if (!id) { window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: p.id } })); return }

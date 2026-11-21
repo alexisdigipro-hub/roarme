@@ -262,6 +262,7 @@ const AS_I = {
   audio: asSolid('M19.5 3.2v12.3a3.2 3.2 0 1 1-1.8-2.9V7.4l-8.4 1.9v8.3a3.2 3.2 0 1 1-1.8-2.9V6.3c0-.6.4-1.1 1-1.2l9.8-2.3c.6-.1 1.2.3 1.2.9z'),
   contact: asSolid('M12 3a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zM3 21a9 9 0 0 1 18 0z'),
   poll: asSolid('M6 3.5h12A2.5 2.5 0 0 1 20.5 6v12a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 18V6A2.5 2.5 0 0 1 6 3.5zM7.6 11.2a1.1 1.1 0 0 0-1.1 1.1v4.2a1.1 1.1 0 0 0 2.2 0v-4.2a1.1 1.1 0 0 0-1.1-1.1zM12 6.8a1.1 1.1 0 0 0-1.1 1.1v8.6a1.1 1.1 0 0 0 2.2 0V7.9A1.1 1.1 0 0 0 12 6.8zM16.4 13.4a1.1 1.1 0 0 0-1.1 1.1v2a1.1 1.1 0 0 0 2.2 0v-2a1.1 1.1 0 0 0-1.1-1.1z'),
+  more: asSolid('M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19zM12 7a1 1 0 0 0-1 1v3H8a1 1 0 0 0 0 2h3v3a1 1 0 0 0 2 0v-3h3a1 1 0 0 0 0-2h-3V8a1 1 0 0 0-1-1z'),
   camera: asSolid('M9.2 4h5.6c.5 0 1 .3 1.3.7l1 1.6H19a2.5 2.5 0 0 1 2.5 2.5v8.7A2.5 2.5 0 0 1 19 20H5a2.5 2.5 0 0 1-2.5-2.5V8.8A2.5 2.5 0 0 1 5 6.3h1.9l1-1.6c.3-.4.8-.7 1.3-.7zM12 8.6a4.3 4.3 0 1 0 0 8.6 4.3 4.3 0 0 0 0-8.6zm0 2a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 0 1 0-4.6z'),
   transfer: asSolid('M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19zM11.2 7.2l-4 4a1.1 1.1 0 0 0 1.6 1.6l2.1-2.1V16a1.1 1.1 0 0 0 2.2 0v-5.3l2.1 2.1a1.1 1.1 0 0 0 1.6-1.6l-4-4a1.1 1.1 0 0 0-1.6 0z'),
 }
@@ -394,6 +395,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   // shown in the chat as a file to download (Alex, 15 Nov). asFile is set by where the first ones were picked
   const [pickedRaw, setAsFile] = useState(false)
   const [tab, setTab] = useState('gallery')
+  const [moreOpen, setMoreOpen] = useState(false) // the + at the end of the bar: Contact and Poll (Alex, 21 Nov)
   const [recent, setRecent] = useState(null)
   const [sending, setSending] = useState('')
   const [edit, setEdit] = useState(-1) // the photo being touched up before it is sent
@@ -436,7 +438,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const [whoOpen, setWhoOpen] = useState(false)
   // the tab bar is the chat's own menu at the foot: its glass, icon over word, the lens in GLASS TRAVEL (Alex, 15 Nov)
   const tabsLens = useLens(`${tab}|${files.length > 0}`)
-  useTabSwipe(bodyRef, ['gallery', 'file', onTransfer && 'transfer', onLocation && 'location', onPoll && 'poll', 'audio', onContact && 'contact'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
+  useTabSwipe(bodyRef, ['gallery', 'file', onTransfer && 'transfer', onLocation && 'location', 'audio', onContact && 'contact', onPoll && 'poll'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
   // RoarMe's own camera in the iPhone app (camera.js), else the system's through the file input
@@ -480,22 +482,20 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
       })
   }, [tab, recent, meId])
   const pick = async (m) => { if (!onResend || sending) return; setSending(m.id); const ok = await onResend(m); setSending(''); if (ok !== false) onClose() }
+  // Camera first, then Gallery, Transfer, Location, Audio, and a + at the end that holds Contact and Poll (Alex, 21 Nov)
   const TABS = [
-    // Gallery and File are one tab with Photos | Files at its top, and the Camera in File's place, opening the camera at
-    // once (Alex, 21 Nov)
-    ['gallery', 'Gallery', AS_I.gallery],
     ['camera', 'Camera', AS_I.camera],
-    // RoarTransfer third (Alex, 20 Nov)
+    ['gallery', 'Gallery', AS_I.gallery],
     onTransfer && ['transfer', 'Transfer', AS_I.transfer],
     onLocation && ['location', 'Location', AS_I.location],
-    onPoll && ['poll', 'Poll', AS_I.poll],
     ['audio', 'Audio', AS_I.audio],
-    onContact && ['contact', 'Contact', AS_I.contact],
   ].filter(Boolean)
+  const MORE = [onContact && ['contact', 'Contact', AS_I.contact], onPoll && ['poll', 'Poll', AS_I.poll]].filter(Boolean)
+  const NAMES = [...TABS, ...MORE]
   const go = (k) => { if (k === 'camera') { camera(); return } setTab(k) }
   // RoarTransfer opens in the sheet's body when its tab is chosen
   useEffect(() => { if (tab === 'transfer' && !files.length) onTransfer?.() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
-  const title = files.length ? `${files.length} selected` : tab === 'poll' ? 'New Poll' : (tab === 'file' ? 'Gallery' : TABS.find(([k]) => k === tab)?.[1]) || 'Send'
+  const title = files.length ? `${files.length} selected` : tab === 'poll' ? 'New Poll' : (tab === 'file' ? 'Gallery' : NAMES.find(([k]) => k === tab)?.[1]) || 'Send'
   const asFile = pickedRaw || (tab === 'file' && files.length > 0) // anything picked while on the File tab goes raw
   const big = files.filter((f) => f.size > 50e6 && !(!asFile && /^video\//.test(f.type)))
   const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
@@ -615,7 +615,16 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
         ) : (
           <nav ref={tabsLens} className="as-tabs lens" data-travel="">
             {TABS.map(([k, label, ico]) => <button key={k} type="button" className={tab === k || (k === 'gallery' && tab === 'file') ? 'on' : ''} onClick={() => go(k)}>{ico}<span>{label}</span></button>)}
+            {MORE.length > 0 && <button type="button" className={MORE.some(([k]) => k === tab) ? 'on' : ''} onClick={() => setMoreOpen(true)} aria-label="More">{AS_I.more}<span>{MORE.find(([k]) => k === tab)?.[1] || 'More'}</span></button>}
           </nav>
+        )}
+        {moreOpen && (
+          <>
+            <button type="button" className="scrim" aria-label="Close" onClick={() => setMoreOpen(false)} />
+            <div className="menu asx-more">
+              {MORE.map(([k, label, ico]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => { setMoreOpen(false); setTab(k) }}>{ico}<span>{label}</span></button>)}
+            </div>
+          </>
         )}
         <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />
         <input ref={cam} type="file" accept="image/*,video/*" capture="environment" hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />

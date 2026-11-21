@@ -6143,3 +6143,7 @@ html:root:root .rt .rt-top .rt-pro { margin-left: 0; height: 22px; padding: 0 9p
 .as-seg-lens { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 999px; background: var(--panel, #fff); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); transition: transform .32s cubic-bezier(.25, 1.35, .45, 1); }
 .as-seg.r .as-seg-lens { transform: translateX(100%); }
 html[data-mode='dark'] .as-seg-lens { background: rgba(255, 255, 255, .16); box-shadow: none; }
+
+/* the attach sheet's + (Alex, 21 Nov): Contact and Poll in a small menu over the bar's right end */
+html:root:root:root:root .as-sheet .menu.asx-more { position: absolute !important; top: auto !important; left: auto !important; right: 14px !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 92px) !important; min-width: 180px !important; z-index: 80 !important; transform-origin: bottom right; }
+html:root:root:root:root .as-sheet .menu.asx-more svg { width: 20px; height: 20px; }

@@ -6108,3 +6108,28 @@ html:root:root .av-on.away, html:root:root .st-dot.st-away {
 /* PRO stands beside the mark, on its line, not under it (Alex, 21 Nov) */
 html:root:root .rt .rt-top { flex-direction: row !important; justify-content: center; align-items: center; gap: 10px; }
 html:root:root .rt .rt-top .rt-pro { margin-left: 0; height: 22px; padding: 0 9px; font-size: 11px; }
+
+/* Videos as Telegram's (Alex, 21 Nov). In the chat: playing by itself, muted, with a small dark chip of the time left and
+   a muted sign at the top left; nothing else on it. Full screen: the big glass play / pause in the middle, the line with
+   both times in a glass capsule over the foot, PiP and the speed in one glass pill between Share and the bin; a tap on
+   the video shows or hides all of it with the bars */
+.vid-auto { cursor: pointer; -webkit-touch-callout: none; }
+.vid-auto > video { pointer-events: none; }
+.vid-chip { position: absolute; left: 8px; top: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 999px; background: rgba(0, 0, 0, .45); color: #fff; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; pointer-events: none; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.vid-chip i { display: grid; place-items: center; }
+.viewer .vw-video { max-width: 100%; max-height: 100%; }
+.viewer .vw-pp { position: absolute; left: 50%; top: 50%; z-index: 4; width: 84px; height: 84px; margin: -42px 0 0 -42px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #fff; cursor: pointer;
+  background: rgba(40, 40, 44, .42); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22), 0 10px 30px rgba(0, 0, 0, .3); transition: opacity .2s ease, transform .2s ease; }
+.viewer .vw-pp svg { width: 34px; height: 34px; }
+.viewer .vw-pp:active { transform: scale(.92); }
+.viewer .vw-seek { position: absolute; left: 14px; right: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); z-index: 4; display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 18px; border-radius: 24px; color: #fff;
+  background: rgba(40, 40, 44, .42); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); transition: opacity .2s ease; }
+.viewer .vw-seek small { flex: none; min-width: 34px; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.viewer .vw-seek small:last-child { text-align: right; }
+.viewer .vw-line { position: relative; flex: 1; height: 28px; cursor: pointer; touch-action: none; }
+.viewer .vw-line::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 6px; margin-top: -3px; border-radius: 3px; background: rgba(255, 255, 255, .3); }
+.viewer .vw-line > i { position: absolute; left: 0; top: 50%; height: 6px; margin-top: -3px; border-radius: 3px; background: #fff; }
+.viewer .vw-vtools { display: inline-flex; align-items: center; gap: 2px; padding: 4px; border-radius: 999px; background: rgba(40, 40, 44, .42); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
+.viewer .vw-vtools button { display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: #fff; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; }
+.viewer .vw-vtools button:active { background: rgba(255, 255, 255, .12); }
+.viewer.bare .vw-pp, .viewer.bare .vw-seek { opacity: 0; pointer-events: none; }

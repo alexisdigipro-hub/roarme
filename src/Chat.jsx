@@ -2947,7 +2947,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     }
     return out
   }, [reacts, me.id])
-  const photos = useMemo(() => msgs.filter((m) => m.kind === 'image' && !m.deleted_at), [msgs])
+  // the full-screen viewer pages through the chat's photos and videos (a video opens there too, Alex, 21 Nov)
+  const photos = useMemo(() => msgs.filter((m) => !m.deleted_at && (m.kind === 'image' || (m.kind === 'file' && /^video\//.test(m.file?.type || '') && !m.file?.asFile && !m.file?.round && !m.file?.bucket))), [msgs])
   const openPhoto = async (m) => {
     const items = await Promise.all(photos.map(async (x) => ({ url: await fileLink(x.file), type: x.file?.type, name: x.file?.name, who: x.user_id === me.id ? 'You' : nameOf(people[x.user_id]), at: x.created_at, m: x })))
     setViewer({ items, index: Math.max(0, photos.findIndex((x) => x.id === m.id)) })
@@ -3248,7 +3249,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
                       : isTransfer ? <TransferTile file={m.file} onCinema={hands.current.setCinema} />
                       : isVideo && m.file?.round ? <NoteTile file={m.file} />
-                      : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />
+                      : isVideo ? <VideoTile file={m.file} auto={autoDl} play={prefs.autoplayVideos} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} onOpen={() => hands.current.openPhoto(m)} />
                       : m.kind === 'file' && isAudioFile(m.file) && !m.file?.asFile ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} onPdf={(url) => setPdfView({ url, name: m.file?.name })} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name, who: mine ? 'You' : nameOf(who), at: m.created_at, m }], index: 0 })} />
                       : null}

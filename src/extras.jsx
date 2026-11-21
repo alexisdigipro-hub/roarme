@@ -65,6 +65,14 @@ export function MediaViewer({ items, index, onClose, onDelete, onShow, onReply }
     return () => document.removeEventListener('keydown', k)
   }, [i, items.length, onClose]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => clearTimeout(tap.current.timer), [])
+  // a video full screen as Telegram's (Alex, 21 Nov): a tap shows or hides the bars, the big play / pause in the middle,
+  // the line with both times in a glass capsule, and at the foot PiP and the speed between Share and the bin
+  const vref = useRef(null)
+  const [vt, setVt] = useState(0)
+  const [vd, setVd] = useState(0)
+  const [vOn, setVOn] = useState(false)
+  const [rate, setRate] = useState(1)
+  const vdrag = useRef(false)
   if (!it) return null
   const clampS = (s) => Math.min(5, Math.max(1, s))
   const mid = () => { const [a, b] = [...pts.current.values()]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) } }
@@ -148,12 +156,29 @@ export function MediaViewer({ items, index, onClose, onDelete, onShow, onReply }
   }
   return (
     <div className={`viewer v2${bars ? '' : ' bare'}`} style={{ '--vw-fade': fade }}>
-      <div className="vw-stage" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onWheel={wheel}>
+      <div className="vw-stage" onClick={isVid ? () => setBars((b) => !b) : undefined} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onWheel={wheel}>
         {isVid
-          ? <video key={it.url} src={it.url} controls autoPlay playsInline />
+          ? <video ref={vref} key={it.url} className="vw-video" src={it.url} autoPlay playsInline
+            onLoadedMetadata={(e) => { const v = e.currentTarget; setVd(Number.isFinite(v.duration) ? v.duration : 0); setVt(0); v.playbackRate = rate }}
+            onTimeUpdate={(e) => setVt(e.currentTarget.currentTime)} onPlay={() => setVOn(true)} onPause={() => setVOn(false)} onEnded={() => { setVOn(false); setBars(true) }} />
           : <img key={it.url} src={it.url} alt="" draggable={false} className={t.s > 1.01 ? 'zoomed' : ''}
             style={{ transform: `translate(${t.x + d.x}px, ${t.y + d.y}px) scale(${t.s * (d.y ? 1 - d.y / 1600 : 1)})`, transition: live ? 'none' : undefined }} />}
       </div>
+      {isVid && (
+        <>
+          <button type="button" className="vw-pp" onClick={() => { const v = vref.current; if (v) { if (v.paused) v.play().catch(() => {}); else v.pause() } }} aria-label={vOn ? 'Pause' : 'Play'}>{vOn ? I.pause : I.play}</button>
+          <div className="vw-seek">
+            <small>{mmssOf(vt)}</small>
+            <span className="vw-line" role="slider" aria-label="Position" aria-valuemin={0} aria-valuemax={Math.round(vd)} aria-valuenow={Math.round(vt)}
+              onPointerDown={(e) => { vdrag.current = true; e.currentTarget.setPointerCapture?.(e.pointerId); const r = e.currentTarget.getBoundingClientRect(), v = vref.current; if (v && vd) v.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vd }}
+              onPointerMove={(e) => { if (!vdrag.current) return; const r = e.currentTarget.getBoundingClientRect(), v = vref.current; if (v && vd) v.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * vd }}
+              onPointerUp={() => { vdrag.current = false }} onPointerCancel={() => { vdrag.current = false }}>
+              <i style={{ width: `${vd ? Math.min(100, (vt / vd) * 100) : 0}%` }} />
+            </span>
+            <small>{mmssOf(vd)}</small>
+          </div>
+        </>
+      )}
       <div className="vw-top">
         <button type="button" className="round" onClick={onClose} aria-label="Back">{I.left}</button>
         <div className="vw-title">{(it.who || it.name) && <b>{it.who || it.name}</b>}{whenText && <small>{whenText}</small>}</div>
@@ -172,7 +197,14 @@ export function MediaViewer({ items, index, onClose, onDelete, onShow, onReply }
       </div>
       <div className="vw-foot">
         <button type="button" className="round" onClick={share} aria-label="Share" title="Share">{I.forward}</button>
-        {items.length > 1 ? <span className="vw-count">{i + 1} / {items.length}</span> : <span />}
+        {isVid
+          ? (
+            <span className="vw-vtools">
+              <button type="button" onClick={() => { const v = vref.current; if (!v) return; try { if (v.webkitSetPresentationMode) v.webkitSetPresentationMode('picture-in-picture'); else v.requestPictureInPicture?.() } catch { /* none */ } }} aria-label="Picture in Picture" title="Picture in Picture">{PIP_I}</button>
+              <button type="button" className="vw-rate" onClick={() => { const r = { 1: 1.5, 1.5: 2, 2: 0.5, 0.5: 1 }[rate] || 1; setRate(r); if (vref.current) vref.current.playbackRate = r }} aria-label={`Speed ${rate}x`} title="Speed">{rate}x</button>
+            </span>
+          )
+          : items.length > 1 ? <span className="vw-count">{i + 1} / {items.length}</span> : <span />}
         {/* the bin where Save was (Alex, 12 Nov); Save is in ⋯. Where nothing can be deleted (the profile's grid), Save stays */}
         {onDelete && it.m
           ? <button type="button" className="round vw-bin" onClick={() => onDelete(it)} aria-label="Delete" title="Delete">{I.trash}</button>
@@ -748,6 +780,8 @@ export function MiniPlayer({ src, poster, autoPlay = false, muted = false, loop 
   )
 }
 
+const PIP_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3" /><rect x="12" y="12" width="7" height="5" rx="1.4" fill="currentColor" stroke="none" /></svg>
+const MUTED_I = <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z" /><path d="M15 9.5l5 5M20 9.5l-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" /></svg>
 export function VideoTools({ wide, onWide, onCinema }) {
   return (
     <span className="vid-tools" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
@@ -757,16 +791,17 @@ export function VideoTools({ wide, onWide, onCinema }) {
   )
 }
 
-export function VideoTile({ file, auto = true, play = false, wide, onWide, onCinema }) {
+export function VideoTile({ file, auto = true, play = false, wide, onWide, onCinema, onOpen }) {
   const [go, setGo] = useState(auto)
   const [url, setUrl] = useState('')
   const ref = useRef(null)
+  const [left, setLeft] = useState(0) // seconds left, on the chip of a video that plays by itself
   useEffect(() => { if (!go) return undefined; let alive = true; fileLink(file).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
   // playing by itself, a video plays only while it is on the screen: a chat with many videos no longer plays them
   // all at once out of sight (Alex, 21 Oct: RoarMe lighter)
   useEffect(() => {
     const v = ref.current
-    if (!play || !v || typeof IntersectionObserver === 'undefined') return undefined
+    if (!(play || onOpen) || !v || typeof IntersectionObserver === 'undefined') return undefined
     const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) v.play?.().catch(() => {}); else v.pause() }, { threshold: 0.25 })
     io.observe(v)
     return () => io.disconnect()
@@ -778,6 +813,22 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
   useEffect(() => { if (!file?.thumb) return undefined; let alive = true; picLink(thumbOf(file)).then((u) => { if (alive) setPoster(u) }); return () => { alive = false } }, [file?.thumb])
   // a video with no still of its own: a quiet frame of it (half a second in, past a black start) under the same play sign,
   // with no player controls, so a long press opens the message's menu as on anything else (Alex, 21 Nov)
+  /* As Telegram's (Alex, 21 Nov): in the chat a video plays by itself while in sight, muted and round again, no taller
+     than 4:5, with only a small chip of the time left and a muted sign; a tap opens it full screen, whole, with its sound
+     (the viewer, onOpen); a long press opens the message's menu. With Auto-Download off it waits for a tap as before. */
+  if (onOpen && go) {
+    return (
+      <span className="vid-box vid-auto" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); onOpen() }} onDoubleClick={(e) => e.stopPropagation()}>
+        {url
+          ? <video ref={(el) => { ref.current = el; if (el) { el.muted = true; el.defaultMuted = true; el.setAttribute('muted', '') } }} className="pic-img ready" src={url} poster={poster || undefined}
+            muted loop playsInline autoPlay preload="auto" tabIndex={-1}
+            onTimeUpdate={(e) => { const v = e.currentTarget; if (Number.isFinite(v.duration)) setLeft(Math.max(0, v.duration - v.currentTime)) }}
+            onLoadedMetadata={(e) => { const v = e.currentTarget; if (Number.isFinite(v.duration)) setLeft(v.duration) }} />
+          : poster ? <img className="pic-img ready" src={poster} alt="" draggable={false} /> : <span className="pic-wait" />}
+        <span className="vid-chip">{`${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}`}<i>{MUTED_I}</i></span>
+      </span>
+    )
+  }
   if (!file?.thumb && go && !play && !tapped) {
     return (
       <span className="vid-box vid-poster" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setGo(true); setTapped(true) }}>
@@ -789,7 +840,7 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
   }
   if (file?.thumb && !play && !tapped) {
     return (
-      <span className="vid-box vid-poster" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setGo(true); setTapped(true) }}>
+      <span className="vid-box vid-poster" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); if (onOpen) onOpen(); else { setGo(true); setTapped(true) } }}>
         {poster ? <img className="pic-img ready" src={poster} alt="" loading="lazy" decoding="async" draggable={false} /> : <span className="pic-wait" />}
         <i className="vid-play">{I.play}</i>
         <small className="vid-size">{fmtBytes(file?.size)}</small>

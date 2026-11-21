@@ -5413,9 +5413,10 @@ html:root:root:root:root:root .rpl .rpl-from b { font-size: 13px; }
    the gap (a padding of 10vw less the list's own side room), the column and the cards fill the rest. A computer is
    untouched. */
 @media (max-width: 760px) {
-  html:root:root:root:root { --media-w: 90vw; }
-  html:root:root:root:root .scroll:not(.picking) .msg.mine { padding-left: calc(10vw - var(--msg-side, 22px)); }
-  html:root:root:root:root .scroll:not(.picking) .msg:not(.mine) { padding-right: calc(10vw - var(--msg-side, 22px)); }
+  /* 85 / 15 since 21 Nov (Alex: "85-15, in every message, ours and the others'"); 90 / 10 before */
+  html:root:root:root:root { --media-w: 85vw; }
+  html:root:root:root:root .scroll:not(.picking) .msg.mine { padding-left: calc(15vw - var(--msg-side, 22px)); }
+  html:root:root:root:root .scroll:not(.picking) .msg:not(.mine) { padding-right: calc(15vw - var(--msg-side, 22px)); }
   html:root:root:root:root .msg .bubble-col, html:root:root:root:root .msg:has(.bubble:is(.event-b, .transfer-b, .pic)) .bubble-col, html:root:root:root:root .msg:has(:is(.locc, .artc)) .bubble-col { max-width: 100%; }
 }
 

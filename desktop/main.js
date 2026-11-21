@@ -1,4 +1,4 @@
-// RoarMe for Mac and Windows (Alex, 16 Oct): the chat from alexisdigipro-hub.github.io/roarme, live, in an
+// RoarMe for Mac and Windows (Alex, 16 Oct): the chat from roarme.app (alexisdigipro-hub.github.io/roarme before 21 Nov), live, in an
 // app of its own. Nothing of the chat is kept in the app, so every change to the site reaches it on the
 // next start without a new install. Links that leave RoarMe open in the computer's own browser.
 // The app adds what a browser cannot: the unread count on its icon, a paw in the menu bar, opening at
@@ -18,7 +18,7 @@ const updater = require('./updater')
 // app://roarme/), as the iPhone app does: Apple does not let an App Store app load its code from a website, and it
 // updates through the App Store, so it has no updater of its own.
 const MAS = !!process.mas
-const HOME = MAS ? 'app://roarme/' : 'https://alexisdigipro-hub.github.io/roarme/'
+const HOME = MAS ? 'app://roarme/' : 'https://roarme.app/'
 if (MAS) protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }])
 const { pathToFileURL } = require('url')
 function serveSite() {
@@ -39,7 +39,9 @@ let tray = null
 let quitting = false
 let unread = 0
 
-const inApp = (url) => typeof url === 'string' && url.startsWith(HOME)
+// the old address (github.io) still counts as RoarMe: it now sends people on to roarme.app (21 Nov)
+const OLD_HOME = 'https://alexisdigipro-hub.github.io/roarme/'
+const inApp = (url) => typeof url === 'string' && (url.startsWith(HOME) || url.startsWith(OLD_HOME))
 // only web and mail links leave the app for the browser; any other kind (file:, smb:, custom app links) is ignored,
 // so a link in a message can never start a program on the computer (security check, 17 Oct)
 // roarmail:// too (Oct 2026): a task made from an email links back to it in RoarMail, which only opens that email

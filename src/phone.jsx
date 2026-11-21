@@ -143,7 +143,7 @@ export async function friendsFromContacts() {
   }
 }
 
-const INVITE_TEXT = 'Join me on RoarMe: https://alexisdigipro-hub.github.io/roarme/'
+const INVITE_TEXT = 'Join me on RoarMe: https://roarme.app/'
 
 /* Contacts > Find Friends: who of your contacts is on RoarMe (Message), and the rest to invite by SMS.
    Light and steady (Alex, 15 Nov: a small card first, then a big one, and it stuttered): the window opens at its full

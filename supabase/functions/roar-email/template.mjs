@@ -108,6 +108,6 @@ export function offPage(ok) {
 <div style="max-width:420px;margin:24px;padding:36px 30px;border-radius:26px;background:#16181c;border:1px solid #262a31;text-align:center">
 <div style="font-family:${JOST};font-size:28px;font-weight:300;line-height:1.2">${ok ? 'No more <b style="font-weight:700">emails.</b>' : 'This link has <b style="font-weight:700">expired.</b>'}</div>
 <p style="color:#9aa1ab;font-size:15px;line-height:1.55;margin:14px 0 24px">${ok ? 'RoarMe will not email you about unread messages any more. You can turn them back on in Settings &gt; Notifications and Sounds.' : 'Turn the emails off in RoarMe, in Settings &gt; Notifications and Sounds.'}</p>
-<a href="https://alexisdigipro-hub.github.io/roarme/" style="display:inline-block;background:#d40000;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 28px;border-radius:999px">Open RoarMe</a>
+<a href="https://roarme.app/" style="display:inline-block;background:#d40000;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 28px;border-radius:999px">Open RoarMe</a>
 </div></body></html>`
 }

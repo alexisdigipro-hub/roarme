@@ -1151,3 +1151,6 @@ html:root:root:root:root:root:root:root:root:root:root[data-glass][data-skin='ha
   html:root:root:root:root:root:root:root:root:root:root[data-glass][data-skin='halo'] .ctx.tgm-out .ctx-card { animation: none !important; }
   html:root:root:root:root:root:root:root:root:root:root[data-glass][data-skin='halo'] .ctx.tgm-out .ctx-menu { animation: tgm-menu-out .15s cubic-bezier(.4, 0, .9, .6) forwards !important; transform-origin: 0 0; }
 }
+/* the pressed message's copy stands still: nothing in it animates or is scaled, so it measures and shows at its true size */
+.msg-lift .msg, .msg-lift .msg * { animation: none !important; }
+.msg-lift .bubble, .msg-lift .bubble-col { transform: none !important; scale: none !important; }

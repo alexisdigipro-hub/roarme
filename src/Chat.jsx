@@ -2955,7 +2955,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       box.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px`
       box.appendChild(c)
       document.body.appendChild(box)
-      const b = (row.querySelector('.bubble') || row).getBoundingClientRect()
+      // measured on the copy, which stands still at the very same place: the real message is sunk or mid-pop under the
+      // finger just then (scaled), and its size read small, so the menu rode over the message's foot (Alex, 22 Nov)
+      const b = (c.querySelector('.bubble') || c).getBoundingClientRect()
       const room = vh - 24 - safe.t - safe.b
       if (!mouse && rx && h + b.height + 8 <= room) {
         rx.style.marginBottom = `${b.height + 8}px`

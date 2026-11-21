@@ -1030,6 +1030,13 @@ function Appearance({ p, toast, me, setMe }) {
               </div>
             </div>
             <Switch on={p.compact} set={(v) => setPrefs({ compact: v })}>Compact Messages</Switch>
+            {/* Message Corners back (Alex, 21 Nov: "where did the squaring of the bubble's corners go?"): square at the left, round at the right */}
+            <div className="set-row set-col">
+              <span className="set-text">Message Corners<small>{p.bubbleR ? (p.bubbleR <= 1 ? 'Square' : `${p.bubbleR} px`) : "The theme's own"}</small></span>
+              <Slide min={1} max={25} step={1} value={p.bubbleR || 17} onChange={(n) => setPrefs({ bubbleR: n })} aria-label="Message Corners" />
+              <span className="range-labels"><small>Square</small><small>Round</small></span>
+              {!!p.bubbleR && <button type="button" className="pill-btn corners-own" onClick={() => setPrefs({ bubbleR: 0 })}>Theme's Own</button>}
+            </div>
           </Box>
           {/* one wallpaper for the chats and the whole app (Alex, 19 Nov); App background is gone */}
           <Box title="Wallpaper" note="For the chats and the whole app. One chat can have its own from its ⋯ menu > Change Wallpaper.">

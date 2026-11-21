@@ -6266,3 +6266,5 @@ html[data-desktop='darwin'] { --bar: 22px; }
 @media (min-width: 761px) {
   html[data-desktop='darwin'][data-theme] .app { padding: 8px 12px 12px; gap: 12px; }
 }
+/* the line under the mark on the sign-in page (Alex, 21 Nov: "Born to connect. Built to roar.") */
+html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-tag { margin: -12px 0 22px; text-align: center; font-size: 14px; font-weight: 500; letter-spacing: .02em; color: rgba(255, 255, 255, .78) !important; }

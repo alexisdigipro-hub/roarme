@@ -107,7 +107,7 @@ export function getPrefs() {
       if (/^#[0-9a-f]{6}$/i.test(p.myBubble || '') && !p.accent) { p.accent = 'h-custom'; p.accentHex = p.myBubble }
       p.oneColour = true
     }
-    Object.assign(p, { appBackground: '', appWallStrength: null, listPanel: false, listShape: 'panel', focusRings: false, accentOpacity: 100, glassBubbles: true, theirBubble: '', bubbleR: 0, chatTheme: '' })
+    Object.assign(p, { appBackground: '', appWallStrength: null, listPanel: false, listShape: 'panel', focusRings: false, accentOpacity: 100, glassBubbles: true, theirBubble: '', chatTheme: '' })
     if (p.contactShape === 'card' || p.contactShape === 'inset') p.contactShape = 'pill'
     return p
   } catch { return { ...DEFAULTS } }

@@ -6133,3 +6133,13 @@ html:root:root .rt .rt-top .rt-pro { margin-left: 0; height: 22px; padding: 0 9p
 .viewer .vw-vtools button { display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 10px; border: 0; border-radius: 999px; background: none; color: #fff; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; }
 .viewer .vw-vtools button:active { background: rgba(255, 255, 255, .12); }
 .viewer.bare .vw-pp, .viewer.bare .vw-seek { opacity: 0; pointer-events: none; }
+
+/* Gallery's Photos | Files at the top of the tab (Alex, 21 Nov: Gallery and File as one tab): a glass capsule, the chosen
+   half in a soft lens that slides between them; Photos go lighter through the editor, Files exactly as they are */
+.as-seg { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-self: center; width: min(300px, 100%); margin: 2px auto 12px; padding: 3px; border-radius: 999px; flex: none;
+  background: color-mix(in srgb, var(--text, #000) 7%, transparent); }
+.as-seg button { position: relative; z-index: 1; height: 32px; border: 0; border-radius: 999px; background: none; color: var(--muted, #777); font-size: 14px; font-weight: 600; cursor: pointer; transition: color .2s ease; }
+.as-seg button.on { color: var(--text, #000); }
+.as-seg-lens { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 999px; background: var(--panel, #fff); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); transition: transform .32s cubic-bezier(.25, 1.35, .45, 1); }
+.as-seg.r .as-seg-lens { transform: translateX(100%); }
+html[data-mode='dark'] .as-seg-lens { background: rgba(255, 255, 255, .16); box-shadow: none; }

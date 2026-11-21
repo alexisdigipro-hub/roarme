@@ -115,6 +115,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     private var lensFactors: [(String, AVCaptureDevice, CGFloat)] = []
     private var lensIndex = -1
     private var rotCoord: AnyObject?
+    private var rotObs: NSKeyValueObservation?
     private var dualCoords: [AnyObject] = []
     private var frameCount = 0
     private var shots: [String] = []
@@ -835,6 +836,31 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     }
     private func portrait(_ c: AVCaptureConnection?) { setRotation(c, 90) }
 
+    // the picture on screen upright for this camera (front or back): iOS 17's rotation coordinator says the angle and
+    // is followed when it changes; before iOS 17, portrait
+    private func uprightPreview(_ dev: AVCaptureDevice, _ layer: AVCaptureVideoPreviewLayer) {
+        if #available(iOS 17.0, *) {
+            let rc = (rotCoord as? AVCaptureDevice.RotationCoordinator).flatMap { $0.device === dev && $0.previewLayer === layer ? $0 : nil }
+                ?? AVCaptureDevice.RotationCoordinator(device: dev, previewLayer: layer)
+            if rotCoord !== rc {
+                rotCoord = rc
+                rotObs = rc.observe(\.videoRotationAngleForHorizonLevelPreview, options: [.new]) { [weak self] c, _ in
+                    DispatchQueue.main.async { self?.setRotation(self?.previewLayer?.connection, c.videoRotationAngleForHorizonLevelPreview) }
+                }
+            }
+            setRotation(layer.connection, rc.videoRotationAngleForHorizonLevelPreview)
+        } else {
+            portrait(layer.connection)
+        }
+    }
+
+    // the angle a photo or video is made at: how the phone is held (or upright when locked)
+    private func captureAngle() -> CGFloat {
+        if orientLock { return 90 }
+        if #available(iOS 17.0, *), let rc = rotCoord as? AVCaptureDevice.RotationCoordinator { return rc.videoRotationAngleForHorizonLevelCapture }
+        return shotAngle
+    }
+
     private func configure() {
         let m = mode, f = front
         let wantsMic = m == .video
@@ -929,11 +955,14 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             self.preview.layer.insertSublayer(layer, at: 0)
             self.previewLayer = layer
             self.portrait(layer.connection)
-            if #available(iOS 17.0, *) { self.rotCoord = AVCaptureDevice.RotationCoordinator(device: dev, previewLayer: layer) }
+            self.uprightPreview(dev, layer)
             self.buildLenses()
             self.refreshUI()
         }
         s.startRunning()
+        // once running, the picture upright again (the selfie stayed on its side)
+        DispatchQueue.main.async { if self.previewLayer === layer { self.uprightPreview(dev, layer) } }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { if self.previewLayer === layer { self.uprightPreview(dev, layer) } }
         applyExposure()
         if focusManual { applyFocus() }
         if wbManual { applyWB() }
@@ -1124,6 +1153,8 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             self.pip.layer.insertSublayer(fl, at: 0)
             self.previewLayer = bl
             self.pipLayer = fl
+            self.rotObs = nil
+            self.rotCoord = nil
             self.lensButtons.forEach { $0.removeFromSuperview() }
             self.lensButtons = []
             self.refreshUI()
@@ -1451,8 +1482,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         guard let po = photoOut else { return }
         keepOpen = open
         dualParts = [:]
-        var angle: CGFloat = orientLock ? 90 : shotAngle
-        if #available(iOS 17.0, *), !orientLock, let rc = rotCoord as? AVCaptureDevice.RotationCoordinator { angle = rc.videoRotationAngleForHorizonLevelCapture }
+        let angle = captureAngle()
         if mode == .photo { setRotation(po.connection(with: .video), angle) }
         let st = photoSettings()
         let take = {
@@ -1492,6 +1522,8 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("VID_\(Int(Date().timeIntervalSince1970)).mov")
         try? FileManager.default.removeItem(at: url)
         setTorch(torchOn)
+        let va = captureAngle()
+        setRotation(mo.connection(with: .video), va)
         queue.async { mo.startRecording(to: url, recordingDelegate: self) }
         recordStart = Date()
         timeLabel.text = "0:00"

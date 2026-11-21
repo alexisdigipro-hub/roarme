@@ -6055,3 +6055,8 @@ html:root:root .rt-plans.four { grid-template-columns: repeat(2, minmax(0, 1fr))
 
 /* Edit on a photo or video message (Alex, 21 Nov): the round button left of the writing box opens Edit Photo / Replace */
 .edit-media-menu { z-index: 81; min-width: 240px; animation: phx-in .22s cubic-bezier(.25,1.35,.45,1) both; }
+
+/* No grey box over what a finger touches (Alex, 21 Nov, a file in a chat: "it selects something it does not need"):
+   the iPhone's own tap highlight is off everywhere; RoarMe answers a touch with its own press effects */
+html, html * { -webkit-tap-highlight-color: transparent; }
+.bubble button, .bubble [role='button'] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }

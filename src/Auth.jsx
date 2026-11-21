@@ -69,6 +69,7 @@ export function Auth() {
           card sits just over the keyboard (styles.css, html.kb .auth), and its last row is scrolled into view once it settles */}
       <form className="auth-card" onSubmit={submit} onFocus={(e) => { const f = e.currentTarget; if (e.target.tagName === 'INPUT') setTimeout(() => f.lastElementChild?.scrollIntoView({ block: 'end', behavior: 'smooth' }), 380) }}>
         <Brand />
+        <p className="auth-tag">Born to connect. Built to roar.</p>
         {invitedBy && mode !== 'forgot' && <p className="auth-invite"><b>@{invitedBy}</b> invited you to RoarMe. {mode === 'up' ? 'Create your account and your chat opens.' : 'Sign in and your chat opens.'}</p>}
         {/* the sign-in screen is only the fields and the buttons (Alex, 14 Nov: "take out Welcome back and the words under it") */}
         {mode !== 'in' && <h1>{mode === 'up' ? 'Create your account' : 'Forgot your password?'}</h1>}

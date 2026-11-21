@@ -613,7 +613,14 @@ export default function Chat({ me, setMe }) {
     sw.addEventListener('message', on)
     return () => sw.removeEventListener('message', on)
   }, [])
-  useEffect(() => onNotificationTap((room) => { setTab('chats'); setActiveId(room) }), [])
+  useEffect(() => onNotificationTap((room) => { setTab('chats'); setActiveId(room); loadRooms(); setTimeout(() => window.dispatchEvent(new Event('roarme-wake')), 60) }), [loadRooms])
+  // the list too, when the app comes back from the background
+  useEffect(() => {
+    let last = 0
+    const back = () => { if (document.hidden || Date.now() - last < 1500) return; last = Date.now(); loadRooms() }
+    document.addEventListener('visibilitychange', back)
+    return () => document.removeEventListener('visibilitychange', back)
+  }, [loadRooms])
   // no paw in the menu bar any more (Alex, 18 Oct: "I don't need it"); an app that still shows it puts it away
   useEffect(() => {
     const d = window.roarDesktop
@@ -2101,6 +2108,22 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     })
     return () => { alive = false; clearTimeout(wait) }
   }, [load]) // eslint-disable-line react-hooks/exhaustive-deps
+  // back from the background (Alex, 21 Nov: "a notification comes with the phone locked, I go in and the message is not
+  // there, I must go out and in again"): the iPhone froze the app and its live link, so on waking, or opening from a
+  // notification, the open chat fetches its newest messages at once instead of waiting for the link to come back
+  useEffect(() => {
+    let last = 0
+    const wake = () => {
+      if (document.hidden || Date.now() - last < 1500) return
+      last = Date.now()
+      load().then((got) => setMsgs((prev) => sameMsgs(prev, got)))
+      loadReacts(); loadReads()
+    }
+    document.addEventListener('visibilitychange', wake)
+    window.addEventListener('focus', wake)
+    window.addEventListener('roarme-wake', wake)
+    return () => { document.removeEventListener('visibilitychange', wake); window.removeEventListener('focus', wake); window.removeEventListener('roarme-wake', wake) }
+  }, [load])
   // what the chat shows is kept on the device for next time (its last 60)
   useEffect(() => { if (rawMsgs.length) keepMsgs(room.room_id, rawMsgs.filter((m) => !hidden.has(m.id))) }, [rawMsgs, hidden, room.room_id])
 

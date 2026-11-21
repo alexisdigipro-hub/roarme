@@ -428,7 +428,7 @@ function ContactPick({ contacts, who, setWho, searching, onContact }) {
   )
 }
 
-export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, onPoll, transferSlot, contacts, onContact }) {
+export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, onPoll, transferSlot, contacts, onContact }) {
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
   // the Gallery tab (and the camera) sends photos and videos made lighter; the File tab sends anything exactly as it is,
@@ -488,6 +488,18 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
     if (r === 'gallery') { if (lib) setTab('gallery'); else gal.current?.click(); return }
     if (r?.files?.length) add(r.files, asScan || r.raw)
   }
+  // the chat's + opens the camera first (Alex, 21 Nov): the sheet waits unseen behind it; the camera's library picture
+  // brings the Gallery, its X the whole sheet, a photo or video goes on to the editor as any picked one
+  const [camFirst, setCamFirst] = useState(() => cameraFirst && !initial.length && !!window.Capacitor?.isNativePlatform?.())
+  useEffect(() => {
+    if (!camFirst) return
+    (async () => {
+      const r = await openCamera({}).catch(() => null)
+      if (r === 'gallery') setTab('gallery')
+      else if (r?.files?.length) add(r.files, r.raw)
+      setCamFirst(false)
+    })()
+  }, [])
   const doc = useRef(null)
   const galRaw = useRef(null)
   const scan = useRef(null) // Scan Document: the camera, the picture sent as a file, untouched
@@ -548,7 +560,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   }
   if (edit >= 0 && files[edit]) return <Suspense fallback={null}><PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} /></Suspense>
   return createPortal(
-    <div className="as-back" onClick={onClose}>
+    <div className={`as-back${camFirst ? ' asx-hide' : ''}`} onClick={onClose}>
       <div ref={sheetRef} className={`as-sheet${tab === 'location' && !files.length ? ' as-loc' : ''}${(tab === 'transfer' || tab === 'poll' || (tab === 'gallery' && lib)) && !files.length ? ' as-tall' : ''}${tab === 'gallery' && lib && !files.length ? ' as-lib' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <i className="as-grab" data-grab="" aria-hidden="true" />
         <div className={`as-head${tab === 'poll' && !files.length ? ' pl-head' : ''}`} data-grab="">

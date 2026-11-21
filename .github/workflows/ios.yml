@@ -72,6 +72,13 @@ jobs:
           /usr/libexec/PlistBuddy -c "Delete :NSUserActivityTypes" "$P" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :NSUserActivityTypes array" -c "Add :NSUserActivityTypes:0 string INSendMessageIntent" "$P"
           /usr/libexec/PlistBuddy -c "Print" "$P"
+      - name: iOS 15 and later
+        working-directory: mobile/ios/App
+        run: |
+          # Apple (ITMS-90068, 20 Nov 2026): from April 2027 apps must target iOS 15 or later; the app and its
+          # notification extension both start at 15
+          perl -pi -e 's/IPHONEOS_DEPLOYMENT_TARGET = 1[0-4]\.\d+;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' App.xcodeproj/project.pbxproj
+          grep -o "IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*" App.xcodeproj/project.pbxproj | sort | uniq -c
       - name: Apple's notifications
         working-directory: mobile/ios/App
         run: |

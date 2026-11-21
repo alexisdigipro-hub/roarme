@@ -1965,6 +1965,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // a photo or video message's picture changed in Edit (Alex, 21 Nov): Edit Photo (the editor on it) or Replace Photo
   const [editFile, setEditFile] = useState(null) // { file, compress }
   const [editMedia, setEditMedia] = useState(null) // the files the editor is open on
+  const [copyEdit, setCopyEdit] = useState(null) // { m, files, cap }: someone else's photo in the editor, sent back as a reply (Alex, 21 Nov)
   const [editMenu, setEditMenu] = useState(null) // where the small menu stands
   const [savingMedia, setSavingMedia] = useState(false)
   const replacePick = useRef(null)
@@ -2468,7 +2469,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const asFile = !!hooks.asFile
     if (viaTransfer || asFile) compress = false
     setAttach(null); setErr('')
-    const reply = replyTo
+    const reply = hooks.replyTo || replyTo
     setReplyTo(null)
     stick.current = true
     // Standard quality shrinks videos to 720p first; anything still over 50 MB goes by RoarTransfer, up to 3 GB
@@ -2506,6 +2507,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         // a small copy of a photo for the chat itself: a phone no longer opens every photo whole (a 1600 px photo
         // takes about 8 MB once opened); the whole photo still opens full screen (Alex, 21 Oct: RoarMe lighter)
         if (asFile) meta.asFile = true
+        if (hooks.editedCopy) meta.editedCopy = true
         if (/^image\/(jpeg|png|webp)$/.test(file.type) && !meta.bucket) {
           try {
             // lighter in the chat (Alex, 15 Nov), yet sharp on an iPhone's screen (21 Nov: "it almost pixelates"): 1080 px at
@@ -3325,7 +3327,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.file?.groupcall?.link ? <LinkCallCard id={m.file.groupcall.id} who={mine ? 'You' : nameOf(who)} onJoin={() => joinCall(m.file.groupcall.id, false, 'Call')} />
                       : m.file?.groupcall ? <GroupCallCard who={mine ? 'You' : nameOf(who)} live={gcLive === m.file.groupcall.id} here={gcLive === m.file.groupcall.id ? gcHere : 0} onJoin={() => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: room.room_id, id: m.file.groupcall.id, video: false } }))} />
                       : m.file?.event ? <EventCard ev={m.file.event} sent={m.created_at} who={title} onJoin={(v) => (room.kind === 'group' ? startGroupCall(room.room_id, v) : hands.current.onCall(v))} />
-                      : m.kind === 'image' || isGifFile ? <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : hands.current.openPhoto(m))} />
+                      : m.kind === 'image' || isGifFile ? (m.file?.editedCopy ? <span className="ecopy-wrap"><span className="ecopy">{I.edit}Edited copy</span><Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : hands.current.openPhoto(m))} /></span> : <Pic file={m.file} auto={autoDl} still={isGifFile && prefs.autoplayGifs === false} gif={isGifFile} onOpen={(u) => (isGifFile ? window.open(u, '_blank', 'noopener') : hands.current.openPhoto(m))} />)
                       : m.kind === 'voice' ? <AudioNote file={m.file} />
                       : isTransfer ? <TransferTile file={m.file} onCinema={hands.current.setCinema} />
                       : isVideo && m.file?.round ? <NoteTile file={m.file} />
@@ -3597,6 +3599,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 </div>
               </OnTop>
             )}
+            {copyEdit && (
+              <Suspense fallback={null}>
+                <PhotoSend files={copyEdit.files} caption={copyEdit.cap} setCaption={(c) => setCopyEdit((x) => (x ? { ...x, cap: typeof c === 'function' ? c(x.cap) : c } : x))} onBack={() => setCopyEdit(null)}
+                  onReplace={(i, nf) => setCopyEdit((x) => (x ? { ...x, files: x.files.map((f, k) => (k === i ? nf : f)) } : x))}
+                  onSend={(kept, compress) => { const c = copyEdit; setCopyEdit(null); if (kept[0]) sendFiles(kept, c.cap.trim(), compress, false, { replyTo: c.m, editedCopy: true }) }} />
+              </Suspense>
+            )}
             {editMedia && (
               <Suspense fallback={null}>
                 <PhotoSend files={editMedia} caption={text} setCaption={setText} onBack={() => setEditMedia(null)}
@@ -3720,6 +3729,15 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {(menu.m.kind === 'image' || /^video\//.test(menu.m.file?.type || '')) && <button type="button" onClick={async () => { const m = menu.m; setMenu(null); if (m.kind === 'image') openPhoto(m); else { const u = await fileLink(m.file); if (u) setViewer({ items: [{ url: u, type: m.file?.type, name: m.file?.name }], index: 0 }) } }}>{I.download}<span>Save {menu.m.kind === 'image' ? 'Image' : 'Video'}</span></button>}
               {replyCount[menu.m.id] > 0 && <button type="button" onClick={() => { setReplies(menu.m); setMenu(null) }}>{I.reply}<span>View {replyCount[menu.m.id]} {replyCount[menu.m.id] === 1 ? 'Reply' : 'Replies'}</span></button>}
               <hr />
+              {menu.m.user_id !== me.id && mediaMsg(menu.m) && !menu.m.deleted_at && !sealOn && <button type="button" onClick={async () => {
+                const m = menu.m
+                setMenu(null)
+                try {
+                  const url = await fileLink(m.file)
+                  const b = await (await fetch(url)).blob()
+                  setCopyEdit({ m, cap: '', files: [new File([b], m.file?.name || 'photo.jpg', { type: m.file?.type || b.type || 'image/jpeg' })] })
+                } catch (er) { setErr(errText(er)) }
+              }}>{I.edit}<span>Edit</span></button>}
               {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && !menu.m.file?.roartransfer && <button type="button" onClick={() => { setEditing(menu.m); setText(textOf(menu.m)); setMenu(null) }}>{I.edit}<span>Edit</span></button>}
               <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
               <button type="button" onClick={() => { setRemindFor(menu.m); setMenu(null) }}>{I.bell}<span>Remind Me</span></button>

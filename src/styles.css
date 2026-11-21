@@ -6188,3 +6188,8 @@ html:root:root:root:root:root:root .modal-back.as-page.pf-leave > .modal { anima
 @media (prefers-reduced-motion: reduce) { html:root:root:root:root:root:root .modal-back.as-page.pf-leave { display: none; } }
 /* on a computer the sheet is wide enough for all eight tabs, Contact and Poll among them (Alex, 21 Nov) */
 @media (min-width: 761px) { html:root:root:root:root .as-sheet.as-wide { width: min(680px, calc(100% - 32px)) !important; } }
+
+/* someone's photo edited and sent back as a reply (Alex, 21 Nov): a small dark chip at the picture's top left */
+.bubble .ecopy { position: absolute; z-index: 3; top: 8px; left: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px 3px 6px; border-radius: 999px; background: rgba(0, 0, 0, .5); color: #fff; font-size: 11px; font-weight: 600; pointer-events: none; }
+.bubble .ecopy svg { width: 12px; height: 12px; }
+.bubble .ecopy-wrap { position: relative; display: block; }

@@ -6195,3 +6195,17 @@ html:root:root:root:root:root:root .modal-back.as-page.pf-leave > .modal { anima
 .bubble .ecopy-wrap { position: relative; display: block; }
 /* Edit Photo / Replace's small menu: only as tall as its two rows, just over the button (Alex, 21 Nov: it filled the screen) */
 html:root:root:root:root .menu.edit-media-menu { top: auto !important; right: auto !important; height: auto !important; max-height: none !important; min-height: 0 !important; width: max-content !important; min-width: 220px !important; }
+
+/* pinch to zoom the photo library (Alex, 21 Nov, Telegram's "Zoom in the Media Picker"): the columns come from
+   --lbz (2 to 13), a change lands with a short settle, from 6 across the rings and times step aside and the gaps go
+   to a hair, and a month chip floats at the top while one scrolls */
+html:root:root:root:root .as-sheet.as-lib .lib-grid.lbz { grid-template-columns: repeat(var(--lbz, 3), minmax(0, 1fr)) !important; gap: 2px !important; touch-action: pan-y; transform-origin: 50% 0; will-change: transform; }
+html:root:root:root:root .as-sheet.as-lib .lib-grid.lbz.lbz-dense { gap: 1px !important; }
+.lib-grid.lbz:not(.lbz-live) { transition: transform .22s cubic-bezier(.25, 1.35, .45, 1); }
+.lib-grid.lbz.lbz-in { animation: lbz-in .26s cubic-bezier(.25, 1.2, .45, 1); }
+@keyframes lbz-in { from { opacity: .55; } to { opacity: 1; } }
+.lib-grid.lbz-dense .lib-ring, .lib-grid.lbz-dense .lib-dur { display: none; }
+.lib-grid.lbz-dense .lib-cell.on img { transform: none; border-radius: 0; outline: 2px solid var(--halo, var(--accent)); outline-offset: -2px; }
+.lib-grid.lbz[data-cols='2'] .lib-ring { width: 28px; height: 28px; top: 9px; right: 9px; font-size: 14px; }
+.lbz-month { position: sticky; top: 52px; z-index: 6; width: max-content; margin: 0 auto -30px; padding: 5px 12px; border-radius: 999px; background: rgba(0, 0, 0, .55); color: #fff; font-size: 13px; font-weight: 600; pointer-events: none; animation: lbz-in .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { .lib-grid.lbz.lbz-in { animation: none; } .lib-grid.lbz:not(.lbz-live) { transition: none; } }

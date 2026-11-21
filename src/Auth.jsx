@@ -4,6 +4,21 @@ import { Wordmark } from './ui.jsx'
 import { pendingInvite } from './invite.jsx'
 import { COUNTRIES, PhoneField, smsErr, toE164, usePhoneAuth } from './phone.jsx'
 
+// the signs inside the fields (Alex, 21 Nov): an envelope, and the eye that shows or hides the password
+const MAIL_I = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m4 7 8 6 8-6" /></svg>
+const EYE_I = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" /></svg>
+const EYE_OFF_I = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3l18 18" /><path d="M10.6 6.1A9.6 9.6 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-3 3.7M6.6 7.6A16.8 16.8 0 0 0 2.5 12S6 18 12 18a9 9 0 0 0 4-.9" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></svg>
+function PwField({ label, value, onChange, autoComplete, placeholder = 'Password' }) {
+  const [shown, setShown] = useState(false)
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <input className="input" type={shown ? 'text' : 'password'} autoComplete={autoComplete} required value={value} onChange={onChange} placeholder={placeholder} autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+      <button type="button" className="lgx-ico" aria-label={shown ? 'Hide password' : 'Show password'} onClick={() => setShown((v) => !v)}>{shown ? EYE_I : EYE_OFF_I}</button>
+    </label>
+  )
+}
+
 function Brand() {
   return (
     <div className="brand">
@@ -60,14 +75,10 @@ export function Auth() {
         {mode === 'forgot' && <p className="auth-sub">Type your email and we will send you a link.</p>}
         <label className="field">
           <span>Email</span>
-          <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+          <i className="lgx-ico" aria-hidden="true">{MAIL_I}</i>
         </label>
-        {mode !== 'forgot' && (
-          <label className="field">
-            <span>Password</span>
-            <input className="input" type="password" autoComplete={mode === 'up' ? 'new-password' : 'current-password'} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder={mode === 'up' ? 'At least 8 characters' : ''} />
-          </label>
-        )}
+        {mode !== 'forgot' && <PwField label="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'up' ? 'new-password' : 'current-password'} placeholder={mode === 'up' ? 'Password, at least 8 characters' : 'Password'} />}
         {err && <p className="auth-err">{err}</p>}
         {note && <p className="auth-note">{note}</p>}
         <button className="btn btn-main" disabled={busy}>{busy ? '…' : mode === 'in' ? 'Sign in' : mode === 'up' ? 'Sign up' : 'Send the link'}</button>
@@ -100,10 +111,7 @@ export function NewPassword({ onDone }) {
       <form className="auth-card" onSubmit={submit}>
         <Brand />
         <h1>Set a new password</h1>
-        <label className="field">
-          <span>New password</span>
-          <input className="input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
-        </label>
+        <PwField label="New password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" placeholder="New password, at least 8 characters" />
         {err && <p className="auth-err">{err}</p>}
         <button className="btn btn-main" disabled={busy}>{busy ? '…' : 'Save'}</button>
       </form>

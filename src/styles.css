@@ -6060,3 +6060,5 @@ html:root:root .rt-plans.four { grid-template-columns: repeat(2, minmax(0, 1fr))
    the iPhone's own tap highlight is off everywhere; RoarMe answers a touch with its own press effects */
 html, html * { -webkit-tap-highlight-color: transparent; }
 .bubble button, .bubble [role='button'] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+/* the frame shown for a video with no still: not a player, so a touch is the message's own */
+.vid-poster .vid-still { pointer-events: none; -webkit-touch-callout: none; object-fit: cover; }

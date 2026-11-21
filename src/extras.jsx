@@ -733,6 +733,17 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
   const [poster, setPoster] = useState('')
   const [tapped, setTapped] = useState(false)
   useEffect(() => { if (!file?.thumb) return undefined; let alive = true; picLink(thumbOf(file)).then((u) => { if (alive) setPoster(u) }); return () => { alive = false } }, [file?.thumb])
+  // a video with no still of its own: a quiet frame of it (half a second in, past a black start) under the same play sign,
+  // with no player controls, so a long press opens the message's menu as on anything else (Alex, 21 Nov)
+  if (!file?.thumb && go && !play && !tapped) {
+    return (
+      <span className="vid-box vid-poster" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setGo(true); setTapped(true) }}>
+        {url ? <video className="pic-img ready vid-still" src={url} muted playsInline preload="metadata" tabIndex={-1} onLoadedMetadata={(e) => { try { e.currentTarget.currentTime = Math.min(0.5, (e.currentTarget.duration || 1) / 2) } catch { /* none */ } }} /> : <span className="pic-wait" />}
+        <i className="vid-play">{I.play}</i>
+        <small className="vid-size">{fmtBytes(file?.size)}</small>
+      </span>
+    )
+  }
   if (file?.thumb && !play && !tapped) {
     return (
       <span className="vid-box vid-poster" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setGo(true); setTapped(true) }}>

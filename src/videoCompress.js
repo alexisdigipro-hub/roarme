@@ -24,7 +24,7 @@ const AUDIO_BPS = 96_000
 
 export const isVideoFile = (f) => (f?.type || '').startsWith('video/')
 
-function pickType() {
+export function pickType() {
   if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) return ''
   const types = ['video/mp4;codecs=avc1.42E01F,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
   return types.find((t) => MediaRecorder.isTypeSupported(t)) || ''
@@ -43,12 +43,12 @@ function audioCtx() {
   return actx
 }
 
-const once = (el, ev, ms) => new Promise((resolve, reject) => {
+export const once = (el, ev, ms) => new Promise((resolve, reject) => {
   const t = setTimeout(() => { el.removeEventListener(ev, h); reject(new Error(`${ev} timed out`)) }, ms)
   const h = () => { clearTimeout(t); resolve() }
   el.addEventListener(ev, h, { once: true })
 })
-const even = (n) => Math.max(2, Math.round(n / 2) * 2)
+export const even = (n) => Math.max(2, Math.round(n / 2) * 2)
 
 /* Call inside the click, before any await. Returns a handle for compressVideo, or null. */
 export function prepareVideo(file) {

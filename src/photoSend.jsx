@@ -1,6 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { process as runFx, processed, lookValues, isNeutral, lutOf, LOOKS, BANDS, noHsl, noCurves } from './photoFx.js'
+import { canvasOf, contrastOf, FXPEN, FONTS, turned, makeFx, paint, applySteps } from './photoKit.js'
+import { getGL } from './videoGL.js'
+import { canEditVideo, exportEdited, grabFrame, VIDEO_EDIT_MAX } from './videoEdit.js'
+import { prepareVideo, releaseVideo } from './videoCompress.js'
+
+const NO_REC = { steps: [], trim: null }
+const mmss = (s) => `${Math.floor((s || 0) / 60)}:${String(Math.floor((s || 0) % 60)).padStart(2, '0')}`
 
 /* The photo before it is sent, full screen (Alex, 21 Nov, from Telegram's editor, sample
    https://claude.ai/artifact/HzvtsMf5inTA3G2i3tYQzE version 2: "βάλ' το"; the pro tools the same day: "Όλα").
@@ -30,16 +37,10 @@ const ADJ = [
 const ZERO = Object.fromEntries(ADJ.map(([k]) => [k, 0]))
 const COLORS = ['#ffffff', '#ff453a', '#ff9f0a', '#ffd60a', '#32d74b', '#64d2ff', '#0a84ff', '#bf5af2']
 const PENS = ['pen', 'arrow', 'marker', 'neon', 'blur', 'pixel', 'eraser']
-const FXPEN = (s) => s.pen === 'blur' || s.pen === 'pixel'
+
 const SHAPES = [
   ['line', <path key="l" d="M5 19L19 5" />], ['arrow', <path key="a" d="M5 19L19 5M10 5h9v9" />],
   ['rect', <rect key="r" x="4.5" y="6" width="15" height="12" rx="2.5" />], ['circle', <circle key="c" cx="12" cy="12" r="7.5" />],
-]
-const FONTS = [
-  ['sans', 'Sans', '-apple-system, system-ui, sans-serif', 800],
-  ['serif', 'Serif', '"New York", Georgia, "Times New Roman", serif', 700],
-  ['round', 'Rounded', 'ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif', 800],
-  ['mono', 'Mono', 'ui-monospace, Menlo, monospace', 700],
 ]
 const TSTYLES = ['fill', 'outline', 'plain']
 const ASPECTS = [['Free', 0], ['1:1', 1], ['4:5', 0.8], ['4:3', 4 / 3], ['16:9', 16 / 9], ['1.85', 1.85], ['2.39', 2.39], ['9:16', 9 / 16]]
@@ -61,25 +62,14 @@ const IC = {
   reset: S(<path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4.5h4.5" />),
   undo: S(<><path d="M9 14L4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" /></>),
   auto: S(<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM18.5 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />),
+  play: <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true"><path d="M8 5.2v13.6a.8.8 0 0 0 1.22.68l10.9-6.8a.8.8 0 0 0 0-1.36L9.22 4.52A.8.8 0 0 0 8 5.2z" /></svg>,
   eye: S(<><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" /></>),
   tstyle: { fill: S(<><rect x="3.5" y="5" width="17" height="14" rx="3.5" fill="currentColor" opacity=".35" /><path d="M8.5 15.5L12 8l3.5 7.5M9.8 13h4.4" /></>), outline: S(<path d="M7 18.5L12 5.5l5 13M8.8 14h6.4" strokeWidth="2.6" />), plain: S(<path d="M7.5 17.5L12 6.5l4.5 11M9 14h6" />) },
 }
 const isPhoto = (f) => /^image\//.test(f?.type || '') && !/gif/.test(f.type)
 const tick = () => { try { navigator.vibrate?.(4) } catch { /* none */ } }
-const canvasOf = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c }
-const contrastOf = (c) => (/^#(f|e|d)/i.test(c) ? '#111' : '#fff')
 
-// the image turned (90° steps), mirrored and straightened, scaled so the straightened picture still fills its frame
-const turned = (img, rot, flip, deg) => {
-  const sw = img.width, sh = img.height, side = rot % 180 !== 0
-  const w = side ? sh : sw, h = side ? sw : sh
-  const c = canvasOf(w, h)
-  const g = c.getContext('2d'), t = (Math.abs(deg) * Math.PI) / 180
-  const fill = Math.max((w * Math.cos(t) + h * Math.sin(t)) / w, (w * Math.sin(t) + h * Math.cos(t)) / h)
-  g.translate(w / 2, h / 2); g.rotate(((rot + deg) * Math.PI) / 180); if (flip) g.scale(-1, 1); g.scale(fill, fill)
-  g.drawImage(img, -sw / 2, -sh / 2)
-  return c
-}
+
 const toFile = (canvas, name) => new Promise((ok) => canvas.toBlob((b) => ok(new File([b], (name || 'photo').replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg', lastModified: Date.now() })), 'image/jpeg', 0.92))
 const loadImg = (file) => new Promise((ok, no) => {
   const u = URL.createObjectURL(file), im = new Image()
@@ -91,16 +81,6 @@ const loadImg = (file) => new Promise((ok, no) => {
   im.onerror = () => { URL.revokeObjectURL(u); no(new Error('image')) }
   im.src = u
 })
-// a blurred and a pixelated copy of the picture, for the Blur and Pixelate brushes (by scaling: canvas filters are not on every iPhone)
-const makeFx = (src, w, h) => {
-  const step = (from, sw, sh) => { const c = canvasOf(sw, sh), g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(from, 0, 0, c.width, c.height); return c }
-  const a = step(src, w / 6, h / 6), b = step(a, w / 24, h / 24), c2 = step(b, w / 6, h / 6), blur = step(c2, w, h)
-  const cell = Math.max(6, Math.round(Math.min(w, h) / 36)), small = canvasOf(w / cell, h / cell)
-  small.getContext('2d').drawImage(src, 0, 0, small.width, small.height)
-  const pixel = canvasOf(w, h), pg = pixel.getContext('2d'); pg.imageSmoothingEnabled = false; pg.drawImage(small, 0, 0, w, h)
-  return { blur, pixel }
-}
-
 // a ruler dragged sideways: degrees for straighten, values for adjust
 function Ruler({ from, to, step, value, onChange, label }) {
   const px = 9.5 / step
@@ -181,6 +161,61 @@ function Curve({ pts, color, onChange }) {
   )
 }
 
+/* Trim (Alex, 21 Nov): a strip of frames from the video, a handle at each end to keep only the part between them, the
+   part's length over it, and a line where the video is; a tap on the strip goes there. */
+function Trim({ url, dur, trim, at, onChange, onSeek }) {
+  const [thumbs, setThumbs] = useState([])
+  const strip = useRef(null)
+  const drag = useRef(null)
+  const N = 9
+  useEffect(() => {
+    if (!url || !dur) return undefined
+    let alive = true
+    const v = document.createElement('video')
+    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url
+    const out = []
+    const next = (i) => {
+      if (!alive || i >= N) return
+      const go = () => { v.removeEventListener('seeked', go); const c = grabFrame(v, 140); if (c) out[i] = c.toDataURL('image/jpeg', 0.6); if (alive) setThumbs([...out]); next(i + 1) }
+      v.addEventListener('seeked', go)
+      v.currentTime = Math.min(dur - 0.05, ((i + 0.5) / N) * dur)
+    }
+    v.addEventListener('loadeddata', () => next(0), { once: true })
+    return () => { alive = false; v.removeAttribute('src'); v.load() }
+  }, [url, dur])
+  const a = trim ? trim[0] : 0, b = trim ? trim[1] : dur
+  const frac = (e) => { const r = strip.current.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * dur }
+  const down = (e) => {
+    const h = e.target.dataset.h
+    drag.current = h || 'seek'
+    e.currentTarget.setPointerCapture(e.pointerId)
+    if (!h) onSeek(Math.min(b, Math.max(a, frac(e))))
+  }
+  const move = (e) => {
+    const h = drag.current
+    if (!h) return
+    const t = frac(e), min = Math.min(0.5, dur)
+    if (h === 'a') { const na = Math.min(b - min, Math.max(0, t)); onChange([na, b]); onSeek(na) }
+    else if (h === 'b') { const nb = Math.max(a + min, Math.min(dur, t)); onChange([a, nb]); onSeek(nb) }
+    else onSeek(Math.min(b, Math.max(a, t)))
+  }
+  const up = () => { if (drag.current === 'a' || drag.current === 'b') tick(); drag.current = null }
+  return (
+    <div className="phx-trim">
+      <div className="phx-trim-strip" ref={strip} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+        <div className="phx-trim-frames">{Array.from({ length: N }, (_, i) => <span key={i} style={thumbs[i] ? { backgroundImage: `url(${thumbs[i]})` } : undefined} />)}</div>
+        <i className="phx-trim-dim l" style={{ width: `${(a / dur) * 100}%` }} />
+        <i className="phx-trim-dim r" style={{ width: `${(1 - b / dur) * 100}%` }} />
+        <div className="phx-trim-box" style={{ left: `${(a / dur) * 100}%`, right: `${(1 - b / dur) * 100}%` }}>
+          <b className="phx-trim-h l" data-h="a" /><b className="phx-trim-h r" data-h="b" />
+        </div>
+        <i className="phx-trim-at" style={{ left: `${(Math.min(b, Math.max(a, at)) / dur) * 100}%` }} />
+      </div>
+      <div className="phx-trim-times"><small>{mmss(a)}</small><b>{mmss(b - a)}</b><small>{mmss(b)}</small></div>
+    </div>
+  )
+}
+
 export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onReplace, onSend }) {
   const [idx, setIdx] = useState(Math.min(start, files.length - 1))
   const [dropped, setDropped] = useState(() => new Set())
@@ -233,21 +268,39 @@ export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onRep
   const tdrag = useRef(null)
   const hold = useRef(null)
   const swipe = useRef(null)
+  // videos (Alex, 21 Nov): the same tools as steps replayed on every frame when sent, and Trim
+  const [recipes, setRecipes] = useState(() => new Map())
+  const [vdur, setVdur] = useState(0)
+  const [vt, setVt] = useState(0)
+  const [vplay, setVplay] = useState(false)
+  const [exporting, setExporting] = useState(null)
+  const stopExport = useRef(false)
+  const vref = useRef(null)
+  const live = useRef(null)
+  const tapGuard = useRef(false)
   const file = files[idx]
   const photo = isPhoto(file)
+  const isVid = /^video\//.test(file?.type || '')
+  const vidEdit = isVid && canEditVideo() && vdur > 0 && vdur <= VIDEO_EDIT_MAX
+  const rec = recipes.get(idx) || NO_REC
+  const setRec = (fn) => setRecipes((m) => { const n = new Map(m); n.set(idx, fn(m.get(idx) || NO_REC)); return n })
   const kept = files.filter((_, k) => !dropped.has(k))
   if (file && !origFile.current.has(idx)) origFile.current.set(idx, file)
-  const changed = photo && origFile.current.get(idx) !== file
+  const changed = photo ? origFile.current.get(idx) !== file : isVid && (rec.steps.length > 0 || !!rec.trim)
+  const asPic = photo || (isVid && !!mode)
+  const editable = photo ? !!img : vidEdit
 
   // the working picture for the photo shown
   useEffect(() => {
     let alive = true
+    if (!photo) return undefined
     setImg(null)
     if (photo) loadImg(file).then((c) => { if (!alive) return; if (origFile.current.get(idx) === file) origPic.current.set(idx, c); setImg(c) }).catch(() => {})
     return () => { alive = false }
   }, [file, photo, idx])
   const [vidUrl, setVidUrl] = useState('')
   useEffect(() => {
+    setVdur(0); setVt(0); setVplay(false)
     if (photo || !file) { setVidUrl(''); return undefined }
     const u = URL.createObjectURL(file); setVidUrl(u)
     return () => URL.revokeObjectURL(u)
@@ -260,7 +313,7 @@ export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onRep
   useLayoutEffect(() => {
     const el = stage.current
     const pic = mode === 'crop' && img ? turned(img, rot, flip, deg) : (peek && !mode && origPic.current.get(idx)) || img
-    if (!el || !pic) return
+    if (!el || !pic || !view.current) return
     const cs = getComputedStyle(el), pad = mode === 'crop' ? 36 : 0
     const aw = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - pad
     const ah = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - pad
@@ -308,14 +361,57 @@ export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onRep
     paint(c.getContext('2d'), c.width, c.height, strokes, dpr, fxScreen.current)
   }, [strokes, box])
 
+  // a video with edits plays through them on screen, frame by frame (smaller than when sent)
+  useEffect(() => {
+    if (!isVid || mode || !rec.steps.length) return undefined
+    const gl = getGL(), pool = {}, src = document.createElement('canvas')
+    let id = 0, last = -1
+    const loop = () => {
+      const v = vref.current, c = live.current
+      if (v && c && v.videoWidth && v.currentTime !== last) {
+        last = v.currentTime
+        try {
+          const out = applySteps(grabFrame(v, 900, src), rec.steps, gl, pool)
+          if (c.width !== out.width || c.height !== out.height) { c.width = out.width; c.height = out.height }
+          c.getContext('2d').drawImage(out, 0, 0)
+        } catch { /* a frame not ready yet */ }
+      }
+      id = requestAnimationFrame(loop)
+    }
+    id = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(id)
+  }, [isVid, mode, rec.steps, vidUrl])
+  const vTrim = rec.trim || [0, vdur]
+  const vToggle = () => {
+    const v = vref.current
+    if (!v) return
+    if (tapGuard.current) { tapGuard.current = false; return }
+    if (v.paused) { if (v.currentTime < vTrim[0] || v.currentTime >= vTrim[1] - 0.05) v.currentTime = vTrim[0]; v.play().catch(() => {}) } else v.pause()
+  }
+  const vSeek = (t) => { const v = vref.current; if (v) { v.currentTime = t; setVt(t) } }
+
   const reset = () => {
     setRot(0); setFlip(false); setDeg(0); setAspect(0); setBars(false); setCrop({ x: 0, y: 0, w: 1, h: 1 })
     setAdj(ZERO); setCurves(noCurves()); setHsl(noHsl()); setLook('none'); setStrength(100)
     setStrokes([]); setDrawTab('draw'); setSel(null); setPeek(false)
   }
-  const open = (m) => { reset(); setMode(m); tick() }
+  const open = (m) => {
+    if (isVid) {
+      // the frame on screen, with the edits so far, is the still the tools work on
+      const v = vref.current
+      if (!v || !v.videoWidth) return
+      v.pause()
+      const f = applySteps(grabFrame(v, 1600), rec.steps, getGL(), {})
+      const still = canvasOf(f.width, f.height); still.getContext('2d').drawImage(f, 0, 0)
+      setImg(still)
+    }
+    reset(); setMode(m); tick()
+  }
   const cancel = () => { reset(); setMode('') }
-  const revert = () => { const o = origFile.current.get(idx); if (o && o !== file) { onReplace(idx, o); tick() } }
+  const revert = () => {
+    if (isVid) { setRec(() => NO_REC); tick(); return }
+    const o = origFile.current.get(idx); if (o && o !== file) { onReplace(idx, o); tick() }
+  }
 
   // ✓: the tool's changes become the photo
   const done = async () => {
@@ -349,7 +445,14 @@ export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onRep
         out = canvasOf(img.width, img.height)
         const g = out.getContext('2d'); g.drawImage(img, 0, 0); g.drawImage(layer, 0, 0)
       }
-      if (out !== img) { const nf = await toFile(out, file.name); onReplace(idx, nf); setImg(out) }
+      if (out !== img && isVid) {
+        // a video keeps the tool as a step, replayed on every frame when it is sent
+        const step = mode === 'crop' ? { t: 'crop', rot, flip, deg, crop, bars, aspect }
+          : mode === 'draw' ? { t: 'draw', strokes: strokes.filter((s) => s.text === undefined || s.text.trim()).map((s) => (s.text !== undefined ? { ...s, paintText: true } : s)), boxW: box.w }
+            : { t: 'fx', params }
+        setRec((r) => ({ ...r, steps: [...r.steps, step] }))
+        setImg(out)
+      } else if (out !== img) { const nf = await toFile(out, file.name); onReplace(idx, nf); setImg(out) }
     } catch { /* a picture too big for this device's memory: leave it as it was */ }
     reset(); setMode(''); setBusy(false); tick()
   }
@@ -435,17 +538,39 @@ export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onRep
   // hold on the photo (or the eye) to see it as it was
   const holdOn = () => { if (!changed && mode !== 'adjust' && mode !== 'looks') return; setPeek(true); tick() }
   const stageDown = (e) => {
+    tapGuard.current = false
     if (!mode && files.length > 1) swipe.current = e.clientX
     if (!mode || mode === 'adjust' || mode === 'looks') { clearTimeout(hold.current); hold.current = setTimeout(holdOn, 260) }
   }
   const stageUp = (e) => {
     clearTimeout(hold.current)
-    if (peek) { setPeek(false); swipe.current = null; return }
+    if (peek) { setPeek(false); swipe.current = null; tapGuard.current = true; return }
     if (swipe.current == null) return
-    const dx = e.clientX - swipe.current; swipe.current = null; if (Math.abs(dx) > 50) go(idx + (dx < 0 ? 1 : -1))
+    const dx = e.clientX - swipe.current; swipe.current = null; if (Math.abs(dx) > 50) { tapGuard.current = true; go(idx + (dx < 0 ? 1 : -1)) }
   }
 
-  const send = () => { if (busy || !kept.length) return; onSend(kept, !hd) }
+  const send = () => {
+    if (busy || exporting || !kept.length) return
+    const jobs = []
+    files.forEach((f, k) => { const r = recipes.get(k); if (!dropped.has(k) && /^video\//.test(f.type) && r && (r.steps.length || r.trim)) jobs.push({ k, f, r }) })
+    if (!jobs.length) { onSend(kept, !hd); return }
+    vref.current?.pause()
+    // Safari plays a video with its sound only from inside the tap: each is readied now, before anything waits
+    const handles = jobs.map((j) => prepareVideo(j.f))
+    stopExport.current = false
+    setExporting({ i: 0, n: jobs.length, p: 0 })
+    ;(async () => {
+      const out = files.slice()
+      for (let i = 0; i < jobs.length && !stopExport.current; i++) {
+        setExporting({ i, n: jobs.length, p: 0 })
+        const nf = await exportEdited(handles[i], jobs[i].r, { hd, stopped: () => stopExport.current, onProgress: (p) => setExporting({ i, n: jobs.length, p }) })
+        if (nf) out[jobs[i].k] = nf
+      }
+      handles.forEach((h) => releaseVideo(h))
+      setExporting(null)
+      if (!stopExport.current) onSend(out.filter((_, k) => !dropped.has(k)), !hd)
+    })()
+  }
   const toggleKeep = () => setDropped((d) => { const n = new Set(d); if (n.has(idx)) n.delete(idx); else n.add(idx); return n })
 
   const val = adj[dial], [, dialName, dMin, dMax] = ADJ.find(([k]) => k === dial)
@@ -489,7 +614,17 @@ export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onRep
 
       <div className="phx-stage" ref={stage} onPointerDown={stageDown} onPointerUp={stageUp} onPointerCancel={() => { clearTimeout(hold.current); setPeek(false); swipe.current = null }}
         onContextMenu={(e) => e.preventDefault()}>
-        {photo ? (
+        {isVid && vidUrl && (
+          <div className={`phx-vid${mode ? ' off' : ''}${!mode && rec.steps.length && !peek ? ' has-live' : ''}`}>
+            <video ref={vref} className="phx-video" src={`${vidUrl}#t=0.001`} playsInline preload="auto" controls={!vidEdit && vdur !== 0}
+              onLoadedMetadata={(e) => setVdur(Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : -1)}
+              onTimeUpdate={(e) => { const v = e.currentTarget; if (vidEdit && !v.paused && v.currentTime >= vTrim[1] - 0.03) v.currentTime = vTrim[0]; setVt(v.currentTime) }}
+              onPlay={() => setVplay(true)} onPause={() => setVplay(false)} onClick={vidEdit ? vToggle : undefined} />
+            {!mode && rec.steps.length > 0 && !peek && <canvas ref={live} className="phx-live" onClick={vToggle} />}
+            {vidEdit && !vplay && !mode && <button type="button" className="phx-g phx-playbig" onClick={vToggle} aria-label="Play">{IC.play}</button>}
+          </div>
+        )}
+        {asPic ? (
           <div className="phx-pic" style={{ width: box.w || undefined, height: box.h || undefined }}>
             <canvas ref={view} />
             <canvas ref={ink} className="phx-ink" style={{ pointerEvents: mode === 'draw' ? 'auto' : 'none' }} onPointerDown={inkDown} onPointerMove={inkMove} onPointerUp={inkUp} onPointerCancel={inkUp} />
@@ -510,8 +645,7 @@ export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onRep
               </div>
             )}
           </div>
-        ) : file && /^video\//.test(file.type) ? <video className="phx-video" src={vidUrl || undefined} controls playsInline />
-          : file ? <img className="phx-video" src={vidUrl || undefined} alt="" /> : null}
+        ) : !isVid && file ? <img className="phx-video" src={vidUrl || undefined} alt="" /> : null}
         {mode === 'draw' && (
           <div className={`phx-size${sizing ? ' active' : ''}`}>
             <i className="phx-wedge" />
@@ -524,13 +658,15 @@ export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onRep
 
       {!mode && (
         <div className="phx-foot">
+          {vidEdit && <Trim url={vidUrl} dur={vdur} trim={rec.trim} at={vt} onSeek={vSeek} onChange={(t) => setRec((r) => ({ ...r, trim: t[0] <= 0.05 && t[1] >= vdur - 0.05 ? null : t }))} />}
+          {isVid && vdur > VIDEO_EDIT_MAX && <small className="phx-note">Videos over 3 minutes are sent as they are.</small>}
           <label className="phx-cap"><input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" /></label>
           <div className="phx-row">
             <div className="phx-g phx-tools">
-              <button type="button" disabled={!photo || !img} onClick={() => open('crop')}>{IC.crop}<small>Crop</small></button>
-              <button type="button" disabled={!photo || !img} onClick={() => open('draw')}>{IC.draw}<small>Draw</small></button>
-              <button type="button" disabled={!photo || !img} onClick={() => open('adjust')}>{IC.adjust}<small>Adjust</small></button>
-              <button type="button" disabled={!photo || !img} onClick={() => open('looks')}>{IC.looks}<small>Looks</small></button>
+              <button type="button" disabled={!editable} onClick={() => open('crop')}>{IC.crop}<small>Crop</small></button>
+              <button type="button" disabled={!editable} onClick={() => open('draw')}>{IC.draw}<small>Draw</small></button>
+              <button type="button" disabled={!editable} onClick={() => open('adjust')}>{IC.adjust}<small>Adjust</small></button>
+              <button type="button" disabled={!editable} onClick={() => open('looks')}>{IC.looks}<small>Looks</small></button>
               <button type="button" className={hd ? 'on-hd' : ''} onClick={() => { setHd((v) => !v); tick() }} aria-pressed={hd}><span className="phx-hd">HD</span><small>{hd ? 'Full' : 'Quality'}</small></button>
             </div>
             <button type="button" className="phx-send" disabled={busy || !kept.length} onClick={send} aria-label={kept.length > 1 ? `Send ${kept.length}` : 'Send'}>{IC.send}{kept.length > 1 && <i className="phx-n">{kept.length}</i>}</button>
@@ -661,74 +797,18 @@ export function PhotoSend({ files, start = 0, caption, setCaption, onBack, onRep
           </div>
         </div>
       )}
+      {exporting && (
+        <div className="phx-export" role="alertdialog" aria-label="Preparing video">
+          <div className="phx-g phx-export-card">
+            <b>{exporting.n > 1 ? `Preparing video ${exporting.i + 1} of ${exporting.n}` : 'Preparing video'}</b>
+            <span className="phx-export-bar"><i style={{ width: `${Math.round(exporting.p * 100)}%` }} /></span>
+            <small>{Math.round(exporting.p * 100)}% · keep RoarMe open</small>
+            <button type="button" className="phx-g phx-txt" onClick={() => { stopExport.current = true }}>Cancel</button>
+          </div>
+        </div>
+      )}
     </div>,
     document.body,
   )
 }
 
-const SCRATCH = { c: null }
-// strokes, shapes and words onto a canvas of w by h; k is how many canvas pixels make one screen pixel; fx the blurred and
-// pixelated copies of the picture at the same size, for those two brushes
-function paint(g, w, h, strokes, k, fx) {
-  g.clearRect(0, 0, w, h)
-  for (const s of strokes) {
-    if (s.text !== undefined) { if (s.paintText) paintText(g, w, h, s, k); continue }
-    g.save(); g.lineCap = 'round'; g.lineJoin = 'round'
-    if (s.shape) {
-      const ax = s.a[0] * w, ay = s.a[1] * h, bx = s.b[0] * w, by = s.b[1] * h
-      g.lineWidth = s.size * k; g.strokeStyle = s.color
-      g.beginPath()
-      if (s.shape === 'rect') { const x = Math.min(ax, bx), y = Math.min(ay, by); if (g.roundRect) g.roundRect(x, y, Math.abs(bx - ax), Math.abs(by - ay), 6 * k); else g.rect(x, y, Math.abs(bx - ax), Math.abs(by - ay)) }
-      else if (s.shape === 'circle') g.ellipse((ax + bx) / 2, (ay + by) / 2, Math.abs(bx - ax) / 2, Math.abs(by - ay) / 2, 0, 0, Math.PI * 2)
-      else { g.moveTo(ax, ay); g.lineTo(bx, by) }
-      g.stroke()
-      if (s.shape === 'arrow' && Math.hypot(bx - ax, by - ay) > 4) head(g, ax, ay, bx, by, (18 + s.size * 2.6) * k)
-      g.restore(); continue
-    }
-    if (!s.pts || s.pts.length < 2) { g.restore(); continue }
-    if (FXPEN(s)) {
-      if (fx) {
-        if (!SCRATCH.c || SCRATCH.c.width !== w || SCRATCH.c.height !== h) SCRATCH.c = canvasOf(w, h)
-        const m = SCRATCH.c.getContext('2d')
-        m.globalCompositeOperation = 'source-over'; m.clearRect(0, 0, w, h)
-        m.lineCap = 'round'; m.lineJoin = 'round'; m.lineWidth = s.size * k * 3.2; m.strokeStyle = '#000'
-        m.beginPath(); s.pts.forEach(([x, y], i) => (i ? m.lineTo(x * w, y * h) : m.moveTo(x * w, y * h))); m.stroke()
-        m.globalCompositeOperation = 'source-in'; m.drawImage(fx[s.pen], 0, 0, w, h); m.globalCompositeOperation = 'source-over'
-        g.drawImage(SCRATCH.c, 0, 0)
-      }
-      g.restore(); continue
-    }
-    g.lineWidth = s.size * k * (s.pen === 'marker' ? 2.4 : 1)
-    g.globalCompositeOperation = s.pen === 'eraser' ? 'destination-out' : 'source-over'
-    g.strokeStyle = s.pen === 'eraser' ? '#000' : s.color; g.globalAlpha = s.pen === 'marker' ? 0.45 : 1
-    if (s.pen === 'neon') { g.shadowColor = s.color; g.shadowBlur = 26 * k; g.strokeStyle = '#fff' }
-    g.beginPath(); s.pts.forEach(([x, y], i) => (i ? g.lineTo(x * w, y * h) : g.moveTo(x * w, y * h))); g.stroke()
-    if (s.pen === 'arrow') {
-      const [x1, y1] = s.pts[Math.max(0, s.pts.length - 6)], [x2, y2] = s.pts[s.pts.length - 1]
-      head(g, x1 * w, y1 * h, x2 * w, y2 * h, (20 + s.size * 3) * k)
-    }
-    g.restore()
-  }
-}
-function head(g, x1, y1, x2, y2, L) {
-  const a = Math.atan2(y2 - y1, x2 - x1)
-  g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 - L * Math.cos(a - 0.5), y2 - L * Math.sin(a - 0.5))
-  g.moveTo(x2, y2); g.lineTo(x2 - L * Math.cos(a + 0.5), y2 - L * Math.sin(a + 0.5)); g.stroke()
-}
-// a text as it stands on screen: its face, its style (filled box, outlined, plain), its size, its lines
-function paintText(g, w, h, s, k) {
-  const f = FONTS.find(([x]) => x === (s.font || 'sans')), st = s.style || 'fill', fs = (12 + (s.sz || 7) * 2) * k
-  const lines = s.text.replace(/\n+$/, '').split('\n')
-  g.save(); g.font = `${f[3]} ${fs}px ${f[2]}`; g.textBaseline = 'middle'
-  const tw = Math.max(...lines.map((l) => g.measureText(l).width)), lh = fs * 1.2, px = 12 * k, py = 4 * k
-  const bw = tw + px * 2, bh = lh * lines.length + py * 2, x = s.x * w - bw / 2, y = s.y * h - bh / 2
-  const ink = contrastOf(s.color)
-  if (st === 'fill') { g.fillStyle = s.color; g.beginPath(); if (g.roundRect) g.roundRect(x, y, bw, bh, 12 * k); else g.rect(x, y, bw, bh); g.fill() }
-  lines.forEach((l, i) => {
-    const ty = y + py + lh * (i + 0.5), tx = x + px + (tw - g.measureText(l).width) / 2
-    if (st === 'outline') { g.lineJoin = 'round'; g.lineWidth = Math.max(1.5, (s.sz || 7) / 5) * 2 * k; g.strokeStyle = ink; g.strokeText(l, tx, ty) }
-    if (st === 'plain') { g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 12 * k; g.shadowOffsetY = 2 * k }
-    g.fillStyle = st === 'fill' ? ink : s.color; g.fillText(l, tx, ty)
-  })
-  g.restore()
-}

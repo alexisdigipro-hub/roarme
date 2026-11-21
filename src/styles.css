@@ -5894,3 +5894,12 @@ html:root:root:root:root .phx .phx-pick b { background: linear-gradient(170deg, 
 .phx-video { max-width: 100%; max-height: 100%; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
 .phx-text { cursor: text; }
 html.kb-native .phx-foot { padding-bottom: calc(var(--kbh, 0px) + 12px); }
+
+/* The attach sheet's tab bar fits a phone whole, no sideways scroll (Alex, 21 Nov: "smaller gaps and icons, so they all fit"):
+   seven even shares, a 20px sign and a 9.5px word under it */
+@media (max-width: 760px) {
+  html:root:root:root:root .as-sheet .as-tabs { overflow: hidden !important; gap: 0 !important; padding: 4px !important; }
+  html:root:root:root:root .as-sheet .as-tabs > button { flex: 1 1 0 !important; min-width: 0 !important; height: 50px !important; padding: 0 1px !important; gap: 2px !important; }
+  html:root:root:root:root .as-sheet .as-tabs > button svg { width: 20px !important; height: 20px !important; }
+  html:root:root:root:root .as-sheet .as-tabs > button > span { font-size: 9.5px !important; letter-spacing: -.01em; overflow: hidden; text-overflow: clip; max-width: 100%; }
+}

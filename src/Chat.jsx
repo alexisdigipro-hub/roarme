@@ -2048,6 +2048,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const dateRef = useRef(null)
   useEffect(() => { if (find === null) { setFindWho(''); setWhoOpen(false) } }, [find])
   const [attach, setAttach] = useState(null) // files waiting in the send window
+  const attachCam = useRef(false) // the + opened the sheet: the camera comes first (Alex, 21 Nov)
+  useEffect(() => { if (!attach) attachCam.current = false }, [attach])
   const [media, setMedia] = useState(false)
   const [headSub, setHeadSub] = useState('') // Mute › or Auto-Delete › open in the ⋯ menu
   // the profile's Search and Chat Options (Halo, whose head has no ⋯) reach this chat's search and menu
@@ -3583,7 +3585,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               </Suspense>
             )}
             {editing && mediaMsg(editing) && <button type="button" className="round edit-media-btn" disabled={savingMedia} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setEditMenu({ left: r.left, bottom: window.innerHeight - r.top + 8 }) }} aria-label="Change Photo" title="Change Photo">{SWAP_I}</button>}
-            {!editing && !sealOn && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.plus}</button>}
+            {!editing && !sealOn && <button type="button" className="round" onClick={() => { attachCam.current = true; setAttach([]) }} aria-label="Photo, video or file" title="Photo, video or file">{I.plus}</button>}
             {!editing && !sealOn && <button type="button" className={`round compose-transfer${transferHidden ? ' busy' : ''}`} onClick={() => { setTransferOpen(true); setTransferHidden(false) }} aria-label="RoarTransfer" title={transferHidden ? `RoarTransfer: uploading, ${Math.round(transferPct * 100)}%` : 'RoarTransfer: big files as they are, one link for all, 1 day up to 5 GB or 3 days up to 3 GB'}>{I.transfer}{transferHidden && <i className="rt-pct">{Math.round(transferPct * 100)}%</i>}</button>}
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
               {sel && (
@@ -3757,7 +3759,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           </div>
         </Modal>
       )}
-      {attach && <AttachSheet initial={attach} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={(f, c, comp, asFile) => sendFiles(f, c, comp, false, { asFile })}
+      {attach && <AttachSheet initial={attach} cameraFirst={attachCam.current} meId={me.id} onResend={resend} onClose={() => setAttach(null)} onSend={(f, c, comp, asFile) => sendFiles(f, c, comp, false, { asFile })}
         onTransfer={() => { setTransferHidden(false); setTransferOpen(true) }} transferSlot={setTransferSlot}
         onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))}
         onLive={sendLive}

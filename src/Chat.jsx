@@ -43,6 +43,7 @@ const LocationCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.
 const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationPicker })))
 const LocationView = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationView })))
 const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.PdfView })))
+const PhotoSend = lazy(() => import('./photoSend.jsx').then((m) => ({ default: m.PhotoSend })))
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
 const LOC_WAIT = <span className="locc"><span className="locc-map" /></span>
 import { resumeLive, startLive } from './live.js'
@@ -1824,6 +1825,9 @@ const FAV_STAR = svg(<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.
 // three full dots for Edit as a round sign in Halo (Alex, 12 Nov, from a picture he sent)
 // the heart reaction drawn as ours, in the accent (Alex, 14 Nov: "this heart, in the chosen accent")
 const RX_HEART = <svg className="rx-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9C.9 8.6 3 4.6 6.9 4.5c2.1 0 3.6 1.1 5.1 2.9 1.5-1.8 3-2.9 5.1-2.9 3.9.1 6 4.1 4.5 7.5C19.5 16.4 12 21 12 21z" /></svg>
+// a photo or video message whose picture Edit can change (Alex, 21 Nov), and the sign of the button that does it
+const mediaMsg = (m) => !!m && !m.sealed && !m.file?.asFile && !m.file?.round && !m.file?.bucket && (m.kind === 'image' || /^video\//.test(m.file?.type || ''))
+const SWAP_I = svg(<><rect x="3.5" y="3.5" width="8" height="8" rx="2" /><rect x="12.5" y="12.5" width="8" height="8" rx="2" /><path d="M15 4.5h2.5a3 3 0 0 1 3 3V10M18.5 8l2 2 2-2M9 19.5H6.5a3 3 0 0 1-3-3V14M5.5 16l-2-2-2 2" /></>, 20)
 const LOCK_OPEN = svg(<><rect x="5" y="10.5" width="14" height="10" rx="2.6" /><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 6.9-.8" /></>, 16) // Encrypted Chat off
 const DOTS3 = <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.8" /><circle cx="12" cy="12" r="2.8" /><circle cx="19" cy="12" r="2.8" /></svg>
 const WHEEL_COPIES = 5, WHEEL_MID = 2 // the folder wheel at the foot: copies of the folders in a row, the middle one the real one
@@ -1902,6 +1906,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const [selBar, setSelBar] = useState(null) // { m, text, x, y }: words selected in a message, on a computer
   useEffect(() => { if (!replyTo) setQuote('') }, [replyTo])
   const [editing, setEditing] = useState(null)
+  // a photo or video message's picture changed in Edit (Alex, 21 Nov): Edit Photo (the editor on it) or Replace Photo
+  const [editFile, setEditFile] = useState(null) // { file, compress }
+  const [editMedia, setEditMedia] = useState(null) // the files the editor is open on
+  const [editMenu, setEditMenu] = useState(null) // where the small menu stands
+  const [savingMedia, setSavingMedia] = useState(false)
+  const replacePick = useRef(null)
+  useEffect(() => { setEditFile(null); setEditMenu(null) }, [editing])
   // scheduled messages (Alex, 18 Oct): hold Send or right click it; the clock in the box lists what waits
   const sched = useScheduled(room.room_id, me.id)
   const [schedNew, setSchedNew] = useState(false)
@@ -2288,7 +2299,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
   const send = async ({ quiet = false, level = 0 } = {}) => {
     const body = prefs.autoEmoji ? swapEmoji(text.trim()) : text.trim()
-    if (!body) return
+    if (!body && !(editing && editFile)) return
     setErr('')
     // while Encrypted Chat is on the text is locked here, before it leaves the device
     const kept = editing?.reply_to ? splitQuote(editing.body).quote : ''
@@ -2299,10 +2310,32 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       try { out = await sealText(full, stretch, room.room_id, me.id) } catch (e) { setErr(errText(e)); return }
       if (out.length > 20000) { setErr('Too long for one encrypted message. Send it in two parts.'); return }
     }
+    if (editing && editFile) {
+      // the new picture first: put up like any photo or video, then set on the same message
+      if (savingMedia) return
+      setSavingMedia(true)
+      try {
+        const raw = editFile.file
+        const file = /^image\/(jpeg|png|webp)$/.test(raw.type) && editFile.compress ? await shrinkImage(raw, 2048, 0.85) : raw
+        const meta = await upload(file)
+        if (/^image\/(jpeg|png|webp)$/.test(file.type) && !meta.bucket) {
+          try { const small = await shrinkImage(file, 640, 0.72); if (small !== file) meta.thumb = (await upload(small)).path } catch { /* the whole photo shows */ }
+        }
+        if (/^video\//.test(file.type) && !meta.bucket) {
+          try { const poster = await videoPoster(file, 640); if (poster) meta.thumb = (await upload(poster)).path } catch { /* the first frame shows */ }
+        }
+        const kind = /^image\//.test(file.type) && !/gif|svg/.test(file.type) && !meta.bucket ? 'image' : 'file'
+        const { error } = await supabase.rpc('roar_replace_media', { msg: editing.id, f: meta, k: kind })
+        if (error) throw error
+        const stamp = new Date().toISOString()
+        setMsgs((list) => list.map((x) => (x.id === editing.id ? { ...x, file: meta, kind, edited_at: stamp } : x)))
+      } catch (e) { setErr(errText(e)); setSavingMedia(false); return }
+      setSavingMedia(false)
+    }
     if (editing) {
       const quiet = await amAdmin()
       const stamp = quiet ? editing.edited_at || null : new Date().toISOString()
-      const { error } = await supabase.from('roar_messages').update({ body: out, edited_at: stamp }).eq('id', editing.id)
+      const { error } = await supabase.from('roar_messages').update({ body: out, edited_at: editFile ? new Date().toISOString() : stamp }).eq('id', editing.id)
       if (error) { setErr(errText(error)); return }
       setMsgs((list) => list.map((x) => (x.id === editing.id ? { ...x, body: out, edited_at: stamp } : x)))
       setEditing(null); setText('')
@@ -3465,6 +3498,32 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 <span className="rec-lock">{I.lock}{CHEV_U}</span>
               </div>
             )}
+            <input ref={replacePick} type="file" accept="image/*,video/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setEditMedia([f]) }} />
+            {editMenu && (
+              <OnTop>
+                <button type="button" className="scrim" aria-label="Close" onClick={() => setEditMenu(null)} />
+                <div className="menu edit-media-menu" style={{ position: 'fixed', left: Math.max(8, editMenu.left), bottom: editMenu.bottom }}>
+                  <button type="button" onClick={async () => {
+                    setEditMenu(null)
+                    if (editFile) { setEditMedia([editFile.file]); return }
+                    try {
+                      const url = await fileLink(editing.file)
+                      const b = await (await fetch(url)).blob()
+                      setEditMedia([new File([b], editing.file?.name || 'photo.jpg', { type: editing.file?.type || b.type || 'image/jpeg' })])
+                    } catch (er) { setErr(errText(er)) }
+                  }}>{I.edit}<span>{/^video\//.test((editFile?.file || editing?.file)?.type || '') ? 'Edit Video' : 'Edit Photo'}</span></button>
+                  <button type="button" onClick={() => { setEditMenu(null); replacePick.current?.click() }}>{SWAP_I}<span>Replace Photo or Video</span></button>
+                </div>
+              </OnTop>
+            )}
+            {editMedia && (
+              <Suspense fallback={null}>
+                <PhotoSend files={editMedia} caption={text} setCaption={setText} onBack={() => setEditMedia(null)}
+                  onReplace={(i, nf) => setEditMedia((l) => l.map((x, k) => (k === i ? nf : x)))}
+                  onSend={(kept, compress) => { if (kept[0]) setEditFile({ file: kept[0], compress }); setEditMedia(null) }} />
+              </Suspense>
+            )}
+            {editing && mediaMsg(editing) && <button type="button" className="round edit-media-btn" disabled={savingMedia} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setEditMenu({ left: r.left, bottom: window.innerHeight - r.top + 8 }) }} aria-label="Change Photo" title="Change Photo">{SWAP_I}</button>}
             {!editing && !sealOn && <button type="button" className="round" onClick={() => setAttach([])} aria-label="Photo, video or file" title="Photo, video or file">{I.plus}</button>}
             {!editing && !sealOn && <button type="button" className={`round compose-transfer${transferHidden ? ' busy' : ''}`} onClick={() => { setTransferOpen(true); setTransferHidden(false) }} aria-label="RoarTransfer" title={transferHidden ? `RoarTransfer: uploading, ${Math.round(transferPct * 100)}%` : 'RoarTransfer: big files as they are, one link for all, 1 day up to 5 GB or 3 days up to 3 GB'}>{I.transfer}{transferHidden && <i className="rt-pct">{Math.round(transferPct * 100)}%</i>}</button>}
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
@@ -3480,7 +3539,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                   <span className="compose-ref-ico">{editing ? I.edit : quote ? I.qmark : I.reply}</span>
                   <span className="compose-ref-text">
                     <b>{editing ? 'Edit message' : quote ? `Quote from ${replyTo.user_id === me.id ? 'yourself' : nameOf(people[replyTo.user_id])}` : `Reply to ${replyTo.user_id === me.id ? 'yourself' : nameOf(people[replyTo.user_id])}`}</b>
-                    <span>{!editing && quote ? quote : textOf(editing || replyTo)}</span>
+                    <span>{editing && editFile ? (/^video\//.test(editFile.file.type) ? 'New video' : 'New photo') : !editing && quote ? quote : textOf(editing || replyTo)}</span>
                   </span>
                   <button type="button" className="compose-ref-x" onClick={() => { setReplyTo(null); if (editing) { setEditing(null); setText('') } }} aria-label="Cancel">{I.x}</button>
                 </span>

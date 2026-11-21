@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState, Component } from 'react'
+import { openCamera } from './camera.js'
 import { createPortal } from 'react-dom'
 import { errText, fileLink, fold, foldHas, lastSeenText, thumbOf, fmtBytes, shrinkImage, supabase, timeOf, picLink } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
@@ -405,6 +406,13 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   useTabSwipe(bodyRef, ['gallery', 'file', onTransfer && 'transfer', onLocation && 'location', onPoll && 'poll', 'audio', onContact && 'contact'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
+  // RoarMe's own camera in the iPhone app (camera.js), else the system's through the file input
+  const camera = async (asScan = false) => {
+    const r = await openCamera(asScan ? { only: 'photo' } : {})
+    if (r === undefined) { (asScan ? scan : cam).current?.click(); return }
+    if (r === 'gallery') { if (lib) setTab('gallery'); else gal.current?.click(); return }
+    if (r) add([r], asScan)
+  }
   const doc = useRef(null)
   const galRaw = useRef(null)
   const scan = useRef(null) // Scan Document: the camera, the picture sent as a file, untouched
@@ -509,13 +517,13 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
           ) : tab === 'poll' && onPoll ? (
             <Suspense fallback={null}><PollEditor onReady={(fn) => setPollOut(() => fn)} /></Suspense>
           ) : tab === 'gallery' && lib ? (
-            <LibraryGrid picked={libPicked} onPick={pickLib} onOpen={openLib} onCamera={() => cam.current?.click()} onFail={() => setLib(false)} />
+            <LibraryGrid picked={libPicked} onPick={pickLib} onOpen={openLib} onCamera={() => camera()} onFail={() => setLib(false)} />
           ) : tab === 'gallery' ? (
             <>
               <div className="as-tiles">
                 <AsTile icon={I.image} title="Photos and Videos" sub="From your library" onClick={() => gal.current?.click()} />
                 {touchOnly
-                  ? <AsTile icon={I.camera} title="Camera" sub="Take one now" onClick={() => cam.current?.click()} />
+                  ? <AsTile icon={I.camera} title="Camera" sub="Take one now" onClick={() => camera()} />
                   : <AsTile icon={I.file} title="Files" sub="From this computer" onClick={() => doc.current?.click()} />}
               </div>
               {recent?.photos?.length > 0 && (
@@ -537,7 +545,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
                 <div className="as-card as-ways">
                   <button type="button" className="as-row as-way" onClick={() => galRaw.current?.click()}>{FT_I.gallery}<span>Select from Gallery</span></button>
                   <button type="button" className="as-row as-way" onClick={() => doc.current?.click()}>{FT_I.files}<span>Select from Files</span></button>
-                  {touchOnly && <button type="button" className="as-row as-way" onClick={() => scan.current?.click()}>{FT_I.scan}<span>Scan Document</span></button>}
+                  {touchOnly && <button type="button" className="as-row as-way" onClick={() => camera(true)}>{FT_I.scan}<span>Scan Document</span></button>}
                 </div>
               )}
               <small className="as-label">{tab === 'audio' ? 'Sound in your chats' : 'Recently sent files'}</small>

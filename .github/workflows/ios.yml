@@ -111,6 +111,27 @@ jobs:
           sips -s format jpeg -s formatOptions 100 /tmp/icon.png --out /tmp/icon.jpg >/dev/null
           sips -s format png /tmp/icon.jpg --out "$D/AppIcon-512@2x.png" >/dev/null
           sips -g pixelWidth -g pixelHeight -g hasAlpha "$D/AppIcon-512@2x.png"
+      - name: RoarMe's own camera
+        working-directory: mobile/ios/App
+        run: |
+          # the camera screen (mobile/ios-app/RoarCamera.swift: VIDEO, PHOTO, DUAL, flash, flip; Alex, 21 Nov) and the main
+          # screen that registers it (RoarViewController.swift), put in the app and in Main.storyboard
+          cp ../../ios-app/*.swift App/
+          gem list -i xcodeproj >/dev/null || sudo gem install xcodeproj --no-document
+          ruby -e '
+            require "xcodeproj"
+            p = Xcodeproj::Project.open("App.xcodeproj")
+            t = p.targets.find { |x| x.name == "App" }
+            g = p.main_group["App"]
+            %w[RoarCamera.swift RoarViewController.swift].each do |n|
+              next if g.files.any? { |x| x.path == n }
+              t.source_build_phase.add_file_reference(g.new_reference(n))
+            end
+            p.save'
+          S=App/Base.lproj/Main.storyboard
+          perl -pi -e 's/customClass="CAPBridgeViewController" customModule="Capacitor"/customClass="RoarViewController" customModule="App" customModuleProvider="target"/' "$S"
+          grep -c 'customClass="RoarViewController"' "$S"
+          grep -c "RoarCamera.swift in Sources" App.xcodeproj/project.pbxproj
       - name: Notification sounds
         working-directory: mobile/ios/App
         run: |

@@ -262,6 +262,7 @@ const AS_I = {
   audio: asSolid('M19.5 3.2v12.3a3.2 3.2 0 1 1-1.8-2.9V7.4l-8.4 1.9v8.3a3.2 3.2 0 1 1-1.8-2.9V6.3c0-.6.4-1.1 1-1.2l9.8-2.3c.6-.1 1.2.3 1.2.9z'),
   contact: asSolid('M12 3a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zM3 21a9 9 0 0 1 18 0z'),
   poll: asSolid('M6 3.5h12A2.5 2.5 0 0 1 20.5 6v12a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 18V6A2.5 2.5 0 0 1 6 3.5zM7.6 11.2a1.1 1.1 0 0 0-1.1 1.1v4.2a1.1 1.1 0 0 0 2.2 0v-4.2a1.1 1.1 0 0 0-1.1-1.1zM12 6.8a1.1 1.1 0 0 0-1.1 1.1v8.6a1.1 1.1 0 0 0 2.2 0V7.9A1.1 1.1 0 0 0 12 6.8zM16.4 13.4a1.1 1.1 0 0 0-1.1 1.1v2a1.1 1.1 0 0 0 2.2 0v-2a1.1 1.1 0 0 0-1.1-1.1z'),
+  camera: asSolid('M9.2 4h5.6c.5 0 1 .3 1.3.7l1 1.6H19a2.5 2.5 0 0 1 2.5 2.5v8.7A2.5 2.5 0 0 1 19 20H5a2.5 2.5 0 0 1-2.5-2.5V8.8A2.5 2.5 0 0 1 5 6.3h1.9l1-1.6c.3-.4.8-.7 1.3-.7zM12 8.6a4.3 4.3 0 1 0 0 8.6 4.3 4.3 0 0 0 0-8.6zm0 2a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 0 1 0-4.6z'),
   transfer: asSolid('M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19zM11.2 7.2l-4 4a1.1 1.1 0 0 0 1.6 1.6l2.1-2.1V16a1.1 1.1 0 0 0 2.2 0v-5.3l2.1 2.1a1.1 1.1 0 0 0 1.6-1.6l-4-4a1.1 1.1 0 0 0-1.6 0z'),
 }
 
@@ -480,8 +481,10 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   }, [tab, recent, meId])
   const pick = async (m) => { if (!onResend || sending) return; setSending(m.id); const ok = await onResend(m); setSending(''); if (ok !== false) onClose() }
   const TABS = [
+    // Gallery and File are one tab with Photos | Files at its top, and the Camera in File's place, opening the camera at
+    // once (Alex, 21 Nov)
     ['gallery', 'Gallery', AS_I.gallery],
-    ['file', 'File', AS_I.file],
+    ['camera', 'Camera', AS_I.camera],
     // RoarTransfer third (Alex, 20 Nov)
     onTransfer && ['transfer', 'Transfer', AS_I.transfer],
     onLocation && ['location', 'Location', AS_I.location],
@@ -489,10 +492,10 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
     ['audio', 'Audio', AS_I.audio],
     onContact && ['contact', 'Contact', AS_I.contact],
   ].filter(Boolean)
-  const go = (k) => setTab(k)
+  const go = (k) => { if (k === 'camera') { camera(); return } setTab(k) }
   // RoarTransfer opens in the sheet's body when its tab is chosen
   useEffect(() => { if (tab === 'transfer' && !files.length) onTransfer?.() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
-  const title = files.length ? `${files.length} selected` : tab === 'poll' ? 'New Poll' : TABS.find(([k]) => k === tab)?.[1] || 'Send'
+  const title = files.length ? `${files.length} selected` : tab === 'poll' ? 'New Poll' : (tab === 'file' ? 'Gallery' : TABS.find(([k]) => k === tab)?.[1]) || 'Send'
   const asFile = pickedRaw || (tab === 'file' && files.length > 0) // anything picked while on the File tab goes raw
   const big = files.filter((f) => f.size > 50e6 && !(!asFile && /^video\//.test(f.type)))
   const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
@@ -520,6 +523,14 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
             : <span className="as-head-pad" />}
         </div>
         <div className="as-body" ref={bodyRef}>
+          {!files.length && (tab === 'gallery' || tab === 'file') && (
+            // what is picked goes as a photo (lighter, through the editor) or as a file (exactly as it is)
+            <div className={`as-seg${tab === 'file' ? ' r' : ''}`} role="tablist">
+              <i className="as-seg-lens" aria-hidden="true" />
+              <button type="button" role="tab" aria-selected={tab === 'gallery'} className={tab === 'gallery' ? 'on' : ''} onClick={() => setTab('gallery')}>Photos</button>
+              <button type="button" role="tab" aria-selected={tab === 'file'} className={tab === 'file' ? 'on' : ''} onClick={() => setTab('file')}>Files</button>
+            </div>
+          )}
           {files.length > 0 ? (
             <>
               <div className="attach-grid">
@@ -603,7 +614,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
           </div>
         ) : (
           <nav ref={tabsLens} className="as-tabs lens" data-travel="">
-            {TABS.map(([k, label, ico]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => go(k)}>{ico}<span>{label}</span></button>)}
+            {TABS.map(([k, label, ico]) => <button key={k} type="button" className={tab === k || (k === 'gallery' && tab === 'file') ? 'on' : ''} onClick={() => go(k)}>{ico}<span>{label}</span></button>)}
           </nav>
         )}
         <input ref={gal} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => { add([...(e.target.files || [])]); e.target.value = '' }} />

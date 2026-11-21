@@ -196,6 +196,14 @@ async function notify(id: string) {
     for (const x of rows || []) if (x.presence === 'dnd') dnd.add(x.id)
   }
   const name = who?.display_name || (who?.username ? `@${who.username}` : 'Someone')
+  // the name and photo each one saved for the sender in their contacts (Alex, 21 Nov: "Darta Man" with the photo he gave
+  // him, while Darta himself has none) come before the sender's own
+  const saved = new Map<string, { nickname?: string | null; photo_url?: string | null }>()
+  {
+    const ids = [...new Set((targets as { user_id: string }[]).map((t) => t.user_id))]
+    const { data: rows } = await sb.from('roar_contacts').select('owner, nickname, photo_url').eq('person', m.user_id).in('owner', ids)
+    for (const x of rows || []) saved.set(x.owner, x)
+  }
   const group = room?.kind === 'group'
   // Send Without Sound (file.quiet): quiet for everyone; Important / Urgent (file.level 1 / 2, a slide up on Send): a mark
   // before the words and Apple's time-sensitive level, which comes through a Focus; Urgent also with RoarMe's loudest sound
@@ -207,9 +215,12 @@ async function notify(id: string) {
   const gone: string[] = []
   await Promise.all((targets as { endpoint: string; p256dh: string; auth: string; preview: boolean; unread: number; mention?: boolean; user_id: string }[]).map(async (t) => {
     const own = chat.get(t.user_id)
+    const mine = saved.get(t.user_id)
+    const nm = mine?.nickname?.trim() || name
+    const pic = mine?.photo_url || (who?.privacy?.photo && who.privacy.photo !== 'everybody' ? '' : who?.avatar_url || '')
     const note = {
-      title: group ? room?.title || 'Group' : name,
-      body: t.preview ? (group ? `${name}${t.mention ? ' mentioned you' : ''}: ${text}` : text).slice(0, 180) : t.mention ? `${name} mentioned you` : 'New message',
+      title: group ? room?.title || 'Group' : nm,
+      body: t.preview ? (group ? `${nm}${t.mention ? ' mentioned you' : ''}: ${text}` : text).slice(0, 180) : t.mention ? `${nm} mentioned you` : 'New message',
       room: m.room_id,
       tag: `room-${m.room_id}`,
       count: t.unread,
@@ -218,7 +229,7 @@ async function notify(id: string) {
       urgent: level > 0,
       // the sender's picture beside the notification on an iPhone (the app's Notification Service Extension reads it);
       // a photo shown only to some stays out
-      sender: { id: m.user_id, name, avatar: who?.privacy?.photo && who.privacy.photo !== 'everybody' ? '' : who?.avatar_url || '', ...(group ? { group: room?.title || 'Group' } : {}) },
+      sender: { id: m.user_id, name: nm, avatar: pic, ...(group ? { group: room?.title || 'Group' } : {}) },
     }
     try {
       const dev = sounds.get(t.endpoint)

@@ -3024,6 +3024,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
   // a chat with one person shows only the name; @username and last seen are in the profile (Alex, 14 Nov). Groups keep their count
   const sub = room.kind === 'group' ? `${(room.members || []).length} ${(room.members || []).length === 1 ? 'member' : 'members'}` : ''
+  // "typing…" under the name in the head too, small (Alex, 21 Nov: "everywhere, but discreetly")
+  const [typer, setTyper] = useState('')
+  useEffect(() => onTyping((m) => setTyper((t) => (m[room.room_id] || '') === t ? t : (m[room.room_id] || ''))), [room.room_id])
+  const typingSub = typer && typer !== me.id ? (room.kind === 'group' && people[typer] ? `${nameOf(people[typer]).split(' ')[0]} is typing` : 'typing') : ''
   // a scheduled call in this chat: a notice when it starts (while the app is open)
   useEffect(() => {
     const timers = msgs.filter((m) => m.file?.event && !m.deleted_at).map((m) => {
@@ -3340,7 +3344,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
               {(room.kind === 'group' ? room.avatar_url : other?.avatar_url) && <i className="head-bg" aria-hidden="true" style={{ backgroundImage: `url("${room.kind === 'group' ? room.avatar_url : other?.avatar_url}")` }} />}
               <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={dotOf(other)} />
-              <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{title}{official && OFFICIAL}{room.kind !== 'group' && batteryText(other) && <i className={`head-batt${other?.battery_charging ? ' charging' : ''}`} title="Battery">{batteryText(other)}</i>}</strong>{sub && <small>{sub}</small>}</span>
+              <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{title}{official && OFFICIAL}{room.kind !== 'group' && batteryText(other) && <i className={`head-batt${other?.battery_charging ? ' charging' : ''}`} title="Battery">{batteryText(other)}</i>}</strong>{typingSub ? <small className="head-typing">{typingSub}<i /><i /><i /></small> : sub && <small>{sub}</small>}</span>
             </button>
             <button type="button" className="round" onClick={() => onCall(false)} aria-label="Voice call" title="Voice call">{I.phone}</button>
             <button type="button" className="round head-video" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>

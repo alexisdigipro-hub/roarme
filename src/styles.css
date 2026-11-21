@@ -6163,3 +6163,11 @@ html:root:root:root:root .lbc-chip.on { background: linear-gradient(170deg, var(
 .room-prev .rty i:nth-of-type(3) { animation-delay: .3s; }
 @keyframes rty-hop { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-3px); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .room-prev .rty i { animation: none; } }
+
+/* "typing…" under the name in a chat's head (Alex, 21 Nov: "everywhere, but discreetly"): small, the accent, the list's dots */
+.head-text small.head-typing { color: var(--halo, var(--accent)); display: inline-flex; align-items: baseline; justify-content: center; opacity: .9; }
+.head-text small.head-typing i { display: inline-block; width: 3px; height: 3px; margin-left: 2px; border-radius: 50%; background: currentColor; animation: rty-hop 1.2s ease-in-out infinite; }
+.head-text small.head-typing i:first-of-type { margin-left: 3px; }
+.head-text small.head-typing i:nth-of-type(2) { animation-delay: .15s; }
+.head-text small.head-typing i:nth-of-type(3) { animation-delay: .3s; }
+@media (prefers-reduced-motion: reduce) { .head-text small.head-typing i { animation: none; } }

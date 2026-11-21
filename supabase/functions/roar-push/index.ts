@@ -5,6 +5,8 @@
 //   POST {id} + x-roar-hook   a new message (from the trigger roar_push): notify who should know (supabase/mentions.sql:
 //                             who is @mentioned is told even in a muted chat, and the notification says so)
 //   POST {reminder} + x-roar-hook   a reminder that is due (supabase/reminders.sql): tell the one who set it
+//   POST {capsule[, by]} + x-roar-hook   a Locked Message opened (supabase/capsule-notify.sql): at its time, tell the chat's
+//                                        other members; reached at its place by someone (by), tell the sender who
 //   POST {test: true} + the user's sign-in   Settings > Send Test: after 5 seconds (time to close RoarMe) a test
 //                                            notification to each of that person's devices, and what each push service said
 // The private key never leaves the database table roar_push_conf, which only the server can read.
@@ -262,6 +264,57 @@ async function remind(id: string) {
   return { sent }
 }
 
+// a Locked Message that opened: at its time, to the chat's other members (not muted, not blocking the sender, unless
+// RoarMe is in front of them); reached at its place, to the sender, saying who opened it
+async function capsule(id: string, by: string | null) {
+  const { data: c } = await sb.from('roar_capsules').select('message_id, room_id, user_id').eq('message_id', id).maybeSingle()
+  if (!c) return { sent: 0 }
+  const { data: room } = await sb.from('roar_rooms').select('kind, title').eq('id', c.room_id).maybeSingle()
+  const group = room?.kind === 'group'
+  const nameOf = async (uid: string) => {
+    const { data: w } = await sb.from('roar_profiles').select('display_name, username').eq('id', uid).maybeSingle()
+    return w?.display_name || (w?.username ? `@${w.username}` : 'Someone')
+  }
+  let people: string[] = []
+  let note: { title: string; body: string; room: string; tag: string }
+  if (by) {
+    people = [c.user_id]
+    note = { title: await nameOf(by), body: '🔓 Reached the place and opened your locked message', room: c.room_id, tag: `capsule-${id}` }
+  } else {
+    const [{ data: mem }, { data: blocks }] = await Promise.all([
+      sb.from('roar_members').select('*').eq('room_id', c.room_id).neq('user_id', c.user_id),
+      sb.from('roar_blocks').select('blocker').eq('blocked', c.user_id),
+    ])
+    const blocking = new Set((blocks || []).map((b) => b.blocker))
+    const now = Date.now()
+    people = (mem || []).filter((x) => !blocking.has(x.user_id) && !(x.muted && (!x.muted_until || new Date(x.muted_until).getTime() > now))).map((x) => x.user_id)
+    const from = await nameOf(c.user_id)
+    note = { title: group ? room?.title || 'Group' : from, body: group ? `🔓 ${from}'s locked message is open now` : '🔓 A locked message is open now', room: c.room_id, tag: `capsule-${id}` }
+  }
+  if (!people.length) return { sent: 0 }
+  const [{ data: subs }, { data: profs }] = await Promise.all([
+    sb.from('roar_push_subs').select('*').in('user_id', people),
+    sb.from('roar_profiles').select('*').in('id', people),
+  ])
+  const inApp = new Set<string>(), dnd = new Set<string>()
+  for (const x of profs || []) {
+    if (x.active_until && new Date(x.active_until).getTime() > Date.now()) inApp.add(x.id)
+    if (x.presence === 'dnd') dnd.add(x.id)
+  }
+  let sent = 0
+  const gone: string[] = []
+  await Promise.all((subs || []).filter((t) => !inApp.has(t.user_id)).map(async (t) => {
+    try {
+      const quiet = dnd.has(t.user_id)
+      const x = await push({ ...t, sound: quiet ? 'off' : t.sound }, { ...note, silent: quiet, passive: quiet })
+      if (x.ok) sent++
+      else if (x.status === 404 || x.status === 410) gone.push(t.endpoint)
+    } catch (e) { console.log('push failed', String(e)) }
+  }))
+  if (gone.length) await sb.from('roar_push_subs').delete().in('endpoint', gone)
+  return { sent }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method === 'GET') return json({ key: (await getConf()).public_key })
@@ -271,6 +324,10 @@ Deno.serve(async (req) => {
   const c = await getConf()
   if (req.headers.get('x-roar-hook') !== String(c.hook_token)) return json({ error: 'not allowed' }, 403)
   if (typeof body?.reminder === 'string') return /^[0-9a-f-]{36}$/i.test(body.reminder) ? json(await remind(body.reminder)) : json({ error: 'no reminder' }, 400)
+  if (typeof body?.capsule === 'string') {
+    const ok = (v: unknown) => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v)
+    return ok(body.capsule) ? json(await capsule(body.capsule, ok(body.by) ? body.by : null)) : json({ error: 'no capsule' }, 400)
+  }
   const { id } = body
   if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)) return json({ error: 'no message' }, 400)
   return json(await notify(id))

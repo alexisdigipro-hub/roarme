@@ -907,7 +907,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         s.addInput(input)
         device = dev
         frontOut = nil
-        if m == .photo { useBigFormat(dev) }
+        if m == .photo && !f { useBigFormat(dev) }
         if m == .video {
             if AVCaptureDevice.authorizationStatus(for: .audio) == .authorized, let mic = AVCaptureDevice.default(for: .audio),
                let mi = try? AVCaptureDeviceInput(device: mic), s.canAddInput(mi) { s.addInput(mi) }
@@ -1468,12 +1468,16 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         }
         if !front, mode == .photo, format != .raw, po.supportedFlashModes.contains(flash) { st.flashMode = flash }
         if mode == .photo, format != .raw {
-            st.photoQualityPrioritization = hdr ? .quality : .speed
+            let want: AVCapturePhotoOutput.QualityPrioritization = hdr ? .quality : .speed
+            st.photoQualityPrioritization = want.rawValue <= po.maxPhotoQualityPrioritization.rawValue ? want : po.maxPhotoQualityPrioritization
         }
         if #available(iOS 16.0, *), mode == .photo, let d = device {
             let all = d.activeFormat.supportedMaxPhotoDimensions.sorted { Int($0.width) * Int($0.height) < Int($1.width) * Int($1.height) }
-            if big48, let top = all.last { st.maxPhotoDimensions = top }
-            else if let twelve = all.last(where: { Int($0.width) * Int($0.height) <= 13_000_000 }) ?? all.first { st.maxPhotoDimensions = twelve }
+            // only a size the output takes (a bigger one throws and closes the app)
+            let cap = po.maxPhotoDimensions
+            let fits = all.filter { $0.width <= cap.width && $0.height <= cap.height }
+            if big48, let top = fits.last { st.maxPhotoDimensions = top }
+            else if let twelve = fits.last(where: { Int($0.width) * Int($0.height) <= 13_000_000 }) ?? fits.first { st.maxPhotoDimensions = twelve }
         }
         return st
     }

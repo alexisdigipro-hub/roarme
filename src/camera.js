@@ -13,10 +13,32 @@ export async function hasCamera() {
   if (ok === null) ok = await C.nativePromise('RoarCamera', 'available', {}).then((r) => !!r?.ok).catch(() => false)
   return ok
 }
+// the app's look for the camera (Alex, 21 Nov: "by the theme we have"): the accent pair and its ink as #hex, Day or
+// Night, Frost
+const hexOf = (css) => {
+  try {
+    const d = document.createElement('i')
+    d.style.cssText = `position:absolute;opacity:0;pointer-events:none;color:${css}`
+    document.body.appendChild(d)
+    const m = getComputedStyle(d).color.match(/[\d.]+/g)
+    d.remove()
+    if (!m || m.length < 3) return ''
+    return '#' + m.slice(0, 3).map((v) => Math.round(+v).toString(16).padStart(2, '0')).join('')
+  } catch { return '' }
+}
+const look = () => {
+  const r = document.documentElement
+  const theme = { light: r.dataset.mode === 'light', frost: r.dataset.frost === '1' }
+  const top = hexOf('var(--halo-mine-top, var(--halo))'), main = hexOf('var(--halo-mine, var(--halo))'), ink = hexOf('var(--halo-ink, #fff)')
+  if (main) theme.accent = main
+  if (top) theme.accentTop = top
+  if (ink) theme.ink = ink
+  return theme
+}
 export async function openCamera(opts = {}) {
   if (!(await hasCamera())) return undefined
   const C = plug()
-  const r = await C.nativePromise('RoarCamera', 'open', opts).catch(() => null)
+  const r = await C.nativePromise('RoarCamera', 'open', { ...look(), ...opts }).catch(() => null)
   if (!r || r.cancelled || r.error) return null
   if (r.gallery) return 'gallery'
   // one file, or several from rapid fire; RAW (DNG) goes as a file, untouched

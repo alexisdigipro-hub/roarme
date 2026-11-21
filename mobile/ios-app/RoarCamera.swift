@@ -31,8 +31,22 @@ public class RoarCameraPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve(["ok": true, "dual": AVCaptureMultiCamSession.isMultiCamSupported, "pro": true])
     }
 
+    static func color(_ hex: String?) -> UIColor? {
+        guard var h = hex?.trimmingCharacters(in: .whitespaces), h.hasPrefix("#") else { return nil }
+        h.removeFirst()
+        guard h.count == 6, let v = UInt32(h, radix: 16) else { return nil }
+        return UIColor(red: CGFloat((v >> 16) & 255) / 255, green: CGFloat((v >> 8) & 255) / 255, blue: CGFloat(v & 255) / 255, alpha: 1)
+    }
+
     @objc func open(_ call: CAPPluginCall) {
         let only = call.getString("only") ?? ""
+        var th = CamTheme()
+        if let c = RoarCameraPlugin.color(call.getString("accent")) { th.accent = c }
+        if let c = RoarCameraPlugin.color(call.getString("accentTop")) { th.accentTop = c }
+        if let c = RoarCameraPlugin.color(call.getString("ink")) { th.ink = c }
+        th.light = call.getBool("light") ?? false
+        th.frost = call.getBool("frost") ?? false
+        camTheme = th
         DispatchQueue.main.async {
             guard let host = self.bridge?.viewController else { call.reject("No screen to show the camera on"); return }
             let vc = RoarCameraController()
@@ -140,6 +154,8 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     private let evPill = UIButton(type: .system)
     private let isoPill = UIButton(type: .system)
     private let dial = RulerDial()
+    private let dialBox = UIView()
+    private let expoBar = UIView()
     private let capsule = UIView()
     private let modeBtn = UIButton(type: .system)
     private let shutter = UIButton(type: .custom)
@@ -167,7 +183,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
 
     deinit { NotificationCenter.default.removeObserver(self) }
 
-    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+    override var preferredStatusBarStyle: UIStatusBarStyle { camTheme.light ? .darkContent : .lightContent }
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .portrait }
 
     private var modes: [Mode] {
@@ -177,32 +193,46 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     private var pro: Bool { mode == .photo }
 
     // ---- building the screen ----
+    // shutter, EV and ISO are three parts of one glass capsule; the chosen one is a pill of the accent inside it
     private func pill(_ b: UIButton, _ title: String) {
         b.setTitle(title, for: .normal)
-        b.titleLabel?.font = .monospacedDigitSystemFont(ofSize: 14, weight: .semibold)
-        b.tintColor = .white
-        b.backgroundColor = UIColor(white: 0.16, alpha: 1)
-        b.layer.cornerRadius = 17
-        view.addSubview(b)
+        b.titleLabel?.font = .monospacedDigitSystemFont(ofSize: 13.5, weight: .semibold)
+        b.titleLabel?.adjustsFontSizeToFitWidth = true
+        b.titleLabel?.minimumScaleFactor = 0.7
+        b.setTitleColor(camTheme.text, for: .normal)
+        b.layer.cornerRadius = 15
+        expoBar.addSubview(b)
     }
 
     private func roundBtn(_ b: UIButton, _ symbol: String, size: CGFloat = 20) {
-        b.setImage(UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: size, weight: .semibold)), for: .normal)
-        b.tintColor = .white
-        b.backgroundColor = UIColor(white: 0.16, alpha: 1)
+        b.setImage(UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(pointSize: size, weight: .medium)), for: .normal)
+        glassify(b, radius: 22)
+        b.tintColor = camTheme.text
+    }
+
+    // a choice inside a glass bar: lit, a pill of the accent with its ink
+    private func inner(_ b: UIButton, _ on: Bool, manual: Bool = false) {
+        b.backgroundColor = on ? camTheme.accent : .clear
+        let c = on ? camTheme.ink : (manual ? camTheme.accent : camTheme.text)
+        b.tintColor = c
+        b.setTitleColor(c, for: .normal)
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        overrideUserInterfaceStyle = .dark
-        view.backgroundColor = .black
+        overrideUserInterfaceStyle = camTheme.light ? .light : .dark
+        view.backgroundColor = camTheme.bg
+        glassify(expoBar, radius: 20)
+        view.addSubview(expoBar)
+        glassify(dialBox, radius: 23)
+        view.addSubview(dialBox)
 
         // top
         roundBtn(closeBtn, "xmark", size: 15)
         closeBtn.addTarget(self, action: #selector(close), for: .touchUpInside)
         view.addSubview(closeBtn)
         for l in [infoLeft, infoRight] {
-            l.textColor = UIColor(white: 1, alpha: 0.75)
+            l.textColor = camTheme.soft
             l.font = .systemFont(ofSize: 13, weight: .medium)
             l.numberOfLines = 2
             view.addSubview(l)
@@ -222,7 +252,9 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         isoPill.addTarget(self, action: #selector(pickISO), for: .touchUpInside)
 
         // the picture
-        card.backgroundColor = UIColor(white: 0.06, alpha: 1)
+        card.backgroundColor = .black
+        card.layer.cornerRadius = 28
+        card.layer.cornerCurve = .continuous
         card.clipsToBounds = true
         view.addSubview(card)
         preview.backgroundColor = .black
@@ -247,8 +279,10 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         pip.clipsToBounds = true
         pip.isHidden = true
         card.addSubview(pip)
-        lensBar.backgroundColor = UIColor(white: 0, alpha: 0.45)
-        lensBar.layer.cornerRadius = 24
+        lensBar.backgroundColor = UIColor(white: 0, alpha: 0.32)
+        lensBar.layer.cornerRadius = 26
+        lensBar.layer.borderWidth = 0.6
+        lensBar.layer.borderColor = UIColor(white: 1, alpha: 0.18).cgColor
         card.addSubview(lensBar)
         timeLabel.font = .monospacedDigitSystemFont(ofSize: 15, weight: .semibold)
         timeLabel.textColor = .white
@@ -293,19 +327,19 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         card.addGestureRecognizer(right)
 
         // the dial
-        view.addSubview(dial)
+        dialBox.addSubview(dial)
         dial.onChange = { [weak self] i in self?.dialMoved(i) }
 
         // foot
-        capsule.backgroundColor = UIColor(white: 0.13, alpha: 1)
-        capsule.layer.cornerRadius = 46
+        capsule.backgroundColor = .clear
         view.addSubview(capsule)
-        modeBtn.tintColor = roarBlue
+        glassify(modeBtn, radius: 24)
+        modeBtn.tintColor = camTheme.text
         modeBtn.addTarget(self, action: #selector(nextMode), for: .touchUpInside)
         capsule.addSubview(modeBtn)
         shutter.backgroundColor = .clear
-        shutter.layer.borderColor = UIColor.white.cgColor
-        shutter.layer.borderWidth = 4
+        shutter.layer.borderColor = camTheme.accent.cgColor
+        shutter.layer.borderWidth = 3.5
         shutter.layer.cornerRadius = 40
         shutter.addTarget(self, action: #selector(shoot), for: .touchUpInside)
         let hold = UILongPressGestureRecognizer(target: self, action: #selector(shutterHold(_:)))
@@ -318,42 +352,39 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         shutterIcon.contentMode = .center
         shutterIcon.isUserInteractionEnabled = false
         shutter.addSubview(shutterIcon)
-        timerBtn.tintColor = .white
-        timerBtn.layer.borderColor = UIColor(white: 1, alpha: 0.85).cgColor
-        timerBtn.layer.borderWidth = 1.5
-        timerBtn.layer.cornerRadius = 21
+        glassify(timerBtn, radius: 24)
+        timerBtn.tintColor = camTheme.text
         timerBtn.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
         timerBtn.addTarget(self, action: #selector(cycleTimer), for: .touchUpInside)
         capsule.addSubview(timerBtn)
-        galleryBtn.backgroundColor = UIColor(white: 0.16, alpha: 1)
-        galleryBtn.layer.cornerRadius = 12
-        galleryBtn.clipsToBounds = true
-        galleryBtn.tintColor = .white
+        glassify(galleryBtn, radius: 18)
+        galleryBtn.layer.cornerCurve = .continuous
+        galleryBtn.tintColor = camTheme.text
         galleryBtn.setImage(UIImage(systemName: "photo.on.rectangle", withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)), for: .normal)
         galleryBtn.imageView?.contentMode = .scaleAspectFill
         galleryBtn.addTarget(self, action: #selector(gallery), for: .touchUpInside)
         galleryBtn.isHidden = only == "photo"
         view.addSubview(galleryBtn)
-        roundBtn(menuBtn, "square.grid.3x3.fill", size: 18)
-        menuBtn.layer.cornerRadius = 14
+        roundBtn(menuBtn, "slider.horizontal.3", size: 19)
+        menuBtn.layer.cornerRadius = 18
+        menuBtn.layer.cornerCurve = .continuous
         menuBtn.addTarget(self, action: #selector(openSheet), for: .touchUpInside)
         view.addSubview(menuBtn)
-        for (b, t) in [(hdrBtn, "HDR"), (mpBtn, "12M")] {
+        // one glass bar at the foot: HDR and 12M / 48M, a fine line, then AUTO · WB · MF
+        glassify(seg, radius: 22)
+        view.addSubview(seg)
+        let line = UIView()
+        line.tag = 77
+        line.backgroundColor = camTheme.text.withAlphaComponent(0.18)
+        seg.addSubview(line)
+        for (b, t) in [(hdrBtn, "HDR"), (mpBtn, "12M"), (siBtn, "AUTO"), (wbBtn, "WB"), (mfBtn, "MF")] {
             b.setTitle(t, for: .normal)
-            b.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
-            b.layer.cornerRadius = 22
-            view.addSubview(b)
+            b.titleLabel?.font = .systemFont(ofSize: 13.5, weight: .semibold)
+            b.layer.cornerRadius = 17
+            seg.addSubview(b)
         }
         hdrBtn.addTarget(self, action: #selector(toggleHDR), for: .touchUpInside)
         mpBtn.addTarget(self, action: #selector(toggle48), for: .touchUpInside)
-        seg.backgroundColor = UIColor(white: 0.13, alpha: 1)
-        seg.layer.cornerRadius = 22
-        view.addSubview(seg)
-        for (b, t) in [(siBtn, "SI"), (wbBtn, "WB"), (mfBtn, "MF")] {
-            b.setTitle(t, for: .normal)
-            b.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
-            seg.addSubview(b)
-        }
         siBtn.addTarget(self, action: #selector(pickSI), for: .touchUpInside)
         wbBtn.addTarget(self, action: #selector(pickWB), for: .touchUpInside)
         mfBtn.addTarget(self, action: #selector(pickMF), for: .touchUpInside)
@@ -379,12 +410,12 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         sheetBack.isHidden = true
         sheetBack.addTarget(self, action: #selector(closeSheet), for: .touchUpInside)
         view.addSubview(sheetBack)
-        sheet.backgroundColor = UIColor(white: 0.17, alpha: 0.97)
-        sheet.layer.cornerRadius = 34
+        glassify(sheet, radius: 34)
+        sheet.layer.cornerCurve = .continuous
         sheet.isHidden = true
         view.addSubview(sheet)
         let grab = UIView(frame: CGRect(x: 0, y: 0, width: 40, height: 5))
-        grab.backgroundColor = UIColor(white: 1, alpha: 0.3)
+        grab.backgroundColor = camTheme.text.withAlphaComponent(0.3)
         grab.layer.cornerRadius = 2.5
         grab.tag = 9
         sheet.addSubview(grab)
@@ -397,6 +428,8 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         sheet.addSubview(pages)
         dots.numberOfPages = 2
         dots.isUserInteractionEnabled = false
+        dots.currentPageIndicatorTintColor = camTheme.accent
+        dots.pageIndicatorTintColor = camTheme.text.withAlphaComponent(0.25)
         sheet.addSubview(dots)
         let list: [(String, String, String?, String?)] = [
             ("rapid", "Rapid Fire", "square.stack.3d.down.right", nil), ("fe", "F/E Lock", "lock.viewfinder", nil),
@@ -430,47 +463,51 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         flashBtn.frame = CGRect(x: 16, y: y, width: r, height: r)
         flipBtn.frame = CGRect(x: w - 16 - r, y: y, width: r, height: r)
         for b in [flashBtn, flipBtn] { b.layer.cornerRadius = r / 2 }
-        let pw = (w - 32 - 2 * r - 4 * 10) / 3
+        expoBar.frame = CGRect(x: 16 + r + 10, y: y + 2, width: w - 32 - 2 * r - 20, height: 40)
+        let pw = (expoBar.bounds.width - 10) / 3
         for (i, b) in [shutterPill, evPill, isoPill].enumerated() {
-            b.frame = CGRect(x: 16 + r + 10 + CGFloat(i) * (pw + 10), y: y + 5, width: pw, height: 34)
+            b.frame = CGRect(x: 5 + CGFloat(i) * pw, y: 5, width: pw, height: 30)
         }
-        y += r + 8
+        y += r + 10
         let footH: CGFloat = pro ? 46 + 10 + 92 + 10 + 44 : 92 + 10 + 44
         let cardH = max(260, h - y - s.bottom - footH - 12)
-        card.frame = CGRect(x: 0, y: y, width: w, height: cardH)
+        card.frame = CGRect(x: 10, y: y, width: w - 20, height: cardH)
         preview.frame = card.bounds
         previewLayer?.frame = preview.bounds
         bwView.frame = card.bounds
         layoutFrame()
         levelView.frame = card.bounds
         histView.frame = CGRect(x: 12, y: 12, width: 118, height: 60)
-        let pwp = round(w * 0.3), php = round(pwp * 16 / 9 * 0.92)
-        pip.frame = CGRect(x: w - pwp - 18, y: 18, width: pwp, height: php)
+        let cwid = card.bounds.width
+        let pwp = round(cwid * 0.3), php = round(pwp * 16 / 9 * 0.92)
+        pip.frame = CGRect(x: cwid - pwp - 18, y: 18, width: pwp, height: php)
         pipLayer?.frame = pip.bounds
         layoutLenses()
-        timeLabel.frame = CGRect(x: (w - 78) / 2, y: 12, width: 78, height: 26)
+        timeLabel.frame = CGRect(x: (cwid - 78) / 2, y: 12, width: 78, height: 26)
         countLabel.frame = card.bounds
-        toast.frame = CGRect(x: (w - 140) / 2, y: 14, width: 140, height: 28)
-        secondBtn.frame = CGRect(x: w - 80, y: cardH / 2 - 29, width: 58, height: 58)
+        toast.frame = CGRect(x: (cwid - 140) / 2, y: 14, width: 140, height: 28)
+        secondBtn.frame = CGRect(x: cwid - 80, y: cardH / 2 - 29, width: 58, height: 58)
         y += cardH + 10
-        dial.frame = CGRect(x: 16, y: y, width: w - 32, height: 46)
-        dial.isHidden = !pro
+        dialBox.frame = CGRect(x: 16, y: y, width: w - 32, height: 46)
+        dial.frame = dialBox.bounds.insetBy(dx: 14, dy: 0)
+        dialBox.isHidden = !pro
         if pro { y += 46 + 10 }
-        let cw: CGFloat = min(w - 150, 290)
-        capsule.frame = CGRect(x: (w - cw) / 2, y: y, width: cw, height: 92)
+        // the foot: the newest photo and the panel at the edges, mode · shutter · timer in the middle, no capsule
+        capsule.frame = CGRect(x: 0, y: y, width: w, height: 92)
         shutter.frame = CGRect(x: (w - 80) / 2, y: y + 6, width: 80, height: 80)
         layoutShutter()
-        modeBtn.frame = CGRect(x: 14, y: 25, width: 42, height: 42)
-        timerBtn.frame = CGRect(x: cw - 14 - 42, y: 25, width: 42, height: 42)
+        modeBtn.frame = CGRect(x: w / 2 - 40 - 22 - 48, y: 22, width: 48, height: 48)
+        timerBtn.frame = CGRect(x: w / 2 + 40 + 22, y: 22, width: 48, height: 48)
         galleryBtn.frame = CGRect(x: 18, y: y + 20, width: 52, height: 52)
         menuBtn.frame = CGRect(x: w - 18 - 52, y: y + 20, width: 52, height: 52)
         y += 92 + 10
-        hdrBtn.frame = CGRect(x: 18, y: y, width: 56, height: 44)
-        mpBtn.frame = CGRect(x: 82, y: y, width: 56, height: 44)
-        let sw: CGFloat = 156
-        seg.frame = CGRect(x: w - 18 - sw, y: y, width: sw, height: 44)
-        for (i, b) in [siBtn, wbBtn, mfBtn].enumerated() { b.frame = CGRect(x: CGFloat(i) * sw / 3, y: 0, width: sw / 3, height: 44) }
-        for v in [hdrBtn, mpBtn, seg] as [UIView] { v.isHidden = !pro }
+        seg.frame = CGRect(x: 16, y: y, width: w - 32, height: 44)
+        let sw = (seg.bounds.width - 18) / 5
+        for (i, b) in [hdrBtn, mpBtn, siBtn, wbBtn, mfBtn].enumerated() {
+            b.frame = CGRect(x: 5 + CGFloat(i) * sw + (i >= 2 ? 8 : 0), y: 5, width: sw, height: 34)
+        }
+        seg.viewWithTag(77)?.frame = CGRect(x: 5 + 2 * sw + 3.5, y: 12, width: 1, height: 20)
+        seg.isHidden = !pro
         white.frame = view.bounds
         sheetBack.frame = view.bounds
         let sh: CGFloat = 400 + s.bottom
@@ -485,6 +522,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             let page = i < 9 ? 0 : 1, k = i < 9 ? i : i - 9
             tiles[key]?.frame = CGRect(x: CGFloat(page) * pages.bounds.width + 20 + CGFloat(k % 4) * tw + 4, y: 8 + CGFloat(k / 4) * 104, width: tw - 8, height: 90)
         }
+        fitGlass(view)
     }
 
     // the photo's own frame inside the card (the whole 3:4 picture, as it will be), with the bars of another aspect
@@ -560,17 +598,17 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         if mode == .video { name = torchOn ? "flashlight.on.fill" : "flashlight.off.fill" }
         else { name = flash == .on ? "bolt.fill" : flash == .auto ? "bolt.badge.a.fill" : "bolt.slash.fill" }
         flashBtn.setImage(UIImage(systemName: name, withConfiguration: cfg), for: .normal)
-        flashBtn.tintColor = (mode == .video ? torchOn : flash != .off) ? roarYellow : .white
+        glassLit(flashBtn, mode == .video ? torchOn : flash != .off)
         flashBtn.isHidden = mode == .dual
         flipBtn.isHidden = mode == .dual
-        for b in [shutterPill, evPill, isoPill] { b.isHidden = !pro }
+        expoBar.isHidden = !pro
         pip.isHidden = mode != .dual
         let modeSym = mode == .photo ? "camera" : mode == .video ? "video" : "rectangle.on.rectangle"
         modeBtn.setImage(UIImage(systemName: modeSym, withConfiguration: UIImage.SymbolConfiguration(pointSize: 21, weight: .regular)), for: .normal)
         modeBtn.isHidden = modes.count < 2
         timerBtn.setImage(timerSecs == 0 ? UIImage(systemName: "timer", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)) : nil, for: .normal)
         timerBtn.setTitle(timerSecs == 0 ? nil : "\(timerSecs)s", for: .normal)
-        timerBtn.tintColor = timerSecs == 0 ? .white : roarYellow
+        glassLit(timerBtn, timerSecs != 0)
         bwView.isHidden = !(bw && pro)
         levelView.isHidden = !(levelOn && pro)
         histView.isHidden = !(histOn && pro)
@@ -578,22 +616,16 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
         previewLayer?.setAffineTransform(anamorphic && pro ? CGAffineTransform(scaleX: 1.33, y: 1) : .identity)
         previewLayer?.videoGravity = pro ? .resizeAspect : .resizeAspectFill
         // the foot's choices
-        func lit(_ b: UIButton, _ on: Bool) {
-            b.backgroundColor = on ? roarBlue.withAlphaComponent(0.85) : UIColor(white: 0.16, alpha: 1)
-            b.tintColor = on ? .black : .white
-        }
-        lit(hdrBtn, hdr)
+        inner(hdrBtn, hdr)
         let can48 = maxDims().1
         mpBtn.isEnabled = can48
         mpBtn.alpha = can48 ? 1 : 0.35
         mpBtn.setTitle(big48 && can48 ? "48M" : "12M", for: .normal)
-        lit(mpBtn, big48 && can48)
-        siBtn.tintColor = param == .ev || param == .shutter || param == .iso ? roarBlue : .white
-        wbBtn.tintColor = param == .wb || wbManual ? roarBlue : .white
-        mfBtn.tintColor = param == .focus || focusManual ? roarBlue : .white
-        evPill.tintColor = param == .ev ? roarBlue : .white
-        shutterPill.tintColor = param == .shutter ? roarBlue : (manualExposure ? roarYellow : .white)
-        isoPill.tintColor = param == .iso ? roarBlue : (manualExposure ? roarYellow : .white)
+        inner(mpBtn, big48 && can48)
+        inner(siBtn, !manualExposure && param == .ev)
+        inner(wbBtn, param == .wb, manual: wbManual)
+        inner(mfBtn, param == .focus, manual: focusManual)
+        refreshPills()
         // the panel's tiles
         tiles["rapid"]?.lit = rapid
         tiles["fe"]?.lit = feLock
@@ -645,8 +677,8 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             dial.index = evList.firstIndex(where: { abs($0 - ev) < 0.05 }) ?? 20
         case .shutter:
             dial.values = shutterList.map { Float($0) }
-            dial.majorEvery = 2
-            dial.label = { v in v >= 0.25 ? String(format: "%.1f", v) : "1/\(Int((1 / Double(v)).rounded()))" }
+            dial.majorEvery = 3
+            dial.label = { v in v >= 0.25 ? String(format: "%.1f\"", v) : "1/\(Int((1 / Double(v)).rounded()))" }
             dial.index = min(shutterIndex, max(0, shutterList.count - 1))
         case .iso:
             dial.values = isoList
@@ -680,8 +712,9 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
 
     private func refreshPills() {
         evPill.setTitle(String(format: "%+.1f EV", ev), for: .normal)
-        shutterPill.tintColor = param == .shutter ? roarBlue : (manualExposure ? roarYellow : .white)
-        isoPill.tintColor = param == .iso ? roarBlue : (manualExposure ? roarYellow : .white)
+        inner(evPill, param == .ev, manual: ev != 0)
+        inner(shutterPill, param == .shutter, manual: manualExposure)
+        inner(isoPill, param == .iso, manual: manualExposure)
     }
 
     // the camera's own reading of shutter and ISO, shown on the pills
@@ -951,10 +984,9 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
     private func paintLenses() {
         for (i, b) in lensButtons.enumerated() {
             let on = i == lensIndex
-            b.backgroundColor = UIColor(white: 1, alpha: on ? 0.22 : 0.1)
-            b.tintColor = on ? roarYellow : .white
-            b.layer.borderWidth = on ? 1.5 : 0
-            b.layer.borderColor = roarBlue.cgColor
+            b.backgroundColor = on ? camTheme.accent : .clear
+            b.tintColor = on ? camTheme.ink : .white
+            b.setTitleColor(on ? camTheme.ink : .white, for: .normal)
             if on { b.setTitle(lensFactors[i].0 + "×", for: .normal) } else { b.setTitle(lensFactors[i].0, for: .normal) }
         }
     }
@@ -1564,7 +1596,7 @@ final class RoarCameraController: UIViewController, AVCapturePhotoCaptureDelegat
             guard let img = img else { return }
             DispatchQueue.main.async {
                 self.galleryBtn.setImage(img, for: .normal)
-                self.galleryBtn.layer.borderColor = UIColor.white.cgColor
+                self.galleryBtn.layer.borderColor = camTheme.accent.cgColor
                 self.galleryBtn.layer.borderWidth = 2
             }
         }

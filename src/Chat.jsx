@@ -3589,7 +3589,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       )}
 
       {lvl !== null && sendBtnRect() && createPortal(
-        <div className="send-lvl" style={{ '--sl-x': `${sendBtnRect().left + sendBtnRect().width / 2}px`, '--sl-y': `${sendBtnRect().top}px` }} aria-hidden="true">
+        <div className="send-lvl" style={{ '--sl-x': `${sendBtnRect().left + sendBtnRect().width / 2}px`, '--sl-y': `${sendBtnRect().top}px`, '--sl-r': `${Math.max(10, window.innerWidth - sendBtnRect().right)}px` }} aria-hidden="true">
           {[[2, '‼️', 'Urgent'], [1, '❗', 'Important'], [0, '', 'Normal']].map(([n, e, w]) => <span key={n} className={`send-lvl-step l${n}${lvl === n ? ' on' : ''}`}>{e && <i>{e}</i>}{w}</span>)}
         </div>, document.body)}
       {sendMenu && createPortal(

@@ -99,6 +99,19 @@ const contactsPlugin = () => {
 }
 export const contactsAvailable = () => !!contactsPlugin()
 
+const FOUND_KEY = 'roarme-c-phone'
+const FOUND_TTL = 24 * 3600e3
+function readFound(uid) {
+  try {
+    const v = JSON.parse(localStorage.getItem(FOUND_KEY))
+    if (!v || v.uid !== uid || !v.at) return null
+    return { at: v.at, hits: v.hits || {}, seen: new Set(v.seen || []) }
+  } catch { return null }
+}
+function keepFound(uid, v) {
+  try { localStorage.setItem(FOUND_KEY, JSON.stringify({ uid, ...v })) } catch { /* full or private: asked again next time */ }
+}
+
 // reads the address book, asks which emails and numbers are on RoarMe; returns who is and who could be invited
 export async function friendsFromContacts() {
   const P = contactsPlugin()
@@ -129,11 +142,32 @@ export async function friendsFromContacts() {
     await new Promise((ok) => setTimeout(ok, 0))
   }
   const hashes = [...byHash.keys()]
+  // what the server said is kept on the phone (Alex, 21 Nov: "That is enough for today" came up after a few visits,
+  // since every visit asked again for the whole address book and the server allows 15,000 a day): the whole book is
+  // asked at most once a day; in between only contacts added since are asked, and if the server says no the last
+  // answer stands. Kept in localStorage roarme-c-phone (names never leave the phone; cleared on signing out).
+  const kept = readFound(user?.id)
+  const fresh = kept && Date.now() - kept.at < FOUND_TTL
+  const ask = fresh ? hashes.filter((h) => !kept.seen.has(h.slice(0, 20))) : hashes
+  const hits = fresh ? { ...kept.hits } : {}
+  const seen = fresh ? new Set(kept.seen) : new Set()
+  try {
+    for (let i = 0; i < ask.length; i += 5000) {
+      const part = ask.slice(i, i + 5000)
+      const { data, error } = await supabase.rpc('roar_find_contacts', { hashes: part })
+      if (error) throw error
+      for (const r of data || []) hits[r.hash] = { id: r.id, username: r.username, display_name: r.display_name, avatar_url: r.avatar_url }
+      for (const h of part) seen.add(h.slice(0, 20))
+    }
+    if (ask.length || !kept) keepFound(user?.id, { at: fresh ? kept.at : Date.now(), hits, seen: [...seen] })
+  } catch (e) {
+    if (!kept) throw e
+    Object.assign(hits, kept.hits) // the server said no (the day's limit, no network): the last answer stands
+  }
   const found = new Map()
-  for (let i = 0; i < hashes.length; i += 5000) {
-    const { data, error } = await supabase.rpc('roar_find_contacts', { hashes: hashes.slice(i, i + 5000) })
-    if (error) throw error
-    for (const r of data || []) if (!found.has(r.id)) found.set(r.id, { ...r, contactName: byHash.get(r.hash)?.name || '' })
+  for (const h of hashes) {
+    const r = hits[h]
+    if (r && !found.has(r.id)) found.set(r.id, { ...r, hash: h, contactName: byHash.get(h)?.name || '' })
   }
   const onRoar = new Set([...found.values()].map((r) => byHash.get(r.hash)))
   return {

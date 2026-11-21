@@ -6180,3 +6180,11 @@ html:root:root:root:root .as-sheet .lbc-row .lbc-chip { flex: none !important; d
 html:root:root:root:root .as-sheet.as-lib .lib-grid { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
 /* the sheet waits unseen while the camera opened by the chat's + is up (Alex, 21 Nov) */
 .as-back.asx-hide { visibility: hidden !important; pointer-events: none !important; }
+
+/* the profile page slides out by itself when one goes to another chat or tab (Alex, 21 Nov) */
+html:root:root:root:root:root:root .modal-back.as-page.pf-leave { z-index: 60; }
+html:root:root:root:root:root:root .modal-back.as-page.pf-leave > .modal { animation: pf-leave .3s cubic-bezier(.4, 0, .2, 1) both !important; }
+@keyframes pf-leave { to { transform: translateX(100%); opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { html:root:root:root:root:root:root .modal-back.as-page.pf-leave { display: none; } }
+/* on a computer the sheet is wide enough for all eight tabs, Contact and Poll among them (Alex, 21 Nov) */
+@media (min-width: 761px) { html:root:root:root:root .as-sheet.as-wide { width: min(680px, calc(100% - 32px)) !important; } }

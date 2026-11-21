@@ -6041,3 +6041,14 @@ html:root:root:root:root .rpl .rpl-ntext small { font-size: 11.5px; color: var(-
 .phx-export-card small { font: 500 12px -apple-system, system-ui, sans-serif; color: rgba(255,255,255,.6); }
 .phx-export-bar { display: block; width: 100%; height: 6px; border-radius: 3px; background: rgba(255,255,255,.14); overflow: hidden; }
 .phx-export-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--acc-top), var(--acc)); transition: width .3s linear; }
+
+/* RoarTransfer knows a Pro account (Alex, 21 Nov): PRO beside the mark, Pro's four choices two by two, no download limit;
+   an account without Pro sees a small card of what Pro gives and a way to see it on roartransfer.com (not inside the App
+   Store apps) */
+.rt-top .rt-pro, .rt-upsell .rt-pro { display: inline-grid; place-items: center; height: 20px; padding: 0 8px; margin-left: 8px; border-radius: 999px; background: linear-gradient(170deg, #ffcf5a, #f5a524); color: #3a2600; font: 800 10.5px/1 -apple-system, system-ui, sans-serif; letter-spacing: .08em; vertical-align: middle; }
+html:root:root .rt-plans.four { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.rt-upsell { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 4px; padding: 14px 16px; border-radius: 20px; background: color-mix(in srgb, #f5a524 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, #f5a524 28%, transparent); }
+.rt-upsell .rt-pro { margin-left: 0; }
+.rt-upsell b { font-size: 15px; font-weight: 650; }
+.rt-upsell ul { margin: 0; padding: 0 0 0 18px; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.rt-upsell-go { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: linear-gradient(170deg, #ffcf5a, #f5a524); color: #3a2600; font-size: 13.5px; font-weight: 650; text-decoration: none; }

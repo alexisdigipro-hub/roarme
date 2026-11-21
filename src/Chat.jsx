@@ -2319,7 +2319,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         const file = /^image\/(jpeg|png|webp)$/.test(raw.type) && editFile.compress ? await shrinkImage(raw, 2048, 0.85) : raw
         const meta = await upload(file)
         if (/^image\/(jpeg|png|webp)$/.test(file.type) && !meta.bucket) {
-          try { const small = await shrinkImage(file, 640, 0.72); if (small !== file) meta.thumb = (await upload(small)).path } catch { /* the whole photo shows */ }
+          try { const small = await shrinkImage(file, 1080, 0.8); if (small !== file) meta.thumb = (await upload(small)).path } catch { /* the whole photo shows */ }
         }
         if (/^video\//.test(file.type) && !meta.bucket) {
           try { const poster = file.poster || raw.poster || await videoPoster(file, 640); if (poster) meta.thumb = (await upload(poster)).path } catch { /* the first frame shows */ }
@@ -2434,8 +2434,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         if (asFile) meta.asFile = true
         if (/^image\/(jpeg|png|webp)$/.test(file.type) && !meta.bucket) {
           try {
-            // lighter in the chat (Alex, 15 Nov): 640 px at .72; the whole photo opens full screen
-            const small = await shrinkImage(file, asFile ? 320 : 640, 0.72)
+            // lighter in the chat (Alex, 15 Nov), yet sharp on an iPhone's screen (21 Nov: "it almost pixelates"): 1080 px at
+            // .8; the whole photo opens full screen
+            const small = await shrinkImage(file, asFile ? 320 : 1080, 0.8)
             if (small !== file) meta.thumb = (await upload(small)).path
           } catch { /* the chat shows the whole photo */ }
         }
@@ -3985,12 +3986,21 @@ function Forward({ msgs, me, rooms, titleOf, fromRoom, onClose, onDone }) {
 const url0 = (go, file) => (go ? picNow(thumbOf(file)) : '')
 function Pic({ file, onOpen, auto = true, still = false, gif = false }) {
   const [go, setGo] = useState(auto && !still)
-  const [url, setUrl] = useState(() => (auto && !still ? picNow(thumbOf(file)) : ''))
+  const [url, setUrl] = useState(() => (auto && !still ? picNow(file) || picNow(thumbOf(file)) : ''))
   const [ready, setReady] = useState(() => !!url0(auto && !still, file))
   const [tall, setTall] = useState(false) // taller than 4:5: shown as 4:5, cut at top and bottom (Alex, 15 Nov)
-  useEffect(() => { if (!go) return undefined; let alive = true; picLink(thumbOf(file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
+  const [sharp, setSharp] = useState(false) // the thumb has shown: now the whole photo in its place
+  useEffect(() => { if (!go) return undefined; let alive = true; picLink(picNow(file) ? file : thumbOf(file)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [file?.path, go])
+  // the thumb (640 px on photos sent before) is soft on an iPhone's screen (Alex, 21 Nov: "it almost pixelates"), so once
+  // it has shown, the whole photo (at most 2048 px, kept on the device like the thumb) takes its place
+  useEffect(() => {
+    if (!sharp || !file?.thumb || file.size > 8e6 || picNow(file) === url) return undefined
+    let alive = true
+    picLink(file).then((u) => { if (alive && u) setUrl(u) })
+    return () => { alive = false }
+  }, [sharp, file?.path])
   if (!go) return <button type="button" className="load-tap" onClick={(e) => { e.stopPropagation(); setGo(true) }}>{gif ? I.play : I.image}<span>{gif ? 'GIF' : 'Photo'} · {fmtBytes(file?.size)}</span><small>Tap to {gif ? 'play' : 'load'}</small></button>
-  return url ? <img className={`pic-img${ready ? ' ready' : ''}${tall ? ' tall' : ''}`} src={url} alt={file?.name || ''} loading="lazy" decoding="async" onLoad={(e) => { const t = e.currentTarget; setTall(t.naturalHeight > t.naturalWidth * 1.25); setReady(true) }} draggable={false} onClick={(e) => { e.stopPropagation(); if (Date.now() - (window.roarHeldAt || 0) < 800) return; onOpen(url) }} /> : <span className="pic-wait" />
+  return url ? <img className={`pic-img${ready ? ' ready' : ''}${tall ? ' tall' : ''}`} src={url} alt={file?.name || ''} loading="lazy" decoding="async" onLoad={(e) => { const t = e.currentTarget; setTall(t.naturalHeight > t.naturalWidth * 1.25); setReady(true); setSharp(true) }} draggable={false} onClick={(e) => { e.stopPropagation(); if (Date.now() - (window.roarHeldAt || 0) < 800) return; onOpen(url) }} /> : <span className="pic-wait" />
 }
 
 /* a file in a message, as Telegram's (Alex, 15 Nov): a square with its picture (or its kind) and a round download

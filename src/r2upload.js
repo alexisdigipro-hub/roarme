@@ -13,6 +13,24 @@ export const PAGE = 'https://roartransfer.com/'
 // 1 day is the first, chosen and recommended one (eco)
 export const PLANS = [{ days: 1, max: 5 * GB, eco: true }, { days: 3, max: 3 * GB }, { days: 7, max: 1 * GB }]
 export const planOf = (days) => PLANS.find((p) => p.days === days) || PLANS[1]
+// Pro (Alex, 25 Oct, as roartransfer-r2 PRO_GB): 1 day up to 50 GB, 3 days 40, 7 days 30, 30 days 20, no download limit
+export const PRO_PLANS = [{ days: 1, max: 50 * GB, eco: true }, { days: 3, max: 40 * GB }, { days: 7, max: 30 * GB }, { days: 30, max: 20 * GB }]
+export const PRICING = 'https://roartransfer.com/pricing/'
+/* Is this RoarMe account Pro on RoarTransfer (the same account; Alex, 21 Nov: "it should know my account has Pro")?
+   Asked of roartransfer-pro once a visit; { pro, until } */
+let proAsk = null
+export function transferPro() {
+  if (!proAsk) {
+    proAsk = (async () => {
+      const { data } = await supabase.auth.getSession()
+      if (!data.session) return { pro: false }
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/roartransfer-pro`, { method: 'POST', headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${data.session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'me' }) })
+      const d = await r.json().catch(() => ({}))
+      return { pro: !!d.pro, until: d.until || null }
+    })().catch(() => { proAsk = null; return { pro: false } })
+  }
+  return proAsk
+}
 
 async function bridge(body) {
   const { data } = await supabase.auth.getSession()

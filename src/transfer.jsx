@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { SUPABASE_KEY, SUPABASE_URL, fmtBytes, supabase, withName } from './lib.js'
 import { locale } from './i18n.js'
 import { I, Modal } from './ui.jsx'
-import { PLANS, planOf, r2Transfer } from './r2upload.js'
+import { PLANS, PRO_PLANS, PRICING, r2Transfer, transferPro } from './r2upload.js'
+import { inApp } from './push.js'
 
 /* RoarTransfer (Alex, 16 Oct): its own window, as on WeTransfer. Pick or drop files, see how big they are against
    the 3 GB, send. The window shows the upload; "Keep chatting" closes it and the upload goes on in the
@@ -89,7 +90,13 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
   const [copied, setCopied] = useState(false)
   const job = useRef(null)
   const pick = useRef(null)
-  const { max } = planOf(days)
+  // a Pro account gets Pro's choices (up to 50 GB, up to 30 days, no download limit); the server checks it again
+  const [pro, setPro] = useState(false)
+  useEffect(() => { let alive = true; transferPro().then((r) => { if (alive) setPro(!!r.pro) }); return () => { alive = false } }, [])
+  const plans = pro ? PRO_PLANS : PLANS
+  const { max } = plans.find((x) => x.days === days) || plans[0]
+  // the call to Pro is not shown inside the App Store apps (Apple 3.1.1: no buying outside the store from inside them)
+  const sell = !pro && !inApp() && !(typeof window !== 'undefined' && window.roarDesktop?.store)
   const total = files.reduce((n, f) => n + f.size, 0)
   const tooBig = total > max
   const add = (list) => setFiles((l) => [...l, ...list.filter((f) => !l.some((x) => x.name === f.name && x.size === f.size))])
@@ -120,7 +127,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
   return (
     slot ? createPortal(<div className="rt-slot">
       <div className={`rt is-${phase}`}>
-        <div className="rt-top"><TransferMark /></div>
+        <div className="rt-top"><TransferMark />{pro && <span className="rt-pro">PRO</span>}</div>
         {phase === 'pick' && (
           <>
             <button type="button" className={`rt-drop${over ? ' over' : ''}${files.length ? ' has' : ''}`} onClick={() => pick.current?.click()}
@@ -152,15 +159,23 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
             )}
             {/* how long and how big, as on roartransfer.com: 1 day up to 5 GB (first, chosen, with the leaf), 3 days up to 3 GB,
                 7 days up to 1 GB, and one small line why (Alex, 23 Oct) */}
-            <div className="rt-plans" role="radiogroup" aria-label="How long the link lasts">
-              {PLANS.map((x) => (
+            <div className={`rt-plans${plans.length > 3 ? " four" : ""}`} role="radiogroup" aria-label="How long the link lasts">
+              {plans.map((x) => (
                 <button key={x.days} type="button" role="radio" aria-checked={days === x.days} className={`rt-tile rt-plan${days === x.days ? ' on' : ''}`} onClick={() => setDays(x.days)}>
                   <i>{I.timer}</i><b>{x.days === 1 ? '1 day' : `${x.days} days`}{x.eco && <span className="rt-leaf" title="Recommended">{LEAF}</span>}</b><small><span>{`up to ${x.max / 1024 ** 3} GB`}</span><span>{`until ${untilDate(Date.now() + x.days * 864e5)}`}</span></small>
                 </button>
               ))}
             </div>
-            <p className="rt-eco rt-dls">{I.download}<span>Each file can be downloaded up to 5 times.</span></p>
-            <p className="rt-eco">{LEAF}<span>The greener choice is also the bigger one: most files are picked up the same day, so a 1-day link spends less time on our servers and carries up to 5 GB.</span></p>
+            <p className="rt-eco rt-dls">{I.download}<span>{pro ? 'No download limit: each file can be downloaded as often as needed.' : 'Each file can be downloaded up to 5 times.'}</span></p>
+            <p className="rt-eco">{LEAF}<span>{pro ? 'The greener choice is also the bigger one: a 1-day link spends less time on our servers and carries up to 50 GB.' : 'The greener choice is also the bigger one: most files are picked up the same day, so a 1-day link spends less time on our servers and carries up to 5 GB.'}</span></p>
+            {sell && (
+              <div className="rt-upsell">
+                <span className="rt-pro">PRO</span>
+                <b>Send bigger, keep longer</b>
+                <ul><li>Up to 50 GB a transfer</li><li>Links up to 30 days</li><li>No download limit</li><li>Your own page to receive files</li></ul>
+                <a className="rt-upsell-go" href={PRICING} target="_blank" rel="noreferrer noopener">See RoarTransfer Pro</a>
+              </div>
+            )}
             {files.length > 0 && (
               <div className="rt-opts">
                 <input className="rt-in" value={name} onChange={(e) => setName(e.target.value.slice(0, 120))} placeholder="Title (optional)" />
@@ -208,7 +223,7 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
 </div>, slot) : (
     <Modal title="RoarTransfer" onClose={close}>
       <div className={`rt is-${phase}`}>
-        <div className="rt-top"><TransferMark /></div>
+        <div className="rt-top"><TransferMark />{pro && <span className="rt-pro">PRO</span>}</div>
         {phase === 'pick' && (
           <>
             <button type="button" className={`rt-drop${over ? ' over' : ''}${files.length ? ' has' : ''}`} onClick={() => pick.current?.click()}
@@ -240,15 +255,23 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
             )}
             {/* how long and how big, as on roartransfer.com: 1 day up to 5 GB (first, chosen, with the leaf), 3 days up to 3 GB,
                 7 days up to 1 GB, and one small line why (Alex, 23 Oct) */}
-            <div className="rt-plans" role="radiogroup" aria-label="How long the link lasts">
-              {PLANS.map((x) => (
+            <div className={`rt-plans${plans.length > 3 ? " four" : ""}`} role="radiogroup" aria-label="How long the link lasts">
+              {plans.map((x) => (
                 <button key={x.days} type="button" role="radio" aria-checked={days === x.days} className={`rt-tile rt-plan${days === x.days ? ' on' : ''}`} onClick={() => setDays(x.days)}>
                   <i>{I.timer}</i><b>{x.days === 1 ? '1 day' : `${x.days} days`}{x.eco && <span className="rt-leaf" title="Recommended">{LEAF}</span>}</b><small><span>{`up to ${x.max / 1024 ** 3} GB`}</span><span>{`until ${untilDate(Date.now() + x.days * 864e5)}`}</span></small>
                 </button>
               ))}
             </div>
-            <p className="rt-eco rt-dls">{I.download}<span>Each file can be downloaded up to 5 times.</span></p>
-            <p className="rt-eco">{LEAF}<span>The greener choice is also the bigger one: most files are picked up the same day, so a 1-day link spends less time on our servers and carries up to 5 GB.</span></p>
+            <p className="rt-eco rt-dls">{I.download}<span>{pro ? 'No download limit: each file can be downloaded as often as needed.' : 'Each file can be downloaded up to 5 times.'}</span></p>
+            <p className="rt-eco">{LEAF}<span>{pro ? 'The greener choice is also the bigger one: a 1-day link spends less time on our servers and carries up to 50 GB.' : 'The greener choice is also the bigger one: most files are picked up the same day, so a 1-day link spends less time on our servers and carries up to 5 GB.'}</span></p>
+            {sell && (
+              <div className="rt-upsell">
+                <span className="rt-pro">PRO</span>
+                <b>Send bigger, keep longer</b>
+                <ul><li>Up to 50 GB a transfer</li><li>Links up to 30 days</li><li>No download limit</li><li>Your own page to receive files</li></ul>
+                <a className="rt-upsell-go" href={PRICING} target="_blank" rel="noreferrer noopener">See RoarTransfer Pro</a>
+              </div>
+            )}
             {files.length > 0 && (
               <div className="rt-opts">
                 <input className="rt-in" value={name} onChange={(e) => setName(e.target.value.slice(0, 120))} placeholder="Title (optional)" />

@@ -444,7 +444,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
     const r = await openCamera(asScan ? { only: 'photo' } : {})
     if (r === undefined) { (asScan ? scan : cam).current?.click(); return }
     if (r === 'gallery') { if (lib) setTab('gallery'); else gal.current?.click(); return }
-    if (r) add([r], asScan)
+    if (r?.files?.length) add(r.files, asScan || r.raw)
   }
   const doc = useRef(null)
   const galRaw = useRef(null)

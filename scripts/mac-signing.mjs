@@ -50,8 +50,13 @@ async function certificate(type) {
   let made
   try { made = await make() } catch (e) {
     if (e.status !== 409) throw e
-    const old = ((await api('GET', `/v1/certificates?filter[certificateType]=${type}&limit=200`)).data || [])
+    // the filtered list can come back empty while Apple still counts one (21 Nov, run 4), so the whole list is read
+    // and this kind picked by its type or its name
+    const label = type === 'MAC_APP_DISTRIBUTION' ? 'Mac App Distribution' : type === 'MAC_INSTALLER_DISTRIBUTION' ? 'Mac Installer Distribution' : type
+    const all = (await api('GET', '/v1/certificates?limit=200')).data || []
+    const old = all.filter((c) => c.attributes.certificateType === type || String(c.attributes.name || '').startsWith(label))
       .sort((a, b) => String(a.attributes.expirationDate).localeCompare(String(b.attributes.expirationDate)))
+    console.log(`${type}: ${old.length} of this kind found`)
     if (!old.length) throw e
     console.log(`${type}: Apple's limit reached; revoking the oldest (${old[0].attributes.name}, ${old[0].attributes.expirationDate})`)
     await api('DELETE', `/v1/certificates/${old[0].id}`)

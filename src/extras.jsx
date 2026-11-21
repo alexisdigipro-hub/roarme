@@ -292,19 +292,52 @@ async function libFile(asset, n) {
   if (/^image\/hei[cf]$/.test(type)) file = await shrinkImage(file, 2048, 0.85)
   return file
 }
-function LibraryGrid({ picked, onPick, onOpen, onCamera, onFail }) {
+// the library in kinds (Alex, 21 Nov: "no camera here, more organised to find your files, with categories"): All, Photos,
+// Videos, then the phone's own smart albums that have something (Favourites, Screenshots, Selfies…), then one's albums
+const SMART = [
+  ['fav', /^(favou?rites?|αγαπημένα)$/i],
+  ['shots', /^(screenshots?|στιγμιότυπα οθόνης)$/i],
+  ['selfies', /^(selfies?|σέλφι)$/i],
+  ['recs', /^(screen recordings?|εγγραφές οθόνης)$/i],
+  ['live', /^(live photos?)$/i],
+  ['portrait', /^(portraits?|πορτρέτο)$/i],
+  ['pano', /^(panoramas?|πανοράματα)$/i],
+]
+function LibraryGrid({ picked, onPick, onOpen, onFail }) {
   const [items, setItems] = useState(null)
   const [want, setWant] = useState(LIB_STEP)
+  const [cat, setCat] = useState('all')
+  const [albums, setAlbums] = useState([])
   const end = useRef(null)
+  // the albums once: the smart ones we know, only if not empty, then the person's own
+  useEffect(() => {
+    const call = mediaCall()
+    if (!call) return undefined
+    let alive = true
+    call('getAlbums', {}).then(async (r) => {
+      const all = r?.albums || []
+      const smart = []
+      for (const [, rx] of SMART) {
+        const a = all.find((x) => x.type === 'smart' && rx.test((x.name || '').trim()))
+        if (a) smart.push(a)
+      }
+      const has = await Promise.all(smart.map((a) => call('getMedias', { quantity: 1, albumIdentifier: a.identifier, types: 'all', thumbnailWidth: 8, thumbnailHeight: 8 }).then((m) => (m?.medias || []).length > 0).catch(() => false)))
+      const own = all.filter((x) => x.type !== 'smart' && x.name).sort((x, y) => x.name.localeCompare(y.name))
+      if (alive) setAlbums([...smart.filter((_, i) => has[i]), ...own])
+    }).catch(() => {})
+    return () => { alive = false }
+  }, [])
   useEffect(() => {
     const call = mediaCall()
     if (!call) { onFail(); return undefined }
     let alive = true
-    call('getMedias', { quantity: want, thumbnailWidth: 300, thumbnailHeight: 300, thumbnailQuality: 65, types: 'all' })
+    const kind = cat === 'photos' ? 'photos' : cat === 'videos' ? 'videos' : 'all'
+    const album = cat === 'all' || cat === 'photos' || cat === 'videos' ? undefined : cat
+    call('getMedias', { quantity: want, thumbnailWidth: 300, thumbnailHeight: 300, thumbnailQuality: 65, types: kind, ...(album ? { albumIdentifier: album } : {}) })
       .then((r) => { if (alive) setItems(r?.medias || []) })
-      .catch(() => { if (alive) onFail() })
+      .catch(() => { if (alive) { if (album) setItems([]); else onFail() } })
     return () => { alive = false }
-  }, [want]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [want, cat]) // eslint-disable-line react-hooks/exhaustive-deps
   // more as the end comes into sight
   useEffect(() => {
     const el = end.current
@@ -313,22 +346,29 @@ function LibraryGrid({ picked, onPick, onOpen, onCamera, onFail }) {
     io.observe(el)
     return () => io.disconnect()
   }, [items, want])
+  const pick = (c) => { if (c === cat) return; setItems(null); setWant(LIB_STEP); setCat(c) }
+  const chips = [['all', 'All'], ['photos', 'Photos'], ['videos', 'Videos'], ...albums.map((a) => [a.identifier, a.name])]
   return (
-    <div className="lib-grid">
-      <button type="button" className="lib-cell lib-cam" onClick={onCamera} aria-label="Camera">{I.camera}<span>Camera</span></button>
-      {(items || []).map((a) => {
-        const n = picked.findIndex((p) => p.identifier === a.identifier)
-        return (
-          <button key={a.identifier} type="button" className={`lib-cell${n >= 0 ? ' on' : ''}`} onClick={() => (onOpen ? onOpen(a) : onPick(a))} aria-label={a.duration ? 'Video' : 'Photo'}>
-            <img src={`data:image/jpeg;base64,${a.data}`} alt="" loading="lazy" decoding="async" draggable={false} />
-            {a.duration ? <small className="lib-dur">{mmssOf(a.duration)}</small> : null}
-            <i className="lib-ring" role="button" aria-label={n >= 0 ? 'Unselect' : 'Select'} onClick={(e) => { e.stopPropagation(); onPick(a) }}>{n >= 0 ? n + 1 : ''}</i>
-          </button>
-        )
-      })}
-      {!items && Array.from({ length: 11 }, (_, k) => <span key={k} className="lib-cell lib-ghost" />)}
-      <span ref={end} className="lib-end" />
-    </div>
+    <>
+      <div className="lbc-row" role="tablist">
+        {chips.map(([k, label]) => <button key={k} type="button" role="tab" aria-selected={cat === k} className={`lbc-chip${cat === k ? ' on' : ''}`} onClick={() => pick(k)}>{label}</button>)}
+      </div>
+      <div className="lib-grid">
+        {(items || []).map((a) => {
+          const n = picked.findIndex((p) => p.identifier === a.identifier)
+          return (
+            <button key={a.identifier} type="button" className={`lib-cell${n >= 0 ? ' on' : ''}`} onClick={() => (onOpen ? onOpen(a) : onPick(a))} aria-label={a.duration ? 'Video' : 'Photo'}>
+              <img src={`data:image/jpeg;base64,${a.data}`} alt="" loading="lazy" decoding="async" draggable={false} />
+              {a.duration ? <small className="lib-dur">{mmssOf(a.duration)}</small> : null}
+              <i className="lib-ring" role="button" aria-label={n >= 0 ? 'Unselect' : 'Select'} onClick={(e) => { e.stopPropagation(); onPick(a) }}>{n >= 0 ? n + 1 : ''}</i>
+            </button>
+          )
+        })}
+        {!items && Array.from({ length: 12 }, (_, k) => <span key={k} className="lib-cell lib-ghost" />)}
+        {items && !items.length && <p className="lbc-empty">Nothing here yet</p>}
+        <span ref={end} className="lib-end" />
+      </div>
+    </>
   )
 }
 
@@ -560,7 +600,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
           ) : tab === 'poll' && onPoll ? (
             <Suspense fallback={null}><PollEditor onReady={(fn) => setPollOut(() => fn)} /></Suspense>
           ) : tab === 'gallery' && lib ? (
-            <LibraryGrid picked={libPicked} onPick={pickLib} onOpen={openLib} onCamera={() => camera()} onFail={() => setLib(false)} />
+            <LibraryGrid picked={libPicked} onPick={pickLib} onOpen={openLib} onFail={() => setLib(false)} />
           ) : tab === 'gallery' ? (
             <>
               <div className="as-tiles">

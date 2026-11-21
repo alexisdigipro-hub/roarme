@@ -565,9 +565,18 @@ export default function Chat({ me, setMe }) {
     })
   }, [rooms, people, namesLate]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // live: new and changed messages, reactions, rooms one is added to
+  // live: new and changed messages, reactions, rooms one is added to. The link drops in the background or on a bad
+  // network and did not come back, so the list missed new messages and their counts (Alex, 21 Nov: "a message came and
+  // nothing shows, show how many he sent"): a dropped link is made again (liveTry), and the list is also asked every
+  // 20 s while RoarMe is in front, and whenever it comes back
+  const [liveTry, setLiveTry] = useState(0)
   useEffect(() => {
-    const ch = supabase.channel(`roar-${me.id}`)
+    const id = setInterval(() => { if (!document.hidden) loadRooms() }, 20000)
+    return () => clearInterval(id)
+  }, [loadRooms])
+  useEffect(() => {
+    let redo = 0
+    const ch = supabase.channel(`roar-${me.id}-${liveTry}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_messages' }, (ev) => {
         listeners.current.forEach((fn) => fn(ev))
         reloadSoon()
@@ -580,9 +589,18 @@ export default function Chat({ me, setMe }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_reactions' }, (ev) => listeners.current.forEach((fn) => fn(ev)))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_pins' }, (ev) => listeners.current.forEach((fn) => fn(ev)))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_roles' }, reloadSoon)
-      .subscribe()
-    return () => { supabase.removeChannel(ch) }
-  }, [me.id, reloadSoon])
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          clearTimeout(redo)
+          redo = setTimeout(() => setLiveTry((n) => n + 1), 3000)
+        }
+        if (status === 'SUBSCRIBED' && liveTry) reloadSoon()
+      })
+    // back in front with a link that is not joined: make it again
+    const back = () => { if (!document.hidden && ch.state !== 'joined') setLiveTry((n) => n + 1) }
+    document.addEventListener('visibilitychange', back)
+    return () => { clearTimeout(redo); document.removeEventListener('visibilitychange', back); supabase.removeChannel(ch) }
+  }, [me.id, reloadSoon, liveTry])
 
   useEffect(() => {
     const ask = () => { pushFirstTap(getPrefs().notifyPreview) }

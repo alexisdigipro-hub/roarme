@@ -58,9 +58,13 @@ async function certificate(type) {
       .sort((a, b) => String(a.attributes.expirationDate).localeCompare(String(b.attributes.expirationDate)))
     console.log(`${type}: ${old.length} of this kind found`)
     if (!old.length) throw e
-    console.log(`${type}: Apple's limit reached; revoking the oldest (${old[0].attributes.name}, ${old[0].attributes.expirationDate})`)
-    await api('DELETE', `/v1/certificates/${old[0].id}`)
-    made = await make()
+    // the oldest go one by one until Apple takes a new one (only this workflow's Mac certificates are of these kinds)
+    for (const c of old) {
+      console.log(`${type}: Apple's limit reached; revoking ${c.attributes.name}, ${c.attributes.expirationDate}`)
+      await api('DELETE', `/v1/certificates/${c.id}`)
+      try { made = await make(); break } catch (e2) { if (e2.status !== 409) throw e2 }
+    }
+    if (!made) throw e
   }
   const cer = join(TMP, `${type}.cer`); const pem = join(TMP, `${type}.pem`); const p12 = join(TMP, `${type}.p12`)
   writeFileSync(cer, Buffer.from(made.data.attributes.certificateContent, 'base64'))

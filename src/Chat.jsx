@@ -2919,6 +2919,30 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     el.style.left = `${left}px`
     el.style.top = `${top}px`
   }, [menu])
+  // the pressed message stays sharp over the blurred chat, as Telegram's (Alex, 21 Nov): a copy of its row is laid over
+  // the veil at the very place it stands, under the menu; it takes no touches and goes with the menu
+  useLayoutEffect(() => {
+    const id = menu?.m.id
+    if (!id) return
+    const row = document.getElementById(`m-${id}`)?.querySelector('.msg')
+    if (!row) return
+    const r = row.getBoundingClientRect()
+    const cs = getComputedStyle(row)
+    const c = row.cloneNode(true)
+    c.classList.remove('fresh', 'flash', 'hit', 'hit-now')
+    c.querySelectorAll('.held, .pressing').forEach((n) => n.classList.remove('held', 'pressing'))
+    c.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'))
+    c.querySelectorAll('video, audio').forEach((v) => { v.removeAttribute('autoplay'); v.muted = true })
+    c.style.paddingLeft = cs.paddingLeft
+    c.style.paddingRight = cs.paddingRight
+    c.style.margin = '0'
+    const box = document.createElement('div')
+    box.className = 'msg-lift'
+    box.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px`
+    box.appendChild(c)
+    document.body.appendChild(box)
+    return () => box.remove()
+  }, [menu?.m.id])
   // The menu opens only on a message itself (Alex, 16 Oct): a right click on it with a mouse, a long press on it on a
   // touch screen (11 Nov: no longer a tap); a click on the empty space beside it does nothing. A double click is the quick reaction;
   // a photo, a link or a button inside it does its own thing.
@@ -3725,7 +3749,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
       {menu && (
         <OnTop>
-          <button type="button" className="scrim blur" aria-label="Close" onClick={() => { if (!lifting()) setMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
+          <button type="button" className="scrim blur msg-veil" aria-label="Close" onClick={() => { if (!lifting()) setMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
           <div ref={menuRef} className="msg-menu" style={{ left: menu.x, top: menu.y }} onClickCapture={(e) => { if (lifting()) { e.stopPropagation(); e.preventDefault() } }}>
             <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
             <div className="menu-list">

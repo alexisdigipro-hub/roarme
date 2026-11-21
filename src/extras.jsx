@@ -705,6 +705,49 @@ export function AudioNote({ file }) {
 const wideIco = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4" /></svg>
 const narrowIco = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12h7M21 12h-7M7 8l4 4-4 4M17 8l-4 4 4 4" /></svg>
 const lightsIco = <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" /></svg>
+/* RoarMe's own small video player (Alex, 21 Nov: "take all the icons off, leave only play / pause and the bar at the
+   foot, and the right double tap"): a tap plays or pauses, the play sign shows in the middle while paused, a thin line
+   at the foot with the time moves through it, a double tap opens it full screen (onDouble). No phone controls, so a
+   long press reaches the message's menu. */
+export function MiniPlayer({ src, poster, autoPlay = false, muted = false, loop = false, at = 0, onDouble, className = '', vref }) {
+  const own = useRef(null)
+  const ref = vref || own
+  const [on, setOn] = useState(false)
+  const [t, setT] = useState(0)
+  const [d, setD] = useState(0)
+  const [show, setShow] = useState(true)
+  const tap = useRef(null)
+  const hide = useRef(null)
+  const drag = useRef(false)
+  const peek = () => { setShow(true); clearTimeout(hide.current); hide.current = setTimeout(() => setShow(false), 1800) }
+  useEffect(() => () => { clearTimeout(tap.current); clearTimeout(hide.current) }, [])
+  const toggle = () => { const v = ref.current; if (!v) return; if (v.paused) v.play().catch(() => {}); else v.pause() }
+  const click = (e) => {
+    e.stopPropagation()
+    if (tap.current) { clearTimeout(tap.current); tap.current = null; onDouble?.(ref.current?.currentTime || 0); return }
+    tap.current = setTimeout(() => { tap.current = null; toggle(); peek() }, onDouble ? 240 : 0)
+  }
+  const seekAt = (e) => { const v = ref.current, r = e.currentTarget.getBoundingClientRect(); if (v && d) { v.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * d; setT(v.currentTime) } }
+  const mm = (x) => `${Math.floor((x || 0) / 60)}:${String(Math.floor((x || 0) % 60)).padStart(2, '0')}`
+  return (
+    <span className={`mini-vid${on ? ' on' : ''}${show || !on ? ' show' : ''} ${className}`} onClick={click} onDoubleClick={(e) => e.stopPropagation()}>
+      <video ref={ref} className="pic-img ready" src={src} poster={poster || undefined} autoPlay={autoPlay} muted={muted} loop={loop} playsInline preload={autoPlay ? 'auto' : 'metadata'}
+        onLoadedMetadata={(e) => { setD(Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0); if (at) e.currentTarget.currentTime = at }}
+        onTimeUpdate={(e) => setT(e.currentTarget.currentTime)} onPlay={() => { setOn(true); peek() }} onPause={() => { setOn(false); setShow(true) }} onEnded={() => setShow(true)} />
+      <i className="mini-pp" aria-hidden="true">{on ? I.pause : I.play}</i>
+      <span className="mini-foot" onClick={(e) => e.stopPropagation()}>
+        <small>{mm(t)}</small>
+        <span className="mini-bar" role="slider" aria-label="Position" aria-valuemin={0} aria-valuemax={Math.round(d)} aria-valuenow={Math.round(t)}
+          onPointerDown={(e) => { drag.current = true; e.currentTarget.setPointerCapture?.(e.pointerId); seekAt(e); peek() }}
+          onPointerMove={(e) => { if (drag.current) seekAt(e) }} onPointerUp={() => { drag.current = false }} onPointerCancel={() => { drag.current = false }}>
+          <i style={{ width: `${d ? Math.min(100, (t / d) * 100) : 0}%` }} />
+        </span>
+        <small>{d ? `-${mm(d - t)}` : ''}</small>
+      </span>
+    </span>
+  )
+}
+
 export function VideoTools({ wide, onWide, onCinema }) {
   return (
     <span className="vid-tools" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
@@ -758,8 +801,8 @@ export function VideoTile({ file, auto = true, play = false, wide, onWide, onCin
   if (!url) return poster ? <span className="vid-box vid-poster"><img className="pic-img ready" src={poster} alt="" draggable={false} /><i className="vid-play spin" /></span> : <span className="pic-wait" />
   return (
     <span className="vid-box">
-      <video ref={ref} className="pic-img ready" src={poster || play ? url : `${url}#t=0.1`} poster={poster || undefined} controls autoPlay={tapped} preload={tapped ? 'auto' : 'metadata'} muted={play} loop={play} playsInline onClick={(e) => e.stopPropagation()} />
-      <VideoTools wide={wide} onWide={onWide} onCinema={onCinema && (() => { const v = ref.current; const at = v?.currentTime || 0; v?.pause(); onCinema({ kind: 'file', src: url, at }) })} />
+      <MiniPlayer vref={ref} src={poster || play ? url : `${url}#t=0.1`} poster={poster} autoPlay={tapped || play} muted={play} loop={play}
+        onDouble={onCinema && ((at) => { document.querySelectorAll('.vid-box video').forEach((v) => v.pause()); onCinema({ kind: 'file', src: url, at }) })} />
     </span>
   )
 }
@@ -846,7 +889,7 @@ export function Cinema({ item, onClose }) {
     <div className="cinema" style={far ? { background: `rgba(0,0,0,${Math.max(0.3, 1 - far / 400)})` } : undefined} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
       onTouchStart={tStart} onTouchMove={tMove} onTouchEnd={tEnd} onTouchCancel={tEnd}>
       {item.kind === 'file'
-        ? <video ref={ref} src={item.src} controls autoPlay playsInline style={far ? { transform: `translate(${off.x}px, ${off.y}px) scale(${Math.max(0.8, 1 - far / 1200)})`, transition: 'none' } : undefined} onLoadedMetadata={() => { if (ref.current && item.at) ref.current.currentTime = item.at }} />
+        ? <span className="cinema-vid" style={far ? { transform: `translate(${off.x}px, ${off.y}px) scale(${Math.max(0.8, 1 - far / 1200)})`, transition: 'none' } : undefined}><MiniPlayer src={item.src} autoPlay at={item.at} onDouble={onClose} /></span>
         : <iframe src={item.src} title="Video" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen />}
       <button type="button" className="cinema-x" onClick={onClose} aria-label="Lights on" title="Lights on (Esc)">{I.x}</button>
     </div>

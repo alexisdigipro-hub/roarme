@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState, Component } from 'react'
 import { createPortal } from 'react-dom'
 import { errText, fileLink, fold, foldHas, lastSeenText, thumbOf, fmtBytes, shrinkImage, supabase, timeOf, picLink } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
@@ -11,6 +11,13 @@ import { locale } from './i18n.js'
 const PollEditor = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollEditor })))
 const PhotoEdit = lazy(() => import('./photoEdit.jsx').then((m) => ({ default: m.PhotoEdit })))
 const PhotoSend = lazy(() => import('./photoSend.jsx').then((m) => ({ default: m.PhotoSend })))
+// if the full-screen editor ever fails, the sheet's own list of picked photos comes back instead of a white page
+class PsGuard extends Component {
+  constructor(p) { super(p); this.state = { bad: false } }
+  static getDerivedStateFromError() { return { bad: true } }
+  componentDidCatch() { this.props.onFail() }
+  render() { return this.state.bad ? null : this.props.children }
+}
 const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationPicker })))
 
 /* ---------- emoji grid ---------- */
@@ -375,6 +382,7 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   }
   // a tap on a photo of the library opens it full screen with the ones picked (Alex, 21 Nov: the editor as Telegram's)
   const [psStart, setPsStart] = useState(0)
+  const [psOff, setPsOff] = useState(false)
   const openLib = async (a) => {
     if (libBusy) return
     const list = libPicked.some((x) => x.identifier === a.identifier) ? libPicked : [...libPicked, a]
@@ -449,11 +457,11 @@ export function AttachSheet({ initial = [], meId, onResend, onClose, onSend, onT
   const big = files.filter((f) => f.size > 50e6 && !(!asFile && /^video\//.test(f.type)))
   const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
   // photos and videos from the Gallery (or the library) go through the full-screen editor before they are sent
-  if (files.length > 0 && !asFile && files.every((f) => /^(image|video)\//.test(f.type || ''))) {
-    return <Suspense fallback={null}><PhotoSend files={files} start={psStart} caption={caption} setCaption={setCaption}
+  if (!psOff && files.length > 0 && !asFile && files.every((f) => /^(image|video)\//.test(f.type || ''))) {
+    return <PsGuard onFail={() => setPsOff(true)}><Suspense fallback={null}><PhotoSend files={files} start={psStart} caption={caption} setCaption={setCaption}
       onBack={() => { setFiles([]); setPsStart(0) }}
       onReplace={(i, nf) => setFiles((l) => l.map((x, k) => (k === i ? nf : x)))}
-      onSend={(kept, compress) => onSend(kept, caption.trim(), compress, false)} /></Suspense>
+      onSend={(kept, compress) => onSend(kept, caption.trim(), compress, false)} /></Suspense></PsGuard>
   }
   if (edit >= 0 && files[edit]) return <Suspense fallback={null}><PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} /></Suspense>
   return createPortal(

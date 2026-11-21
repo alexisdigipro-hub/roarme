@@ -139,6 +139,21 @@ export default function Chat({ me, setMe }) {
   const [muteUntil, setMuteUntil] = useLocal('roarme-mute-until', {})
   const [drafts] = useLocal('roarme-drafts', {})
   const [roomMenu, setRoomMenu] = useState(null) // { r, x, y, sub }
+  // the chat's long-press view leaves as Telegram's (Alex, 22 Nov): a copy of it stays for a moment, the menu drawing
+  // back into its corner and the rest fading, while the real one is already gone
+  const ctxOn = !!roomMenu
+  useLayoutEffect(() => {
+    if (!ctxOn) return
+    const el = document.querySelector('.ctx')
+    return () => {
+      if (!el || calm()) return
+      const c = el.cloneNode(true)
+      c.classList.add('tgm-out')
+      c.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'))
+      document.body.appendChild(c)
+      setTimeout(() => c.remove(), 180)
+    }
+  }, [ctxOn])
   const [peek, setPeek] = useState(null) // a chat looked at without opening it
   const [folderMenu, setFolderMenu] = useState(null) // right click on a folder tab: {f, x, y}
   const [folderChats, setFolderChats] = useState('') // the folder whose chats are being picked
@@ -2945,15 +2960,33 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       if (!mouse && rx && h + b.height + 8 <= room) {
         rx.style.marginBottom = `${b.height + 8}px`
         const mine = row.classList.contains('mine')
+        el.dataset.side = mine ? 'r' : 'l'
         left = Math.max(8 + safe.l, Math.min(mine ? b.right - w : b.left, vw - w - 8 - safe.r))
         const want = b.top - rx.offsetHeight - 8
         top = Math.max(8 + safe.t, Math.min(want, vh - (h + b.height + 8) - 8 - safe.b))
-        if (top !== want) box.style.top = `${r.top + (top - want)}px`
+        // the message glides to its new place (Telegram's way), it does not jump
+        if (top !== want) {
+          const dy = top - want
+          if (calm()) box.style.top = `${r.top + dy}px`
+          else requestAnimationFrame(() => requestAnimationFrame(() => { if (box) box.style.transform = `translateY(${dy}px)` }))
+        }
       }
     }
     el.style.left = `${left}px`
     el.style.top = `${top}px`
-    return () => box?.remove()
+    // leaving, as Telegram's: a copy of the menu draws back into its corner and fades, the reactions and the veil fade,
+    // the message glides home; the real ones are already gone, so nothing waits on this
+    return () => {
+      if (calm()) { box?.remove(); return }
+      const out = el.cloneNode(true)
+      out.classList.add('tgm-out')
+      const veil = document.createElement('div')
+      veil.className = 'scrim blur msg-veil tgm-out'
+      document.body.append(veil, out)
+      if (box) { box.style.transform = ''; box.classList.add('tgm-home') }
+      const gone = box
+      setTimeout(() => { out.remove(); veil.remove(); gone?.remove() }, 180)
+    }
   }, [menu])
   // The menu opens only on a message itself (Alex, 16 Oct): a right click on it with a mouse, a long press on it on a
   // touch screen (11 Nov: no longer a tap); a click on the empty space beside it does nothing. A double click is the quick reaction;

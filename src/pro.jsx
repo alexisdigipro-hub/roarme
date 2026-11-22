@@ -1,6 +1,7 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
-import { Avatar, I } from './ui.jsx'
-import { errText, fileLink, nameOf, picLink, supabase } from './lib.js'
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Avatar, I, Lens, Modal } from './ui.jsx'
+import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib.js'
 import { inApp } from './push.js'
 
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
@@ -13,9 +14,12 @@ const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollC
 
 export const proOk = () => typeof window !== 'undefined' && !inApp() && !window.roarDesktop && window.matchMedia('(min-width: 761px) and (pointer: fine)').matches
 
-export const STAGES = [['prep', 'In prep'], ['shoot', 'Shooting'], ['post', 'Post'], ['done', 'Delivered']]
-export const stageName = (s) => (STAGES.find((x) => x[0] === s) || STAGES[0])[1]
-export const ProChip = ({ p }) => <span className={`prj-chip prj-${p.status}`}>{stageName(p.status)}</span>
+// a project's stages: these to start, renamed, added or taken away per project (Alex, 22 Nov: "the names will change")
+export const DEFAULT_STAGES = [{ id: 'dev', name: 'Development', c: '#8a8f98' }, { id: 'prep', name: 'Pre-production', c: '#d48806' }, { id: 'shoot', name: 'Shooting', c: '#e5483f' }, { id: 'post', name: 'Post-production', c: '#7b4dff' }, { id: 'done', name: 'Delivered', c: '#14a37f' }]
+const STAGE_COLOURS = ['#8a8f98', '#d48806', '#e5483f', '#7b4dff', '#14a37f', '#3a8ee6', '#d6338a', '#0f6e7a']
+export const stagesOf = (p) => (Array.isArray(p?.stages) && p.stages.length ? p.stages : DEFAULT_STAGES)
+export const stageOf = (p) => stagesOf(p).find((s) => s.id === p?.status) || stagesOf(p)[0]
+export const ProChip = ({ p }) => { const s = stageOf(p); return <span className="prj-chip" style={{ '--pc': s.c }}>{s.name}</span> }
 
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2))
 const FIELD_START = ['Client', 'Budget', 'Location', 'Lead']
@@ -70,10 +74,22 @@ const folderOf = (m) => {
 export const isAsset = (m) => {
   const f = m.file
   if (!f || m.kind === 'voice') return false
-  if ((m.kind === 'image' || m.kind === 'file') && f.path) return !f.groupcall
-  return !!(f.location || f.live || f.poll || f.contact)
+  if ((m.kind === 'image' || m.kind === 'file') && f.path) return true
+  return !!(f.location || f.live || f.poll || f.contact || f.groupcall || f.event)
 }
-const isFileMsg = (m) => (m.kind === 'image' || m.kind === 'file') && !!m.file?.path
+// the tabs things go to, with the words for one and for many (the line left in the chat)
+export const ASIDE_TABS = { media: ['Media', 'photo or video', 'photos and videos'], files: ['Files', 'file', 'files'], places: ['Places', 'place', 'places'], polls: ['Polls', 'poll', 'polls'], contacts: ['Contacts', 'contact', 'contacts'], calls: ['Calls', 'call', 'calls'] }
+// which tab of the project a message went to
+export const asideTab = (m) => {
+  const f = m.file || {}
+  if (f.groupcall || f.event) return 'calls'
+  if (f.location || f.live) return 'places'
+  if (f.poll) return 'polls'
+  if (f.contact) return 'contacts'
+  return isMediaMsg(m) ? 'media' : 'files'
+}
+const isFileMsg = (m) => (m.kind === 'image' || m.kind === 'file') && !!m.file?.path && !m.file.groupcall
+const isMediaMsg = (m) => isFileMsg(m) && (folderOf(m) === 'photos' || folderOf(m) === 'videos')
 const FOLDERS = [['docs', 'Documents'], ['photos', 'Photos'], ['videos', 'Videos'], ['audio', 'Audio'], ['other', 'Other']]
 const tagOf = (m) => (EXT(m.file) || (m.kind === 'image' ? 'jpg' : 'file')).slice(0, 4).toUpperCase()
 const sizeText = (n) => (!n ? '' : n > 1e9 ? `${(n / 1e9).toFixed(1)} GB` : n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`)
@@ -144,9 +160,23 @@ function Files({ files, onJump, aside = false }) {
 
 /* ---------- places, polls and contacts at the side ---------- */
 const mapUrl = (l) => `https://www.openstreetmap.org/?mlat=${l.lat}&mlon=${l.lng}#map=16/${l.lat}/${l.lng}`
-function Places({ list }) {
+// a link to a map (Alex, 22 Nov: "Google Maps links, like https://maps.app.goo.gl/…, go to Places; the link stays in the chat")
+const MAP_RX = /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.apple\.com|(www\.)?openstreetmap\.org)/i
+export const isMapLink = (u) => MAP_RX.test(u)
+const mapName = (u) => {
+  const m = u.match(/\/place\/([^/@?]+)/) || u.match(/[?&]q=([^&]+)/)
+  if (m) { try { return decodeURIComponent(m[1].replace(/\+/g, ' ')) } catch { /* left as it is */ } }
+  return /apple/i.test(u) ? 'Apple Maps' : /openstreetmap/i.test(u) ? 'OpenStreetMap' : 'Google Maps'
+}
+function Places({ list, maps = [], people = {}, me }) {
   return (
     <div className="prj-list">
+      {maps.map(({ u, m }, i) => (
+        <a key={`${m.id}-${i}`} className="prj-row" href={u} target="_blank" rel="noopener noreferrer" title={u}>
+          <i className="prj-tag prj-k-place">{I.place}</i>
+          <span className="prj-ftext"><b>{mapName(u)}</b><small>{[m.user_id === me?.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0], new Date(m.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })].join(' · ')}</small></span>
+        </a>
+      ))}
       {list.map((m) => {
         const l = m.file.location || {}
         const live = !!m.file.live
@@ -210,36 +240,6 @@ function Field({ value, onSave, placeholder, area = false, className = '' }) {
 
 /* ---------- tasks ---------- */
 const TASK_COLS = [['todo', 'To do'], ['doing', 'Doing'], ['done', 'Done']]
-function Tasks({ list, onChange }) {
-  const [add, setAdd] = useState('')
-  const put = (next) => onChange(next)
-  const step = (t) => put(list.map((x) => (x.id === t.id ? { ...x, s: x.s === 'todo' ? 'doing' : x.s === 'doing' ? 'done' : 'todo' } : x)))
-  return (
-    <div className="prj-tasks">
-      <form className="prj-add" onSubmit={(e) => { e.preventDefault(); const t = add.trim(); if (!t) return; put([...list, { id: uid(), t: t.slice(0, 200), s: 'todo' }]); setAdd('') }}>
-        <input value={add} onChange={(e) => setAdd(e.target.value)} placeholder="Add a task" maxLength={200} />
-        <button type="submit" className="round" aria-label="Add task" disabled={!add.trim()}>{I.plus}</button>
-      </form>
-      {TASK_COLS.map(([s, label]) => {
-        const rows = list.filter((t) => t.s === s)
-        if (!rows.length) return null
-        return (
-          <div key={s} className={`prj-tcol prj-t-${s}`}>
-            <h5>{label}<small>{rows.length}</small></h5>
-            {rows.map((t) => (
-              <div key={t.id} className="prj-task">
-                <button type="button" className="prj-tick" onClick={() => step(t)} aria-label={`Move to ${s === 'todo' ? 'Doing' : s === 'doing' ? 'Done' : 'To do'}`} title={s === 'todo' ? 'Start' : s === 'doing' ? 'Done' : 'Back to To do'}>{s === 'done' ? I.check : s === 'doing' ? <i className="prj-half" /> : null}</button>
-                <span className="prj-ttext">{t.t}</span>
-                <button type="button" className="prj-tdel" onClick={() => put(list.filter((x) => x.id !== t.id))} aria-label="Delete task" title="Delete">{I.x}</button>
-              </div>
-            ))}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 /* ---------- the panel ---------- */
 function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, onOpenRoom, me, people = {} }) {
   const files = useRoomFiles(room.room_id)
@@ -273,71 +273,476 @@ function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, on
     )
   }
 
-  const fields = Array.isArray(project.fields) ? project.fields : []
-  const tasks = Array.isArray(project.tasks) ? project.tasks : []
-  const setField = (i, patch) => save({ fields: fields.map((f, n) => (n === i ? { ...f, ...patch } : f)) })
-  const done = tasks.filter((t) => t.s === 'done').length
+  // a project shows the workspace instead (Work)
+  return null
+}
+
+/* ===================================================================================================================
+   The project's workspace (Alex, 22 Nov, from the sample https://claude.ai/artifact/AKd1UNfScaixsPqkoaQqSg: "yes, let's
+   go"): in a project the panel is the main thing and the chat a narrow column beside it. One row on top: the name,
+   the stage as one button (a menu of stages, Rename Stages), the date as a button whose name changes (Shoot Date, Due
+   Date, ... or one's own) and the people. Under it tabs: Overview, Media, Files, Location Scout, Calls, Links, Tags,
+   and Polls, Places, Contacts when there are any, and Tasks.
+   =================================================================================================================== */
+
+const URL_RX = /https?:\/\/[^\s<>()"']+[^\s<>()"'.,;:!?]/g
+const TAG_RX = /(^|[^\p{L}\p{N}_&/#])#([\p{L}\p{N}_]{2,40})/gu
+const tagsIn = (t) => [...String(t || '').matchAll(TAG_RX)].map((x) => x[2])
+const day = (d) => new Date(d).toLocaleDateString([], { day: 'numeric', month: 'short' })
+
+// everything the workspace shows from the chat: messages with something attached, and text with links or #tags
+function useRoomStuff(roomId) {
+  const [stuff, setStuff] = useState({ assets: null, words: [] })
+  useEffect(() => {
+    let gone = false, timer = 0
+    setStuff({ assets: null, words: [] })
+    const load = async () => {
+      const [a, w] = await Promise.all([
+        supabase.from('roar_messages').select('id, user_id, kind, body, file, created_at').eq('room_id', roomId).not('file', 'is', null).is('deleted_at', null).order('created_at', { ascending: false }).limit(600),
+        supabase.from('roar_messages').select('id, user_id, kind, body, created_at').eq('room_id', roomId).eq('kind', 'text').or('body.ilike.*http*,body.ilike.*#*').is('deleted_at', null).order('created_at', { ascending: false }).limit(600),
+      ])
+      if (!gone) setStuff({ assets: (a.data || []).filter(isAsset), words: w.data || [] })
+    }
+    load()
+    const ch = supabase.channel(`pro-stuff-${roomId}-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_messages', filter: `room_id=eq.${roomId}` }, () => { clearTimeout(timer); timer = setTimeout(load, 700) })
+      .subscribe()
+    return () => { gone = true; clearTimeout(timer); supabase.removeChannel(ch) }
+  }, [roomId])
+  return stuff
+}
+
+/* ---------- a big viewer for photos and videos ---------- */
+function Viewer({ items, index, onClose, people = {}, me }) {
+  const [i, setI] = useState(index)
+  const [src, setSrc] = useState('')
+  const m = items[i]
+  useEffect(() => {
+    let gone = false
+    setSrc('')
+    if (m) fileLink(m.file).then((u) => { if (!gone) setSrc(u) }).catch(() => {})
+    return () => { gone = true }
+  }, [m])
+  useEffect(() => {
+    const k = (e) => { if (e.key === 'Escape') onClose(); if (e.key === 'ArrowRight') setI((n) => Math.min(items.length - 1, n + 1)); if (e.key === 'ArrowLeft') setI((n) => Math.max(0, n - 1)) }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [items.length, onClose])
+  if (!m) return null
+  const video = folderOf(m) === 'videos'
+  const who = m.user_id === me?.id ? 'You' : nameOf(people[m.user_id])
+  return createPortal(
+    <div className="prv" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <button type="button" className="round prv-x" onClick={onClose} aria-label="Close">{I.x}</button>
+      {i > 0 && <button type="button" className="round prv-prev" onClick={() => setI(i - 1)} aria-label="Previous">{I.right}</button>}
+      {i < items.length - 1 && <button type="button" className="round prv-next" onClick={() => setI(i + 1)} aria-label="Next">{I.right}</button>}
+      <div className="prv-stage">{src ? (video ? <video key={src} src={src} controls autoPlay playsInline /> : <img src={src} alt="" />) : <span className="prv-wait" />}</div>
+      <div className="prv-cap"><b>{m.file.name || (video ? 'Video' : 'Photo')}</b><small>{who} · {day(m.created_at)} · {i + 1} of {items.length}</small>{m.body?.trim() && <p>{m.body.trim()}</p>}</div>
+    </div>,
+    document.body,
+  )
+}
+
+function Tile({ m, onOpen }) {
+  const [src, setSrc] = useState('')
+  useEffect(() => {
+    let gone = false
+    picLink(m.file).then((u) => { if (!gone && u) setSrc(u) }).catch(() => {})
+    return () => { gone = true }
+  }, [m.id])
+  const video = folderOf(m) === 'videos'
+  return (
+    <button type="button" className={`prw-tile${m.file.round ? ' round' : ''}`} onClick={onOpen} title={m.file.name || ''}>
+      {src ? <img src={src} alt="" loading="lazy" /> : <i className="prw-tile-ph" />}
+      {video && <span className="prw-play"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg></span>}
+      <span className="prw-tile-meta">{m.file.name && !m.file.round ? m.file.name : day(m.created_at)}</span>
+    </button>
+  )
+}
+
+/* ---------- small menus that hang from a button ---------- */
+function Hang({ open, onClose, children, className = '' }) {
+  if (!open) return null
   return (
     <>
-      <div className="prj-top">
-        <div className="prj-stages" role="radiogroup" aria-label="Stage">
-          {STAGES.map(([k, label]) => <button key={k} type="button" role="radio" aria-checked={project.status === k} className={`prj-stage prj-${k}${project.status === k ? ' on' : ''}`} onClick={() => save({ status: k })}>{label}</button>)}
-        </div>
-        <label className="prj-due"><span>{I.calendar}</span><span>Due</span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} /></label>
-      </div>
-      <Section id="brief" title="Brief">
-        <Field area className="prj-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} />
-        <div className="prj-kv">
-          {fields.map((f, i) => (
-            <div key={i} className="prj-kvrow">
-              <Field className="prj-k" value={f.k} placeholder="Field" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
-              <Field className="prj-v" value={f.v} placeholder="—" onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
-              <button type="button" className="prj-kvdel" onClick={() => save({ fields: fields.filter((_, n) => n !== i) })} aria-label="Remove field" title="Remove">{I.x}</button>
-            </div>
-          ))}
-          {fields.length < 20 && <button type="button" className="pill-btn prj-kvadd" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
-        </div>
-      </Section>
-      <Section id="files" title="Files" count={files ? files.filter(isFileMsg).length : null}><Files files={files} onJump={onJump} aside /></Section>
-      {(() => {
-        const places = (files || []).filter((m) => m.file.location || m.file.live)
-        const polls = (files || []).filter((m) => m.file.poll)
-        const cards = (files || []).filter((m) => m.file.contact)
-        return (
-          <>
-            {places.length > 0 && <Section id="places" title="Places" count={places.length}><Places list={places} /></Section>}
-            {polls.length > 0 && <Section id="polls" title="Polls" count={polls.length}><Polls list={polls} me={me} people={people} canStop={room.role === 'admin'} /></Section>}
-            {cards.length > 0 && <Section id="contacts" title="Contacts" count={cards.length}><Contacts list={cards} people={people} /></Section>}
-          </>
-        )
-      })()}
-      <Section id="tasks" title="Tasks" count={tasks.length ? `${done}/${tasks.length}` : null}><Tasks list={tasks} onChange={(next) => save({ tasks: next })} /></Section>
-      <button type="button" className="pill-btn prj-unmake" onClick={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields and tasks are deleted; the chat stays.')) kit.remove(room.room_id).catch((e) => toast(errText(e))) }}>Stop Being a Project</button>
+      <span className="prw-scrim" onClick={onClose} />
+      <div className={`menu prw-menu ${className}`} onClick={(e) => e.stopPropagation()}>{children}</div>
     </>
   )
 }
 
-/* the panel's width follows its left edge (Alex, 22 Nov: "this window should be dragged wider or narrower, left and right"):
-   kept on the device, a double click puts it back */
-const PRJ_W = 330
+const DATE_NAMES = ['Shoot Date', 'Due Date', 'Delivery', 'Premiere']
+
+function Stages({ project, save, onClose }) {
+  const [list, setList] = useState(() => stagesOf(project).map((s) => ({ ...s })))
+  const put = (i, patch) => setList((l) => l.map((s, n) => (n === i ? { ...s, ...patch } : s)))
+  return (
+    <Modal title="Stages" onClose={onClose} foot={<><button type="button" className="btn" onClick={() => setList(DEFAULT_STAGES.map((s) => ({ ...s })))}>Reset</button><button type="button" className="btn btn-main" onClick={() => { const clean = list.map((s) => ({ ...s, name: s.name.trim().slice(0, 30) || 'Stage' })); save({ stages: clean, ...(clean.some((s) => s.id === project.status) ? {} : { status: clean[0].id }) }); onClose() }}>Save</button></>}>
+      <div className="prw-stages">
+        {list.map((s, i) => (
+          <div key={s.id} className="prw-stage-row">
+            <button type="button" className="prw-dotbtn" style={{ '--pc': s.c }} onClick={() => put(i, { c: STAGE_COLOURS[(STAGE_COLOURS.indexOf(s.c) + 1) % STAGE_COLOURS.length] })} aria-label="Change colour" title="Change colour" />
+            <input value={s.name} maxLength={30} onChange={(e) => put(i, { name: e.target.value })} />
+            {list.length > 1 && <button type="button" className="round prw-del" onClick={() => setList((l) => l.filter((_, n) => n !== i))} aria-label="Remove stage">{I.trash}</button>}
+          </div>
+        ))}
+        {list.length < 10 && <button type="button" className="pill-btn prj-kvadd" onClick={() => setList((l) => [...l, { id: uid().slice(0, 8), name: 'New Stage', c: STAGE_COLOURS[l.length % STAGE_COLOURS.length] }])}>{I.plus}<span>Add Stage</span></button>}
+      </div>
+    </Modal>
+  )
+}
+
+/* ---------- Location Scout ---------- */
+const SCOUT_ST = [['option', 'Option', '#d48806'], ['confirmed', 'Confirmed', '#14a37f'], ['rejected', 'Rejected', '#e5483f']]
+const scoutSt = (k) => SCOUT_ST.find((x) => x[0] === k) || SCOUT_ST[0]
+const mapSearch = (q) => `https://www.openstreetmap.org/search?query=${encodeURIComponent(q)}`
+
+async function putPhotos(roomId, files) {
+  const out = []
+  for (const raw of files) {
+    if (!/^image\//.test(raw.type) && !/^video\//.test(raw.type)) continue
+    const f = /^image\/(jpeg|png|webp)$/.test(raw.type) ? await shrinkImage(raw, 2048, 0.85).catch(() => raw) : raw
+    if (f.size > 50e6) continue
+    const safe = (raw.name || 'photo').normalize('NFKD').replace(/[^\w.-]+/g, '_').slice(-60)
+    const path = `${roomId}/scout-${uid()}-${safe}`
+    const { error } = await supabase.storage.from('roar-files').upload(path, f, { contentType: f.type || raw.type })
+    if (error) throw error
+    out.push({ path, name: raw.name, type: f.type || raw.type, size: f.size })
+  }
+  return out
+}
+
+function ScoutPhoto({ p, className = '', onClick }) {
+  const [src, setSrc] = useState('')
+  useEffect(() => { let gone = false; picLink(p).then((u) => { if (!gone && u) setSrc(u) }).catch(() => {}); return () => { gone = true } }, [p.path])
+  return <button type="button" className={`prw-sph ${className}`} onClick={onClick}>{src ? <img src={src} alt="" loading="lazy" /> : <i className="prw-tile-ph" />}</button>
+}
+
+function ScoutEdit({ item, onSave, onDelete, onClose, roomId, toast }) {
+  const [x, setX] = useState(item)
+  const [busy, setBusy] = useState(false)
+  const pick = useRef(null)
+  const set = (patch) => setX((v) => ({ ...v, ...patch }))
+  return (
+    <Modal title={item.name ? 'Edit Location' : 'New Location'} onClose={onClose} foot={<>{onDelete && <button type="button" className="btn danger" onClick={onDelete}>Delete</button>}<button type="button" className="btn btn-main" disabled={busy} onClick={() => onSave({ ...x, name: (x.name || '').trim().slice(0, 80) || 'Location' })}>Save</button></>}>
+      <div className="prw-form">
+        <label><span>Name</span><input value={x.name || ''} maxLength={80} placeholder="Kypseli corner" onChange={(e) => set({ name: e.target.value })} autoFocus /></label>
+        <label><span>Address</span><input value={x.addr || ''} maxLength={160} placeholder="Street, area, city" onChange={(e) => set({ addr: e.target.value })} /></label>
+        <div className="prw-formrow"><span>Status</span><Lens className="seg" dep={x.st}>{SCOUT_ST.map(([k, l]) => <button key={k} type="button" className={x.st === k ? 'on' : ''} onClick={() => set({ st: k })}>{l}</button>)}</Lens></div>
+        <label><span>Contact</span><input value={x.contact || ''} maxLength={120} placeholder="Who to call, a number" onChange={(e) => set({ contact: e.target.value })} /></label>
+        <label><span>Permit</span><input value={x.permit || ''} maxLength={120} placeholder="Asked, granted, dates" onChange={(e) => set({ permit: e.target.value })} /></label>
+        <label><span>Notes</span><textarea rows={3} value={x.notes || ''} maxLength={1000} placeholder="Power, sound, light, parking…" onChange={(e) => set({ notes: e.target.value })} /></label>
+        <div className="prw-formrow top"><span>Photos</span>
+          <div className="prw-sgrid">
+            {(x.photos || []).map((p, n) => (
+              <span key={p.path} className="prw-sgrid-it"><ScoutPhoto p={p} /><button type="button" className="round prw-del" onClick={() => set({ photos: x.photos.filter((_, k) => k !== n) })} aria-label="Remove photo">{I.x}</button></span>
+            ))}
+            <button type="button" className="prw-sadd" disabled={busy} onClick={() => pick.current?.click()}>{busy ? '…' : I.plus}</button>
+            <input ref={pick} type="file" accept="image/*,video/*" multiple hidden onChange={async (e) => { const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return; setBusy(true); try { const got = await putPhotos(roomId, fs); setX((v) => ({ ...v, photos: [...(v.photos || []), ...got].slice(0, 40) })) } catch (er) { toast(errText(er)) } setBusy(false) }} />
+          </div>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function Scout({ project, save, room, toast, onView }) {
+  const list = Array.isArray(project.scouts) ? project.scouts : []
+  const [edit, setEdit] = useState(null)
+  const put = (next) => save({ scouts: next })
+  return (
+    <div className="prw-cards">
+      {list.map((x) => {
+        const [, label, c] = scoutSt(x.st)
+        const ph = x.photos || []
+        return (
+          <article key={x.id} className="prw-card">
+            <div className="prw-cover">
+              {ph[0] ? <ScoutPhoto p={ph[0]} className="cover" onClick={() => onView(ph, 0)} /> : <button type="button" className="prw-cover-empty" onClick={() => setEdit(x)}>{I.image}<span>Add photos</span></button>}
+              <button type="button" className="prj-chip prw-st" style={{ '--pc': c }} onClick={() => put(list.map((y) => (y.id === x.id ? { ...y, st: SCOUT_ST[(SCOUT_ST.findIndex((s) => s[0] === y.st) + 1) % SCOUT_ST.length][0] } : y)))} title="Change status">{label}</button>
+            </div>
+            <div className="prw-card-in">
+              <button type="button" className="prw-card-title" onClick={() => setEdit(x)}><h3>{x.name}</h3>{x.addr && <small>{x.addr}</small>}</button>
+              {ph.length > 1 && <div className="prw-strip">{ph.slice(1, 5).map((p, n) => <ScoutPhoto key={p.path} p={p} onClick={() => onView(ph, n + 1)} />)}{ph.length > 5 && <span className="prw-more">+{ph.length - 5}</span>}</div>}
+              {(x.contact || x.permit || x.notes) && <div className="prw-kv">{x.contact && <><span>Contact</span><b>{x.contact}</b></>}{x.permit && <><span>Permit</span><b>{x.permit}</b></>}{x.notes && <><span>Notes</span><p>{x.notes}</p></>}</div>}
+              <div className="prw-card-acts">
+                <button type="button" className="pill-btn" onClick={() => setEdit(x)}>{I.edit || I.plus}<span>Edit</span></button>
+                {x.addr && <a className="pill-btn" href={mapSearch(x.addr)} target="_blank" rel="noopener noreferrer">{I.place}<span>Map</span></a>}
+              </div>
+            </div>
+          </article>
+        )
+      })}
+      <button type="button" className="prw-newcard" onClick={() => setEdit({ id: uid(), name: '', st: 'option', photos: [] })}>{I.plus}<span>New Location</span></button>
+      {edit && <ScoutEdit item={edit} roomId={room.room_id} toast={toast} onClose={() => setEdit(null)}
+        onDelete={list.some((y) => y.id === edit.id) ? () => { if (window.confirm(`Delete ${edit.name || 'this location'}?`)) { put(list.filter((y) => y.id !== edit.id)); setEdit(null) } } : null}
+        onSave={(x) => { put(list.some((y) => y.id === x.id) ? list.map((y) => (y.id === x.id ? x : y)) : [...list, x]); setEdit(null) }} />}
+    </div>
+  )
+}
+
+/* ---------- Calls ---------- */
+function Calls({ list, room, people, me }) {
+  const [live, setLive] = useState(null)
+  useEffect(() => {
+    let gone = false
+    const look = () => supabase.from('roar_group_calls').select('id, video, started_by, started_at').eq('room_id', room.room_id).is('ended_at', null).order('started_at', { ascending: false }).limit(1)
+      .then(({ data }) => { if (!gone) setLive(data?.[0] || null) })
+    look()
+    const t = setInterval(look, 15000)
+    return () => { gone = true; clearInterval(t) }
+  }, [room.room_id])
+  const go = (video, id) => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: room.room_id, video, ...(id ? { id } : {}) } }))
+  const now = Date.now()
+  const events = list.filter((m) => m.file.event).map((m) => ({ m, ev: m.file.event, s: new Date(m.file.event.start).getTime() }))
+  const soon = events.filter((x) => x.s + 2 * 3600e3 > now).sort((a, b) => a.s - b.s)
+  const past = [...list.filter((m) => m.file.groupcall), ...events.filter((x) => x.s + 2 * 3600e3 <= now).map((x) => x.m)].sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+  const who = (id) => (id === me.id ? 'You' : nameOf(people[id]).split(' ')[0])
+  return (
+    <div className="prw-calls">
+      <div className="prw-calls-top">
+        <button type="button" className="btn btn-main" onClick={() => go(true)}>{I.video}<span>Start Video Chat</span></button>
+        <button type="button" className="btn" onClick={() => go(false)}>{I.phone}<span>Voice Call</span></button>
+      </div>
+      {live && <div className="prw-call on"><span className="prw-call-ico">{I.video}</span><span className="prj-ftext"><b>{live.video ? 'Video chat' : 'Call'} is on</b><small>Started by {who(live.started_by)} at {new Date(live.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></span><button type="button" className="btn btn-main" onClick={() => go(live.video, live.id)}>Join</button></div>}
+      {soon.length > 0 && <h6 className="prw-h">Scheduled</h6>}
+      {soon.map(({ m, ev, s }) => {
+        const open = now >= s - 10 * 60e3
+        return <div key={m.id} className="prw-call"><span className="prw-call-ico sched">{I.calendar}</span><span className="prj-ftext"><b>{ev.title || 'Call'}</b><small>{new Date(s).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span>{open && <button type="button" className="btn btn-main" onClick={() => go(true)}>Join</button>}</div>
+      })}
+      {past.length > 0 && <h6 className="prw-h">Past</h6>}
+      {past.map((m) => <div key={m.id} className="prw-call past"><span className="prw-call-ico past">{m.file.event ? I.calendar : I.video}</span><span className="prj-ftext"><b>{m.file.event ? m.file.event.title || 'Scheduled call' : `${m.file.groupcall?.video === false ? 'Call' : 'Video chat'} by ${who(m.user_id)}`}</b><small>{new Date(m.file.event ? m.file.event.start : m.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span></div>)}
+      {!live && !soon.length && !past.length && <p className="prj-quiet">No calls yet. Calls and scheduled calls of this project gather here.</p>}
+    </div>
+  )
+}
+
+/* ---------- Links and Tags ---------- */
+function Links({ words, people, me, onJump }) {
+  const list = words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].map((u) => ({ u, m })))
+  if (!list.length) return <p className="prj-quiet">No links yet. Links sent in the chat stay there and gather here too.</p>
+  return (
+    <div className="prj-list prw-links">
+      {list.map(({ u, m }, i) => {
+        let host = u
+        try { host = new URL(u).hostname.replace(/^www\./, '') } catch { /* not a full address */ }
+        return (
+          <div key={`${m.id}-${i}`} className="prw-link">
+            <a className="prj-row" href={u} target="_blank" rel="noopener noreferrer"><i className="prj-tag prj-k-docs">{host.slice(0, 1).toUpperCase()}</i><span className="prj-ftext"><b>{host}</b><small>{u}</small></span></a>
+            <button type="button" className="pill-btn prw-goto" onClick={() => onJump(m.id)}>{m.user_id === me.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0]} · {day(m.created_at)}</button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function Tags({ words, people, me, onJump, pick, setPick }) {
+  const all = {}
+  words.forEach((m) => [...new Set(tagsIn(m.body).map((t) => t.toLowerCase()))].forEach((t) => { (all[t] = all[t] || []).push(m) }))
+  const tags = Object.entries(all).sort((a, b) => b[1].length - a[1].length)
+  if (!tags.length) return <p className="prj-quiet">No tags yet. Write #something in a message (#callsheet, #location, #wardrobe) and every message with it gathers here as one thread.</p>
+  const chosen = pick && all[pick] ? pick : tags[0][0]
+  return (
+    <div className="prw-tags">
+      <div className="prw-tagbar">{tags.map(([t, l]) => <button key={t} type="button" className={`prw-tagchip${t === chosen ? ' on' : ''}`} onClick={() => setPick(t)}>#{t}<small>{l.length}</small></button>)}</div>
+      <div className="prw-thread">
+        {[...all[chosen]].reverse().map((m) => (
+          <button key={m.id} type="button" className="prw-tmsg" onClick={() => onJump(m.id)} title="Show in chat">
+            <span className="prw-tmsg-head"><b>{m.user_id === me.id ? 'You' : nameOf(people[m.user_id])}</b><small>{new Date(m.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span>
+            <span className="prw-tmsg-text">{String(m.body).split(TAG_RX).map((part, n, arr) => (n % 3 === 2 ? <mark key={n}>#{part}</mark> : n % 3 === 1 ? part : arr[n]))}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ---------- tasks on a board ---------- */
+function Board({ list, onChange }) {
+  const [add, setAdd] = useState('')
+  const step = (t) => onChange(list.map((x) => (x.id === t.id ? { ...x, s: x.s === 'todo' ? 'doing' : x.s === 'doing' ? 'done' : 'todo' } : x)))
+  return (
+    <div className="prw-board-wrap">
+      <form className="prj-add" onSubmit={(e) => { e.preventDefault(); const t = add.trim(); if (!t) return; onChange([...list, { id: uid(), t: t.slice(0, 200), s: 'todo' }]); setAdd('') }}>
+        <input value={add} onChange={(e) => setAdd(e.target.value)} placeholder="Add a task" maxLength={200} />
+        <button type="submit" className="round" aria-label="Add task" disabled={!add.trim()}>{I.plus}</button>
+      </form>
+      <div className="prw-board">
+        {TASK_COLS.map(([s, label]) => {
+          const rows = list.filter((t) => t.s === s)
+          return (
+            <div key={s} className={`prw-col prj-t-${s}`}>
+              <h5>{label}<small>{rows.length}</small></h5>
+              {rows.map((t) => (
+                <div key={t.id} className="prw-kc prj-task">
+                  <button type="button" className="prj-tick" onClick={() => step(t)} title={s === 'todo' ? 'Start' : s === 'doing' ? 'Done' : 'Back to To do'} aria-label="Move on">{s === 'done' ? I.check : s === 'doing' ? <i className="prj-half" /> : null}</button>
+                  <span className="prj-ttext">{t.t}</span>
+                  <button type="button" className="prj-tdel" onClick={() => onChange(list.filter((x) => x.id !== t.id))} aria-label="Delete task" title="Delete">{I.x}</button>
+                </div>
+              ))}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
+  const stuff = useRoomStuff(room.room_id)
+  const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
+  const [menu, setMenu] = useState('')
+  const [stagesOpen, setStagesOpen] = useState(false)
+  const [custom, setCustom] = useState('')
+  const [mf, setMf] = useState('all')
+  const [view, setView] = useState(null)
+  const [tag, setTag] = useState('')
+  const save = (patch) => kit.save(room.room_id, patch).catch((e) => toast(errText(e)))
+  const goTab = (t) => { setTab(t); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
+  // a tap on the small line in the chat ("2 photos went to Media") or on a #tag opens that tab
+  useEffect(() => {
+    const f = (e) => { if (e.detail?.room !== room.room_id) return; if (e.detail.tag) { setTag(e.detail.tag.toLowerCase()); goTab('tags') } else if (e.detail.tab) goTab(e.detail.tab) }
+    window.addEventListener('roarme-pro-tab', f)
+    return () => window.removeEventListener('roarme-pro-tab', f)
+  }, [room.room_id])
+  const assets = stuff.assets || []
+  const media = assets.filter(isMediaMsg)
+  const files = assets.filter((m) => isFileMsg(m) && !isMediaMsg(m))
+  const places = assets.filter((m) => m.file.location || m.file.live)
+  const polls = assets.filter((m) => m.file.poll)
+  const cards = assets.filter((m) => m.file.contact)
+  const calls = assets.filter((m) => m.file.groupcall || m.file.event)
+  const links = stuff.words.filter((m) => URL_RX.test(m.body) && ((URL_RX.lastIndex = 0), true))
+  const tagged = stuff.words.filter((m) => tagsIn(m.body).length)
+  const maps = stuff.words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter(isMapLink).map((u) => ({ u, m })))
+  const tasks = Array.isArray(project.tasks) ? project.tasks : []
+  const scouts = Array.isArray(project.scouts) ? project.scouts : []
+  const fields = Array.isArray(project.fields) ? project.fields : []
+  const st = stageOf(project)
+  const dateName = project.date_label || 'Shoot Date'
+  const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls', calls.length], ['links', 'Links', links.length], ['tags', 'Tags', tagged.length],
+    ...(polls.length ? [['polls', 'Polls', polls.length]] : []), ...(places.length + maps.length ? [['places', 'Places', places.length + maps.length]] : []), ...(cards.length ? [['contacts', 'Contacts', cards.length]] : []),
+    ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0]]
+  const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
+  const shownMedia = media.filter((m) => mf === 'all' || folderOf(m) === mf)
+  const openMedia = (list, i) => setView({ items: list, index: i })
+  const setField = (i, patch) => save({ fields: fields.map((f, n) => (n === i ? { ...f, ...patch } : f)) })
+  const members = (room.members || []).slice(0, 5)
+  return (
+    <div className="prw-work">
+      <div className="prw-top">
+        <h1>{title}</h1>
+        <span className="prw-hang">
+          <button type="button" className="prw-pill stage" style={{ '--pc': st.c }} onClick={() => setMenu(menu === 'stage' ? '' : 'stage')}><i className="prw-dot" />{st.name}<span className="prw-caret">{I.down}</span></button>
+          <Hang open={menu === 'stage'} onClose={() => setMenu('')}>
+            {stagesOf(project).map((s) => <button key={s.id} type="button" onClick={() => { save({ status: s.id }); setMenu('') }}><i className="prw-dot" style={{ '--pc': s.c }} /><span>{s.name}</span>{s.id === st.id && <b className="prw-tick">{I.check}</b>}</button>)}
+            <hr />
+            <button type="button" onClick={() => { setMenu(''); setStagesOpen(true) }}>{I.edit || I.plus}<span>Rename Stages</span></button>
+          </Hang>
+        </span>
+        <span className="prw-pill date">
+          <span className="prw-hang">
+            <button type="button" className="prw-datename" onClick={() => setMenu(menu === 'date' ? '' : 'date')}>{I.calendar}<span>{dateName}</span><span className="prw-caret">{I.down}</span></button>
+            <Hang open={menu === 'date'} onClose={() => setMenu('')}>
+              {DATE_NAMES.map((d) => <button key={d} type="button" onClick={() => { save({ date_label: d }); setMenu('') }}><span>{d}</span>{d === dateName && <b className="prw-tick">{I.check}</b>}</button>)}
+              <hr />
+              <form className="prw-custom" onSubmit={(e) => { e.preventDefault(); const v = custom.trim(); if (v) { save({ date_label: v.slice(0, 30) }); setCustom(''); setMenu('') } }}>
+                <input value={custom} maxLength={30} placeholder="Your own name" onChange={(e) => setCustom(e.target.value)} />
+              </form>
+            </Hang>
+          </span>
+          <input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} />
+        </span>
+        <span className="prw-faces">{members.map((id) => <Avatar key={id} src={people[id]?.avatar_url} name={nameOf(people[id])} size={30} />)}{(room.members || []).length > 5 && <i>+{room.members.length - 5}</i>}</span>
+      </div>
+      <div className="prw-tabs"><Lens className="seg" dep={shownTab}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)}>{l}{n ? <small>{n}</small> : null}</button>)}</Lens></div>
+      <div className="prw-body">
+        {shownTab === 'overview' && (
+          <div className="prw-over">
+            <div className="prw-box">
+              <h4>Brief</h4>
+              <Field area className="prj-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} />
+              <div className="prj-kv">
+                {fields.map((f, i) => (
+                  <div key={i} className="prj-kvrow">
+                    <Field className="prj-k" value={f.k} placeholder="Field" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
+                    <Field className="prj-v" value={f.v} placeholder="—" onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
+                    <button type="button" className="prj-kvdel" onClick={() => save({ fields: fields.filter((_, n) => n !== i) })} aria-label="Remove field" title="Remove">{I.x}</button>
+                  </div>
+                ))}
+                {fields.length < 20 && <button type="button" className="pill-btn prj-kvadd" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
+              </div>
+            </div>
+            <div className="prw-box">
+              <h4>At a Glance</h4>
+              <div className="prw-glance">
+                <button type="button" onClick={() => goTab('media')}><b>{media.length}</b><span>Photos and videos</span></button>
+                <button type="button" onClick={() => goTab('files')}><b>{files.length}</b><span>Files</span></button>
+                <button type="button" onClick={() => goTab('scout')}><b>{scouts.filter((x) => x.st === 'confirmed').length}/{scouts.length}</b><span>Locations confirmed</span></button>
+                <button type="button" onClick={() => goTab('tasks')}><b>{tasks.filter((t) => t.s === 'done').length}/{tasks.length}</b><span>Tasks done</span></button>
+              </div>
+            </div>
+            {media.length > 0 && <div className="prw-box wide"><h4>Latest Media</h4><div className="prw-grid">{media.slice(0, 8).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} />)}</div></div>}
+          </div>
+        )}
+        {shownTab === 'media' && (
+          <>
+            <div className="prw-sub"><Lens className="seg" dep={mf}>{[['all', 'All'], ['photos', 'Photos'], ['videos', 'Videos']].map(([k, l]) => <button key={k} type="button" className={mf === k ? 'on' : ''} onClick={() => setMf(k)}>{l}</button>)}</Lens></div>
+            {stuff.assets === null ? <p className="prj-quiet">Loading…</p> : shownMedia.length ? <div className="prw-grid big">{shownMedia.map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(shownMedia, i)} />)}</div> : <p className="prj-quiet">No photos or videos yet. What is sent in the chat comes here.</p>}
+          </>
+        )}
+        {shownTab === 'files' && (files.length ? (
+          <div className="prj-list prw-files">{files.map((m) => (
+            <button key={m.id} type="button" className="prj-row" onClick={() => openFile(m)}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button>
+          ))}</div>
+        ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents and sound files sent in the chat come here.'}</p>)}
+        {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
+        {shownTab === 'calls' && <Calls list={calls} room={room} people={people} me={me} />}
+        {shownTab === 'links' && <Links words={links} people={people} me={me} onJump={onJump} />}
+        {shownTab === 'tags' && <Tags words={tagged} people={people} me={me} onJump={onJump} pick={tag} setPick={setTag} />}
+        {shownTab === 'polls' && <div className="prw-polls">{polls.map((m) => <div key={m.id} className="prj-poll"><Suspense fallback={<p className="prj-quiet">Poll</p>}><PollCard id={m.id} me={me.id} people={people} canStop={room.role === 'admin'} /></Suspense></div>)}</div>}
+        {shownTab === 'places' && <Places list={places} maps={maps} people={people} me={me} />}
+        {shownTab === 'contacts' && <Contacts list={cards} people={people} />}
+        {shownTab === 'tasks' && <Board list={tasks} onChange={(next) => save({ tasks: next })} />}
+        {shownTab === 'overview' && <button type="button" className="pill-btn prj-unmake" onClick={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields, tasks and locations are deleted; the chat stays.')) kit.remove(room.room_id).catch((e) => toast(errText(e))) }}>Stop Being a Project</button>}
+      </div>
+      {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
+      {view && <Viewer items={view.items} index={view.index} people={people} me={me} onClose={() => setView(null)} />}
+    </div>
+  )
+}
+
+/* the panel: in a project the workspace, and the chat a column whose width is dragged by the edge between them; elsewhere
+   the small panel of 22 Nov, its width dragged by its left edge. Widths kept on the device, a double click resets. */
+const PRJ_W = 330, CHAT_W = 400
 const prjMax = () => Math.max(300, Math.min(640, window.innerWidth - 760))
+const lsNum = (k, d) => { try { return Number(localStorage.getItem(k)) || d } catch { return d } }
+const lsPut = (k, v) => { try { localStorage.setItem(k, String(Math.round(v))) } catch { /* private window */ } }
 export function ProPanel(props) {
-  const [w, setW] = useState(() => { try { return Number(localStorage.getItem('roarme-pro-w')) || PRJ_W } catch { return PRJ_W } })
-  const keep = (v) => { try { localStorage.setItem('roarme-pro-w', String(Math.round(v))) } catch { /* private window */ } }
+  const big = props.room.kind === 'group' && !!props.project
+  const [w, setW] = useState(() => lsNum('roarme-pro-w', PRJ_W))
+  const [cw, setCw] = useState(() => lsNum('roarme-pro-chat', CHAT_W))
+  const wrap = useRef(null)
+  useLayoutEffect(() => { const p = wrap.current?.parentElement; if (p) p.style.setProperty('--pro-chat', `${cw}px`) }, [cw, big])
   const drag = (e) => {
     e.preventDefault()
-    const x0 = e.clientX, w0 = w
+    const x0 = e.clientX, w0 = big ? cw : w
+    const room = wrap.current?.parentElement?.clientWidth || window.innerWidth
     let last = w0
     document.documentElement.classList.add('prj-dragging')
-    const move = (ev) => { last = Math.max(260, Math.min(prjMax(), w0 + (x0 - ev.clientX))); setW(last) }
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); document.documentElement.classList.remove('prj-dragging'); keep(last) }
+    const move = (ev) => {
+      if (big) { last = Math.max(320, Math.min(room - 460, w0 + (ev.clientX - x0))); setCw(last) } else { last = Math.max(260, Math.min(prjMax(), w0 + (x0 - ev.clientX))); setW(last) }
+    }
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); document.documentElement.classList.remove('prj-dragging'); lsPut(big ? 'roarme-pro-chat' : 'roarme-pro-w', last) }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
   }
+  const reset = () => { if (big) { setCw(CHAT_W); lsPut('roarme-pro-chat', CHAT_W) } else { setW(PRJ_W); lsPut('roarme-pro-w', PRJ_W) } }
   return (
-    <div className="prj-wrap" style={{ width: Math.min(w, prjMax()) }}>
-      <span className="prj-grip" onPointerDown={drag} onDoubleClick={() => { setW(PRJ_W); keep(PRJ_W) }} title="Drag to widen or narrow, double-click to reset" />
-      <aside className="prj"><ProInner {...props} /></aside>
+    <div ref={wrap} className={`prj-wrap${big ? ' big' : ''}`} style={big ? undefined : { width: Math.min(w, prjMax()) }}>
+      <span className="prj-grip" onPointerDown={drag} onDoubleClick={reset} title={big ? 'Drag to make the chat wider or narrower, double-click to reset' : 'Drag to widen or narrow, double-click to reset'} />
+      {big ? <Work {...props} /> : <aside className="prj"><ProInner {...props} /></aside>}
     </div>
   )
 }

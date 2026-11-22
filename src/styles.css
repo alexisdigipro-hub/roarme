@@ -6472,3 +6472,155 @@ html:root:root:root:root .prj-row:hover { background: color-mix(in srgb, current
 .prj-live { flex: none; margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #34c759; box-shadow: 0 0 0 4px rgba(52, 199, 89, .2); }
 .prj-polls { display: flex; flex-direction: column; gap: 8px; }
 .prj-poll { border-radius: 14px; padding: 10px 12px; background: color-mix(in srgb, currentColor 4%, transparent); --fs: 13.5px; }
+/* The project's workspace (Alex, 22 Nov; pro.jsx Work): the chat a column on the left, its width the grip's, the
+   workspace the rest. One row on top, tabs on the app's own Lens, big tiles for media, cards for Location Scout. */
+.prw.big > .room-view { flex: none; width: var(--pro-chat, 400px); min-width: 300px; }
+.prj-wrap.big { flex: 1; min-width: 0; width: auto; }
+.prw.big .prj-grip { left: -5px; }
+.prw-work { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid color-mix(in srgb, currentColor 8%, transparent); background: color-mix(in srgb, var(--panel, #fff) 55%, transparent); }
+html[data-mode='dark'] .prw-work { background: rgba(255, 255, 255, .02); }
+.prw-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px 18px 12px; }
+.prw-top h1 { margin: 0 4px 0 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+.prw-hang { position: relative; display: inline-flex; }
+html:root:root:root:root .prw-pill { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 14px; border-radius: 17px; border: 0; font: inherit; font-size: 13px; font-weight: 600; color: inherit; cursor: pointer; background: color-mix(in srgb, var(--panel, #fff) 85%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 8%, transparent); }
+html[data-mode='dark']:root:root:root .prw-pill { background: rgba(255, 255, 255, .06); }
+html:root:root:root:root .prw-pill.stage { color: var(--pc); background: color-mix(in srgb, var(--pc) 14%, transparent); box-shadow: none; }
+.prw-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pc); flex: none; display: inline-block; }
+.prw-caret { display: grid; opacity: .55; }
+.prw-caret svg { width: 12px; height: 12px; }
+html:root:root:root:root .prw-pill.date { padding: 0 6px 0 4px; gap: 2px; cursor: default; }
+html:root:root:root:root .prw-datename { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border: 0; border-radius: 14px; background: none; box-shadow: none; font: inherit; font-size: 12.5px; font-weight: 500; color: inherit; opacity: .75; cursor: pointer; }
+html:root:root:root:root .prw-datename:hover { background: color-mix(in srgb, currentColor 7%, transparent); opacity: 1; }
+.prw-datename svg { width: 15px; height: 15px; }
+.prw-pill.date input { border: 0; background: none; font: inherit; font-weight: 600; color: inherit; color-scheme: light dark; padding: 0 4px; }
+.prw-faces { margin-left: auto; display: flex; align-items: center; }
+.prw-faces > * { margin-left: -8px; box-shadow: 0 0 0 2px var(--panel, #fff); border-radius: 50%; }
+.prw-faces i { font-style: normal; font-size: 11px; font-weight: 700; width: 30px; height: 30px; display: grid; place-items: center; background: color-mix(in srgb, currentColor 12%, var(--panel, #fff)); }
+.prw-scrim { position: fixed; inset: 0; z-index: 40; }
+html:root:root:root:root:root:root:root .prw-menu { position: absolute !important; top: 40px !important; left: 0 !important; right: auto !important; bottom: auto !important; z-index: 41; min-width: 220px; max-height: none; animation: none; }
+.prw-menu .prw-tick { margin-left: auto; display: grid; color: var(--halo-mine, var(--accent)); }
+.prw-menu .prw-tick svg { width: 16px; height: 16px; }
+.prw-custom { padding: 4px 8px 6px; }
+.prw-custom input { width: 100%; height: 32px; border: 0; outline: 0; border-radius: 10px; padding: 0 10px; font: inherit; font-size: 14px; color: inherit; background: color-mix(in srgb, currentColor 7%, transparent); }
+.prw-tabs { padding: 0 18px; flex: none; }
+html:root:root:root:root .prw-tabs .seg { width: 100%; overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
+html:root:root:root:root .prw-tabs .seg > button { flex: none; padding: 0 14px; gap: 6px; white-space: nowrap; }
+.prw-tabs .seg small, .prw-tagchip small { font-size: 10.5px; font-weight: 600; padding: 0 6px; border-radius: 8px; background: color-mix(in srgb, currentColor 10%, transparent); }
+.prw-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px 24px; display: flex; flex-direction: column; gap: 14px; }
+.prw-sub { display: flex; }
+html:root:root:root:root .prw-sub .seg { width: auto; }
+.prw-box { border-radius: 20px; padding: 14px 16px; background: color-mix(in srgb, var(--panel, #fff) 82%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 7%, transparent); }
+html[data-mode='dark'] .prw-box { background: rgba(255, 255, 255, .05); }
+.prw-box h4 { margin: 0 0 10px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .6; }
+.prw-over { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.prw-over .wide { grid-column: 1 / -1; }
+@media (max-width: 1250px) { .prw-over { grid-template-columns: 1fr; } }
+.prw-glance { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+html:root:root:root:root .prw-glance button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; height: auto; padding: 12px; border: 0; border-radius: 14px; background: color-mix(in srgb, currentColor 5%, transparent); box-shadow: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.prw-glance b { font-size: 20px; font-weight: 700; }
+.prw-glance span { font-size: 12px; opacity: .6; }
+.prw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.prw-grid.big { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+html:root:root:root:root .prw-tile { position: relative; aspect-ratio: 4 / 3; padding: 0; border: 0; border-radius: 16px; overflow: hidden; cursor: zoom-in; background: color-mix(in srgb, currentColor 8%, transparent); box-shadow: none; height: auto; }
+html:root:root:root:root .prw-tile.round { border-radius: 16px; }
+.prw-tile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s var(--ease, ease); }
+.prw-tile:hover img { transform: scale(1.03); }
+.prw-tile.round img { border-radius: 50%; width: 76%; height: auto; aspect-ratio: 1; margin: 6% auto 0; }
+.prw-tile-ph { display: block; width: 100%; height: 100%; background: linear-gradient(120deg, color-mix(in srgb, currentColor 6%, transparent), color-mix(in srgb, currentColor 12%, transparent)); }
+.prw-play { position: absolute; inset: 0; margin: auto; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: rgba(0, 0, 0, .45); }
+.prw-tile-meta { position: absolute; left: 8px; bottom: 8px; max-width: calc(100% - 16px); font-size: 11px; color: #fff; background: rgba(0, 0, 0, .42); padding: 2px 8px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prw-files .prj-tag { width: 40px; height: 40px; border-radius: 10px; }
+.prw-files .prj-row { padding: 8px 10px; }
+.prw-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; align-items: start; }
+.prw-card { border-radius: 20px; overflow: hidden; background: color-mix(in srgb, var(--panel, #fff) 90%, transparent); box-shadow: 0 1px 3px rgba(20, 30, 50, .08), 0 8px 24px rgba(20, 30, 50, .06); }
+html[data-mode='dark'] .prw-card { background: rgba(255, 255, 255, .06); box-shadow: none; }
+.prw-cover { position: relative; aspect-ratio: 16 / 9; background: color-mix(in srgb, currentColor 7%, transparent); }
+html:root:root:root:root .prw-sph { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; box-shadow: none; cursor: zoom-in; border-radius: 0; overflow: hidden; aspect-ratio: auto; }
+.prw-sph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+html:root:root:root:root .prw-cover-empty { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; background: none; box-shadow: none; font: inherit; font-size: 13px; color: inherit; opacity: .55; cursor: pointer; }
+html:root:root:root:root .prw-st { position: absolute; top: 10px; left: 10px; height: 22px; border: 0; cursor: pointer; background: color-mix(in srgb, var(--pc) 16%, #fff); box-shadow: 0 1px 4px rgba(0, 0, 0, .15); }
+.prw-card-in { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+html:root:root:root:root .prw-card-title { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 0; border: 0; background: none; box-shadow: none; font: inherit; color: inherit; text-align: left; cursor: pointer; height: auto; }
+.prw-card-title h3 { margin: 0; font-size: 16px; }
+.prw-card-title small { font-size: 12.5px; opacity: .6; }
+.prw-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; position: relative; }
+.prw-strip .prw-sph { aspect-ratio: 1; border-radius: 9px; }
+.prw-more { position: absolute; right: 0; bottom: 0; width: calc(25% - 4px); aspect-ratio: 1; border-radius: 9px; display: grid; place-items: center; color: #fff; font-weight: 700; background: rgba(0, 0, 0, .45); pointer-events: none; }
+.prw-kv { display: grid; grid-template-columns: 70px 1fr; gap: 4px 10px; font-size: 12.5px; }
+.prw-kv span { opacity: .55; }
+.prw-kv p { margin: 0; line-height: 1.45; }
+.prw-card-acts { display: flex; gap: 6px; }
+html:root:root:root:root .prw-card-acts .pill-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; border-radius: 16px; font-size: 12.5px; text-decoration: none; color: inherit; }
+.prw-card-acts svg { width: 15px; height: 15px; }
+html:root:root:root:root .prw-newcard { min-height: 240px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed color-mix(in srgb, currentColor 14%, transparent); border-radius: 20px; background: none; box-shadow: none; font: inherit; font-weight: 600; color: inherit; opacity: .65; cursor: pointer; height: auto; }
+html:root:root:root:root .prw-newcard:hover { opacity: 1; }
+.prw-form { display: flex; flex-direction: column; gap: 10px; }
+.prw-form label, .prw-formrow { display: grid; grid-template-columns: 80px 1fr; align-items: center; gap: 10px; }
+.prw-formrow.top { align-items: start; }
+.prw-form label > span, .prw-formrow > span { font-size: 13px; opacity: .6; }
+.prw-form input, .prw-form textarea { width: 100%; box-sizing: border-box; border: 0; outline: 0; border-radius: 12px; padding: 9px 12px; font: inherit; font-size: 14px; color: inherit; background: color-mix(in srgb, currentColor 6%, transparent); resize: vertical; }
+.prw-sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
+.prw-sgrid-it { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; }
+html:root:root:root:root .prw-sgrid-it .prw-del { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; min-width: 22px; padding: 0; background: rgba(0, 0, 0, .55); color: #fff; box-shadow: none; }
+.prw-sgrid-it .prw-del svg { width: 11px; height: 11px; }
+html:root:root:root:root .prw-sadd { aspect-ratio: 1; display: grid; place-items: center; border: 2px dashed color-mix(in srgb, currentColor 18%, transparent); border-radius: 10px; background: none; box-shadow: none; color: inherit; cursor: pointer; height: auto; }
+.prw-stages { display: flex; flex-direction: column; gap: 8px; }
+.prw-stage-row { display: flex; align-items: center; gap: 10px; }
+.prw-stage-row input { flex: 1; min-width: 0; height: 38px; border: 0; outline: 0; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 14px; color: inherit; background: color-mix(in srgb, currentColor 6%, transparent); }
+html:root:root:root:root .prw-dotbtn { width: 24px; height: 24px; min-width: 24px; padding: 0; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--pc) 30%, transparent); background: var(--pc); box-shadow: none; cursor: pointer; }
+html:root:root:root:root .prw-stage-row .prw-del { width: 34px; height: 34px; min-width: 34px; }
+.prw-calls { display: flex; flex-direction: column; gap: 8px; max-width: 720px; }
+.prw-calls-top { display: flex; gap: 8px; margin-bottom: 6px; }
+html:root:root:root:root .prw-calls-top .btn { display: inline-flex; align-items: center; gap: 8px; }
+.prw-calls-top .ic-mask { width: 20px; height: 20px; }
+.prw-call { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--panel, #fff) 85%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 7%, transparent); }
+html[data-mode='dark'] .prw-call { background: rgba(255, 255, 255, .05); }
+.prw-call .prj-ftext { flex: 1; }
+.prw-call-ico { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #34c759; flex: none; }
+.prw-call-ico.sched { background: #3a8ee6; } .prw-call-ico.past { background: #8a8f98; }
+.prw-call-ico .ic-mask, .prw-call-ico svg { width: 20px; height: 20px; }
+.prw-h { margin: 10px 0 0; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .55; }
+.prw-link { display: flex; align-items: center; gap: 8px; }
+.prw-link .prj-row { flex: 1; min-width: 0; }
+.prw-link .prj-ftext small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:root:root:root:root .prw-goto { flex: none; height: 28px; padding: 0 10px; border-radius: 14px; font-size: 11.5px; }
+.prw-tagbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+html:root:root:root:root .prw-tagchip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 0; border-radius: 15px; font: inherit; font-size: 13px; font-weight: 600; color: inherit; cursor: pointer; background: color-mix(in srgb, currentColor 7%, transparent); box-shadow: none; }
+html:root:root:root:root .prw-tagchip.on { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; color: var(--halo-ink, #fff) !important; }
+.prw-thread { display: flex; flex-direction: column; gap: 6px; max-width: 760px; }
+html:root:root:root:root .prw-tmsg { display: flex; flex-direction: column; gap: 3px; height: auto; padding: 10px 14px; border: 0; border-radius: 16px; text-align: left; font: inherit; color: inherit; cursor: pointer; background: color-mix(in srgb, var(--panel, #fff) 85%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 7%, transparent); }
+html[data-mode='dark']:root:root:root .prw-tmsg { background: rgba(255, 255, 255, .05); }
+.prw-tmsg-head { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; }
+.prw-tmsg-head small { opacity: .55; }
+.prw-tmsg-text { font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.prw-tmsg mark { background: none; color: var(--halo-mine, var(--accent)); font-weight: 600; }
+.prw-polls { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; align-items: start; }
+.prw-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.prw-col { border-radius: 16px; padding: 10px; min-height: 200px; background: color-mix(in srgb, currentColor 4%, transparent); }
+.prw-col h5 { margin: 0 0 8px; display: flex; gap: 6px; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; opacity: .6; }
+.prw-kc { background: color-mix(in srgb, var(--panel, #fff) 92%, transparent); padding: 8px 8px 8px 10px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0, 0, 0, .05); border-radius: 10px; }
+html[data-mode='dark'] .prw-kc { background: rgba(255, 255, 255, .07); }
+.prw-board-wrap .prj-add { max-width: 520px; }
+.prv { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 30px 80px; background: rgba(8, 8, 12, .9); }
+.prv-stage { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+.prv-stage img, .prv-stage video { max-width: 100%; max-height: 100%; border-radius: 14px; object-fit: contain; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+.prv-wait { width: 40px; height: 40px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .2); border-top-color: #fff; animation: prv-spin .8s linear infinite; }
+@keyframes prv-spin { to { transform: rotate(360deg); } }
+.prv-cap { color: #fff; text-align: center; max-width: 720px; }
+.prv-cap b { display: block; font-weight: 600; }
+.prv-cap small { opacity: .65; font-size: 12.5px; }
+.prv-cap p { margin: 6px 0 0; font-size: 13.5px; opacity: .85; }
+html:root:root:root:root .prv .round { position: absolute; width: 44px; height: 44px; min-width: 44px; padding: 0; background: rgba(255, 255, 255, .14); color: #fff; border: 0; box-shadow: none; }
+html:root:root:root:root .prv-x { top: 18px; right: 18px; }
+html:root:root:root:root .prv-prev { left: 18px; top: 50%; margin-top: -22px; transform: scaleX(-1); }
+html:root:root:root:root .prv-next { right: 18px; top: 50%; margin-top: -22px; }
+.aside-note { display: flex; justify-content: center; margin: 6px 0; }
+html:root:root:root:root .aside-note button { display: inline-flex; align-items: center; gap: 6px; max-width: 92%; height: auto; padding: 4px 12px; border: 0; border-radius: 999px; font: inherit; font-size: 11.5px; color: inherit; cursor: pointer; background: color-mix(in srgb, currentColor 7%, transparent); box-shadow: none; }
+.aside-note b { font-weight: 600; }
+.aside-note span { opacity: .75; }
+.aside-note i { font-style: normal; color: var(--halo-mine, var(--accent)); font-weight: 600; }
+.prw-top { flex-wrap: nowrap; }
+.prw-top h1 { flex: 0 1 auto; min-width: 0; max-width: none; }
+.prw-top > .prw-hang, .prw-top > .prw-pill { flex: none; }
+.prw-faces { flex: none; }
+html:root:root:root:root .prw-tabs .seg > button { padding: 0 11px; font-size: 13px; }

@@ -759,7 +759,7 @@ function OrdinoWindow({ onClose, onSent }) {
       if (d.type === 'roardino:ready') hand()
       if (d.type === 'roardino:send' && d.ordino?.url && /^https:\/\//.test(d.ordino.url)) {
         const o = d.ordino
-        onSent({ url: String(o.url).slice(0, 600), token: String(o.token || '').slice(0, 80), title: String(o.title || '').slice(0, 120), label: String(o.label || '').slice(0, 60), date: String(o.date || '').slice(0, 20), call: String(o.call || '').slice(0, 20), place: String(o.place || '').slice(0, 120), accent: /^#[0-9a-f]{3,8}$/i.test(o.accent || '') ? o.accent : '#d40000' })
+        onSent({ url: String(o.url).slice(0, 600), token: String(o.token || '').slice(0, 80), title: String(o.title || '').slice(0, 120), artist: String(o.artist || '').slice(0, 120), label: String(o.label || '').slice(0, 60), date: String(o.date || '').slice(0, 20), call: String(o.call || '').slice(0, 20), place: String(o.place || '').slice(0, 120), accent: /^#[0-9a-f]{3,8}$/i.test(o.accent || '') ? o.accent : '#d40000' })
       }
     }
     window.addEventListener('message', on)
@@ -906,6 +906,8 @@ function Hero({ media, project, title, st, dateName, fields, onBrief }) {
 const SEND_I = tsv(<path d="M4 12 20 4l-5 16-3.5-6.5z" />)
 const FWD_I = tsv(<><path d="M14 5l6 6-6 6" /><path d="M20 11H9a5 5 0 0 0-5 5v3" /></>)
 // an ordino message in the chat: sent with file.ordino, or (sent before that) the text "📋 Label: Title / when / link"
+// the ordino's name with its artist (Alex, 22 Nov: "we want the name too: Ιουλία Καλλιμάνη – INTRO VIDEO")
+export const ordName = (o, artist = '') => [o.artist || artist, o.title].filter(Boolean).join(' – ') || 'Ordino'
 const ORD_URL = /https:\/\/themadlions\.com\/roardino\/\?t=[\w-]+/
 export function ordinoOf(m) {
   if (m.file?.ordino?.url) return m.file.ordino
@@ -932,7 +934,7 @@ export function OrdinoCard({ o, onView }) {
     <span className="ordc" style={{ '--oa': o.accent || '#d4a017' }} onClick={(e) => e.stopPropagation()}>
       <span className="ordc-top">
         <i className="ordc-ico">{TAB_I.files}</i>
-        <span className="ordc-text"><span className="ordc-label">{o.label || 'Ordino'}</span><b>{o.title || 'Ordino'}</b>{when && <small>{when}</small>}</span>
+        <span className="ordc-text"><span className="ordc-label">{o.label || 'Ordino'}</span><b>{ordName(o)}</b>{when && <small>{when}</small>}</span>
       </span>
       <button type="button" className="ordc-view" onClick={(e) => { e.stopPropagation(); onView() }}>View the Ordino</button>
       <span className="ordc-link"><a href={o.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{o.url.replace(/^https:\/\//, '')}</a><button type="button" className="ordc-copy" onClick={copy}>{done ? I.check : COPY_I}<span>{done ? 'Copied' : 'Copy'}</span></button></span>
@@ -948,7 +950,7 @@ export function OrdinoView({ o, onClose, onSend }) {
     <div className="prd" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="prd-card prw-ordwin">
         <div className="prd-head">
-          <span className="prj-ftext"><b>{o.title || 'Ordino'}</b><small>{o.label || 'Ordino'}</small></span>
+          <span className="prj-ftext"><b>{ordName(o)}</b><small>{o.label || 'Ordino'}</small></span>
           {onSend && <button type="button" className="pill-btn" onClick={onSend}>{FWD_I}<span>Send to…</span></button>}
           <a className="pill-btn" href={o.url} target="_blank" rel="noopener noreferrer">{I.right}<span>Open</span></a>
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
@@ -995,12 +997,14 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [doc, setDoc] = useState(null)
   const [ordinoOpen, setOrdinoOpen] = useState(false)
   const [ordView, setOrdView] = useState(null)
+  const artistOf = () => ((Array.isArray(project.fields) ? project.fields : []).find((f) => f.k === 'Artist / Client')?.v || '').trim()
   const [ordSend, setOrdSend] = useState(null)
   // the ordino goes into a chat as a message with its link (Alex, 22 Nov: "throw it in the group, or send it to another")
   const sendOrdino = async (o, ids) => {
     const when = [o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')
-    const body = `📋 ${o.label || 'Ordino'}: ${o.title || title}${when ? `\n${when}` : ''}\n${o.url}`
-    const { error } = await supabase.from('roar_messages').insert(ids.map((id) => ({ room_id: id, user_id: me.id, kind: 'text', body, file: { ordino: { url: o.url, token: o.token || '', label: o.label || '', title: o.title || title, date: o.date || '', call: o.call || '', place: o.place || '', accent: o.accent || '' } } })))
+    const name = ordName({ ...o, title: o.title || title }, artistOf())
+    const body = `📋 ${o.label || 'Ordino'}: ${name}${when ? `\n${when}` : ''}\n${o.url}`
+    const { error } = await supabase.from('roar_messages').insert(ids.map((id) => ({ room_id: id, user_id: me.id, kind: 'text', body, file: { ordino: { url: o.url, token: o.token || '', label: o.label || '', title: o.title || title, artist: o.artist || artistOf(), date: o.date || '', call: o.call || '', place: o.place || '', accent: o.accent || '' } } })))
     if (error) { toast(errText(error)); return false }
     toast(ids.length === 1 && ids[0] === room.room_id ? 'Ordino sent to this chat' : `Ordino sent to ${ids.length} chat${ids.length === 1 ? '' : 's'}`)
     return true
@@ -1139,13 +1143,13 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
               {ordinos.length ? ordinos.map((o) => (
                 <div key={o.token || o.url} className="prw-ordrow" style={{ '--oa': o.accent || '#d40000' }}>
                   {o.date && !Number.isNaN(new Date(o.date).getTime()) ? <i className="prw-ordino-cal"><small>{new Date(o.date).toLocaleDateString([], { month: 'short' })}</small><b>{new Date(o.date).getDate()}</b></i> : <i className="prw-ordino-cal"><b>{TAB_I.files}</b></i>}
-                  <button type="button" className="prw-ordtext" onClick={() => setOrdView(o)}>
+                  <button type="button" className="prw-ordtext" onClick={() => setOrdView({ ...o, artist: o.artist || artistOf() })}>
                     <span className="prw-ordino-label">{o.label || 'Ordino'}</span>
-                    <b>{o.title || title}</b>
+                    <b>{ordName(o, artistOf())}</b>
                     <small>{[o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')}</small>
                   </button>
                   <span className="prw-ordacts">
-                    <button type="button" className="pill-btn" onClick={() => setOrdView(o)}>{TAB_I.files}<span>View</span></button>
+                    <button type="button" className="pill-btn" onClick={() => setOrdView({ ...o, artist: o.artist || artistOf() })}>{TAB_I.files}<span>View</span></button>
                     <button type="button" className="pill-btn" onClick={() => sendOrdino(o, [room.room_id])}>{SEND_I}<span>Send to This Chat</span></button>
                     <button type="button" className="pill-btn" onClick={() => setOrdSend(o)}>{FWD_I}<span>Send to…</span></button>
                     <button type="button" className="round prw-ibtn" onClick={() => setOrdinoOpen(true)} title="Edit in Roardino" aria-label="Edit in Roardino">{I.edit}</button>

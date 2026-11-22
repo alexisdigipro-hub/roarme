@@ -53,7 +53,18 @@ export function hubStart() {
   hubMe().then((m) => (m ? hubCall({ action: 'linkall' }) : null)).catch(() => {})
 }
 
-// Settings > Production Hub
+// Settings > PROJECTS (Alex, 22 Nov: "the gold Projects in Settings, and inside it the hub you join, and the subscription"):
+// for now its Production Hub; the plan joins it once its terms are agreed
+export function ProjectsPage({ toast = () => {} }) {
+  return (
+    <div className="hb-page">
+      <small className="hb-cap hb-sec">Production Hub</small>
+      <HubPage toast={toast} />
+    </div>
+  )
+}
+
+// the Production Hub part of Settings > PROJECTS
 export function HubPage({ toast = () => {} }) {
   const [me, setMe] = useState(undefined)
   const [key, setKey] = useState('')

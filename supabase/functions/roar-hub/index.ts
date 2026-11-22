@@ -9,8 +9,10 @@
 //                                         makes a group for every hub project made since I connected that has none
 //   link { room }                         ties one project group (Make It a Project)
 //   sync { room }                         both ways, for one group: title, stage, shoot day, category, tasks, locations
+//   (pg_cron, x-roar-cron)                every minute, for every linked account: a group for each hub project whose
+//                                         Create PROject was pressed, or that was made in the hub since linking
 // What changed on which side since the last sync decides (base hashes in roar_hub_links.base); when both changed the
-// same thing, RoarMe's wins. verify_jwt on.
+// same thing, RoarMe's wins. verify_jwt off: the function checks the sign-in, or pg_cron's Vault secret, itself.
 
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'npm:@supabase/supabase-js@2'
@@ -46,10 +48,12 @@ const locCommon = (l: any) => ({ name: l.name || '', address: l.address || l.add
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } })
+  // pg_cron, every minute (supabase/hub-link.sql 'roar-hub-pull'): with the Vault secret, no sign-in
+  const cronKey = req.headers.get('x-roar-cron') || ''
+  const isCron = !!cronKey && (await db.rpc('roar_cron_ok', { s: cronKey })).data === true
   const jwt = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
-  const { data: u } = await db.auth.getUser(jwt)
-  const me = u?.user?.id
-  if (!me) return json({ error: 'Sign in first' }, 401)
+  const me = isCron ? '' : (await db.auth.getUser(jwt)).data?.user?.id
+  if (!me && !isCron) return json({ error: 'Sign in first' }, 401)
   let body: any
   try { body = await req.json() } catch { return json({ error: 'Nothing sent' }, 400) }
   const action = String(body?.action || '')
@@ -197,6 +201,19 @@ Deno.serve(async (req) => {
     return pid
   }
 
+  // a group for a hub project, its owner the account that holds the key (a project made in the hub after linking, or
+  // one whose Create PROject was pressed there)
+  async function makeGroup(acc: any, p: any) {
+    const { data: room, error } = await db.from('roar_rooms').insert({ kind: 'group', title: p.title || 'Project', created_by: acc.user_id }).select('id').single()
+    if (error || !room) return false
+    await db.from('roar_members').insert({ room_id: room.id, user_id: acc.user_id, role: 'admin' })
+    await db.from('roar_pro_projects').insert({ room_id: room.id, status: 'dev', due: p.startDate || null, fields: [] })
+    await db.from('roar_hub_links').upsert({ room_id: room.id, owner: acc.user_id, hub_project: p.id, hub_name: acc.hub_name, set_by: acc.user_id, set_at: new Date().toISOString(), base: {} })
+    try { await syncRoom(room.id) } catch { /* next time */ }
+    return true
+  }
+  const wanted = (acc: any, p: any, taken: Set<string>) => !taken.has(p.id) && !p.room && ((p.request && !p.delivered) || (p.createdAt && p.createdAt >= acc.set_at))
+
   try {
     if (action === 'connect') {
       const key = String(body?.key || '').trim()
@@ -208,6 +225,20 @@ Deno.serve(async (req) => {
       await db.from('roar_hub_links').delete().eq('owner', me)
       await db.from('roar_hub_accounts').delete().eq('user_id', me)
       return json({ ok: true })
+    }
+
+    if (isCron) {
+      // every linked account: a group for each hub project that asked for one (Create PROject) or was made since linking
+      const { data: accs } = await db.from('roar_hub_accounts').select('*')
+      let made = 0
+      for (const acc of accs || []) {
+        try {
+          const projects = (await hubCall(acc.hub_key, { action: 'projects.list' })).projects || []
+          const taken = new Set(((await db.from('roar_hub_links').select('hub_project')).data || []).map((x: any) => x.hub_project))
+          for (const p of projects) if (wanted(acc, p, taken) && await makeGroup(acc, p)) { taken.add(p.id); made++ }
+        } catch { /* that hub next minute */ }
+      }
+      return json({ ok: true, made })
     }
 
     if (body.action === 'linkall') {
@@ -226,16 +257,7 @@ Deno.serve(async (req) => {
       }
       // hub projects made since I connected, with no group: a group for each
       const taken = new Set(((await db.from('roar_hub_links').select('hub_project')).data || []).map((x: any) => x.hub_project))
-      for (const p of projects) {
-        if (taken.has(p.id) || p.room || !p.createdAt || p.createdAt < acc.set_at) continue
-        const { data: room, error } = await db.from('roar_rooms').insert({ kind: 'group', title: p.title || 'Project', created_by: me }).select('id').single()
-        if (error || !room) continue
-        await db.from('roar_members').insert({ room_id: room.id, user_id: me, role: 'admin' })
-        await db.from('roar_pro_projects').insert({ room_id: room.id, status: 'dev', due: p.startDate || null, fields: [] })
-        await db.from('roar_hub_links').upsert({ room_id: room.id, owner: me, hub_project: p.id, hub_name: acc.hub_name, set_by: me, set_at: new Date().toISOString(), base: {} })
-        try { await syncRoom(room.id) } catch { /* next time */ }
-        made++
-      }
+      for (const p of projects) if (wanted(acc, p, taken) && await makeGroup(acc, p)) { taken.add(p.id); made++ }
       return json({ ok: true, linked: true, hub: acc.hub_name, joined, made })
     }
 

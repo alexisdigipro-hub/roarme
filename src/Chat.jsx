@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, dotOf, statusOf, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
-import { ASIDE_TABS, OrdinoCard, OrdinoView, ProChip, ProPanel, asideTab, isAsset, ordinoOf, proOk, useProjects } from './pro.jsx'
+import { ASIDE_TABS, OrdinoCard, OrdinoView, ProChip, ProPanel, asideTab, isAsset, isDelivered, ordinoOf, proOk, useProjects } from './pro.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls, CALL_EDGE } from './calls.jsx'
@@ -109,6 +109,7 @@ export default function Chat({ me, setMe }) {
   // Production Hub: on starting, tie my project groups and bring the hub's new projects in as groups (hub.jsx)
   useEffect(() => { hubStart() }, [])
   // on a computer a tap on a project chat's name shows or hides the Workspace beside it (Alex, 22 Nov); kept on the device
+  const [archOpen, setArchOpen] = useState(() => { try { return localStorage.getItem('roarme-proj-arch') === '1' } catch { return false } })
   const [proShut, setProShut] = useState(() => { try { return localStorage.getItem('roarme-pro-shut') === '1' } catch { return false } })
   useEffect(() => {
     const f = () => setProShut((v) => { try { localStorage.setItem('roarme-pro-shut', v ? '0' : '1') } catch { /* private window */ } return !v })
@@ -1635,7 +1636,20 @@ export default function Chat({ me, setMe }) {
                 </div>
               )}
               {rooms.length > 0 && !shown.length && !hits.length && <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : myFolders.some((f) => f.id === folder) ? 'This folder is empty. Add chats to it under Edit folders.' : folder === 'archived' ? 'Nothing here in Archived.' : 'Nothing here.'}</p>}
-              {shown.map((r) => roomRow(r))}
+              {(folder === 'projects' && !q.trim() ? shown.filter((r) => !isDelivered(proKit.map[r.room_id])) : shown).map((r) => roomRow(r))}
+              {folder === 'projects' && !q.trim() && (() => {
+                // delivered projects fold away at the foot of PROject (Alex, 22 Nov, "B"); kept open or shut on the device
+                const done = shown.filter((r) => isDelivered(proKit.map[r.room_id]))
+                if (!done.length) return null
+                return (
+                  <>
+                    <button type="button" className={`proj-arch${archOpen ? ' open' : ''}`} onClick={() => setArchOpen((v) => { try { localStorage.setItem('roarme-proj-arch', v ? '0' : '1') } catch { /* private */ } return !v })} aria-expanded={archOpen}>
+                      <i className="proj-arch-ico">{I.archive}</i><span>Archived Projects</span><small>{done.length}</small><i className="proj-arch-chev">{I.right}</i>
+                    </button>
+                    {archOpen && <div className="proj-arch-list">{done.map((r) => roomRow(r))}</div>}
+                  </>
+                )
+              })()}
               {rowActs && (() => {
                 const r = rooms.find((x) => x.room_id === rowActs.id)
                 if (!r) return null

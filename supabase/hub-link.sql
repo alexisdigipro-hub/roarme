@@ -69,3 +69,12 @@ $c$);
 -- song; they must talk to each other"): the hub's cover picture and its songs, each with a link good for a day (roar-hub)
 alter table public.roar_pro_projects add column if not exists hub_cover text,
   add column if not exists hub_music jsonb not null default '[]'::jsonb;
+
+-- Unlink (Alex, 22 Nov: "deleted on one side, unlinked on the other; an Unlink button on both"): an untied group keeps its
+-- row with no hub project (so linkall does not tie it again by its name); the state is only for a tied group
+create or replace function public.roar_hub_state(r uuid) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select case when roar_is_member(r) then (
+    select jsonb_build_object('hub', hub_name, 'project', hub_project is not null, 'at', set_at, 'synced', coalesce(array_length(synced, 1), 0), 'last', last_sync_at, 'error', last_error)
+    from roar_hub_links where room_id = r and hub_project is not null) end
+$$;

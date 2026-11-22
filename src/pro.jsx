@@ -1320,7 +1320,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           <button type="button" className={`round prw-gear${menu === 'gear' ? ' on' : ''}`} onClick={() => setMenu(menu === 'gear' ? '' : 'gear')} aria-label="Project settings" title="Project settings">{I.gear}</button>
           <Hang open={menu === 'gear'} onClose={() => setMenu('')} className="right">
             <span className="prw-mcap">Tabs</span>
-            {OPTIONAL.map(([k, l]) => <button key={k} type="button" onClick={() => flipTab(k)}>{TAB_I[k]}<span>{l}</span><i className={`prw-sw${hidden.includes(k) ? '' : ' on'}`} /></button>)}
+            {OPTIONAL.map(([k, l]) => (k === 'stats' && adminIn ? ['admin', 'Admin'] : [k, l])).map(([k, l]) => <button key={k} type="button" onClick={() => flipTab(k)}>{TAB_I[k]}<span>{l}</span><i className={`prw-sw${hidden.includes(k) ? '' : ' on'}`} /></button>)}
             <hr />
             <span className="prw-mcap">Chat</span>
             <button type="button" onClick={() => setPrefs({ proNotes: !getPrefs().proNotes })}>{TAB_I.media}<span>Show What Went to the Side</span><i className={`prw-sw${notesOn ? ' on' : ''}`} /></button>

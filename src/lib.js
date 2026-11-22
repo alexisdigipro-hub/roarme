@@ -189,7 +189,7 @@ export function picNow(file) {
 }
 export async function picLink(file) {
   const path = typeof file === 'string' ? file : file?.path
-  if (!path) return ''
+  if (!path) return (typeof file === 'object' && file?.url) || '' // a picture that lives elsewhere (the Production Hub's thumbnails)
   const bucket = (typeof file === 'object' && file?.bucket) || 'roar-files'
   const key = `${bucket}|${path}`
   // only pictures: a video or a sound handed over (an old message with no frame of its own) or a big file keeps its link
@@ -228,7 +228,7 @@ export async function dropPics() {
 
 export async function fileLink(file, download = '') {
   const path = typeof file === 'string' ? file : file?.path
-  if (!path) return ''
+  if (!path) return (typeof file === 'object' && file?.url) || '' // a file that lives elsewhere (the Production Hub's songs and photos)
   const bucket = (typeof file === 'object' && file?.bucket) || 'roar-files'
   const key = `${bucket}|${path}|${download}`
   const hit = signed.get(key)

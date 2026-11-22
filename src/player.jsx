@@ -9,7 +9,7 @@ import { fileLink, fmtBytes, supabase } from './lib.js'
 
 export const AUDIO_EXT = /\.(mp3|wav|m4a|aac|ogg|oga|opus|flac|aif|aiff|weba)$/i
 export const isAudioFile = (f) => !!f && (/^audio\//.test(f.type || '') || AUDIO_EXT.test(f.name || ''))
-const keyOf = (f) => f?.path || f?.name || ''
+const keyOf = (f) => f?.path || f?.hubId || f?.name || ''
 const nameOf = (f) => (f?.name || 'Audio').replace(AUDIO_EXT, '')
 
 /* The big player (Alex, 18 Nov: "a player with a bigger window, more 2026"): the songs of the chat the song came from
@@ -165,6 +165,8 @@ const shape = (raw) => { const top = Math.max(...raw, 0.01); return raw.map((x) 
 async function finePeaks(file, n) {
   const key = `${keyOf(file)}|${n}`
   if (fine.has(key)) return fine.get(key)
+  // a song from the Production Hub brings its own shape
+  if (Array.isArray(file.peaks) && file.peaks.length) { const pk = file.peaks, v = shape(Array.from({ length: n }, (_, i) => pk[Math.floor(i * pk.length / n)] || 0)); fine.set(key, v); return v }
   try { const k = localStorage.getItem(`roarme-wave-${key}`); if (k) { const v = k.split(',').map(Number); fine.set(key, v); return v } } catch { /* private window */ }
   if (fineWait.has(key)) return fineWait.get(key)
   const job = (async () => {

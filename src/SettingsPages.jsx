@@ -968,9 +968,9 @@ function Appearance({ p, toast, me, setMe }) {
       <span className="pv-compose"><span>Write a message…</span><i /></span>
     </div>
   )
+  // Day and Night as a small capsule right under the preview, no title of its own (Alex, 22 Nov: "centred and compact")
   const modeRow = (
-    <div className="set-row set-col">
-      <span className="set-text">Day and Night</span>
+    <div className="set-row apx-mode" aria-label="Day and Night">
       <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
     </div>
   )
@@ -991,8 +991,8 @@ function Appearance({ p, toast, me, setMe }) {
             {modeRow}
             {/* one colour (Alex, 19 Nov): it paints one's own messages, Send and the buttons; Message Colours, Accent
                 Opacity and Glass Look are gone */}
-            <div className="set-row set-col">
-              <span className="set-text">Colour<small>Your messages, Send and the buttons</small></span>
+            <div className="set-row set-col apx-colour">
+              <span className="apx-cap">Colour</span>
               <div className="accents halo-accents">
                 <button type="button" className={`acc acc-halo${!HALO_ACCENTS.some(([k]) => k === p.accent) && !(p.accent === 'h-custom' && p.accentHex) ? ' on' : ''}`} style={{ '--c': '#f47318', background: 'linear-gradient(135deg, #ff9a3c, #f47318)' }} title="Orange" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Orange</small></button>
                 {HALO_ACCENTS.map(([k, l, c, , [x, y]]) => <button key={k} type="button" className={`acc acc-halo${p.accent === k ? ' on' : ''}`} style={{ '--c': c, background: `linear-gradient(135deg, ${x}, ${y})` }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
@@ -1049,7 +1049,7 @@ function Appearance({ p, toast, me, setMe }) {
               <span className="set-text">Font</span>
               <select className="input set-select" value={p.font || 'system'} onChange={(e) => setPrefs({ font: e.target.value })}>{FONTS.map(([k, l, f]) => <option key={k} value={k} style={{ fontFamily: f }}>{l}</option>)}</select>
             </div>
-            <div className="set-row set-col">
+            <div className="set-row apx-line">
               <span className="set-text">Spacing</span>
               <Lens className="seg" dep={p.density || 'standard'}>{[['relaxed', 'Relaxed'], ['standard', 'Standard'], ['tight', 'Tight']].map(([k, l]) => <button key={k} type="button" className={(p.density || 'standard') === k ? 'on' : ''} onClick={() => setPrefs({ density: k })}>{l}</button>)}</Lens>
             </div>

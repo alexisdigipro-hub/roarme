@@ -6340,3 +6340,21 @@ html:root:root:root .bk-add { display: flex; align-items: center; gap: 10px; wid
 /* the sort menu: the chosen one in the accent, a little stronger, no tick (Alex, 22 Nov, "A") */
 html:root:root:root:root .menu > button.csort { justify-content: flex-start; }
 html:root:root:root:root .menu > button.csort.on { color: var(--halo, var(--accent)); font-weight: 600; }
+
+/* Appearance centred and compact (Alex, 22 Nov: "I like the centred and gathered ones, not many gaps"; the six points
+   he said yes to): slimmer tabs, less air between the boxes, Day and Night as a small centred capsule under the
+   preview with no title of its own, the colours' title small and centred over a centred grid of smaller dots with
+   no subtitle, Spacing beside its word. */
+html:root:root:root:root .apx-tabs .seg { height: 36px; min-height: 36px; }
+html:root:root:root:root .apx-tabs .seg > button { min-height: 0; height: 28px; font-size: 13.5px; }
+html:root:root:root:root .apx-tabs { margin-bottom: 0; }
+html:root:root:root:root .apx-pane { gap: 10px !important; }
+html:root:root:root:root .set-row.apx-mode { display: flex; justify-content: center; padding-top: 4px; padding-bottom: 4px; border-top: 0; }
+html:root:root:root:root .set-row.apx-mode .seg { width: auto; min-width: 240px; height: 34px; }
+html:root:root:root:root .set-row.apx-mode .seg > button { height: 26px; min-height: 0; padding: 0 16px; font-size: 13px; }
+html:root:root:root:root .apx-colour { align-items: center; gap: 10px; padding-top: 8px; }
+.apx-cap { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-align: center; }
+html:root:root:root:root .apx-colour .accents.halo-accents { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 14px; width: 100%; max-width: 260px; margin: 0 auto; }
+html:root:root:root:root .apx-colour .accents.halo-accents .acc { width: 36px; height: 36px; min-width: 0; }
+html:root:root:root:root .apx-tabs + .apx-swipe .apx-pane, html:root:root:root:root .apx-tabs + * .apx-pane { margin-top: -6px; }
+html:root:root:root:root .apx-pane .set-preview.live { min-height: 0 !important; height: auto !important; padding-top: 18px !important; }

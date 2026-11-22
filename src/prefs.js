@@ -6,7 +6,7 @@ export const DEFAULTS = {
   mode: 'light', // dark | light | auto (follows the computer); a first start opens Stone in light (Alex, 21 Oct)
   lang: 'en', // en | el, the interface language (i18n.js)
   theme: 'glass', // Glass is the main theme since 12 Nov (Alex: "this will be the app's main theme"); Stone was since 21 Oct. Whoever chose a theme keeps it
-  accent: 'h-custom', // a colour of one's own, DEFAULTS.accentHex #1bb4fb, on a first start and after Reset Appearance (Alex, 18 Nov: "#1BB4FB"; Onyx since 14 Nov before); '' is the orange, or one of ACCENTS / HALO_ACCENTS
+  accent: 'h-roar', // Roar Blue #3AA7E8, RoarMe's own colour, on a first start and after Reset Appearance (Alex, 22 Nov: "#3AA7E8 is our basic colour"; #1bb4fb from 18 Nov before); '' is the orange, or one of ACCENTS / HALO_ACCENTS, or 'h-custom' with accentHex
   density: 'standard', // relaxed | standard | tight
   font: 'system', // one of FONTS; the system's face is how RoarMe starts (Alex's own settings, 18 Nov; DM Sans for an hour that day was a wrong guess)
   radius: 12, // corners of the Ember theme, 4 to 16
@@ -68,8 +68,8 @@ export const DEFAULTS = {
   wallStrength: 31, // 31 is how RoarMe starts and what Reset goes back to (Alex's own settings, 21 Nov; 60 since 18 Nov, 100 before) // 10 to 100: how strong RoarMe's wallpapers and a colour show (one's own photo keeps its own)
   // one's own chat theme (Alex, 9 Nov, "as a feature in Settings"): '' each = the theme's own
   chatTheme: '', // one of CHAT_THEMES, or '' when built by hand
-  accentHex: '#1bb4fb', // any accent colour, over the ready-made ones; this light blue from the start (Alex, 18 Nov)
-  myBubble: '#1bb4fb', // the colour of one's own messages; this light blue from the start (Alex, 18 Nov, his own look)
+  accentHex: '', // any accent colour of one's own (accent 'h-custom'); none at the start since 22 Nov
+  myBubble: '#3AA7E8', // the colour of one's own messages: the accent's (applyLook sets it from the accent)
   theirBubble: '', // the colour of the others' messages
   bubbleR: 6, // Message Corners in px (0 = the theme's own); 6 px is how RoarMe starts and what Reset goes back to (Alex, 21 Nov)
 }

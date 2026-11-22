@@ -3645,6 +3645,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             <button type="button" className="round head-find" onClick={() => { setFind(''); setFindAt(0) }} aria-label="Search in this chat" title="Search in this chat">{I.search}</button>
             {/* on a phone the chat list (with its Tasks button) is another screen, so Tasks is here too */}
             {onTasks && <button type="button" className="round tasks-btn only-phone" onClick={onTasks} aria-label="Tasks" title="Tasks">{I.tasks}{tasksCount > 0 && <i>{tasksCount > 99 ? '99+' : tasksCount}</i>}</button>}
+            {/* a project on a phone: the gold button between the name and the picture opens the project's page (Alex, 22 Nov) */}
+            {assetsAside && <button type="button" className="round head-proj" onClick={() => window.dispatchEvent(new CustomEvent('roarme-pro-open', { detail: { room: room.room_id } }))} aria-label="Project" title="Project">{FOOT_I.pro}</button>}
             <span className="plus-wrap">
               {/* Halo shows the picture here, round, in place of ⋯ (Alex, 12 Nov, from a picture he sent); it opens the profile, as the name does */}
               <button type="button" className="head-ava" onClick={() => setCallsOpen(true)} aria-label="Call" title="Call"><Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={44} group={room.kind === 'group'} /></button>

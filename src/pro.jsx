@@ -1487,8 +1487,10 @@ export function ProPanel(props) {
     host.addEventListener('touchstart', start, { passive: true })
     host.addEventListener('touchend', end)
     const back = (e) => { if (e.detail?.room === props.room.room_id) setSide('chat') }
+    const open = (e) => { if (e.detail?.room === props.room.room_id) setSide('proj') }
     window.addEventListener('roarme-pro-chat', back)
-    return () => { host.removeEventListener('touchstart', start); host.removeEventListener('touchend', end); window.removeEventListener('roarme-pro-chat', back) }
+    window.addEventListener('roarme-pro-open', open) // the gold button in the chat's head
+    return () => { host.removeEventListener('touchstart', start); host.removeEventListener('touchend', end); window.removeEventListener('roarme-pro-chat', back); window.removeEventListener('roarme-pro-open', open) }
   }, [narrow, props.room.room_id])
   if (narrow) {
     // two pages: the chat as it is, and the project over it; a Chat | Project switch under the chat's head
@@ -1496,7 +1498,6 @@ export function ProPanel(props) {
     return (
       <>
         <span ref={anchor} hidden />
-        {side === 'chat' && <div className="prw-sw2-float">{sw}</div>}
         {side === 'proj' && (
           <div className="prw-phone">
             <div className="prw-phone-top">{sw}</div>

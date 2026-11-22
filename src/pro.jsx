@@ -15,7 +15,8 @@ const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.Pdf
    chat keeps everything it has, and a panel at its right holds the project: stage, due date, brief, fields, its files in
    folders and its tasks. Turning Pro off hides all of this; the rows in roar_pro_projects stay (supabase/pro.sql). */
 
-export const proOk = () => typeof window !== 'undefined' && !inApp() && !window.roarDesktop && window.matchMedia('(min-width: 761px) and (pointer: fine)').matches
+// the website and the computer apps (Alex, 22 Nov: "make it for the Apple desktop app too"); not the iPhone app yet
+export const proOk = () => typeof window !== 'undefined' && !inApp() && window.matchMedia('(min-width: 761px) and (pointer: fine)').matches
 
 // a project's stages: these to start, renamed, added or taken away per project (Alex, 22 Nov: "the names will change")
 export const DEFAULT_STAGES = [{ id: 'dev', name: 'Development', c: '#8a8f98' }, { id: 'prep', name: 'Pre-production', c: '#d48806' }, { id: 'shoot', name: 'Shooting', c: '#e5483f' }, { id: 'post', name: 'Post-production', c: '#7b4dff' }, { id: 'done', name: 'Delivered', c: '#14a37f' }]
@@ -130,6 +131,8 @@ function Thumb({ m }) {
 }
 
 async function openFile(m) {
+  // the computer apps open a link in the browser themselves; a blank window first would go nowhere there
+  if (window.roarDesktop) { const u = await fileLink(m.file).catch(() => ''); if (u) window.open(u, '_blank'); return }
   const w = window.open('', '_blank')
   try {
     const u = await fileLink(m.file)

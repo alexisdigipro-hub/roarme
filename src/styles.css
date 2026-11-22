@@ -7332,3 +7332,12 @@ html:root:root:root:root:root:root:root .prw-phone .prw-menu .prw-custom input {
 }
 @keyframes prw-lens-r { from { transform: translateX(-70%); opacity: .5; } to { transform: none; opacity: 1; } }
 @keyframes prw-lens-l { from { transform: translateX(70%); opacity: .5; } to { transform: none; opacity: 1; } }
+/* on the project's page the switch reads Chat | Project (the cover names the project), and the gear stands in the top
+   bar at the right, where the chat has the group's picture (Alex, 22 Nov) */
+.prw-phone { position: absolute; }
+.prw-phone > .prw-work, .prw-phone .prw-top { position: static; }
+html:root:root:root:root:root .prw-phone .prw-gear-wrap { position: absolute; z-index: 6; top: calc(env(safe-area-inset-top, 0px) + 6px); right: 10px; margin: 0; }
+@media (min-width: 761px) { html:root:root:root:root:root .prw-phone .prw-gear-wrap { top: 10px; } }
+html:root:root:root:root:root:root .prw-phone .prw-gear-wrap > .round, html:root:root:root:root:root:root .prw-phone .prw-gear-wrap > button { width: 44px; height: 44px; min-width: 44px; }
+.prw-phone .prw-top { grid-template-columns: minmax(0, max-content) minmax(0, 1fr); }
+.prw-phone-top { min-height: 44px; align-items: center; padding-left: 60px; padding-right: 60px; }

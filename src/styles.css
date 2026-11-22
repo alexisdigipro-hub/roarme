@@ -7822,3 +7822,19 @@ html:root:root:root:root .ch-tabs > button { white-space: nowrap; }
 html:root:root:root:root .prs2-cell :is(input, textarea).prs2-fv, html:root:root:root:root .prs2-cell .prs2-fv input { border: 0 !important; outline: 0; background: none !important; box-shadow: none !important; padding: 0; font: inherit; font-size: 15px; font-weight: 500; color: var(--text); }
 html:root:root:root:root .prs2-dateline { display: flex; align-items: center; gap: 10px; }
 html:root:root:root:root .prs2-clear { position: relative; z-index: 2; height: 28px; padding: 0 12px; font-size: 12.5px; color: #c62828; }
+/* the project's three chats, version C (Alex, 22 Nov, https://claude.ai/artifact/FREKbL9q4EFFH4kGUP81Zn): words only, the
+   chosen one in the words' colour with a soft glow of its stage colour behind and a short line of it under, unread as a small
+   number; Glass Travel's landing curve. Replaces the dot of the first pass */
+html:root:root:root:root .ch-tabs { gap: 4px; padding: 6px 10px 2px; }
+html:root:root:root:root .ch-tabs > button { position: relative; padding: 6px 12px 9px; font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted); }
+html:root:root:root:root .ch-tabs > button.on { color: var(--text); font-weight: 650; }
+html:root:root:root:root .ch-tabs > button.on::after { content: none; }
+.ch-tabs > button::before { content: ''; position: absolute; inset: 2px 0 4px; border-radius: 12px; background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 22%, transparent), transparent); opacity: 0; transform: scale(.7); transition: opacity .35s cubic-bezier(.25, 1.35, .45, 1), transform .35s cubic-bezier(.25, 1.35, .45, 1); pointer-events: none; }
+.ch-tabs > button.on::before { opacity: 1; transform: scale(1); }
+.ch-tabs > button > span { position: relative; }
+.ch-tabs > button > span::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 16px; height: 3px; margin-left: -8px; border-radius: 2px; background: var(--c); transform: scaleX(0); transition: transform .3s cubic-bezier(.25, 1.45, .45, 1); }
+.ch-tabs > button.on > span::after { transform: scaleX(1); }
+.ch-tabs sup { margin-left: 3px; font-size: 9.5px; font-weight: 700; color: var(--halo, var(--accent)); }
+@media (max-width: 760px) { html:root:root:root:root .ch-tabs > button { padding: 6px 8px 9px; font-size: 12px; } }
+@media (prefers-reduced-motion: reduce) { .ch-tabs > button::before, .ch-tabs > button > span::after { transition: none; } }
+html[data-lite] .ch-tabs > button::before, html[data-lite] .ch-tabs > button > span::after { transition: none; }

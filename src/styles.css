@@ -7289,3 +7289,17 @@ html:root:root:root:root:root .prw-join-name { flex: 1; display: flex; flex-dire
 .prw-join-name b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 650; }
 .prw-join-name small { font-size: 11.5px; opacity: .55; }
 html:root:root:root:root:root .prw-join > button.on { flex: none; font-size: 14px; font-weight: 700; background: color-mix(in srgb, #c9962f 16%, transparent); border-left: 1px solid rgba(20, 30, 50, .08); }
+/* a project's head on a phone shows the artist alone, and the capsule is as wide as its words, at the right beside the
+   picture (Alex, 22 Nov: "only the artist's name; let the bar shrink from the left"); Project is the quieter half in
+   the chat and the lit half on the project's page, so the two read as two places */
+.ht-art { display: none; }
+@media (max-width: 960px) {
+  .room-head.has-proj .ht-full { display: none; }
+  .room-head.has-proj .ht-art { display: inline; }
+  html:root:root:root:root:root:root:root .room-head.has-proj .head-card { flex: 0 1 auto !important; width: auto !important; min-width: 0; margin-left: auto; padding-left: 20px; padding-right: 16px; }
+  html:root:root:root:root:root:root:root .room-head.has-proj .head-proj { background: rgba(255, 255, 255, .42); }
+  html[data-mode='dark']:root:root:root:root:root:root:root .room-head.has-proj .head-proj { background: rgba(255, 255, 255, .04); }
+}
+.prw-phone-top { justify-content: flex-end; }
+.prw-join { width: auto; max-width: 100%; }
+html:root:root:root:root:root .prw-join-name { flex: 0 1 auto; padding: 0 20px; opacity: .7; }

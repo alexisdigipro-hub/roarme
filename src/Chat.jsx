@@ -1754,7 +1754,7 @@ export default function Chat({ me, setMe }) {
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
-            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} />
+            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} proArtist={proOn ? String((proKit.map[active.room_id]?.fields || []).find((f) => f.k === 'Artist / Client')?.v || '').trim() : ''} />
           {proOn && active.kind === 'group' && proKit.map[active.room_id] && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
             <Suspense fallback={null}><Profile inline room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
               onClose={() => {}} onMessage={() => {}} onOpenRoom={(id) => setActiveId(id)} onChanged={loadRooms} onLeft={() => { setActiveId(''); loadRooms() }} loadPeople={loadPeople}
@@ -2053,7 +2053,7 @@ function sameMsgs(prev, got) {
   const extra = lastAt ? prev.filter((m) => !ids.has(m.id) && m.created_at > lastAt) : []
   return all && !extra.length ? prev : [...out, ...extra]
 }
-const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [], assetsAside = false }) {
+const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [], proArtist = '', assetsAside = false }) {
   const [rawMsgs, setMsgs] = useState(() => keptMsgs(room.room_id) || []) // the chat's last messages kept on the device show at once (cache.js)
   // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
   const [sealOn, reloadSeal] = useEncrypted(room.room_id)
@@ -3638,7 +3638,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
               {(room.kind === 'group' ? room.avatar_url : other?.avatar_url) && <i className="head-bg" aria-hidden="true" style={{ backgroundImage: `url("${room.kind === 'group' ? room.avatar_url : other?.avatar_url}")` }} />}
               <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={dotOf(other)} />
-              <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{title}{official && OFFICIAL}{room.kind !== 'group' && batteryText(other) && <i className={`head-batt${other?.battery_charging ? ' charging' : ''}`} title="Battery">{batteryText(other)}</i>}</strong>{typingSub ? <small className="head-typing">{typingSub}<i /><i /><i /></small> : sub && <small>{sub}</small>}</span>
+              <span className="head-text"><strong>{sealOn && <i className="head-lock" title="Encrypted Chat is on">{I.lock}</i>}{assetsAside && proArtist ? <><span className="ht-full">{title}</span><span className="ht-art">{proArtist}</span></> : title}{official && OFFICIAL}{room.kind !== 'group' && batteryText(other) && <i className={`head-batt${other?.battery_charging ? ' charging' : ''}`} title="Battery">{batteryText(other)}</i>}</strong>{typingSub ? <small className="head-typing">{typingSub}<i /><i /><i /></small> : sub && <small>{sub}</small>}</span>
             </button>
             <button type="button" className="round" onClick={() => onCall(false)} aria-label="Voice call" title="Voice call">{I.phone}</button>
             <button type="button" className="round head-video" onClick={() => onCall(true)} aria-label="Video call" title="Video call">{I.video}</button>

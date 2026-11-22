@@ -903,7 +903,51 @@ function Hero({ media, project, title, st, dateName, fields, onBrief }) {
   )
 }
 
-function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged }) {
+const SEND_I = tsv(<path d="M4 12 20 4l-5 16-3.5-6.5z" />)
+const FWD_I = tsv(<><path d="M14 5l6 6-6 6" /><path d="M20 11H9a5 5 0 0 0-5 5v3" /></>)
+// the ordino read inside RoarMe, its own published page in a window
+function OrdinoView({ o, onClose, onSend }) {
+  useEffect(() => { const k = (e) => { if (e.key === 'Escape') onClose() }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [onClose])
+  return createPortal(
+    <div className="prd" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="prd-card prw-ordwin">
+        <div className="prd-head">
+          <span className="prj-ftext"><b>{o.title || 'Ordino'}</b><small>{o.label || 'Ordino'}</small></span>
+          <button type="button" className="pill-btn" onClick={onSend}>{FWD_I}<span>Send to…</span></button>
+          <a className="pill-btn" href={o.url} target="_blank" rel="noopener noreferrer">{I.right}<span>Open</span></a>
+          <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
+        </div>
+        <iframe className="prw-ordframe" src={o.url} title={o.title || 'Ordino'} />
+      </div>
+    </div>,
+    document.body,
+  )
+}
+// pick chats to send to: groups first, this chat marked
+function SendPick({ rooms, titleOf, here, onClose, onSend }) {
+  const [q, setQ] = useState('')
+  const [pick, setPick] = useState([])
+  const [busy, setBusy] = useState(false)
+  const list = rooms.filter((r) => !r.archived).filter((r) => !q.trim() || titleOf(r).toLowerCase().includes(q.trim().toLowerCase()))
+    .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'group' ? -1 : 1))
+  const flip = (id) => setPick((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+  return (
+    <Modal title="Send the Ordino" onClose={onClose} foot={<button type="button" className="btn btn-main" disabled={!pick.length || busy} onClick={async () => { setBusy(true); await onSend(pick); setBusy(false) }}>{pick.length ? `Send to ${pick.length}` : 'Send'}</button>}>
+      <input className="prw-sendq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search chats" autoFocus />
+      <div className="prw-sendlist">
+        {list.map((r) => (
+          <button key={r.room_id} type="button" className={`prw-sendrow${pick.includes(r.room_id) ? ' on' : ''}`} onClick={() => flip(r.room_id)}>
+            <Avatar src={r.avatar_url} name={titleOf(r)} size={34} group={r.kind === 'group'} />
+            <span className="prj-ftext"><b>{titleOf(r)}</b><small>{r.room_id === here ? 'This chat' : r.kind === 'group' ? `${(r.members || []).length} members` : 'Direct'}</small></span>
+            <i className="prw-check">{pick.includes(r.room_id) && I.check}</i>
+          </button>
+        ))}
+      </div>
+    </Modal>
+  )
+}
+
+function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged, rooms = [], titleOf = () => '' }) {
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
   const [menu, setMenu] = useState('')
@@ -914,6 +958,17 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [tag, setTag] = useState('')
   const [doc, setDoc] = useState(null)
   const [ordinoOpen, setOrdinoOpen] = useState(false)
+  const [ordView, setOrdView] = useState(null)
+  const [ordSend, setOrdSend] = useState(null)
+  // the ordino goes into a chat as a message with its link (Alex, 22 Nov: "throw it in the group, or send it to another")
+  const sendOrdino = async (o, ids) => {
+    const when = [o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')
+    const body = `📋 ${o.label || 'Ordino'}: ${o.title || title}${when ? `\n${when}` : ''}\n${o.url}`
+    const { error } = await supabase.from('roar_messages').insert(ids.map((id) => ({ room_id: id, user_id: me.id, kind: 'text', body })))
+    if (error) { toast(errText(error)); return false }
+    toast(ids.length === 1 && ids[0] === room.room_id ? 'Ordino sent to this chat' : `Ordino sent to ${ids.length} chat${ids.length === 1 ? '' : 's'}`)
+    return true
+  }
   const notesOn = !!usePrefs().proNotes
   const [gone, setGone] = useState(() => new Set())
   const [isAdmin, setIsAdmin] = useState(false)
@@ -1043,23 +1098,27 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 {fields.length < 20 && <button type="button" className="prw-fact add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
               </div>
             </div>
-            <div className="prw-box wide">
-              <div className="prw-boxhead"><h4>Ordinos</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => setOrdinoOpen(true)}>{I.plus}<span>New Ordino</span></button></div>
-              {ordinos.length ? (
-                <div className="prw-ordinos">
-                  {ordinos.map((o) => (
-                    <div key={o.token || o.url} className="prw-ordino" style={{ '--oa': o.accent || '#d40000' }}>
-                      <a href={o.url} target="_blank" rel="noopener noreferrer" className="prw-ordino-in">
-                        {o.date && !Number.isNaN(new Date(o.date).getTime()) && <i className="prw-ordino-cal"><small>{new Date(o.date).toLocaleDateString([], { month: 'short' })}</small><b>{new Date(o.date).getDate()}</b></i>}
-                        <span className="prw-ordino-label">{o.label || 'Ordino'}</span>
-                        <b>{o.title || title}</b>
-                        <small>{[o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ') || 'Open the call sheet'}</small>
-                      </a>
-                      <button type="button" className="prj-kvdel" onClick={() => save({ ordinos: ordinos.filter((x) => x !== o) })} aria-label="Remove from the project" title="Remove from the project">{I.x}</button>
-                    </div>
-                  ))}
+            {/* the ordino as a slim bar under the cover (Alex, 22 Nov: "there is usually one, the big box stays empty") */}
+            <div className="prw-ordbar wide">
+              {ordinos.length ? ordinos.map((o) => (
+                <div key={o.token || o.url} className="prw-ordrow" style={{ '--oa': o.accent || '#d40000' }}>
+                  {o.date && !Number.isNaN(new Date(o.date).getTime()) ? <i className="prw-ordino-cal"><small>{new Date(o.date).toLocaleDateString([], { month: 'short' })}</small><b>{new Date(o.date).getDate()}</b></i> : <i className="prw-ordino-cal"><b>{TAB_I.files}</b></i>}
+                  <button type="button" className="prw-ordtext" onClick={() => setOrdView(o)}>
+                    <span className="prw-ordino-label">{o.label || 'Ordino'}</span>
+                    <b>{o.title || title}</b>
+                    <small>{[o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')}</small>
+                  </button>
+                  <span className="prw-ordacts">
+                    <button type="button" className="pill-btn" onClick={() => setOrdView(o)}>{TAB_I.files}<span>View</span></button>
+                    <button type="button" className="pill-btn" onClick={() => sendOrdino(o, [room.room_id])}>{SEND_I}<span>Send to This Chat</span></button>
+                    <button type="button" className="pill-btn" onClick={() => setOrdSend(o)}>{FWD_I}<span>Send to…</span></button>
+                    <button type="button" className="round prw-ibtn" onClick={() => setOrdinoOpen(true)} title="Edit in Roardino" aria-label="Edit in Roardino">{I.edit}</button>
+                    <Trash className="prw-ibtn" onClick={() => { if (window.confirm('Take this ordino out of the project?') && window.confirm('Are you sure? The call sheet itself stays in Roardino.')) save({ ordinos: ordinos.filter((x) => x !== o) }) }} />
+                  </span>
                 </div>
-              ) : <p className="prj-quiet">No ordino yet. New Ordino opens Roardino; make the call sheet there and press Send, and it stays here.</p>}
+              )) : (
+                <button type="button" className="prw-ordmake" onClick={() => setOrdinoOpen(true)}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
+              )}
             </div>
             {media.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-grid mosaic">{media.slice(0, 7).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
           </div>
@@ -1089,6 +1148,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
+      {ordView && <OrdinoView o={ordView} onClose={() => setOrdView(null)} onSend={() => { setOrdSend(ordView); setOrdView(null) }} />}
+      {ordSend && <SendPick rooms={rooms} titleOf={titleOf} here={room.room_id} onClose={() => setOrdSend(null)} onSend={async (ids) => { if (await sendOrdino(ordSend, ids)) setOrdSend(null) }} />}
       {ordinoOpen && <OrdinoWindow onClose={() => setOrdinoOpen(false)} onSent={(o) => { save({ ordinos: [o, ...ordinos.filter((x) => x.token !== o.token)].slice(0, 60) }); setOrdinoOpen(false); toast('Ordino saved in the project') }} />}
       {view && <Viewer items={view.items} index={view.index} people={people} me={me} onClose={() => setView(null)} />}
     </div>

@@ -6893,3 +6893,37 @@ html:root:root:root:root .prw-grid.mosaic .prw-tile { aspect-ratio: auto; height
 .prw-fact:hover input.prw-fact-k, .prw-fact:focus-within input.prw-fact-k { padding-right: 24px; }
 .prw-top { padding-top: 14px; }
 .prw-hero { min-height: 170px; }
+/* the ordino as a slim bar under the cover (Alex, 22 Nov): its date tile, what it is, and View, Send to This Chat,
+   Send to…, Edit, the bin; with none, one wide button to make it; the send window lists the chats to tick */
+.prw-ordbar { display: flex; flex-direction: column; gap: 8px; }
+.prw-ordrow, html:root:root:root:root .prw-ordmake { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 20px; background: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .58)); box-shadow: inset 4px 0 0 var(--oa, var(--halo-mine, var(--accent))), inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 0 0 1px rgba(255, 255, 255, .55), 0 8px 24px rgba(20, 30, 50, .06); }
+html[data-mode='dark'] .prw-ordrow, html[data-mode='dark']:root:root:root:root .prw-ordmake { background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .04)); box-shadow: inset 4px 0 0 var(--oa, var(--halo-mine, var(--accent))), inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.prw-ordrow .prw-ordino-cal, .prw-ordmake .prw-ordino-cal { position: static; flex: none; margin-left: 4px; }
+.prw-ordino-cal b svg { width: 20px; height: 20px; display: block; color: var(--oa, var(--halo-mine, var(--accent))); }
+html:root:root:root:root .prw-ordtext { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; height: auto; padding: 0; border: 0; background: none; box-shadow: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.prw-ordtext b { font-size: 15px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prw-ordtext small { font-size: 12px; opacity: .62; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prw-ordacts { display: flex; align-items: center; gap: 6px; flex: none; }
+html:root:root:root:root .prw-ordacts .pill-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 16px; font-size: 12.5px; white-space: nowrap; }
+.prw-ordacts .pill-btn svg { width: 15px; height: 15px; }
+@media (max-width: 1400px) { .prw-ordacts .pill-btn span { display: none; } html:root:root:root:root .prw-ordacts .pill-btn { width: 32px; padding: 0; justify-content: center; } }
+html:root:root:root:root .prw-ordmake { width: 100%; height: auto; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.prw-ordmake > span { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.prw-ordmake > span b { font-size: 15px; }
+.prw-ordmake > span small { font-size: 12px; opacity: .62; }
+.prw-ordmake > svg { width: 18px; height: 18px; opacity: .6; }
+html:root:root:root:root .prd-head a.pill-btn, html:root:root:root:root .prd-head .pill-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 17px; font-size: 13px; color: inherit; text-decoration: none; }
+.prd-head .pill-btn svg { width: 15px; height: 15px; }
+.prw-sendq { width: 100%; box-sizing: border-box; height: 40px; border: 0; outline: 0; border-radius: 20px; padding: 0 16px; margin-bottom: 10px; font: inherit; font-size: 14px; color: inherit; background: color-mix(in srgb, currentColor 6%, transparent); }
+.prw-sendlist { display: flex; flex-direction: column; gap: 2px; max-height: 50vh; overflow-y: auto; }
+html:root:root:root:root .prw-sendrow { display: flex; align-items: center; gap: 12px; width: 100%; height: auto; padding: 8px 10px; border: 0; border-radius: 14px; background: none; box-shadow: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+html:root:root:root:root .prw-sendrow:hover { background: color-mix(in srgb, currentColor 5%, transparent); }
+html:root:root:root:root .prw-sendrow.on { background: color-mix(in srgb, var(--halo-mine, var(--accent)) 10%, transparent); }
+.prw-sendrow .prj-ftext { flex: 1; }
+.prw-check { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; border: 1.6px solid rgba(128, 128, 128, .5); color: #fff; }
+.prw-sendrow.on .prw-check { border-color: transparent; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); }
+.prw-check svg { width: 13px; height: 13px; stroke-width: 3; }
+.prw-ordrow { flex-wrap: wrap; row-gap: 10px; }
+html:root:root:root:root .prw-ordtext { flex: 1 1 240px; }
+.prw-ordacts { margin-left: auto; }
+@media (max-width: 1400px) { .prw-ordacts .pill-btn span { display: inline; } html:root:root:root:root .prw-ordacts .pill-btn { width: auto; padding: 0 12px; } }

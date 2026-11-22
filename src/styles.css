@@ -7198,3 +7198,13 @@ html:root:root:root:root:root:root:root .prw-phone .prw-menu.right { left: auto 
 html:root:root:root:root .prw-phone .prw-datename { padding: 0 6px; gap: 2px; }
 html:root:root:root:root .prw-phone .prw-pill.stage { max-width: none; font-size: 12.5px; }
 .prw-phone .prw-pill.date input { font-size: 12.5px; }
+/* the phone's top row can never push the gear out (Alex, 22 Nov: "the gear went outside"): a grid of three, the stage
+   and the date shrink (the stage's word ends in dots), the gear keeps its 36px */
+html:root:root:root:root .prw-phone .prw-top { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr) 36px; align-items: center; gap: 6px; padding: 8px 12px 6px; }
+.prw-phone .prw-top > * { min-width: 0; }
+html:root:root:root:root .prw-phone .prw-pill.stage { width: 100%; min-width: 0; max-width: 46vw; }
+.prw-phone .prw-st-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:root:root:root:root .prw-phone .prw-pill.date { width: 100%; }
+.prw-phone .prw-pill.date input { flex: 1 1 0; width: 0; min-width: 0; -webkit-appearance: none; appearance: none; text-align: left; background: none; }
+.prw-phone .prw-gear-wrap { justify-self: end; }
+html:root:root:root:root .prw-phone .prw-gear { margin: 0; }

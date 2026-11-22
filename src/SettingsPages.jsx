@@ -219,7 +219,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
         )}
         {page === 'keys' && <Keys p={p} />}
         {page === 'news' && <WhatsNewPage />}
-        {(page === 'hub' || page === 'projects') && <ProjectsPage toast={toast} />}
+        {(page === 'hub' || page === 'projects') && <ProjectsPage toast={toast} me={me} />}
         {page === 'notify' && <Notify p={p} toast={toast} />}
         {page === 'autoreply' && <AutoReply toast={toast} />}
         {page === 'privacy' && <><Privacy me={me} setMe={setMe} toast={toast} /><Sessions me={me} setMe={setMe} toast={toast} /></>}

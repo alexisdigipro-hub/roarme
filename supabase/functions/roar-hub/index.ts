@@ -10,7 +10,8 @@
 //   link { room }                         ties one project group (Make It a Project)
 //   unlink { room }                       unties one group (an admin, or who tied it); both sides stay
 //   sync { room }                         both ways, for one group: title, stage, shoot day, category, tasks, locations;
-//                                         from the hub only: its cover, its songs and its locations' photos
+//                                         from the hub only: its cover (also the group's picture, unless it has one of its own),
+//                                         its songs and its locations' photos
 //   (pg_cron, x-roar-cron)                every minute, for every linked account: a group for each hub project whose
 //                                         Create PROject was pressed, or that was made in the hub since linking, and a
 //                                         sync of every tied project the hub changed since its last sync (live both ways);
@@ -80,7 +81,7 @@ Deno.serve(async (req) => {
     const key = acc.hub_key
     const { data: proj } = await db.from('roar_pro_projects').select('*').eq('room_id', room).maybeSingle()
     if (!proj) return { linked: false }
-    const { data: rm } = await db.from('roar_rooms').select('title').eq('id', room).maybeSingle()
+    const { data: rm } = await db.from('roar_rooms').select('title, avatar_url').eq('id', room).maybeSingle()
     const { data: mem } = await db.from('roar_members').select('user_id').eq('room_id', room)
     const ids = (mem || []).map((m: any) => m.user_id)
     const { data: profs } = ids.length ? await db.from('roar_profiles').select('id, display_name, username').in('id', ids) : { data: [] }
@@ -196,7 +197,11 @@ Deno.serve(async (req) => {
     const sameSet = had.length === tracks.length && tracks.every((t, i) => had[i]?.id === t.id && had[i]?.name === t.name)
     if (!sameSet || had.some((t) => !(t.until > Date.now() + 6 * 3600 * 1000))) roarPatch.hub_music = tracks
     if (Object.keys(roarPatch).length) await db.from('roar_pro_projects').update(roarPatch).eq('room_id', room)
-    if (F.title && F.title !== R.title) await db.from('roar_rooms').update({ title: F.title }).eq('id', room)
+    // the group's picture is the hub's cover (Alex, 22 Nov), unless someone gave the group a picture of its own
+    const roomPatch: any = {}
+    if (F.title && F.title !== R.title) roomPatch.title = F.title
+    if (hub.cover && rm?.avatar_url !== hub.cover && (!rm?.avatar_url || rm.avatar_url === proj.hub_cover)) roomPatch.avatar_url = hub.cover
+    if (Object.keys(roomPatch).length) await db.from('roar_rooms').update(roomPatch).eq('id', room)
 
     const nextBase = {
       hu: hub.updatedAt || '',

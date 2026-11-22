@@ -4,6 +4,21 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib.js'
 
+// PROjects on or off for this account (Alex, 22 Nov: "off for users; whoever wants turns it on and the folder shows"):
+// roar_profiles.pro_on, kept on the device too so it is right from the first frame
+const PRO_KEY = 'roarme-pro-on'
+export function proSwitchNow() { try { return localStorage.getItem(PRO_KEY) === '1' } catch { return false } }
+function keepSwitch(v) { try { localStorage.setItem(PRO_KEY, v ? '1' : '0') } catch { /* private window */ } window.dispatchEvent(new CustomEvent('roarme-pro-switch', { detail: v })) }
+export async function proSwitchLoad(meId) {
+  const { data } = await supabase.from('roar_profiles').select('pro_on').eq('id', meId).maybeSingle()
+  if (data && typeof data.pro_on === 'boolean' && data.pro_on !== proSwitchNow()) keepSwitch(data.pro_on)
+}
+export async function proSwitchSet(meId, v) {
+  keepSwitch(v)
+  const { error } = await supabase.from('roar_profiles').update({ pro_on: v }).eq('id', meId)
+  if (error) { keepSwitch(!v); throw error }
+}
+
 const roomCache = {} // room -> roar_hub_state (null = not tied)
 let meCache // undefined = not asked yet, null = no Production Hub
 
@@ -58,9 +73,18 @@ const Gold = () => <span className="tab-gold"><b>PRO</b>jects</span>
 
 // Settings > PROJECTS (Alex, 22 Nov: "the gold Projects in Settings, and inside it the hub you join, and the subscription"):
 // the plan (free for now, Subscribe "Coming soon") and the Production Hub
-export function ProjectsPage({ toast = () => {} }) {
+export function ProjectsPage({ toast = () => {}, me }) {
+  const [on, setOn] = useState(proSwitchNow)
+  useEffect(() => { const f = (e) => setOn(!!e.detail); window.addEventListener('roarme-pro-switch', f); return () => window.removeEventListener('roarme-pro-switch', f) }, [])
+  const flip = async (v) => { setOn(v); try { await proSwitchSet(me.id, v); toast(v ? 'PROjects is on' : 'PROjects is off') } catch (e) { setOn(!v); toast(e.message || 'Could not save') } }
   return (
     <div className="hb-page">
+      <label className="set-box hb-on hb-switch">
+        <span className="hb-t"><b><Gold /></b><small>{on ? 'The gold folder and the Workspace of every project are on.' : 'Turn on to see the gold folder and make groups into projects.'}</small></span>
+        <span className="switch"><input type="checkbox" checked={on} onChange={(e) => flip(e.target.checked)} /><span /></span>
+      </label>
+      {!on && <p className="hb-hint">Off, project groups open as ordinary chats. Nothing is deleted: stages, tasks, locations and the link to the hub stay, and come back when it is on.</p>}
+      {on && <>
       {/* the plan (Alex, 22 Nov: "make it free for now, subscribe Coming soon, we see the subscription later") */}
       <small className="hb-cap hb-sec">Plan</small>
       <div className="set-box hb-on hb-plan">
@@ -69,6 +93,7 @@ export function ProjectsPage({ toast = () => {} }) {
       </div>
       <small className="hb-cap hb-sec">Production Hub</small>
       <HubPage toast={toast} />
+      </>}
     </div>
   )
 }

@@ -78,3 +78,8 @@ language sql stable security definer set search_path = public as $$
     select jsonb_build_object('hub', hub_name, 'project', hub_project is not null, 'at', set_at, 'synced', coalesce(array_length(synced, 1), 0), 'last', last_sync_at, 'error', last_error)
     from roar_hub_links where room_id = r and hub_project is not null) end
 $$;
+
+-- PROjects on or off per account (Alex, 22 Nov: "off for users; whoever wants turns it on and the folder shows"); on once
+-- for whoever already had a Production Hub or ran a project group
+alter table public.roar_profiles add column if not exists pro_on boolean not null default false;
+grant select (pro_on), update (pro_on) on public.roar_profiles to authenticated;

@@ -12,7 +12,23 @@ const NAME = /^[a-z0-9_]{3,24}$/
 
 // the website's own address, also inside the iPhone app, whose page lives at capacitor://localhost and opened nothing
 // in Safari (Alex, 19 Nov: "I paste it in Safari and it goes nowhere")
-export const inviteLink = (username) => `${appUrl()}?u=${username}`
+// and since 22 Nov just the name after the address, roarme.app/username (Alex: "plain username for everyone");
+// public/404.html turns such an address into ?u=username, and the old ?u= links keep working
+export const inviteLink = (username) => `${appUrl()}${username}`
+
+/* a person's link handed to the iPhone app (roarme.app/username or ?u=username): kept as the pending invite, and the
+   chat is told to open it now (Chat.jsx listens to roarme-invite) */
+export function takeInviteUrl(url) {
+  let u
+  try { u = new URL(url) } catch { return false }
+  if (u.searchParams.get('token_hash')) return false
+  const seg = u.pathname.replace(/^\/+|\/+$/g, '')
+  const name = (u.searchParams.get('u') || (seg && !seg.includes('/') ? seg : '')).toLowerCase()
+  if (!NAME.test(name)) return false
+  try { localStorage.setItem(KEY, name) } catch { return false }
+  window.dispatchEvent(new CustomEvent('roarme-invite'))
+  return true
+}
 
 /* on load: a ?u=username in the address is kept until the person is signed in, then taken out of the address */
 export function takeInvite() {

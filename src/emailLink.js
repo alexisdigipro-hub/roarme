@@ -3,6 +3,7 @@
    iPhone with RoarMe that address is handed to the app (Associated Domains, public/.well-known/apple-app-site-association),
    anywhere else it opens the website. Either way the token is checked here with verifyOtp and the account is signed in. */
 import { supabase } from './lib.js'
+import { takeInviteUrl } from './invite.jsx'
 
 const TYPES = new Set(['signup', 'email', 'magiclink', 'invite', 'email_change', 'recovery'])
 const done = new Set()
@@ -27,7 +28,7 @@ export function watchEmailLinks() {
   }
   const C = window.Capacitor
   if (!C?.isNativePlatform?.()) return
-  const on = (e) => { if (e?.url) takeEmailLink(e.url) }
+  const on = (e) => { if (e?.url && !takeInviteUrl(e.url)) takeEmailLink(e.url) }
   try {
     const A = C.Plugins?.App
     if (A?.addListener) A.addListener('appUrlOpen', on)

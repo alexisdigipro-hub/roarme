@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RoarMe</title>
+<script>
+  // roarme.app/username is a person's link (Alex, 22 Nov): GitHub Pages has no page there and serves this one, which
+  // hands the name on to RoarMe as ?u=username (signs up if needed, then their chat opens). Anything else goes home.
+  (function () {
+    var seg = location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase()
+    var to = /^[a-z0-9_]{3,24}$/.test(seg) ? '/?u=' + seg : '/'
+    location.replace(to + location.hash)
+  })()
+</script>
+<style>html,body{margin:0;height:100%;background:#0e0e10}</style>
+</head>
+<body></body>
+</html>

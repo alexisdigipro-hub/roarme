@@ -475,16 +475,22 @@ export default function Chat({ me, setMe }) {
   const roomIdsKey = rooms.map((r) => r.room_id).join(',')
   useEffect(() => { watchTyping(roomIdsKey ? roomIdsKey.split(',') : [], me.id) }, [roomIdsKey, me.id])
   // opened from someone's invite link: their chat opens by itself, once
+  // (also when the iPhone app, already open, is handed a person's link: roarme-invite from invite.jsx takeInviteUrl)
   useEffect(() => {
-    const u = pendingInvite()
-    if (!u) return
-    clearInvite()
-    if (u === me.username) return
-    supabase.from('roar_people').select('id, username, display_name').eq('username', u).maybeSingle().then(async ({ data: p }) => {
-      if (!p) return
-      const { data: r, error } = await supabase.rpc('roar_open_direct', { other: p.id })
-      if (!error && r) { setTab('chats'); setActiveId(r); loadRooms() }
-    })
+    const go = () => {
+      const u = pendingInvite()
+      if (!u) return
+      clearInvite()
+      if (u === me.username) return
+      supabase.from('roar_people').select('id, username, display_name').eq('username', u).maybeSingle().then(async ({ data: p }) => {
+        if (!p) return
+        const { data: r, error } = await supabase.rpc('roar_open_direct', { other: p.id })
+        if (!error && r) { setTab('chats'); setActiveId(r); loadRooms() }
+      })
+    }
+    go()
+    window.addEventListener('roarme-invite', go)
+    return () => window.removeEventListener('roarme-invite', go)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // online: a heartbeat on one's own profile

@@ -7549,3 +7549,12 @@ html:root:root:root:root:root .prw-mrow .prw-st { position: static; top: auto; l
 .prw-hero .prw-hero-in { align-items: center; justify-content: center; text-align: center; padding: 24px 52px; }
 .prw-phone .prw-hero .prw-hero-in { padding: 24px 40px; }
 .prw-hero h2 { text-align: center; }
+/* the Workspace's tabs on a computer: the sign over a short word, as a menu (Alex, 22 Nov); a phone keeps signs only */
+html:root:root:root:root:root:root:root .prw-work > .prw-tabs:not(.slide) .prw-bar > button { height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0 4px; }
+.prw-bl { font-size: 11px; font-weight: 600; letter-spacing: .01em; line-height: 1; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+html:root:root:root:root:root .prw-tabs:not(.slide) .prw-bar .prw-bi svg { width: 19px; height: 19px; }
+.prw-work > .prw-tabs:not(.slide) { container-type: inline-size; container-name: prwtabs; }
+@container prwtabs (max-width: 520px) { .prw-bl { display: none; } html:root:root:root:root:root:root:root .prw-work > .prw-tabs:not(.slide) .prw-bar > button { height: 44px; } }
+/* a song's waveform finer (Alex, 22 Nov): thin bars close together, from the sound itself */
+.prw-wave { gap: 1px; height: 30px; }
+.prw-wave i { min-width: 1px; border-radius: 1px; }

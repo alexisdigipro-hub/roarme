@@ -7772,3 +7772,21 @@ html:root:root:root:root .prw-hero-pill.on { background: #fff !important; color:
   html:root:root:root:root:root .apx-colour .accents.halo-accents .acc { width: 34px; height: 34px; }
   .acc-more { display: inline-block !important; }
 }
+/* the chats' preview keeps room under its head (Alex, 22 Nov: the message ran over "Giorgos online") */
+html:root:root:root:root:root .apx-pane .set-preview.live:has(.pv-head) { padding-top: 56px !important; }
+/* Light mode, words that faded into the page (Alex, 22 Nov: "in the light version the letters get lost, all over the app"):
+   measured screen by screen; the quiet grey is darker, coloured words (names, chips, the chosen tab) take a deeper form of
+   their colour by Day, and faded paragraphs keep their full opacity */
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) { --muted: #61616d; }
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) .who { color: color-mix(in srgb, var(--who, var(--accent)) 60%, #000); }
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) :is(.foot button.on, .foot button[aria-current]) > span:not(.foot-ico) { color: color-mix(in srgb, var(--halo) 62%, #000) !important; }
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) :is(.prj-chip, .prw-st, .prw-pill.stage .prw-st-name, .tk-pill) { color: color-mix(in srgb, var(--pc, var(--halo)) 55%, #000) !important; }
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) :is(.ordc-label, .ordc-view) { color: color-mix(in srgb, var(--halo) 58%, #000) !important; }
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) :is(.set-row.danger, .set-pick.danger, .danger) .set-text { color: #c62828; }
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) :is(.calls-empty p, .set-note, .set-sec > h4, .scroll > p.empty, .pick > p, .rooms-none, .day > span, .room-top small, .head-text small, .set-me-text small, .set-text small, .set-val, .meta, .pv-compose span) { color: var(--muted) !important; opacity: 1 !important; }
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) :is(.seg, .lens) > button:not(.on) { color: #3d3d47; opacity: 1; }
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) .bubble .meta, html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) .room-prev { opacity: 1; }
+html:root:root:root:root[data-skin='halo']:not([data-mode='dark']) .room-prev { color: #55555f; }
+/* the banner's menu lives on the page (the banner clips what it holds), fixed under the gear */
+.prw-hero-veil { position: fixed; inset: 0; z-index: 80; }
+html:root:root:root:root:root .menu.prw-hero-menu { position: fixed; left: auto; bottom: auto; z-index: 81; min-width: 200px; }

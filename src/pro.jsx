@@ -1026,7 +1026,7 @@ function Hero({ room, me, project, dateName, fields, onCover, toast }) {
     try { const b = await (await fetch(bg)).blob(); setCrop(new File([b], 'cover.jpg', { type: b.type || 'image/jpeg' })) } catch { toast('Could not open the picture') }
   }
   // reposition: drag the picture, Done keeps where it stands (background-position in %)
-  const down = (e) => { if (!moving) return; drag.current = { x: e.clientX, y: e.clientY, p: moving, w: e.currentTarget.offsetWidth, h: e.currentTarget.offsetHeight }; e.currentTarget.setPointerCapture?.(e.pointerId) }
+  const down = (e) => { if (!moving || e.target.closest('.prw-hero-tools')) return; drag.current = { x: e.clientX, y: e.clientY, p: moving, w: e.currentTarget.offsetWidth, h: e.currentTarget.offsetHeight }; e.currentTarget.setPointerCapture?.(e.pointerId) }
   const move = (e) => { const d = drag.current; if (!d) return; const cl = (v) => Math.max(0, Math.min(100, v)); setMoving({ x: cl(d.p.x - ((e.clientX - d.x) / d.w) * 100), y: cl(d.p.y - ((e.clientY - d.y) / d.h) * 200) }) }
   const up = () => { drag.current = null }
   const val = (k) => (fields.find((f) => f.k === k)?.v || '').trim()
@@ -1048,18 +1048,18 @@ function Hero({ room, me, project, dateName, fields, onCover, toast }) {
             </>
           ) : (
             <span className="prw-hero-menuwrap">
-              <button type="button" className="round prw-hero-btn" disabled={busy} onClick={() => setMenu((v) => !v)} aria-label="Cover settings" title="Cover settings" aria-expanded={menu}>{I.gear}</button>
-              {menu && (
+              <button type="button" className="round prw-hero-btn" disabled={busy} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setMenu(menu ? false : { top: r.bottom + 6, right: Math.max(8, innerWidth - r.right) }) }} aria-label="Cover settings" title="Cover settings" aria-expanded={!!menu}>{I.gear}</button>
+              {menu && createPortal(
                 <>
                   <span className="prw-hero-veil" onClick={() => setMenu(false)} />
-                  <div className="menu prw-hero-menu">
+                  <div className="menu prw-hero-menu" style={{ top: menu.top, right: menu.right }}>
                     <button type="button" onClick={() => { setMenu(false); pick.current?.click() }}>{I.image}<span>{bg ? 'Change Photo' : 'Add a Photo'}</span></button>
                     {bg && <button type="button" onClick={() => { setMenu(false); setMoving({ ...(project.cover_pos || { x: 50, y: 50 }) }) }}>{MOVE_I}<span>Reposition</span></button>}
                     {bg && <button type="button" onClick={recrop}>{CROP_I}<span>Crop</span></button>}
                     {bg && <><hr /><button type="button" className="danger" onClick={() => { setMenu(false); if (window.confirm('Remove the cover? The banner goes back to its colour.')) onCover({ cover: project.hub_cover ? 'none' : null, cover_pos: null }) }}>{I.trash}<span>Remove</span></button></>}
                     {!bg && project.cover === 'none' && project.hub_cover && <button type="button" onClick={() => { setMenu(false); onCover({ cover: null, cover_pos: null }) }}>{I.image}<span>Use the Hub's Picture</span></button>}
                   </div>
-                </>
+                </>, document.body
               )}
             </span>
           )}
@@ -1452,9 +1452,43 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
       <div key={page} className={`prs2-body ${dir > 0 ? 'fwd' : 'bwd'}`}>
         {page === 'home' && (
           <>
-            <small className="prs2-cap">Project</small>
+            {/* everything about the project right here, no Project Info page (Alex, 22 Nov) */}
+            <small className="prs2-cap">Details</small>
+            <p className="prs2-hint">What is written here shows on the cover. Artist / Client and Title also name the group.</p>
+            <datalist id="prs2-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
             <div className="prs2-box">
-              {row('details', 'Project Info', [filled ? `${filled} of ${fields.length} details` : 'Artist / Client, Title, Category, Budget', stageOf(project).name, project.due ? `${dateName} ${new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short' })}` : ''].filter(Boolean).join(' · '), () => go('info'))}
+              {fields.map((f, i) => (
+                <div key={`${i}-${f.k}`} className="prs2-field">
+                  <span className="prs2-fin">
+                    <Field className="prs2-fk" value={f.k} placeholder="Field name" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
+                    <Field className="prs2-fv" value={f.v} placeholder="Not written" list={f.k === 'Category' ? 'prs2-cats' : undefined} onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
+                  </span>
+                  <span className="prs2-facts">
+                    <button type="button" className="round prs2-mini" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move up" title="Move up">{SET_I.up}</button>
+                    <button type="button" className="round prs2-mini" disabled={i === fields.length - 1} onClick={() => move(i, 1)} aria-label="Move down" title="Move down">{SET_I.down}</button>
+                    <Trash className="prs2-mini" onClick={() => { if (!(f.v || '').trim() || window.confirm(`Delete ${f.k || 'this field'}?`)) save({ fields: fields.filter((_, n) => n !== i) }) }} />
+                  </span>
+                </div>
+              ))}
+            </div>
+            {fields.length < 20 && <button type="button" className="pill-btn prs2-add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
+            <small className="prs2-cap">Brief</small>
+            <div className="prs2-box prs2-pad"><Field area className="prs2-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} /></div>
+            <small className="prs2-cap">Stage</small>
+            <div className="prs2-box">
+              {pickStages(project).map((x) => <button key={x.id} type="button" className="prs2-row" onClick={() => save({ status: x.id })}><i className="prw-dot prs2-dot" style={{ '--pc': x.c }} /><span className="prs2-t"><b>{x.name}</b></span>{project.status === x.id && <b className="prw-tick">{I.check}</b>}</button>)}
+              {row('stages', 'Edit Stages', 'Rename, colour, add or take away', () => go('stages'))}
+            </div>
+            {/* Delivered is not a stage to pick: one button sends the project to Archived Projects and brings it back */}
+            <div className="prs2-box">
+              {isDelivered(project)
+                ? <button type="button" className="prs2-row" onClick={() => save({ status: (pickStages(project).slice(-1)[0] || stagesOf(project)[0]).id })}><i className="prs2-ic">{I.archive || I.check}</i><span className="prs2-t"><b>Back to Active</b><small>Delivered, in Archived Projects</small></span></button>
+                : doneStage(project) && <button type="button" className="prs2-row" onClick={() => save({ status: doneStage(project).id })}><i className="prs2-ic">{I.check}</i><span className="prs2-t"><b>Mark as Delivered</b><small>It moves to Archived Projects</small></span></button>}
+            </div>
+            <small className="prs2-cap">{dateName}</small>
+            <div className="prs2-box">
+              <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></label>
+              {project.due && <button type="button" className="prs2-row danger" onClick={() => save({ due: null })}><span className="prs2-t"><b>Clear the Date</b></span></button>}
             </div>
             <small className="prs2-cap">Tabs</small>
             <div className="prs2-box">
@@ -1498,47 +1532,6 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
                 </>
               ) : <p className="prs2-hint">Link RoarMe to your production hub in Settings, Production Hub, and every project here becomes a project there.</p>
             )}
-          </>
-        )}
-        {page === 'info' && (
-          <>
-            <small className="prs2-cap">Details</small>
-            <p className="prs2-hint">What is written here shows on the cover. Artist / Client and Title also name the group.</p>
-            <datalist id="prs2-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
-            <div className="prs2-box">
-              {fields.map((f, i) => (
-                <div key={`${i}-${f.k}`} className="prs2-field">
-                  <span className="prs2-fin">
-                    <Field className="prs2-fk" value={f.k} placeholder="Field name" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
-                    <Field className="prs2-fv" value={f.v} placeholder="Not written" list={f.k === 'Category' ? 'prs2-cats' : undefined} onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
-                  </span>
-                  <span className="prs2-facts">
-                    <button type="button" className="round prs2-mini" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move up" title="Move up">{SET_I.up}</button>
-                    <button type="button" className="round prs2-mini" disabled={i === fields.length - 1} onClick={() => move(i, 1)} aria-label="Move down" title="Move down">{SET_I.down}</button>
-                    <Trash className="prs2-mini" onClick={() => { if (!(f.v || '').trim() || window.confirm(`Delete ${f.k || 'this field'}?`)) save({ fields: fields.filter((_, n) => n !== i) }) }} />
-                  </span>
-                </div>
-              ))}
-            </div>
-            {fields.length < 20 && <button type="button" className="pill-btn prs2-add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
-            <small className="prs2-cap">Brief</small>
-            <div className="prs2-box prs2-pad"><Field area className="prs2-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} /></div>
-            <small className="prs2-cap">Stage</small>
-            <div className="prs2-box">
-              {pickStages(project).map((x) => <button key={x.id} type="button" className="prs2-row" onClick={() => save({ status: x.id })}><i className="prw-dot prs2-dot" style={{ '--pc': x.c }} /><span className="prs2-t"><b>{x.name}</b></span>{project.status === x.id && <b className="prw-tick">{I.check}</b>}</button>)}
-              {row('stages', 'Edit Stages', 'Rename, colour, add or take away', () => go('stages'))}
-            </div>
-            {/* Delivered is not a stage to pick: one button sends the project to Archived Projects and brings it back */}
-            <div className="prs2-box">
-              {isDelivered(project)
-                ? <button type="button" className="prs2-row" onClick={() => save({ status: (pickStages(project).slice(-1)[0] || stagesOf(project)[0]).id })}><i className="prs2-ic">{I.archive || I.check}</i><span className="prs2-t"><b>Back to Active</b><small>Delivered, in Archived Projects</small></span></button>
-                : doneStage(project) && <button type="button" className="prs2-row" onClick={() => save({ status: doneStage(project).id })}><i className="prs2-ic">{I.check}</i><span className="prs2-t"><b>Mark as Delivered</b><small>It moves to Archived Projects</small></span></button>}
-            </div>
-            <small className="prs2-cap">{dateName}</small>
-            <div className="prs2-box">
-              <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></label>
-              {project.due && <button type="button" className="prs2-row danger" onClick={() => save({ due: null })}><span className="prs2-t"><b>Clear the Date</b></span></button>}
-            </div>
           </>
         )}
         {page === 'stages' && (

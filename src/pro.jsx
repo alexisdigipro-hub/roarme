@@ -520,7 +520,7 @@ function Scout({ project, save, room, toast, onView }) {
             return (
               <article key={x.id} className="prw-card">
                 <div className="prw-cover">
-                  {ph[0] ? <ScoutPhoto p={ph[0]} className="cover" onClick={() => onView(ph, 0)} /> : <button type="button" className="prw-cover-empty" onClick={() => setEdit(x)}>{I.image}<span>Add photos</span></button>}
+                  {ph[0] ? <ScoutPhoto p={ph[0]} className="cover" onClick={() => onView(ph, 0)} /> : <button type="button" className="prw-cover-empty" onClick={() => setEdit(x)}>{TAB_I.scout}<span>Add photos</span></button>}
                   {status(x)}
                   {ph.length > 1 && <span className="prw-count">{I.image}{ph.length}</span>}
                 </div>
@@ -541,7 +541,7 @@ function Scout({ project, save, room, toast, onView }) {
             const ph = x.photos || []
             return (
               <div key={x.id} className="prw-srow">
-                {ph[0] ? <ScoutPhoto p={ph[0]} className="prw-sthumb" onClick={() => onView(ph, 0)} /> : <button type="button" className="prw-sthumb empty" onClick={() => setEdit(x)}>{I.image}</button>}
+                {ph[0] ? <ScoutPhoto p={ph[0]} className="prw-sthumb" onClick={() => onView(ph, 0)} /> : <button type="button" className="prw-sthumb empty" onClick={() => setEdit(x)}>{TAB_I.scout}</button>}
                 <button type="button" className="prw-stext" onClick={() => setEdit(x)}><b>{x.name}</b><small>{[where(x), x.type || 'Interior'].filter(Boolean).join(' · ')}</small></button>
                 <span className="prw-scontact">{[x.contact, x.phone].filter(Boolean).join(' · ')}</span>
                 {status(x)}
@@ -654,7 +654,7 @@ const TAB_I = {
   media: tsv(<><rect x="3" y="4.5" width="18" height="15" rx="3" /><circle cx="9" cy="10" r="1.8" /><path d="m21 16-5-5-8.5 8.5" /></>),
   files: tsv(<><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h4" /></>),
   music: tsv(<><path d="M9 18V5.5l11-2V16" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="17.5" cy="16" r="2.5" /></>),
-  scout: tsv(<><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2l1.5-2h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /><circle cx="12" cy="12.5" r="3.5" /></>),
+  scout: tsv(<><path d="M9 4.5 3.5 6.6v13l5.5-2.1 6 2.1 5.5-2.1v-13L15 6.6z" /><path d="M9 4.5v13M15 6.6v13" /></>), // a folded map (Alex, 22 Nov: "the camera does not say location")
   calls: tsv(<><rect x="3" y="6" width="12.5" height="12" rx="3" /><path d="m15.5 10.5 5-3v9l-5-3" /></>),
   links: tsv(<><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>),
   polls: tsv(<path d="M5 20V12M10 20V5M15 20v-9M20 20V8" />),

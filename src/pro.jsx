@@ -18,7 +18,7 @@ const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.Pdf
 // everywhere: the website, the computer apps and the iPhone app (Alex, 22 Nov: "put it out everywhere")
 export const proOk = () => typeof window !== 'undefined'
 // a screen too narrow for the chat and the workspace side by side: they become two pages (Alex, 22 Nov, version B)
-const NARROW = '(max-width: 960px)'
+const NARROW = '(max-width: 760px)' // a phone; a computer's narrow window keeps the workspace beside the chat (Alex, 22 Nov)
 function useNarrow() {
   const [n, setN] = useState(() => window.matchMedia(NARROW).matches)
   useEffect(() => { const q = window.matchMedia(NARROW); const f = () => setN(q.matches); q.addEventListener('change', f); return () => q.removeEventListener('change', f) }, [])

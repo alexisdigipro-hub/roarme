@@ -1315,6 +1315,8 @@ export default function Chat({ me, setMe }) {
   useEffect(() => { if (tab === 'contacts') loadBook(me.id).then(setBook).catch(() => {}) }, [tab, me.id])
   const bookGroups = useMemo(() => [...new Set(book.flatMap((e) => e.groups || []))].sort((a, b) => a.localeCompare(b, 'el', { sensitivity: 'base' })), [book])
   const bookPeople = useMemo(() => new Set(book.map((e) => e.person).filter(Boolean)), [book])
+  // the RoarMe people the book links to, also those with no chat with me yet, so their cards say they are on RoarMe
+  useEffect(() => { const ids = [...bookPeople].filter((id) => !people[id]); if (ids.length) loadPeople(ids) }, [bookPeople]) // eslint-disable-line react-hooks/exhaustive-deps
   const findPerson = useMemo(() => {
     const f = async (u) => { const { data } = await supabase.from('roar_people').select('*').eq('username', u).maybeSingle(); if (data) loadPeople([data.id]); return data || null }
     f.byId = (id) => people[id] || null
@@ -1771,7 +1773,7 @@ export default function Chat({ me, setMe }) {
       {inboxOpen && <RoarMeInbox onClose={() => setInboxOpen(false)} />}
       {modal === 'newchat' && <NewChat me={me} onClose={() => setModal('')} onOpen={openRoom} />}
       {modal === 'phonefriends' && <PhoneFriends onClose={() => setModal('')} onOpen={openRoom} />}
-      {modal === 'newcall' && <NewCall me={me} people={calls} toast={toast} onClose={() => setModal('')} onCall={(p, v) => { setModal(''); startCall(p, directWith(p), v) }} />}
+      {modal === 'newcall' && <NewCall me={me} people={calls} phoneBook={book} toast={toast} onClose={() => setModal('')} onCall={(p, v) => { setModal(''); startCall(p, directWith(p), v) }} />}
       {modal === 'newgroup' && <NewGroup me={me} start={groupWith} onClose={() => { setModal(''); setGroupWith(null); if (songHold.current) { setSongShare(songHold.current); songHold.current = null } }} onOpen={(id) => { setGroupWith(null); const h = songHold.current; songHold.current = null; if (h) { setModal(''); loadRooms(); setSongShare({ ...h, pre: [id] }) } else openRoom(id) }} />}
       {modal === 'info' && active && <Suspense fallback={null}><Profile room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
         onClose={() => { setModal(''); if (infoBack.current) { infoBack.current = false; setActiveId('') } }} onMessage={() => { infoBack.current = false; setModal('') }} onOpenRoom={(id) => { infoBack.current = false; setModal(''); setActiveId(id) }}
@@ -4647,7 +4649,8 @@ function NewChat({ me, onClose, onOpen }) {
 
 /* New Call (Alex, 14 Nov, from Telegram's): the search on top, the people in letter order under their letters, and the
    letters down the right side to jump to one; a call or a video call from each row */
-function NewCall({ me, people, toast, onClose, onCall }) {
+const telLink = (v) => `tel:${String(v || '').replace(/[^\d+]/g, '')}`
+function NewCall({ me, people, toast, onClose, onCall, phoneBook = [] }) {
   const [q, setQ] = useState('')
   const box = useRef(null)
   // Telegram's New Call (Alex, 15 Nov): New Group Call (pick people, each gets the call in their chat with Join) and
@@ -4662,6 +4665,10 @@ function NewCall({ me, people, toast, onClose, onCall }) {
   const groups = []
   for (const p of shown) { const l = letterOf(p); const g = groups[groups.length - 1]; if (g && g.l === l) g.list.push(p); else groups.push({ l, list: [p] }) }
   const jump = (l) => box.current?.querySelector(`[data-letter="${CSS.escape(l)}"]`)?.scrollIntoView({ block: 'start' })
+  // every number of every contact in the address book, for a call through the phone (the carrier)
+  const phoneShown = phoneBook.flatMap((e) => (e.phones || []).map((ph) => ({ e, tel: ph.value, label: ph.label })))
+    .filter((x) => !q.trim() || foldHas(`${entryName(x.e)} ${x.tel} ${x.e.company || ''}`, q.trim()))
+    .sort((a, b) => entryName(a.e).localeCompare(entryName(b.e), 'el', { sensitivity: 'base' }))
   const toggle = (p) => setPicked((l) => (l.includes(p.id) ? l.filter((x) => x !== p.id) : [...l, p.id]))
   const makeLink = async () => {
     setBusy(true)
@@ -4729,6 +4736,20 @@ function NewCall({ me, people, toast, onClose, onCall }) {
                   ))}
                 </div>
               ))}
+              {/* the address book's contacts that have a number (Alex, 22 Nov: "a normal call through the carrier"):
+                  a phone call with the phone itself; a RoarMe person keeps both kinds above */}
+              {mode !== 'pick' && phoneShown.length > 0 && (
+                <div className="nc-group nc-phonebook">
+                  <div className="nc-letter">Phone Calls</div>
+                  {phoneShown.map(({ e, tel, label }) => (
+                    <a key={`${e.id}${tel}`} className="person call-row" href={telLink(tel)}>
+                      <Avatar src={e.photo_url} name={entryName(e)} size={48} />
+                      <span className="person-text"><b>{entryName(e)}</b><small>{`${label} · ${tel}`}</small></span>
+                      <span className="round nc-tel" aria-label="Phone call">{I.phone}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
             {!q.trim() && groups.length > 1 && <div className="nc-index">{groups.map((g) => <button key={g.l} type="button" onClick={() => jump(g.l)}>{g.l}</button>)}</div>}
           </div>

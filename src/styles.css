@@ -6273,8 +6273,8 @@ html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth
    full of buttons, nicely grouped and lean"; book.jsx). The card is the contact card's own (.cc), each kind of detail
    one soft box with no lines inside it, a small round sign in the accent before each line; New Contact the same boxes
    with fields, green add and red minus as the iPhone's. Prefix bk-. */
-html:root:root:root .cc-acts a { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--edge); background: var(--glass); color: var(--text); text-decoration: none; }
-html:root:root:root .cc-acts a svg { width: 21px; height: 21px; }
+html:root:root:root .cc-acts > a { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--edge); background: var(--glass); color: var(--text); text-decoration: none; }
+html:root:root:root .cc-acts > a svg { width: 21px; height: 21px; }
 .bk-on { margin: -2px 0 0; font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 .bk-on i { width: 7px; height: 7px; border-radius: 50%; background: #30c466; }
 .bk-box { width: 100%; display: flex; flex-direction: column; border-radius: 18px; background: var(--glass); border: 1px solid var(--edge); overflow: hidden; }
@@ -6363,3 +6363,13 @@ html:root:root:root .modal:has(> .modal-body > .bk-form) > .modal-head { display
 html:root:root:root .modal:has(> .modal-body > .bk-form) > .modal-body { padding-top: 14px; }
 .bk-addr-2 { grid-template-columns: 1fr 1.1fr 1.1fr; padding-left: 40px; }
 html:root:root:root:root:root:root:root:root .menu > button.csort.on, html:root:root:root:root:root:root:root:root .menu > button.csort.on span { color: var(--halo, var(--accent)) !important; font-weight: 600 !important; }
+/* a contact on RoarMe with a number: Call asks RoarMe Call or Phone Call (Alex, 22 Nov); the address book's numbers in New Call */
+.bk-callwrap { position: relative; display: inline-flex; }
+html:root:root:root:root .bk-callwrap > .menu.bk-callmenu { position: absolute !important; top: 58px !important; left: 50% !important; right: auto !important; translate: -50% 0; min-width: 240px !important; z-index: 30; }
+.bk-callmenu > a { display: flex; align-items: center; gap: 12px; min-height: 38px; padding: 0 22px; color: var(--text); text-decoration: none; font-size: 16px; white-space: nowrap; }
+.bk-callmenu > a svg, .bk-callmenu > a .ic-mask { width: 22px; height: 22px; flex: none; }
+.nc-phonebook a.person { text-decoration: none; color: inherit; }
+html:root:root:root .nc-phonebook .nc-tel { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; margin-left: auto; color: #30c466; }
+html:root:root:root:root .bk-callwrap > .scrim { all: unset; position: fixed; inset: 0; z-index: 29; }
+html:root:root:root:root:root .bk-callmenu > :is(button, a) { display: flex !important; align-items: center; justify-content: flex-start; gap: 14px; width: 100% !important; height: 38px !important; min-height: 38px; padding: 0 22px !important; border: 0 !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; color: var(--text) !important; font-size: 16px; white-space: nowrap; }
+html:root:root:root:root:root .bk-callmenu > :is(button, a) svg { width: 22px !important; height: 22px !important; }

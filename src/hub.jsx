@@ -53,6 +53,9 @@ export function hubStart() {
   hubMe().then((m) => (m ? hubCall({ action: 'linkall' }) : null)).catch(() => {})
 }
 
+// the word PROjects, in the gold of its folder, wherever it is written (Alex, 22 Nov: "PROjects, gold, everywhere")
+const Gold = () => <span className="tab-gold"><b>PRO</b>jects</span>
+
 // Settings > PROJECTS (Alex, 22 Nov: "the gold Projects in Settings, and inside it the hub you join, and the subscription"):
 // the plan (free for now, Subscribe "Coming soon") and the Production Hub
 export function ProjectsPage({ toast = () => {} }) {
@@ -61,7 +64,7 @@ export function ProjectsPage({ toast = () => {} }) {
       {/* the plan (Alex, 22 Nov: "make it free for now, subscribe Coming soon, we see the subscription later") */}
       <small className="hb-cap hb-sec">Plan</small>
       <div className="set-box hb-on hb-plan">
-        <span className="hb-t"><b>PROject is free for now</b><small>Every group can be a project, with its Workspace, tasks, locations and the Production Hub.</small></span>
+        <span className="hb-t"><b><Gold /> is free for now</b><small>Every group can be a project, with its Workspace, tasks, locations and the Production Hub.</small></span>
         <button type="button" className="pill-btn hb-soon" disabled>Coming soon</button>
       </div>
       <small className="hb-cap hb-sec">Production Hub</small>
@@ -97,7 +100,7 @@ export function HubPage({ toast = () => {} }) {
             <i className="hb-dot" />
             <span className="hb-t"><b>Linked to {me.hub}</b><small>{me.projects ? `${me.projects} project${me.projects === 1 ? '' : 's'} tied` : 'No projects tied yet'} · since {new Date(me.at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</small></span>
           </div>
-          <p className="hb-hint">Every group in PROject is a project of {me.hub}: its name, stage, shoot day, category, tasks and locations stay the same on both sides. A project made in the hub brings a new group here, and a group made a project here makes one there.</p>
+          <p className="hb-hint">Every group in <Gold /> is a project of {me.hub}: its name, stage, shoot day, category, tasks and locations stay the same on both sides. A project made in the hub brings a new group here, and a group made a project here makes one there.</p>
           <div className="hb-acts">
             <button type="button" className="pill-btn" disabled={busy} onClick={() => run({ action: 'linkall' }, 'Up to date.')}>{busy ? 'Working…' : 'Sync Now'}</button>
             <button type="button" className="pill-btn hb-off" disabled={busy} onClick={() => { if (window.confirm(`Unlink RoarMe from ${me.hub}? Your groups and the hub's projects both stay; they just stop following each other.`)) run({ action: 'disconnect' }, 'Unlinked') }}>Unlink</button>
@@ -105,7 +108,7 @@ export function HubPage({ toast = () => {} }) {
         </>
       ) : (
         <>
-          <p className="hb-hint">Link RoarMe to your production hub. Every group in PROject becomes a project there, and every project there a group here, with tasks, locations, stage and shoot day kept the same on both sides.</p>
+          <p className="hb-hint">Link RoarMe to your production hub. Every group in <Gold /> becomes a project there, and every project there a group here, with tasks, locations, stage and shoot day kept the same on both sides.</p>
           <small className="hb-cap">Hub key</small>
           <div className="set-box hb-pad">
             <input className="hb-key" value={key} onChange={(e) => setKey(e.target.value.trim())} placeholder="tmlhub_…" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} />

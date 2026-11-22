@@ -2912,6 +2912,34 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // the menu always fits on the screen (Alex, 8 Nov: "always inside the edges of the screen"): once it is drawn it is
   // measured, the reactions above the list too, without its opening zoom, and moved in from every edge, clear of the
   // clock and the home bar; taller than the screen, its list scrolls (styles.css)
+  // Messages run on under the chat's head and soften there (Alex, 22 Nov, from Telegram's head: "this blur and fade,
+  // not cut as ours"): the room is told how tall everything above the messages is (--under: the head, Now playing,
+  // the pinned message), the stylesheet lets the list start that much higher and fades and blurs it there
+  useLayoutEffect(() => {
+    const sc = scrollRef.current
+    const host = sc?.parentElement
+    if (!sc || !host || typeof ResizeObserver === 'undefined') return
+    let ro = null
+    const put = () => {
+      let h = 0
+      for (let n = sc.previousElementSibling; n; n = n.previousElementSibling) {
+        const cs = getComputedStyle(n)
+        if (cs.position === 'absolute' || cs.position === 'fixed' || cs.display === 'none') continue
+        h += n.offsetHeight + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0)
+      }
+      host.style.setProperty('--under', `${Math.round(h)}px`)
+    }
+    const watch = () => {
+      ro?.disconnect()
+      ro = new ResizeObserver(put)
+      for (let n = sc.previousElementSibling; n; n = n.previousElementSibling) ro.observe(n)
+      put()
+    }
+    const mo = new MutationObserver(watch)
+    mo.observe(host, { childList: true })
+    watch()
+    return () => { mo.disconnect(); ro?.disconnect() }
+  }, [room.room_id])
   const menuRef = useRef(null)
   useLayoutEffect(() => {
     const el = menuRef.current
@@ -3534,6 +3562,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         </div>
       )}
 
+      <i className="top-haze" aria-hidden="true"><b /><b /><b /></i>
       <div className={`scroll${picked ? ' picking' : ''}`} ref={scrollRef} onScroll={onScroll}>
         {!shownMsgs.length && <p className="empty">No messages yet.</p>}
         {msgList}

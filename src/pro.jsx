@@ -1238,6 +1238,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 {fields.length < 20 && <button type="button" className="prw-fact add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
               </div>
             </div>
+            {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('music')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {/* the ordino as a slim bar under the cover (Alex, 22 Nov: "there is usually one, the big box stays empty") */}
             <div className="prw-ordbar wide">
               {ordinos.length ? ordinos.map((o) => (
@@ -1260,7 +1261,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 <button type="button" className="prw-ordmake" onClick={() => setOrdinoOpen(true)}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
               )}
             </div>
-            {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('music')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {media.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-grid mosaic">{media.slice(0, 7).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
           </div>
         )}

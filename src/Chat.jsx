@@ -60,6 +60,7 @@ import { CAPSULE_BODY, CapsuleCard, CapsuleWindow } from './capsule.jsx'
 import { GroupCallBar, GroupCallCard, GroupCallHost, LinkCallCard, joinCall, startGroupCall, useGroupCall } from './groupcall.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
 import { ReportHost, report } from './report.jsx'
+import { WhatsNewHost } from './whatsnew.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
@@ -1779,6 +1780,7 @@ export default function Chat({ me, setMe }) {
       </main>
 
       <ReportHost me={me} people={people} blocks={[...blocks]} onBlocks={loadBlocks} toast={toast} />
+      <WhatsNewHost />
       <GroupCallHost me={me} people={people} rooms={rooms} toast={toast} />
       <PlayerSheet onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} onShare={(file, roomId) => setSongShare({ file, roomId })} />
       {songShare && <ShareSong file={songShare.file} pre={songShare.pre} me={me} rooms={rooms} titleOf={titleOf} toast={toast} onClose={() => setSongShare(null)}

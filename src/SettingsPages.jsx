@@ -10,6 +10,7 @@ import { LegalDoc, legalTitle } from './legal.jsx'
 import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode, bioAvailable, bioName, bioOn, bioOff } from './lock.jsx'
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
+import { WhatsNewPage } from './whatsnew.jsx'
 import { MyTransfers } from './transfer.jsx'
 import { useNameMarks } from './fancy.jsx'
 import { PhoneField, showPhone, smsErr, toE164, usePhoneAuth } from './phone.jsx'
@@ -43,7 +44,7 @@ const parentOf = (id) => (id?.startsWith('folder:') ? 'folders' : PARENT[id] || 
 // pages that are no longer doors of their own in the menu: they open from inside General, Chats or Privacy and Security
 const SUBS = { general: 'App, Features, Language', chats: 'Folders, Auto-Reply, Data and Storage', privacy: 'Privacy, Active Sessions' }
 const TUCKED = ['features', 'language', 'transfer', 'folders', 'autoreply', 'data', 'sessions']
-export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
+export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : id === 'news' ? "What's New" : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 // the top of a page: its icon in its colour and what it holds
 // a settings page opens with its title alone (Alex, 12 Nov): the large sign and the line under it are gone
@@ -162,6 +163,10 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
           {inThemeLab(me) && <button type="button" className={`set-row set-pick set-nav${page === 'admin' ? ' on' : ''}`} onClick={() => onPage('admin')}><span className="nav-ico" style={{ '--c': '#d40000' }}>{I.people}</span><span className="set-text">Admin<small>Only you see this</small></span><i className="set-chev">{I.right}</i></button>}
         </div>
       )}
+      {/* every update, with its bullets (Alex, 22 Nov) */}
+      <div className="set-box">
+        <button type="button" className={`set-row set-pick set-nav${page === 'news' ? ' on' : ''}`} onClick={() => onPage('news')}><span className="nav-ico" style={{ '--c': '#3aa7e8' }}>{svg(<><path d="M12 3l2.2 4.8L19 9l-3.6 3.3.9 5L12 15l-4.3 2.3.9-5L5 9l4.8-1.2z" /></>, 16)}</span><span className="set-text">What's New<small>Every update, what it brought</small></span><i className="set-chev">{I.right}</i></button>
+      </div>
       <div className="set-box">
         <button type="button" className="set-row set-pick set-nav danger" onClick={() => { if (window.confirm('Sign out of RoarMe on this device?')) supabase.auth.signOut() }}><span className="nav-ico" style={{ '--c': '#ff453a' }}>{svg(<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />, 16)}</span><span className="set-text">Sign Out</span></button>
       </div>
@@ -208,6 +213,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
           </>
         )}
         {page === 'keys' && <Keys p={p} />}
+        {page === 'news' && <WhatsNewPage />}
         {page === 'notify' && <Notify p={p} toast={toast} />}
         {page === 'autoreply' && <AutoReply toast={toast} />}
         {page === 'privacy' && <><Privacy me={me} setMe={setMe} toast={toast} /><Sessions me={me} setMe={setMe} toast={toast} /></>}

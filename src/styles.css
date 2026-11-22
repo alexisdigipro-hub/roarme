@@ -7164,3 +7164,8 @@ html[data-mode='dark']:root:root:root:root .prw-sw2 { background: rgba(40, 40, 4
 .tab-gold-ico svg { width: 16px; height: 16px; }
 html[data-mode='dark'] .tab-gold { background-image: linear-gradient(135deg, #ffe08a 0%, #e0ad45 45%, #ffd56e 70%, #c18a2b 100%); }
 .tab-gold { background-image: linear-gradient(135deg, #d9a93a 0%, #a8761f 45%, #d4a03a 70%, #8a5e14 100%); }
+/* a phone: version A (Alex, 22 Nov): the workspace's tabs as the menu bar, sliding sideways, each tab its natural width */
+.prw-tabs.slide { padding: 0 10px 4px; }
+html:root:root:root:root:root:root .prw-tabs.slide .prw-bar { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+html:root:root:root:root:root:root .prw-tabs.slide .prw-bar > button { flex: 0 0 auto; min-width: 64px; height: 50px; padding: 0 10px; }
+.prw-tabs.slide .prw-bar::-webkit-scrollbar { display: none; }

@@ -315,7 +315,6 @@ function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, on
    =================================================================================================================== */
 
 const URL_RX = /https?:\/\/[^\s<>()"']+[^\s<>()"'.,;:!?]/g
-const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 const day = (d) => new Date(d).toLocaleDateString([], { day: 'numeric', month: 'short' })
 
 // everything the workspace shows from the chat: messages with something attached, and text with links or #tags
@@ -1157,7 +1156,7 @@ function Admin({ room, people, me, project, toast }) {
 
 function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged, rooms = [], titleOf = () => '', onSwap, phone = false }) {
   const stuff = useRoomStuff(room.room_id)
-  const [tab, setTab] = useState(() => { if (phone) return 'home'; try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
+  const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
   const [menu, setMenu] = useState('')
   const [stagesOpen, setStagesOpen] = useState(false)
   const [custom, setCustom] = useState('')
@@ -1229,7 +1228,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     const next = [...FIELD_START.map((k) => f.find((x) => x.k === k) || { k, v: '' }), ...f.filter((x) => !FIELD_START.includes(x.k))]
     if (JSON.stringify(next) !== JSON.stringify(project.fields || [])) save({ fields: next })
   }, [project.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
-  const goTab = (t) => { setTab(t); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
+  const goTab = (t) => { setTab(t); requestAnimationFrame(() => document.querySelector('.prw-tabs.slide .prw-bar > button.on')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
   // a tap on the small line in the chat ("2 photos went to Media") or on a #tag opens that tab
   useEffect(() => {
     const f = (e) => { if (e.detail?.room !== room.room_id) return; const t = { places: 'links', music: 'files', contacts: 'contacts' }[e.detail.tab] || e.detail.tab; if (t) goTab(t) }
@@ -1259,10 +1258,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0], adminIn ? ['admin', 'Admin'] : ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
   // on a phone the project opens on a home of its own (the cover, the songs, the ordino, the details) and tiles for the
   // rest; a tile opens its page with a back (Alex, 22 Nov: "the second, with the tiles")
-  const home = phone && (tab === 'home' || tab === 'overview' || !TABS.some((t) => t[0] === tab))
-  const shownTab = home ? 'overview' : TABS.some((t) => t[0] === tab) ? tab : 'overview'
-  const SUM = { media: `${pl(media.filter((m) => folderOf(m) === 'photos').length, 'photo')} · ${pl(media.filter((m) => folderOf(m) === 'videos').length, 'video')}`, files: `${pl(files.length, 'doc')} · ${pl(music.length, 'song')}`, scout: `${scouts.length} location${scouts.length === 1 ? '' : 's'}`, calls: `${calls.length} call${calls.length === 1 ? '' : 's'}`, links: `${linkCount} links · ${places.length + maps.length} places`, tasks: `${tasks.filter((t) => t.s === 'done').length} of ${tasks.length} done`, admin: 'Budget and fees', stats: 'The chat in numbers', polls: `${polls.length} polls`, contacts: `${cards.length} contacts` }
-  const TILE_C = { media: '#9b5de5', files: '#3a8ee6', scout: '#d48806', calls: '#34c759', links: '#0f6e7a', tasks: '#14a37f', admin: '#b8862b', stats: '#7b4dff', polls: '#d6338a', contacts: '#5b6ee1' }
+  // a phone has version A (Alex, 22 Nov: "in the end I want version A"): the same tabs as a row that slides sideways
+  const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
   const shownMedia = media.filter((m) => mf === 'all' || folderOf(m) === mf)
   const openMedia = (list, i) => setView({ items: list, index: i })
   // Artist / Client and Title name the group (Alex, 22 Nov: "as soon as something is written there it becomes the group's
@@ -1317,8 +1314,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           </Hang>
         </span>
       </div>
-      {phone && !home && <div className="prw-back"><button type="button" className="round" onClick={() => goTab('home')} aria-label="Back"><span className="flip">{I.right}</span></button><b>{(TABS.find((t) => t[0] === shownTab) || [])[1]}</b></div>}
-      {!phone && <div className="prw-tabs"><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span><span className="prw-bw">{k === 'scout' ? 'Scout' : k === 'calls' ? 'Meetings' : l}</span></button>)}</Lens></div>}
+      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span><span className="prw-bw">{k === 'scout' ? 'Scout' : k === 'calls' ? 'Meetings' : l}</span></button>)}</Lens></div>
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">
@@ -1361,7 +1357,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
               )}
             </div>
             {media.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-grid mosaic">{media.slice(0, 7).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
-            {phone && <div className="prw-tiles wide">{TABS.filter(([k]) => k !== 'overview').map(([k, l]) => <button key={k} type="button" className="prw-tile2" style={{ '--c': TILE_C[k] || '#3a8ee6' }} onClick={() => goTab(k)}><span className="prw-tile2-ic">{TAB_I[k]}</span><b>{l}</b><small>{SUM[k] || ''}</small></button>)}</div>}
           </div>
         )}
         {shownTab === 'media' && (

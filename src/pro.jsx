@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { I } from './ui.jsx'
-import { errText, nameOf, picLink, supabase } from './lib.js'
+import { errText, fileLink, nameOf, picLink, supabase } from './lib.js'
 import { inApp } from './push.js'
 
 /* RoarMe Pro (Alex, 22 Nov, from the sample https://claude.ai/artifact/HzxD32EAhTGsWVS7QPs4dT, "Pro grouped"): the same
@@ -62,6 +62,8 @@ const folderOf = (m) => {
   if (DOCS.test(e) || /pdf|word|text|sheet|presentation/.test(t)) return 'docs'
   return 'other'
 }
+// what goes to the side in a project: photos, videos, documents and sound files (not voice or round video messages)
+export const isAsset = (m) => (m.kind === 'image' || m.kind === 'file') && !!m.file?.path && !m.file.round && !m.file.groupcall
 const FOLDERS = [['docs', 'Documents'], ['photos', 'Photos'], ['videos', 'Videos'], ['audio', 'Audio'], ['other', 'Other']]
 const tagOf = (m) => (EXT(m.file) || (m.kind === 'image' ? 'jpg' : 'file')).slice(0, 4).toUpperCase()
 const sizeText = (n) => (!n ? '' : n > 1e9 ? `${(n / 1e9).toFixed(1)} GB` : n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`)
@@ -69,12 +71,17 @@ const sizeText = (n) => (!n ? '' : n > 1e9 ? `${(n / 1e9).toFixed(1)} GB` : n > 
 function useRoomFiles(roomId) {
   const [files, setFiles] = useState(null)
   useEffect(() => {
-    let gone = false
+    let gone = false, timer = 0
     setFiles(null)
-    supabase.from('roar_messages').select('id, user_id, kind, file, created_at').eq('room_id', roomId).in('kind', ['image', 'file'])
+    const load = () => supabase.from('roar_messages').select('id, user_id, kind, body, file, created_at').eq('room_id', roomId).in('kind', ['image', 'file'])
       .is('deleted_at', null).order('created_at', { ascending: false }).limit(400)
-      .then(({ data }) => { if (!gone) setFiles((data || []).filter((m) => m.file?.path && !m.file.round && !m.file.groupcall)) })
-    return () => { gone = true }
+      .then(({ data }) => { if (!gone) setFiles((data || []).filter(isAsset)) })
+    load()
+    // what is sent or deleted while the panel is open shows here at once
+    const ch = supabase.channel(`pro-files-${roomId}-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_messages', filter: `room_id=eq.${roomId}` }, () => { clearTimeout(timer); timer = setTimeout(load, 700) })
+      .subscribe()
+    return () => { gone = true; clearTimeout(timer); supabase.removeChannel(ch) }
   }, [roomId])
   return files
 }
@@ -90,7 +97,14 @@ function Thumb({ m }) {
   return <i className={`prj-tag prj-k-${folderOf(m)}`}>{src ? <img src={src} alt="" /> : tagOf(m)}</i>
 }
 
-function Files({ files, onJump }) {
+async function openFile(m) {
+  const w = window.open('', '_blank')
+  try {
+    const u = await fileLink(m.file)
+    if (w) w.location.href = u; else window.location.assign(u)
+  } catch { if (w) w.close() }
+}
+function Files({ files, onJump, aside = false }) {
   const [open, setOpen] = useState('')
   if (!files) return <p className="prj-quiet">Loading…</p>
   if (!files.length) return <p className="prj-quiet">Nothing shared yet. Files and photos sent here gather in folders.</p>
@@ -105,8 +119,8 @@ function Files({ files, onJump }) {
           {open === k && (
             <div className="prj-flist">
               {by[k].slice(0, 60).map((m) => (
-                <button key={m.id} type="button" className="prj-file" onClick={() => onJump(m.id)} title="Show in chat">
-                  <Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || (m.kind === 'image' ? 'Photo' : 'File')}</b><small>{[sizeText(m.file.size), new Date(m.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })].filter(Boolean).join(' · ')}</small></span>
+                <button key={m.id} type="button" className="prj-file" onClick={() => (aside ? openFile(m) : onJump(m.id))} title={aside ? 'Open' : 'Show in chat'}>
+                  <Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || (m.kind === 'image' ? 'Photo' : 'File')}</b>{aside && m.body?.trim() && <em>{m.body.trim()}</em>}<small>{[sizeText(m.file.size), new Date(m.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })].filter(Boolean).join(' · ')}</small></span>
                 </button>
               ))}
             </div>
@@ -234,7 +248,7 @@ function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, on
           {fields.length < 20 && <button type="button" className="pill-btn prj-kvadd" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
         </div>
       </Section>
-      <Section id="files" title="Files" count={files?.length}><Files files={files} onJump={onJump} /></Section>
+      <Section id="files" title="Files" count={files?.length}><Files files={files} onJump={onJump} aside /></Section>
       <Section id="tasks" title="Tasks" count={tasks.length ? `${done}/${tasks.length}` : null}><Tasks list={tasks} onChange={(next) => save({ tasks: next })} /></Section>
       <button type="button" className="pill-btn prj-unmake" onClick={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields and tasks are deleted; the chat stays.')) kit.remove(room.room_id).catch((e) => toast(errText(e))) }}>Stop Being a Project</button>
     </>

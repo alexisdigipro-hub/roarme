@@ -6462,3 +6462,4 @@ html:root:root:root:root:root:root:root .foot button.foot-pro.lit, html:root:roo
 .prj-grip::after { content: ''; position: absolute; top: 50%; left: 3px; width: 4px; height: 44px; margin-top: -22px; border-radius: 2px; background: color-mix(in srgb, currentColor 25%, transparent); opacity: 0; transition: opacity .2s; }
 .prj-wrap:hover > .prj-grip::after, html.prj-dragging .prj-grip::after { opacity: 1; }
 html.prj-dragging, html.prj-dragging * { cursor: col-resize !important; user-select: none !important; }
+.prj-ftext em { font-style: normal; font-size: 12px; opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

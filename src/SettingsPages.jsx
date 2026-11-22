@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { dropPics, errText, foldHas, nameOf, statusOf, supabase } from './lib.js'
-import { Avatar, I, Lens, Modal, Slide, NAME_COLORS, useTabSwipe, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
+import { Avatar, FOOT_I, I, Lens, Modal, Slide, NAME_COLORS, useTabSwipe, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { PRESENCE, PresenceDot, StatusSheet } from './status.jsx'
 import { HALO_ACCENTS, DEFAULTS, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
@@ -11,7 +11,7 @@ import { checkCode, clearLock, getLock, lockNow, setLockAfter, setLockCode, bioA
 import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { WhatsNewPage } from './whatsnew.jsx'
-import { HubPage } from './hub.jsx'
+import { ProjectsPage } from './hub.jsx'
 import { MyTransfers } from './transfer.jsx'
 import { useNameMarks } from './fancy.jsx'
 import { PhoneField, showPhone, smsErr, toE164, usePhoneAuth } from './phone.jsx'
@@ -45,7 +45,7 @@ const parentOf = (id) => (id?.startsWith('folder:') ? 'folders' : PARENT[id] || 
 // pages that are no longer doors of their own in the menu: they open from inside General, Chats or Privacy and Security
 const SUBS = { general: 'App, Features, Language', chats: 'Folders, Auto-Reply, Data and Storage', privacy: 'Privacy, Active Sessions' }
 const TUCKED = ['features', 'language', 'transfer', 'folders', 'autoreply', 'data', 'sessions']
-export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : id === 'news' ? "What's New" : id === 'hub' ? 'Production Hub' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
+export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : id === 'news' ? "What's New" : id === 'hub' || id === 'projects' ? 'Projects' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 // the top of a page: its icon in its colour and what it holds
 // a settings page opens with its title alone (Alex, 12 Nov): the large sign and the line under it are gone
@@ -164,9 +164,9 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
           {inThemeLab(me) && <button type="button" className={`set-row set-pick set-nav${page === 'admin' ? ' on' : ''}`} onClick={() => onPage('admin')}><span className="nav-ico" style={{ '--c': '#d40000' }}>{I.people}</span><span className="set-text">Admin<small>Only you see this</small></span><i className="set-chev">{I.right}</i></button>}
         </div>
       )}
-      {/* Production Hub (Alex, 22 Nov: "the key goes in RoarMe's Settings") */}
+      {/* PROJECTS, the gold door (Alex, 22 Nov: "in Settings the tab is the gold Projects, and inside it the hub you join, and the subscription"), on a phone and a computer */}
       <div className="set-box">
-        <button type="button" className={`set-row set-pick set-nav${page === 'hub' ? ' on' : ''}`} onClick={() => onPage('hub')}><span className="nav-ico" style={{ '--c': '#d4a017' }}>{svg(<><circle cx="12" cy="12" r="3" /><circle cx="5" cy="6" r="2" /><circle cx="19" cy="6" r="2" /><circle cx="12" cy="20" r="2" /><path d="M6.6 7.3 9.7 10M17.4 7.3 14.3 10M12 15v3" /></>, 16)}</span><span className="set-text">Production Hub<small>Your projects, the same here and in your hub</small></span><i className="set-chev">{I.right}</i></button>
+        <button type="button" className={`set-row set-pick set-nav set-proj${page === 'projects' || page === 'hub' ? ' on' : ''}`} onClick={() => onPage('projects')}><span className="nav-ico set-proj-ico">{FOOT_I.pro}</span><span className="set-text"><span className="tab-gold"><b>PRO</b>JECTS</span><small>Production Hub</small></span><i className="set-chev">{I.right}</i></button>
       </div>
       {/* every update, with its bullets (Alex, 22 Nov) */}
       <div className="set-box">
@@ -219,7 +219,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
         )}
         {page === 'keys' && <Keys p={p} />}
         {page === 'news' && <WhatsNewPage />}
-        {page === 'hub' && <HubPage toast={toast} />}
+        {(page === 'hub' || page === 'projects') && <ProjectsPage toast={toast} />}
         {page === 'notify' && <Notify p={p} toast={toast} />}
         {page === 'autoreply' && <AutoReply toast={toast} />}
         {page === 'privacy' && <><Privacy me={me} setMe={setMe} toast={toast} /><Sessions me={me} setMe={setMe} toast={toast} /></>}

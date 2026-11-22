@@ -7723,3 +7723,10 @@ html[data-mode='dark'] .wn-seg button.on, html.dark .wn-seg button.on { backgrou
 /* the song's waveform, 1 of the sample (Alex, 22 Nov) */
 .prw-wave.fine { display: block; height: 34px; }
 .prw-wave.fine .prw-fine { display: block; width: 100%; height: 100%; }
+
+/* Settings > PROJECTS, the gold door (Alex, 22 Nov) */
+html:root:root:root:root .set-proj-ico { color: #c9962f !important; }
+html:root:root:root:root[data-mode="dark"] .set-proj-ico { color: #e0ad45 !important; }
+.set-proj .set-text > .tab-gold { font-size: 15px; letter-spacing: .04em; }
+.hb-page { display: flex; flex-direction: column; gap: 10px; }
+.hb-sec { margin: 4px 2px 0; }

@@ -1411,7 +1411,48 @@ const SET_I = {
 // the project's details in its settings (Alex, 22 Nov: "take Budget and Add Field out, gathered, in one line if they fit")
 const MAIN_FIELDS = ['Artist / Client', 'Title', 'Category']
 
-function ProSettings({ start = 'home', roomId, boss, toast, project, save, fields, setField, hidden, flipTab, adminIn, notesOn, dateName, onStop, onClose }) {
+// who sees which chat, in Project Settings (Alex, 22 Nov: "on the desktop I could not find the members list"): every member with
+// Pre · Prod · Post (admins see all three); only the group's admins change them (roar_set_channels, project-channels.sql)
+function MembersChats({ room, me, people, boss, toast }) {
+  const [rows, setRows] = useState(null)
+  const load = useCallback(async () => {
+    const { data } = await supabase.from('roar_members').select('user_id, role, channels').eq('room_id', room.room_id)
+    setRows(data || [])
+  }, [room.room_id])
+  useEffect(() => { load() }, [load])
+  const flip = async (r, k) => {
+    const had = r.channels || ['prod']
+    const next = had.includes(k) ? had.filter((x) => x !== k) : [...had, k]
+    setRows((list) => list.map((x) => (x.user_id === r.user_id ? { ...x, channels: next } : x)))
+    const { error } = await supabase.rpc('roar_set_channels', { r: room.room_id, u: r.user_id, chans: next })
+    if (error) { toast(errText(error)); load() }
+  }
+  if (!rows) return null
+  const list = [...rows].sort((a, b) => (a.role === 'admin') - (b.role === 'admin') || nameOf(people[a.user_id]).localeCompare(nameOf(people[b.user_id])))
+  return (
+    <>
+      <small className="prs2-cap">Who Sees Which Chat</small>
+      <div className="prs2-box">
+        {list.map((r) => {
+          const p = people[r.user_id] || {}
+          const ch = r.role === 'admin' ? ['pre', 'prod', 'post'] : (r.channels || ['prod'])
+          return (
+            <div key={r.user_id} className="prs2-row prs2-member">
+              <Avatar src={p.avatar_url} name={nameOf(p)} size={32} />
+              <span className="prs2-t"><b>{r.user_id === me.id ? 'You' : nameOf(p)}</b><small>{r.role === 'admin' ? 'Admin · sees every chat' : ch.includes('pre') ? 'Sees the Workspace' : 'Chat only'}</small></span>
+              <span className="pf-chans">
+                {[['pre', 'Pre'], ['prod', 'Prod'], ['post', 'Post']].map(([k, l]) => <button key={k} type="button" className={ch.includes(k) ? 'on' : ''} disabled={!boss || r.role === 'admin'} aria-pressed={ch.includes(k)} onClick={() => flip(r, k)}>{l}</button>)}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+      {!boss && <p className="prs2-hint">Only an admin of the group can change who sees which chat.</p>}
+    </>
+  )
+}
+
+function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, boss, toast, project, save, fields, setField, hidden, flipTab, adminIn, notesOn, dateName, onStop, onClose }) {
   const [stack, setStack] = useState([start]) // the pages walked into; back goes one step out
   const page = stack[stack.length - 1]
   const [dir, setDir] = useState(1)
@@ -1486,6 +1527,7 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
               <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} />{project.due && <button type="button" className="pill-btn prs2-clear" onClick={(e) => { e.preventDefault(); save({ due: null }) }}>Clear</button>}</label>
 
             </div>
+            {room.members?.length > 0 && <MembersChats room={room} me={me} people={people} boss={boss} toast={toast} />}
             <small className="prs2-cap">Tabs</small>
             <div className="prs2-chips prs2-tabchips">
               {OPTIONAL.map(([k, l]) => (k === 'stats' && adminIn ? ['admin', 'Admin'] : [k, l])).map(([k, l]) => <button key={k} type="button" className={hidden.includes(k) ? '' : 'on'} aria-pressed={!hidden.includes(k)} onClick={() => flipTab(k)}>{TAB_I[k]}{l}</button>)}
@@ -1822,7 +1864,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       </div>
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
-      {setOpen && <ProSettings key={String(setOpen)} start={setOpen === true ? 'home' : setOpen} roomId={room.room_id} boss={room.role === 'admin'} toast={toast} project={project} save={save} fields={fields} setField={setField} hidden={hidden} flipTab={flipTab} adminIn={adminIn} notesOn={notesOn} dateName={dateName} onClose={() => setSetOpen(false)}
+      {setOpen && <ProSettings key={String(setOpen)} start={setOpen === true ? 'home' : setOpen} roomId={room.room_id} room={room} me={me} people={people} boss={room.role === 'admin'} toast={toast} project={project} save={save} fields={fields} setField={setField} hidden={hidden} flipTab={flipTab} adminIn={adminIn} notesOn={notesOn} dateName={dateName} onClose={() => setSetOpen(false)}
         onStop={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields, tasks and locations are deleted; the chat stays.')) { setSetOpen(false); kit.remove(room.room_id).catch((e) => toast(errText(e))) } }} />}
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
       {ordView && <OrdinoView o={ordView} onClose={() => setOrdView(null)} onSend={() => { setOrdSend(ordView); setOrdView(null) }} />}

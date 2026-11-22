@@ -140,7 +140,7 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
           read who writes to RoarMe and answer as RoarMe. My Profile itself is the card above. */}
       {onInbox && (
         <div className="set-box">
-          <button type="button" className="set-row set-pick set-nav" onClick={onInbox}><span className="nav-ico" style={{ '--c': '#d40000' }}>{I.chats}</span><span className="set-text">RoarMe<small>Who writes to RoarMe · you answer as RoarMe</small></span>{inboxCount > 0 && <i className="set-count">{inboxCount}</i>}<i className="set-chev">{I.right}</i></button>
+          <button type="button" className="set-row set-pick set-nav" onClick={onInbox}><span className="nav-ico" style={{ '--c': '#d40000' }}>{I.chats}</span><span className="set-text">Customer Service<small>Messages and feedback to RoarMe · you answer as RoarMe</small></span>{inboxCount > 0 && <i className="set-count">{inboxCount}</i>}<i className="set-chev">{I.right}</i></button>
         </div>
       )}
       {/* the menu, tidied (Alex, 12 Nov: "not so many menus"): six doors. General holds Features and Language, Chats holds

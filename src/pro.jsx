@@ -1154,6 +1154,65 @@ function SongBar({ m, from, roomId, who, onSendHere, onSendTo, onDrop }) {
    statistics a little more gathered below"): roar_pro_admin, read and written only by the group's admins ---------- */
 const EXP_CATS = ['Equipment', 'Location', 'Crew', 'Transport', 'Food', 'Post-production', 'Props and Wardrobe', 'Other']
 const today = () => new Date().toISOString().slice(0, 10)
+/* ---------- Admin's parts that fold away with an arrow (Alex, 22 Nov), kept open or shut on the device ---------- */
+function Fold({ id, title, children }) {
+  const key = `roarme-pra-fold-${id}`
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem(key) !== '0' } catch { return true } })
+  const flip = () => { const v = !open; setOpen(v); try { localStorage.setItem(key, v ? '1' : '0') } catch { /* private window */ } }
+  return (
+    <section className={`pra-fold${open ? ' open' : ''}`}>
+      <button type="button" className="pra-fold-h" onClick={flip} aria-expanded={open}><span>{title}</span><i className="pra-chev">{I.right}</i></button>
+      {open && <div className="pra-fold-b">{children}</div>}
+    </section>
+  )
+}
+
+/* ---------- People: who came in, how often, for how long, what they sent (Alex, 22 Nov) ---------- */
+const spent = (s) => { const m = Math.round((Number(s) || 0) / 60); return m < 1 ? 'under a minute' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60 ? `${m % 60} min` : ''}`.trim() }
+const ago = (t) => { if (!t) return ''; const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 2 ? 'now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago` }
+function People({ room, people, me }) {
+  const [rows, setRows] = useState(null)
+  useEffect(() => {
+    let gone = false
+    ;(async () => {
+      const [{ data: v }, { data: msgs }] = await Promise.all([
+        supabase.rpc('roar_visit_stats', { r: room.room_id }),
+        supabase.from('roar_messages').select('user_id').eq('room_id', room.room_id).is('deleted_at', null).neq('kind', 'system').limit(5000),
+      ])
+      const sent = {}
+      ;(msgs || []).forEach((m) => { sent[m.user_id] = (sent[m.user_id] || 0) + 1 })
+      const by = Object.fromEntries((v || []).map((x) => [x.user_id, x]))
+      const ids = [...new Set([...(room.members || []), ...Object.keys(by)])]
+      const list = ids.map((id) => ({ id, opens: Number(by[id]?.opens) || 0, secs: Number(by[id]?.secs) || 0, days: Number(by[id]?.days) || 0, week: Number(by[id]?.week_opens) || 0, last: by[id]?.last_at, sent: sent[id] || 0 }))
+        .sort((a, b) => b.secs - a.secs || b.opens - a.opens || b.sent - a.sent)
+      if (!gone) setRows(list)
+    })().catch(() => { if (!gone) setRows([]) })
+    return () => { gone = true }
+  }, [room.room_id, room.members])
+  if (!rows) return <p className="prj-quiet">Counting…</p>
+  if (!rows.length) return <p className="prj-quiet">No one yet.</p>
+  const top = Math.max(1, ...rows.map((r) => r.secs))
+  const nameFor = (id) => (id === me.id ? 'You' : nameOf(people[id]) || 'Member')
+  return (
+    <div className="prp">
+      {rows.map((r) => (
+        <div key={r.id} className="prp-row">
+          <Avatar src={people[r.id]?.avatar_url || (r.id === me.id ? me.avatar_url : '')} name={r.id === me.id ? nameOf(me) : nameFor(r.id)} size={34} />
+          <span className="prp-who"><b>{nameFor(r.id)}</b><small>{r.last ? `Last in ${ago(r.last)}` : 'Not in yet'}</small></span>
+          <span className="prp-bar"><i style={{ width: `${r.secs ? Math.max(3, (r.secs / top) * 100) : 0}%` }} /></span>
+          <span className="prp-nums">
+            <span><b>{r.opens}</b><small>{r.opens === 1 ? 'visit' : 'visits'}</small></span>
+            <span><b>{r.secs ? spent(r.secs).replace('under a minute', '<1 min') : '0 min'}</b><small>time in</small></span>
+            <span><b>{r.sent}</b><small>{r.sent === 1 ? 'message' : 'messages'}</small></span>
+            <span><b>{r.week}</b><small>this week</small></span>
+          </span>
+        </div>
+      ))}
+      <p className="prp-note">Counted since 22 November 2026, while the project is open and in sight.</p>
+    </div>
+  )
+}
+
 function Admin({ room, people, me, project, toast }) {
   // the group's admins, and the members they let in (access), see this; only the group's admins choose who
   const boss = room.role === 'admin'
@@ -1252,8 +1311,8 @@ function Admin({ room, people, me, project, toast }) {
         </div>
       </div>
       <datalist id="pra-names">{names.map((n) => <option key={n} value={n} />)}</datalist>
-      <h6 className="prw-h pra-stats-h">The Chat in Numbers</h6>
-      <Stats room={room} people={people} me={me} project={project} compact />
+      <Fold id="people" title="People"><People room={room} people={people} me={me} /></Fold>
+      <Fold id="numbers" title="The Chat in Numbers"><Stats room={room} people={people} me={me} project={project} compact /></Fold>
     </div>
   )
 }
@@ -1710,6 +1769,14 @@ export function ProPanel(props) {
   // what changed in the Production Hub comes in when the workspace opens, and every minute while it is open
   const pullRoom = props.room.kind === 'group' && props.project ? props.room.room_id : ''
   useEffect(() => { if (!pullRoom) return undefined; hubPull(pullRoom); const t = setInterval(() => hubPull(pullRoom), 60000); return () => clearInterval(t) }, [pullRoom])
+  // who comes into a project and for how long, for Admin's People (Alex, 22 Nov): an open, then 30 s at a time while in sight
+  useEffect(() => {
+    if (!pullRoom) return undefined
+    const visit = (opened, secs) => { supabase.rpc('roar_visit', { r: pullRoom, opened, add_secs: secs }).then(() => {}, () => {}) }
+    visit(true, 0)
+    const t = setInterval(() => { if (!document.hidden) visit(false, 30) }, 30000)
+    return () => clearInterval(t)
+  }, [pullRoom])
   const [w, setW] = useState(() => lsNum('roarme-pro-w', PRJ_W))
   const [cw, setCw] = useState(() => lsNum('roarme-pro-chat', CHAT_W))
   // the chat on the left or on the right of the workspace (Alex, 22 Nov: "a small button to bring the chat to the right")

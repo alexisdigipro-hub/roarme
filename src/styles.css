@@ -7669,3 +7669,33 @@ html:root:root:root:root .hb-key { width: 100%; height: 42px; border: 0; outline
 .hb-acts { display: flex; gap: 8px; flex-wrap: wrap; }
 html:root:root:root:root .hb-acts .hb-off { color: #e5484d; }
 .hb-go { align-self: flex-start; }
+
+/* Admin: parts that fold away, and People (Alex, 22 Nov) */
+.pra-fold { border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+html:root:root:root:root .pra-fold-h { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 48px; padding: 0 4px; border: 0; background: none; box-shadow: none; color: inherit; font: inherit; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.pra-fold-h > span { opacity: .7; }
+.pra-chev { display: grid; transition: transform .25s cubic-bezier(.3, .7, .4, 1); opacity: .55; }
+.pra-chev svg { width: 15px; height: 15px; }
+.pra-fold.open .pra-chev { transform: rotate(90deg); }
+.pra-fold-b { padding-bottom: 14px; animation: pra-in .26s cubic-bezier(.3, .7, .4, 1); }
+@keyframes pra-in { from { opacity: 0; transform: translateY(-6px); } }
+html[data-lite] .pra-fold-b { animation: none; }
+@media (prefers-reduced-motion: reduce) { .pra-fold-b { animation: none; } .pra-chev { transition: none; } }
+.prp { display: flex; flex-direction: column; gap: 6px; }
+.prp-row { display: grid; grid-template-columns: 34px minmax(120px, 1fr) minmax(60px, 1.2fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, currentColor 4%, transparent); }
+.prp-who { display: flex; flex-direction: column; min-width: 0; }
+.prp-who b { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prp-who small { font-size: 12px; opacity: .55; }
+.prp-bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, currentColor 8%, transparent); overflow: hidden; }
+.prp-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); }
+.prp-nums { display: flex; gap: 16px; }
+.prp-nums > span { display: flex; flex-direction: column; align-items: flex-end; min-width: 48px; }
+.prp-nums b { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prp-nums small { font-size: 11px; opacity: .5; white-space: nowrap; }
+.prp-note { margin: 6px 2px 0; font-size: 12px; opacity: .45; }
+@media (max-width: 760px) {
+  .prp-row { grid-template-columns: 34px 1fr; row-gap: 8px; }
+  .prp-bar { grid-column: 1 / -1; }
+  .prp-nums { grid-column: 1 / -1; justify-content: space-between; }
+  .prp-nums > span { align-items: flex-start; }
+}

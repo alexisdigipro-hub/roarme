@@ -25,6 +25,8 @@ export const NEWS = [
         'Your address book: contacts with phones, emails, addresses and groups, import and export as .vcf.',
         'Archived is a drawer icon, always at the right end of the folder bar.',
         'Five new colours in Appearance.',
+        'A project\u2019s Admin shows its People: how often each one came in, for how long, and what they sent. Its parts fold away with an arrow.',
+        'Customer Service, in Settings, for the messages people send to RoarMe.',
         'This page, with what each update brought.',
       ] },
       { title: 'On a phone', items: [

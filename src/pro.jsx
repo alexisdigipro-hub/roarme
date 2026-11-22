@@ -896,7 +896,7 @@ function Hero({ media, project, title, st, dateName, fields, onBrief }) {
       {bg && <i className="prw-hero-bg" style={{ backgroundImage: `url(${bg})` }} />}
       <div className="prw-hero-in">
         <span className="prw-hero-kick">{cat && <span className="prw-hero-cat">{cat}</span>}<span className="prw-hero-st" style={{ '--pc': st.c }}><i className="prw-dot" />{st.name}</span>{when && <span className="prw-hero-when">{I.calendar}{when}</span>}</span>
-        <h2>{artist || work ? <>{artist}{artist && work && <span className="prw-hero-sep"> – </span>}{work && <em>{work}</em>}</> : title}</h2>
+        {(artist || work) && <h2>{artist}{artist && work && <span className="prw-hero-sep"> – </span>}{work && <em>{work}</em>}</h2>}
         <Field area className="prw-hero-brief" value={project.brief} placeholder="Write the brief: what it is, where, when, the look…" onSave={onBrief} />
       </div>
     </section>
@@ -988,7 +988,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   return (
     <div className="prw-work">
       <div className="prw-top">
-        <h1>{title}</h1>
         <span className="prw-hang">
           <button type="button" className="prw-pill stage" style={{ '--pc': st.c }} onClick={() => setMenu(menu === 'stage' ? '' : 'stage')}><i className="prw-dot" />{st.name}<span className="prw-caret">{I.down}</span></button>
           <Hang open={menu === 'stage'} onClose={() => setMenu('')}>

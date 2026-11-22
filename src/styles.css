@@ -6891,3 +6891,5 @@ html:root:root:root:root .prw-grid.mosaic .prw-tile { aspect-ratio: auto; height
 @media (min-width: 1560px) { .prw-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .prw-fact input.prw-fact-k { padding-right: 0; text-overflow: ellipsis; }
 .prw-fact:hover input.prw-fact-k, .prw-fact:focus-within input.prw-fact-k { padding-right: 24px; }
+.prw-top { padding-top: 14px; }
+.prw-hero { min-height: 170px; }

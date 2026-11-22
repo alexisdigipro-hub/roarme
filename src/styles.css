@@ -6358,3 +6358,8 @@ html:root:root:root:root .apx-colour .accents.halo-accents { display: flex; flex
 html:root:root:root:root .apx-colour .accents.halo-accents .acc { width: 36px; height: 36px; min-width: 0; }
 html:root:root:root:root .apx-tabs + .apx-swipe .apx-pane, html:root:root:root:root .apx-tabs + * .apx-pane { margin-top: -6px; }
 html:root:root:root:root .apx-pane .set-preview.live { min-height: 0 !important; height: auto !important; padding-top: 18px !important; }
+/* the address book's form and card carry their own top row: the window's own close is not shown over them */
+html:root:root:root .modal:has(> .modal-body > .bk-form) > .modal-head { display: none !important; }
+html:root:root:root .modal:has(> .modal-body > .bk-form) > .modal-body { padding-top: 14px; }
+.bk-addr-2 { grid-template-columns: 1fr 1.1fr 1.1fr; padding-left: 40px; }
+html:root:root:root:root:root:root:root:root .menu > button.csort.on, html:root:root:root:root:root:root:root:root .menu > button.csort.on span { color: var(--halo, var(--accent)) !important; font-weight: 600 !important; }

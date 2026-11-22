@@ -1305,6 +1305,7 @@ export default function Chat({ me, setMe }) {
   useEffect(() => { const f = (e) => { if (e.detail) { setTab('chats'); setActiveId(e.detail) } }; window.addEventListener('roarme-goroom', f); return () => window.removeEventListener('roarme-goroom', f) }, [])
   useEffect(() => { const f = () => setModal((m) => (m ? m : 'info')); window.addEventListener('roarme-profile', f); return () => window.removeEventListener('roarme-profile', f) }, [])
   const [favs, setFavs] = useLocal('roarme-fav', [])
+  const [contactSort, setContactSort] = useLocal('roarme-contacts-sort', 'seen') // Contacts: 'seen' (last seen first) or 'name'
   // the address book (book.jsx): kept on the device, fresh from the cloud whenever Contacts is opened
   const [book, setBook] = useState(() => keptBook(me.id))
   const [bookOpen, setBookOpen] = useState('') // a contact's id: its card
@@ -1333,7 +1334,6 @@ export default function Chat({ me, setMe }) {
     const abc = (x, y) => x.sort.localeCompare(y.sort, 'el', { sensitivity: 'base' })
     return all.sort((x, y) => (y.fav - x.fav) || (contactSort === 'name' ? abc(x, y) : (y.seen - x.seen) || abc(x, y)))
   }, [book, bookGroup, bookPeople, contacts, people, favs, cq, contactSort])
-  const [contactSort, setContactSort] = useLocal('roarme-contacts-sort', 'seen') // Contacts: 'seen' (last seen first) or 'name'
   const [contactsMenu, setContactsMenu] = useState('') // Contacts' ⋯ ('sort') or + ('add') menu open
   const cardPerson = card ? people[card] : null
   const showTasks = (v) => { setTasksOpen(v); try { localStorage.setItem('roarme-tasks', v ? '1' : '0') } catch { /* private window */ } }

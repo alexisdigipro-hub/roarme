@@ -7314,3 +7314,21 @@ html:root:root:root:root:root .prw-phone .prw-pill.date .prw-datewrap input { po
 html[data-mode='dark'] .prw-phone .prw-custom input { background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
 html:root:root:root:root:root:root:root .prw-phone .prw-menu .prw-custom { display: block; width: auto; height: auto; padding: 6px 12px 12px; }
 html:root:root:root:root:root:root:root .prw-phone .prw-menu .prw-custom input { display: block; width: 100% !important; min-width: 0; height: 42px; border-radius: 14px !important; }
+/* the project's head on a phone is the Chat | Project switch itself (Alex, 22 Nov, from its screenshot: "exactly this,
+   same height, same letters; only the first one is wider and says the project's name, and the picture at the right"):
+   in the chat's head the switch stands between Back and the picture with the name chosen (a tap opens the profile, as
+   the name always did) and Project beside it; the project's page has the same switch with Project chosen and the name
+   going back to the chat. This replaces the joined capsule of the same day. */
+.head-sw { display: none; }
+.head-sw-name { display: block; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 960px) {
+  html:root:root:root:root:root:root:root .room-head.has-proj .head-card { display: none !important; }
+  html:root:root:root:root:root .room-head.has-proj .head-sw { display: inline-flex; flex: none; margin: 0 auto; min-width: 0; max-width: calc(100% - 120px); }
+}
+.prw-phone-top { justify-content: center; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-lite]):not([data-still]) .prw-sw2.to-proj > button.on { animation: prw-lens-r .28s cubic-bezier(.25, 1.2, .45, 1) both; }
+  html:not([data-lite]):not([data-still]) .prw-sw2.head-sw > button.on { animation: prw-lens-l .28s cubic-bezier(.25, 1.2, .45, 1) both; }
+}
+@keyframes prw-lens-r { from { transform: translateX(-70%); opacity: .5; } to { transform: none; opacity: 1; } }
+@keyframes prw-lens-l { from { transform: translateX(70%); opacity: .5; } to { transform: none; opacity: 1; } }

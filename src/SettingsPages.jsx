@@ -52,6 +52,9 @@ export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.start
 const Hero = () => null
 
 
+// plain colours offered on a computer besides the theme's own (hidden on a phone, end of styles.css)
+const MORE_COLOURS = ['#e53935', '#d81b60', '#ff4f8b', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#00acc1', '#00897b', '#43a047', '#7cb342', '#c0ca33', '#fdd835', '#ffb300', '#fb8c00', '#f4511e', '#6d4c41', '#757575', '#546e7a', '#ef9a9a', '#f48fb1', '#ce93d8', '#9fa8da', '#90caf9', '#80deea', '#a5d6a7', '#e6ee9c', '#ffe082', '#ffab91']
+
 const Switch = ({ on, set, children, hint }) => (
   <label className="set-row">
     <span className="set-text">{children}{hint && <small>{hint}</small>}</span>
@@ -1008,7 +1011,9 @@ function Appearance({ p, toast, me, setMe }) {
               <div className="accents halo-accents">
                 <button type="button" className={`acc acc-halo${!HALO_ACCENTS.some(([k]) => k === p.accent) && !(p.accent === 'h-custom' && p.accentHex) ? ' on' : ''}`} style={{ '--c': '#f47318', background: 'linear-gradient(135deg, #ff9a3c, #f47318)' }} title="Orange" onClick={() => setPrefs({ accent: '', accentHex: '' })}><small>Orange</small></button>
                 {HALO_ACCENTS.map(([k, l, c, , [x, y]]) => <button key={k} type="button" className={`acc acc-halo${p.accent === k ? ' on' : ''}`} style={{ '--c': c, background: `linear-gradient(135deg, ${x}, ${y})` }} title={l} onClick={() => setPrefs({ accent: k, accentHex: '' })}><small>{l}</small></button>)}
-                <button type="button" className={`acc acc-halo acc-any${p.accent === 'h-custom' && p.accentHex ? ' on' : ''}`} style={p.accent === 'h-custom' && p.accentHex ? { '--c': p.accentHex, background: p.accentHex } : { '--c': '#8a8a96' }} title="Any colour" onClick={() => setAccentPick(true)}><small>Any colour</small></button>
+                {/* more plain colours on a computer (Alex, 22 Nov: "spread them on the desktop, and many more, just as basic") */}
+                {MORE_COLOURS.map((h) => <button key={h} type="button" className={`acc acc-halo acc-more${p.accent === 'h-custom' && (p.accentHex || '').toLowerCase() === h ? ' on' : ''}`} style={{ '--c': h, background: h }} title={h.toUpperCase()} onClick={() => setPrefs({ accent: 'h-custom', accentHex: h })} />)}
+                <button type="button" className={`acc acc-halo acc-any${p.accent === 'h-custom' && p.accentHex && !(window.matchMedia?.('(min-width: 761px) and (pointer: fine)').matches && MORE_COLOURS.includes(p.accentHex.toLowerCase())) ? ' on' : ''}`} style={p.accent === 'h-custom' && p.accentHex ? { '--c': p.accentHex, background: p.accentHex } : { '--c': '#8a8a96' }} title="Any colour" onClick={() => setAccentPick(true)}><small>Any colour</small></button>
                 {accentPick && <ColorPick title="Colour" value={p.accent === 'h-custom' && p.accentHex ? p.accentHex.toUpperCase() : '#3AA7E8'} onSet={(h) => setPrefs({ accent: 'h-custom', accentHex: h })} onClose={() => setAccentPick(false)} />}
               </div>
             </div>

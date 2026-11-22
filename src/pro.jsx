@@ -464,7 +464,7 @@ async function putPhotos(roomId, files) {
 
 function ScoutPhoto({ p, className = '', onClick }) {
   const [src, setSrc] = useState('')
-  useEffect(() => { let gone = false; picLink(p).then((u) => { if (!gone && u) setSrc(u) }).catch(() => {}); return () => { gone = true } }, [p.path])
+  useEffect(() => { let gone = false; picLink(p).then((u) => { if (!gone && u) setSrc(u) }).catch(() => {}); return () => { gone = true } }, [p.path || p.url])
   return <button type="button" className={`prw-sph ${className}`} onClick={onClick}>{src ? <img src={src} alt="" loading="lazy" /> : <i className="prw-tile-ph" />}</button>
 }
 
@@ -989,7 +989,7 @@ function Stats({ room, people, me, project, compact = false }) {
 function Hero({ room, me, project, dateName, fields, onCover, toast }) {
   // the cover: one's own picture, or the theme's colour (Alex, 22 Nov: "no arrows to change pictures; a photo I put, else
   // the colour it had"); on it only the project's name; the shoot day stands under the banner
-  const bg = project.cover || ''
+  const bg = project.cover || project.hub_cover || '' // one's own cover, else the Production Hub's (Alex, 22 Nov)
   const [crop, setCrop] = useState(null)
   const [busy, setBusy] = useState(false)
   const pick = useRef(null)
@@ -1154,8 +1154,8 @@ function FineWave({ peaks, frac }) {
 function SongBar({ m, from, roomId, who, onSendHere, onSendTo, onDrop }) {
   const p = usePlayer()
   const [url, setUrl] = useState('')
-  useEffect(() => { let alive = true; fileLink(m.file).then((u) => { if (alive) setUrl(u) }).catch(() => {}); return () => { alive = false } }, [m.file?.path])
-  const key = m.file.path
+  useEffect(() => { let alive = true; fileLink(m.file).then((u) => { if (alive) setUrl(u) }).catch(() => {}); return () => { alive = false } }, [m.file?.path, m.file?.url])
+  const key = m.file.path || m.file.hubId
   const mine = p.key === key
   const playing = mine && p.playing
   const frac = mine && p.dur ? p.at / p.dur : 0
@@ -1550,7 +1550,9 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     toast(ids.length === 1 && ids[0] === room.room_id ? 'Sent to this chat' : `Sent to ${ids.length} chat${ids.length === 1 ? '' : 's'}`)
     return true
   }
-  const songBar = (m) => <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who={m.user_id === me.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0]} onSendTo={() => setSongSend(m)} onDrop={() => drop(m, 'this song')} />
+  const songBar = (m) => (m.hub
+    ? <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who="From the Hub" />
+    : <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who={m.user_id === me.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0]} onSendTo={() => setSongSend(m)} onDrop={() => drop(m, 'this song')} />)
   // the ordino goes into a chat as a message with its link (Alex, 22 Nov: "throw it in the group, or send it to another")
   const sendOrdino = async (o, ids) => {
     const when = [o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')
@@ -1615,7 +1617,9 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const assets = (stuff.assets || []).filter((m) => !gone.has(m.id))
   const media = assets.filter(isMediaMsg)
   const files = assets.filter((m) => isFileMsg(m) && !isMediaMsg(m) && folderOf(m) !== 'audio')
-  const music = assets.filter((m) => isFileMsg(m) && folderOf(m) === 'audio')
+  // the Production Hub's songs stand first in Music (Alex, 22 Nov: "where is the song?"); they play from the hub's link
+  const hubSongs = (Array.isArray(project.hub_music) ? project.hub_music : []).filter((t) => t.url).map((t) => ({ id: `hub-${t.id}`, hub: true, user_id: '', created_at: t.addedAt || project.updated_at, body: '', file: { name: t.name, size: t.bytes, url: t.url, peaks: t.peaks, hubId: `hub-${t.id}`, type: `audio/${t.ext || 'mpeg'}` } }))
+  const music = [...hubSongs, ...assets.filter((m) => isFileMsg(m) && folderOf(m) === 'audio')]
   const places = assets.filter((m) => m.file.location || m.file.live)
   const polls = assets.filter((m) => m.file.poll)
   const cards = assets.filter((m) => m.file.contact)
@@ -1762,7 +1766,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
             </>
           )
         })() : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents, music and anything else sent in the chat come here.'}</p>)}
-        {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
+        {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path || p.url, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
         {shownTab === 'calls' && <Calls list={calls} room={room} people={people} me={me} onDrop={drop} />}
         {shownTab === 'links' && (linkCount + places.length + maps.length ? (
           <div className="prw-filesecs">

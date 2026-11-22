@@ -8,7 +8,8 @@
 //   linkall                               ties every project group I run to a hub project (same title, or a new one) and
 //                                         makes a group for every hub project made since I connected that has none
 //   link { room }                         ties one project group (Make It a Project)
-//   sync { room }                         both ways, for one group: title, stage, shoot day, category, tasks, locations
+//   sync { room }                         both ways, for one group: title, stage, shoot day, category, tasks, locations;
+//                                         from the hub only: its cover, its songs and its locations' photos
 //   (pg_cron, x-roar-cron)                every minute, for every linked account: a group for each hub project whose
 //                                         Create PROject was pressed, or that was made in the hub since linking, and a
 //                                         sync of every tied project the hub changed since its last sync (live both ways)
@@ -133,7 +134,13 @@ Deno.serve(async (req) => {
     // locations: a scout here is a location of the hub's project, with an entry in the hub's library for its photos
     const scouts: any[] = Array.isArray(proj.scouts) ? proj.scouts : []
     const locs = merge(scouts, Array.isArray(hub.locations) ? hub.locations : [], locCommon, locCommon, base.l)
-    const roarScouts = locs.map(({ id, c, r, h }) => ({ st: 'option', tags: [], photos: [], ...(r || {}), ...(h && !r ? { lat: h.lat || '', lon: h.lon || '', fromHub: true } : {}), id, ...c }))
+    // the hub's photos of a place show in Location Scout (its public thumbnails), unless RoarMe has photos of its own for it
+    const hubPh = (h: any) => ((h?.photos?.length ? h.photos : h?.libPhotos || []) as any[]).filter((p) => p?.thumb).slice(0, 40).map((p) => ({ id: `hub-${p.id}`, url: p.thumb, w: p.w || 0, h: p.h || 0 }))
+    const roarScouts = locs.map(({ id, c, r, h }) => {
+      const own = ((r?.photos || []) as any[]).filter((p) => p?.path)
+      const photos = own.length ? r.photos : (h ? hubPh(h) : (r?.photos || []))
+      return { st: 'option', tags: [], ...(r || {}), ...(h && !r ? { lat: h.lat || '', lon: h.lon || '', fromHub: true } : {}), id, ...c, photos }
+    })
     const hubLocs: any[] = []
     for (const { id, c, r, h } of locs) {
       let libraryId = h?.libraryId || ''
@@ -150,7 +157,8 @@ Deno.serve(async (req) => {
           libraryId = put.id || libraryId
         } catch { /* the project's own entry still goes */ }
       }
-      hubLocs.push({ lat: '', lon: '', sceneLocations: [], ...(h || {}), id, ...c, ...(libraryId ? { libraryId, libraryMissing: false } : {}) })
+      const { libPhotos: _lp, ...hk } = h || {} // the library's photos came only to be shown here; they are not the project's own
+      hubLocs.push({ lat: '', lon: '', sceneLocations: [], ...hk, id, ...c, ...(libraryId ? { libraryId, libraryMissing: false } : {}) })
     }
     // a scout taken out here: its library entry, if RoarMe made it, leaves the hub too
     for (const id of Object.keys(base.l || {})) if (!locs.some((x) => x.id === id)) { try { await hubCall(key, { action: 'location.delete', ext: `${room}:${id}` }) } catch { /* next time */ } }
@@ -169,6 +177,12 @@ Deno.serve(async (req) => {
     if (F.startDate !== (proj.due || '')) roarPatch.due = F.startDate || null
     if (F.status !== R.status) { const sid = toStageId(F.status); if (sid) roarPatch.status = sid }
     if (F.category !== cat) roarPatch.fields = fields.some((f) => f.k === 'Category') ? fields.map((f) => (f.k === 'Category' ? { ...f, v: F.category } : f)) : [...fields, { k: 'Category', v: F.category }]
+    // the hub's cover and songs, shown here only; a song's link is renewed when it has less than six hours left
+    if ((hub.cover || '') !== (proj.hub_cover || '')) roarPatch.hub_cover = hub.cover || null
+    const had: any[] = Array.isArray(proj.hub_music) ? proj.hub_music : []
+    const tracks: any[] = Array.isArray(hub.music) ? hub.music : []
+    const sameSet = had.length === tracks.length && tracks.every((t, i) => had[i]?.id === t.id && had[i]?.name === t.name)
+    if (!sameSet || had.some((t) => !(t.until > Date.now() + 6 * 3600 * 1000))) roarPatch.hub_music = tracks
     if (Object.keys(roarPatch).length) await db.from('roar_pro_projects').update(roarPatch).eq('room_id', room)
     if (F.title && F.title !== R.title) await db.from('roar_rooms').update({ title: F.title }).eq('id', room)
 

@@ -64,3 +64,8 @@ select cron.schedule('roar-hub-pull', '* * * * *', $c$
     body := '{"action":"cron"}'::jsonb
   ) where exists (select 1 from public.roar_hub_accounts)
 $c$);
+
+-- what comes from the hub and is only shown here (Alex, 22 Nov: "the project's photo from the hub, the locations' photos, the
+-- song; they must talk to each other"): the hub's cover picture and its songs, each with a link good for a day (roar-hub)
+alter table public.roar_pro_projects add column if not exists hub_cover text,
+  add column if not exists hub_music jsonb not null default '[]'::jsonb;

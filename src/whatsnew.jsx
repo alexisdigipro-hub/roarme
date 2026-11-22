@@ -17,6 +17,7 @@ export const NEWS = [
       'Import from Telegram: bring a chat’s history and files into RoarMe (on a computer, from the profile’s More).',
       'Your address book: contacts with phones, emails, addresses and groups, import and export as .vcf.',
       'Archived is a drawer icon, always at the right end of the folder bar.',
+      'A project\u2019s Overview gives a taste of everything: small thumbnails, then the latest documents, locations, links and tasks, each with See All.',
       'On a computer a project\u2019s chat keeps its full name in the head; the workspace stays beside it even in a narrow window.',
       'Anything dropped into a chat is sent straight away.',
       'The number of unread messages on RoarMe’s icon.',

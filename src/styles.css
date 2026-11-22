@@ -7511,3 +7511,26 @@ html:root:root:root:root .prw-mrow:hover { background: color-mix(in srgb, curren
 .prw-mtick.doing { box-shadow: inset 0 0 0 1.6px #e8a33a; }
 .prw-mtick .prj-half { width: 10px; height: 10px; }
 .prw-mrow .prw-st { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 11px; font-style: normal; font-weight: 600; color: var(--pc); background: color-mix(in srgb, var(--pc) 14%, transparent); }
+/* the project page's top row is the chat head's row (Alex, 22 Nov: "the gear one height, the bar another; check it all,
+   the same logic and look"): Back 44 at 10px, the switch from 62px, the gear 44 at the right, all on one line at the
+   head's own height; the stage and date pills under it 40px */
+.prw-phone-top { display: flex; align-items: center; gap: 8px; padding-left: 10px !important; padding-right: 62px !important; }
+html:root:root:root:root:root .prw-pback { flex: none; width: 44px; height: 44px; min-width: 44px; padding: 0; }
+.prw-pback svg { width: 20px; height: 20px; }
+html:root:root:root:root:root .prw-phone .prw-gear-wrap { top: calc(env(safe-area-inset-top, 0px) + 10px); right: 10px; }
+@media (min-width: 761px) { html:root:root:root:root:root .prw-phone .prw-gear-wrap { top: 14px; } }
+html:root:root:root:root:root .prw-phone .prw-pill.stage, html:root:root:root:root:root .prw-phone .prw-pill.date { height: 40px; min-height: 40px; }
+/* What's New with more air and the app's own letters (Alex, 22 Nov: "more spread out, nicer letters, the theme's font"):
+   each day a title in the theme's face, bullets with room between them */
+.wn, .wn * { font-family: inherit; }
+html[data-font] .wn, html[data-font] .wn * { font-family: var(--font) !important; }
+.wn { gap: 14px; }
+.wn-box { padding: 20px 22px 22px; }
+.wn-entry { gap: 14px; }
+.wn-date { font-size: 18px; font-weight: 700; letter-spacing: -.01em; text-transform: none; opacity: 1; }
+.wn-list { gap: 13px; }
+.wn-list li { padding-left: 22px; font-size: 15.5px; line-height: 1.55; letter-spacing: -.005em; }
+.wn-list li::before { left: 3px; top: .62em; width: 8px; height: 8px; }
+.wn-sec { display: flex; flex-direction: column; gap: 10px; }
+.wn-sec + .wn-sec { padding-top: 14px; border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+.wn-sec-t { font-size: 11.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--halo-mine, var(--accent)); }

@@ -935,6 +935,7 @@ function Hero({ photos = [], room, me, project, st, dateName, fields, onBrief, o
   )
 }
 
+const BACK_I = tsv(<path d="M15 5l-7 7 7 7" />)
 const SWAP_I = tsv(<path d="M7 7h12M15 3l4 4-4 4M17 17H5M9 13l-4 4 4 4" />)
 const SEND_I = tsv(<path d="M4 12 20 4l-5 16-3.5-6.5z" />)
 const FWD_I = tsv(<><path d="M14 5l6 6-6 6" /><path d="M20 11H9a5 5 0 0 0-5 5v3" /></>)
@@ -1625,7 +1626,8 @@ export function ProPanel(props) {
         <span ref={anchor} hidden />
         {side === 'proj' && (
           <div className="prw-phone">
-            <div className="prw-phone-top">{sw}</div>
+            {/* the same row as the chat's head: Back, the switch, and (laid at the right) the gear, at the same places and heights */}
+            <div className="prw-phone-top"><button type="button" className="round prw-pback" onClick={() => setSide('chat')} aria-label="Back to the chat" title="Back to the chat">{BACK_I}</button>{sw}</div>
             {big ? <Work {...props} phone /> : <aside className="prj prw-phone-small"><ProInner {...props} /></aside>}
           </div>
         )}

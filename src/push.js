@@ -75,6 +75,8 @@ const keepNative = async (token, preview) => {
   // before supabase/push-sound.sql has been run there is no sound column: keep the device all the same
   if (error && /sound/.test(error.message || '')) ({ error } = await supabase.from('roar_push_subs').upsert(row))
   if (error) throw error
+  // the icon's number on or off (supabase/badge.sql; a device kept before that column exists stays as it is)
+  try { await supabase.from('roar_push_subs').update({ badge: getPrefs().badge !== false }).eq('endpoint', APNS + token) } catch { /* fine */ }
   saveToken(token)
 }
 // a new pick in Settings reaches this iPhone's notifications at once
@@ -82,6 +84,7 @@ export async function syncPushSound() {
   const t = native() && savedToken()
   if (!t) return
   try { await supabase.from('roar_push_subs').update({ sound: pushSound() }).eq('endpoint', APNS + t) } catch { /* next time */ }
+  try { await supabase.from('roar_push_subs').update({ badge: getPrefs().badge !== false }).eq('endpoint', APNS + t) } catch { /* next time */ }
 }
 // a tapped notification opens its chat: inside the iPhone app the plugin says so (the service worker does it on the web)
 export function onNotificationTap(open) {

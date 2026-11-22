@@ -176,9 +176,10 @@ async function notify(id: string) {
   // each iPhone's sound (select * keeps working before supabase/push-sound.sql adds the column)
   const phones = (targets as { endpoint: string }[]).filter((t) => t.endpoint.startsWith(APNS)).map((t) => t.endpoint)
   const sounds = new Map<string, string | null>()
+  const noBadge = new Set<string>() // iPhones with Unread Count on the App Icon off (supabase/badge.sql)
   if (phones.length) {
     const { data: rows } = await sb.from('roar_push_subs').select('*').in('endpoint', phones)
-    for (const x of rows || []) sounds.set(x.endpoint, x.sound ?? null)
+    for (const x of rows || []) { sounds.set(x.endpoint, x.sound ?? null); if (x.badge === false) noBadge.add(x.endpoint) }
   }
   // each person's own settings for this chat (supabase/mute-more.sql; select * keeps working before it is run):
   // Disable Sound -> no sound, Customize -> this chat's sound over the device's
@@ -233,7 +234,7 @@ async function notify(id: string) {
       room: m.room_id,
       tag: `room-${m.room_id}`,
       count: t.unread,
-      badge: badges.has(t.user_id) ? Math.max(1, badges.get(t.user_id) || 0) : undefined,
+      badge: noBadge.has(t.endpoint) ? 0 : badges.has(t.user_id) ? Math.max(1, badges.get(t.user_id) || 0) : undefined,
       silent: !!own?.silent || dnd.has(t.user_id) || quiet,
       passive: dnd.has(t.user_id) || quiet,
       urgent: level > 0,

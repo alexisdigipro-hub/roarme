@@ -15,3 +15,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.roar_badge_counts(uuid[]) from public, anon, authenticated;
 grant execute on function public.roar_badge_counts(uuid[]) to service_role;
+
+-- each iPhone's own choice (Settings > Notifications > Unread Count on the App Icon; Alex, 22 Nov: "fix it"): with it
+-- off, roar-push sends 0 and the icon carries no number
+alter table public.roar_push_subs add column if not exists badge boolean not null default true;

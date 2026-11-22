@@ -5,6 +5,7 @@ import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib
 import { inApp } from './push.js'
 
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
+const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.PdfView })))
 
 /* RoarMe Pro (Alex, 22 Nov, from the sample https://claude.ai/artifact/HzxD32EAhTGsWVS7QPs4dT, "Pro grouped"): the same
    chat, with a group able to be a project. Only on the website on a computer for now (not the iPhone app, not the Mac
@@ -75,7 +76,8 @@ export const isAsset = (m) => {
   const f = m.file
   if (!f || m.kind === 'voice') return false
   if ((m.kind === 'image' || m.kind === 'file') && f.path) return true
-  return !!(f.location || f.live || f.poll || f.contact || f.groupcall || f.event)
+  // a scheduled meeting stays in the chat as its card (tap it to join) and is listed in Calls & Meetings too (Alex, 22 Nov)
+  return !!(f.location || f.live || f.poll || f.contact || f.groupcall)
 }
 // the tabs things go to, with the words for one and for many (the line left in the chat)
 export const ASIDE_TABS = { media: ['Media', 'photo or video', 'photos and videos'], files: ['Files', 'file', 'files'], places: ['Places', 'place', 'places'], polls: ['Polls', 'poll', 'polls'], contacts: ['Contacts', 'contact', 'contacts'], calls: ['Calls', 'call', 'calls'] }
@@ -159,7 +161,8 @@ function Files({ files, onJump, aside = false }) {
 }
 
 /* ---------- places, polls and contacts at the side ---------- */
-const mapUrl = (l) => `https://www.openstreetmap.org/?mlat=${l.lat}&mlon=${l.lng}#map=16/${l.lat}/${l.lng}`
+// a place opens in Google Maps (Alex, 22 Nov)
+const mapUrl = (l) => `https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}`
 // a link to a map (Alex, 22 Nov: "Google Maps links, like https://maps.app.goo.gl/…, go to Places; the link stays in the chat")
 const MAP_RX = /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.apple\.com|(www\.)?openstreetmap\.org)/i
 export const isMapLink = (u) => MAP_RX.test(u)
@@ -168,26 +171,33 @@ const mapName = (u) => {
   if (m) { try { return decodeURIComponent(m[1].replace(/\+/g, ' ')) } catch { /* left as it is */ } }
   return /apple/i.test(u) ? 'Apple Maps' : /openstreetmap/i.test(u) ? 'OpenStreetMap' : 'Google Maps'
 }
-function Places({ list, maps = [], people = {}, me }) {
+// a button at the right of a map link or a place: Add to Location Scout (Alex, 22 Nov), or Added once it is there
+const AddScout = ({ onAdd, has }) => (onAdd ? <button type="button" className={`pill-btn prw-addscout${has ? ' done' : ''}`} disabled={has} onClick={onAdd}>{has ? I.check : I.plus}<span>{has ? 'In Location Scout' : 'Add to Location Scout'}</span></button> : null)
+function Places({ list, maps = [], people = {}, me, onAdd, hasUrl = () => false }) {
   return (
     <div className="prj-list">
       {maps.map(({ u, m }, i) => (
-        <a key={`${m.id}-${i}`} className="prj-row" href={u} target="_blank" rel="noopener noreferrer" title={u}>
-          <i className="prj-tag prj-k-place">{I.place}</i>
-          <span className="prj-ftext"><b>{mapName(u)}</b><small>{[m.user_id === me?.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0], new Date(m.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })].join(' · ')}</small></span>
-        </a>
+        <div key={`${m.id}-${i}`} className="prw-link">
+          <a className="prj-row" href={u} target="_blank" rel="noopener noreferrer" title={u}>
+            <i className="prj-tag prj-k-place">{I.place}</i>
+            <span className="prj-ftext"><b>{mapName(u)}</b><small>{[m.user_id === me?.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0], new Date(m.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })].join(' · ')}</small></span>
+          </a>
+          <AddScout has={hasUrl(u)} onAdd={onAdd && (() => onAdd({ name: mapName(u), mapsUrl: u, address: '' }))} />
+        </div>
       ))}
       {list.map((m) => {
         const l = m.file.location || {}
         const live = !!m.file.live
         const on = live && (!m.file.live.until || new Date(m.file.live.until) > new Date())
-        return (
+        const row = (
           <a key={m.id} className="prj-row" href={mapUrl(l)} target="_blank" rel="noopener noreferrer" title="Open the map">
             <i className="prj-tag prj-k-place">{I.place}</i>
             <span className="prj-ftext"><b>{live ? 'Live Location' : l.name || 'Place'}</b><small>{[live ? (on ? 'Sharing now' : 'Ended') : l.addr, new Date(m.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })].filter(Boolean).join(' · ')}</small></span>
             {on && <span className="prj-live" />}
           </a>
         )
+        if (!onAdd || live) return row
+        return <div key={m.id} className="prw-link">{row}<AddScout has={hasUrl(mapUrl(l))} onAdd={() => onAdd({ name: l.name || 'Place', address: l.addr || '', mapsUrl: mapUrl(l), lat: l.lat, lon: l.lng })} /></div>
       })}
     </div>
   )
@@ -301,7 +311,7 @@ function useRoomStuff(roomId) {
         supabase.from('roar_messages').select('id, user_id, kind, body, file, created_at').eq('room_id', roomId).not('file', 'is', null).is('deleted_at', null).order('created_at', { ascending: false }).limit(600),
         supabase.from('roar_messages').select('id, user_id, kind, body, created_at').eq('room_id', roomId).eq('kind', 'text').or('body.ilike.*http*,body.ilike.*#*').is('deleted_at', null).order('created_at', { ascending: false }).limit(600),
       ])
-      if (!gone) setStuff({ assets: (a.data || []).filter(isAsset), words: w.data || [] })
+      if (!gone) setStuff({ assets: (a.data || []).filter(isAsset), meets: (a.data || []).filter((m) => m.file?.event), words: w.data || [] })
     }
     load()
     const ch = supabase.channel(`pro-stuff-${roomId}-${Date.now()}`)
@@ -395,7 +405,7 @@ function Stages({ project, save, onClose }) {
 /* ---------- Location Scout ---------- */
 const SCOUT_ST = [['option', 'Option', '#d48806'], ['confirmed', 'Confirmed', '#14a37f'], ['rejected', 'Rejected', '#e5483f']]
 const scoutSt = (k) => SCOUT_ST.find((x) => x[0] === k) || SCOUT_ST[0]
-const mapSearch = (q) => `https://www.openstreetmap.org/search?query=${encodeURIComponent(q)}`
+const mapSearch = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`
 
 async function putPhotos(roomId, files) {
   const out = []
@@ -427,11 +437,15 @@ function ScoutEdit({ item, onSave, onDelete, onClose, roomId, toast }) {
     <Modal title={item.name ? 'Edit Location' : 'New Location'} onClose={onClose} foot={<>{onDelete && <button type="button" className="btn danger" onClick={onDelete}>Delete</button>}<button type="button" className="btn btn-main" disabled={busy} onClick={() => onSave({ ...x, name: (x.name || '').trim().slice(0, 80) || 'Location' })}>Save</button></>}>
       <div className="prw-form">
         <label><span>Name</span><input value={x.name || ''} maxLength={80} placeholder="Kypseli corner" onChange={(e) => set({ name: e.target.value })} autoFocus /></label>
-        <label><span>Address</span><input value={x.addr || ''} maxLength={160} placeholder="Street, area, city" onChange={(e) => set({ addr: e.target.value })} /></label>
+        <label><span>Address</span><input value={x.address ?? x.addr ?? ''} maxLength={160} placeholder="Street, area, city" onChange={(e) => set({ address: e.target.value, addr: undefined })} /></label>
+        <div className="prw-formrow"><span>Type</span><Lens className="seg" dep={x.type || 'Interior'}>{['Interior', 'Exterior', 'Both'].map((k) => <button key={k} type="button" className={(x.type || 'Interior') === k ? 'on' : ''} onClick={() => set({ type: k })}>{k}</button>)}</Lens></div>
         <div className="prw-formrow"><span>Status</span><Lens className="seg" dep={x.st}>{SCOUT_ST.map(([k, l]) => <button key={k} type="button" className={x.st === k ? 'on' : ''} onClick={() => set({ st: k })}>{l}</button>)}</Lens></div>
-        <label><span>Contact</span><input value={x.contact || ''} maxLength={120} placeholder="Who to call, a number" onChange={(e) => set({ contact: e.target.value })} /></label>
+        <label><span>Contact</span><input value={x.contact || ''} maxLength={120} placeholder="Who to ask for" onChange={(e) => set({ contact: e.target.value })} /></label>
+        <label><span>Phone</span><input value={x.phone || ''} maxLength={40} placeholder="+30 …" onChange={(e) => set({ phone: e.target.value })} /></label>
+        <label><span>Map link</span><input value={x.mapsUrl || ''} maxLength={500} placeholder="https://maps.app.goo.gl/…" onChange={(e) => set({ mapsUrl: e.target.value.trim() })} /></label>
         <label><span>Permit</span><input value={x.permit || ''} maxLength={120} placeholder="Asked, granted, dates" onChange={(e) => set({ permit: e.target.value })} /></label>
         <label><span>Notes</span><textarea rows={3} value={x.notes || ''} maxLength={1000} placeholder="Power, sound, light, parking…" onChange={(e) => set({ notes: e.target.value })} /></label>
+        <label><span>Tags</span><input value={(x.tags || []).join(', ')} maxLength={200} placeholder="rooftop, night, street" onChange={(e) => set({ tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 12) })} /></label>
         <div className="prw-formrow top"><span>Photos</span>
           <div className="prw-sgrid">
             {(x.photos || []).map((p, n) => (
@@ -462,18 +476,18 @@ function Scout({ project, save, room, toast, onView }) {
               <button type="button" className="prj-chip prw-st" style={{ '--pc': c }} onClick={() => put(list.map((y) => (y.id === x.id ? { ...y, st: SCOUT_ST[(SCOUT_ST.findIndex((s) => s[0] === y.st) + 1) % SCOUT_ST.length][0] } : y)))} title="Change status">{label}</button>
             </div>
             <div className="prw-card-in">
-              <button type="button" className="prw-card-title" onClick={() => setEdit(x)}><h3>{x.name}</h3>{x.addr && <small>{x.addr}</small>}</button>
+              <button type="button" className="prw-card-title" onClick={() => setEdit(x)}><h3>{x.name}</h3>{(x.address || x.addr) && <small>{x.address || x.addr}</small>}<span className="prw-card-meta">{x.type || 'Interior'}{(x.tags || []).map((t) => <i key={t}>{t}</i>)}</span></button>
               {ph.length > 1 && <div className="prw-strip">{ph.slice(1, 5).map((p, n) => <ScoutPhoto key={p.path} p={p} onClick={() => onView(ph, n + 1)} />)}{ph.length > 5 && <span className="prw-more">+{ph.length - 5}</span>}</div>}
-              {(x.contact || x.permit || x.notes) && <div className="prw-kv">{x.contact && <><span>Contact</span><b>{x.contact}</b></>}{x.permit && <><span>Permit</span><b>{x.permit}</b></>}{x.notes && <><span>Notes</span><p>{x.notes}</p></>}</div>}
+              {(x.contact || x.phone || x.permit || x.notes) && <div className="prw-kv">{(x.contact || x.phone) && <><span>Contact</span><b>{[x.contact, x.phone].filter(Boolean).join(' · ')}</b></>}{x.permit && <><span>Permit</span><b>{x.permit}</b></>}{x.notes && <><span>Notes</span><p>{x.notes}</p></>}</div>}
               <div className="prw-card-acts">
                 <button type="button" className="pill-btn" onClick={() => setEdit(x)}>{I.edit || I.plus}<span>Edit</span></button>
-                {x.addr && <a className="pill-btn" href={mapSearch(x.addr)} target="_blank" rel="noopener noreferrer">{I.place}<span>Map</span></a>}
+                {(x.mapsUrl || x.address || x.addr) && <a className="pill-btn" href={x.mapsUrl || mapSearch(x.address || x.addr)} target="_blank" rel="noopener noreferrer">{I.place}<span>Map</span></a>}
               </div>
             </div>
           </article>
         )
       })}
-      <button type="button" className="prw-newcard" onClick={() => setEdit({ id: uid(), name: '', st: 'option', photos: [] })}>{I.plus}<span>New Location</span></button>
+      <button type="button" className="prw-newcard" onClick={() => setEdit({ id: uid(), name: '', address: '', type: 'Interior', st: 'option', contact: '', phone: '', notes: '', mapsUrl: '', tags: [], photos: [] })}>{I.plus}<span>New Location</span></button>
       {edit && <ScoutEdit item={edit} roomId={room.room_id} toast={toast} onClose={() => setEdit(null)}
         onDelete={list.some((y) => y.id === edit.id) ? () => { if (window.confirm(`Delete ${edit.name || 'this location'}?`)) { put(list.filter((y) => y.id !== edit.id)); setEdit(null) } } : null}
         onSave={(x) => { put(list.some((y) => y.id === x.id) ? list.map((y) => (y.id === x.id ? x : y)) : [...list, x]); setEdit(null) }} />}
@@ -503,16 +517,17 @@ function Calls({ list, room, people, me }) {
       <div className="prw-calls-top">
         <button type="button" className="btn btn-main" onClick={() => go(true)}>{I.video}<span>Start Video Chat</span></button>
         <button type="button" className="btn" onClick={() => go(false)}>{I.phone}<span>Voice Call</span></button>
+        <button type="button" className="btn" onClick={() => window.dispatchEvent(new CustomEvent('roarme-roomact', { detail: { what: 'schedule' } }))}>{I.calendar}<span>Schedule Meeting</span></button>
       </div>
       {live && <div className="prw-call on"><span className="prw-call-ico">{I.video}</span><span className="prj-ftext"><b>{live.video ? 'Video chat' : 'Call'} is on</b><small>Started by {who(live.started_by)} at {new Date(live.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></span><button type="button" className="btn btn-main" onClick={() => go(live.video, live.id)}>Join</button></div>}
-      {soon.length > 0 && <h6 className="prw-h">Scheduled</h6>}
+      {soon.length > 0 && <h6 className="prw-h">Meetings</h6>}
       {soon.map(({ m, ev, s }) => {
         const open = now >= s - 10 * 60e3
         return <div key={m.id} className="prw-call"><span className="prw-call-ico sched">{I.calendar}</span><span className="prj-ftext"><b>{ev.title || 'Call'}</b><small>{new Date(s).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span>{open && <button type="button" className="btn btn-main" onClick={() => go(true)}>Join</button>}</div>
       })}
       {past.length > 0 && <h6 className="prw-h">Past</h6>}
       {past.map((m) => <div key={m.id} className="prw-call past"><span className="prw-call-ico past">{m.file.event ? I.calendar : I.video}</span><span className="prj-ftext"><b>{m.file.event ? m.file.event.title || 'Scheduled call' : `${m.file.groupcall?.video === false ? 'Call' : 'Video chat'} by ${who(m.user_id)}`}</b><small>{new Date(m.file.event ? m.file.event.start : m.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span></div>)}
-      {!live && !soon.length && !past.length && <p className="prj-quiet">No calls yet. Calls and scheduled calls of this project gather here.</p>}
+      {!live && !soon.length && !past.length && <p className="prj-quiet">No calls or meetings yet. Schedule Meeting puts a card in the chat that everyone taps to join, and it is listed here.</p>}
     </div>
   )
 }
@@ -589,6 +604,95 @@ function Board({ list, onChange }) {
   )
 }
 
+/* ---------- the tabs as a menu: a line sign over the word, spread across (Alex, 22 Nov: "like a menu") ---------- */
+const tsv = (d) => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+const TAB_I = {
+  overview: tsv(<><rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="7" rx="2" /><rect x="3.5" y="13.5" width="7" height="7" rx="2" /><rect x="13.5" y="13.5" width="7" height="7" rx="2" /></>),
+  media: tsv(<><rect x="3" y="4.5" width="18" height="15" rx="3" /><circle cx="9" cy="10" r="1.8" /><path d="m21 16-5-5-8.5 8.5" /></>),
+  files: tsv(<><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h4" /></>),
+  scout: tsv(<><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2l1.5-2h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /><circle cx="12" cy="12.5" r="3.5" /></>),
+  calls: tsv(<><rect x="3" y="6" width="12.5" height="12" rx="3" /><path d="m15.5 10.5 5-3v9l-5-3" /></>),
+  links: tsv(<><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>),
+  tags: tsv(<path d="M9 3.5 7 20.5M17 3.5l-2 17M4 8.5h16.5M3.5 15.5H20" />),
+  polls: tsv(<path d="M5 20V12M10 20V5M15 20v-9M20 20V8" />),
+  places: tsv(<><path d="M12 21s-6.5-5.8-6.5-11a6.5 6.5 0 0 1 13 0c0 5.2-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.4" /></>),
+  contacts: tsv(<><circle cx="12" cy="8" r="3.8" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>),
+  tasks: tsv(<><rect x="4" y="3.5" width="16" height="17" rx="3.5" /><path d="m8 9 1.6 1.6L12.5 7.8M8 15l1.6 1.6 2.9-2.8M14.5 9.5H16M14.5 15.5H16" /></>),
+}
+const OPTIONAL = [['scout', 'Location Scout'], ['calls', 'Calls & Meetings'], ['links', 'Links'], ['tags', 'Tags'], ['tasks', 'Tasks']]
+const hiddenKey = (roomId) => `roarme-pro-hide-${roomId}`
+
+/* ---------- a document read inside RoarMe (Alex, 22 Nov: "tap a document and read it, a preview of the text"):
+   a PDF in RoarMe's PDF viewer, a Word file's words (read from the .docx itself, on the device), plain text as it is ---------- */
+const TEXT_EXT = /^(txt|md|csv|tsv|json|srt|vtt|fountain|log|xml|html?|rtf)$/
+async function unzipEntry(buf, want) {
+  const dv = new DataView(buf)
+  let e = buf.byteLength - 22
+  while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e -= 1
+  if (e < 0) return null
+  const count = dv.getUint16(e + 10, true)
+  let p = dv.getUint32(e + 16, true)
+  for (let i = 0; i < count; i += 1) {
+    const method = dv.getUint16(p + 10, true), size = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), at = dv.getUint32(p + 42, true)
+    const name = new TextDecoder().decode(new Uint8Array(buf, p + 46, nl))
+    if (name === want) {
+      const data = new Uint8Array(buf, at + 30 + dv.getUint16(at + 26, true) + dv.getUint16(at + 28, true), size)
+      if (method === 0) return new TextDecoder().decode(data)
+      return new Response(new Blob([data]).stream().pipeThrough(new window.DecompressionStream('deflate-raw'))).text()
+    }
+    p += 46 + nl + el + cl
+  }
+  return null
+}
+const unxml = (t) => t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&')
+const docxParas = (xml) => xml.split(/<\/w:p>/).map((p) => ({
+  head: /<w:pStyle w:val="(Heading|Title)/i.test(p),
+  t: unxml(p.replace(/<w:tab\/>/g, '\t').replace(/<w:br[^>]*\/>/g, '\n').match(/<w:t[^>]*>[^<]*<\/w:t>|\t|\n/g)?.map((x) => x.replace(/<[^>]+>/g, '')).join('') || ''),
+})).filter((x, i, a) => x.t.trim() || (i > 0 && a[i - 1].t.trim()))
+
+function DocView({ m, onClose }) {
+  const ext = EXT(m.file)
+  const pdf = ext === 'pdf' || m.file.type === 'application/pdf'
+  const [url, setUrl] = useState('')
+  const [doc, setDoc] = useState(null) // { paras } | { text } | { none }
+  useEffect(() => {
+    let gone = false
+    fileLink(m.file).then(async (u) => {
+      if (gone) return
+      setUrl(u)
+      if (pdf) return
+      try {
+        if (ext === 'docx') { const buf = await (await fetch(u)).arrayBuffer(); const xml = await unzipEntry(buf, 'word/document.xml'); if (!gone) setDoc(xml ? { paras: docxParas(xml) } : { none: true }) }
+        else if (TEXT_EXT.test(ext) || /^text\//.test(m.file.type || '')) { const t = await (await fetch(u)).text(); if (!gone) setDoc({ text: t.slice(0, 400000) }) }
+        else setDoc({ none: true })
+      } catch { if (!gone) setDoc({ none: true }) }
+    }).catch(() => { if (!gone) setDoc({ none: true }) })
+    return () => { gone = true }
+  }, [m.id])
+  useEffect(() => { const k = (e) => { if (e.key === 'Escape') onClose() }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [onClose])
+  if (pdf) return url ? createPortal(<Suspense fallback={null}><PdfView url={url} name={m.file.name} onClose={onClose} /></Suspense>, document.body) : null
+  const save = async () => { const u = await fileLink(m.file, m.file.name || 'file'); if (u) window.open(u, '_blank') }
+  return createPortal(
+    <div className="prd" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="prd-card">
+        <div className="prd-head">
+          <i className={`prj-tag prj-k-${folderOf(m)}`}>{tagOf(m)}</i>
+          <span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{sizeText(m.file.size)}</small></span>
+          <button type="button" className="pill-btn" onClick={save}>{I.down}<span>Download</span></button>
+          <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
+        </div>
+        <div className="prd-body">
+          {!doc ? <span className="prv-wait dark" />
+            : doc.paras ? <article className="prd-page">{doc.paras.map((x, i) => (x.head ? <h3 key={i}>{x.t}</h3> : <p key={i}>{x.t || ' '}</p>))}</article>
+            : doc.text != null ? <pre className="prd-page prd-pre">{doc.text}</pre>
+            : <div className="prd-none">{TAB_I.files}<b>No preview for this kind of file</b><p>Download it to open it on your computer.</p><button type="button" className="btn btn-main" onClick={save}>Download</button></div>}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
@@ -598,6 +702,9 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const [mf, setMf] = useState('all')
   const [view, setView] = useState(null)
   const [tag, setTag] = useState('')
+  const [doc, setDoc] = useState(null)
+  const [hidden, setHidden] = useState(() => { try { return JSON.parse(localStorage.getItem(hiddenKey(room.room_id)) || '[]') } catch { return [] } })
+  const flipTab = (k) => { const next = hidden.includes(k) ? hidden.filter((x) => x !== k) : [...hidden, k]; setHidden(next); try { localStorage.setItem(hiddenKey(room.room_id), JSON.stringify(next)) } catch { /* private window */ } }
   const save = (patch) => kit.save(room.room_id, patch).catch((e) => toast(errText(e)))
   const goTab = (t) => { setTab(t); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
   // a tap on the small line in the chat ("2 photos went to Media") or on a #tag opens that tab
@@ -612,7 +719,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const places = assets.filter((m) => m.file.location || m.file.live)
   const polls = assets.filter((m) => m.file.poll)
   const cards = assets.filter((m) => m.file.contact)
-  const calls = assets.filter((m) => m.file.groupcall || m.file.event)
+  const calls = [...assets.filter((m) => m.file.groupcall), ...(stuff.meets || [])]
   const links = stuff.words.filter((m) => URL_RX.test(m.body) && ((URL_RX.lastIndex = 0), true))
   const tagged = stuff.words.filter((m) => tagsIn(m.body).length)
   const maps = stuff.words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter(isMapLink).map((u) => ({ u, m })))
@@ -621,9 +728,9 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const fields = Array.isArray(project.fields) ? project.fields : []
   const st = stageOf(project)
   const dateName = project.date_label || 'Shoot Date'
-  const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls', calls.length], ['links', 'Links', links.length], ['tags', 'Tags', tagged.length],
+  const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', links.length], ['tags', 'Tags', tagged.length],
     ...(polls.length ? [['polls', 'Polls', polls.length]] : []), ...(places.length + maps.length ? [['places', 'Places', places.length + maps.length]] : []), ...(cards.length ? [['contacts', 'Contacts', cards.length]] : []),
-    ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0]]
+    ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0]].filter(([k]) => !hidden.includes(k))
   const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
   const shownMedia = media.filter((m) => mf === 'all' || folderOf(m) === mf)
   const openMedia = (list, i) => setView({ items: list, index: i })
@@ -655,8 +762,18 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
           <input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} />
         </span>
         <span className="prw-faces">{members.map((id) => <Avatar key={id} src={people[id]?.avatar_url} name={nameOf(people[id])} size={30} />)}{(room.members || []).length > 5 && <i>+{room.members.length - 5}</i>}</span>
+        <span className="prw-hang prw-gear-wrap">
+          <button type="button" className={`round prw-gear${menu === 'gear' ? ' on' : ''}`} onClick={() => setMenu(menu === 'gear' ? '' : 'gear')} aria-label="Project settings" title="Project settings">{I.gear}</button>
+          <Hang open={menu === 'gear'} onClose={() => setMenu('')} className="right">
+            <span className="prw-mcap">Tabs</span>
+            {OPTIONAL.map(([k, l]) => <button key={k} type="button" onClick={() => flipTab(k)}>{TAB_I[k]}<span>{l}</span><i className={`prw-sw${hidden.includes(k) ? '' : ' on'}`} /></button>)}
+            <hr />
+            <button type="button" onClick={() => { setMenu(''); setStagesOpen(true) }}>{I.edit}<span>Rename Stages</span></button>
+            <button type="button" className="danger" onClick={() => { setMenu(''); if (window.confirm('Stop this group being a project? Its stage, brief, fields, tasks and locations are deleted; the chat stays.')) kit.remove(room.room_id).catch((e) => toast(errText(e))) }}>{I.trash}<span>Stop Being a Project</span></button>
+          </Hang>
+        </span>
       </div>
-      <div className="prw-tabs"><Lens className="seg" dep={shownTab}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)}>{l}{n ? <small>{n}</small> : null}</button>)}</Lens></div>
+      <div className="prw-tabs"><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span><span className="prw-bw">{k === 'scout' ? 'Scout' : k === 'calls' ? 'Meetings' : l}</span></button>)}</Lens></div>
       <div className="prw-body">
         {shownTab === 'overview' && (
           <div className="prw-over">
@@ -694,7 +811,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
         )}
         {shownTab === 'files' && (files.length ? (
           <div className="prj-list prw-files">{files.map((m) => (
-            <button key={m.id} type="button" className="prj-row" onClick={() => openFile(m)}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button>
+            <button key={m.id} type="button" className="prj-row" onClick={() => (folderOf(m) === 'audio' ? openFile(m) : setDoc(m))}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button>
           ))}</div>
         ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents and sound files sent in the chat come here.'}</p>)}
         {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
@@ -702,12 +819,13 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
         {shownTab === 'links' && <Links words={links} people={people} me={me} onJump={onJump} />}
         {shownTab === 'tags' && <Tags words={tagged} people={people} me={me} onJump={onJump} pick={tag} setPick={setTag} />}
         {shownTab === 'polls' && <div className="prw-polls">{polls.map((m) => <div key={m.id} className="prj-poll"><Suspense fallback={<p className="prj-quiet">Poll</p>}><PollCard id={m.id} me={me.id} people={people} canStop={room.role === 'admin'} /></Suspense></div>)}</div>}
-        {shownTab === 'places' && <Places list={places} maps={maps} people={people} me={me} />}
+        {shownTab === 'places' && <Places list={places} maps={maps} people={people} me={me} hasUrl={(u) => scouts.some((x) => x.mapsUrl === u)}
+          onAdd={(p) => { save({ scouts: [...scouts, { id: uid(), type: 'Exterior', st: 'option', contact: '', phone: '', notes: '', tags: [], photos: [], ...p }] }); toast(`${p.name} added to Location Scout`) }} />}
         {shownTab === 'contacts' && <Contacts list={cards} people={people} />}
         {shownTab === 'tasks' && <Board list={tasks} onChange={(next) => save({ tasks: next })} />}
-        {shownTab === 'overview' && <button type="button" className="pill-btn prj-unmake" onClick={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields, tasks and locations are deleted; the chat stays.')) kit.remove(room.room_id).catch((e) => toast(errText(e))) }}>Stop Being a Project</button>}
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
+      {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
       {view && <Viewer items={view.items} index={view.index} people={people} me={me} onClose={() => setView(null)} />}
     </div>
   )

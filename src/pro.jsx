@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Avatar, I, Lens, Modal } from './ui.jsx'
+import { Avatar, CropModal, I, Lens, Modal } from './ui.jsx'
 import { AUDIO_EXT, mmss, player, shapeOf, usePlayer } from './player.jsx'
 import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib.js'
 import { inApp } from './push.js'
@@ -883,9 +883,39 @@ function Stats({ room, people, me, project }) {
 
 /* ---------- the Overview's cover (Alex, 22 Nov: "make this page much more beautiful"): the newest photo behind, darkened,
    the category and the stage, Artist and Title large, how long until the date, and the brief written on it ---------- */
-function Hero({ media, project, title, st, dateName, fields, onBrief }) {
+// the cover's pictures, in turn with the arrows (Alex, 22 Nov: "the group's picture, switched left and right, and one I upload,
+// with crop and zoom"): one's own cover, the group's photo, then the project's newest photos
+function Hero({ photos = [], room, me, project, st, dateName, fields, onBrief, onCover, toast }) {
+  const list = [project.cover && { url: project.cover, own: true }, room.avatar_url && { url: room.avatar_url, group: true }, ...photos.slice(0, 8).map((m) => ({ m }))].filter(Boolean)
+  const [i, setI] = useState(() => { const n = Number(project.cover_pick); return Number.isFinite(n) ? n : 0 })
+  const at = list.length ? ((i % list.length) + list.length) % list.length : 0
+  const cur = list[at]
   const [bg, setBg] = useState('')
-  useEffect(() => { let gone = false; setBg(''); if (media) picLink(media.file).then((u) => { if (!gone && u) setBg(u) }).catch(() => {}); return () => { gone = true } }, [media?.id])
+  const [crop, setCrop] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const pick = useRef(null)
+  useEffect(() => {
+    let gone = false
+    if (!cur) { setBg(''); return undefined }
+    if (cur.url) { setBg(cur.url); return undefined }
+    picLink(cur.m.file).then((u) => { if (!gone && u) setBg(u) }).catch(() => {})
+    return () => { gone = true }
+  }, [cur?.url, cur?.m?.id])
+  const turn = (d) => { const n = at + d; setI(n); onCover({ cover_pick: ((n % list.length) + list.length) % list.length }) }
+  const upload = async (f) => {
+    setCrop(null)
+    if (!f) return
+    setBusy(true)
+    try {
+      const path = `${me.id}/cover-${room.room_id}-${Date.now()}.jpg`
+      const up = await supabase.storage.from('roar-avatars').upload(path, f, { contentType: 'image/jpeg' })
+      if (up.error) throw up.error
+      const url = supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl
+      onCover({ cover: url, cover_pick: 0 })
+      setI(0)
+    } catch (e) { toast(errText(e)) }
+    setBusy(false)
+  }
   const val = (k) => (fields.find((f) => f.k === k)?.v || '').trim()
   const artist = val('Artist / Client'), work = val('Title'), cat = val('Category')
   let when = ''
@@ -895,16 +925,26 @@ function Hero({ media, project, title, st, dateName, fields, onBrief }) {
   }
   return (
     <section className={`prw-hero wide${bg ? ' has-bg' : ''}`}>
-      {bg && <i className="prw-hero-bg" style={{ backgroundImage: `url(${bg})` }} />}
+      {bg && <i key={bg} className="prw-hero-bg" style={{ backgroundImage: `url(${bg})` }} />}
+      <span className="prw-hero-tools">
+        {list.length > 1 && <button type="button" className="round prw-hero-btn" onClick={() => turn(-1)} aria-label="Previous picture" title="Previous picture"><span className="flip">{I.right}</span></button>}
+        {list.length > 1 && <span className="prw-hero-dots">{list.map((x, n) => <i key={n} className={n === at ? 'on' : ''} />)}</span>}
+        {list.length > 1 && <button type="button" className="round prw-hero-btn" onClick={() => turn(1)} aria-label="Next picture" title="Next picture">{I.right}</button>}
+        <button type="button" className="round prw-hero-btn" disabled={busy} onClick={() => pick.current?.click()} aria-label="Upload a cover" title={project.cover ? 'Replace the cover' : 'Upload a cover'}>{I.image}</button>
+        {project.cover && cur?.own && <button type="button" className="round prw-hero-btn" onClick={() => { if (window.confirm('Remove your cover? The group photo and the project photos stay.')) { onCover({ cover: null, cover_pick: 0 }); setI(0) } }} aria-label="Remove the cover" title="Remove the cover">{I.trash}</button>}
+        <input ref={pick} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setCrop(f) }} />
+      </span>
       <div className="prw-hero-in">
         <span className="prw-hero-kick">{cat && <span className="prw-hero-cat">{cat}</span>}<span className="prw-hero-st" style={{ '--pc': st.c }}><i className="prw-dot" />{st.name}</span>{when && <span className="prw-hero-when">{I.calendar}{when}</span>}</span>
         {(artist || work) && <h2>{artist}{artist && work && <span className="prw-hero-sep"> – </span>}{work && <em>{work}</em>}</h2>}
         <Field area className="prw-hero-brief" value={project.brief} placeholder="Write the brief: what it is, where, when, the look…" onSave={onBrief} />
       </div>
+      {crop && <CropModal file={crop} wide={3} title="Project cover" onDone={upload} onClose={() => setCrop(null)} />}
     </section>
   )
 }
 
+const SWAP_I = tsv(<path d="M7 7h12M15 3l4 4-4 4M17 17H5M9 13l-4 4 4 4" />)
 const SEND_I = tsv(<path d="M4 12 20 4l-5 16-3.5-6.5z" />)
 const FWD_I = tsv(<><path d="M14 5l6 6-6 6" /><path d="M20 11H9a5 5 0 0 0-5 5v3" /></>)
 // an ordino message in the chat: sent with file.ordino, or (sent before that) the text "📋 Label: Title / when / link"
@@ -1023,7 +1063,7 @@ function SongBar({ m, from, roomId, who, onSendHere, onSendTo, onDrop }) {
   )
 }
 
-function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged, rooms = [], titleOf = () => '' }) {
+function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged, rooms = [], titleOf = () => '', onSwap }) {
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
   const [menu, setMenu] = useState('')
@@ -1164,6 +1204,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           <input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} />
         </span>
         <span className="prw-faces">{members.map((id) => <Avatar key={id} src={people[id]?.avatar_url} name={nameOf(people[id])} size={30} />)}{(room.members || []).length > 5 && <i>+{room.members.length - 5}</i>}</span>
+        {onSwap && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}
         <span className="prw-hang prw-gear-wrap">
           <button type="button" className={`round prw-gear${menu === 'gear' ? ' on' : ''}`} onClick={() => setMenu(menu === 'gear' ? '' : 'gear')} aria-label="Project settings" title="Project settings">{I.gear}</button>
           <Hang open={menu === 'gear'} onClose={() => setMenu('')} className="right">
@@ -1182,7 +1223,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">
-            <Hero media={media[0]} project={project} title={title} st={st} dateName={dateName} fields={fields} onBrief={(v) => save({ brief: v.slice(0, 4000) })} />
+            <Hero photos={media.filter((m) => folderOf(m) === 'photos' || m.file?.thumb)} room={room} me={me} project={project} st={st} dateName={dateName} fields={fields} toast={toast} onCover={save} onBrief={(v) => save({ brief: v.slice(0, 4000) })} />
             <div className="prw-box prw-brief-box wide">
               <h4>Details</h4>
               <datalist id="prw-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
@@ -1197,6 +1238,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 {fields.length < 20 && <button type="button" className="prw-fact add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
               </div>
             </div>
+            {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('music')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {/* the ordino as a slim bar under the cover (Alex, 22 Nov: "there is usually one, the big box stays empty") */}
             <div className="prw-ordbar wide">
               {ordinos.length ? ordinos.map((o) => (
@@ -1219,7 +1261,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 <button type="button" className="prw-ordmake" onClick={() => setOrdinoOpen(true)}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
               )}
             </div>
-            {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('music')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {media.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-grid mosaic">{media.slice(0, 7).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
           </div>
         )}
@@ -1267,11 +1308,15 @@ const prjMax = () => Math.max(300, Math.min(640, window.innerWidth - 760))
 const lsNum = (k, d) => { try { return Number(localStorage.getItem(k)) || d } catch { return d } }
 const lsPut = (k, v) => { try { localStorage.setItem(k, String(Math.round(v))) } catch { /* private window */ } }
 export function ProPanel(props) {
-  const big = props.room.kind === 'group' && !!props.project
+  // a project, or (Alex, 22 Nov) a chat with one person, whose profile page stands at the right
+  const big = (props.room.kind === 'group' && !!props.project) || !!props.profile
   const [w, setW] = useState(() => lsNum('roarme-pro-w', PRJ_W))
   const [cw, setCw] = useState(() => lsNum('roarme-pro-chat', CHAT_W))
+  // the chat on the left or on the right of the workspace (Alex, 22 Nov: "a small button to bring the chat to the right")
+  const [swap, setSwap] = useState(() => { try { return localStorage.getItem('roarme-pro-swap') === '1' } catch { return false } })
+  const flipSides = () => { const v = !swap; setSwap(v); try { localStorage.setItem('roarme-pro-swap', v ? '1' : '0') } catch { /* private window */ } }
   const wrap = useRef(null)
-  useLayoutEffect(() => { const p = wrap.current?.parentElement; if (p) p.style.setProperty('--pro-chat', `${cw}px`) }, [cw, big])
+  useLayoutEffect(() => { const p = wrap.current?.parentElement; if (p) { p.style.setProperty('--pro-chat', `${cw}px`); p.classList.toggle('swap', big && swap) } }, [cw, big, swap])
   const drag = (e) => {
     e.preventDefault()
     const x0 = e.clientX, w0 = big ? cw : w
@@ -1279,7 +1324,7 @@ export function ProPanel(props) {
     let last = w0
     document.documentElement.classList.add('prj-dragging')
     const move = (ev) => {
-      if (big) { last = Math.max(320, Math.min(room - 460, w0 + (ev.clientX - x0))); setCw(last) } else { last = Math.max(260, Math.min(prjMax(), w0 + (x0 - ev.clientX))); setW(last) }
+      if (big) { last = Math.max(320, Math.min(room - 460, w0 + (swap ? -1 : 1) * (ev.clientX - x0))); setCw(last) } else { last = Math.max(260, Math.min(prjMax(), w0 + (x0 - ev.clientX))); setW(last) }
     }
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); document.documentElement.classList.remove('prj-dragging'); lsPut(big ? 'roarme-pro-chat' : 'roarme-pro-w', last) }
     window.addEventListener('pointermove', move)
@@ -1289,7 +1334,7 @@ export function ProPanel(props) {
   return (
     <div ref={wrap} className={`prj-wrap${big ? ' big' : ''}`} style={big ? undefined : { width: Math.min(w, prjMax()) }}>
       <span className="prj-grip" onPointerDown={drag} onDoubleClick={reset} title={big ? 'Drag to make the chat wider or narrower, double-click to reset' : 'Drag to widen or narrow, double-click to reset'} />
-      {big ? <Work {...props} /> : <aside className="prj"><ProInner {...props} /></aside>}
+      {props.profile ? <div className="prw-pf"><button type="button" className="round prw-swap prw-swap-float" onClick={flipSides} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>{props.profile}</div> : big ? <Work {...props} onSwap={flipSides} /> : <aside className="prj"><ProInner {...props} /></aside>}
     </div>
   )
 }

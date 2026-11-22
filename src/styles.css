@@ -7421,3 +7421,10 @@ html[data-mode='dark'] .prw-portal .prw-custom input { background: rgba(255, 255
 /* Archived in the folder bar as a drawer sign (Alex, 22 Nov) */
 .tab-arch { display: inline-grid; place-items: center; font-style: normal; vertical-align: middle; padding: 0 2px; }
 .tab-arch svg { width: 20px; height: 20px; display: block; }
+/* Archived held at the folder bar's right end (Alex, 22 Nov): the other folders slide behind it; its own ground hides
+   them, with a short fade on its left; chosen, it wears the lens's chip itself */
+html:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'] { position: sticky; right: 0; z-index: 3; flex: none; padding: 0 12px; background: #f7f8fa !important; box-shadow: -14px 0 12px -4px #f7f8fa, 24px 0 0 6px #f7f8fa !important; }
+html[data-mode='dark']:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'] { background: #2b2b30 !important; box-shadow: -14px 0 12px -4px #2b2b30, 24px 0 0 6px #2b2b30 !important; }
+html:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'].on { background: linear-gradient(var(--lg-chip, #e6e8ec), var(--lg-chip, #e6e8ec)), #f7f8fa !important; }
+html[data-mode='dark']:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'].on { background: linear-gradient(var(--lg-chip, rgba(255, 255, 255, .12)), var(--lg-chip, rgba(255, 255, 255, .12))), #2b2b30 !important; }
+.rooms-area .tabs.editing button[data-tab='archived'] .tab-x { display: none; }

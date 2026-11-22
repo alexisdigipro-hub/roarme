@@ -1228,6 +1228,21 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     const next = [...FIELD_START.map((k) => f.find((x) => x.k === k) || { k, v: '' }), ...f.filter((x) => !FIELD_START.includes(x.k))]
     if (JSON.stringify(next) !== JSON.stringify(project.fields || [])) save({ fields: next })
   }, [project.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const tabsRef = useRef([])
+  useEffect(() => {
+    if (!phone) return undefined
+    const f = (e) => {
+      if (e.detail?.room !== room.room_id) return
+      const keys = tabsRef.current, i = keys.indexOf(tabRef.current)
+      const n = i + e.detail.dir
+      if (n < 0) window.dispatchEvent(new CustomEvent('roarme-pro-chat', { detail: { room: room.room_id } }))
+      else if (n < keys.length) goTabRef.current(keys[n])
+    }
+    window.addEventListener('roarme-pro-swipe', f)
+    return () => window.removeEventListener('roarme-pro-swipe', f)
+  }, [phone, room.room_id])
+  const tabRef = useRef('')
+  const goTabRef = useRef(null)
   const goTab = (t) => { setTab(t); requestAnimationFrame(() => document.querySelector('.prw-tabs.slide .prw-bar > button.on')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
   // a tap on the small line in the chat ("2 photos went to Media") or on a #tag opens that tab
   useEffect(() => {
@@ -1260,6 +1275,9 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   // rest; a tile opens its page with a back (Alex, 22 Nov: "the second, with the tiles")
   // a phone has version A (Alex, 22 Nov: "in the end I want version A"): the same tabs as a row that slides sideways
   const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
+  tabsRef.current = TABS.map((t) => t[0])
+  tabRef.current = shownTab
+  goTabRef.current = goTab
   const shownMedia = media.filter((m) => mf === 'all' || folderOf(m) === mf)
   const openMedia = (list, i) => setView({ items: list, index: i })
   // Artist / Client and Title name the group (Alex, 22 Nov: "as soon as something is written there it becomes the group's
@@ -1278,7 +1296,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     <div className="prw-work">
       <div className="prw-top">
         <span className="prw-hang">
-          <button type="button" className="prw-pill stage" style={{ '--pc': st.c }} onClick={() => setMenu(menu === 'stage' ? '' : 'stage')}><i className="prw-dot" />{st.name}<span className="prw-caret">{I.down}</span></button>
+          <button type="button" className="prw-pill stage" style={{ '--pc': st.c }} onClick={() => setMenu(menu === 'stage' ? '' : 'stage')}><i className="prw-dot" /><span className="prw-st-name">{st.name}</span><span className="prw-caret">{I.down}</span></button>
           <Hang open={menu === 'stage'} onClose={() => setMenu('')}>
             {stagesOf(project).map((s) => <button key={s.id} type="button" onClick={() => { save({ status: s.id }); setMenu('') }}><i className="prw-dot" style={{ '--pc': s.c }} /><span>{s.name}</span>{s.id === st.id && <b className="prw-tick">{I.check}</b>}</button>)}
             <hr />
@@ -1443,11 +1461,41 @@ export function ProPanel(props) {
   const reset = () => { if (big) { setCw(CHAT_W); lsPut('roarme-pro-chat', CHAT_W) } else { setW(PRJ_W); lsPut('roarme-pro-w', PRJ_W) } }
   const narrow = useNarrow()
   const [side, setSide] = useState('chat')
+  // a slide sideways moves about (Alex, 22 Nov): on the chat, a slide to the left that starts off a message opens the
+  // project (on a message it is the reply); on the project, left and right go through its tabs, and right on the first
+  // one goes back to the chat
+  const anchor = useRef(null)
+  const sideRef = useRef(side)
+  sideRef.current = side
+  useEffect(() => {
+    const host = anchor.current?.parentElement
+    if (!narrow || !host) return undefined
+    let s = null
+    const start = (e) => {
+      const t = e.target
+      s = e.touches.length === 1 && !t.closest?.('input, textarea, select, canvas, .prw-tabs, .prw-sw2, .prw-wave, .prs-cols, .prw-strip, .prw-hero-tools, .map, [id^="m-"], .compose, .composer') ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null
+    }
+    const end = (e) => {
+      if (!s) return
+      const dx = e.changedTouches[0].clientX - s.x, dy = e.changedTouches[0].clientY - s.y
+      const ok = Date.now() - s.t < 600 && Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6
+      s = null
+      if (!ok) return
+      if (sideRef.current === 'chat') { if (dx < 0) setSide('proj'); return }
+      window.dispatchEvent(new CustomEvent('roarme-pro-swipe', { detail: { dir: dx < 0 ? 1 : -1, room: props.room.room_id } }))
+    }
+    host.addEventListener('touchstart', start, { passive: true })
+    host.addEventListener('touchend', end)
+    const back = (e) => { if (e.detail?.room === props.room.room_id) setSide('chat') }
+    window.addEventListener('roarme-pro-chat', back)
+    return () => { host.removeEventListener('touchstart', start); host.removeEventListener('touchend', end); window.removeEventListener('roarme-pro-chat', back) }
+  }, [narrow, props.room.room_id])
   if (narrow) {
     // two pages: the chat as it is, and the project over it; a Chat | Project switch under the chat's head
     const sw = <span className="prw-sw2" role="tablist"><button type="button" className={side === 'chat' ? 'on' : ''} onClick={() => setSide('chat')}>Chat</button><button type="button" className={side === 'proj' ? 'on' : ''} onClick={() => setSide('proj')}><span className="prw-gold">Project</span></button></span>
     return (
       <>
+        <span ref={anchor} hidden />
         {side === 'chat' && <div className="prw-sw2-float">{sw}</div>}
         {side === 'proj' && (
           <div className="prw-phone">

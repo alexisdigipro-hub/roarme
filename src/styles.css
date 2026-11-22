@@ -7208,3 +7208,36 @@ html:root:root:root:root .prw-phone .prw-pill.date { width: 100%; }
 .prw-phone .prw-pill.date input { flex: 1 1 0; width: 0; min-width: 0; -webkit-appearance: none; appearance: none; text-align: left; background: none; }
 .prw-phone .prw-gear-wrap { justify-self: end; }
 html:root:root:root:root .prw-phone .prw-gear { margin: 0; }
+/* Pro on a phone set straight (Alex, 22 Nov: "most of them spill over, they slide a little to the left"): nothing in the
+   project page is wider than the screen, the eight tab signs share the bar evenly with no sideways scroll, Calls has three
+   even buttons with the sign over the word, Links rows keep only the link and its bin, the cover is calmer */
+.prw-phone, .prw-phone > .prw-work, .prw-phone .prw-body, .prw-phone .prw-tabs { min-width: 0; max-width: 100%; overflow-x: clip; }
+.prw-phone .prw-body > * { min-width: 0; max-width: 100%; }
+html:root:root:root:root:root:root:root .prw-tabs.slide .prw-bar { overflow-x: hidden; padding: 4px; gap: 0; }
+html:root:root:root:root:root:root:root .prw-tabs.slide .prw-bar > button { flex: 1 1 0; min-width: 0; height: 40px; padding: 0; }
+html:root:root:root:root:root .prw-tabs.slide .prw-bar .prw-bi svg { width: 20px; height: 20px; }
+.prw-tabs.slide .prw-bar .prw-n { transform: scale(.88); }
+.prw-phone .prw-calls-top { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+html:root:root:root:root:root .prw-phone .prw-calls-top .btn { flex-direction: column; justify-content: center; gap: 5px; height: 68px; min-width: 0; padding: 0 4px; border-radius: 20px; font-size: 12.5px; font-weight: 600; line-height: 1.1; white-space: nowrap; }
+html:root:root:root:root:root .prw-phone .prw-calls-top .btn svg, .prw-phone .prw-calls-top .ic-mask { width: 22px; height: 22px; }
+.prw-phone .prw-call { min-width: 0; }
+.prw-phone .prw-call .prj-ftext { min-width: 0; flex: 1; }
+.prw-phone .prw-goto { display: none !important; }
+html:root:root:root:root:root .prw-phone .prw-addscout { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 50%; }
+.prw-phone .prw-addscout span { display: none; }
+.prw-phone .prw-link, .prw-phone .prw-place { min-width: 0; }
+.prw-phone .prw-hero { min-height: 0; border-radius: 22px; }
+.prw-phone .prw-hero-in { padding: 54px 16px 14px; gap: 6px; }
+.prw-phone .prw-hero-tools { top: 10px; right: 10px; left: 10px; justify-content: flex-end; gap: 6px; }
+.prw-phone .prw-hero-dots { margin-right: auto; order: -1; padding-left: 4px; }
+html:root:root:root:root:root .prw-phone .prw-hero-btn { width: 30px; height: 30px; min-width: 30px; }
+.prw-phone .prw-hero-kick > span { height: 24px; padding: 0 9px; font-size: 11.5px; }
+.prw-phone .prw-hero h2 { font-size: 20px; }
+.prw-phone .prw-hero-brief { font-size: 14px; }
+.prw-phone .pra-sum { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.prw-phone .pra-tile, .prw-phone .prw-box, .prw-phone .prw-card, .prw-phone .prw-row { min-width: 0; }
+.prw-phone .pra-form { flex-wrap: wrap; }
+.prw-phone .pra-form > * { min-width: 0; }
+.prw-phone .prw-col { min-height: 0; }
+.prw-phone .prw-board { gap: 10px; }
+.prw-phone .prw-hero-st { display: none !important; }

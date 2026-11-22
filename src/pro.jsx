@@ -570,9 +570,9 @@ function Calls({ list, room, people, me, onDrop }) {
   return (
     <div className="prw-calls">
       <div className="prw-calls-top">
-        <button type="button" className="btn btn-main" onClick={() => go(true)}>{I.video}<span>Start Video Chat</span></button>
+        <button type="button" className="btn btn-main" onClick={() => go(true)}>{I.video}<span>Video Chat</span></button>
         <button type="button" className="btn" onClick={() => go(false)}>{I.phone}<span>Voice Call</span></button>
-        <button type="button" className="btn" onClick={() => window.dispatchEvent(new CustomEvent('roarme-roomact', { detail: { what: 'schedule' } }))}>{I.calendar}<span>Schedule Meeting</span></button>
+        <button type="button" className="btn" onClick={() => window.dispatchEvent(new CustomEvent('roarme-roomact', { detail: { what: 'schedule' } }))}>{I.calendar}<span>Schedule</span></button>
       </div>
       {live && <div className="prw-call on"><span className="prw-call-ico">{I.video}</span><span className="prj-ftext"><b>{live.video ? 'Video chat' : 'Call'} is on</b><small>Started by {who(live.started_by)} at {new Date(live.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></span><button type="button" className="btn btn-main" onClick={() => go(live.video, live.id)}>Join</button></div>}
       {soon.length > 0 && <h6 className="prw-h">Meetings</h6>}
@@ -582,7 +582,7 @@ function Calls({ list, room, people, me, onDrop }) {
       })}
       {past.length > 0 && <h6 className="prw-h">Past</h6>}
       {past.map((m) => <div key={m.id} className="prw-call past"><span className="prw-call-ico past">{m.file.event ? I.calendar : I.video}</span><span className="prj-ftext"><b>{m.file.event ? m.file.event.title || 'Scheduled call' : `${m.file.groupcall?.video === false ? 'Call' : 'Video chat'} by ${who(m.user_id)}`}</b><small>{new Date(m.file.event ? m.file.event.start : m.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span><Trash onClick={onDrop && (() => onDrop(m, m.file.event ? 'this meeting' : 'this call'))} /></div>)}
-      {!live && !soon.length && !past.length && <p className="prj-quiet">No calls or meetings yet. Schedule Meeting puts a card in the chat that everyone taps to join, and it is listed here.</p>}
+      {!live && !soon.length && !past.length && <p className="prj-quiet">No calls or meetings yet. Schedule puts a card in the chat that everyone taps to join, and it is listed here.</p>}
     </div>
   )
 }
@@ -1085,7 +1085,7 @@ function Admin({ room, people, me, project, toast }) {
   const names = (room.members || []).map((id) => nameOf(people[id])).filter(Boolean)
   return (
     <div className="pra">
-      {boss && (
+      {boss && (room.members || []).some((id) => id !== me.id) && (
         <div className="prw-box pra-access">
           <div className="prw-boxhead"><h4>Who Sees Admin</h4><small className="pra-total">The group's admins always do</small></div>
           <div className="pra-people">
@@ -1243,7 +1243,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   }, [phone, room.room_id])
   const tabRef = useRef('')
   const goTabRef = useRef(null)
-  const goTab = (t) => { setTab(t); requestAnimationFrame(() => document.querySelector('.prw-tabs.slide .prw-bar > button.on')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
+  const goTab = (t) => { setTab(t); requestAnimationFrame(() => { const b = document.querySelector('.prw-tabs.slide .prw-bar > button.on'), bar = b?.parentElement; if (bar && bar.scrollWidth > bar.clientWidth) bar.scrollTo({ left: b.offsetLeft - (bar.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' }) }); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
   // a tap on the small line in the chat ("2 photos went to Media") or on a #tag opens that tab
   useEffect(() => {
     const f = (e) => { if (e.detail?.room !== room.room_id) return; const t = { places: 'links', music: 'files', contacts: 'contacts' }[e.detail.tab] || e.detail.tab; if (t) goTab(t) }

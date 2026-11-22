@@ -3263,15 +3263,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // links that open (in the browser, a new tab) and @usernames lit up, inside a message's text
   const markFound = (s) => withMentions(s).flatMap((part, n) => (typeof part !== 'string' || !findRx ? [part]
     : part.split(findRx).map((x, j) => (j % 2 ? <mark key={`f${n}-${j}`} className="find-mark">{x}</mark> : x))))
-  // a #tag can be tapped (Alex, 22 Nov): in a Pro project it opens the Tags tab on that tag, elsewhere it searches the chat
-  const asideRef = useRef(assetsAside)
-  asideRef.current = assetsAside
-  const openTag = (t) => { if (asideRef.current) window.dispatchEvent(new CustomEvent('roarme-pro-tab', { detail: { room: room.room_id, tag: t.slice(1) } })); else setFind(t) }
   const withMentions = (s) => {
-    const parts = String(s).split(/(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|@[\p{L}\p{N}_]{2,24}|(?<![\p{L}\p{N}_&/#])#[\p{L}\p{N}_]{2,40})/gu)
+    const parts = String(s).split(/(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|@[\p{L}\p{N}_]{2,24})/gu)
     return parts.map((p, i) => {
       if (!(i % 2)) return p
-      if (p.startsWith('#')) return <span key={i} className="msg-tag" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openTag(p) }}>{p}</span>
       if (p.startsWith('@')) return <span key={i} className={`mention${mentionsMe(p, me, roles) ? ' me' : ''}`}>{p}</span>
       const tail = (p.match(/[.,;:!?)\]]+$/) || [''])[0]
       const url = tail ? p.slice(0, -tail.length) : p

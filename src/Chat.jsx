@@ -461,6 +461,7 @@ export default function Chat({ me, setMe }) {
   const [roles, setRoles] = useState([])
   const rolesRef = useRef([])
   rolesRef.current = roles
+  const seenRooms = useRef(null)
   const loadRooms = useCallback(async () => {
     const { data, error } = await supabase.rpc('roar_my_rooms')
     if (error) return
@@ -479,6 +480,10 @@ export default function Chat({ me, setMe }) {
       setRoles(rl || [])
     }
     lsSet(`rooms-${me.id}`, list)
+    // a chat new to this list (a group the Production Hub made, Alex 22 Nov) may already be a project: read the projects again
+    const seen = seenRooms.current
+    if (seen && list.some((r) => !seen.has(r.room_id))) proKit.reload()
+    seenRooms.current = new Set(list.map((r) => r.room_id))
     // chats that did not change keep the same object, and an unchanged list leaves the screen alone
     setRooms((old) => {
       const was = Object.fromEntries(old.map((r) => [r.room_id, r]))
@@ -488,7 +493,7 @@ export default function Chat({ me, setMe }) {
     // only people not known yet; the others are refreshed every 90 seconds
     const known = peopleRef.current || {}
     loadPeople(list.flatMap((r) => r.members || []).filter((id) => !known[id]))
-  }, [loadPeople])
+  }, [loadPeople, proKit.reload])
 
   // a burst of messages reloads the list once; a message read in the open chat (the message, then one's own read mark,
   // then the server's echo of it) is one reload too, not two or three (Alex, 21 Oct: lighter)

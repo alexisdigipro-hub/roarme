@@ -1447,6 +1447,8 @@ function MembersChats({ room, me, people, boss, toast }) {
           )
         })}
       </div>
+      {/* adding people is the group's own: its page with Add people (any member may add, members-add.sql) */}
+      <div className="prs2-chips"><button type="button" className="on" onClick={() => window.dispatchEvent(new Event('roarme-profile'))}>{I.plus || '+'}Add People</button></div>
       {!boss && <p className="prs2-hint">Only an admin of the group can change who sees which chat.</p>}
     </>
   )

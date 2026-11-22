@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
     if (isCron) {
       // every linked account: a group for each hub project that asked for one (Create PROject) or was made since linking
       const { data: accs } = await db.from('roar_hub_accounts').select('*')
-      let made = 0, synced = 0
+      let made = 0, synced = 0, gone = 0
       for (const acc of accs || []) {
         try {
           const projects = (await hubCall(acc.hub_key, { action: 'projects.list' })).projects || []
@@ -244,12 +244,17 @@ Deno.serve(async (req) => {
           const { data: links } = await db.from('roar_hub_links').select('room_id, hub_project, base').eq('owner', acc.user_id).not('hub_project', 'is', null)
           for (const l of links || []) {
             const p = byId[l.hub_project]
-            if (!p) { await db.from('roar_hub_links').update({ last_error: 'This project is not in the hub any more.' }).eq('room_id', l.room_id); continue }
+            if (!p) {
+              // deleted in the hub: the group goes too (Alex, 22 Nov, "B"), only once the hub itself says 404 for that very project
+              const r = await fetch(HUB, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-hub-key': acc.hub_key }, body: JSON.stringify({ action: 'project.get', id: l.hub_project }) })
+              if (r.status === 404) { await db.from('roar_rooms').delete().eq('id', l.room_id).eq('kind', 'group'); await db.from('roar_hub_links').delete().eq('room_id', l.room_id); gone++ }
+              continue
+            }
             if (p.updatedAt && p.updatedAt !== l.base?.hu) { try { await syncRoom(l.room_id); synced++ } catch { /* next minute */ } }
           }
         } catch { /* that hub next minute */ }
       }
-      return json({ ok: true, made, synced })
+      return json({ ok: true, made, synced, gone })
     }
 
     if (body.action === 'linkall') {

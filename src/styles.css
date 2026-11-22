@@ -7732,3 +7732,7 @@ html:root:root:root:root[data-mode="dark"] .set-proj-ico { color: #e0ad45 !impor
 .hb-sec { margin: 4px 2px 0; }
 /* PROject (Alex, 22 Nov: "PROject everywhere"): the gold folder keeps its own letters, never the bar's capitals */
 html:root:root:root .tabs button .tab-name .tab-gold, html:root:root:root .tabs button:has(.tab-gold) { text-transform: none !important; }
+/* Settings > PROject, the plan (Alex, 22 Nov: free for now, Subscribe "Coming soon") */
+.hb-plan { justify-content: space-between; }
+.hb-plan .hb-t small { line-height: 1.4; }
+html:root:root:root:root .hb-soon { flex: none; opacity: .55; cursor: default; }

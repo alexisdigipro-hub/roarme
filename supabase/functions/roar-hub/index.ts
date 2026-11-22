@@ -8,11 +8,14 @@
 //   linkall                               ties every project group I run to a hub project (same title, or a new one) and
 //                                         makes a group for every hub project made since I connected that has none
 //   link { room }                         ties one project group (Make It a Project)
+//   unlink { room }                       unties one group (an admin, or who tied it); both sides stay
 //   sync { room }                         both ways, for one group: title, stage, shoot day, category, tasks, locations;
 //                                         from the hub only: its cover, its songs and its locations' photos
 //   (pg_cron, x-roar-cron)                every minute, for every linked account: a group for each hub project whose
 //                                         Create PROject was pressed, or that was made in the hub since linking, and a
-//                                         sync of every tied project the hub changed since its last sync (live both ways)
+//                                         sync of every tied project the hub changed since its last sync (live both ways);
+//                                         a project deleted or unlinked in the hub unties its group (never deletes it), and a
+//                                         group deleted here leaves its hub project marked unlinked
 // What changed on which side since the last sync decides (base hashes in roar_hub_links.base); when both changed the
 // same thing, RoarMe's wins. verify_jwt off: the function checks the sign-in, or pg_cron's Vault secret, itself.
 
@@ -62,6 +65,12 @@ Deno.serve(async (req) => {
 
   const accountOf = async (user: string) => (await db.from('roar_hub_accounts').select('*').eq('user_id', user).maybeSingle()).data
 
+  // untie a group from its hub project: both stay, they stop following each other; the row stays with no project, so
+  // linkall does not tie it again by its name (Add to the hub in Project Settings ties it again)
+  async function untie(room: string, note: string | null) {
+    await db.from('roar_hub_links').update({ hub_project: null, base: {}, last_sync_at: null, last_error: note }).eq('room_id', room)
+  }
+
   /* ---------- one group, both ways ---------- */
   async function syncRoom(room: string) {
     const { data: link } = await db.from('roar_hub_links').select('*').eq('room_id', room).maybeSingle()
@@ -79,9 +88,12 @@ Deno.serve(async (req) => {
     const byName = (n: string) => (profs || []).find((x: any) => n && norm(x.display_name || x.username) === norm(n))?.id
     let hub: any
     try { hub = (await hubCall(key, { action: 'project.get', id: link.hub_project })).project } catch (e) {
+      if (/not in the hub any more/i.test((e as Error).message)) { await untie(room, 'The project was deleted in the hub, so this group was unlinked.'); return { linked: false } }
       await db.from('roar_hub_links').update({ last_error: (e as Error).message, last_sync_at: new Date().toISOString() }).eq('room_id', room)
       return { linked: true, error: (e as Error).message }
     }
+    // Unlink was pressed in the hub: untie here, never tie it back
+    if (hub.roarme?.unlinked) { await untie(room, null); return { linked: false } }
     const base = link.base || {}
     const first = !link.last_sync_at
     const stages = Array.isArray(proj.stages) && proj.stages.length ? proj.stages : DEFAULT_STAGES
@@ -228,7 +240,7 @@ Deno.serve(async (req) => {
     try { await syncRoom(room.id) } catch { /* next time */ }
     return true
   }
-  const wanted = (acc: any, p: any, taken: Set<string>) => !taken.has(p.id) && !p.room && ((p.request && !p.delivered) || (p.createdAt && p.createdAt >= acc.set_at))
+  const wanted = (acc: any, p: any, taken: Set<string>) => !taken.has(p.id) && !p.room && !p.unlinked && ((p.request && !p.delivered) || (p.createdAt && p.createdAt >= acc.set_at))
 
   try {
     if (action === 'connect') {
@@ -259,12 +271,23 @@ Deno.serve(async (req) => {
           for (const l of links || []) {
             const p = byId[l.hub_project]
             if (!p) {
-              // deleted in the hub: the group goes too (Alex, 22 Nov, "B"), only once the hub itself says 404 for that very project
+              // deleted in the hub: only untied, the group stays as it is (Alex, 22 Nov: "deleted on one side, unlinked on the
+              // other"), and only once the hub itself says 404 for that very project
               const r = await fetch(HUB, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-hub-key': acc.hub_key }, body: JSON.stringify({ action: 'project.get', id: l.hub_project }) })
-              if (r.status === 404) { await db.from('roar_rooms').delete().eq('id', l.room_id).eq('kind', 'group'); await db.from('roar_hub_links').delete().eq('room_id', l.room_id); gone++ }
+              if (r.status === 404) { await untie(l.room_id, 'The project was deleted in the hub, so this group was unlinked.'); gone++ }
               continue
             }
+            // Unlink pressed in the hub
+            if (p.unlinked) { await untie(l.room_id, null); gone++; continue }
             if (p.updatedAt && p.updatedAt !== l.base?.hu) { try { await syncRoom(l.room_id); synced++ } catch { /* next minute */ } }
+          }
+          // a group deleted here (its link went with it): the hub's project is told it is unlinked
+          const tiedHere = new Set((links || []).map((l: any) => l.hub_project))
+          const stale = projects.filter((p: any) => p.room && /^[0-9a-f-]{36}$/.test(p.room) && !tiedHere.has(p.id))
+          if (stale.length) {
+            const { data: alive } = await db.from('roar_rooms').select('id').in('id', stale.map((p: any) => p.room))
+            const here = new Set((alive || []).map((x: any) => x.id))
+            for (const p of stale) if (!here.has(p.room)) { try { await hubCall(acc.hub_key, { action: 'project.put', id: p.id, set: { roarme: { unlinked: true } } }) } catch { /* next minute */ } }
           }
         } catch { /* that hub next minute */ }
       }
@@ -280,7 +303,7 @@ Deno.serve(async (req) => {
       const rooms = (mine || []).map((m: any) => m.room_id)
       const { data: projRows } = rooms.length ? await db.from('roar_pro_projects').select('room_id').in('room_id', rooms) : { data: [] }
       const { data: links } = await db.from('roar_hub_links').select('room_id, hub_project')
-      const tied = new Set((links || []).filter((l: any) => l.hub_project).map((l: any) => l.room_id))
+      const tied = new Set((links || []).map((l: any) => l.room_id)) // with no project: unlinked on purpose, left alone
       let made = 0, joined = 0
       for (const r of (projRows || []).map((x: any) => x.room_id).filter((r: string) => !tied.has(r))) {
         try { if (await linkRoom(r, acc, projects)) { joined++; await syncRoom(r) } } catch { /* next time */ }
@@ -303,6 +326,16 @@ Deno.serve(async (req) => {
       return json({ ok: true, ...(await syncRoom(room)) })
     }
     if (action === 'sync') return json({ ok: true, ...(await syncRoom(room)) })
+    if (action === 'unlink') {
+      // Unlink in Project Settings, or Stop Being a Project: the group and the hub's project both stay
+      const { data: l } = await db.from('roar_hub_links').select('owner, hub_project').eq('room_id', room).maybeSingle()
+      if (!l?.hub_project) return json({ ok: true })
+      if (mem.role !== 'admin' && l.owner !== me) return json({ error: 'Only an admin of the group can unlink it.' }, 403)
+      const acc = await accountOf(l.owner)
+      if (acc) { try { await hubCall(acc.hub_key, { action: 'project.put', id: l.hub_project, set: { roarme: { unlinked: true } } }) } catch { /* the hub hears it when the group is gone from its list */ } }
+      await untie(room, null)
+      return json({ ok: true })
+    }
     return json({ error: 'Unknown action' }, 400)
   } catch (e) {
     return json({ error: (e as Error).message }, 400)

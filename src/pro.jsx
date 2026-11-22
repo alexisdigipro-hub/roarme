@@ -30,6 +30,8 @@ function useNarrow() {
 export const DEFAULT_STAGES = [{ id: 'dev', name: 'Development', c: '#8a8f98' }, { id: 'prep', name: 'Pre-production', c: '#d48806' }, { id: 'shoot', name: 'Shooting', c: '#e5483f' }, { id: 'post', name: 'Post-production', c: '#7b4dff' }, { id: 'done', name: 'Delivered', c: '#14a37f' }]
 const STAGE_COLOURS = ['#8a8f98', '#d48806', '#e5483f', '#7b4dff', '#14a37f', '#3a8ee6', '#d6338a', '#0f6e7a']
 export const stagesOf = (p) => (Array.isArray(p?.stages) && p.stages.length ? p.stages : DEFAULT_STAGES)
+// a project at its Delivered stage (by name, or the starting stages' last one) sits in Archived Projects (Alex, 22 Nov)
+export const isDelivered = (p) => { if (!p) return false; const st = stagesOf(p).find((s) => s.id === p.status); return st ? /^delivered$/i.test((st.name || '').trim()) || st.id === 'done' : false }
 export const stageOf = (p) => stagesOf(p).find((s) => s.id === p?.status) || stagesOf(p)[0]
 export const ProChip = ({ p }) => { const s = stageOf(p); return <span className="prj-chip" style={{ '--pc': s.c }}>{s.name}</span> }
 
@@ -68,6 +70,8 @@ export function useProjects(me, on) {
     return data
   }, [load])
   const remove = useCallback(async (roomId) => {
+    // Stop Being a Project unlinks it from the Production Hub first; the hub's project stays (Alex, 22 Nov)
+    try { if (await hubState(roomId, true)) await hubCall({ action: 'unlink', room: roomId }) } catch { /* not linked, or the hub is away */ }
     const { error } = await supabase.from('roar_pro_projects').delete().eq('room_id', roomId)
     if (error) throw error
     setMap((m) => { const n = { ...m }; delete n[roomId]; return n })
@@ -1425,7 +1429,7 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
               <button type="button" className="prs2-row" onClick={() => setPrefs({ proNotes: !getPrefs().proNotes })}><i className="prs2-ic">{SET_I.side}</i><span className="prs2-t"><b>Show What Went to the Side</b><small>A small line in the chat when a photo or file goes to the project</small></span><i className={`prw-sw${notesOn ? ' on' : ''}`} /></button>
             </div>
             <div className="prs2-box">
-              <button type="button" className="prs2-row danger" onClick={onStop}><i className="prs2-ic">{I.trash}</i><span className="prs2-t"><b>Stop Being a Project</b><small>The chat stays; the stage, details, tasks and locations go</small></span></button>
+              <button type="button" className="prs2-row danger" onClick={onStop}><i className="prs2-ic">{I.trash}</i><span className="prs2-t"><b>Stop Being a Project</b><small>The chat stays; the stage, details, tasks and locations go. In the hub the project stays, unlinked.</small></span></button>
             </div>
           </>
         )}
@@ -1441,6 +1445,8 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
                 <p className="prs2-hint">Its name, stage, shoot day, category, tasks and locations are kept the same here and in the hub.</p>
                 <div className="prs2-hubacts">
                   <button type="button" className="pill-btn" disabled={hubBusy} onClick={() => hubDo({ action: 'sync' }, 'Up to date')}>{hubBusy ? 'Working\u2026' : 'Sync Now'}</button>
+                  {/* Unlink (Alex, 22 Nov): the group and the hub's project both stay, they stop following each other */}
+                  {boss && <button type="button" className="pill-btn prs2-unlink" disabled={hubBusy} onClick={() => { if (window.confirm(`Unlink this project from ${hub.hub}? The group here and the project in the hub both stay; they just stop following each other.`)) hubDo({ action: 'unlink' }, 'Unlinked') }}>Unlink</button>}
                 </div>
               </>
             ) : hub === null && (

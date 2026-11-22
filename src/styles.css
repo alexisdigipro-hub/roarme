@@ -7736,3 +7736,13 @@ html:root:root:root .tabs button .tab-name .tab-gold, html:root:root:root .tabs 
 .hb-plan { justify-content: space-between; }
 .hb-plan .hb-t small { line-height: 1.4; }
 html:root:root:root:root .hb-soon { flex: none; opacity: .55; cursor: default; }
+/* PROject > Archived Projects (Alex, 22 Nov, "B"): delivered projects fold away at the foot of the list */
+.proj-arch { display: flex; align-items: center; gap: 10px; width: calc(100% - 16px); margin: 10px 8px 4px; padding: 10px 14px; border: 0; border-radius: 16px; background: color-mix(in srgb, currentColor 5%, transparent); color: inherit; font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; text-align: left; }
+.proj-arch > span { flex: 1; min-width: 0; }
+.proj-arch > small { opacity: .55; font-weight: 500; }
+.proj-arch-ico { display: inline-grid; opacity: .7; } .proj-arch-ico svg { width: 18px; height: 18px; }
+.proj-arch-chev { display: inline-grid; opacity: .5; transition: transform .25s var(--spring, ease); } .proj-arch-chev svg { width: 16px; height: 16px; }
+.proj-arch.open .proj-arch-chev { transform: rotate(90deg); }
+.proj-arch-list { opacity: .78; }
+/* Project Settings > Production Hub > Unlink (Alex, 22 Nov) */
+html:root:root:root:root .prs2-hubacts .prs2-unlink { color: #e5484d; }

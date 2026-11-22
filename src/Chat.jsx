@@ -3298,19 +3298,22 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const shownMsgs = useMemo(() => {
     const base = msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt))
     if (!assetsAside) return base
+    // the small lines are off unless turned on in the project's settings (Alex, 22 Nov: "I don't want them shown, but a setting")
+    const notes = !!prefs.proNotes
     // in its place a small line says what went where ("Nefeli · 2 photos and videos · in Media"), one line for a run
     // of things from the same person; a tap on it opens that tab
     const out = []
     for (const m of base) {
       if (!isAsset(m)) { out.push(m); continue }
       const t = asideTab(m)
+      if (!notes) { if ((m.kind === 'image' || m.kind === 'file') && (m.body || '').trim()) out.push({ ...m, kind: 'text', file: null, asideAsset: true }); continue }
       const last = out[out.length - 1]
       if (last?.asideNote && last.user_id === m.user_id) last.asideNote = { ...last.asideNote, [t]: (last.asideNote[t] || 0) + 1 }
       else out.push({ id: `aside-${m.id}`, room_id: m.room_id, user_id: m.user_id, created_at: m.created_at, kind: 'aside', asideNote: { [t]: 1 } })
       if ((m.kind === 'image' || m.kind === 'file') && (m.body || '').trim()) out.push({ ...m, kind: 'text', file: null, asideAsset: true })
     }
     return out
-  }, [msgs, clearedAt, hidden, assetsAside])
+  }, [msgs, clearedAt, hidden, assetsAside, prefs.proNotes])
   // what others ask me to delete, one at a time, above the writing box
   const askForMe = asks.filter((a) => a.owner === me.id && msgs.some((m) => m.id === a.message_id && !m.deleted_at))
   const askedByMe = new Set(asks.filter((a) => a.asked_by === me.id).map((a) => a.message_id))

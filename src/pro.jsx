@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Avatar, I, Lens, Modal } from './ui.jsx'
 import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib.js'
 import { inApp } from './push.js'
+import { getPrefs, setPrefs, usePrefs } from './prefs.js'
 
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
 const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.PdfView })))
@@ -790,6 +791,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [tag, setTag] = useState('')
   const [doc, setDoc] = useState(null)
   const [ordinoOpen, setOrdinoOpen] = useState(false)
+  const notesOn = !!usePrefs().proNotes
   const [gone, setGone] = useState(() => new Set())
   const [isAdmin, setIsAdmin] = useState(false)
   useEffect(() => { supabase.rpc('roar_is_admin').then(({ data }) => setIsAdmin(data === true), () => {}) }, [])
@@ -891,6 +893,9 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           <Hang open={menu === 'gear'} onClose={() => setMenu('')} className="right">
             <span className="prw-mcap">Tabs</span>
             {OPTIONAL.map(([k, l]) => <button key={k} type="button" onClick={() => flipTab(k)}>{TAB_I[k]}<span>{l}</span><i className={`prw-sw${hidden.includes(k) ? '' : ' on'}`} /></button>)}
+            <hr />
+            <span className="prw-mcap">Chat</span>
+            <button type="button" onClick={() => setPrefs({ proNotes: !getPrefs().proNotes })}>{TAB_I.media}<span>Show What Went to the Side</span><i className={`prw-sw${notesOn ? ' on' : ''}`} /></button>
             <hr />
             <button type="button" onClick={() => { setMenu(''); setStagesOpen(true) }}>{I.edit}<span>Rename Stages</span></button>
             <button type="button" className="danger" onClick={() => { setMenu(''); if (window.confirm('Stop this group being a project? Its stage, brief, fields, tasks and locations are deleted; the chat stays.')) kit.remove(room.room_id).catch((e) => toast(errText(e))) }}>{I.trash}<span>Stop Being a Project</span></button>

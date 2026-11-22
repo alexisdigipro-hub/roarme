@@ -6627,3 +6627,53 @@ html:root:root:root:root .prw-tabs .seg > button { padding: 0 11px; font-size: 1
 .msg-tag { color: var(--halo-mine, var(--accent)); font-weight: 600; cursor: pointer; }
 .msg.mine .msg-tag { color: inherit; font-weight: 700; }
 .prw-top h1 { flex: 0 0 auto; max-width: 36%; }
+/* the workspace's tabs as a menu (Alex, 22 Nov: "more spread out, like a menu, nicer"): one glass bar across, each tab a
+   line sign over its word, the chosen one on the app's lens; the gear for the project's settings; documents read inside */
+.prw-tabs { padding: 0 18px 2px; }
+html:root:root:root:root .prw-bar { position: relative; display: flex; gap: 2px; padding: 5px; border-radius: 22px; background: color-mix(in srgb, var(--panel, #fff) 80%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 7%, transparent), 0 6px 18px rgba(20, 30, 50, .05); overflow-x: auto; scrollbar-width: none; }
+html[data-mode='dark']:root:root:root .prw-bar { background: rgba(255, 255, 255, .05); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+html:root:root:root:root .prw-bar > button { position: relative; z-index: 1; flex: 1 0 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 54px; padding: 0 6px; border: 0; border-radius: 17px; background: none; box-shadow: none; font: inherit; color: inherit; opacity: .6; cursor: pointer; transition: opacity .2s, color .2s; }
+html:root:root:root:root .prw-bar > button:hover { opacity: .9; }
+html:root:root:root:root .prw-bar > button.on { opacity: 1; color: var(--halo-mine, var(--accent)); }
+.prw-bar::before { content: ''; position: absolute; z-index: 0; left: 0; top: var(--ly, 5px); width: var(--lw, 0); height: var(--lh, 54px); transform: translateX(var(--lx, 0)); border-radius: 17px; background: color-mix(in srgb, var(--panel, #fff) 96%, transparent); box-shadow: 0 1px 3px rgba(20, 30, 50, .1), 0 4px 12px rgba(20, 30, 50, .06); opacity: 0; transition: transform .32s var(--spring, ease), width .32s var(--spring, ease), opacity .2s; }
+html[data-mode='dark'] .prw-bar::before { background: rgba(255, 255, 255, .1); box-shadow: none; }
+.prw-bar.lens-on::before { opacity: 1; }
+.prw-bi { position: relative; display: grid; place-items: center; }
+.prw-bi small { position: absolute; top: -6px; left: calc(100% - 4px); min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; font-size: 9.5px; font-weight: 700; line-height: 16px; text-align: center; color: inherit; background: color-mix(in srgb, currentColor 14%, var(--panel, #fff)); }
+.prw-bw { font-size: 11px; font-weight: 600; white-space: nowrap; letter-spacing: .01em; }
+html:root:root:root:root .prw-gear { width: 36px; height: 36px; min-width: 36px; padding: 0; margin-left: 4px; }
+.prw-gear svg { width: 19px; height: 19px; }
+html:root:root:root:root:root:root:root .prw-menu.right { left: auto !important; right: 0 !important; min-width: 250px; }
+.prw-mcap { display: block; padding: 8px 14px 4px; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; opacity: .5; }
+.prw-menu button svg { width: 18px; height: 18px; flex: none; }
+.prw-sw { margin-left: auto; flex: none; width: 34px; height: 20px; border-radius: 10px; background: color-mix(in srgb, currentColor 18%, transparent); position: relative; transition: background .2s; }
+.prw-sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .22s var(--spring, ease); }
+.prw-sw.on { background: #34c759; }
+.prw-sw.on::after { transform: translateX(14px); }
+.prw-card-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; font-size: 11px; font-weight: 600; opacity: .7; }
+.prw-card-meta i { font-style: normal; font-weight: 500; padding: 0 7px; border-radius: 6px; background: color-mix(in srgb, currentColor 8%, transparent); }
+.prd { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 28px; background: rgba(10, 12, 18, .5); backdrop-filter: blur(var(--blur-veil, 4px)); }
+.prd-card { width: min(860px, 100%); height: min(92vh, 1100px); display: flex; flex-direction: column; border-radius: 26px; overflow: hidden; background: var(--panel, #fff); box-shadow: 0 30px 80px rgba(0, 0, 0, .3); color: var(--ink, #16181d); }
+html[data-mode='dark'] .prd-card { background: #1d1d20; color: #f2f2f4; }
+.prd-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+.prd-head .prj-ftext { flex: 1; }
+html:root:root:root:root .prd-head .pill-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 17px; font-size: 13px; }
+.prd-head .pill-btn svg { width: 15px; height: 15px; }
+html:root:root:root:root .prd-head .round { width: 36px; height: 36px; min-width: 36px; padding: 0; }
+.prd-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; justify-content: center; padding: 28px 24px; background: color-mix(in srgb, currentColor 3%, transparent); }
+.prd-page { width: 100%; max-width: 680px; margin: 0; padding: 48px 56px; border-radius: 8px; background: #fff; color: #1d1f24; box-shadow: 0 2px 10px rgba(0, 0, 0, .08); font-size: 14.5px; line-height: 1.6; align-self: flex-start; }
+.prd-page h3 { margin: 18px 0 8px; font-size: 17px; }
+.prd-page p { margin: 0 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.prd-pre { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.prd-none { align-self: center; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; opacity: .8; }
+.prd-none svg { width: 40px; height: 40px; opacity: .5; }
+.prd-none p { margin: 0 0 6px; font-size: 13px; opacity: .7; }
+.prv-wait.dark { align-self: center; border-color: color-mix(in srgb, currentColor 15%, transparent); border-top-color: currentColor; }
+html:root:root:root:root .prw-addscout { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 15px; font-size: 12px; white-space: nowrap; }
+.prw-addscout svg { width: 14px; height: 14px; }
+html:root:root:root:root .prw-addscout.done { opacity: .6; cursor: default; color: #14a37f; }
+.prd-card { background: #fff; color: #16181d; }
+html[data-mode='dark'] .prd-card { background: #1d1d20; color: #f2f2f4; }
+.prd-body { background: #f1f2f5; }
+html[data-mode='dark'] .prd-body { background: #141416; }
+html:root:root:root:root .prw-bar > button { flex: 1 0 54px; padding: 0 4px; }

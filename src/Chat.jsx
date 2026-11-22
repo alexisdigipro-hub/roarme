@@ -314,6 +314,12 @@ export default function Chat({ me, setMe }) {
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
   const toast = useCallback((s) => { setNote(s); clearTimeout(noteTimer.current); noteTimer.current = setTimeout(() => setNote(''), 2200) }, [])
+  // a file dropped anywhere outside a chat is never opened by the browser itself (it played songs, showed PDFs)
+  useEffect(() => {
+    const stop = (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault() }
+    window.addEventListener('dragover', stop); window.addEventListener('drop', stop)
+    return () => { window.removeEventListener('dragover', stop); window.removeEventListener('drop', stop) }
+  }, [])
   // the official RoarMe account (Alex, 19 Oct; supabase/official.sql): a badge beside its name, and its chat from Settings
   const [officialIds, setOfficialIds] = useState([])
   useEffect(() => { supabase.from('roar_official').select('user_id').then(({ data }) => setOfficialIds((data || []).map((x) => x.user_id))) }, [])
@@ -2590,6 +2596,17 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
   // viaTransfer: the RoarTransfer button beside the clip (Alex, 16 Oct) sends the files as they are, any size up to 3 GB
   // hooks: the RoarTransfer window follows its own files (batch), can stop them, and hears each one sent
+  // whatever is dropped on the chat (or, in Pro, on the workspace beside it) goes straight up into the chat, no window
+  // (Alex, 22 Nov: "anything I drop in the chat, upload it, recognise it; not a window, not playing it")
+  const dropIn = (files) => {
+    if (!files.length) return
+    if (sealOn) { setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
+    toast(files.length === 1 ? `Sending ${files[0].name}` : `Sending ${files.length} files`)
+    sendFiles(files, '', true)
+  }
+  const dropRef = useRef(dropIn)
+  dropRef.current = dropIn
+  useEffect(() => { const f = (e) => { if (e.detail?.room === room.room_id && e.detail.files?.length) dropRef.current(e.detail.files) }; window.addEventListener('roarme-drop', f); return () => window.removeEventListener('roarme-drop', f) }, [room.room_id])
   const sendFiles = async (files, caption = '', compress = true, viaTransfer = false, hooks = {}) => {
     if (sealOn) { setAttach(null); setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); return }
     // from the attach sheet's File tab: sent exactly as they are, as files (Alex, 15 Nov: photos raw, untouched)
@@ -3610,7 +3627,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
   return (
     <div className={`room-view${find !== null ? ' finding' : ''}${prefs.compact ? ' compact' : ''}${prefs.frost || wall === (prefs.appBackground || prefs.background) && (!prefs.appBackground || (prefs.appWallStrength ?? prefs.wallStrength) === prefs.wallStrength) ? ' same-wall' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
-      onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) { if (sealOn) setErr('While Encrypted Chat is on, only text can be sent. Turn it off to send photos, files, places and voice messages.'); else setAttach([...e.dataTransfer.files]) } }}>
+      onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) dropIn([...e.dataTransfer.files]); else { const t = e.dataTransfer.getData('text/plain'); if (t) setText((v) => (v ? `${v} ${t}` : t)) } }}>
       <header className={`room-head${callsOpen ? ' calls-open' : ''}`}>
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
         {(

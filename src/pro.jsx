@@ -1315,6 +1315,7 @@ export function ProPanel(props) {
   // the chat on the left or on the right of the workspace (Alex, 22 Nov: "a small button to bring the chat to the right")
   const [swap, setSwap] = useState(() => { try { return localStorage.getItem('roarme-pro-swap') === '1' } catch { return false } })
   const flipSides = () => { const v = !swap; setSwap(v); try { localStorage.setItem('roarme-pro-swap', v ? '1' : '0') } catch { /* private window */ } }
+  const [dragging, setDragging] = useState(false)
   const wrap = useRef(null)
   useLayoutEffect(() => { const p = wrap.current?.parentElement; if (p) { p.style.setProperty('--pro-chat', `${cw}px`); p.classList.toggle('swap', big && swap) } }, [cw, big, swap])
   const drag = (e) => {
@@ -1332,7 +1333,10 @@ export function ProPanel(props) {
   }
   const reset = () => { if (big) { setCw(CHAT_W); lsPut('roarme-pro-chat', CHAT_W) } else { setW(PRJ_W); lsPut('roarme-pro-w', PRJ_W) } }
   return (
-    <div ref={wrap} className={`prj-wrap${big ? ' big' : ''}`} style={big ? undefined : { width: Math.min(w, prjMax()) }}>
+    <div ref={wrap} className={`prj-wrap${big ? ' big' : ''}${dragging ? ' dropping' : ''}`} style={big ? undefined : { width: Math.min(w, prjMax()) }}
+      onDragOver={(e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { e.preventDefault(); setDragging(true) } }} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false) }}
+      onDrop={(e) => { e.preventDefault(); setDragging(false); const files = [...(e.dataTransfer?.files || [])]; if (files.length) window.dispatchEvent(new CustomEvent('roarme-drop', { detail: { room: props.room.room_id, files } })) }}>
+      {dragging && <span className="prw-drop"><b>Drop to send to the chat</b></span>}
       <span className="prj-grip" onPointerDown={drag} onDoubleClick={reset} title={big ? 'Drag to make the chat wider or narrower, double-click to reset' : 'Drag to widen or narrow, double-click to reset'} />
       {props.profile ? <div className="prw-pf"><button type="button" className="round prw-swap prw-swap-float" onClick={flipSides} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>{props.profile}</div> : big ? <Work {...props} onSwap={flipSides} /> : <aside className="prj"><ProInner {...props} /></aside>}
     </div>

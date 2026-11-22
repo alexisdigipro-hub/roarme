@@ -7006,3 +7006,7 @@ html:root:root:root:root .prw-hero-btn:hover { opacity: 1; background: rgba(255,
 @media (prefers-reduced-motion: no-preference) { html:not([data-lite]):not([data-still]) .prw-hero-bg { animation: prw-fadein .5s ease both, prw-ken 18s ease-in-out .5s infinite alternate; } }
 @keyframes prw-fadein { from { opacity: 0; } to { opacity: 1; } }
 .crop-wide .crop-frame { border-radius: 16px; }
+/* a file held over the workspace: a soft veil says it goes to the chat (Alex, 22 Nov) */
+.prw-drop { position: absolute; inset: 10px; z-index: 20; display: grid; place-items: center; border-radius: 22px; border: 2px dashed color-mix(in srgb, var(--halo-mine, var(--accent)) 60%, transparent); background: color-mix(in srgb, var(--halo-mine, var(--accent)) 10%, rgba(255, 255, 255, .6)); pointer-events: none; }
+html[data-mode='dark'] .prw-drop { background: color-mix(in srgb, var(--halo-mine, var(--accent)) 14%, rgba(20, 20, 24, .6)); }
+.prw-drop b { font-size: 15px; padding: 10px 18px; border-radius: 999px; background: var(--panel, #fff); box-shadow: 0 6px 20px rgba(0, 0, 0, .1); }

@@ -7861,3 +7861,17 @@ html:root:root:root:root:root:root .room-head .head-ws { display: none !importan
   html:root:root:root:root:root:root .room-head .head-ws.on { background: linear-gradient(170deg, #f6d27a, #d9a440) !important; color: #3b2a0c; box-shadow: 0 4px 14px rgba(185, 134, 43, .35), inset 0 0 0 1px rgba(255, 255, 255, .45) !important; }
   html[data-mode='dark']:root:root:root:root:root:root .room-head .head-ws:not(.on) { color: #f0c45a; }
 }
+
+/* Hub Member on a contact's card (hub.jsx HubMemberBox, Alex, 22 Nov): a switch, then the category as three chips */
+.hbm { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; border-radius: 18px; background: var(--glass); border: 1px solid var(--edge); overflow: hidden; text-align: left; flex-shrink: 0; }
+html[data-mode='light'] .hbm { background: rgba(255, 255, 255, .72); }
+.hbm-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+.hbm-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hbm-t b { font-size: 15px; font-weight: 600; }
+.hbm-t small { font-size: 12.5px; color: var(--muted); }
+.hbm-cat { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 12px 14px; border-top: 1px solid var(--edge); }
+.hbm-cat > small { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.hbm-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+html:root:root:root:root .hbm-chips > button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 16px; border: 0; background: color-mix(in srgb, currentColor 6%, transparent); box-shadow: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
+html:root:root:root:root .hbm-chips > button i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+html:root:root:root:root .hbm-chips > button.on { color: var(--text); background: color-mix(in srgb, var(--c) 16%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); }

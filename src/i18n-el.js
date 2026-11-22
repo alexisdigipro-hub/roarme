@@ -147,6 +147,7 @@ export const EL = {
   'Add Chats': 'Προσθήκη συνομιλιών',
   'Add people': 'Προσθήκη ατόμων',
   'Add people by @username or name': 'Πρόσθεσε άτομα με @όνομα χρήστη ή όνομα',
+  'Add people by name': 'Πρόσθεσε άτομα με το όνομα',
   'Add Reaction': 'Προσθήκη αντίδρασης',
   'Add to a folder': 'Προσθήκη σε φάκελο',
   'Add to folder…': 'Προσθήκη σε φάκελο…',

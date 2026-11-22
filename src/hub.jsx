@@ -145,3 +145,59 @@ export function HubPage({ toast = () => {} }) {
     </div>
   )
 }
+
+// Hub Member on a contact's card (Alex, 22 Nov): whoever linked a Production Hub makes a contact a member of THEIR hub,
+// then picks the category (Pre / Prod / Post) that decides which chats of a project group they land in.
+// supabase/hub-members.sql: roar_hub_members, only the owner sees or changes their own rows.
+const HUB_CH = [['pre', 'Pre Production', '#d48806'], ['prod', 'Production', '#e5483f'], ['post', 'Post Production', '#7b4dff']]
+export function HubMemberBox({ me, personId, toast = () => {} }) {
+  const [hub, setHub] = useState(undefined)
+  const [row, setRow] = useState(undefined)
+  useEffect(() => {
+    let alive = true
+    if (!personId || personId === me?.id) { setHub(null); return }
+    hubMe().then(async (h) => {
+      if (!alive) return
+      setHub(h)
+      if (!h) return
+      const { data } = await supabase.from('roar_hub_members').select('channels').eq('owner', me.id).eq('member', personId).maybeSingle()
+      if (alive) setRow(data || null)
+    })
+    return () => { alive = false }
+  }, [me?.id, personId])
+  if (!hub || row === undefined) return null
+  const on = !!row
+  const flip = async (v) => {
+    const was = row
+    setRow(v ? { channels: ['prod'] } : null)
+    const { error } = v
+      ? await supabase.from('roar_hub_members').upsert({ owner: me.id, member: personId, channels: ['prod'] })
+      : await supabase.from('roar_hub_members').delete().eq('owner', me.id).eq('member', personId)
+    if (error) { setRow(was); toast(error.message || 'Could not save') } else toast(v ? `Hub Member of ${hub.hub || 'your hub'}` : 'No longer a Hub Member')
+  }
+  const pick = async (k) => {
+    const cur = row.channels || []
+    const next = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]
+    if (!next.length) return
+    const was = row
+    setRow({ channels: HUB_CH.map(([x]) => x).filter((x) => next.includes(x)) })
+    const { error } = await supabase.from('roar_hub_members').update({ channels: next }).eq('owner', me.id).eq('member', personId)
+    if (error) { setRow(was); toast(error.message || 'Could not save') }
+  }
+  return (
+    <div className="hbm">
+      <label className="hbm-row">
+        <span className="hbm-t"><b>Hub Member</b><small>{on ? `Works in ${hub.hub || 'your hub'}'s projects, no plan of their own` : `Make them part of ${hub.hub || 'your hub'}`}</small></span>
+        <span className="switch"><input type="checkbox" checked={on} onChange={(e) => flip(e.target.checked)} /><span /></span>
+      </label>
+      {on && (
+        <div className="hbm-cat">
+          <small>Category</small>
+          <div className="hbm-chips">
+            {HUB_CH.map(([k, l, c]) => <button key={k} type="button" className={row.channels?.includes(k) ? 'on' : ''} style={{ '--c': c }} aria-pressed={!!row.channels?.includes(k)} onClick={() => pick(k)}><i />{l}</button>)}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

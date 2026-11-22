@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { batteryText } from './battery.js'
-import { errText, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, statusOf, supabase, timeOf, picLink } from './lib.js'
+import { errText, fold, fileLink, thumbOf, fmtBytes, lastSeenText, nameOf, statusOf, supabase, timeOf, picLink } from './lib.js'
 import { Avatar, CropModal, I, Modal, OnTop, svg, useSeen, useTabSwipe } from './ui.jsx'
 import { AudioNote, MediaViewer, MusicTile, isAudioFile } from './extras.jsx'
 import { SOUNDS, chime } from './prefs.js'
@@ -201,17 +201,33 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   }, [items])
   const common = useMemo(() => (group || !other ? [] : rooms.filter((r) => r.kind === 'group' && (r.members || []).includes(other.id))), [rooms, group, other])
 
-  // people to add to a group
+  // people to add to a group: the people I talk to come first, from the first letter (Alex, 22 Nov: "it should suggest
+  // the people I have talked to, with the first letter"); with nothing typed, the ones I talked to last. The server's
+  // search joins in from the second letter
+  const known = useMemo(() => {
+    const ids = []
+    for (const r of [...(rooms || [])].sort((x, y) => String(y.last_message_at || '').localeCompare(String(x.last_message_at || '')))) {
+      if (r.kind !== 'direct') continue
+      const o = (r.members || []).find((id) => id !== me.id)
+      if (o && !ids.includes(o)) ids.push(o)
+    }
+    return ids.map((id) => people[id]).filter((p) => p && p.username && p.username !== '…')
+  }, [rooms, people, me.id])
   useEffect(() => {
+    if (!adding) { setHits([]); return }
     const t = q.trim().replace(/[^\p{L}\p{N}_ .-]/gu, '').replace(/^@/, '')
-    if (!adding || t.length < 2) { setHits([]); return }
+    const inRoom = (p) => !(room.members || []).includes(p.id)
+    const f = fold(t)
+    const local = known.filter(inRoom).filter((p) => !f || fold(nameOf(p)).split(/\s+/).some((w) => w.startsWith(f)) || fold(nameOf(p)).startsWith(f) || fold(p.username).startsWith(f)).slice(0, t ? 20 : 8)
+    setHits(local)
+    if (t.length < 2) return
     let alive = true
     const id = setTimeout(async () => {
       const { data } = await supabase.from('roar_people').select('id, username, display_name, avatar_url, last_seen').or(`username.ilike.${t.toLowerCase()}%,display_name.ilike.%${t}%`).neq('id', me.id).limit(20)
-      if (alive) setHits((data || []).filter((p) => !(room.members || []).includes(p.id)))
+      if (alive) setHits([...local, ...(data || []).filter((p) => inRoom(p) && !local.some((x) => x.id === p.id))].slice(0, 20))
     }, 220)
     return () => { alive = false; clearTimeout(id) }
-  }, [q, adding, me.id, room.members])
+  }, [q, adding, me.id, room.members, known])
 
   const setMine = async (patch, done) => {
     setMore(false)
@@ -426,7 +442,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
           {tab === 'members' && (
             <div className="people">
               {(adding
-                ? <label className="search">{I.search}<input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by @username or name" /><button type="button" className="link" onClick={() => { setAdding(false); setQ('') }}>Done</button></label>
+                ? <label className="search">{I.search}<input autoFocus type="search" name="roar-add-people" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-1p-ignore="" data-lpignore="true" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by name" /><button type="button" className="link" onClick={() => { setAdding(false); setQ('') }}>Done</button></label>
                 : <button type="button" className="pf-row" onClick={() => setAdding(true)}><span className="pf-row-ico add">{I.plus}</span><span className="pf-row-text"><b>Add people</b></span></button>)}
               {hits.map((p) => (
                 <button key={p.id} type="button" className="pf-row" onClick={() => add(p)}>

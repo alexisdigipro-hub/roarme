@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { errText, fold, nameOf, supabase } from './lib.js'
 import { Avatar, CropModal, I, Modal, svg } from './ui.jsx'
+import { HubMemberBox } from './hub.jsx'
 
 /* RoarMe's address book (Alex, 22 Nov: "contacts as a real database for each user, in the cloud, to take out or join
    with another app whenever they want; a full contacts suite", from the sample https://claude.ai/artifact/DFB7sDjj3c7TyQhTTWmHnv,
@@ -264,7 +265,7 @@ function Row({ icon, label, children, href, onCopy }) {
 
 /* a contact's card: the picture, the name and what they do; the round actions; then one soft box for each kind of
    detail, no lines inside a box; Share / Save to Phone / Favourite grouped; Delete alone */
-export function BookCard({ entry: e, person, onEdit, onClose, onMessage, onCall, onInvite, onFav, onDelete, toast }) {
+export function BookCard({ me, entry: e, person, onEdit, onClose, onMessage, onCall, onInvite, onFav, onDelete, toast }) {
   const name = entryName(e)
   const sub = [e.job_title, e.company].filter(Boolean).join(' · ')
   const copy = async (v, what) => { try { await navigator.clipboard.writeText(v); toast?.(`${what} copied`) } catch { toast?.(v) } }
@@ -319,6 +320,7 @@ export function BookCard({ entry: e, person, onEdit, onClose, onMessage, onCall,
             {e.notes && <div className="bk-row bk-still"><span className="bk-ico">{B.note}</span><span className="bk-txt"><small>notes</small><span className="bk-notes">{e.notes}</span></span></div>}
           </div>
         ) : null}
+        {person?.id && <HubMemberBox me={me} personId={person.id} toast={toast} />}
         <div className="bk-box bk-links">
           <button type="button" onClick={() => shareVcf([e], `${name}.vcf`)}>{B.share}<span>Share Contact</span></button>
           <button type="button" onClick={async () => { const how = await toPhone(e); if (how === 'phone') toast?.('Saved to your iPhone Contacts') }}>{B.down}<span>{phoneBookOn() ? 'Save to iPhone Contacts' : 'Download Contact'}</span></button>

@@ -1413,7 +1413,7 @@ const MAIN_FIELDS = ['Artist / Client', 'Title', 'Category']
 
 // who sees which chat, in Project Settings (Alex, 22 Nov: "on the desktop I could not find the members list"): every member with
 // Pre · Prod · Post (admins see all three); only the group's admins change them (roar_set_channels, project-channels.sql)
-function MembersChats({ room, me, people, boss, toast }) {
+function MembersChats({ room, me, people, boss, toast, onClose }) {
   const [rows, setRows] = useState(null)
   const load = useCallback(async () => {
     const { data } = await supabase.from('roar_members').select('user_id, role, channels').eq('room_id', room.room_id)
@@ -1448,7 +1448,7 @@ function MembersChats({ room, me, people, boss, toast }) {
         })}
       </div>
       {/* adding people is the group's own: its page with Add people (any member may add, members-add.sql) */}
-      <div className="prs2-chips"><button type="button" className="on" onClick={() => window.dispatchEvent(new Event('roarme-profile'))}>{I.plus || '+'}Add People</button></div>
+      <div className="prs2-chips"><button type="button" className="on" onClick={() => { onClose?.(); setTimeout(() => window.dispatchEvent(new Event('roarme-profile')), 60) }}>{I.plus || '+'}Add People</button></div>
       {!boss && <p className="prs2-hint">Only an admin of the group can change who sees which chat.</p>}
     </>
   )
@@ -1529,7 +1529,7 @@ function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, 
               <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} />{project.due && <button type="button" className="pill-btn prs2-clear" onClick={(e) => { e.preventDefault(); save({ due: null }) }}>Clear</button>}</label>
 
             </div>
-            {room.members?.length > 0 && <MembersChats room={room} me={me} people={people} boss={boss} toast={toast} />}
+            {room.members?.length > 0 && <MembersChats room={room} me={me} people={people} boss={boss} toast={toast} onClose={onClose} />}
             <small className="prs2-cap">Tabs</small>
             <div className="prs2-chips prs2-tabchips">
               {OPTIONAL.map(([k, l]) => (k === 'stats' && adminIn ? ['admin', 'Admin'] : [k, l])).map(([k, l]) => <button key={k} type="button" className={hidden.includes(k) ? '' : 'on'} aria-pressed={!hidden.includes(k)} onClick={() => flipTab(k)}>{TAB_I[k]}{l}</button>)}

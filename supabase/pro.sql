@@ -81,3 +81,57 @@ alter table public.roar_pro_projects add constraint roar_pro_projects_ordinos_ok
 -- The project's cover (Alex, 22 Nov): one's own picture (a public link in roar-avatars) and which picture the cover shows
 alter table public.roar_pro_projects add column if not exists cover text;
 alter table public.roar_pro_projects add column if not exists cover_pick int not null default 0;
+
+-- A project's admin side (Alex, 22 Nov): budget, expenses, who worked and their fees. Only the group's admins read or
+-- change it, so it is a table of its own (the project row is read by every member).
+create table if not exists public.roar_pro_admin (
+  room_id uuid primary key references public.roar_rooms(id) on delete cascade,
+  budget numeric,
+  currency text not null default 'EUR',
+  expenses jsonb not null default '[]'::jsonb,
+  crew jsonb not null default '[]'::jsonb,
+  updated_by uuid default auth.uid(),
+  updated_at timestamptz not null default now()
+);
+alter table public.roar_pro_admin drop constraint if exists roar_pro_admin_ok;
+alter table public.roar_pro_admin add constraint roar_pro_admin_ok check (
+  jsonb_typeof(expenses) = 'array' and jsonb_typeof(crew) = 'array' and char_length(currency) <= 8
+  and pg_column_size(expenses) <= 200000 and pg_column_size(crew) <= 100000);
+alter table public.roar_pro_admin enable row level security;
+drop policy if exists roar_pro_admin_all on public.roar_pro_admin;
+create policy roar_pro_admin_all on public.roar_pro_admin for all to authenticated
+  using (public.roar_is_admin(room_id)) with check (public.roar_is_admin(room_id));
+revoke all on public.roar_pro_admin from anon;
+grant select, insert, update, delete on public.roar_pro_admin to authenticated;
+drop trigger if exists roar_pro_admin_touch on public.roar_pro_admin;
+create trigger roar_pro_admin_touch before insert or update on public.roar_pro_admin
+  for each row execute function public.roar_pro_projects_touch();
+
+-- Who besides the group's admins may open Admin (Alex, 22 Nov: "specific members"): access, a list the group's admins set
+alter table public.roar_pro_admin add column if not exists access uuid[] not null default '{}';
+drop policy if exists roar_pro_admin_all on public.roar_pro_admin;
+drop policy if exists roar_pro_admin_read on public.roar_pro_admin;
+create policy roar_pro_admin_read on public.roar_pro_admin for select to authenticated
+  using (public.roar_is_admin(room_id) or (auth.uid() = any(access) and public.roar_is_member(room_id)));
+drop policy if exists roar_pro_admin_add on public.roar_pro_admin;
+create policy roar_pro_admin_add on public.roar_pro_admin for insert to authenticated
+  with check (public.roar_is_admin(room_id));
+drop policy if exists roar_pro_admin_change on public.roar_pro_admin;
+create policy roar_pro_admin_change on public.roar_pro_admin for update to authenticated
+  using (public.roar_is_admin(room_id) or (auth.uid() = any(access) and public.roar_is_member(room_id)))
+  with check (public.roar_is_admin(room_id) or (auth.uid() = any(access) and public.roar_is_member(room_id)));
+drop policy if exists roar_pro_admin_drop on public.roar_pro_admin;
+create policy roar_pro_admin_drop on public.roar_pro_admin for delete to authenticated
+  using (public.roar_is_admin(room_id));
+-- only the group's admins change who has access
+create or replace function public.roar_pro_admin_guard() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if tg_op = 'UPDATE' and new.access is distinct from old.access and not roar_is_admin(new.room_id) then
+    raise exception 'Only an admin of the group can change who sees Admin';
+  end if;
+  return new;
+end $$;
+drop trigger if exists roar_pro_admin_guard on public.roar_pro_admin;
+create trigger roar_pro_admin_guard before update on public.roar_pro_admin
+  for each row execute function public.roar_pro_admin_guard();

@@ -667,6 +667,7 @@ const TAB_I = {
   places: tsv(<><path d="M12 21s-6.5-5.8-6.5-11a6.5 6.5 0 0 1 13 0c0 5.2-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.4" /></>),
   contacts: tsv(<><circle cx="12" cy="8" r="3.8" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>),
   tasks: tsv(<><rect x="4" y="3.5" width="16" height="17" rx="3.5" /><path d="m8 9 1.6 1.6L12.5 7.8M8 15l1.6 1.6 2.9-2.8M14.5 9.5H16M14.5 15.5H16" /></>),
+  admin: tsv(<><rect x="3.5" y="6.5" width="17" height="13" rx="3" /><path d="M9 6.5V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v1.5M3.5 12h17M12 11v2.5" /></>),
   stats: tsv(<><path d="M4 20h16" /><rect x="5.5" y="11" width="3" height="6.5" rx="1" /><rect x="10.5" y="6" width="3" height="11.5" rx="1" /><rect x="15.5" y="13.5" width="3" height="4" rx="1" /></>),
 }
 const OPTIONAL = [['music', 'Music'], ['scout', 'Location Scout'], ['calls', 'Calls & Meetings'], ['links', 'Links'], ['tags', 'Tags'], ['tasks', 'Tasks'], ['stats', 'Stats']]
@@ -786,7 +787,7 @@ function OrdinoWindow({ onClose, onSent }) {
 /* ---------- Stats: the whole chat in numbers (Alex, 22 Nov: "the statistics of the whole chat, made nicely, and more") ----------
    the newest 5,000 messages, counted on the device; bars in the accent (one series, one hue), a hover names each one */
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-function Stats({ room, people, me, project }) {
+function Stats({ room, people, me, project, compact = false }) {
   const [rows, setRows] = useState(null)
   useEffect(() => {
     let gone = false
@@ -838,7 +839,7 @@ function Stats({ room, people, me, project }) {
   const nameFor = (id) => (id === me.id ? 'You' : nameOf(people[id]))
   const KPI = [['Messages', rows.length.toLocaleString()], ['Photos and videos', media], ['Files', files], ['Voice messages', voice.length, voiceMin ? `${voiceMin} min` : ''], ['Links', links], ['Shared', sizeText(bytes) || '0 KB'], ['Days active', days, `since ${day(first)}`]]
   return (
-    <div className="prs">
+    <div className={`prs${compact ? ' compact' : ''}`}>
       <div className="prs-kpis">{KPI.map(([l, v, sub]) => <div key={l} className="prs-kpi"><b>{v}</b><span>{l}</span>{sub && <small>{sub}</small>}</div>)}</div>
       <div className="prs-grid">
         <div className="prw-box">
@@ -1063,6 +1064,114 @@ function SongBar({ m, from, roomId, who, onSendHere, onSendTo, onDrop }) {
   )
 }
 
+/* ---------- Admin, for the group's admins (Alex, 22 Nov: "budget, entering expenses, who worked and their fees, and the
+   statistics a little more gathered below"): roar_pro_admin, read and written only by the group's admins ---------- */
+const EXP_CATS = ['Equipment', 'Location', 'Crew', 'Transport', 'Food', 'Post-production', 'Props and Wardrobe', 'Other']
+const today = () => new Date().toISOString().slice(0, 10)
+function Admin({ room, people, me, project, toast }) {
+  // the group's admins, and the members they let in (access), see this; only the group's admins choose who
+  const boss = room.role === 'admin'
+  const [row, setRow] = useState(undefined)
+  const [exp, setExp] = useState({ what: '', amount: '', cat: 'Equipment', date: today(), by: '' })
+  const [man, setMan] = useState({ name: '', role: '', fee: '' })
+  useEffect(() => {
+    let gone = false
+    supabase.from('roar_pro_admin').select('*').eq('room_id', room.room_id).maybeSingle().then(({ data, error }) => { if (!gone) setRow(error ? null : data || (boss ? { room_id: room.room_id, budget: null, currency: 'EUR', expenses: [], crew: [], access: [] } : null)) })
+    return () => { gone = true }
+  }, [room.room_id])
+  const save = async (patch) => {
+    const next = { ...row, ...patch }
+    setRow(next)
+    const body = { budget: next.budget, currency: next.currency || 'EUR', expenses: next.expenses || [], crew: next.crew || [], ...(boss ? { access: next.access || [] } : {}) }
+    const { error } = boss ? await supabase.from('roar_pro_admin').upsert({ room_id: room.room_id, ...body }, { onConflict: 'room_id' })
+      : await supabase.from('roar_pro_admin').update(body).eq('room_id', room.room_id)
+    if (error) toast(errText(error))
+  }
+  if (row === undefined) return <p className="prj-quiet">Loading…</p>
+  if (row === null) return <p className="prj-quiet">Only the group's admins can see this.</p>
+  const cur = row.currency || 'EUR'
+  const money = (n) => { try { return new Intl.NumberFormat([], { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(Number(n) || 0) } catch { return `${Math.round(Number(n) || 0)} ${cur}` } }
+  const expenses = Array.isArray(row.expenses) ? row.expenses : []
+  const crew = Array.isArray(row.crew) ? row.crew : []
+  const spent = expenses.reduce((a, x) => a + (Number(x.amount) || 0), 0)
+  const fees = crew.reduce((a, x) => a + (Number(x.fee) || 0), 0)
+  const unpaid = crew.filter((x) => !x.paid).reduce((a, x) => a + (Number(x.fee) || 0), 0)
+  const budget = Number(row.budget) || 0
+  const used = spent + fees
+  const left = budget - used
+  const byCat = EXP_CATS.map((c) => [c, expenses.filter((x) => x.cat === c).reduce((a, x) => a + (Number(x.amount) || 0), 0)]).filter(([, n]) => n > 0)
+  const names = (room.members || []).map((id) => nameOf(people[id])).filter(Boolean)
+  return (
+    <div className="pra">
+      {boss && (
+        <div className="prw-box pra-access">
+          <div className="prw-boxhead"><h4>Who Sees Admin</h4><small className="pra-total">The group's admins always do</small></div>
+          <div className="pra-people">
+            {(room.members || []).filter((id) => id !== me.id).map((id) => {
+              const on = (row.access || []).includes(id)
+              return <button key={id} type="button" className={`pra-person${on ? ' on' : ''}`} onClick={() => save({ access: on ? (row.access || []).filter((x) => x !== id) : [...(row.access || []), id] })}><Avatar src={people[id]?.avatar_url} name={nameOf(people[id])} size={26} /><span>{nameOf(people[id])}</span><i className="prw-check">{on && I.check}</i></button>
+            })}
+          </div>
+        </div>
+      )}
+      <div className="pra-sum">
+        <label className="pra-tile budget"><span>Budget</span><span className="pra-money"><input type="number" min="0" step="50" value={row.budget ?? ''} placeholder="0" onChange={(e) => setRow({ ...row, budget: e.target.value === '' ? null : Number(e.target.value) })} onBlur={() => save({ budget: row.budget })} /><select value={cur} onChange={(e) => save({ currency: e.target.value })}>{['EUR', 'USD', 'GBP'].map((c) => <option key={c}>{c}</option>)}</select></span></label>
+        <div className="pra-tile"><span>Expenses</span><b>{money(spent)}</b></div>
+        <div className="pra-tile"><span>Fees</span><b>{money(fees)}</b>{unpaid > 0 && <small>{money(unpaid)} unpaid</small>}</div>
+        <div className={`pra-tile${left < 0 ? ' over' : ''}`}><span>{left < 0 ? 'Over budget' : 'Left'}</span><b>{money(Math.abs(left))}</b></div>
+      </div>
+      {budget > 0 && <span className="prs-track pra-bar" title={`${Math.round((used / budget) * 100)}% of the budget`}><i style={{ width: `${Math.min(100, (used / budget) * 100)}%` }} className={used > budget ? 'over' : ''} /></span>}
+      <div className="pra-grid">
+        <div className="prw-box">
+          <div className="prw-boxhead"><h4>Expenses</h4><small className="pra-total">{money(spent)}</small></div>
+          <form className="pra-form" onSubmit={(e) => { e.preventDefault(); const a = Number(exp.amount); if (!exp.what.trim() || !a) return; save({ expenses: [{ id: uid(), what: exp.what.trim().slice(0, 120), amount: a, cat: exp.cat, date: exp.date, by: exp.by.trim().slice(0, 60) }, ...expenses] }); setExp({ ...exp, what: '', amount: '' }) }}>
+            <input className="w2" value={exp.what} onChange={(e) => setExp({ ...exp, what: e.target.value })} placeholder="What" maxLength={120} />
+            <input type="number" min="0" step="0.01" value={exp.amount} onChange={(e) => setExp({ ...exp, amount: e.target.value })} placeholder="Amount" />
+            <select value={exp.cat} onChange={(e) => setExp({ ...exp, cat: e.target.value })}>{EXP_CATS.map((c) => <option key={c}>{c}</option>)}</select>
+            <input type="date" value={exp.date} onChange={(e) => setExp({ ...exp, date: e.target.value })} />
+            <input list="pra-names" value={exp.by} onChange={(e) => setExp({ ...exp, by: e.target.value })} placeholder="Paid by" maxLength={60} />
+            <button type="submit" className="round pra-add" aria-label="Add expense" disabled={!exp.what.trim() || !Number(exp.amount)}>{I.plus}</button>
+          </form>
+          {byCat.length > 0 && <div className="pra-cats">{byCat.map(([c, n]) => <span key={c}><b>{money(n)}</b>{c}</span>)}</div>}
+          <div className="pra-list">
+            {expenses.map((x) => (
+              <div key={x.id} className="pra-row">
+                <span className="pra-what"><b>{x.what}</b><small>{[x.cat, x.date && new Date(x.date).toLocaleDateString([], { day: 'numeric', month: 'short' }), x.by].filter(Boolean).join(' · ')}</small></span>
+                <b className="pra-amt">{money(x.amount)}</b>
+                <Trash onClick={() => { if (window.confirm(`Delete ${x.what}?`)) save({ expenses: expenses.filter((y) => y.id !== x.id) }) }} />
+              </div>
+            ))}
+            {!expenses.length && <p className="prj-quiet">No expenses yet.</p>}
+          </div>
+        </div>
+        <div className="prw-box">
+          <div className="prw-boxhead"><h4>Who Worked</h4><small className="pra-total">{money(fees)}</small></div>
+          <form className="pra-form crew" onSubmit={(e) => { e.preventDefault(); if (!man.name.trim()) return; save({ crew: [...crew, { id: uid(), name: man.name.trim().slice(0, 80), role: man.role.trim().slice(0, 60), fee: Number(man.fee) || 0, paid: false }] }); setMan({ name: '', role: '', fee: '' }) }}>
+            <input list="pra-names" value={man.name} onChange={(e) => setMan({ ...man, name: e.target.value })} placeholder="Name" maxLength={80} />
+            <input value={man.role} onChange={(e) => setMan({ ...man, role: e.target.value })} placeholder="Role (DoP, Gaffer…)" maxLength={60} />
+            <input type="number" min="0" step="10" value={man.fee} onChange={(e) => setMan({ ...man, fee: e.target.value })} placeholder="Fee" />
+            <button type="submit" className="round pra-add" aria-label="Add person" disabled={!man.name.trim()}>{I.plus}</button>
+          </form>
+          <div className="pra-list">
+            {crew.map((x) => (
+              <div key={x.id} className={`pra-row${x.paid ? ' paid' : ''}`}>
+                <span className="pra-what"><b>{x.name}</b><small>{x.role || '—'}</small></span>
+                <b className="pra-amt">{money(x.fee)}</b>
+                <button type="button" className={`pra-paid${x.paid ? ' on' : ''}`} onClick={() => save({ crew: crew.map((y) => (y.id === x.id ? { ...y, paid: !y.paid } : y)) })}>{x.paid ? <>{I.check}Paid</> : 'Unpaid'}</button>
+                <Trash onClick={() => { if (window.confirm(`Delete ${x.name}?`)) save({ crew: crew.filter((y) => y.id !== x.id) }) }} />
+              </div>
+            ))}
+            {!crew.length && <p className="prj-quiet">No one added yet.</p>}
+          </div>
+        </div>
+      </div>
+      <datalist id="pra-names">{names.map((n) => <option key={n} value={n} />)}</datalist>
+      <h6 className="prw-h pra-stats-h">The Chat in Numbers</h6>
+      <Stats room={room} people={people} me={me} project={project} compact />
+    </div>
+  )
+}
+
 function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged, rooms = [], titleOf = () => '', onSwap }) {
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
@@ -1078,6 +1187,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const artistOf = () => ((Array.isArray(project.fields) ? project.fields : []).find((f) => f.k === 'Artist / Client')?.v || '').trim()
   const [ordSend, setOrdSend] = useState(null)
   const [songSend, setSongSend] = useState(null)
+  const [adminIn, setAdminIn] = useState(room.role === 'admin')
+  useEffect(() => { if (room.role === 'admin') { setAdminIn(true); return } supabase.from('roar_pro_admin').select('room_id').eq('room_id', room.room_id).maybeSingle().then(({ data }) => setAdminIn(!!data), () => {}) }, [room.room_id, room.role])
   // a song sent on: into this chat again, or a copy of the file into each chosen chat (each chat keeps its own files)
   const sendSong = async (m, ids) => {
     let bad = null
@@ -1163,7 +1274,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const dateName = project.date_label || 'Shoot Date'
   const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length], ['music', 'Music', music.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', links.length], ['tags', 'Tags', tagged.length],
     ...(polls.length ? [['polls', 'Polls', polls.length]] : []), ...(places.length + maps.length ? [['places', 'Places', places.length + maps.length]] : []), ...(cards.length ? [['contacts', 'Contacts', cards.length]] : []),
-    ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0], ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
+    ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0], adminIn ? ['admin', 'Admin'] : ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
   const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
   const shownMedia = media.filter((m) => mf === 'all' || folderOf(m) === mf)
   const openMedia = (list, i) => setView({ items: list, index: i })
@@ -1288,6 +1399,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
         {shownTab === 'contacts' && <Contacts list={cards} people={people} onDrop={drop} />}
         {shownTab === 'tasks' && <Board list={tasks} onChange={(next) => save({ tasks: next })} />}
         {shownTab === 'stats' && <Stats room={room} people={people} me={me} project={project} />}
+        {shownTab === 'admin' && <Admin room={room} people={people} me={me} project={project} toast={toast} />}
       </div>
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}

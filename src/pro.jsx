@@ -990,13 +990,19 @@ function Stats({ room, people, me, project, compact = false }) {
    the category and the stage, Artist and Title large, how long until the date, and the brief written on it ---------- */
 // the cover's pictures, in turn with the arrows (Alex, 22 Nov: "the group's picture, switched left and right, and one I upload,
 // with crop and zoom"): one's own cover, the group's photo, then the project's newest photos
+const MOVE_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" /></svg>
+const CROP_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></svg>
 function Hero({ room, me, project, dateName, fields, onCover, toast }) {
-  // the cover: one's own picture, or the theme's colour (Alex, 22 Nov: "no arrows to change pictures; a photo I put, else
-  // the colour it had"); on it only the project's name; the shoot day stands under the banner
-  const bg = project.cover || project.hub_cover || '' // one's own cover, else the Production Hub's (Alex, 22 Nov)
+  // the cover: one's own picture, else the Production Hub's, else the theme's colour; 'none' = no picture even with the hub's
+  // (Alex, 22 Nov). One settings button opens a small menu: Change Photo, Reposition, Crop, Remove
+  const bg = project.cover === 'none' ? '' : (project.cover || project.hub_cover || '')
   const [crop, setCrop] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [menu, setMenu] = useState(false)
+  const [moving, setMoving] = useState(null) // { x, y } while repositioning
   const pick = useRef(null)
+  const drag = useRef(null)
+  const pos = moving || project.cover_pos || { x: 50, y: 50 }
   const upload = async (f) => {
     setCrop(null)
     if (!f) return
@@ -1006,10 +1012,19 @@ function Hero({ room, me, project, dateName, fields, onCover, toast }) {
       const up = await supabase.storage.from('roar-avatars').upload(path, f, { contentType: 'image/jpeg' })
       if (up.error) throw up.error
       const url = supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl
-      onCover({ cover: url, cover_pick: 0 })
+      onCover({ cover: url, cover_pick: 0, cover_pos: null })
     } catch (e) { toast(errText(e)) }
     setBusy(false)
   }
+  // crop the picture there is now (one's own or the hub's): fetched and handed to the cropper as a file
+  const recrop = async () => {
+    setMenu(false)
+    try { const b = await (await fetch(bg)).blob(); setCrop(new File([b], 'cover.jpg', { type: b.type || 'image/jpeg' })) } catch { toast('Could not open the picture') }
+  }
+  // reposition: drag the picture, Done keeps where it stands (background-position in %)
+  const down = (e) => { if (!moving) return; drag.current = { x: e.clientX, y: e.clientY, p: moving, w: e.currentTarget.offsetWidth, h: e.currentTarget.offsetHeight }; e.currentTarget.setPointerCapture?.(e.pointerId) }
+  const move = (e) => { const d = drag.current; if (!d) return; const cl = (v) => Math.max(0, Math.min(100, v)); setMoving({ x: cl(d.p.x - ((e.clientX - d.x) / d.w) * 100), y: cl(d.p.y - ((e.clientY - d.y) / d.h) * 200) }) }
+  const up = () => { drag.current = null }
   const val = (k) => (fields.find((f) => f.k === k)?.v || '').trim()
   const artist = val('Artist / Client'), work = val('Title')
   let when = ''
@@ -1019,13 +1034,34 @@ function Hero({ room, me, project, dateName, fields, onCover, toast }) {
   }
   return (
     <>
-      <section className={`prw-hero wide${bg ? ' has-bg' : ''}`}>
-        {bg && <i key={bg} className="prw-hero-bg" style={{ backgroundImage: `url(${bg})` }} />}
+      <section className={`prw-hero wide${bg ? ' has-bg' : ''}${moving ? ' moving' : ''}`} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+        {bg && <i key={bg} className="prw-hero-bg" style={{ backgroundImage: `url(${bg})`, backgroundPosition: `${pos.x}% ${pos.y}%` }} />}
         <span className="prw-hero-tools">
-          <button type="button" className="round prw-hero-btn" disabled={busy} onClick={() => pick.current?.click()} aria-label="Upload a cover" title={bg ? 'Replace the cover' : 'Upload a cover'}>{I.image}</button>
-          {bg && <button type="button" className="round prw-hero-btn" onClick={() => { if (window.confirm('Remove the cover? The banner goes back to its colour.')) onCover({ cover: null, cover_pick: 0 }) }} aria-label="Remove the cover" title="Remove the cover">{I.trash}</button>}
+          {moving ? (
+            <>
+              <button type="button" className="pill-btn prw-hero-pill" onClick={() => setMoving(null)}>Cancel</button>
+              <button type="button" className="pill-btn prw-hero-pill on" onClick={() => { onCover({ cover_pos: moving }); setMoving(null) }}>Done</button>
+            </>
+          ) : (
+            <span className="prw-hero-menuwrap">
+              <button type="button" className="round prw-hero-btn" disabled={busy} onClick={() => setMenu((v) => !v)} aria-label="Cover settings" title="Cover settings" aria-expanded={menu}>{I.gear}</button>
+              {menu && (
+                <>
+                  <span className="prw-hero-veil" onClick={() => setMenu(false)} />
+                  <div className="menu prw-hero-menu">
+                    <button type="button" onClick={() => { setMenu(false); pick.current?.click() }}>{I.image}<span>{bg ? 'Change Photo' : 'Add a Photo'}</span></button>
+                    {bg && <button type="button" onClick={() => { setMenu(false); setMoving({ ...(project.cover_pos || { x: 50, y: 50 }) }) }}>{MOVE_I}<span>Reposition</span></button>}
+                    {bg && <button type="button" onClick={recrop}>{CROP_I}<span>Crop</span></button>}
+                    {bg && <><hr /><button type="button" className="danger" onClick={() => { setMenu(false); if (window.confirm('Remove the cover? The banner goes back to its colour.')) onCover({ cover: project.hub_cover ? 'none' : null, cover_pos: null }) }}>{I.trash}<span>Remove</span></button></>}
+                    {!bg && project.cover === 'none' && project.hub_cover && <button type="button" onClick={() => { setMenu(false); onCover({ cover: null, cover_pos: null }) }}>{I.image}<span>Use the Hub's Picture</span></button>}
+                  </div>
+                </>
+              )}
+            </span>
+          )}
           <input ref={pick} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setCrop(f) }} />
         </span>
+        {moving && <span className="prw-hero-hint">Drag the picture</span>}
         <div className="prw-hero-in">
           <h2>{artist || work ? <>{artist}{artist && work && <span className="prw-hero-sep"> – </span>}{work && <em>{work}</em>}</> : room.title}</h2>
         </div>

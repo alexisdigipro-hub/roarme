@@ -1096,7 +1096,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     toast(ids.length === 1 && ids[0] === room.room_id ? 'Sent to this chat' : `Sent to ${ids.length} chat${ids.length === 1 ? '' : 's'}`)
     return true
   }
-  const songBar = (m) => <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who={m.user_id === me.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0]} onSendHere={() => sendSong(m, [room.room_id])} onSendTo={() => setSongSend(m)} onDrop={() => drop(m, 'this song')} />
+  const songBar = (m) => <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who={m.user_id === me.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0]} onSendTo={() => setSongSend(m)} onDrop={() => drop(m, 'this song')} />
   // the ordino goes into a chat as a message with its link (Alex, 22 Nov: "throw it in the group, or send it to another")
   const sendOrdino = async (o, ids) => {
     const when = [o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')

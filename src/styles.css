@@ -7544,3 +7544,8 @@ html:root:root:root:root:root .prw-hero-btn { width: 26px; height: 26px; min-wid
 .prw-when svg { width: 15px; height: 15px; }
 /* a Location Scout status chip inside a small list stays in its row (it rode up onto the banner as "Option") */
 html:root:root:root:root:root .prw-mrow .prw-st { position: static; top: auto; left: auto; box-shadow: none; }
+/* the banner's title in the middle, both ways (Alex, 22 Nov) */
+.prw-hero { align-items: center; justify-content: center; }
+.prw-hero .prw-hero-in { align-items: center; justify-content: center; text-align: center; padding: 24px 52px; }
+.prw-phone .prw-hero .prw-hero-in { padding: 24px 40px; }
+.prw-hero h2 { text-align: center; }

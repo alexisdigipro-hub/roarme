@@ -16,6 +16,8 @@ export const FOOT_I = {
   calls: <i className="ic-mask fi-phone" style={{ '--m': `url(${phoneMask})` }} aria-hidden="true" />,
   messages: solid('M12 3c5 0 9 3.6 9 8s-4 8-9 8c-1.6 0-3.1-.3-4.3-1L3 21l1.6-4.6C3.6 15 3 13.1 3 11c0-4.4 4-8 9-8z'),
   tasks: solid('M4 4h16v16H4zM6.8 12.3l2.1-2.1 2 2 4.9-4.9 2.1 2.1-7 7z'),
+  // Pro (Alex, 22 Nov): a briefcase, its handle and the band across it cut out
+  pro: solid('M9 3.5h6A1.5 1.5 0 0 1 16.5 5v1.5H20a2 2 0 0 1 2 2V18a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 18V8.5a2 2 0 0 1 2-2h3.5V5A1.5 1.5 0 0 1 9 3.5zM9.5 5.5v1h5v-1zM2 12.2v1.6h8.5V15h3v-1.2H22v-1.6z'),
   // a toothed gear with three spokes (Alex, 12 Nov): filled in every theme (.fi-solid), drawn in lines in Halo's rail (.fi-line)
   settings: (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">

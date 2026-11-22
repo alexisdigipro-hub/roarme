@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, dotOf, statusOf, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
+import { ProChip, ProPanel, proOk, useProjects } from './pro.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls, CALL_EDGE } from './calls.jsx'
@@ -95,6 +96,9 @@ function usePeopleSearch(meId) {
 /* ---------- the app ---------- */
 export default function Chat({ me, setMe }) {
   const prefs = usePrefs()
+  // RoarMe Pro (Alex, 22 Nov): only on the website on a computer for now; the button in the bar at the foot turns it on and off
+  const proOn = !!prefs.pro && proOk()
+  const proKit = useProjects(me, proOn)
   // the chat list and the people kept on the device show at once; the cloud's copy follows (cache.js, Alex, 19 Nov)
   const [rooms, setRooms] = useState(() => lsGet(`rooms-${me.id}`) || [])
   const [people, setPeople] = useState(() => { const p = lsGet(`people-${me.id}`) || {}; Object.values(p).forEach((x) => x?.id && setNameColor(x.id, x.name_color)); return p }) // id -> profile
@@ -697,7 +701,8 @@ export default function Chat({ me, setMe }) {
     if (d?.getSettings) d.getSettings().then((s) => { if (s?.tray) d.setSetting('tray', false) }).catch(() => {})
   }, [])
 
-  const BUILTIN = [['all', 'All'], ['unread', 'Unread'], ['groups', 'Groups'], ['archived', 'Archived']]
+  // with Pro on, Projects and Direct join the folders (Alex, 22 Nov: "the left column as the chat's own")
+  const BUILTIN = [['all', 'All'], ['unread', 'Unread'], ...(proOn ? [['projects', 'Projects'], ['direct', 'Direct']] : []), ['groups', 'Groups'], ['archived', 'Archived']]
   // in the order dragged in Settings > Folders (Alex, 16 Oct); a folder not placed yet goes at the end
   const fOrder = prefs.folderOrder || []
   const fRank = (id) => { const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
@@ -795,13 +800,15 @@ export default function Chat({ me, setMe }) {
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', up)
   }
-  useEffect(() => { if (folder !== 'all' && hiddenF.includes(folder)) setFolder('all') }, [hiddenF.join(), folder])
+  useEffect(() => { if (folder !== 'all' && (hiddenF.includes(folder) || (!proOn && (folder === 'projects' || folder === 'direct')))) setFolder('all') }, [hiddenF.join(), folder, proOn])
   const fits = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
     // a chat marked as unread by hand belongs here too (Alex, 21 Oct), even when its last message is one's own
     if (f === 'unread') return r.unread > 0 || marked.includes(r.room_id) || (prefs.folderExtra?.unread || []).includes(r.room_id)
     if (f === 'groups') return r.kind === 'group' || (prefs.folderExtra?.groups || []).includes(r.room_id)
+    if (f === 'projects') return !!proKit.map[r.room_id]
+    if (f === 'direct') return r.kind !== 'group'
     const mine = myFolders.find((x) => x.id === f)
     if (mine) {
       if ((mine.exclude || []).includes(r.room_id)) return false
@@ -826,7 +833,7 @@ export default function Chat({ me, setMe }) {
   // with each chat in one folder, Unread is the one folder whose chats All shows too (Alex, 21 Nov: "Unread will be the
   // only folder that shows inside All"); a chat read again goes back to its own folder and leaves All
   const inFolder = (r, f) => {
-    if (!prefs.folderAlone) return fits(r, f)
+    if (!prefs.folderAlone || f === 'projects' || f === 'direct') return fits(r, f)
     const home = homeOf(r)
     return home === f || (f === 'all' && home === 'unread')
   }
@@ -1470,7 +1477,7 @@ export default function Chat({ me, setMe }) {
         <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={dotOf(other)} size={prefs.listPreview ? 54 : 48} />
         <span className="room-main">
           <span className="room-top"><strong>{titleOf(r)}{r.kind === 'direct' && officialIds.includes(otherOf(r)?.id) && OFFICIAL}</strong>{prefs.listPreview && r.last_message_at && <small data-raw="">{listTime(r.last_message_at)}</small>}</span>
-          <span className="room-bottom"><span className="room-prev">{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.mentions > 0 && <span className="badge at" title="You were mentioned">@</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
+          <span className="room-bottom"><span className="room-prev">{proOn && proKit.map[r.room_id] && <ProChip p={proKit.map[r.room_id]} />}{preview(r)}</span>{r.muted && <span className="room-muted" title="Muted">{I.bell}</span>}{r.mentions > 0 && <span className="badge at" title="You were mentioned">@</span>}{r.unread > 0 ? <span key={r.unread} className={`badge${r.muted ? ' quiet' : ''}${prefs.peekBadge ? ' peekable' : ''}`} onClick={prefs.peekBadge ? (e) => { e.stopPropagation(); setPeek(r) } : undefined} title={prefs.peekBadge ? 'Preview' : undefined}>{r.unread}</span> : marked.includes(r.room_id) ? <span className={`badge dot${r.muted ? ' quiet' : ''}`} /> : pins.includes(r.room_id) ? <span className="room-pin" title="Pinned">{I.pin}</span> : null}</span>
           {prefs.folderTags && tagsOf(r).length > 0 && <span className="room-tags">{tagsOf(r).map((t) => <span key={t}>{t}</span>)}</span>}
         </span>
       </button>
@@ -1578,7 +1585,7 @@ export default function Chat({ me, setMe }) {
                   const n = folderUnread(f)
                   const dragged = tabDrag?.id === f.id
                   return <button key={`${k}:${f.id}`} type="button" data-tab={f.id} data-copy={k} title={f.name} aria-hidden={twin || undefined} tabIndex={twin ? -1 : undefined} className={`${folder === f.id && !twin ? 'on' : ''}${dragged ? ' tab-dragging' : ''}`} style={dragged ? { transform: `translateX(${tabDrag.dx}px)` } : undefined}
-                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{editTabs ? (f.id !== 'all' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'direct' ? I.person : f.id === 'projects' ? I.tasks : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{editTabs ? (f.id !== 'all' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
                 }))}
               </nav>
               </div>
@@ -1719,6 +1726,8 @@ export default function Chat({ me, setMe }) {
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
             {prefs.tasksTab && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}
+            {/* Pro, before Settings (Alex, 22 Nov); a switch, not a page: lit while on */}
+            {proOk() && <button type="button" className={`foot-pro${prefs.pro ? ' lit' : ''}`} aria-pressed={!!prefs.pro} onClick={() => { const on = !prefs.pro; setPrefs({ pro: on }); toast(on ? 'Pro is on' : 'Pro is off') }} title={prefs.pro ? 'Turn Pro off' : 'Turn Pro on'}>{FOOT_I.pro}<span>Pro</span></button>}
             <button type="button" className={`foot-settings${(tab === 'settings' || tab === 'media') && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('settings')}>{FOOT_I.settings}<span>Settings</span></button>
           </nav>
         )}
@@ -1733,12 +1742,14 @@ export default function Chat({ me, setMe }) {
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} toast={toast} />
-        ) : active ? (
+        ) : active ? (<div className={proOn ? 'prw' : 'prw-off'}>
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} />
-        ) : (
+          {proOn && <ProPanel key={`pro-${active.room_id}`} room={active} other={otherOf(active)} project={proKit.map[active.room_id]} kit={proKit} rooms={rooms} titleOf={titleOf} toast={toast}
+            onJump={(id) => libChat(active.room_id, id)} onOpenRoom={(id) => { setTab('chats'); setActiveId(id) }} />}
+        </div>) : (
           <div className="pick">
             <span className="pick-mark"><Wordmark by /></span>
             <p>Pick a chat, or start a new one.</p>

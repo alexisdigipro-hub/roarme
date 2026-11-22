@@ -7626,3 +7626,12 @@ html:root:root:root:root .tk-donebar { display: inline-flex; align-items: center
 .prw-board-wrap.tk, .prw-board-wrap.tk .prj-add { max-width: none; }
 html:root:root:root:root .tk-pill.pri-urgent { color: #e5484d; background: rgba(229, 72, 77, .12); font-weight: 600; }
 html:root:root:root:root .tk-pill.pri-high { color: #f08c00; background: rgba(240, 140, 0, .12); font-weight: 600; }
+
+/* Project Settings > TML Hub (Alex, 22 Nov) */
+.prs2-hubon { display: flex; align-items: center; gap: 12px; }
+.prs2-hubdot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #14a37f; box-shadow: 0 0 0 4px rgba(20, 163, 127, .16); }
+.prs2-err { color: #e5484d; opacity: 1; }
+.prs2-hubacts { display: flex; gap: 8px; flex-wrap: wrap; }
+html:root:root:root:root .prs2-hubacts .pill-btn.danger { color: #e5484d; }
+html:root:root:root:root .prs2-keyin { width: 100%; height: 40px; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; font-size: 15px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.prs2-hubgo { align-self: flex-start; }

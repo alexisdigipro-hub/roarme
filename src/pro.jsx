@@ -60,6 +60,7 @@ export function useProjects(me, on) {
     const { data, error } = await supabase.from('roar_pro_projects').upsert({ room_id: roomId, ...patch }, { onConflict: 'room_id' }).select().single()
     if (error) { load(); throw error }
     setMap((m) => ({ ...m, [roomId]: data }))
+    if ('scouts' in patch) hubSoon(roomId)
     return data
   }, [load])
   const remove = useCallback(async (roomId) => {
@@ -68,6 +69,26 @@ export function useProjects(me, on) {
     setMap((m) => { const n = { ...m }; delete n[roomId]; return n })
   }, [])
   return { map, save, remove, reload: load }
+}
+
+/* ---------- a project linked to a TML Hub (Alex, 22 Nov): Location Scout goes into the hub's locations ---------- */
+const hubCache = {} // room -> state from roar_hub_state (null = not linked)
+export async function hubState(roomId, fresh = false) {
+  if (!fresh && roomId in hubCache) return hubCache[roomId]
+  const { data } = await supabase.rpc('roar_hub_state', { r: roomId })
+  hubCache[roomId] = data || null
+  return hubCache[roomId]
+}
+export async function hubCall(body) {
+  const { data, error } = await supabase.functions.invoke('roar-hub', { body })
+  if (error) { let m = error.message; try { m = (await error.context.json()).error || m } catch { /* keep */ } throw new Error(m) }
+  if (body.room) delete hubCache[body.room]
+  return data
+}
+const hubTimers = {}
+function hubSoon(roomId) {
+  clearTimeout(hubTimers[roomId])
+  hubTimers[roomId] = setTimeout(async () => { try { if (await hubState(roomId)) await hubCall({ action: 'sync', room: roomId }) } catch { /* shown in Settings > TML Hub */ } }, 1200)
 }
 
 /* ---------- files in folders ---------- */
@@ -447,7 +468,12 @@ async function putPhotos(roomId, files) {
     const path = `${roomId}/scout-${uid()}-${safe}`
     const { error } = await supabase.storage.from('roar-files').upload(path, f, { contentType: f.type || raw.type })
     if (error) throw error
-    out.push({ path, name: raw.name, type: f.type || raw.type, size: f.size })
+    // a lighter copy the TML Hub takes (its pictures are at most 2 MB)
+    let small
+    if (/^image\//.test(f.type || raw.type)) {
+      try { const sm = await shrinkImage(raw, 1600, 0.8); const sp = `${roomId}/scout-small-${uid()}.jpg`; const r2 = await supabase.storage.from('roar-files').upload(sp, sm, { contentType: sm.type || 'image/jpeg' }); if (!r2.error) small = sp } catch { /* the hub takes the photo itself */ }
+    }
+    out.push({ path, name: raw.name, type: f.type || raw.type, size: f.size, ...(small ? { small } : {}) })
   }
   return out
 }
@@ -1254,6 +1280,7 @@ function Admin({ room, people, me, project, toast }) {
 /* ---------- the project's settings, a page of its own (Alex, 22 Nov: "the gear opens a page with all of it, the details'
    fields set from there, only the written ones on the Overview; navigation inside, back and with a swipe") ---------- */
 const SET_I = {
+  hub: tsv(<><circle cx="12" cy="12" r="3" /><circle cx="5" cy="6" r="2" /><circle cx="19" cy="6" r="2" /><circle cx="12" cy="20" r="2" /><path d="M6.6 7.3 9.7 10M17.4 7.3 14.3 10M12 15v3" /></>),
   details: tsv(<><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M8 9h8M8 13h8M8 17h5" /></>),
   stages: tsv(<><circle cx="6" cy="12" r="2.2" /><circle cx="12" cy="12" r="2.2" /><circle cx="18" cy="12" r="2.2" /></>),
   date: tsv(<><rect x="4" y="5" width="16" height="15" rx="3" /><path d="M8 3v4M16 3v4M4 10h16" /></>),
@@ -1263,7 +1290,7 @@ const SET_I = {
   up: tsv(<path d="M6 15l6-6 6 6" />),
   down: tsv(<path d="M6 9l6 6 6-6" />),
 }
-function ProSettings({ start = 'home', project, save, fields, setField, hidden, flipTab, adminIn, notesOn, dateName, onStop, onClose }) {
+function ProSettings({ start = 'home', roomId, boss, toast, project, save, fields, setField, hidden, flipTab, adminIn, notesOn, dateName, onStop, onClose }) {
   const [stack, setStack] = useState([start]) // the pages walked into; back goes one step out
   const page = stack[stack.length - 1]
   const [dir, setDir] = useState(1)
@@ -1289,7 +1316,12 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
   const keepStages = (next) => { setList(next); const clean = next.map((x) => ({ ...x, name: (x.name || '').trim().slice(0, 30) || 'Stage' })); save({ stages: clean, ...(clean.some((x) => x.id === project.status) ? {} : { status: clean[0].id }) }) }
   const move = (i, d) => { const j = i + d; if (j < 0 || j >= fields.length) return; const next = [...fields]; [next[i], next[j]] = [next[j], next[i]]; save({ fields: next }) }
   const filled = fields.filter((f) => (f.v || '').trim()).length
-  const titles = { home: 'Project Settings', info: 'Project Info', stages: 'Stages' }
+  const titles = { home: 'Project Settings', info: 'Project Info', stages: 'Stages', hub: 'TML Hub' }
+  const [hub, setHub] = useState(undefined) // undefined while asking, null when not linked
+  const [hubKey, setHubKey] = useState('')
+  const [hubBusy, setHubBusy] = useState(false)
+  useEffect(() => { let gone = false; hubState(roomId, true).then((x) => { if (!gone) setHub(x) }, () => { if (!gone) setHub(null) }); return () => { gone = true } }, [roomId, page])
+  const hubDo = async (body, ok) => { setHubBusy(true); try { const r = await hubCall({ room: roomId, ...body }); setHub(await hubState(roomId, true)); if (r?.error) toast(r.error); else if (ok) toast(ok); if (body.action === 'connect') setHubKey('') } catch (e) { toast(e.message || 'The hub did not answer') } setHubBusy(false) }
   const row = (k, label, sub, onClick) => <button type="button" className="prs2-row" onClick={onClick}><i className="prs2-ic">{SET_I[k]}</i><span className="prs2-t"><b>{label}</b>{sub && <small>{sub}</small>}</span><span className="prs2-go">{I.right}</span></button>
   return (
     <div ref={box} className="prs2" role="dialog" aria-label={titles[page]}>
@@ -1309,6 +1341,10 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
             <div className="prs2-box">
               {OPTIONAL.map(([k, l]) => (k === 'stats' && adminIn ? ['admin', 'Admin'] : [k, l])).map(([k, l]) => <button key={k} type="button" className="prs2-row" onClick={() => flipTab(k)}><i className="prs2-ic">{TAB_I[k]}</i><span className="prs2-t"><b>{l}</b></span><i className={`prw-sw${hidden.includes(k) ? '' : ' on'}`} /></button>)}
             </div>
+            <small className="prs2-cap">Connections</small>
+            <div className="prs2-box">
+              {row('hub', 'TML Hub', hub === undefined ? '' : hub ? `Linked to ${hub.hub} · locations go there by themselves` : 'Send this project\u2019s locations to your hub', () => go('hub'))}
+            </div>
             <small className="prs2-cap">Chat</small>
             <div className="prs2-box">
               <button type="button" className="prs2-row" onClick={() => setPrefs({ proNotes: !getPrefs().proNotes })}><i className="prs2-ic">{SET_I.side}</i><span className="prs2-t"><b>Show What Went to the Side</b><small>A small line in the chat when a photo or file goes to the project</small></span><i className={`prw-sw${notesOn ? ' on' : ''}`} /></button>
@@ -1316,6 +1352,38 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
             <div className="prs2-box">
               <button type="button" className="prs2-row danger" onClick={onStop}><i className="prs2-ic">{I.trash}</i><span className="prs2-t"><b>Stop Being a Project</b><small>The chat stays; the stage, details, tasks and locations go</small></span></button>
             </div>
+          </>
+        )}
+        {page === 'hub' && (
+          <>
+            {hub ? (
+              <>
+                <div className="prs2-box prs2-pad prs2-hubon">
+                  <i className="prs2-hubdot" />
+                  <span className="prs2-t"><b>Linked to {hub.hub}</b><small>{hub.synced ? `${hub.synced} location${hub.synced === 1 ? '' : 's'} in the hub` : 'No locations sent yet'}{hub.last ? ` · last sent ${new Date(hub.last).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}</small></span>
+                </div>
+                {hub.error && <p className="prs2-hint prs2-err">{hub.error}</p>}
+                <p className="prs2-hint">Every place in Location Scout goes into the hub&rsquo;s Locations, with its photos, and changes there as it changes here. A place taken out here leaves the hub too.</p>
+                <div className="prs2-hubacts">
+                  <button type="button" className="pill-btn" disabled={hubBusy} onClick={() => hubDo({ action: 'sync' }, 'Sent to the hub')}>{hubBusy ? 'Sending\u2026' : 'Send Now'}</button>
+                  {boss && <button type="button" className="pill-btn danger" disabled={hubBusy} onClick={() => { if (window.confirm(`Unlink this project from ${hub.hub}? What is in the hub stays there.`)) hubDo({ action: 'disconnect' }, 'Unlinked') }}>Unlink</button>}
+                </div>
+              </>
+            ) : hub === null && (
+              <>
+                <p className="prs2-hint">Link this project to your TML Hub and every place in Location Scout goes into the hub&rsquo;s Locations by itself, with its photos.</p>
+                {boss ? (
+                  <>
+                    <small className="prs2-cap">Hub key</small>
+                    <div className="prs2-box prs2-pad">
+                      <input className="prs2-keyin" value={hubKey} onChange={(e) => setHubKey(e.target.value.trim())} placeholder="tmlhub_…" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} />
+                    </div>
+                    <p className="prs2-hint">In the hub: Settings, Integrations, Connected Apps, Make a Key. Paste it here.</p>
+                    <button type="button" className="btn btn-main prs2-hubgo" disabled={hubBusy || !/^tmlhub_[0-9a-f]{48}$/.test(hubKey)} onClick={() => hubDo({ action: 'connect', key: hubKey }, 'Linked. The locations are on their way.')}>{hubBusy ? 'Linking\u2026' : 'Link to the Hub'}</button>
+                  </>
+                ) : <p className="prs2-hint">Only an admin of the group can link it to a hub.</p>}
+              </>
+            )}
           </>
         )}
         {page === 'info' && (
@@ -1631,7 +1699,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       </div>
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
-      {setOpen && <ProSettings key={String(setOpen)} start={setOpen === true ? 'home' : setOpen} project={project} save={save} fields={fields} setField={setField} hidden={hidden} flipTab={flipTab} adminIn={adminIn} notesOn={notesOn} dateName={dateName} onClose={() => setSetOpen(false)}
+      {setOpen && <ProSettings key={String(setOpen)} start={setOpen === true ? 'home' : setOpen} roomId={room.room_id} boss={room.role === 'admin'} toast={toast} project={project} save={save} fields={fields} setField={setField} hidden={hidden} flipTab={flipTab} adminIn={adminIn} notesOn={notesOn} dateName={dateName} onClose={() => setSetOpen(false)}
         onStop={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields, tasks and locations are deleted; the chat stays.')) { setSetOpen(false); kit.remove(room.room_id).catch((e) => toast(errText(e))) } }} />}
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
       {ordView && <OrdinoView o={ordView} onClose={() => setOrdView(null)} onSend={() => { setOrdSend(ordView); setOrdView(null) }} />}

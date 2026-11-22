@@ -6805,3 +6805,23 @@ html:root:root:root:root:root .prw-seg > button { min-height: 0; height: 34px; p
 @keyframes prw-zoom { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
 .prw-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .prw-facts .prw-fact.add { grid-column: 1 / -1; min-height: 44px; }
+/* the bins of the workspace (Alex, 22 Nov): a small round bin at the end of a row, on a photo's corner, on a poll's corner */
+html:root:root:root:root .prw-trash { flex: none; width: 28px; height: 28px; min-width: 28px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; color: #e5483f; background: color-mix(in srgb, #e5483f 9%, transparent); box-shadow: none; cursor: pointer; opacity: .55; transition: opacity .15s, background .15s; }
+html:root:root:root:root .prw-trash:hover { opacity: 1; background: color-mix(in srgb, #e5483f 16%, transparent); }
+.prw-trash svg { width: 14px; height: 14px; }
+.prw-link:not(:hover) .prw-trash, .prw-srow:not(:hover) .prw-trash, .prw-call:not(:hover) .prw-trash { opacity: .3; }
+.prw-tilewrap { position: relative; display: block; }
+.prw-tilewrap > .prw-tile { width: 100%; }
+html:root:root:root:root .prw-trash.on-pic, html:root:root:root:root .prw-trash.corner { position: absolute; top: 8px; right: 8px; z-index: 2; color: #fff; background: rgba(0, 0, 0, .45); opacity: 0; }
+html:root:root:root:root .prw-trash.corner { color: #e5483f; background: color-mix(in srgb, #e5483f 10%, var(--panel, #fff)); }
+.prw-tilewrap:hover .prw-trash.on-pic, .prw-pollwrap:hover .prw-trash.corner { opacity: 1; }
+html:root:root:root:root .prw-trash.on-pic:hover { background: #e5483f; }
+.prw-pollwrap { position: relative; }
+@media (hover: none) { html:root:root:root:root .prw-trash.on-pic, html:root:root:root:root .prw-trash.corner { opacity: .85; } }
+html:root:root:root:root .prw-tilewrap:hover .prw-trash.on-pic, html:root:root:root:root .prw-pollwrap:hover .prw-trash.corner { opacity: 1; }
+/* a fact's bin (Alex, 22 Nov: "Add Field makes a field; let me delete it too") */
+html:root:root:root:root .prw-fact-del { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; min-width: 24px; opacity: 0; }
+html:root:root:root:root .prw-fact:hover .prw-fact-del, html:root:root:root:root .prw-fact:focus-within .prw-fact-del { opacity: .8; }
+@media (hover: none) { html:root:root:root:root .prw-fact-del { opacity: .6; } }
+.prw-fact-del svg { width: 12px; height: 12px; }
+.prw-fact input.prw-fact-k { padding-right: 26px; }

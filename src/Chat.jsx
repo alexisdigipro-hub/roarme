@@ -1748,7 +1748,7 @@ export default function Chat({ me, setMe }) {
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} />
           {proOn && <ProPanel key={`pro-${active.room_id}`} room={active} other={otherOf(active)} project={proKit.map[active.room_id]} kit={proKit} rooms={rooms} titleOf={titleOf} toast={toast}
-            onJump={(id) => libChat(active.room_id, id)} onOpenRoom={(id) => { setTab('chats'); setActiveId(id) }} me={me} people={people} title={titleOf(active)} />}
+            onJump={(id) => libChat(active.room_id, id)} onOpenRoom={(id) => { setTab('chats'); setActiveId(id) }} me={me} people={people} title={titleOf(active)} onChanged={loadRooms} />}
         </div>) : (
           <div className="pick">
             <span className="pick-mark"><Wordmark by /></span>
@@ -3293,6 +3293,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
   // in a Pro project the chat keeps only the talk and every photo, video and file goes to the panel at the side (Alex,
   // 22 Nov: "when it becomes a project, no materials stay in the chat, only the conversations"); a caption stays as words
+  // what the Pro panel took away for me leaves the chat at once too
+  useEffect(() => { const f = (e) => { if (e.detail?.room === room.room_id) setHidden((h) => new Set([...h, e.detail.id])) }; window.addEventListener('roarme-hide', f); return () => window.removeEventListener('roarme-hide', f) }, [room.room_id])
   const shownMsgs = useMemo(() => {
     const base = msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt))
     if (!assetsAside) return base

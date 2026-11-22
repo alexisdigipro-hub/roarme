@@ -1314,7 +1314,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           </Hang>
         </span>
       </div>
-      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span><span className="prw-bw">{k === 'scout' ? 'Scout' : k === 'calls' ? 'Meetings' : l}</span></button>)}</Lens></div>
+      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span></button>)}</Lens></div>
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">

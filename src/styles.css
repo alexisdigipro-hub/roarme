@@ -6624,3 +6624,6 @@ html:root:root:root:root .aside-note button { display: inline-flex; align-items:
 .prw-top > .prw-hang, .prw-top > .prw-pill { flex: none; }
 .prw-faces { flex: none; }
 html:root:root:root:root .prw-tabs .seg > button { padding: 0 11px; font-size: 13px; }
+.msg-tag { color: var(--halo-mine, var(--accent)); font-weight: 600; cursor: pointer; }
+.msg.mine .msg-tag { color: inherit; font-weight: 700; }
+.prw-top h1 { flex: 0 0 auto; max-width: 36%; }

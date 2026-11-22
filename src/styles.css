@@ -7169,3 +7169,15 @@ html[data-mode='dark'] .tab-gold { background-image: linear-gradient(135deg, #ff
 html:root:root:root:root:root:root .prw-tabs.slide .prw-bar { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 html:root:root:root:root:root:root .prw-tabs.slide .prw-bar > button { flex: 0 0 auto; min-width: 64px; height: 50px; padding: 0 10px; }
 .prw-tabs.slide .prw-bar::-webkit-scrollbar { display: none; }
+/* the workspace's tabs as the folders' bar (Alex, 22 Nov, from a screenshot of ALL / UNREAD / GROUPS / ARCHIVED; signs only,
+   no words): a white capsule with a soft rim and shadow, dark line signs, the chosen one on a soft grey lens */
+html:root:root:root:root:root:root:root .prw-bar { padding: 6px; gap: 2px; border-radius: 999px; background: rgba(255, 255, 255, .88) !important; border: 1px solid rgba(255, 255, 255, .95); box-shadow: 0 6px 20px rgba(20, 30, 50, .08), 0 1px 2px rgba(20, 30, 50, .05); }
+html[data-mode='dark']:root:root:root:root:root:root .prw-bar { background: rgba(44, 44, 49, .9) !important; border-color: rgba(255, 255, 255, .07); }
+html:root:root:root:root:root:root:root .prw-bar > button { flex: 1 1 0; min-width: 44px; height: 44px; padding: 0; border-radius: 999px; color: #1f2329; opacity: .78; }
+html[data-mode='dark']:root:root:root:root:root:root .prw-bar > button { color: #f2f2f4; }
+html:root:root:root:root:root:root:root .prw-bar > button.on { opacity: 1; color: #1f2329; }
+html[data-mode='dark']:root:root:root:root:root:root .prw-bar > button.on { color: #fff; }
+html:root:root:root:root:root:root:root .prw-bar::before { border-radius: 999px; background: #e6e8ec; box-shadow: none; }
+html[data-mode='dark']:root:root:root:root:root:root .prw-bar::before { background: rgba(255, 255, 255, .12); }
+html:root:root:root:root:root .prw-bar .prw-bi svg { width: 21px; height: 21px; }
+html:root:root:root:root:root:root .prw-tabs.slide .prw-bar > button { flex: 1 0 48px; min-width: 48px; height: 42px; padding: 0; }

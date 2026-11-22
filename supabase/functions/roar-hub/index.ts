@@ -10,7 +10,8 @@
 //   link { room }                         ties one project group (Make It a Project)
 //   sync { room }                         both ways, for one group: title, stage, shoot day, category, tasks, locations
 //   (pg_cron, x-roar-cron)                every minute, for every linked account: a group for each hub project whose
-//                                         Create PROject was pressed, or that was made in the hub since linking
+//                                         Create PROject was pressed, or that was made in the hub since linking, and a
+//                                         sync of every tied project the hub changed since its last sync (live both ways)
 // What changed on which side since the last sync decides (base hashes in roar_hub_links.base); when both changed the
 // same thing, RoarMe's wins. verify_jwt off: the function checks the sign-in, or pg_cron's Vault secret, itself.
 
@@ -172,6 +173,7 @@ Deno.serve(async (req) => {
     if (F.title && F.title !== R.title) await db.from('roar_rooms').update({ title: F.title }).eq('id', room)
 
     const nextBase = {
+      hu: hub.updatedAt || '',
       f: F,
       t: Object.fromEntries(tasks.map((x) => [x.id, hashOf(x.c)])),
       l: Object.fromEntries(locs.map((x) => [x.id, hashOf(x.c)])),
@@ -230,15 +232,24 @@ Deno.serve(async (req) => {
     if (isCron) {
       // every linked account: a group for each hub project that asked for one (Create PROject) or was made since linking
       const { data: accs } = await db.from('roar_hub_accounts').select('*')
-      let made = 0
+      let made = 0, synced = 0
       for (const acc of accs || []) {
         try {
           const projects = (await hubCall(acc.hub_key, { action: 'projects.list' })).projects || []
           const taken = new Set(((await db.from('roar_hub_links').select('hub_project')).data || []).map((x: any) => x.hub_project))
           for (const p of projects) if (wanted(acc, p, taken) && await makeGroup(acc, p)) { taken.add(p.id); made++ }
+          // live from the hub too (Alex, 22 Nov: "what I delete in the hub goes in RoarMe, and back"): every tied project
+          // the hub changed since its last sync is synced now, whether RoarMe is open or not
+          const byId = Object.fromEntries(projects.map((p: any) => [p.id, p]))
+          const { data: links } = await db.from('roar_hub_links').select('room_id, hub_project, base').eq('owner', acc.user_id).not('hub_project', 'is', null)
+          for (const l of links || []) {
+            const p = byId[l.hub_project]
+            if (!p) { await db.from('roar_hub_links').update({ last_error: 'This project is not in the hub any more.' }).eq('room_id', l.room_id); continue }
+            if (p.updatedAt && p.updatedAt !== l.base?.hu) { try { await syncRoom(l.room_id); synced++ } catch { /* next minute */ } }
+          }
         } catch { /* that hub next minute */ }
       }
-      return json({ ok: true, made })
+      return json({ ok: true, made, synced })
     }
 
     if (body.action === 'linkall') {

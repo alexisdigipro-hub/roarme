@@ -109,7 +109,6 @@ const start = (a, url) => { lockAt = 0; a.src = url; a.defaultPlaybackRate = sta
    sound itself when the file is small enough to open whole on a phone (up to WAVE_MAX), else a calm shape of its own,
    the same every time for the same file. Kept for the visit; asked only while the big player is open. */
 export const WAVE = 56
-const WAVE_MAX = 12e6
 const waves = new Map()
 export const shapeOf = (key) => {
   let h = 2166136261
@@ -126,22 +125,78 @@ async function loadWave(key, file) {
   const calm = shapeOf(key)
   waves.set(key, calm)
   if (state.key === key) set({ peaks: calm })
-  const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext
-  if (!Ctx || !(file.size > 0) || file.size > WAVE_MAX) return
-  try {
+  // the real shape, worked out once per song (finePeaks: a WAV of any length read from its samples, other kinds decoded)
+  const real = await finePeaks(file, WAVE)
+  if (real) { waves.set(key, real); if (state.key === key) set({ peaks: real }) }
+}
+
+/* A song's real waveform, finer (Alex, 22 Nov: "the waveform in the audio, what is it? make it more detailed"): n levels
+   read from the sound itself. A WAV is read straight from its samples (no decoding, so a long one fits a phone's memory,
+   up to 160 MB on a computer, 60 MB on a phone); other kinds are decoded up to 40 MB (20 on a phone). Kept for the visit
+   and on the device (localStorage roarme-wave-<path>), so it is worked out once per song. */
+const fine = new Map()
+const fineWait = new Map()
+const touchy = () => typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
+const wavPeaks = (buf, n) => {
+  const dv = new DataView(buf)
+  if (dv.byteLength < 44 || dv.getUint32(0) !== 0x52494646 || dv.getUint32(8) !== 0x57415645) return null // RIFF WAVE
+  let p = 12, ch = 1, bits = 16, fmt = 1, start = 0, size = 0
+  while (p + 8 <= dv.byteLength) {
+    const id = dv.getUint32(p), len = dv.getUint32(p + 4, true)
+    if (id === 0x666d7420) { fmt = dv.getUint16(p + 8, true); ch = dv.getUint16(p + 10, true); bits = dv.getUint16(p + 22, true) } // 'fmt '
+    if (id === 0x64617461) { start = p + 8; size = Math.min(len, dv.byteLength - start); break } // 'data'
+    p += 8 + len + (len & 1)
+  }
+  if (!start || !size || (fmt !== 1 && fmt !== 3 && fmt !== 65534)) return null
+  const bps = bits / 8, frame = bps * ch, frames = Math.floor(size / frame)
+  if (!frames) return null
+  const read = bits === 16 ? (o) => dv.getInt16(o, true) / 32768 : bits === 24 ? (o) => ((dv.getUint8(o) | (dv.getUint8(o + 1) << 8) | (dv.getInt8(o + 2) << 16)) / 8388608)
+    : bits === 32 && fmt !== 1 ? (o) => dv.getFloat32(o, true) : bits === 32 ? (o) => dv.getInt32(o, true) / 2147483648 : (o) => (dv.getUint8(o) - 128) / 128
+  const per = frames / n, out = []
+  const stride = Math.max(1, Math.floor(per / 400)) // about 400 looks per bar
+  for (let i = 0; i < n; i++) {
+    let m = 0, sq = 0, c = 0
+    for (let f = Math.floor(i * per), e = Math.min(frames, Math.floor((i + 1) * per)); f < e; f += stride) { const v = Math.abs(read(start + f * frame)); if (v > m) m = v; sq += v * v; c++ }
+    out.push(c ? Math.sqrt(sq / c) * 0.6 + m * 0.4 : 0)
+  }
+  return out
+}
+const shape = (raw) => { const top = Math.max(...raw, 0.01); return raw.map((x) => Math.round((0.1 + 0.9 * Math.pow(x / top, 0.8)) * 100) / 100) }
+async function finePeaks(file, n) {
+  const key = `${keyOf(file)}|${n}`
+  if (fine.has(key)) return fine.get(key)
+  try { const k = localStorage.getItem(`roarme-wave-${key}`); if (k) { const v = k.split(',').map(Number); fine.set(key, v); return v } } catch { /* private window */ }
+  if (fineWait.has(key)) return fineWait.get(key)
+  const job = (async () => {
+    const isWav = /\.wav$/i.test(file.name || '') || /wav/.test(file.type || '')
+    const cap = isWav ? (touchy() ? 60e6 : 160e6) : (touchy() ? 20e6 : 40e6)
+    if (!(file.size > 0) || file.size > cap) return null
     const url = await fileLink(file)
+    if (!url) return null
     const data = await (await fetch(url)).arrayBuffer()
-    const ac = new Ctx(1, 1, 44100)
-    const buf = await new Promise((ok, bad) => { const pr = ac.decodeAudioData(data, ok, bad); if (pr?.then) pr.then(ok, bad) })
-    const ch = buf.getChannelData(0)
-    const step = Math.max(1, Math.floor(ch.length / WAVE))
-    const raw = []
-    for (let i = 0; i < WAVE; i++) { let m = 0; for (let j = i * step, e = Math.min(ch.length, j + step); j < e; j += 64) { const a = Math.abs(ch[j]); if (a > m) m = a } raw.push(m) }
-    const top = Math.max(...raw, 0.01)
-    const real = raw.map((x) => 0.14 + 0.86 * (x / top))
-    waves.set(key, real)
-    if (state.key === key) set({ peaks: real })
-  } catch { /* the calm shape stays */ }
+    let raw = isWav ? wavPeaks(data, n) : null
+    if (!raw) {
+      const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext
+      if (!Ctx) return null
+      const ac = new Ctx(1, 1, 44100)
+      const buf = await new Promise((ok, bad) => { const pr = ac.decodeAudioData(data, ok, bad); if (pr?.then) pr.then(ok, bad) })
+      const chd = buf.getChannelData(0), per = chd.length / n
+      raw = []
+      for (let i = 0; i < n; i++) { let m = 0, sq = 0, c = 0; for (let j = Math.floor(i * per), e = Math.min(chd.length, Math.floor((i + 1) * per)); j < e; j += 32) { const v = Math.abs(chd[j]); if (v > m) m = v; sq += v * v; c++ } raw.push(c ? Math.sqrt(sq / c) * 0.6 + m * 0.4 : 0) }
+    }
+    const v = shape(raw)
+    fine.set(key, v)
+    try { localStorage.setItem(`roarme-wave-${key}`, v.join(',')) } catch { /* full or private */ }
+    return v
+  })().catch(() => null).finally(() => fineWait.delete(key))
+  fineWait.set(key, job)
+  return job
+}
+export function useWave(file, n = 96) {
+  const key = `${keyOf(file)}|${n}`
+  const [v, setV] = useState(() => fine.get(key) || null)
+  useEffect(() => { let alive = true; if (!file) return undefined; finePeaks(file, n).then((x) => { if (alive && x) setV(x) }); return () => { alive = false } }, [key]) // eslint-disable-line react-hooks/exhaustive-deps
+  return v
 }
 
 /* play a song of the list */

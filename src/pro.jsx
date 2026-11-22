@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Avatar, CropModal, I, Lens, Modal } from './ui.jsx'
-import { AUDIO_EXT, mmss, player, shapeOf, usePlayer } from './player.jsx'
+import { AUDIO_EXT, mmss, player, shapeOf, usePlayer, useWave } from './player.jsx'
 import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib.js'
 import { inApp } from './push.js'
 import { getPrefs, setPrefs, usePrefs } from './prefs.js'
@@ -649,6 +649,8 @@ function Board({ list, onChange }) {
 
 /* ---------- the tabs as a menu: a line sign over the word, spread across (Alex, 22 Nov: "like a menu") ---------- */
 const tsv = (d) => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+// the words under the signs on a computer, short enough for eight side by side (Alex, 22 Nov: "words, like a menu, with the sign")
+const TAB_SHORT = { scout: 'Locations', calls: 'Calls' }
 const TAB_I = {
   overview: tsv(<><rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="7" rx="2" /><rect x="3.5" y="13.5" width="7" height="7" rx="2" /><rect x="13.5" y="13.5" width="7" height="7" rx="2" /></>),
   media: tsv(<><rect x="3" y="4.5" width="18" height="15" rx="3" /><circle cx="9" cy="10" r="1.8" /><path d="m21 16-5-5-8.5 8.5" /></>),
@@ -1018,7 +1020,8 @@ function SongBar({ m, from, roomId, who, onSendHere, onSendTo, onDrop }) {
   const mine = p.key === key
   const playing = mine && p.playing
   const frac = mine && p.dur ? p.at / p.dur : 0
-  const peaks = (mine && p.peaks) || shapeOf(key)
+  const real = useWave(m.file, 110)
+  const peaks = real || shapeOf(key)
   const name = (m.file.name || 'Audio').replace(AUDIO_EXT, '')
   const ext = ((m.file.name || '').match(AUDIO_EXT) || [])[1]?.toUpperCase() || 'AUDIO'
   const go = () => { if (url) player.toggle({ key, url, title: name, from, roomId, file: m.file }) }
@@ -1439,7 +1442,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           <button type="button" className={`round prw-gear${setOpen ? ' on' : ''}`} onClick={() => setSetOpen(true)} aria-label="Project settings" title="Project settings">{I.gear}</button>
         </span>
       </div>
-      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span></button>)}</Lens></div>
+      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span>{!phone && <span className="prw-bl">{TAB_SHORT[k] || l}</span>}</button>)}</Lens></div>
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">

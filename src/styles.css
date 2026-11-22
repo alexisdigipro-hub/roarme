@@ -7623,6 +7623,6 @@ html:root:root:root:root .tk-donebar { display: inline-flex; align-items: center
 .tk-chev.on { transform: rotate(90deg); }
 .tk-chev svg { width: 14px; height: 14px; }
 .tk-completed .tk-row { background: color-mix(in srgb, currentColor 2.5%, transparent); }
-.prw-board-wrap.tk { max-width: 860px; }
+.prw-board-wrap.tk, .prw-board-wrap.tk .prj-add { max-width: none; }
 html:root:root:root:root .tk-pill.pri-urgent { color: #e5484d; background: rgba(229, 72, 77, .12); font-weight: 600; }
 html:root:root:root:root .tk-pill.pri-high { color: #f08c00; background: rgba(240, 140, 0, .12); font-weight: 600; }

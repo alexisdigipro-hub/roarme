@@ -6379,7 +6379,6 @@ html:root:root:root:root:root .bk-callmenu > :is(button, a) svg { width: 22px !i
 .prw, .prw-off { flex: 1; min-height: 0; display: flex; }
 .prw-off > .room-view, .prw > .room-view { flex: 1; min-width: 0; }
 .prj { flex: none; width: 330px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 14px 18px; display: flex; flex-direction: column; gap: 10px; border-left: 1px solid color-mix(in srgb, currentColor 8%, transparent); background: color-mix(in srgb, var(--panel, #fff) 55%, transparent); }
-@media (max-width: 1100px) { .prj { width: 290px; } }
 @media (max-width: 960px) { .prj { display: none; } }
 .prj-chip { display: inline-flex; align-items: center; gap: 5px; height: 17px; padding: 0 7px; margin-right: 6px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; vertical-align: 1px; color: var(--pc); background: color-mix(in srgb, var(--pc) 14%, transparent); }
 .prj-chip::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--pc); }
@@ -6456,3 +6455,10 @@ html:root:root:root:root .prj-t-done .prj-tick { border-color: transparent; back
 .prj-make b { font-size: 15px; margin-top: 4px; }
 .prj-make p { margin: 0 0 6px; font-size: 12.5px; line-height: 1.45; opacity: .62; }
 html:root:root:root:root:root:root:root .foot button.foot-pro.lit, html:root:root:root:root:root:root:root .foot button.foot-pro.lit:hover { color: var(--halo-mine, var(--accent)) !important; }
+.prj-wrap { position: relative; flex: none; min-height: 0; display: flex; }
+.prj-wrap > .prj { width: auto; flex: 1; min-width: 0; }
+@media (max-width: 960px) { .prj-wrap { display: none; } }
+.prj-grip { position: absolute; top: 0; bottom: 0; left: -5px; width: 10px; z-index: 3; cursor: col-resize; touch-action: none; }
+.prj-grip::after { content: ''; position: absolute; top: 50%; left: 3px; width: 4px; height: 44px; margin-top: -22px; border-radius: 2px; background: color-mix(in srgb, currentColor 25%, transparent); opacity: 0; transition: opacity .2s; }
+.prj-wrap:hover > .prj-grip::after, html.prj-dragging .prj-grip::after { opacity: 1; }
+html.prj-dragging, html.prj-dragging * { cursor: col-resize !important; user-select: none !important; }

@@ -202,7 +202,7 @@ export function useTabSwipe(ref, keys, current, setCurrent, dep = 0) {
   }, [ref, dep])
 }
 
-export function Modal({ title, onClose, children, foot, wide = false, page = false }) {
+export function Modal({ title, onClose, children, foot, wide = false, page = false, inline = false }) {
   useEffect(() => {
     const k = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', k)
@@ -213,7 +213,17 @@ export function Modal({ title, onClose, children, foot, wide = false, page = fal
   // on the page itself, not inside a glass panel (a panel's blur would hold it inside the panel)
   // page: the window takes the chat's own pane and slides in from the right, as a page, not a small window over it
   // (Alex, 18 Nov, the profile); with no pane in sight it is the usual window
-  const pane = page ? [...document.querySelectorAll('.app > .main')].find((m) => m.offsetWidth > 0) : null
+  const pane = page && !inline ? [...document.querySelectorAll('.app > .main')].find((m) => m.offsetWidth > 0) : null
+  // inline: the same page drawn where it stands, in a panel (Pro's profile beside a chat with one person)
+  if (inline) {
+    return (
+      <div className="modal-back as-page as-inline">
+        <div ref={box} className={`modal${wide ? ' modal-wide' : ''}`} role="region" aria-label={title}>
+          <div className="modal-body">{children}</div>
+        </div>
+      </div>
+    )
+  }
   return createPortal(
     <div className={`modal-back${pane ? ' as-page' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div ref={box} className={`modal${wide ? ' modal-wide' : ''}`} role="dialog" aria-label={title}>
@@ -424,7 +434,10 @@ export const Wordmark = ({ by = false }) => (
 /* Adjust a new picture before it is saved (Alex, 16 Oct): drag to place it, slide or scroll to zoom,
    inside the round frame it will be shown in. Gives back a square JPEG, 400 px (Alex, 21 Oct: RoarMe lighter; the biggest circle it fills is 132 px, so 400 is sharp on any phone). */
 const FRAME = 280
-export function CropModal({ file, title = 'Adjust photo', onDone, onClose }) {
+export function CropModal({ file, title = 'Adjust photo', onDone, onClose, wide = 0 }) {
+  // wide: a frame of that width to height (a project's cover, Alex, 22 Nov), with no round ring and a larger picture out
+  const FW = wide ? 360 : FRAME
+  const FH = wide ? Math.round(360 / wide) : FRAME
   const [img, setImg] = useState(null)
   const [z, setZ] = useState(1)
   const [pos, setPos] = useState({ x: 0, y: 0 })
@@ -436,10 +449,10 @@ export function CropModal({ file, title = 'Adjust photo', onDone, onClose }) {
     i.src = url
     return () => URL.revokeObjectURL(url)
   }, [file])
-  const base = img ? Math.max(FRAME / img.naturalWidth, FRAME / img.naturalHeight) : 1
-  const dw = img ? img.naturalWidth * base * z : FRAME
-  const dh = img ? img.naturalHeight * base * z : FRAME
-  const clamp = (p, w = dw, h = dh) => ({ x: Math.max(-(w - FRAME) / 2, Math.min((w - FRAME) / 2, p.x)), y: Math.max(-(h - FRAME) / 2, Math.min((h - FRAME) / 2, p.y)) })
+  const base = img ? Math.max(FW / img.naturalWidth, FH / img.naturalHeight) : 1
+  const dw = img ? img.naturalWidth * base * z : FW
+  const dh = img ? img.naturalHeight * base * z : FH
+  const clamp = (p, w = dw, h = dh) => ({ x: Math.max(-(w - FW) / 2, Math.min((w - FW) / 2, p.x)), y: Math.max(-(h - FH) / 2, Math.min((h - FH) / 2, p.y)) })
   const zoomTo = (nz) => {
     const v = Math.max(1, Math.min(4, nz))
     setZ(v)
@@ -450,25 +463,26 @@ export function CropModal({ file, title = 'Adjust photo', onDone, onClose }) {
   const up = () => { drag.current = null }
   const save = () => {
     if (!img) return
-    const O = 400
-    const r = O / FRAME
+    const OW = wide ? 1600 : 400
+    const OH = wide ? Math.round(1600 / wide) : 400
+    const r = OW / FW
     const c = document.createElement('canvas')
-    c.width = O
-    c.height = O
+    c.width = OW
+    c.height = OH
     const g = c.getContext('2d')
     g.fillStyle = '#111'
-    g.fillRect(0, 0, O, O)
+    g.fillRect(0, 0, OW, OH)
     g.imageSmoothingQuality = 'high'
-    g.drawImage(img, O / 2 + pos.x * r - (dw * r) / 2, O / 2 + pos.y * r - (dh * r) / 2, dw * r, dh * r)
-    c.toBlob((b) => b && onDone(new File([b], 'photo.jpg', { type: 'image/jpeg' })), 'image/jpeg', 0.9)
+    g.drawImage(img, OW / 2 + pos.x * r - (dw * r) / 2, OH / 2 + pos.y * r - (dh * r) / 2, dw * r, dh * r)
+    c.toBlob((b) => b && onDone(new File([b], 'photo.jpg', { type: 'image/jpeg' })), 'image/jpeg', wide ? 0.86 : 0.9)
   }
   return (
     <Modal title={title} onClose={onClose} foot={<><button type="button" className="btn" onClick={onClose}>Cancel</button><button type="button" className="btn btn-main" onClick={save} disabled={!img}>Save</button></>}>
-      <div className="crop">
-        <div className="crop-frame" style={{ width: FRAME, height: FRAME }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+      <div className={`crop${wide ? ' crop-wide' : ''}`}>
+        <div className="crop-frame" style={{ width: FW, height: FH }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
           onWheel={(e) => zoomTo(z * (e.deltaY < 0 ? 1.08 : 1 / 1.08))}>
           {img && <img src={img.src} alt="" draggable={false} style={{ width: dw, height: dh, transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))` }} />}
-          <span className="crop-ring" />
+          {!wide && <span className="crop-ring" />}
         </div>
         <label className="crop-zoom">
           {svg(<><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5M8.5 11h5" /></>, 18)}

@@ -77,3 +77,7 @@ alter table public.roar_pro_projects add constraint roar_pro_projects_more_ok ch
 alter table public.roar_pro_projects add column if not exists ordinos jsonb not null default '[]'::jsonb;
 alter table public.roar_pro_projects drop constraint if exists roar_pro_projects_ordinos_ok;
 alter table public.roar_pro_projects add constraint roar_pro_projects_ordinos_ok check (jsonb_typeof(ordinos) = 'array' and pg_column_size(ordinos) <= 60000);
+
+-- The project's cover (Alex, 22 Nov): one's own picture (a public link in roar-avatars) and which picture the cover shows
+alter table public.roar_pro_projects add column if not exists cover text;
+alter table public.roar_pro_projects add column if not exists cover_pick int not null default 0;

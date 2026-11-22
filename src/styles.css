@@ -6972,3 +6972,37 @@ html:root:root:root:root .prw-song-play:disabled { opacity: .5; }
 .prw-more-songs { align-self: flex-start; }
 @media (prefers-reduced-motion: no-preference) { html:not([data-lite]):not([data-still]) .prw-song.on .prw-song-play { animation: prw-beat 1.6s ease-in-out infinite; } }
 @keyframes prw-beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+/* the workspace's tabs as the app's own foot menu (Alex, 22 Nov, from two screenshots: "make this bar as our menu"): the
+   same capsule of glass (--lg, its rim and shadow), dark signs and words (--lg-ink), the chosen one on the grey chip
+   (--lg-chip) in the accent, counts as small accent badges */
+html:root:root:root:root:root:root .prw-bar { padding: 5px; border-radius: 999px; background: var(--lg) !important; border: 1px solid var(--lg-rim); box-shadow: var(--lg-shadow); }
+html:root:root:root:root:root:root .prw-bar > button { height: 54px; border-radius: 999px; opacity: 1; color: var(--lg-ink, inherit); }
+html:root:root:root:root:root:root .prw-bar > button.on { color: var(--halo, var(--accent)); }
+html:root:root:root:root:root:root .prw-bar::before { border-radius: 999px; background: var(--lg-chip, rgba(0, 0, 0, .07)); box-shadow: none; }
+.prw-bar .prw-bi svg { width: 22px; height: 22px; }
+html:root:root:root:root .prw-bar .prw-bw { font-size: 10.5px; font-weight: 600; letter-spacing: 0; }
+html:root:root:root:root .prw-bi small { top: -5px; left: calc(100% - 6px); min-width: 15px; height: 15px; line-height: 15px; font-size: 9px; color: #fff; background: var(--halo, var(--accent)); }
+/* the chat on the right (the ⇄ button): the row turns over, the grip moves to the workspace's right edge */
+.prw.big.swap { flex-direction: row-reverse; }
+.prw.big.swap .prj-wrap.big .prw-work { border-left: 0; border-right: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+.prw.big.swap .prj-grip { left: auto; right: -5px; }
+.prw-swap svg { width: 18px; height: 18px; }
+/* a chat with one person: their profile page at the right, drawn in place (Modal inline) */
+.prw-pf { position: relative; flex: 1; min-width: 0; min-height: 0; display: flex; border-left: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+.prw.big.swap .prw-pf { border-left: 0; border-right: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+html:root:root:root:root:root:root:root .prw-pf .modal-back.as-inline { position: relative !important; inset: auto !important; flex: 1; z-index: 1; }
+html:root:root:root:root:root:root:root .prw-pf .modal-back.as-inline > .modal { animation: none !important; background: transparent !important; }
+.prw-pf .as-inline .pf-back, .prw-pf .as-inline .pf-dock > .round:first-child { visibility: hidden; }
+html:root:root:root:root .prw-swap-float { position: absolute; top: 14px; left: 14px; z-index: 5; width: 36px; height: 36px; min-width: 36px; padding: 0; }
+/* the cover's own buttons: the arrows between its pictures, the dots, upload, remove */
+.prw-hero-tools { position: absolute; z-index: 2; top: 14px; right: 14px; display: flex; align-items: center; gap: 6px; }
+html:root:root:root:root .prw-hero-btn { width: 32px; height: 32px; min-width: 32px; padding: 0; display: grid; place-items: center; color: #fff; border: 0; background: rgba(255, 255, 255, .16) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; opacity: .85; }
+html:root:root:root:root .prw-hero-btn:hover { opacity: 1; background: rgba(255, 255, 255, .26) !important; }
+.prw-hero-btn svg { width: 15px; height: 15px; }
+.prw-hero-btn .flip { display: grid; transform: scaleX(-1); }
+.prw-hero-dots { display: flex; gap: 4px; padding: 0 2px; }
+.prw-hero-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .4); transition: width .25s, background .25s; }
+.prw-hero-dots i.on { width: 16px; border-radius: 3px; background: #fff; }
+@media (prefers-reduced-motion: no-preference) { html:not([data-lite]):not([data-still]) .prw-hero-bg { animation: prw-fadein .5s ease both, prw-ken 18s ease-in-out .5s infinite alternate; } }
+@keyframes prw-fadein { from { opacity: 0; } to { opacity: 1; } }
+.crop-wide .crop-frame { border-radius: 16px; }

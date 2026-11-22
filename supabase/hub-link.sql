@@ -83,3 +83,6 @@ $$;
 -- for whoever already had a Production Hub or ran a project group
 alter table public.roar_profiles add column if not exists pro_on boolean not null default false;
 grant select (pro_on), update (pro_on) on public.roar_profiles to authenticated;
+
+-- where the banner's picture stands (Reposition, Alex 22 Nov): { x, y } in % of background-position
+alter table public.roar_pro_projects add column if not exists cover_pos jsonb;

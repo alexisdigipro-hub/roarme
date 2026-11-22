@@ -39,6 +39,7 @@ const hubCall = async (key: string, body: any) => {
 const IMG = /\.(jpe?g|png|webp|gif)$/i
 const uid = () => crypto.randomUUID()
 const hashOf = (o: any) => JSON.stringify(o)
+const hashText = async (t: string) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)))].map((b) => b.toString(16).padStart(2, '0')).join('')
 const norm = (t: string) => String(t || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[–—-]+/g, '-').replace(/\s+/g, ' ').trim()
 
 // RoarMe's stage names and the hub's statuses
@@ -200,7 +201,26 @@ Deno.serve(async (req) => {
     // the group's picture is the hub's cover (Alex, 22 Nov), unless someone gave the group a picture of its own
     const roomPatch: any = {}
     if (F.title && F.title !== R.title) roomPatch.title = F.title
-    if (hub.cover && rm?.avatar_url !== hub.cover && (!rm?.avatar_url || rm.avatar_url === proj.hub_cover)) roomPatch.avatar_url = hub.cover
+    // a group's picture may only live in RoarMe's own roar-avatars (roar_room_avatar_own), so the cover is copied there once
+    // per cover (the ?v= is the cover's own address); a picture someone set by hand (another path) is left alone
+    const ownPath = `${link.owner}/hub-cover-${room}.jpg`
+    const ownBase = db.storage.from('roar-avatars').getPublicUrl(ownPath).data.publicUrl
+    if (hub.cover && (!rm?.avatar_url || rm.avatar_url.startsWith(ownBase))) {
+      const want = `${ownBase}?v=${(await hashText(hub.cover)).slice(0, 12)}`
+      if (rm?.avatar_url !== want) {
+        try {
+          const r = await fetch(hub.cover)
+          const type = r.headers.get('content-type') || 'image/jpeg'
+          if (r.ok && /^image\//.test(type)) {
+            const buf = new Uint8Array(await r.arrayBuffer())
+            if (buf.byteLength < 5_000_000) {
+              const up = await db.storage.from('roar-avatars').upload(ownPath, buf, { contentType: type, upsert: true })
+              if (!up.error) roomPatch.avatar_url = want
+            }
+          }
+        } catch { /* next sync */ }
+      }
+    }
     if (Object.keys(roomPatch).length) await db.from('roar_rooms').update(roomPatch).eq('id', room)
 
     const nextBase = {

@@ -7655,3 +7655,17 @@ html:root:root:root:root .prs2-keyin { width: 100%; height: 40px; border: 0; out
 .wn-list li::before { left: 2px; top: .7em; width: 5px; height: 5px; opacity: .7; }
 .modal .wn .wn-list li { font-size: 14px; }
 @media (max-width: 760px) { .wn-box { padding: 20px 18px 22px; } }
+
+/* Settings > Production Hub (Alex, 22 Nov) */
+.hb { display: flex; flex-direction: column; gap: 12px; }
+.hb-on { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.hb-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: #14a37f; box-shadow: 0 0 0 4px rgba(20, 163, 127, .16); }
+.hb-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hb-t small { opacity: .6; }
+.hb-hint { margin: 0; font-size: 13.5px; line-height: 1.5; opacity: .65; }
+.hb-cap { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .55; }
+.hb-pad { padding: 4px 14px; }
+html:root:root:root:root .hb-key { width: 100%; height: 42px; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; font-size: 15px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.hb-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+html:root:root:root:root .hb-acts .hb-off { color: #e5484d; }
+.hb-go { align-self: flex-start; }

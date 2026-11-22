@@ -111,7 +111,7 @@ const start = (a, url) => { lockAt = 0; a.src = url; a.defaultPlaybackRate = sta
 export const WAVE = 56
 const WAVE_MAX = 12e6
 const waves = new Map()
-const shapeOf = (key) => {
+export const shapeOf = (key) => {
   let h = 2166136261
   for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619) }
   const rnd = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 1000) / 1000 }

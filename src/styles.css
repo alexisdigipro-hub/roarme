@@ -6953,3 +6953,22 @@ html[data-mode='dark'] .prw-musicrow { background: linear-gradient(180deg, rgba(
 .prw-musicby { font-size: 12px; opacity: .6; padding-left: 2px; padding-right: 34px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prw-musicby em { font-style: normal; }
 html:root:root:root:root .prw-musicdel { position: absolute; right: 10px; bottom: 6px; }
+/* a song as a slim bar (Alex, 22 Nov), the ordino bar's sister: a round play in the accent's pair, the name over its
+   waveform (bars fill as it plays, a tap goes to that moment), the time while it plays, then send and the bin */
+.prw-songs { display: flex; flex-direction: column; gap: 8px; }
+.prw-song { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 20px; background: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .58)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 0 0 1px rgba(255, 255, 255, .55), 0 8px 24px rgba(20, 30, 50, .06); }
+html[data-mode='dark'] .prw-song { background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .04)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+html:root:root:root:root .prw-song-play { flex: none; width: 42px; height: 42px; min-width: 42px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer; color: var(--halo-ink, #fff) !important; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; box-shadow: 0 4px 12px color-mix(in srgb, var(--halo-mine, var(--accent)) 35%, transparent); }
+html:root:root:root:root .prw-song-play:disabled { opacity: .5; }
+.prw-song-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.prw-song-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.prw-song-top b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prw-song-top small { flex: none; font-size: 11.5px; opacity: .55; white-space: nowrap; }
+.prw-wave { display: flex; align-items: center; gap: 2px; height: 26px; cursor: pointer; }
+.prw-wave i { flex: 1; min-width: 1px; border-radius: 2px; background: color-mix(in srgb, currentColor 18%, transparent); transition: background .2s; }
+.prw-wave i.done { background: var(--halo-mine, var(--accent)); }
+.prw-song-time { flex: none; font-size: 11.5px; font-variant-numeric: tabular-nums; opacity: .6; min-width: 0; }
+.prw-song .prw-ordacts { gap: 4px; }
+.prw-more-songs { align-self: flex-start; }
+@media (prefers-reduced-motion: no-preference) { html:not([data-lite]):not([data-still]) .prw-song.on .prw-song-play { animation: prw-beat 1.6s ease-in-out infinite; } }
+@keyframes prw-beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }

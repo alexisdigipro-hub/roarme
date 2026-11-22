@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Avatar, I, Lens, Modal } from './ui.jsx'
-import { MusicTile } from './extras.jsx'
+import { AUDIO_EXT, mmss, player, shapeOf, usePlayer } from './player.jsx'
 import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib.js'
 import { inApp } from './push.js'
 import { getPrefs, setPrefs, usePrefs } from './prefs.js'
@@ -964,7 +964,7 @@ export function OrdinoView({ o, onClose, onSend }) {
   )
 }
 // pick chats to send to: groups first, this chat marked
-function SendPick({ rooms, titleOf, here, onClose, onSend }) {
+function SendPick({ rooms, titleOf, here, onClose, onSend, title = 'Send the Ordino' }) {
   const [q, setQ] = useState('')
   const [pick, setPick] = useState([])
   const [busy, setBusy] = useState(false)
@@ -972,7 +972,7 @@ function SendPick({ rooms, titleOf, here, onClose, onSend }) {
     .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'group' ? -1 : 1))
   const flip = (id) => setPick((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   return (
-    <Modal title="Send the Ordino" onClose={onClose} foot={<button type="button" className="btn btn-main" disabled={!pick.length || busy} onClick={async () => { setBusy(true); await onSend(pick); setBusy(false) }}>{pick.length ? `Send to ${pick.length}` : 'Send'}</button>}>
+    <Modal title={title} onClose={onClose} foot={<button type="button" className="btn btn-main" disabled={!pick.length || busy} onClick={async () => { setBusy(true); await onSend(pick); setBusy(false) }}>{pick.length ? `Send to ${pick.length}` : 'Send'}</button>}>
       <input className="prw-sendq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search chats" autoFocus />
       <div className="prw-sendlist">
         {list.map((r) => (
@@ -984,6 +984,42 @@ function SendPick({ rooms, titleOf, here, onClose, onSend }) {
         ))}
       </div>
     </Modal>
+  )
+}
+
+/* ---------- a song as a slim bar (Alex, 22 Nov: "like the ordino, a small box, the song with its waveform, play; it keeps
+   playing when the chat changes and when the phone is locked; and send it as the other chats do"): the one player of the
+   app plays it (so it goes on across chats, in the big player and on the lock screen); its waveform fills as it plays and
+   a tap on it goes to that moment ---------- */
+function SongBar({ m, from, roomId, who, onSendHere, onSendTo, onDrop }) {
+  const p = usePlayer()
+  const [url, setUrl] = useState('')
+  useEffect(() => { let alive = true; fileLink(m.file).then((u) => { if (alive) setUrl(u) }).catch(() => {}); return () => { alive = false } }, [m.file?.path])
+  const key = m.file.path
+  const mine = p.key === key
+  const playing = mine && p.playing
+  const frac = mine && p.dur ? p.at / p.dur : 0
+  const peaks = (mine && p.peaks) || shapeOf(key)
+  const name = (m.file.name || 'Audio').replace(AUDIO_EXT, '')
+  const ext = ((m.file.name || '').match(AUDIO_EXT) || [])[1]?.toUpperCase() || 'AUDIO'
+  const go = () => { if (url) player.toggle({ key, url, title: name, from, roomId, file: m.file }) }
+  const seek = (e) => { if (!mine || !p.dur) { go(); return } const r = e.currentTarget.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width) }
+  return (
+    <div className={`prw-song${playing ? ' on' : ''}`}>
+      <button type="button" className="prw-song-play" onClick={go} disabled={!url} aria-label={playing ? 'Pause' : 'Play'}>{playing ? <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6.5" y="5" width="4" height="14" rx="1.2" /><rect x="13.5" y="5" width="4" height="14" rx="1.2" /></svg> : <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>}</button>
+      <span className="prw-song-mid">
+        <span className="prw-song-top"><b>{name}</b><small>{ext} · {sizeText(m.file.size)}{who ? ` · ${who}` : ''}</small></span>
+        <span className="prw-wave" onClick={seek} role="slider" aria-label="Position" aria-valuenow={Math.round(frac * 100)} tabIndex={0}>
+          {peaks.map((h, i) => <i key={i} className={i / peaks.length < frac ? 'done' : ''} style={{ height: `${Math.round(h * 100)}%` }} />)}
+        </span>
+      </span>
+      <span className="prw-song-time">{mine ? `${mmss(p.at)} / ${p.dur ? mmss(p.dur) : '–:––'}` : ''}</span>
+      <span className="prw-ordacts">
+        {onSendHere && <button type="button" className="round prw-ibtn" onClick={onSendHere} title="Send to This Chat" aria-label="Send to This Chat">{SEND_I}</button>}
+        {onSendTo && <button type="button" className="round prw-ibtn" onClick={onSendTo} title="Send to…" aria-label="Send to…">{FWD_I}</button>}
+        {onDrop && <Trash className="prw-ibtn" onClick={onDrop} />}
+      </span>
+    </div>
   )
 }
 
@@ -1001,6 +1037,26 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [ordView, setOrdView] = useState(null)
   const artistOf = () => ((Array.isArray(project.fields) ? project.fields : []).find((f) => f.k === 'Artist / Client')?.v || '').trim()
   const [ordSend, setOrdSend] = useState(null)
+  const [songSend, setSongSend] = useState(null)
+  // a song sent on: into this chat again, or a copy of the file into each chosen chat (each chat keeps its own files)
+  const sendSong = async (m, ids) => {
+    let bad = null
+    for (const id of ids) {
+      let file = m.file
+      if (id !== room.room_id) {
+        const to = `${id}/${uid()}-${file.path.split('/').pop().replace(/^[0-9a-f-]{36}-/, '')}`
+        const { error } = await supabase.storage.from(file.bucket || 'roar-files').copy(file.path, to)
+        if (error) { bad = error; continue }
+        file = { ...file, path: to }
+      }
+      const { error } = await supabase.from('roar_messages').insert({ room_id: id, user_id: me.id, kind: 'file', body: '', file })
+      if (error) bad = error
+    }
+    if (bad) { toast(errText(bad)); return false }
+    toast(ids.length === 1 && ids[0] === room.room_id ? 'Sent to this chat' : `Sent to ${ids.length} chat${ids.length === 1 ? '' : 's'}`)
+    return true
+  }
+  const songBar = (m) => <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who={m.user_id === me.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0]} onSendHere={() => sendSong(m, [room.room_id])} onSendTo={() => setSongSend(m)} onDrop={() => drop(m, 'this song')} />
   // the ordino goes into a chat as a message with its link (Alex, 22 Nov: "throw it in the group, or send it to another")
   const sendOrdino = async (o, ids) => {
     const when = [o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')
@@ -1163,7 +1219,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 <button type="button" className="prw-ordmake" onClick={() => setOrdinoOpen(true)}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
               )}
             </div>
-            {music.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Music</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('music')}><span>See All</span>{I.right}</button></div><div className="prw-music small">{music.slice(0, 3).map((m) => <div key={m.id} className="prw-musicrow"><MusicTile file={m.file} from={title} roomId={room.room_id} /></div>)}</div></div>}
+            {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('music')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {media.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-grid mosaic">{media.slice(0, 7).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
           </div>
         )}
@@ -1179,13 +1235,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           ))}</div>
         ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents and sound files sent in the chat come here.'}</p>)}
         {shownTab === 'music' && (music.length ? (
-          <div className="prw-music">{music.map((m) => (
-            <div key={m.id} className="prw-musicrow">
-              <MusicTile file={m.file} from={title} roomId={room.room_id} />
-              <span className="prw-musicby">{m.user_id === me.id ? 'You' : nameOf(people[m.user_id])} · {day(m.created_at)}{m.body?.trim() && <em> · {m.body.trim()}</em>}</span>
-              <Trash className="prw-musicdel" onClick={() => drop(m, 'this song')} />
-            </div>
-          ))}</div>
+          <div className="prw-songs">{music.map((m) => songBar(m))}</div>
         ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No music yet. Drop an MP3 or WAV into the chat and it plays here.'}</p>)}
         {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
         {shownTab === 'calls' && <Calls list={calls} room={room} people={people} me={me} onDrop={drop} />}
@@ -1202,6 +1252,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
       {ordView && <OrdinoView o={ordView} onClose={() => setOrdView(null)} onSend={() => { setOrdSend(ordView); setOrdView(null) }} />}
+      {songSend && <SendPick title="Send the Song" rooms={rooms} titleOf={titleOf} here={room.room_id} onClose={() => setSongSend(null)} onSend={async (ids) => { if (await sendSong(songSend, ids)) setSongSend(null) }} />}
       {ordSend && <SendPick rooms={rooms} titleOf={titleOf} here={room.room_id} onClose={() => setOrdSend(null)} onSend={async (ids) => { if (await sendOrdino(ordSend, ids)) setOrdSend(null) }} />}
       {ordinoOpen && <OrdinoWindow onClose={() => setOrdinoOpen(false)} onSent={(o) => { save({ ordinos: [o, ...ordinos.filter((x) => x.token !== o.token)].slice(0, 60) }); setOrdinoOpen(false); toast('Ordino saved in the project') }} />}
       {view && <Viewer items={view.items} index={view.index} people={people} me={me} onClose={() => setView(null)} />}

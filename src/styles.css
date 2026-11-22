@@ -7157,3 +7157,10 @@ html:root:root:root:root .prw-back .round { width: 36px; height: 36px; min-width
 html:root:root:root:root .prw-sw2 { background: rgba(255, 255, 255, .92); border: 1px solid rgba(255, 255, 255, .9); box-shadow: 0 4px 16px rgba(20, 30, 50, .12); }
 html[data-mode='dark']:root:root:root:root .prw-sw2 { background: rgba(40, 40, 44, .92); border-color: rgba(255, 255, 255, .08); }
 @media (hover: none) { html:root:root:root:root .prw-fact-del { opacity: .3; } }
+/* PROJECTS, the gold folder (Alex, 22 Nov): PRO bold and JECTS plain, all capitals, in a gold that falls light to deep */
+.tab-gold { font-weight: 500; letter-spacing: .02em; background: linear-gradient(135deg, #f3cf6b 0%, #c9962f 45%, #f0c45a 70%, #a8761f 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.tab-gold b { font-weight: 800; }
+.tab-gold-ico { display: inline-grid; font-style: normal; color: #c9962f; }
+.tab-gold-ico svg { width: 16px; height: 16px; }
+html[data-mode='dark'] .tab-gold { background-image: linear-gradient(135deg, #ffe08a 0%, #e0ad45 45%, #ffd56e 70%, #c18a2b 100%); }
+.tab-gold { background-image: linear-gradient(135deg, #d9a93a 0%, #a8761f 45%, #d4a03a 70%, #8a5e14 100%); }

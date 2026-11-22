@@ -16,6 +16,7 @@ export const NEWS = [
         'Production Hub: link RoarMe to your production hub in Settings, PROjects. Projects stay the same on both sides, and PROjects is free for now.',
         'From the Hub: a project shows the hub\'s cover picture, its locations\' photos and its songs, which play in RoarMe.',
         'Archived Projects: delivered projects fold away at the foot of PROjects.',
+        'PROjects is off to start: turn it on in Settings, PROjects, and the gold folder shows.',
         'Unlink: untie a project from the hub in its settings. Deleting on one side only unlinks the other.',
         'A project has its own workspace: media, files, Location Scout, calls, links, tasks, and Admin for budget and fees.',
         'The project\u2019s Overview gives a taste of everything: small thumbnails, then the latest documents, locations, links and tasks.',

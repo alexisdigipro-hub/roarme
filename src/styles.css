@@ -7746,3 +7746,6 @@ html:root:root:root:root .hb-soon { flex: none; opacity: .55; cursor: default; }
 .proj-arch-list { opacity: .78; }
 /* Project Settings > Production Hub > Unlink (Alex, 22 Nov) */
 html:root:root:root:root .prs2-hubacts .prs2-unlink { color: #e5484d; }
+/* Settings > PROjects: the switch on top (Alex, 22 Nov) */
+.hb-switch { justify-content: space-between; cursor: pointer; }
+.hb-switch .hb-t b { font-size: 16px; }

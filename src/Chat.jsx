@@ -64,7 +64,7 @@ import { WhatsNewHost } from './whatsnew.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
-import { hubLink, hubStart } from './hub.jsx'
+import { hubLink, hubStart, proSwitchLoad, proSwitchNow } from './hub.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -104,10 +104,13 @@ export default function Chat({ me, setMe }) {
   // RoarMe Pro (Alex, 22 Nov): only on the website on a computer for now; the button in the bar at the foot turns it on and off
   // no Pro button any more (Alex, 22 Nov): a group made a project lives in the gold PROJECTS folder and opens its
   // workspace wherever it is opened; every other chat stays the normal chat
-  const proOn = proOk()
+  // PROjects is off unless turned on in Settings > PROjects (Alex, 22 Nov: "off for users; whoever wants turns it on")
+  const [proSwitch, setProSwitch] = useState(proSwitchNow)
+  useEffect(() => { proSwitchLoad(me.id).catch(() => {}); const f = (e) => setProSwitch(!!e.detail); window.addEventListener('roarme-pro-switch', f); return () => window.removeEventListener('roarme-pro-switch', f) }, [me.id])
+  const proOn = proOk() && proSwitch
   const proKit = useProjects(me, true)
   // Production Hub: on starting, tie my project groups and bring the hub's new projects in as groups (hub.jsx)
-  useEffect(() => { hubStart() }, [])
+  useEffect(() => { if (proOn) hubStart() }, [proOn])
   // on a computer a tap on a project chat's name shows or hides the Workspace beside it (Alex, 22 Nov); kept on the device
   const [archOpen, setArchOpen] = useState(() => { try { return localStorage.getItem('roarme-proj-arch') === '1' } catch { return false } })
   const [proShut, setProShut] = useState(() => { try { return localStorage.getItem('roarme-pro-shut') === '1' } catch { return false } })
@@ -738,7 +741,7 @@ export default function Chat({ me, setMe }) {
   const fRank = (id) => { if (id === 'archived') return 1e9; const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
   // the ready-made folders can be renamed and, except All, deleted (Alex, 16 Oct)
   const hiddenF = prefs.hiddenFolders || []
-  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), { id: 'projects', name: 'PROjects', fixed: true }]
+  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), ...(proOn ? [{ id: 'projects', name: 'PROjects', fixed: true }] : [])]
     .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
   const tabsShown = tabDrag?.order ? tabDrag.order.map((id) => allFolders.find((f) => f.id === id)).filter(Boolean) : allFolders
   const editTabs = tabsEdit || picking
@@ -855,7 +858,7 @@ export default function Chat({ me, setMe }) {
     if (r.archived) return 'archived'
     const has = (id) => allFolders.some((f) => f.id === id)
     if (has('unread') && fits(r, 'unread')) return 'unread'
-    if (fits(r, 'projects')) return 'projects'
+    if (proOn && fits(r, 'projects')) return 'projects'
     const own = allFolders.find((f) => f.custom && fits(r, f.id))
     if (own) return own.id
     if (has('groups') && fits(r, 'groups')) return 'groups'
@@ -1888,7 +1891,7 @@ export default function Chat({ me, setMe }) {
             {!window.matchMedia('(max-width: 760px)').matches && <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>}
             {/* no Preview Messages: the messages are shown above the menu (Alex, 14 Nov) */}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
-            {roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }, { k: 'Budget', v: '' }] }).then(() => { toast('Moved to PROjects'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
+            {proOn && roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }, { k: 'Budget', v: '' }] }).then(() => { toast('Moved to PROjects'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
               : (

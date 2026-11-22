@@ -19,6 +19,7 @@ export const NEWS = [
         'Songs show their real waveform, finer, read from the sound itself.',
         'Project tasks are one list: each task has its own status, due date, priority, people and subtasks; Completed folds away.',
         'Type @ in a new task to give it to someone in the group.',
+        'A project\u2019s Files has a menu of the kinds there are: PDF, Documents, Music and the rest.',
         'Link a project to your TML Hub: every place in Location Scout goes into the hub\u2019s Locations by itself, with its photos.',
         'Project settings are a page now. Project Info holds the details, brief, stage and the Shoot Day.',
         'Your address book: contacts with phones, emails, addresses and groups, import and export as .vcf.',

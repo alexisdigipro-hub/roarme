@@ -86,6 +86,8 @@ export function getPrefs() {
     if (p.folderTabs === 'left') p.folderTabs = 'bottom'
     // Frost is gone (Alex, 22 Nov): whoever wore it is back on Roar, with the colours and wallpaper they had there
     p.frost = false
+    // animations always smooth (Alex, 22 Nov): the switch is gone; Power Saving and the system's Reduce Motion still calm them
+    p.motion = true
     // Glass was for a few hours a mode beside Light; it is a theme of its own (Alex, 12 Nov)
     if (p.mode === 'glass') { p.mode = 'light'; p.theme = 'glass' }
     // Stone, Halo and Air are gone (Alex, 12 Nov): everyone is on Glass. Halo's own look carries over as it is; a colour or

@@ -12,7 +12,7 @@ export const NEWS = [
     date: '22 November 2026',
     sections: [
       { title: 'Everywhere', items: [
-        'Projects: a gold PROJECTS folder. Turn a group into a project from its long-press menu.',
+        'PROject: a gold PROject folder. Turn a group into a project from its long-press menu.',
         'A project has its own workspace: media, files, Location Scout, calls, links, tasks, and Admin for budget and fees.',
         'The project\u2019s Overview gives a taste of everything: small thumbnails, then the latest documents, locations, links and tasks.',
         'The project\u2019s banner is calmer: its name on your own photo or the theme\u2019s colour, the shoot day under it.',

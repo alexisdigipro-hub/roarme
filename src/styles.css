@@ -7730,3 +7730,5 @@ html:root:root:root:root[data-mode="dark"] .set-proj-ico { color: #e0ad45 !impor
 .set-proj .set-text > .tab-gold { font-size: 15px; letter-spacing: .04em; }
 .hb-page { display: flex; flex-direction: column; gap: 10px; }
 .hb-sec { margin: 4px 2px 0; }
+/* PROject (Alex, 22 Nov: "PROject everywhere"): the gold folder keeps its own letters, never the bar's capitals */
+html:root:root:root .tabs button .tab-name .tab-gold, html:root:root:root .tabs button:has(.tab-gold) { text-transform: none !important; }

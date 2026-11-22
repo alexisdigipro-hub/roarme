@@ -6739,3 +6739,67 @@ html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-them
 html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode='dark'][data-bubbles][data-my-bubble] .msg.mine .bubble.event-b:not(.pic):not(.big-emoji):not(.note-b) { background: #2a2a2e !important; color: #f2f2f4 !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06) !important; }
 html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg .bubble.event-b :is(.meta, .meta *, .ticks, .ticks *) { color: rgba(110, 112, 122, .95) !important; }
 html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg .bubble.event-b .evx { padding-bottom: 6px; }
+/* Location Scout, gathered (Alex, 22 Nov): Cards or List; a card is a short cover, the name and address beside two round
+   buttons (Google Maps, Edit), one line of small chips (type, contact, tags); the list is one slim row per place */
+.prw-scouthead { display: flex; align-items: center; gap: 10px; }
+html:root:root:root:root .prw-scouthead .seg { width: auto; }
+.prw-scouthead .prw-boxbtn { margin-left: auto; }
+.prw-cards { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.prw-card { border-radius: 18px; }
+.prw-cover { aspect-ratio: 16 / 8; }
+.prw-count { position: absolute; right: 8px; bottom: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: #fff; background: rgba(0, 0, 0, .45); }
+.prw-count svg { width: 12px; height: 12px; }
+.prw-card-in { padding: 10px 12px 12px; gap: 6px; }
+.prw-card-top { display: flex; align-items: flex-start; gap: 8px; }
+.prw-card-top .prw-card-title { flex: 1; min-width: 0; }
+.prw-card-title h3 { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.prw-card-title small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.prw-card-btns { display: flex; gap: 4px; flex: none; }
+html:root:root:root:root .prw-ibtn { width: 30px; height: 30px; min-width: 30px; padding: 0; display: grid; place-items: center; color: inherit; text-decoration: none; }
+.prw-ibtn svg { width: 15px; height: 15px; }
+.prw-card-meta { margin-top: 0; }
+.prw-card-meta i.type { font-weight: 700; }
+html:root:root:root:root .prw-st { top: 8px; left: 8px; height: 20px; font-size: 9.5px; }
+.prw-slist { display: flex; flex-direction: column; gap: 6px; }
+.prw-srow { display: flex; align-items: center; gap: 12px; padding: 6px 8px 6px 6px; border-radius: 14px; background: color-mix(in srgb, var(--panel, #fff) 88%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 7%, transparent); }
+html[data-mode='dark'] .prw-srow { background: rgba(255, 255, 255, .05); }
+html:root:root:root:root .prw-sthumb { flex: none; width: 56px; height: 42px; border-radius: 10px; overflow: hidden; display: grid; place-items: center; padding: 0; border: 0; background: color-mix(in srgb, currentColor 7%, transparent); box-shadow: none; color: inherit; cursor: pointer; }
+.prw-sthumb.empty svg { width: 16px; height: 16px; opacity: .5; }
+html:root:root:root:root .prw-stext { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; height: auto; padding: 0; border: 0; background: none; box-shadow: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.prw-stext b { font-size: 14px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prw-stext small { font-size: 12px; opacity: .6; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prw-scontact { flex: 0 1 180px; min-width: 0; font-size: 12.5px; opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:root:root:root:root .prw-srow .prw-st { position: static; flex: none; box-shadow: none; }
+@media (max-width: 1150px) { .prw-scontact { display: none; } }
+/* The workspace, fresher (Alex, 22 Nov: "glass, buttons, motion"): a soft glass ground with light from the top corner, the
+   boxes and cards as glass with a bright rim, the choices (All / Photos / Videos, Cards / List) roomy like a menu, things
+   that lift a little under the pointer and press in, and each tab coming in with a short rise */
+html:root:root:root:root .prw-work { background: radial-gradient(120% 60% at 100% 0%, color-mix(in srgb, var(--halo-mine, var(--accent)) 9%, transparent), transparent 60%), radial-gradient(90% 50% at 0% 100%, color-mix(in srgb, var(--halo-mine-top, var(--accent)) 6%, transparent), transparent 60%), color-mix(in srgb, var(--panel, #fff) 50%, transparent); }
+html[data-mode='dark']:root:root:root .prw-work { background: radial-gradient(120% 60% at 100% 0%, color-mix(in srgb, var(--halo-mine, var(--accent)) 12%, transparent), transparent 60%), rgba(255, 255, 255, .015); }
+.prw-pane { display: flex; flex-direction: column; gap: 14px; }
+html:root:root:root:root:root .prw-box, html:root:root:root:root:root .prw-card, html:root:root:root:root:root .prw-srow, html:root:root:root:root:root .prw-call, html:root:root:root:root:root .prw-tmsg { background: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .58)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 0 0 1px rgba(255, 255, 255, .55), 0 1px 2px rgba(20, 30, 50, .05), 0 10px 30px rgba(20, 30, 50, .07); backdrop-filter: blur(var(--blur, 10px)) saturate(1.2) !important; -webkit-backdrop-filter: blur(var(--blur, 10px)) saturate(1.2) !important; }
+html[data-mode='dark']:root:root:root:root .prw-box, html[data-mode='dark']:root:root:root:root .prw-card, html[data-mode='dark']:root:root:root:root .prw-srow, html[data-mode='dark']:root:root:root:root .prw-call, html[data-mode='dark']:root:root:root:root .prw-tmsg { background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .04)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), inset 0 0 0 1px rgba(255, 255, 255, .06), 0 10px 30px rgba(0, 0, 0, .25); }
+html:root:root:root:root:root .prw-bar { background: linear-gradient(180deg, rgba(255, 255, 255, .8), rgba(255, 255, 255, .6)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .6), 0 8px 24px rgba(20, 30, 50, .07); backdrop-filter: blur(var(--blur, 10px)) saturate(1.2) !important; -webkit-backdrop-filter: blur(var(--blur, 10px)) saturate(1.2) !important; }
+html[data-mode='dark']:root:root:root:root .prw-bar { background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .05)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), inset 0 0 0 1px rgba(255, 255, 255, .06); }
+/* the choices, roomy (Alex, 22 Nov: "bigger, like a menu, comfortable, it is all stuck together") */
+html:root:root:root:root:root .prw-seg { height: 42px; min-height: 42px; padding: 4px; gap: 4px; border-radius: 21px; }
+html:root:root:root:root:root .prw-seg > button { min-height: 0; height: 34px; padding: 0 20px; border-radius: 17px; font-size: 14px; font-weight: 600; }
+/* motion: off with Power Saving, Smooth Animations off and Reduce Motion */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-lite]):not([data-still]) .prw-pane { animation: prw-in .32s cubic-bezier(.25, .9, .35, 1) both; }
+  html:not([data-lite]):not([data-still]) .prw-pane > .prw-cards, html:not([data-lite]):not([data-still]) .prw-pane > .prw-grid { animation: prw-in .4s cubic-bezier(.25, .9, .35, 1) both; }
+  html:not([data-lite]):not([data-still]) .prw-card, html:not([data-lite]):not([data-still]) .prw-tile, html:not([data-lite]):not([data-still]) .prw-srow, html:not([data-lite]):not([data-still]) .prw-glance button, html:not([data-lite]):not([data-still]) .prw-fact, html:not([data-lite]):not([data-still]) .prw-ordino { transition: transform .26s cubic-bezier(.25, 1.3, .45, 1), box-shadow .26s ease; }
+  html:not([data-lite]):not([data-still]) :is(.prw-card, .prw-ordino, .prw-glance button):hover { transform: translateY(-2px); }
+  html:not([data-lite]):not([data-still]) .prw-tile:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 12px 28px rgba(20, 30, 50, .18); }
+  html:not([data-lite]):not([data-still]) .prw-srow:hover { transform: translateX(2px); }
+  html:not([data-lite]):not([data-still]) :is(.prw-tile, .prw-card, .prw-glance button, .prw-pill, .prw-ibtn, .prw-boxbtn, .prw-bar > button, .prw-addscout, .prw-tagchip):active { transform: scale(.97); transition-duration: .08s; }
+  html:not([data-lite]):not([data-still]) .prw-bar > button.on .prw-bi { animation: prw-pop .38s cubic-bezier(.25, 1.6, .45, 1); }
+  html:not([data-lite]):not([data-still]) .prw-menu { animation: prw-drop .22s cubic-bezier(.25, 1.2, .45, 1) both; transform-origin: top left; }
+  html:not([data-lite]):not([data-still]) .prw-menu.right { transform-origin: top right; }
+  html:not([data-lite]):not([data-still]) .prv-stage > :is(img, video) { animation: prw-zoom .3s cubic-bezier(.25, .9, .35, 1) both; }
+  html:not([data-lite]):not([data-still]) .prd-card { animation: prw-zoom .28s cubic-bezier(.25, 1.1, .45, 1) both; }
+}
+@keyframes prw-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes prw-pop { 0% { transform: scale(1); } 40% { transform: scale(1.22) translateY(-2px); } 100% { transform: scale(1); } }
+@keyframes prw-drop { from { opacity: 0; transform: scale(.94) translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes prw-zoom { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }

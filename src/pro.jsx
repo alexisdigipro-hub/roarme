@@ -464,35 +464,66 @@ function ScoutEdit({ item, onSave, onDelete, onClose, roomId, toast }) {
 function Scout({ project, save, room, toast, onView }) {
   const list = Array.isArray(project.scouts) ? project.scouts : []
   const [edit, setEdit] = useState(null)
+  // Cards or List (Alex, 22 Nov), kept on the device
+  const [mode, setMode] = useState(() => { try { return localStorage.getItem('roarme-scout-mode') || 'cards' } catch { return 'cards' } })
+  const pickMode = (m) => { setMode(m); try { localStorage.setItem('roarme-scout-mode', m) } catch { /* private window */ } }
   const put = (next) => save({ scouts: next })
+  const step = (x) => put(list.map((y) => (y.id === x.id ? { ...y, st: SCOUT_ST[(SCOUT_ST.findIndex((s) => s[0] === y.st) + 1) % SCOUT_ST.length][0] } : y)))
+  const where = (x) => x.address || x.addr || ''
+  const mapOf = (x) => (x.mapsUrl || where(x) ? x.mapsUrl || mapSearch(where(x)) : '')
+  const fresh = () => setEdit({ id: uid(), name: '', address: '', type: 'Interior', st: 'option', contact: '', phone: '', notes: '', mapsUrl: '', tags: [], photos: [] })
+  const status = (x) => { const [, label, c] = scoutSt(x.st); return <button type="button" className="prj-chip prw-st" style={{ '--pc': c }} onClick={() => step(x)} title="Change status">{label}</button> }
+  const mapBtn = (x) => (mapOf(x) ? <a className="round prw-ibtn" href={mapOf(x)} target="_blank" rel="noopener noreferrer" title="Open in Google Maps" aria-label="Open in Google Maps">{I.place}</a> : null)
+  const editBtn = (x) => <button type="button" className="round prw-ibtn" onClick={() => setEdit(x)} title="Edit" aria-label="Edit">{I.edit}</button>
   return (
-    <div className="prw-cards">
-      {list.map((x) => {
-        const [, label, c] = scoutSt(x.st)
-        const ph = x.photos || []
-        return (
-          <article key={x.id} className="prw-card">
-            <div className="prw-cover">
-              {ph[0] ? <ScoutPhoto p={ph[0]} className="cover" onClick={() => onView(ph, 0)} /> : <button type="button" className="prw-cover-empty" onClick={() => setEdit(x)}>{I.image}<span>Add photos</span></button>}
-              <button type="button" className="prj-chip prw-st" style={{ '--pc': c }} onClick={() => put(list.map((y) => (y.id === x.id ? { ...y, st: SCOUT_ST[(SCOUT_ST.findIndex((s) => s[0] === y.st) + 1) % SCOUT_ST.length][0] } : y)))} title="Change status">{label}</button>
-            </div>
-            <div className="prw-card-in">
-              <button type="button" className="prw-card-title" onClick={() => setEdit(x)}><h3>{x.name}</h3>{(x.address || x.addr) && <small>{x.address || x.addr}</small>}<span className="prw-card-meta">{x.type || 'Interior'}{(x.tags || []).map((t) => <i key={t}>{t}</i>)}</span></button>
-              {ph.length > 1 && <div className="prw-strip">{ph.slice(1, 5).map((p, n) => <ScoutPhoto key={p.path} p={p} onClick={() => onView(ph, n + 1)} />)}{ph.length > 5 && <span className="prw-more">+{ph.length - 5}</span>}</div>}
-              {(x.contact || x.phone || x.permit || x.notes) && <div className="prw-kv">{(x.contact || x.phone) && <><span>Contact</span><b>{[x.contact, x.phone].filter(Boolean).join(' · ')}</b></>}{x.permit && <><span>Permit</span><b>{x.permit}</b></>}{x.notes && <><span>Notes</span><p>{x.notes}</p></>}</div>}
-              <div className="prw-card-acts">
-                <button type="button" className="pill-btn" onClick={() => setEdit(x)}>{I.edit || I.plus}<span>Edit</span></button>
-                {(x.mapsUrl || x.address || x.addr) && <a className="pill-btn" href={x.mapsUrl || mapSearch(x.address || x.addr)} target="_blank" rel="noopener noreferrer">{I.place}<span>Map</span></a>}
+    <>
+      <div className="prw-scouthead">
+        <Lens className="seg prw-seg" dep={mode}>{[['cards', 'Cards'], ['list', 'List']].map(([k, l]) => <button key={k} type="button" className={mode === k ? 'on' : ''} onClick={() => pickMode(k)}>{l}</button>)}</Lens>
+        <button type="button" className="pill-btn prw-boxbtn" onClick={fresh}>{I.plus}<span>New Location</span></button>
+      </div>
+      {!list.length && <p className="prj-quiet">No locations yet. New Location, or Add to Location Scout from a map link in Places.</p>}
+      {mode === 'cards' ? (
+        <div className="prw-cards">
+          {list.map((x) => {
+            const ph = x.photos || []
+            return (
+              <article key={x.id} className="prw-card">
+                <div className="prw-cover">
+                  {ph[0] ? <ScoutPhoto p={ph[0]} className="cover" onClick={() => onView(ph, 0)} /> : <button type="button" className="prw-cover-empty" onClick={() => setEdit(x)}>{I.image}<span>Add photos</span></button>}
+                  {status(x)}
+                  {ph.length > 1 && <span className="prw-count">{I.image}{ph.length}</span>}
+                </div>
+                <div className="prw-card-in">
+                  <div className="prw-card-top">
+                    <button type="button" className="prw-card-title" onClick={() => setEdit(x)}><h3>{x.name}</h3>{where(x) && <small>{where(x)}</small>}</button>
+                    <span className="prw-card-btns">{mapBtn(x)}{editBtn(x)}</span>
+                  </div>
+                  <span className="prw-card-meta"><i className="type">{x.type || 'Interior'}</i>{(x.contact || x.phone) && <i>{[x.contact, x.phone].filter(Boolean).join(' · ')}</i>}{(x.tags || []).map((t) => <i key={t}>{t}</i>)}</span>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      ) : list.length > 0 && (
+        <div className="prw-slist">
+          {list.map((x) => {
+            const ph = x.photos || []
+            return (
+              <div key={x.id} className="prw-srow">
+                {ph[0] ? <ScoutPhoto p={ph[0]} className="prw-sthumb" onClick={() => onView(ph, 0)} /> : <button type="button" className="prw-sthumb empty" onClick={() => setEdit(x)}>{I.image}</button>}
+                <button type="button" className="prw-stext" onClick={() => setEdit(x)}><b>{x.name}</b><small>{[where(x), x.type || 'Interior'].filter(Boolean).join(' · ')}</small></button>
+                <span className="prw-scontact">{[x.contact, x.phone].filter(Boolean).join(' · ')}</span>
+                {status(x)}
+                <span className="prw-card-btns">{mapBtn(x)}{editBtn(x)}</span>
               </div>
-            </div>
-          </article>
-        )
-      })}
-      <button type="button" className="prw-newcard" onClick={() => setEdit({ id: uid(), name: '', address: '', type: 'Interior', st: 'option', contact: '', phone: '', notes: '', mapsUrl: '', tags: [], photos: [] })}>{I.plus}<span>New Location</span></button>
+            )
+          })}
+        </div>
+      )}
       {edit && <ScoutEdit item={edit} roomId={room.room_id} toast={toast} onClose={() => setEdit(null)}
         onDelete={list.some((y) => y.id === edit.id) ? () => { if (window.confirm(`Delete ${edit.name || 'this location'}?`)) { put(list.filter((y) => y.id !== edit.id)); setEdit(null) } } : null}
         onSave={(x) => { put(list.some((y) => y.id === x.id) ? list.map((y) => (y.id === x.id ? x : y)) : [...list, x]); setEdit(null) }} />}
-    </div>
+    </>
   )
 }
 
@@ -822,7 +853,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
         </span>
       </div>
       <div className="prw-tabs"><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span><span className="prw-bw">{k === 'scout' ? 'Scout' : k === 'calls' ? 'Meetings' : l}</span></button>)}</Lens></div>
-      <div className="prw-body">
+      <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">
             <div className="prw-box prw-brief-box">
@@ -870,7 +901,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
         )}
         {shownTab === 'media' && (
           <>
-            <div className="prw-sub"><Lens className="seg" dep={mf}>{[['all', 'All'], ['photos', 'Photos'], ['videos', 'Videos']].map(([k, l]) => <button key={k} type="button" className={mf === k ? 'on' : ''} onClick={() => setMf(k)}>{l}</button>)}</Lens></div>
+            <div className="prw-sub"><Lens className="seg prw-seg" dep={mf}>{[['all', 'All'], ['photos', 'Photos'], ['videos', 'Videos']].map(([k, l]) => <button key={k} type="button" className={mf === k ? 'on' : ''} onClick={() => setMf(k)}>{l}</button>)}</Lens></div>
             {stuff.assets === null ? <p className="prj-quiet">Loading…</p> : shownMedia.length ? <div className="prw-grid big">{shownMedia.map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(shownMedia, i)} />)}</div> : <p className="prj-quiet">No photos or videos yet. What is sent in the chat comes here.</p>}
           </>
         )}
@@ -888,6 +919,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
           onAdd={(p) => { save({ scouts: [...scouts, { id: uid(), type: 'Exterior', st: 'option', contact: '', phone: '', notes: '', tags: [], photos: [], ...p }] }); toast(`${p.name} added to Location Scout`) }} />}
         {shownTab === 'contacts' && <Contacts list={cards} people={people} />}
         {shownTab === 'tasks' && <Board list={tasks} onChange={(next) => save({ tasks: next })} />}
+      </div>
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}

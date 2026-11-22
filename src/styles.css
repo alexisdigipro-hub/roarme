@@ -7069,3 +7069,32 @@ html:root:root:root:root .pra-paid.on { color: #14a37f; background: color-mix(in
 .pra-money select { flex: none; width: 58px; }
 .pra-tile.budget { position: relative; }
 .pra-tile.budget .pra-money select { position: absolute; top: 10px; right: 10px; width: auto; height: 24px; padding: 0 4px; font-size: 11px; }
+/* Stats, fully gathered and minimal (Alex, 22 Nov): one card; the numbers as one quiet line with no boxes; who writes,
+   the last 30 days, by hour and the project side by side with no boxes of their own, thin bars, short charts */
+html:root:root:root:root .prs { gap: 0; padding: 14px 16px; border-radius: 20px; background: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .58)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 0 0 1px rgba(255, 255, 255, .55), 0 8px 24px rgba(20, 30, 50, .06); }
+html[data-mode='dark']:root:root:root .prs { background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .035)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+html:root:root:root:root .prs-kpis { display: flex; flex-wrap: wrap; gap: 6px 22px; padding-bottom: 12px; border-bottom: 1px solid color-mix(in srgb, currentColor 7%, transparent); }
+html:root:root:root:root .prs-kpi { flex-direction: row; align-items: baseline; gap: 5px; padding: 0; border-radius: 0; background: none; box-shadow: none; }
+html:root:root:root:root .prs-kpi b { font-size: 15px; font-weight: 700; }
+html:root:root:root:root .prs-kpi span { font-size: 12px; opacity: .55; }
+html:root:root:root:root .prs-kpi small { font-size: 11px; opacity: .4; }
+html:root:root:root:root .prs-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding-top: 12px; }
+@media (max-width: 1400px) { html:root:root:root:root .prs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; } }
+html:root:root:root:root .prs-grid > .prw-box { padding: 0 14px; border-radius: 0; background: none !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border-left: 1px solid color-mix(in srgb, currentColor 7%, transparent); }
+html:root:root:root:root .prs-grid > .prw-box:first-child { padding-left: 0; border-left: 0; }
+html:root:root:root:root .prs-grid > .prw-box.wide { grid-column: 1 / -1; border-left: 0; padding: 12px 0 0; margin-top: 12px; border-top: 1px solid color-mix(in srgb, currentColor 7%, transparent); }
+html:root:root:root:root .prs-grid h4 { margin-bottom: 8px; font-size: 10.5px; }
+html:root:root:root:root .prs-people { gap: 5px; }
+html:root:root:root:root .prs-person { grid-template-columns: 20px minmax(40px, 1fr) minmax(30px, 1fr) 26px; gap: 6px; font-size: 12px; }
+html:root:root:root:root .prs-person .av, html:root:root:root:root .prs-person > :first-child { width: 20px !important; height: 20px !important; font-size: 8px; }
+html:root:root:root:root .prs-track { height: 4px; border-radius: 2px; }
+html:root:root:root:root .prs-track i { border-radius: 2px; }
+html:root:root:root:root .prs-cols { height: 54px; gap: 1px; padding-top: 2px; }
+html:root:root:root:root .prs-col i { border-radius: 2px 2px 0 0; }
+html:root:root:root:root .prs-axis { margin-top: 4px; font-size: 10px; }
+html:root:root:root:root .prs-note { margin-top: 6px; font-size: 11.5px; }
+html:root:root:root:root .prs-proj { gap: 7px; }
+html:root:root:root:root .prs-proj > div { font-size: 12px; gap: 3px 8px; }
+html:root:root:root:root .prs .prw-tagbar { margin: 0; gap: 4px; }
+html:root:root:root:root .prs .prw-tagchip { height: 24px; padding: 0 9px; font-size: 11.5px; }
+html:root:root:root:root .prs-person { grid-template-columns: 20px minmax(50px, 1.6fr) minmax(24px, 1fr) 22px; }

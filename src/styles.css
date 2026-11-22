@@ -6463,3 +6463,12 @@ html:root:root:root:root:root:root:root .foot button.foot-pro.lit, html:root:roo
 .prj-wrap:hover > .prj-grip::after, html.prj-dragging .prj-grip::after { opacity: 1; }
 html.prj-dragging, html.prj-dragging * { cursor: col-resize !important; user-select: none !important; }
 .prj-ftext em { font-style: normal; font-size: 12px; opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Places, Polls and Contacts at the side of a project (Alex, 22 Nov) */
+.prj-list { display: flex; flex-direction: column; gap: 1px; }
+html:root:root:root:root .prj-row { display: flex; align-items: center; gap: 10px; width: 100%; height: auto; border: 0; background: none; box-shadow: none; color: inherit; font: inherit; padding: 5px 6px; border-radius: 10px; cursor: pointer; text-align: left; text-decoration: none; }
+html:root:root:root:root .prj-row:hover { background: color-mix(in srgb, currentColor 6%, transparent); }
+.prj-k-place { --fk: #14a37f; }
+.prj-k-place svg { width: 16px; height: 16px; }
+.prj-live { flex: none; margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #34c759; box-shadow: 0 0 0 4px rgba(52, 199, 89, .2); }
+.prj-polls { display: flex; flex-direction: column; gap: 8px; }
+.prj-poll { border-radius: 14px; padding: 10px 12px; background: color-mix(in srgb, currentColor 4%, transparent); --fs: 13.5px; }

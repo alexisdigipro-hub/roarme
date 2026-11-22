@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { I } from './ui.jsx'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
+import { Avatar, I } from './ui.jsx'
 import { errText, fileLink, nameOf, picLink, supabase } from './lib.js'
 import { inApp } from './push.js'
+
+const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
 
 /* RoarMe Pro (Alex, 22 Nov, from the sample https://claude.ai/artifact/HzxD32EAhTGsWVS7QPs4dT, "Pro grouped"): the same
    chat, with a group able to be a project. Only on the website on a computer for now (not the iPhone app, not the Mac
@@ -62,8 +64,16 @@ const folderOf = (m) => {
   if (DOCS.test(e) || /pdf|word|text|sheet|presentation/.test(t)) return 'docs'
   return 'other'
 }
-// what goes to the side in a project: photos, videos, documents and sound files (not voice or round video messages)
-export const isAsset = (m) => (m.kind === 'image' || m.kind === 'file') && !!m.file?.path && !m.file.round && !m.file.groupcall
+// what goes to the side in a project (Alex, 22 Nov: "voice stays in the chat, all the rest and the maps too go to the
+// right"): photos, videos, round videos, documents, sound files, places, live locations, polls and contacts. Text, voice
+// messages, call cards, scheduled calls and locked messages stay in the chat.
+export const isAsset = (m) => {
+  const f = m.file
+  if (!f || m.kind === 'voice') return false
+  if ((m.kind === 'image' || m.kind === 'file') && f.path) return !f.groupcall
+  return !!(f.location || f.live || f.poll || f.contact)
+}
+const isFileMsg = (m) => (m.kind === 'image' || m.kind === 'file') && !!m.file?.path
 const FOLDERS = [['docs', 'Documents'], ['photos', 'Photos'], ['videos', 'Videos'], ['audio', 'Audio'], ['other', 'Other']]
 const tagOf = (m) => (EXT(m.file) || (m.kind === 'image' ? 'jpg' : 'file')).slice(0, 4).toUpperCase()
 const sizeText = (n) => (!n ? '' : n > 1e9 ? `${(n / 1e9).toFixed(1)} GB` : n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`)
@@ -73,8 +83,8 @@ function useRoomFiles(roomId) {
   useEffect(() => {
     let gone = false, timer = 0
     setFiles(null)
-    const load = () => supabase.from('roar_messages').select('id, user_id, kind, body, file, created_at').eq('room_id', roomId).in('kind', ['image', 'file'])
-      .is('deleted_at', null).order('created_at', { ascending: false }).limit(400)
+    const load = () => supabase.from('roar_messages').select('id, user_id, kind, body, file, created_at').eq('room_id', roomId).not('file', 'is', null)
+      .is('deleted_at', null).order('created_at', { ascending: false }).limit(500)
       .then(({ data }) => { if (!gone) setFiles((data || []).filter(isAsset)) })
     load()
     // what is sent or deleted while the panel is open shows here at once
@@ -107,6 +117,7 @@ async function openFile(m) {
 function Files({ files, onJump, aside = false }) {
   const [open, setOpen] = useState('')
   if (!files) return <p className="prj-quiet">Loading…</p>
+  files = files.filter(isFileMsg)
   if (!files.length) return <p className="prj-quiet">Nothing shared yet. Files and photos sent here gather in folders.</p>
   const by = Object.fromEntries(FOLDERS.map(([k]) => [k, files.filter((m) => folderOf(m) === k)]))
   return (
@@ -127,6 +138,45 @@ function Files({ files, onJump, aside = false }) {
           )}
         </div>
       ))}
+    </div>
+  )
+}
+
+/* ---------- places, polls and contacts at the side ---------- */
+const mapUrl = (l) => `https://www.openstreetmap.org/?mlat=${l.lat}&mlon=${l.lng}#map=16/${l.lat}/${l.lng}`
+function Places({ list }) {
+  return (
+    <div className="prj-list">
+      {list.map((m) => {
+        const l = m.file.location || {}
+        const live = !!m.file.live
+        const on = live && (!m.file.live.until || new Date(m.file.live.until) > new Date())
+        return (
+          <a key={m.id} className="prj-row" href={mapUrl(l)} target="_blank" rel="noopener noreferrer" title="Open the map">
+            <i className="prj-tag prj-k-place">{I.place}</i>
+            <span className="prj-ftext"><b>{live ? 'Live Location' : l.name || 'Place'}</b><small>{[live ? (on ? 'Sharing now' : 'Ended') : l.addr, new Date(m.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })].filter(Boolean).join(' · ')}</small></span>
+            {on && <span className="prj-live" />}
+          </a>
+        )
+      })}
+    </div>
+  )
+}
+function Polls({ list, me, people, canStop }) {
+  return <div className="prj-polls">{list.map((m) => <div key={m.id} className="prj-poll"><Suspense fallback={<p className="prj-quiet">Poll</p>}><PollCard id={m.id} me={me.id} people={people} canStop={canStop} /></Suspense></div>)}</div>
+}
+function Contacts({ list, people }) {
+  return (
+    <div className="prj-list">
+      {list.map((m) => {
+        const c = m.file.contact, p = people[c.id]
+        return (
+          <button key={m.id} type="button" className="prj-row" onClick={() => window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: c.id } }))}>
+            <Avatar src={p?.avatar_url || c.avatar} name={p ? nameOf(p) : c.name} size={32} />
+            <span className="prj-ftext"><b>{p ? nameOf(p) : c.name}</b><small>@{p?.username || c.username}</small></span>
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -191,7 +241,7 @@ function Tasks({ list, onChange }) {
 }
 
 /* ---------- the panel ---------- */
-function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, onOpenRoom }) {
+function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, onOpenRoom, me, people = {} }) {
   const files = useRoomFiles(room.room_id)
   const save = (patch) => kit.save(room.room_id, patch).catch((e) => toast(errText(e)))
 
@@ -204,7 +254,7 @@ function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, on
             <button key={r.room_id} type="button" className="prj-link" onClick={() => onOpenRoom(r.room_id)}><b>{titleOf(r)}</b><ProChip p={kit.map[r.room_id]} /></button>
           )) : <p className="prj-quiet">No projects with {other ? nameOf(other).split(' ')[0] : 'them'} yet.</p>}
         </Section>
-        <Section id="files" title="Shared files" count={files?.length}><Files files={files} onJump={onJump} /></Section>
+        <Section id="files" title="Shared files" count={files ? files.filter(isFileMsg).length : null}><Files files={files} onJump={onJump} /></Section>
       </>
     )
   }
@@ -218,7 +268,7 @@ function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, on
           <p>A stage, a due date, a brief, its files in folders and its tasks, beside the chat. The chat stays as it is.</p>
           <button type="button" className="btn btn-main" onClick={() => save({ status: 'prep', fields: FIELD_START.map((k) => ({ k, v: '' })) })}>Make It a Project</button>
         </div>
-        <Section id="files" title="Files" count={files?.length}><Files files={files} onJump={onJump} /></Section>
+        <Section id="files" title="Files" count={files ? files.filter(isFileMsg).length : null}><Files files={files} onJump={onJump} /></Section>
       </>
     )
   }
@@ -248,7 +298,19 @@ function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, on
           {fields.length < 20 && <button type="button" className="pill-btn prj-kvadd" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
         </div>
       </Section>
-      <Section id="files" title="Files" count={files?.length}><Files files={files} onJump={onJump} aside /></Section>
+      <Section id="files" title="Files" count={files ? files.filter(isFileMsg).length : null}><Files files={files} onJump={onJump} aside /></Section>
+      {(() => {
+        const places = (files || []).filter((m) => m.file.location || m.file.live)
+        const polls = (files || []).filter((m) => m.file.poll)
+        const cards = (files || []).filter((m) => m.file.contact)
+        return (
+          <>
+            {places.length > 0 && <Section id="places" title="Places" count={places.length}><Places list={places} /></Section>}
+            {polls.length > 0 && <Section id="polls" title="Polls" count={polls.length}><Polls list={polls} me={me} people={people} canStop={room.role === 'admin'} /></Section>}
+            {cards.length > 0 && <Section id="contacts" title="Contacts" count={cards.length}><Contacts list={cards} people={people} /></Section>}
+          </>
+        )
+      })()}
       <Section id="tasks" title="Tasks" count={tasks.length ? `${done}/${tasks.length}` : null}><Tasks list={tasks} onChange={(next) => save({ tasks: next })} /></Section>
       <button type="button" className="pill-btn prj-unmake" onClick={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields and tasks are deleted; the chat stays.')) kit.remove(room.room_id).catch((e) => toast(errText(e))) }}>Stop Being a Project</button>
     </>

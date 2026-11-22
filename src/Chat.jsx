@@ -1748,7 +1748,7 @@ export default function Chat({ me, setMe }) {
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} />
           {proOn && <ProPanel key={`pro-${active.room_id}`} room={active} other={otherOf(active)} project={proKit.map[active.room_id]} kit={proKit} rooms={rooms} titleOf={titleOf} toast={toast}
-            onJump={(id) => libChat(active.room_id, id)} onOpenRoom={(id) => { setTab('chats'); setActiveId(id) }} />}
+            onJump={(id) => libChat(active.room_id, id)} onOpenRoom={(id) => { setTab('chats'); setActiveId(id) }} me={me} people={people} />}
         </div>) : (
           <div className="pick">
             <span className="pick-mark"><Wordmark by /></span>
@@ -3289,7 +3289,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // in a Pro project the chat keeps only the talk and every photo, video and file goes to the panel at the side (Alex,
   // 22 Nov: "when it becomes a project, no materials stay in the chat, only the conversations"); a caption stays as words
   const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt))
-    .flatMap((m) => (!assetsAside || !isAsset(m) ? [m] : (m.body || '').trim() ? [{ ...m, kind: 'text', file: null, asideAsset: true }] : [])), [msgs, clearedAt, hidden, assetsAside])
+    .flatMap((m) => (!assetsAside || !isAsset(m) ? [m] : (m.kind === 'image' || m.kind === 'file') && (m.body || '').trim() ? [{ ...m, kind: 'text', file: null, asideAsset: true }] : [])), [msgs, clearedAt, hidden, assetsAside])
   // what others ask me to delete, one at a time, above the writing box
   const askForMe = asks.filter((a) => a.owner === me.id && msgs.some((m) => m.id === a.message_id && !m.deleted_at))
   const askedByMe = new Set(asks.filter((a) => a.asked_by === me.id).map((a) => a.message_id))

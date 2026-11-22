@@ -666,7 +666,7 @@ const TAB_I = {
   admin: tsv(<><rect x="3.5" y="6.5" width="17" height="13" rx="3" /><path d="M9 6.5V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v1.5M3.5 12h17M12 11v2.5" /></>),
   stats: tsv(<><path d="M4 20h16" /><rect x="5.5" y="11" width="3" height="6.5" rx="1" /><rect x="10.5" y="6" width="3" height="11.5" rx="1" /><rect x="15.5" y="13.5" width="3" height="4" rx="1" /></>),
 }
-const OPTIONAL = [['scout', 'Location Scout'], ['calls', 'Calls & Meetings'], ['links', 'Links'], ['tasks', 'Tasks'], ['stats', 'Stats']]
+const OPTIONAL = [['scout', 'Location Scout'], ['tasks', 'Tasks'], ['links', 'Links'], ['calls', 'Calls & Meetings'], ['stats', 'Stats']]
 const hiddenKey = (roomId) => `roarme-pro-hide-${roomId}`
 
 /* ---------- a document read inside RoarMe (Alex, 22 Nov: "tap a document and read it, a preview of the text"):
@@ -1395,9 +1395,11 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const ordinos = Array.isArray(project.ordinos) ? project.ordinos : []
   const st = stageOf(project)
   const dateName = 'Shoot Day' // the one date a project keeps (Alex, 22 Nov: "only the shoot day, the most important for everything")
-  const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length + music.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', linkCount + places.length + maps.length], 
-    ...(polls.length ? [['polls', 'Polls', polls.length]] : []), ...(cards.length ? [['contacts', 'Contacts', cards.length]] : []),
-    ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0], adminIn ? ['admin', 'Admin'] : ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
+  // the order Alex chose (22 Nov): Overview, Media, Files, Location Scout, Tasks, Links, Calls & Meetings, then Admin; no
+  // counts on the tabs ("leave them clean")
+  const TABS = [['overview', 'Overview'], ['media', 'Media'], ['files', 'Files'], ['scout', 'Location Scout'], ['tasks', 'Tasks'], ['links', 'Links'], ['calls', 'Calls & Meetings'],
+    ...(polls.length ? [['polls', 'Polls']] : []), ...(cards.length ? [['contacts', 'Contacts']] : []),
+    adminIn ? ['admin', 'Admin'] : ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
   // on a phone the project opens on a home of its own (the cover, the songs, the ordino, the details) and tiles for the
   // rest; a tile opens its page with a back (Alex, 22 Nov: "the second, with the tiles")
   // a phone has version A (Alex, 22 Nov: "in the end I want version A"): the same tabs as a row that slides sideways
@@ -1442,7 +1444,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           <button type="button" className={`round prw-gear${setOpen ? ' on' : ''}`} onClick={() => setSetOpen(true)} aria-label="Project settings" title="Project settings">{I.gear}</button>
         </span>
       </div>
-      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span>{!phone && <span className="prw-bl">{TAB_SHORT[k] || l}</span>}</button>)}</Lens></div>
+      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}><span className="prw-bi">{TAB_I[k]}</span>{!phone && <span className="prw-bl">{TAB_SHORT[k] || l}</span>}</button>)}</Lens></div>
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">
@@ -1478,7 +1480,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
               const sc = hidden.includes('scout') ? [] : scouts.slice(0, 3)
               const lk = hidden.includes('links') ? [] : links.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter((u) => !isMapLink(u)).map((u) => ({ u, m }))).slice(0, 3)
               const open = hidden.includes('tasks') ? [] : tasks.filter((t) => t.s !== 'done')
-              const box = (k, title, n, body) => <div key={k} className="prw-box prw-peek prw-peek-list"><div className="prw-boxhead"><h4>{title}<small>{n}</small></h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab(k)}><span>See All</span>{I.right}</button></div><div className="prw-mini-list">{body}</div></div>
+              const box = (k, title, n, body) => <div key={k} className="prw-box prw-peek prw-peek-list"><div className="prw-boxhead"><h4>{title}</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab(k)}><span>See All</span>{I.right}</button></div><div className="prw-mini-list">{body}</div></div>
               const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return u } }
               const parts = [
                 docs.length > 0 && box('files', 'Documents', files.length, docs.map((m) => <button key={m.id} type="button" className="prw-mrow" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prw-mtext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), day(m.created_at)].filter(Boolean).join(' · ')}</small></span></button>)),

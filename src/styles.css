@@ -7450,3 +7450,16 @@ html:root:root:root:root:root .prw-addscout { width: 32px; height: 32px; padding
 .prw-hero-st { display: none !important; }
 html:root:root:root:root .prw-pill.date .prw-datename, .prw-pill.date .prw-datename > span { white-space: nowrap; }
 html:root:root:root:root .prw-pill.date .prw-datewrap { min-width: 84px; }
+/* the project's switch in the chat's head fills the row like the name's pill of any chat, at its height (44px) and with
+   its letters (16px, 600), the same 8px from Back and from the picture (Alex, 22 Nov); it reads the project's title
+   (the Title field, else the group's name) | Project. The project page's switch takes the same size. */
+@media (max-width: 960px) {
+  html:root:root:root:root:root:root .room-head.has-proj .head-sw { flex: 1 1 auto; margin: 0; max-width: none; min-width: 0; }
+}
+html:root:root:root:root:root:root .prw-sw2.head-sw, html:root:root:root:root:root:root .prw-sw2.to-proj { box-sizing: border-box; height: 44px; padding: 4px; display: flex; align-items: stretch; }
+html:root:root:root:root:root:root .prw-sw2.head-sw > button, html:root:root:root:root:root:root .prw-sw2.to-proj > button { flex: 1 1 0; min-width: 0; height: auto; padding: 0 12px; font-size: 16px; font-weight: 600; }
+html:root:root:root:root:root:root .prw-sw2.head-sw > button:last-child, html:root:root:root:root:root:root .prw-sw2.to-proj > button:last-child { flex: 0 0 auto; padding: 0 18px; }
+.prw-sw2.head-sw .head-sw-name { max-width: none; }
+.prw-phone-top > .prw-sw2.to-proj { flex: 1 1 auto; }
+.prw-phone-top { padding-left: 10px; padding-right: 62px; }
+html:root:root:root:root:root:root .prw-sw2.to-proj > button:last-child { flex: 1 1 0; }

@@ -173,9 +173,11 @@ const mapName = (u) => {
   if (m) { try { return decodeURIComponent(m[1].replace(/\+/g, ' ')) } catch { /* left as it is */ } }
   return /apple/i.test(u) ? 'Apple Maps' : /openstreetmap/i.test(u) ? 'OpenStreetMap' : 'Google Maps'
 }
+// a small bin on most things in the workspace (Alex, 22 Nov: "a small bin, it asks twice, and it deletes")
+const Trash = ({ onClick, className = '' }) => (onClick ? <button type="button" className={`round prw-trash ${className}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick() }} title="Delete" aria-label="Delete">{I.trash}</button> : null)
 // a button at the right of a map link or a place: Add to Location Scout (Alex, 22 Nov), or Added once it is there
 const AddScout = ({ onAdd, has }) => (onAdd ? <button type="button" className={`pill-btn prw-addscout${has ? ' done' : ''}`} disabled={has} onClick={onAdd}>{has ? I.check : I.plus}<span>{has ? 'In Location Scout' : 'Add to Location Scout'}</span></button> : null)
-function Places({ list, maps = [], people = {}, me, onAdd, hasUrl = () => false }) {
+function Places({ list, maps = [], people = {}, me, onAdd, hasUrl = () => false, onDrop }) {
   return (
     <div className="prj-list">
       {maps.map(({ u, m }, i) => (
@@ -185,6 +187,7 @@ function Places({ list, maps = [], people = {}, me, onAdd, hasUrl = () => false 
             <span className="prj-ftext"><b>{mapName(u)}</b><small>{[m.user_id === me?.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0], new Date(m.created_at).toLocaleDateString([], { day: 'numeric', month: 'short' })].join(' · ')}</small></span>
           </a>
           <AddScout has={hasUrl(u)} onAdd={onAdd && (() => onAdd({ name: mapName(u), mapsUrl: u, address: '' }))} />
+          <Trash onClick={onDrop && (() => onDrop(m, 'this message with the link'))} />
         </div>
       ))}
       {list.map((m) => {
@@ -198,8 +201,7 @@ function Places({ list, maps = [], people = {}, me, onAdd, hasUrl = () => false 
             {on && <span className="prj-live" />}
           </a>
         )
-        if (!onAdd || live) return row
-        return <div key={m.id} className="prw-link">{row}<AddScout has={hasUrl(mapUrl(l))} onAdd={() => onAdd({ name: l.name || 'Place', address: l.addr || '', mapsUrl: mapUrl(l), lat: l.lat, lon: l.lng })} /></div>
+        return <div key={m.id} className="prw-link">{row}{onAdd && !live && <AddScout has={hasUrl(mapUrl(l))} onAdd={() => onAdd({ name: l.name || 'Place', address: l.addr || '', mapsUrl: mapUrl(l), lat: l.lat, lon: l.lng })} />}<Trash onClick={onDrop && (() => onDrop(m, 'this place'))} /></div>
       })}
     </div>
   )
@@ -207,16 +209,19 @@ function Places({ list, maps = [], people = {}, me, onAdd, hasUrl = () => false 
 function Polls({ list, me, people, canStop }) {
   return <div className="prj-polls">{list.map((m) => <div key={m.id} className="prj-poll"><Suspense fallback={<p className="prj-quiet">Poll</p>}><PollCard id={m.id} me={me.id} people={people} canStop={canStop} /></Suspense></div>)}</div>
 }
-function Contacts({ list, people }) {
+function Contacts({ list, people, onDrop }) {
   return (
     <div className="prj-list">
       {list.map((m) => {
         const c = m.file.contact, p = people[c.id]
         return (
-          <button key={m.id} type="button" className="prj-row" onClick={() => window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: c.id } }))}>
-            <Avatar src={p?.avatar_url || c.avatar} name={p ? nameOf(p) : c.name} size={32} />
-            <span className="prj-ftext"><b>{p ? nameOf(p) : c.name}</b><small>@{p?.username || c.username}</small></span>
-          </button>
+          <div key={m.id} className="prw-link">
+            <button type="button" className="prj-row" onClick={() => window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: c.id } }))}>
+              <Avatar src={p?.avatar_url || c.avatar} name={p ? nameOf(p) : c.name} size={32} />
+              <span className="prj-ftext"><b>{p ? nameOf(p) : c.name}</b><small>@{p?.username || c.username}</small></span>
+            </button>
+            <Trash onClick={onDrop && (() => onDrop(m, 'this contact'))} />
+          </div>
         )
       })}
     </div>
@@ -309,11 +314,14 @@ function useRoomStuff(roomId) {
     let gone = false, timer = 0
     setStuff({ assets: null, words: [] })
     const load = async () => {
-      const [a, w] = await Promise.all([
+      const [a, w, h] = await Promise.all([
         supabase.from('roar_messages').select('id, user_id, kind, body, file, created_at').eq('room_id', roomId).not('file', 'is', null).is('deleted_at', null).order('created_at', { ascending: false }).limit(600),
         supabase.from('roar_messages').select('id, user_id, kind, body, created_at').eq('room_id', roomId).eq('kind', 'text').or('body.ilike.*http*,body.ilike.*#*').is('deleted_at', null).order('created_at', { ascending: false }).limit(600),
+        supabase.from('roar_msg_hides').select('message_id').eq('room_id', roomId),
       ])
-      if (!gone) setStuff({ assets: (a.data || []).filter(isAsset), meets: (a.data || []).filter((m) => m.file?.event), words: w.data || [] })
+      const hid = new Set((h.data || []).map((x) => x.message_id))
+      const keep = (l) => (l || []).filter((m) => !hid.has(m.id))
+      if (!gone) setStuff({ assets: keep(a.data).filter(isAsset), meets: keep(a.data).filter((m) => m.file?.event), words: keep(w.data) })
     }
     load()
     const ch = supabase.channel(`pro-stuff-${roomId}-${Date.now()}`)
@@ -355,7 +363,7 @@ function Viewer({ items, index, onClose, people = {}, me }) {
   )
 }
 
-function Tile({ m, onOpen }) {
+function Tile({ m, onOpen, onDrop }) {
   const [src, setSrc] = useState('')
   useEffect(() => {
     let gone = false
@@ -364,11 +372,14 @@ function Tile({ m, onOpen }) {
   }, [m.id])
   const video = folderOf(m) === 'videos'
   return (
-    <button type="button" className={`prw-tile${m.file.round ? ' round' : ''}`} onClick={onOpen} title={m.file.name || ''}>
-      {src ? <img src={src} alt="" loading="lazy" /> : <i className="prw-tile-ph" />}
-      {video && <span className="prw-play"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg></span>}
-      <span className="prw-tile-meta">{m.file.name && !m.file.round ? m.file.name : day(m.created_at)}</span>
-    </button>
+    <span className="prw-tilewrap">
+      <button type="button" className={`prw-tile${m.file.round ? ' round' : ''}`} onClick={onOpen} title={m.file.name || ''}>
+        {src ? <img src={src} alt="" loading="lazy" /> : <i className="prw-tile-ph" />}
+        {video && <span className="prw-play"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg></span>}
+        <span className="prw-tile-meta">{m.file.name && !m.file.round ? m.file.name : day(m.created_at)}</span>
+      </button>
+      <Trash className="on-pic" onClick={onDrop && (() => onDrop(m, video ? 'this video' : 'this photo'))} />
+    </span>
   )
 }
 
@@ -476,6 +487,7 @@ function Scout({ project, save, room, toast, onView }) {
   const status = (x) => { const [, label, c] = scoutSt(x.st); return <button type="button" className="prj-chip prw-st" style={{ '--pc': c }} onClick={() => step(x)} title="Change status">{label}</button> }
   const mapBtn = (x) => (mapOf(x) ? <a className="round prw-ibtn" href={mapOf(x)} target="_blank" rel="noopener noreferrer" title="Open in Google Maps" aria-label="Open in Google Maps">{I.place}</a> : null)
   const editBtn = (x) => <button type="button" className="round prw-ibtn" onClick={() => setEdit(x)} title="Edit" aria-label="Edit">{I.edit}</button>
+  const dropBtn = (x) => <Trash className="prw-ibtn" onClick={() => { if (window.confirm(`Delete ${x.name || 'this location'} from Location Scout?`) && window.confirm('Are you sure? Its photos and notes go too.')) put(list.filter((y) => y.id !== x.id)) }} />
   return (
     <>
       <div className="prw-scouthead">
@@ -497,7 +509,7 @@ function Scout({ project, save, room, toast, onView }) {
                 <div className="prw-card-in">
                   <div className="prw-card-top">
                     <button type="button" className="prw-card-title" onClick={() => setEdit(x)}><h3>{x.name}</h3>{where(x) && <small>{where(x)}</small>}</button>
-                    <span className="prw-card-btns">{mapBtn(x)}{editBtn(x)}</span>
+                    <span className="prw-card-btns">{mapBtn(x)}{editBtn(x)}{dropBtn(x)}</span>
                   </div>
                   <span className="prw-card-meta"><i className="type">{x.type || 'Interior'}</i>{(x.contact || x.phone) && <i>{[x.contact, x.phone].filter(Boolean).join(' · ')}</i>}{(x.tags || []).map((t) => <i key={t}>{t}</i>)}</span>
                 </div>
@@ -515,7 +527,7 @@ function Scout({ project, save, room, toast, onView }) {
                 <button type="button" className="prw-stext" onClick={() => setEdit(x)}><b>{x.name}</b><small>{[where(x), x.type || 'Interior'].filter(Boolean).join(' · ')}</small></button>
                 <span className="prw-scontact">{[x.contact, x.phone].filter(Boolean).join(' · ')}</span>
                 {status(x)}
-                <span className="prw-card-btns">{mapBtn(x)}{editBtn(x)}</span>
+                <span className="prw-card-btns">{mapBtn(x)}{editBtn(x)}{dropBtn(x)}</span>
               </div>
             )
           })}
@@ -529,7 +541,7 @@ function Scout({ project, save, room, toast, onView }) {
 }
 
 /* ---------- Calls ---------- */
-function Calls({ list, room, people, me }) {
+function Calls({ list, room, people, me, onDrop }) {
   const [live, setLive] = useState(null)
   useEffect(() => {
     let gone = false
@@ -556,17 +568,17 @@ function Calls({ list, room, people, me }) {
       {soon.length > 0 && <h6 className="prw-h">Meetings</h6>}
       {soon.map(({ m, ev, s }) => {
         const open = now >= s - 10 * 60e3
-        return <div key={m.id} className="prw-call"><span className="prw-call-ico sched">{I.calendar}</span><span className="prj-ftext"><b>{ev.title || 'Call'}</b><small>{new Date(s).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span>{open && <button type="button" className="btn btn-main" onClick={() => go(true)}>Join</button>}</div>
+        return <div key={m.id} className="prw-call"><span className="prw-call-ico sched">{I.calendar}</span><span className="prj-ftext"><b>{ev.title || 'Call'}</b><small>{new Date(s).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span>{open && <button type="button" className="btn btn-main" onClick={() => go(true)}>Join</button>}<Trash onClick={onDrop && (() => onDrop(m, 'this meeting'))} /></div>
       })}
       {past.length > 0 && <h6 className="prw-h">Past</h6>}
-      {past.map((m) => <div key={m.id} className="prw-call past"><span className="prw-call-ico past">{m.file.event ? I.calendar : I.video}</span><span className="prj-ftext"><b>{m.file.event ? m.file.event.title || 'Scheduled call' : `${m.file.groupcall?.video === false ? 'Call' : 'Video chat'} by ${who(m.user_id)}`}</b><small>{new Date(m.file.event ? m.file.event.start : m.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span></div>)}
+      {past.map((m) => <div key={m.id} className="prw-call past"><span className="prw-call-ico past">{m.file.event ? I.calendar : I.video}</span><span className="prj-ftext"><b>{m.file.event ? m.file.event.title || 'Scheduled call' : `${m.file.groupcall?.video === false ? 'Call' : 'Video chat'} by ${who(m.user_id)}`}</b><small>{new Date(m.file.event ? m.file.event.start : m.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span><Trash onClick={onDrop && (() => onDrop(m, m.file.event ? 'this meeting' : 'this call'))} /></div>)}
       {!live && !soon.length && !past.length && <p className="prj-quiet">No calls or meetings yet. Schedule Meeting puts a card in the chat that everyone taps to join, and it is listed here.</p>}
     </div>
   )
 }
 
 /* ---------- Links and Tags ---------- */
-function Links({ words, people, me, onJump }) {
+function Links({ words, people, me, onJump, onDrop }) {
   const list = words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].map((u) => ({ u, m })))
   if (!list.length) return <p className="prj-quiet">No links yet. Links sent in the chat stay there and gather here too.</p>
   return (
@@ -578,6 +590,7 @@ function Links({ words, people, me, onJump }) {
           <div key={`${m.id}-${i}`} className="prw-link">
             <a className="prj-row" href={u} target="_blank" rel="noopener noreferrer"><i className="prj-tag prj-k-docs">{host.slice(0, 1).toUpperCase()}</i><span className="prj-ftext"><b>{host}</b><small>{u}</small></span></a>
             <button type="button" className="pill-btn prw-goto" onClick={() => onJump(m.id)}>{m.user_id === me.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0]} · {day(m.created_at)}</button>
+            <Trash onClick={onDrop && (() => onDrop(m, 'this message with the link'))} />
           </div>
         )
       })}
@@ -766,7 +779,7 @@ function OrdinoWindow({ onClose, onSent }) {
   )
 }
 
-function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
+function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged }) {
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
   const [menu, setMenu] = useState('')
@@ -777,13 +790,31 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const [tag, setTag] = useState('')
   const [doc, setDoc] = useState(null)
   const [ordinoOpen, setOrdinoOpen] = useState(false)
+  const [gone, setGone] = useState(() => new Set())
+  const [isAdmin, setIsAdmin] = useState(false)
+  useEffect(() => { supabase.rpc('roar_is_admin').then(({ data }) => setIsAdmin(data === true), () => {}) }, [])
+  // a bin asks twice (Alex, 22 Nov): one's own thing is deleted for everyone (it leaves the chat too), an admin deletes
+  // anyone's, someone else's is only taken away for me (Delete for Me)
+  const drop = async (m, what = 'this') => {
+    const mine = m.user_id === me.id
+    const all = mine || isAdmin
+    if (!window.confirm(all ? `Delete ${what} for everyone? It leaves the chat too.` : `Remove ${what} for you? The others still see it.`)) return
+    if (!window.confirm('Are you sure? This cannot be undone.')) return
+    const { error } = mine ? await supabase.from('roar_messages').update({ deleted_at: new Date().toISOString(), body: '' }).eq('id', m.id)
+      : isAdmin ? await supabase.rpc('roar_admin_delete_message', { m: m.id })
+      : await supabase.from('roar_msg_hides').upsert({ user_id: me.id, message_id: m.id, room_id: room.room_id })
+    if (error) { toast(errText(error)); return }
+    setGone((g) => new Set([...g, m.id]))
+    if (!all) window.dispatchEvent(new CustomEvent('roarme-hide', { detail: { room: room.room_id, id: m.id } }))
+    toast(all ? 'Deleted' : 'Removed for you')
+  }
   const [hidden, setHidden] = useState(() => { try { return JSON.parse(localStorage.getItem(hiddenKey(room.room_id)) || '[]') } catch { return [] } })
   const flipTab = (k) => { const next = hidden.includes(k) ? hidden.filter((x) => x !== k) : [...hidden, k]; setHidden(next); try { localStorage.setItem(hiddenKey(room.room_id), JSON.stringify(next)) } catch { /* private window */ } }
   const save = (patch) => kit.save(room.room_id, patch).catch((e) => toast(errText(e)))
   // the first facts brought to today's set, once: Location and Lead go, Client becomes Artist / Client, Title and Category
   // come in, in FIELD_START's order with anything else after (Alex, 22 Nov)
   useEffect(() => {
-    const f = (Array.isArray(project.fields) ? project.fields : []).filter((x) => x.k !== 'Location' && x.k !== 'Lead').map((x) => (x.k === 'Client' ? { ...x, k: 'Artist / Client' } : x))
+    const f = (Array.isArray(project.fields) ? project.fields : []).filter((x) => x.k !== 'Location' && x.k !== 'Lead' && ((x.k || '').trim() || (x.v || '').trim()) && !(x.k === 'Field' && !(x.v || '').trim())).map((x) => (x.k === 'Client' ? { ...x, k: 'Artist / Client' } : x))
     const next = [...FIELD_START.map((k) => f.find((x) => x.k === k) || { k, v: '' }), ...f.filter((x) => !FIELD_START.includes(x.k))]
     if (JSON.stringify(next) !== JSON.stringify(project.fields || [])) save({ fields: next })
   }, [project.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -794,16 +825,17 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
     window.addEventListener('roarme-pro-tab', f)
     return () => window.removeEventListener('roarme-pro-tab', f)
   }, [room.room_id])
-  const assets = stuff.assets || []
+  const assets = (stuff.assets || []).filter((m) => !gone.has(m.id))
   const media = assets.filter(isMediaMsg)
   const files = assets.filter((m) => isFileMsg(m) && !isMediaMsg(m))
   const places = assets.filter((m) => m.file.location || m.file.live)
   const polls = assets.filter((m) => m.file.poll)
   const cards = assets.filter((m) => m.file.contact)
-  const calls = [...assets.filter((m) => m.file.groupcall), ...(stuff.meets || [])]
-  const links = stuff.words.filter((m) => URL_RX.test(m.body) && ((URL_RX.lastIndex = 0), true))
-  const tagged = stuff.words.filter((m) => tagsIn(m.body).length)
-  const maps = stuff.words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter(isMapLink).map((u) => ({ u, m })))
+  const calls = [...assets.filter((m) => m.file.groupcall), ...(stuff.meets || []).filter((m) => !gone.has(m.id))]
+  const words = stuff.words.filter((m) => !gone.has(m.id))
+  const links = words.filter((m) => URL_RX.test(m.body) && ((URL_RX.lastIndex = 0), true))
+  const tagged = words.filter((m) => tagsIn(m.body).length)
+  const maps = words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter(isMapLink).map((u) => ({ u, m })))
   const tasks = Array.isArray(project.tasks) ? project.tasks : []
   const scouts = Array.isArray(project.scouts) ? project.scouts : []
   const fields = Array.isArray(project.fields) ? project.fields : []
@@ -816,7 +848,17 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
   const shownMedia = media.filter((m) => mf === 'all' || folderOf(m) === mf)
   const openMedia = (list, i) => setView({ items: list, index: i })
-  const setField = (i, patch) => save({ fields: fields.map((f, n) => (n === i ? { ...f, ...patch } : f)) })
+  // Artist / Client and Title name the group (Alex, 22 Nov: "as soon as something is written there it becomes the group's
+  // name"): "Artist – Title", or the one that is there
+  const setField = (i, patch) => {
+    const next = fields.map((f, n) => (n === i ? { ...f, ...patch } : f))
+    save({ fields: next })
+    const val = (k) => (next.find((f) => f.k === k)?.v || '').trim()
+    const name = [val('Artist / Client'), val('Title')].filter(Boolean).join(' – ').slice(0, 80)
+    if (name && name !== title && ['Artist / Client', 'Title'].includes(next[i]?.k)) {
+      supabase.from('roar_rooms').update({ title: name }).eq('id', room.room_id).then(({ error }) => { if (error) toast('Only an admin of the group can change its name'); else onChanged?.() })
+    }
+  }
   const members = (room.members || []).slice(0, 5)
   return (
     <div className="prw-work">
@@ -868,7 +910,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
                   <div key={i} className="prw-fact">
                     <Field className="prw-fact-k" value={f.k} placeholder="Field" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
                     <Field className="prw-fact-v" value={f.v} placeholder="—" list={f.k === 'Category' ? 'prw-cats' : undefined} onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
-                    <button type="button" className="prj-kvdel" onClick={() => save({ fields: fields.filter((_, n) => n !== i) })} aria-label="Remove field" title="Remove">{I.x}</button>
+                    <Trash className="prw-fact-del" onClick={() => { if (!(f.v || '').trim() || window.confirm(`Delete ${f.k || 'this field'}?`)) save({ fields: fields.filter((_, n) => n !== i) }) }} />
                   </div>
                 ))}
                 {fields.length < 20 && <button type="button" className="prw-fact add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
@@ -900,28 +942,28 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
                 </div>
               ) : <p className="prj-quiet">No ordino yet. New Ordino opens Roardino; make the call sheet there and press Send, and it stays here.</p>}
             </div>
-            {media.length > 0 && <div className="prw-box wide"><h4>Latest Media</h4><div className="prw-grid">{media.slice(0, 8).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} />)}</div></div>}
+            {media.length > 0 && <div className="prw-box wide"><h4>Latest Media</h4><div className="prw-grid">{media.slice(0, 8).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
           </div>
         )}
         {shownTab === 'media' && (
           <>
             <div className="prw-sub"><Lens className="seg prw-seg" dep={mf}>{[['all', 'All'], ['photos', 'Photos'], ['videos', 'Videos']].map(([k, l]) => <button key={k} type="button" className={mf === k ? 'on' : ''} onClick={() => setMf(k)}>{l}</button>)}</Lens></div>
-            {stuff.assets === null ? <p className="prj-quiet">Loading…</p> : shownMedia.length ? <div className="prw-grid big">{shownMedia.map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(shownMedia, i)} />)}</div> : <p className="prj-quiet">No photos or videos yet. What is sent in the chat comes here.</p>}
+            {stuff.assets === null ? <p className="prj-quiet">Loading…</p> : shownMedia.length ? <div className="prw-grid big">{shownMedia.map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(shownMedia, i)} onDrop={drop} />)}</div> : <p className="prj-quiet">No photos or videos yet. What is sent in the chat comes here.</p>}
           </>
         )}
         {shownTab === 'files' && (files.length ? (
           <div className="prj-list prw-files">{files.map((m) => (
-            <button key={m.id} type="button" className="prj-row" onClick={() => (folderOf(m) === 'audio' ? openFile(m) : setDoc(m))}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button>
+            <div key={m.id} className="prw-link"><button type="button" className="prj-row" onClick={() => (folderOf(m) === 'audio' ? openFile(m) : setDoc(m))}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button><Trash onClick={() => drop(m, 'this file')} /></div>
           ))}</div>
         ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents and sound files sent in the chat come here.'}</p>)}
         {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
-        {shownTab === 'calls' && <Calls list={calls} room={room} people={people} me={me} />}
-        {shownTab === 'links' && <Links words={links} people={people} me={me} onJump={onJump} />}
+        {shownTab === 'calls' && <Calls list={calls} room={room} people={people} me={me} onDrop={drop} />}
+        {shownTab === 'links' && <Links words={links} people={people} me={me} onJump={onJump} onDrop={drop} />}
         {shownTab === 'tags' && <Tags words={tagged} people={people} me={me} onJump={onJump} pick={tag} setPick={setTag} />}
-        {shownTab === 'polls' && <div className="prw-polls">{polls.map((m) => <div key={m.id} className="prj-poll"><Suspense fallback={<p className="prj-quiet">Poll</p>}><PollCard id={m.id} me={me.id} people={people} canStop={room.role === 'admin'} /></Suspense></div>)}</div>}
-        {shownTab === 'places' && <Places list={places} maps={maps} people={people} me={me} hasUrl={(u) => scouts.some((x) => x.mapsUrl === u)}
+        {shownTab === 'polls' && <div className="prw-polls">{polls.map((m) => <div key={m.id} className="prj-poll prw-pollwrap"><Trash className="corner" onClick={() => drop(m, 'this poll')} /><Suspense fallback={<p className="prj-quiet">Poll</p>}><PollCard id={m.id} me={me.id} people={people} canStop={room.role === 'admin'} /></Suspense></div>)}</div>}
+        {shownTab === 'places' && <Places list={places} maps={maps} people={people} me={me} onDrop={drop} hasUrl={(u) => scouts.some((x) => x.mapsUrl === u)}
           onAdd={(p) => { save({ scouts: [...scouts, { id: uid(), type: 'Exterior', st: 'option', contact: '', phone: '', notes: '', tags: [], photos: [], ...p }] }); toast(`${p.name} added to Location Scout`) }} />}
-        {shownTab === 'contacts' && <Contacts list={cards} people={people} />}
+        {shownTab === 'contacts' && <Contacts list={cards} people={people} onDrop={drop} />}
         {shownTab === 'tasks' && <Board list={tasks} onChange={(next) => save({ tasks: next })} />}
       </div>
       </div>

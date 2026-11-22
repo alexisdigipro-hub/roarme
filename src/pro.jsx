@@ -54,7 +54,10 @@ export function useProjects(me, on) {
         else if (ev.new?.room_id) setMap((m) => ({ ...m, [ev.new.room_id]: ev.new }))
       })
       .subscribe()
-    return () => { supabase.removeChannel(ch) }
+    // back in front (the phone froze the live link meanwhile): read them again
+    const wake = () => { if (document.visibilityState === 'visible') load() }
+    document.addEventListener('visibilitychange', wake)
+    return () => { supabase.removeChannel(ch); document.removeEventListener('visibilitychange', wake) }
   }, [on, me.id, load])
   const save = useCallback(async (roomId, patch) => {
     setMap((m) => ({ ...m, [roomId]: { ...(m[roomId] || {}), room_id: roomId, ...patch } }))

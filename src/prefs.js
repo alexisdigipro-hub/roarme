@@ -32,7 +32,8 @@ export const DEFAULTS = {
   autoplayVideos: false,
   autoplayGifs: true,
   callsTab: true,
-  pro: false, // RoarMe Pro, the website on a computer only (Alex, 22 Nov): the button in the bar at the foot
+  pro: false,
+  proNotes: false, // Pro: the small line in a project's chat for what went to the side (Alex, 22 Nov: off unless turned on) // RoarMe Pro, the website on a computer only (Alex, 22 Nov): the button in the bar at the foot
   tasksTab: false, // Tasks in the bar at the foot: off until turned on in Settings (Alex, 7 Nov)
   lite: false, // power saving: no animations, no glass blur
   peekBadge: false, // a click on the unread badge previews the chat

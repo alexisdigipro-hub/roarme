@@ -841,7 +841,7 @@ export default function Chat({ me, setMe }) {
     // a chat marked as unread by hand belongs here too (Alex, 21 Oct), even when its last message is one's own
     if (f === 'unread') return r.unread > 0 || marked.includes(r.room_id) || (prefs.folderExtra?.unread || []).includes(r.room_id)
     if (f === 'groups') return r.kind === 'group' || (prefs.folderExtra?.groups || []).includes(r.room_id)
-    if (f === 'projects') return r.kind === 'group' && !!proKit.map[r.room_id]
+    if (f === 'projects') return r.kind === 'group' && (!!r.project || !!proKit.map[r.room_id])
     const mine = myFolders.find((x) => x.id === f)
     if (mine) {
       if ((mine.exclude || []).includes(r.room_id)) return false
@@ -1891,7 +1891,7 @@ export default function Chat({ me, setMe }) {
             {!window.matchMedia('(max-width: 760px)').matches && <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>}
             {/* no Preview Messages: the messages are shown above the menu (Alex, 14 Nov) */}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
-            {proOn && roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }, { k: 'Budget', v: '' }] }).then(() => { toast('Moved to PROjects'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
+            {proOn && roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }] }).then(() => { toast('Moved to PROjects'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
               : (
@@ -2091,7 +2091,20 @@ function sameMsgs(prev, got) {
   const extra = lastAt ? prev.filter((m) => !ids.has(m.id) && m.created_at > lastAt) : []
   return all && !extra.length ? prev : [...out, ...extra]
 }
+const CHANS = [['pre', 'Pre Production'], ['prod', 'Production'], ['post', 'Post Production']]
+
 const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [], proArtist = '', assetsAside = false }) {
+  // a PROjects group is three chats (Alex, 22 Nov): PRE PRODUCTION, PRODUCTION, POST PRODUCTION; one sees the tabs the
+  // group's admins gave them (roar_my_rooms channels; the server holds it, supabase/project-channels.sql). A new message goes
+  // into the tab that is open: the server reads roar_members.cur_channel, which is set here as a tab is chosen
+  const chans = room.kind === 'group' && room.project && Array.isArray(room.channels) && room.channels.length ? room.channels : null
+  const [chanPick, setChan] = useState(() => { try { return localStorage.getItem(`roarme-chan-${room.room_id}`) || '' } catch { return '' } })
+  const chan = chans ? (chans.includes(chanPick) ? chanPick : chans[0]) : null
+  useEffect(() => {
+    if (!chan) return
+    try { localStorage.setItem(`roarme-chan-${room.room_id}`, chan) } catch { /* private window */ }
+    supabase.from('roar_members').update({ cur_channel: chan }).eq('room_id', room.room_id).eq('user_id', me.id).then(() => {})
+  }, [chan, room.room_id, me.id])
   const [rawMsgs, setMsgs] = useState(() => keptMsgs(room.room_id) || []) // the chat's last messages kept on the device show at once (cache.js)
   // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
   const [sealOn, reloadSeal] = useEncrypted(room.room_id)
@@ -3356,7 +3369,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // what the Pro panel took away for me leaves the chat at once too
   useEffect(() => { const f = (e) => { if (e.detail?.room === room.room_id) setHidden((h) => new Set([...h, e.detail.id])) }; window.addEventListener('roarme-hide', f); return () => window.removeEventListener('roarme-hide', f) }, [room.room_id])
   const shownMsgs = useMemo(() => {
-    const base = msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt))
+    const base = msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt) && (!chans || (m.channel || 'pre') === chan))
     if (!assetsAside) return base
     // the small lines are off unless turned on in the project's settings (Alex, 22 Nov: "I don't want them shown, but a setting")
     const notes = !!prefs.proNotes
@@ -3373,7 +3386,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       if ((m.kind === 'image' || m.kind === 'file') && (m.body || '').trim()) out.push({ ...m, kind: 'text', file: null, asideAsset: true })
     }
     return out
-  }, [msgs, clearedAt, hidden, assetsAside, prefs.proNotes])
+  }, [msgs, clearedAt, hidden, assetsAside, prefs.proNotes, chan, chans?.join()])
   // what others ask me to delete, one at a time, above the writing box
   const askForMe = asks.filter((a) => a.owner === me.id && msgs.some((m) => m.id === a.message_id && !m.deleted_at))
   const askedByMe = new Set(asks.filter((a) => a.asked_by === me.id).map((a) => a.message_id))
@@ -3755,6 +3768,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         </div>
       )}
 
+      {chans && chans.length > 1 && find === null && (
+        <nav className="ch-tabs" role="tablist" aria-label="Chats of the project">
+          {CHANS.filter(([k]) => chans.includes(k)).map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={chan === k} className={chan === k ? 'on' : ''} onClick={() => setChan(k)}>{l}</button>)}
+        </nav>
+      )}
       {room.kind === 'group' && find === null && <GroupCallBar call={gc.call} here={gc.here} people={people} me={me} inIt={gc.here.includes(me.id)} onJoin={joinGc} />}
 
       {/* the song that is playing: under the chat's head, in the flow (Alex, 18 Nov, from Telegram's); a tap on its name

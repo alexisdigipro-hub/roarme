@@ -17,6 +17,8 @@ export const NEWS = [
         'From the Hub: a project shows the hub\'s cover picture, its locations\' photos and its songs, which play in RoarMe.',
         'Archived Projects: delivered projects fold away at the foot of PROjects.',
         'PROjects is off to start: turn it on in Settings, PROjects, and the gold folder shows.',
+        'Project chats: a project group has three chats, Pre Production, Production and Post Production. Admins choose who sees which; only Pre Production sees the Workspace.',
+        'Project Settings on one page: Mark as Delivered on top, the details in one line, the stage as three choices.',
         'Unlink: untie a project from the hub in its settings. Deleting on one side only unlinks the other.',
         'A project has its own workspace: media, files, Location Scout, calls, links, tasks, and Admin for budget and fees.',
         'The project\u2019s Overview gives a taste of everything: small thumbnails, then the latest documents, locations, links and tasks.',

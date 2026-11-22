@@ -41,7 +41,7 @@ export const ProChip = ({ p }) => { const s = stageOf(p); return <span className
 
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2))
 // a project's first facts (Alex, 22 Nov: "artist / client, apart title, apart category"; Budget stays); Add Field adds more
-const FIELD_START = ['Artist / Client', 'Title', 'Category', 'Budget']
+const FIELD_START = ['Artist / Client', 'Title', 'Category'] // no Budget (Alex, 22 Nov)
 const CATEGORIES = ['Music Video', 'Commercial', 'Feature Film', 'Short Film', 'Documentary', 'TV Series', 'Branded Content', 'Photoshoot', 'Live Event']
 
 // every project I can see, live
@@ -1408,6 +1408,9 @@ const SET_I = {
   up: tsv(<path d="M6 15l6-6 6 6" />),
   down: tsv(<path d="M6 9l6 6 6-6" />),
 }
+// the project's details in its settings (Alex, 22 Nov: "take Budget and Add Field out, gathered, in one line if they fit")
+const MAIN_FIELDS = ['Artist / Client', 'Title', 'Category']
+
 function ProSettings({ start = 'home', roomId, boss, toast, project, save, fields, setField, hidden, flipTab, adminIn, notesOn, dateName, onStop, onClose }) {
   const [stack, setStack] = useState([start]) // the pages walked into; back goes one step out
   const page = stack[stack.length - 1]
@@ -1452,57 +1455,45 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
       <div key={page} className={`prs2-body ${dir > 0 ? 'fwd' : 'bwd'}`}>
         {page === 'home' && (
           <>
-            {/* everything about the project right here, no Project Info page (Alex, 22 Nov) */}
-            <small className="prs2-cap">Details</small>
-            <p className="prs2-hint">What is written here shows on the cover. Artist / Client and Title also name the group.</p>
-            <datalist id="prs2-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
-            <div className="prs2-box">
-              {fields.map((f, i) => (
-                <div key={`${i}-${f.k}`} className="prs2-field">
-                  <span className="prs2-fin">
-                    <Field className="prs2-fk" value={f.k} placeholder="Field name" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
-                    <Field className="prs2-fv" value={f.v} placeholder="Not written" list={f.k === 'Category' ? 'prs2-cats' : undefined} onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
-                  </span>
-                  <span className="prs2-facts">
-                    <button type="button" className="round prs2-mini" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move up" title="Move up">{SET_I.up}</button>
-                    <button type="button" className="round prs2-mini" disabled={i === fields.length - 1} onClick={() => move(i, 1)} aria-label="Move down" title="Move down">{SET_I.down}</button>
-                    <Trash className="prs2-mini" onClick={() => { if (!(f.v || '').trim() || window.confirm(`Delete ${f.k || 'this field'}?`)) save({ fields: fields.filter((_, n) => n !== i) }) }} />
-                  </span>
-                </div>
-              ))}
-            </div>
-            {fields.length < 20 && <button type="button" className="pill-btn prs2-add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
-            <small className="prs2-cap">Brief</small>
-            <div className="prs2-box prs2-pad"><Field area className="prs2-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} /></div>
-            <small className="prs2-cap">Stage</small>
-            <div className="prs2-box">
-              {pickStages(project).map((x) => <button key={x.id} type="button" className="prs2-row" onClick={() => save({ status: x.id })}><i className="prw-dot prs2-dot" style={{ '--pc': x.c }} /><span className="prs2-t"><b>{x.name}</b></span>{project.status === x.id && <b className="prw-tick">{I.check}</b>}</button>)}
-              {row('stages', 'Edit Stages', 'Rename, colour, add or take away', () => go('stages'))}
-            </div>
+            {/* everything about the project right here, no Project Info page (Alex, 22 Nov); Mark as Delivered on top, then
+                Artist / Client, Title and Category on one line (no Budget, no fields of one's own, no brief), then the stage */}
             {/* Delivered is not a stage to pick: one button sends the project to Archived Projects and brings it back */}
             <div className="prs2-box">
               {isDelivered(project)
                 ? <button type="button" className="prs2-row" onClick={() => save({ status: (pickStages(project).slice(-1)[0] || stagesOf(project)[0]).id })}><i className="prs2-ic">{I.archive || I.check}</i><span className="prs2-t"><b>Back to Active</b><small>Delivered, in Archived Projects</small></span></button>
                 : doneStage(project) && <button type="button" className="prs2-row" onClick={() => save({ status: doneStage(project).id })}><i className="prs2-ic">{I.check}</i><span className="prs2-t"><b>Mark as Delivered</b><small>It moves to Archived Projects</small></span></button>}
             </div>
+            <small className="prs2-cap">Details</small>
+            <datalist id="prs2-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
+            <div className="prs2-box prs2-trio">
+              {MAIN_FIELDS.map((k) => {
+                const i = fields.findIndex((f) => f.k === k)
+                const f = i >= 0 ? fields[i] : { k, v: '' }
+                return (
+                  <label key={k} className="prs2-cell">
+                    <small>{k}</small>
+                    <Field className="prs2-fv" value={f.v} placeholder="Not written" list={k === 'Category' ? 'prs2-cats' : undefined} onSave={(v) => (i >= 0 ? setField(i, { v: v.slice(0, 200) }) : save({ fields: [...fields, { k, v: v.slice(0, 200) }] }))} />
+                  </label>
+                )
+              })}
+            </div>
+            <small className="prs2-cap">Stage</small>
+            <div className="prs2-chips">
+              {pickStages(project).map((x) => <button key={x.id} type="button" className={project.status === x.id ? 'on' : ''} style={{ '--pc': x.c }} onClick={() => save({ status: x.id })}><i className="prw-dot" />{x.name}</button>)}
+            </div>
             <small className="prs2-cap">{dateName}</small>
             <div className="prs2-box">
-              <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></label>
-              {project.due && <button type="button" className="prs2-row danger" onClick={() => save({ due: null })}><span className="prs2-t"><b>Clear the Date</b></span></button>}
+              <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} />{project.due && <button type="button" className="pill-btn prs2-clear" onClick={(e) => { e.preventDefault(); save({ due: null }) }}>Clear</button>}</label>
+
             </div>
             <small className="prs2-cap">Tabs</small>
-            <div className="prs2-box">
-              {OPTIONAL.map(([k, l]) => (k === 'stats' && adminIn ? ['admin', 'Admin'] : [k, l])).map(([k, l]) => <button key={k} type="button" className="prs2-row" onClick={() => flipTab(k)}><i className="prs2-ic">{TAB_I[k]}</i><span className="prs2-t"><b>{l}</b></span><i className={`prw-sw${hidden.includes(k) ? '' : ' on'}`} /></button>)}
+            <div className="prs2-chips prs2-tabchips">
+              {OPTIONAL.map(([k, l]) => (k === 'stats' && adminIn ? ['admin', 'Admin'] : [k, l])).map(([k, l]) => <button key={k} type="button" className={hidden.includes(k) ? '' : 'on'} aria-pressed={!hidden.includes(k)} onClick={() => flipTab(k)}>{TAB_I[k]}{l}</button>)}
             </div>
-            <small className="prs2-cap">Connections</small>
+            <small className="prs2-cap">More</small>
             <div className="prs2-box">
               {row('hub', 'Production Hub', hub === undefined ? '' : hub ? `A project of ${hub.hub}` : 'Not in a hub', () => go('hub'))}
-            </div>
-            <small className="prs2-cap">Chat</small>
-            <div className="prs2-box">
               <button type="button" className="prs2-row" onClick={() => setPrefs({ proNotes: !getPrefs().proNotes })}><i className="prs2-ic">{SET_I.side}</i><span className="prs2-t"><b>Show What Went to the Side</b><small>A small line in the chat when a photo or file goes to the project</small></span><i className={`prw-sw${notesOn ? ' on' : ''}`} /></button>
-            </div>
-            <div className="prs2-box">
               <button type="button" className="prs2-row danger" onClick={onStop}><i className="prs2-ic">{I.trash}</i><span className="prs2-t"><b>Stop Being a Project</b><small>The chat stays; the stage, details, tasks and locations go. In the hub the project stays, unlinked.</small></span></button>
             </div>
           </>

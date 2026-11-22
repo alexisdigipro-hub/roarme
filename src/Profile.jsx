@@ -142,10 +142,20 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   }
   // who is an admin (Alex, 18 Oct): an admin makes others admins or takes it back (supabase/admins.sql)
   const [roles, setRoles] = useState({})
+  // the three chats of a PROjects group: an admin chooses who sees which (supabase/project-channels.sql, Alex 22 Nov)
+  const [chans, setChans] = useState({})
+  const flipChan = async (p, k) => {
+    const had = chans[p.id] || ['prod']
+    const next = had.includes(k) ? had.filter((x) => x !== k) : [...had, k]
+    setChans((c) => ({ ...c, [p.id]: next }))
+    const { error } = await supabase.rpc('roar_set_channels', { r: room.room_id, u: p.id, chans: next })
+    if (error) { setErr(errText(error)); loadRoles() }
+  }
   const loadRoles = async () => {
     if (!group) return
-    const { data } = await supabase.from('roar_members').select('user_id, role').eq('room_id', room.room_id)
+    const { data } = await supabase.from('roar_members').select('*').eq('room_id', room.room_id)
     setRoles(Object.fromEntries((data || []).map((x) => [x.user_id, x.role])))
+    setChans(Object.fromEntries((data || []).map((x) => [x.user_id, x.channels || ['prod']])))
   }
   useEffect(() => { loadRoles() }, [room.room_id, (room.members || []).length]) // eslint-disable-line react-hooks/exhaustive-deps
   const setAdmin = async (p, on) => {
@@ -432,6 +442,11 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   {admin && (roles[p.id] === 'admin'
                     ? (p.id !== me.id || Object.values(roles).filter((x) => x === 'admin').length > 1) && <button type="button" className="round on pf-row-adm" onClick={() => setAdmin(p, false)} aria-label={p.id === me.id ? 'Step Down' : 'Remove Admin'} title={p.id === me.id ? 'Step down as admin' : 'Remove as admin'}>{ADMIN_I}</button>
                     : <button type="button" className="round pf-row-adm" onClick={() => setAdmin(p, true)} aria-label="Make Admin" title="Make admin">{ADMIN_I}</button>)}
+                  {admin && room.project && roles[p.id] !== 'admin' && (
+                    <span className="pf-chans" role="group" aria-label="Which chats they see">
+                      {[['pre', 'Pre'], ['prod', 'Prod'], ['post', 'Post']].map(([k, l]) => <button key={k} type="button" className={(chans[p.id] || ['prod']).includes(k) ? 'on' : ''} aria-pressed={(chans[p.id] || ['prod']).includes(k)} onClick={() => flipChan(p, k)} title={`${{ pre: 'Pre Production', prod: 'Production', post: 'Post Production' }[k]} chat`}>{l}</button>)}
+                    </span>
+                  )}
                   {admin && p.id !== me.id && <button type="button" className="round danger pf-row-del" onClick={() => removeMember(p)} aria-label={`Remove ${nameOf(p)}`} title="Remove from the group">{I.trash}</button>}
                 </div>
               ))}

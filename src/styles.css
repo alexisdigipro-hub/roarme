@@ -7241,3 +7241,27 @@ html:root:root:root:root:root .prw-phone .prw-hero-btn { width: 30px; height: 30
 .prw-phone .prw-col { min-height: 0; }
 .prw-phone .prw-board { gap: 10px; }
 .prw-phone .prw-hero-st { display: none !important; }
+/* Import from Telegram (Alex, 22 Nov; src/tgImport.jsx): a window of steps, the people of the export as rows with a
+   choice of who each one is here, a bar while it runs; "imported" is a small word before a message's time */
+.tgi { display: flex; flex-direction: column; gap: 12px; min-width: min(440px, 100%); }
+.tgi-steps { margin: 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14.5px; line-height: 1.45; }
+.tgi-hint { margin: 0; font-size: 13px; line-height: 1.45; opacity: .68; }
+.tgi-hint b { opacity: 1; }
+.tgi-cap { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; opacity: .55; }
+html:root:root:root:root .tgi-go { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; }
+.tgi-go svg { width: 18px; height: 18px; }
+.tgi-list { display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow-y: auto; }
+html:root:root:root:root .tgi-row { display: flex; align-items: center; gap: 10px; width: 100%; height: auto; min-height: 52px; padding: 8px 12px; border: 0; border-radius: 16px; text-align: left; font: inherit; color: inherit; background: color-mix(in srgb, currentColor 5%, transparent); box-shadow: none; }
+html:root:root:root:root button.tgi-row { cursor: pointer; }
+.tgi-row > svg { width: 16px; height: 16px; opacity: .5; flex: none; }
+.tgi-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.tgi-text b { font-weight: 600; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tgi-text small { font-size: 12px; opacity: .6; }
+.tgi-row select { flex: none; max-width: 46%; height: 34px; padding: 0 10px; border: 0; border-radius: 17px; font: inherit; font-size: 13px; color: inherit; background: color-mix(in srgb, currentColor 8%, transparent); }
+.tgi-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.tgi-big { margin: 6px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -.02em; }
+.tgi-big small { font-size: 14px; font-weight: 500; opacity: .6; letter-spacing: 0; }
+.tgi-bar { height: 6px; border-radius: 3px; overflow: hidden; background: color-mix(in srgb, currentColor 10%, transparent); }
+.tgi-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); transition: width .3s; }
+.tgi-now { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tgi-mark { font-style: normal; opacity: .75; }

@@ -30,6 +30,8 @@ const BAN_I = <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke
 export default function Profile({ room, me, people, title, other, rooms, titleOf, toast, onClose, onChanged, onLeft, onMessage, onOpenRoom, loadPeople, blocked, onBlocks, onCall, inline = false }) {
   const group = room.kind === 'group'
   const admin = room.role === 'admin'
+  // Import from Telegram needs a computer (the export folder is made by Telegram Desktop); in a group, an admin
+  const canImport = (!group || admin) && typeof window !== 'undefined' && window.matchMedia?.('(pointer: fine)').matches && window.innerWidth > 760
   const canName = group && admin
   const [items, setItems] = useState(null)
   const [links, setLinks] = useState([])
@@ -376,6 +378,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                   {group && <button type="button" onClick={() => toChat('roles')}>{I.people}<span>Roles for @mentions</span></button>}
                   <hr />
                   <button type="button" onClick={() => toChat('export')}>{I.file}<span>Export Chat History</span></button>
+                  {canImport && <button type="button" onClick={() => toChat('import')}>{I.file}<span>Import from Telegram</span></button>}
                   <button type="button" onClick={() => setMine({ archived: !room.archived }, room.archived ? 'Unarchived' : 'Archived')}>{I.archive}<span>{room.archived ? 'Unarchive' : 'Archive'}</span></button>
                   <hr />
                   {/* Block User above the chat's own deletes (Alex, 19 Nov) */}

@@ -97,8 +97,10 @@ function usePeopleSearch(meId) {
 export default function Chat({ me, setMe }) {
   const prefs = usePrefs()
   // RoarMe Pro (Alex, 22 Nov): only on the website on a computer for now; the button in the bar at the foot turns it on and off
-  const proOn = !!prefs.pro && proOk()
-  const proKit = useProjects(me, proOn)
+  // no Pro button any more (Alex, 22 Nov): a group made a project lives in the gold PROJECTS folder and opens its
+  // workspace wherever it is opened; every other chat stays the normal chat
+  const proOn = proOk()
+  const proKit = useProjects(me, true)
   // the chat list and the people kept on the device show at once; the cloud's copy follows (cache.js, Alex, 19 Nov)
   const [rooms, setRooms] = useState(() => lsGet(`rooms-${me.id}`) || [])
   const [people, setPeople] = useState(() => { const p = lsGet(`people-${me.id}`) || {}; Object.values(p).forEach((x) => x?.id && setNameColor(x.id, x.name_color)); return p }) // id -> profile
@@ -709,12 +711,13 @@ export default function Chat({ me, setMe }) {
 
   // the folders are the same with Pro on or off (Alex, 22 Nov: "what was made once stays the same; Pro only changes the groups")
   const BUILTIN = [['all', 'All'], ['unread', 'Unread'], ['groups', 'Groups'], ['archived', 'Archived']]
+  // PROJECTS, always there (Alex, 22 Nov): not deleted, not renamed; last until it is moved
   // in the order dragged in Settings > Folders (Alex, 16 Oct); a folder not placed yet goes at the end
   const fOrder = prefs.folderOrder || []
   const fRank = (id) => { const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
   // the ready-made folders can be renamed and, except All, deleted (Alex, 16 Oct)
   const hiddenF = prefs.hiddenFolders || []
-  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true }))]
+  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), { id: 'projects', name: 'PROJECTS', fixed: true }]
     .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
   const tabsShown = tabDrag?.order ? tabDrag.order.map((id) => allFolders.find((f) => f.id === id)).filter(Boolean) : allFolders
   const editTabs = tabsEdit || picking
@@ -813,8 +816,7 @@ export default function Chat({ me, setMe }) {
     // a chat marked as unread by hand belongs here too (Alex, 21 Oct), even when its last message is one's own
     if (f === 'unread') return r.unread > 0 || marked.includes(r.room_id) || (prefs.folderExtra?.unread || []).includes(r.room_id)
     if (f === 'groups') return r.kind === 'group' || (prefs.folderExtra?.groups || []).includes(r.room_id)
-    if (f === 'projects') return !!proKit.map[r.room_id]
-    if (f === 'direct') return r.kind !== 'group'
+    if (f === 'projects') return r.kind === 'group' && !!proKit.map[r.room_id]
     const mine = myFolders.find((x) => x.id === f)
     if (mine) {
       if ((mine.exclude || []).includes(r.room_id)) return false
@@ -831,6 +833,7 @@ export default function Chat({ me, setMe }) {
     if (r.archived) return 'archived'
     const has = (id) => allFolders.some((f) => f.id === id)
     if (has('unread') && fits(r, 'unread')) return 'unread'
+    if (fits(r, 'projects')) return 'projects'
     const own = allFolders.find((f) => f.custom && fits(r, f.id))
     if (own) return own.id
     if (has('groups') && fits(r, 'groups')) return 'groups'
@@ -839,7 +842,7 @@ export default function Chat({ me, setMe }) {
   // with each chat in one folder, Unread is the one folder whose chats All shows too (Alex, 21 Nov: "Unread will be the
   // only folder that shows inside All"); a chat read again goes back to its own folder and leaves All
   const inFolder = (r, f) => {
-    if (!prefs.folderAlone || f === 'projects' || f === 'direct') return fits(r, f)
+    if (!prefs.folderAlone) return fits(r, f)
     const home = homeOf(r)
     return home === f || (f === 'all' && home === 'unread')
   }
@@ -1591,7 +1594,7 @@ export default function Chat({ me, setMe }) {
                   const n = folderUnread(f)
                   const dragged = tabDrag?.id === f.id
                   return <button key={`${k}:${f.id}`} type="button" data-tab={f.id} data-copy={k} title={f.name} aria-hidden={twin || undefined} tabIndex={twin ? -1 : undefined} className={`${folder === f.id && !twin ? 'on' : ''}${dragged ? ' tab-dragging' : ''}`} style={dragged ? { transform: `translateX(${tabDrag.dx}px)` } : undefined}
-                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'direct' ? I.person : f.id === 'projects' ? I.tasks : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.name}</span>{editTabs ? (f.id !== 'all' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'direct' ? I.person : f.id === 'projects' ? <i className="tab-gold-ico">{FOOT_I.pro}</i> : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b>JECTS</span> : f.name}</span>{editTabs ? (f.id !== 'all' && f.id !== 'projects' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
                 }))}
               </nav>
               </div>
@@ -1732,8 +1735,6 @@ export default function Chat({ me, setMe }) {
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
             {prefs.tasksTab && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}
-            {/* Pro, before Settings (Alex, 22 Nov); a switch, not a page: lit while on */}
-            {proOk() && <button type="button" className={`foot-pro${prefs.pro ? ' lit' : ''}`} aria-pressed={!!prefs.pro} onClick={() => { const on = !prefs.pro; setPrefs({ pro: on }); toast(on ? 'Pro is on' : 'Pro is off') }} title={prefs.pro ? 'Turn Pro off' : 'Turn Pro on'}>{FOOT_I.pro}<span>Pro</span></button>}
             <button type="button" className={`foot-settings${(tab === 'settings' || tab === 'media') && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('settings')}>{FOOT_I.settings}<span>Settings</span></button>
           </nav>
         )}
@@ -1748,12 +1749,12 @@ export default function Chat({ me, setMe }) {
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} toast={toast} />
-        ) : active ? (<div className={proOn && active.kind === 'group' ? `prw${proKit.map[active.room_id] ? ' big' : ''}` : 'prw-off'}>
+        ) : active ? (<div className={proOn && active.kind === 'group' && proKit.map[active.room_id] ? 'prw big' : 'prw-off'}>
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} />
-          {proOn && active.kind === 'group' && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
+          {proOn && active.kind === 'group' && proKit.map[active.room_id] && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
             <Suspense fallback={null}><Profile inline room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
               onClose={() => {}} onMessage={() => {}} onOpenRoom={(id) => setActiveId(id)} onChanged={loadRooms} onLeft={() => { setActiveId(''); loadRooms() }} loadPeople={loadPeople}
               blocked={blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={(v) => callRoom(active, v)} /></Suspense>
@@ -1851,6 +1852,7 @@ export default function Chat({ me, setMe }) {
             {!window.matchMedia('(max-width: 760px)').matches && <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>}
             {/* no Preview Messages: the messages are shown above the menu (Alex, 14 Nov) */}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
+            {roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }, { k: 'Budget', v: '' }] }).then(() => { toast('Moved to PROJECTS'); setActiveId(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
               : (
@@ -1901,7 +1903,7 @@ export default function Chat({ me, setMe }) {
         <OnTop>
           <button type="button" className="scrim" aria-label="Close" onClick={() => { if (!folderMenu.at || Date.now() - folderMenu.at > 500) setFolderMenu(null) }} onContextMenu={(e) => { e.preventDefault(); if (!folderMenu.at || Date.now() - folderMenu.at > 500) setFolderMenu(null) }} />
           <div className="room-menu folder-menu menu-list" style={folderMenu.bottom != null ? { left: folderMenu.x, bottom: folderMenu.bottom, top: 'auto' } : { left: folderMenu.x, top: folderMenu.y }}>
-            {folderMenu.f.custom ? (
+            {folderMenu.f.id === 'projects' ? (<>{folderMute}{folderReorder}</>) : folderMenu.f.custom ? (
               <>
                 <button type="button" onClick={() => { const f = folderMenu.f; setFolderMenu(null); editFolder(f.id) }}>{I.edit}<span>Edit Folder</span></button>
                 <button type="button" onClick={() => { setFolderChats(folderMenu.f.id); setFolderMenu(null) }}>{I.plus}<span>Add Chats</span></button>

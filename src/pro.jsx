@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Avatar, I, Lens, Modal } from './ui.jsx'
+import { MusicTile } from './extras.jsx'
 import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib.js'
 import { inApp } from './push.js'
 import { getPrefs, setPrefs, usePrefs } from './prefs.js'
@@ -83,7 +84,7 @@ export const isAsset = (m) => {
   return !!(f.location || f.live || f.poll || f.contact || f.groupcall)
 }
 // the tabs things go to, with the words for one and for many (the line left in the chat)
-export const ASIDE_TABS = { media: ['Media', 'photo or video', 'photos and videos'], files: ['Files', 'file', 'files'], places: ['Places', 'place', 'places'], polls: ['Polls', 'poll', 'polls'], contacts: ['Contacts', 'contact', 'contacts'], calls: ['Calls', 'call', 'calls'] }
+export const ASIDE_TABS = { media: ['Media', 'photo or video', 'photos and videos'], files: ['Files', 'file', 'files'], music: ['Music', 'song or sound', 'songs and sounds'], places: ['Places', 'place', 'places'], polls: ['Polls', 'poll', 'polls'], contacts: ['Contacts', 'contact', 'contacts'], calls: ['Calls', 'call', 'calls'] }
 // which tab of the project a message went to
 export const asideTab = (m) => {
   const f = m.file || {}
@@ -91,7 +92,7 @@ export const asideTab = (m) => {
   if (f.location || f.live) return 'places'
   if (f.poll) return 'polls'
   if (f.contact) return 'contacts'
-  return isMediaMsg(m) ? 'media' : 'files'
+  return isMediaMsg(m) ? 'media' : folderOf(m) === 'audio' ? 'music' : 'files'
 }
 const isFileMsg = (m) => (m.kind === 'image' || m.kind === 'file') && !!m.file?.path && !m.file.groupcall
 const isMediaMsg = (m) => isFileMsg(m) && (folderOf(m) === 'photos' || folderOf(m) === 'videos')
@@ -657,6 +658,7 @@ const TAB_I = {
   overview: tsv(<><rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="7" rx="2" /><rect x="3.5" y="13.5" width="7" height="7" rx="2" /><rect x="13.5" y="13.5" width="7" height="7" rx="2" /></>),
   media: tsv(<><rect x="3" y="4.5" width="18" height="15" rx="3" /><circle cx="9" cy="10" r="1.8" /><path d="m21 16-5-5-8.5 8.5" /></>),
   files: tsv(<><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h4" /></>),
+  music: tsv(<><path d="M9 18V5.5l11-2V16" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="17.5" cy="16" r="2.5" /></>),
   scout: tsv(<><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2l1.5-2h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /><circle cx="12" cy="12.5" r="3.5" /></>),
   calls: tsv(<><rect x="3" y="6" width="12.5" height="12" rx="3" /><path d="m15.5 10.5 5-3v9l-5-3" /></>),
   links: tsv(<><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>),
@@ -667,7 +669,7 @@ const TAB_I = {
   tasks: tsv(<><rect x="4" y="3.5" width="16" height="17" rx="3.5" /><path d="m8 9 1.6 1.6L12.5 7.8M8 15l1.6 1.6 2.9-2.8M14.5 9.5H16M14.5 15.5H16" /></>),
   stats: tsv(<><path d="M4 20h16" /><rect x="5.5" y="11" width="3" height="6.5" rx="1" /><rect x="10.5" y="6" width="3" height="11.5" rx="1" /><rect x="15.5" y="13.5" width="3" height="4" rx="1" /></>),
 }
-const OPTIONAL = [['scout', 'Location Scout'], ['calls', 'Calls & Meetings'], ['links', 'Links'], ['tags', 'Tags'], ['tasks', 'Tasks'], ['stats', 'Stats']]
+const OPTIONAL = [['music', 'Music'], ['scout', 'Location Scout'], ['calls', 'Calls & Meetings'], ['links', 'Links'], ['tags', 'Tags'], ['tasks', 'Tasks'], ['stats', 'Stats']]
 const hiddenKey = (roomId) => `roarme-pro-hide-${roomId}`
 
 /* ---------- a document read inside RoarMe (Alex, 22 Nov: "tap a document and read it, a preview of the text"):
@@ -1047,7 +1049,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   }, [room.room_id])
   const assets = (stuff.assets || []).filter((m) => !gone.has(m.id))
   const media = assets.filter(isMediaMsg)
-  const files = assets.filter((m) => isFileMsg(m) && !isMediaMsg(m))
+  const files = assets.filter((m) => isFileMsg(m) && !isMediaMsg(m) && folderOf(m) !== 'audio')
+  const music = assets.filter((m) => isFileMsg(m) && folderOf(m) === 'audio')
   const places = assets.filter((m) => m.file.location || m.file.live)
   const polls = assets.filter((m) => m.file.poll)
   const cards = assets.filter((m) => m.file.contact)
@@ -1062,7 +1065,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const ordinos = Array.isArray(project.ordinos) ? project.ordinos : []
   const st = stageOf(project)
   const dateName = project.date_label || 'Shoot Date'
-  const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', links.length], ['tags', 'Tags', tagged.length],
+  const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length], ['music', 'Music', music.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', links.length], ['tags', 'Tags', tagged.length],
     ...(polls.length ? [['polls', 'Polls', polls.length]] : []), ...(places.length + maps.length ? [['places', 'Places', places.length + maps.length]] : []), ...(cards.length ? [['contacts', 'Contacts', cards.length]] : []),
     ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0], ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
   const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
@@ -1160,6 +1163,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 <button type="button" className="prw-ordmake" onClick={() => setOrdinoOpen(true)}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
               )}
             </div>
+            {music.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Music</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('music')}><span>See All</span>{I.right}</button></div><div className="prw-music small">{music.slice(0, 3).map((m) => <div key={m.id} className="prw-musicrow"><MusicTile file={m.file} from={title} roomId={room.room_id} /></div>)}</div></div>}
             {media.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-grid mosaic">{media.slice(0, 7).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
           </div>
         )}
@@ -1174,6 +1178,15 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
             <div key={m.id} className="prw-link"><button type="button" className="prj-row" onClick={() => (folderOf(m) === 'audio' ? openFile(m) : setDoc(m))}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button><Trash onClick={() => drop(m, 'this file')} /></div>
           ))}</div>
         ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents and sound files sent in the chat come here.'}</p>)}
+        {shownTab === 'music' && (music.length ? (
+          <div className="prw-music">{music.map((m) => (
+            <div key={m.id} className="prw-musicrow">
+              <MusicTile file={m.file} from={title} roomId={room.room_id} />
+              <span className="prw-musicby">{m.user_id === me.id ? 'You' : nameOf(people[m.user_id])} · {day(m.created_at)}{m.body?.trim() && <em> · {m.body.trim()}</em>}</span>
+              <Trash className="prw-musicdel" onClick={() => drop(m, 'this song')} />
+            </div>
+          ))}</div>
+        ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No music yet. Drop an MP3 or WAV into the chat and it plays here.'}</p>)}
         {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
         {shownTab === 'calls' && <Calls list={calls} room={room} people={people} me={me} onDrop={drop} />}
         {shownTab === 'links' && <Links words={links} people={people} me={me} onJump={onJump} onDrop={drop} />}

@@ -6943,3 +6943,13 @@ html:root:root:root:root .ordc-view { height: 34px; border: 0; border-radius: 17
 .ordc-link a { flex: 1; min-width: 0; font-size: 12px; color: inherit; opacity: .7; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 html:root:root:root:root .ordc-copy { flex: none; display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border: 0; border-radius: 13px; font: inherit; font-size: 12px; font-weight: 600; color: inherit; cursor: pointer; background: color-mix(in srgb, currentColor 8%, transparent); box-shadow: none; }
 .ordc-copy svg { width: 13px; height: 13px; }
+/* Music, the workspace's tab for songs and sounds (Alex, 22 Nov: "MP3 or WAV dropped in the chat, a tab of its own"): the
+   chat's own song tile (plays in the one player, with its line) on glass, who sent it and when under it, a bin */
+.prw-music { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.prw-music.small { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.prw-musicrow { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 18px; background: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .58)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 0 0 1px rgba(255, 255, 255, .55), 0 8px 24px rgba(20, 30, 50, .06); }
+html[data-mode='dark'] .prw-musicrow { background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .04)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.prw-musicrow .music { width: 100%; --fs: 14px; }
+.prw-musicby { font-size: 12px; opacity: .6; padding-left: 2px; padding-right: 34px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prw-musicby em { font-style: normal; }
+html:root:root:root:root .prw-musicdel { position: absolute; right: 10px; bottom: 6px; }

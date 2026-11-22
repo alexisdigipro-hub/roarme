@@ -141,6 +141,30 @@ export default function Chat({ me, setMe }) {
   const [roomMenu, setRoomMenu] = useState(null) // { r, x, y, sub }
   // the chat's long-press view leaves as Telegram's (Alex, 22 Nov): a copy of it stays for a moment, the menu drawing
   // back into its corner and the rest fading, while the real one is already gone
+  // The chats run on under the list's head and folders and soften there, as a chat's messages do under its head
+  // (Alex, 22 Nov, from Telegram's Chats: "like this on the page where the chats are"): the panel is told how far
+  // down the list starts (--under), the stylesheet lets it start at the top and fades and blurs it there
+  useLayoutEffect(() => {
+    const pg = pagerRef.current
+    const side = pg?.closest('.side')
+    if (!pg || !side || typeof ResizeObserver === 'undefined') return
+    let now = parseFloat(side.style.getPropertyValue('--under')) || 0
+    let raf = 0
+    const put = () => {
+      const h = Math.max(0, Math.round(pg.getBoundingClientRect().top - side.getBoundingClientRect().top + now))
+      if (Math.abs(h - now) < 1) return
+      now = h
+      side.style.setProperty('--under', `${h}px`)
+    }
+    const soon = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(put) }
+    const ro = new ResizeObserver(soon)
+    const watch = () => { ro.disconnect(); ro.observe(side); for (const n of side.children) if (n !== pg) ro.observe(n); for (const n of side.querySelectorAll('.rooms-area > *')) if (n !== pg) ro.observe(n); soon() }
+    const mo = new MutationObserver(watch)
+    mo.observe(side, { childList: true })
+    watch()
+    put()
+    return () => { cancelAnimationFrame(raf); mo.disconnect(); ro.disconnect(); side.style.removeProperty('--under') }
+  }, [tab, !!q.trim()]) // eslint-disable-line react-hooks/exhaustive-deps
   const ctxOn = !!roomMenu
   useLayoutEffect(() => {
     if (!ctxOn) return
@@ -1522,6 +1546,7 @@ export default function Chat({ me, setMe }) {
             {/* the song that is playing, under the folders as Telegram has it (Alex, 18 Nov): in the flow, never over anything */}
             {!q.trim() && <NowPlaying className="in-side under-tabs" onOpen={(id) => { setTab('chats'); setActiveId(id) }} />}
             {!q.trim() && <BirthdayBar people={people} me={me} onWish={wishBirthday} />}
+            <i className="top-haze" aria-hidden="true"><b /><b /><b /></i>
             <div className="rooms-pager" ref={pagerRef}>
             <div className="rooms-track" ref={trackRef}>
             <div className={`rooms${swipedTo === folder ? '' : ' stagger'}${prefs.listPreview ? '' : ' no-prev'}`} key={folder}>

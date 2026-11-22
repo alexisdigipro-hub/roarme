@@ -1162,15 +1162,32 @@ html:root:root:root:root:root:root:root:root:root:root[data-glass][data-skin='ha
 .top-haze { display: none; }
 html:root:root:root:root[data-glass][data-skin='halo'] .room-view > .scroll {
   margin-top: calc(-1 * var(--under, 0px)); padding-top: calc(var(--under, 0px) + 8px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .12) calc(var(--under, 0px) * .5), rgba(0, 0, 0, .55) calc(var(--under, 0px) + 2px), #000 calc(var(--under, 0px) + 30px));
-  mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .12) calc(var(--under, 0px) * .5), rgba(0, 0, 0, .55) calc(var(--under, 0px) + 2px), #000 calc(var(--under, 0px) + 30px));
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .14) calc(var(--under, 0px) * .45), rgba(0, 0, 0, .6) calc(var(--under, 0px) * .85), #000 var(--under, 0px));
+  mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .14) calc(var(--under, 0px) * .45), rgba(0, 0, 0, .6) calc(var(--under, 0px) * .85), #000 var(--under, 0px));
 }
 /* the blur grows towards the top in three steps (a mask on a blurred layer switches the blur off in some browsers,
    so the steps are three plain strips, each shorter and stronger than the one under it) */
-html:root:root:root:root[data-glass][data-skin='halo'] .room-view > .top-haze { display: block; position: absolute; left: 0; right: 0; top: 0; height: calc(var(--under, 0px) + 26px); z-index: 2; pointer-events: none; }
+html:root:root:root:root[data-glass][data-skin='halo'] .room-view > .top-haze { display: block; position: absolute; left: 0; right: 0; top: 0; height: var(--under, 0px); z-index: 2; pointer-events: none; }
 html:root:root:root:root[data-glass][data-skin='halo'] .room-view > .top-haze > b { position: absolute; left: 0; right: 0; top: 0; }
 html:root:root:root:root[data-glass][data-skin='halo'] .room-view > .top-haze > b:nth-child(1) { height: 100%; -webkit-backdrop-filter: blur(1.5px) !important; backdrop-filter: blur(1.5px) !important; }
-html:root:root:root:root[data-glass][data-skin='halo'] .room-view > .top-haze > b:nth-child(2) { height: 80%; -webkit-backdrop-filter: blur(3px) !important; backdrop-filter: blur(3px) !important; }
-html:root:root:root:root[data-glass][data-skin='halo'] .room-view > .top-haze > b:nth-child(3) { height: 58%; -webkit-backdrop-filter: blur(6px) !important; backdrop-filter: blur(6px) !important; }
+html:root:root:root:root[data-glass][data-skin='halo'] .room-view > .top-haze > b:nth-child(2) { height: 78%; -webkit-backdrop-filter: blur(3px) !important; backdrop-filter: blur(3px) !important; }
+html:root:root:root:root[data-glass][data-skin='halo'] .room-view > .top-haze > b:nth-child(3) { height: 52%; -webkit-backdrop-filter: blur(6px) !important; backdrop-filter: blur(6px) !important; }
 html:root:root:root:root[data-glass][data-skin='halo'] .room-view > :is(.room-head, .nowbar, .pinbar) { position: relative; z-index: 3; }
 html:root:root:root:root[data-glass][data-skin='halo'] .room-view.finding > .top-haze { display: none; }
+
+/* The chat list the same way (Alex, 22 Nov, from Telegram's Chats page): the chats run on under the list's head, the
+   search and the folders, faded and blurred there; those float over them. --under comes from Chat.jsx. */
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side { position: relative; }
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .rooms-pager {
+  margin-top: calc(-1 * var(--under, 0px));
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .14) calc(var(--under, 0px) * .45), rgba(0, 0, 0, .6) calc(var(--under, 0px) * .85), #000 var(--under, 0px));
+  mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, .14) calc(var(--under, 0px) * .45), rgba(0, 0, 0, .6) calc(var(--under, 0px) * .85), #000 var(--under, 0px));
+}
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .rooms-pager .rooms { padding-top: var(--under, 0px) !important; scroll-padding-top: var(--under, 0px); }
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .top-haze { display: block; position: absolute; left: 0; right: 0; top: 0; height: var(--under, 0px); z-index: 2; pointer-events: none; }
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .top-haze > b { position: absolute; left: 0; right: 0; top: 0; }
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .top-haze > b:nth-child(1) { height: 100%; -webkit-backdrop-filter: blur(1.5px) !important; backdrop-filter: blur(1.5px) !important; }
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .top-haze > b:nth-child(2) { height: 78%; -webkit-backdrop-filter: blur(3px) !important; backdrop-filter: blur(3px) !important; }
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .top-haze > b:nth-child(3) { height: 52%; -webkit-backdrop-filter: blur(6px) !important; backdrop-filter: blur(6px) !important; }
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > :is(.side-head, .nowbar, .search-wrap, .bday-pill),
+html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .rooms-area > * { position: relative; z-index: 3; }

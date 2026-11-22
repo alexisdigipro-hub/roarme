@@ -7838,3 +7838,13 @@ html:root:root:root:root .ch-tabs > button.on::after { content: none; }
 @media (max-width: 760px) { html:root:root:root:root .ch-tabs > button { padding: 6px 8px 9px; font-size: 12px; } }
 @media (prefers-reduced-motion: reduce) { .ch-tabs > button::before, .ch-tabs > button > span::after { transition: none; } }
 html[data-lite] .ch-tabs > button::before, html[data-lite] .ch-tabs > button > span::after { transition: none; }
+/* the project's three chats, version A after all (Alex, 22 Nov: "in the end this one is better"): a glass capsule with the app's
+   travelling lens (Lens, GLASS TRAVEL), each chat with a dot of its stage colour; replaces the words-only C */
+html:root:root:root:root .ch-tabs { display: flex; justify-content: center; gap: 0; padding: 8px 10px 2px; }
+html:root:root:root:root .ch-tabs .ch-seg { display: inline-flex; max-width: 100%; }
+html:root:root:root:root .ch-tabs .ch-seg > button { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 13px; font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; white-space: nowrap; color: var(--muted); }
+html:root:root:root:root .ch-tabs .ch-seg > button.on { color: var(--text); }
+html:root:root:root:root .ch-tabs .ch-seg > button::before, html:root:root:root:root .ch-tabs .ch-seg > button::after { content: none; }
+.ch-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); flex: none; }
+.ch-tabs .ch-seg sup { margin-left: 1px; font-size: 9.5px; font-weight: 700; color: var(--halo, var(--accent)); }
+@media (max-width: 760px) { html:root:root:root:root .ch-tabs .ch-seg > button { padding: 0 9px; font-size: 11.5px; gap: 5px; } }

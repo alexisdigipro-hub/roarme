@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, dotOf, statusOf, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
-import { ProChip, ProPanel, isAsset, proOk, useProjects } from './pro.jsx'
+import { ASIDE_TABS, ProChip, ProPanel, asideTab, isAsset, proOk, useProjects } from './pro.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls, CALL_EDGE } from './calls.jsx'
@@ -1742,13 +1742,13 @@ export default function Chat({ me, setMe }) {
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} toast={toast} />
-        ) : active ? (<div className={proOn ? 'prw' : 'prw-off'}>
+        ) : active ? (<div className={proOn ? `prw${active.kind === 'group' && proKit.map[active.room_id] ? ' big' : ''}` : 'prw-off'}>
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} />
           {proOn && <ProPanel key={`pro-${active.room_id}`} room={active} other={otherOf(active)} project={proKit.map[active.room_id]} kit={proKit} rooms={rooms} titleOf={titleOf} toast={toast}
-            onJump={(id) => libChat(active.room_id, id)} onOpenRoom={(id) => { setTab('chats'); setActiveId(id) }} me={me} people={people} />}
+            onJump={(id) => libChat(active.room_id, id)} onOpenRoom={(id) => { setTab('chats'); setActiveId(id) }} me={me} people={people} title={titleOf(active)} />}
         </div>) : (
           <div className="pick">
             <span className="pick-mark"><Wordmark by /></span>
@@ -3288,8 +3288,22 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
   // in a Pro project the chat keeps only the talk and every photo, video and file goes to the panel at the side (Alex,
   // 22 Nov: "when it becomes a project, no materials stay in the chat, only the conversations"); a caption stays as words
-  const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt))
-    .flatMap((m) => (!assetsAside || !isAsset(m) ? [m] : (m.kind === 'image' || m.kind === 'file') && (m.body || '').trim() ? [{ ...m, kind: 'text', file: null, asideAsset: true }] : [])), [msgs, clearedAt, hidden, assetsAside])
+  const shownMsgs = useMemo(() => {
+    const base = msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt))
+    if (!assetsAside) return base
+    // in its place a small line says what went where ("Nefeli · 2 photos and videos · in Media"), one line for a run
+    // of things from the same person; a tap on it opens that tab
+    const out = []
+    for (const m of base) {
+      if (!isAsset(m)) { out.push(m); continue }
+      const t = asideTab(m)
+      const last = out[out.length - 1]
+      if (last?.asideNote && last.user_id === m.user_id) last.asideNote = { ...last.asideNote, [t]: (last.asideNote[t] || 0) + 1 }
+      else out.push({ id: `aside-${m.id}`, room_id: m.room_id, user_id: m.user_id, created_at: m.created_at, kind: 'aside', asideNote: { [t]: 1 } })
+      if ((m.kind === 'image' || m.kind === 'file') && (m.body || '').trim()) out.push({ ...m, kind: 'text', file: null, asideAsset: true })
+    }
+    return out
+  }, [msgs, clearedAt, hidden, assetsAside])
   // what others ask me to delete, one at a time, above the writing box
   const askForMe = asks.filter((a) => a.owner === me.id && msgs.some((m) => m.id === a.message_id && !m.deleted_at))
   const askedByMe = new Set(asks.filter((a) => a.asked_by === me.id).map((a) => a.message_id))
@@ -3502,6 +3516,17 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           const vlink = !m.deleted_at && m.kind === 'text' ? videoLinkOf(m.body) : null
           const wide = wideIds.has(m.id)
           const hit = find && found.includes(m.id)
+          // what went to the project's panel (Pro)
+          if (m.asideNote) {
+            const n = m.asideNote, ks = Object.keys(n)
+            const said = ks.map((k) => `${n[k]} ${ASIDE_TABS[k][n[k] > 1 ? 2 : 1]}`).join(', ')
+            return (
+              <div key={m.id} id={`m-${m.id}`}>
+                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+                <div className="aside-note"><button type="button" onClick={() => window.dispatchEvent(new CustomEvent('roarme-pro-tab', { detail: { room: room.room_id, tab: ks[0] } }))}><b>{mine ? 'You' : nameOf(who)}</b><span>{said}</span><i>in {ASIDE_TABS[ks[0]][0]}</i></button></div>
+              </div>
+            )
+          }
           // a line in the middle when someone turns Encrypted Chat on or off
           if (m.kind === 'system') {
             return (

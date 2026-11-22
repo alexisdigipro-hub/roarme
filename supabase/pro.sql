@@ -60,3 +60,15 @@ create trigger roar_pro_projects_touch before insert or update on public.roar_pr
 do $$ begin
   alter publication supabase_realtime add table public.roar_pro_projects;
 exception when duplicate_object then null; when undefined_object then null; end $$;
+
+-- The workspace (Alex, 22 Nov): stages of one's own, a date whose name changes, Location Scout
+alter table public.roar_pro_projects add column if not exists stages jsonb;
+alter table public.roar_pro_projects add column if not exists date_label text not null default 'Shoot Date';
+alter table public.roar_pro_projects add column if not exists scouts jsonb not null default '[]'::jsonb;
+alter table public.roar_pro_projects alter column status set default 'prep';
+alter table public.roar_pro_projects drop constraint if exists roar_pro_projects_status_ok;
+alter table public.roar_pro_projects add constraint roar_pro_projects_status_ok check (char_length(status) between 1 and 40);
+alter table public.roar_pro_projects drop constraint if exists roar_pro_projects_more_ok;
+alter table public.roar_pro_projects add constraint roar_pro_projects_more_ok check (
+  char_length(date_label) <= 30 and jsonb_typeof(scouts) = 'array' and pg_column_size(scouts) <= 200000
+  and (stages is null or (jsonb_typeof(stages) = 'array' and pg_column_size(stages) <= 4000)));

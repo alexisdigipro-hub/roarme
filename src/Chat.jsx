@@ -47,6 +47,7 @@ const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: 
 const LocationView = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationView })))
 const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.PdfView })))
 const PhotoSend = lazy(() => import('./photoSend.jsx').then((m) => ({ default: m.PhotoSend })))
+const TelegramImport = lazy(() => import('./tgImport.jsx').then((m) => ({ default: m.TelegramImport })))
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
 const LOC_WAIT = <span className="locc"><span className="locc-map" /></span>
 import { resumeLive, startLive } from './live.js'
@@ -640,7 +641,7 @@ export default function Chat({ me, setMe }) {
         reloadSoon()
         const m = ev.new
         if (ev.eventType === 'UPDATE' && m) fixKept(m)
-        if (ev.eventType === 'INSERT' && m && m.user_id !== me.id) notifyRef.current(m)
+        if (ev.eventType === 'INSERT' && m && m.user_id !== me.id && !m.file?.imported) notifyRef.current(m)
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_members', filter: `user_id=eq.${me.id}` }, reloadSoon)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'roar_rooms' }, reloadSoon)
@@ -2108,6 +2109,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const sched = useScheduled(room.room_id, me.id)
   const [schedNew, setSchedNew] = useState(false)
   const [remindFor, setRemindFor] = useState(null) // Remind Me on a message (src/reminders.jsx)
+  const [tgOpen, setTgOpen] = useState(false) // Import from Telegram (src/tgImport.jsx)
   const [rolesOpen, setRolesOpen] = useState(false) // the group's roles for @mentions (src/roles.jsx)
   const [pinTab, setPinTab] = useState('all') // in the pinned window: everything, or the files only
   const [schedEdit, setSchedEdit] = useState(null)
@@ -2386,6 +2388,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     if (!m || m.room_id !== room.room_id) return
     if (ev.eventType === 'INSERT' && m.kind === 'system' && (m.body === E2E_ON || m.body === E2E_OFF)) reloadSeal()
     // a burst of messages asks once who has read them
+    if (ev.eventType === 'INSERT' && m.file?.imported) return // history brought from Telegram: it shows when the chat is read again
     if (ev.eventType === 'INSERT') { setMsgs((list) => (list.some((x) => x.id === m.id) ? list : [...list, m])); clearTimeout(readsSoon.current); readsSoon.current = setTimeout(loadReads, 1500) }
     if (ev.eventType === 'UPDATE') setMsgs((list) => list.map((x) => (x.id === m.id ? m : x)))
   }), [listen, room.room_id, loadReacts, loadReads, loadPins, reloadSeal])
@@ -3526,9 +3529,11 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   function drawMsg(m, i) {
           const prev = shownMsgs[i - 1]
           const newDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
-          const mine = m.user_id === me.id
-          const first = newDay || !prev || prev.user_id !== m.user_id || new Date(m.created_at) - new Date(prev.created_at) > 5 * 60 * 1000
-          const who = people[m.user_id]
+          // brought from Telegram under a name that is not a member here: shown as that person's, never as mine
+          const ghost = m.file?.imported?.as || ''
+          const mine = m.user_id === me.id && !ghost
+          const first = newDay || !prev || prev.user_id !== m.user_id || (prev.file?.imported?.as || '') !== ghost || new Date(m.created_at) - new Date(prev.created_at) > 5 * 60 * 1000
+          const who = ghost ? { display_name: ghost } : people[m.user_id]
           const quoted = m.reply_to ? byId[m.reply_to] : null
           const qs = m.reply_to && m.body && !m.deleted_at ? splitQuote(m.body) : null
           const rx = reactsOf[m.id]
@@ -3539,7 +3544,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           // what the message is, as classes on its bubble, so the themes need no :has() to find it out (Alex, 12 Nov: lighter):
           // rt-b a RoarTransfer card, aud-b a voice message or a song, file-b a file, solo with no words, quote or name over it
           const isAud = m.kind === 'voice' || (m.kind === 'file' && !isTransfer && !m.file?.roartransfer && isAudioFile(m.file))
-          const kindCls = `${m.file?.roartransfer ? ' rt-b' : ''}${isAud ? ' aud-b' : ''}${m.kind === 'file' && !isAud && !m.file?.roartransfer && !m.file?.event && !m.file?.location && !m.file?.article && (m.file?.asFile || !/^(image|video)\//.test(m.file?.type || '')) ? ' file-b' : ''}${!m.body && !(m.reply_to && byId[m.reply_to] && !byId[m.reply_to].deleted_at) && !(m.user_id !== me.id && room.kind === 'group') ? ' solo' : ''}`
+          const kindCls = `${m.file?.roartransfer ? ' rt-b' : ''}${isAud ? ' aud-b' : ''}${m.kind === 'file' && !isAud && !m.file?.roartransfer && !m.file?.event && !m.file?.location && !m.file?.article && (m.file?.asFile || !/^(image|video)\//.test(m.file?.type || '')) ? ' file-b' : ''}${!m.body && !(m.reply_to && byId[m.reply_to] && !byId[m.reply_to].deleted_at) && !(ghost || (m.user_id !== me.id && room.kind === 'group')) ? ' solo' : ''}`
           const isVideo = m.kind === 'file' && !isTransfer && !m.file?.asFile && /^video\//.test(m.file?.type || '')
           const ord = !m.deleted_at && ordinoOf(m) // an ordino sent from Pro: a card with View and the link with Copy (Alex, 22 Nov)
           const isGifFile = m.kind === 'file' && !isTransfer && !m.file?.asFile && /gif/.test(m.file?.type || '')
@@ -3576,10 +3581,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 onDoubleClick={(e) => { clearTimeout(tapTimer.current); if (hands.current.onBubble(e)) hands.current.onDouble(m, e) }}
                 onContextMenu={(e) => { if (hands.current.onBubble(e)) hands.current.openMenu(e, m) }}>
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
-                {!mine && room.kind === 'group' && prefs.faces && (first ? <button type="button" className="who-ava" aria-label={`Chat with ${nameOf(who)}`} onClick={(e) => { e.stopPropagation(); toDm(m.user_id) }}><Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /></button> : <span className="av-gap" />)}
+                {!mine && room.kind === 'group' && prefs.faces && (first ? <button type="button" className="who-ava" aria-label={`Chat with ${nameOf(who)}`} onClick={(e) => { e.stopPropagation(); if (!ghost) toDm(m.user_id) }}><Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /></button> : <span className="av-gap" />)}
                 <div className="bubble-col">
                   <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.poll && !m.deleted_at ? ' poll-b' : ''}${ord ? ' event-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
-                    {!mine && room.kind === 'group' && first && !big && <b className="who" role="button" tabIndex={0} style={{ '--who': colorOf(m.user_id) }} onClick={(e) => { e.stopPropagation(); toDm(m.user_id) }}>{nameOf(who)}</b>}
+                    {!mine && (room.kind === 'group' || ghost) && first && !big && <b className="who" role="button" tabIndex={0} style={{ '--who': colorOf(ghost || m.user_id) }} onClick={(e) => { e.stopPropagation(); if (!ghost) toDm(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
                       : m.file?.capsule ? <CapsuleCard id={m.id} cap={m.file.capsule} mine={mine} />
@@ -3610,7 +3615,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                         {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); hands.current.setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
                       </span>
                     )}
-                    <span className="meta">{m.file?.level === 2 && !m.deleted_at && <i className="lvl-mark l2" title="Urgent">‼️</i>}{m.file?.level === 1 && !m.deleted_at && <i className="lvl-mark" title="Important">❗</i>}{m.file?.quiet && !m.deleted_at && <i className="quiet-mark" title="Sent without sound">{I.bellOff}</i>}{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
+                    <span className="meta">{m.file?.level === 2 && !m.deleted_at && <i className="lvl-mark l2" title="Urgent">‼️</i>}{m.file?.level === 1 && !m.deleted_at && <i className="lvl-mark" title="Important">❗</i>}{m.file?.quiet && !m.deleted_at && <i className="quiet-mark" title="Sent without sound">{I.bellOff}</i>}{m.file?.auto && <i className="auto-mark" title="Sent by auto-reply">Auto-reply · </i>}{m.sealed && !m.deleted_at && <i className="seal-mark" title="Encrypted">{I.lock}</i>}{pinnedSet.has(m.id) && <i className="pin-mark" title="Pinned">{I.pin}</i>}{m.file?.imported && !m.deleted_at && <i className="tgi-mark" title="Imported from Telegram">imported · </i>}{m.edited_at && !m.deleted_at && 'edited · '}{timeOf(m.created_at)}{mine && !m.deleted_at && <i className={`ticks${seen ? ' seen' : ''}`} title={seen ? `Seen by ${seenBy(m).map((u) => nameOf(people[u])).join(', ')}` : 'Sent'}>{seen ? I.ticks : I.tick1}</i>}</span>
                   </div>
                 </div>
               </div>
@@ -3620,7 +3625,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
 
   roomActs.current = {
     wallpaper: () => setWallPick(true), seal: () => (sealOn ? turnOff() : askSeal()), group: () => other && onNewGroup(other), schedule: () => setSchedOpen(true),
-    export: () => exportChat(), auto: (h) => setAutoDelete(h ?? null), clear: () => act('clear'), roles: () => setRolesOpen(true), delete: () => act('delete'),
+    export: () => exportChat(), auto: (h) => setAutoDelete(h ?? null), clear: () => act('clear'), roles: () => setRolesOpen(true), delete: () => act('delete'), import: () => setTgOpen(true),
   }
   return (
     <div className={`room-view${find !== null ? ' finding' : ''}${prefs.compact ? ' compact' : ''}${prefs.frost || wall === (prefs.appBackground || prefs.background) && (!prefs.appBackground || (prefs.appWallStrength ?? prefs.wallStrength) === prefs.wallStrength) ? ' same-wall' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
@@ -3970,6 +3975,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       {schedNew && <ScheduleMessage body={text.trim()} onClose={() => setSchedNew(false)} onSave={scheduleIt} />}
       {schedEdit && <ScheduleMessage item={schedEdit} onClose={() => setSchedEdit(null)} onSave={async (v) => { const e = await sched.move(schedEdit.id, v); if (!e) { setSchedEdit(null); toast(`Scheduled for ${whenText(v.at.toISOString())}`) } return e }} />}
       {remindFor && <RemindMe preview={textOf(remindFor)} onClose={() => setRemindFor(null)} onSave={async (at) => { const e = await addReminder(room.room_id, remindFor.id, at); if (!e) { setRemindFor(null); toast(`Reminder set for ${whenText(at.toISOString())}`) } return e }} />}
+      {tgOpen && <Suspense fallback={null}><TelegramImport room={room} me={me} people={people} onClose={() => setTgOpen(false)} onDone={(n) => { if (n) { toast(`${n.toLocaleString()} messages imported from Telegram`); window.dispatchEvent(new Event('roarme-wake')) } }} /></Suspense>}
       {rolesOpen && <RolesWindow room={room} roles={roles} people={people} me={me} toast={toast} onClose={() => setRolesOpen(false)} />}
       {schedList && !schedEdit && <ScheduledList sched={sched} toast={toast} onEdit={setSchedEdit} onClose={() => setSchedList(false)} />}
 

@@ -413,7 +413,6 @@ function Hang({ open, onClose, children, className = '', portal = false }) {
   )
 }
 
-const DATE_NAMES = ['Shoot Date', 'Due Date', 'Delivery', 'Premiere']
 
 function Stages({ project, save, onClose }) {
   const [list, setList] = useState(() => stagesOf(project).map((s) => ({ ...s })))
@@ -1199,7 +1198,6 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
   const [list, setList] = useState(() => stagesOf(project).map((x) => ({ ...x })))
   const put = (i, patch) => setList((l) => l.map((x, n) => (n === i ? { ...x, ...patch } : x)))
   const keepStages = (next) => { setList(next); const clean = next.map((x) => ({ ...x, name: (x.name || '').trim().slice(0, 30) || 'Stage' })); save({ stages: clean, ...(clean.some((x) => x.id === project.status) ? {} : { status: clean[0].id }) }) }
-  const [custom, setCustom] = useState(DATE_NAMES.includes(dateName) ? '' : dateName)
   const move = (i, d) => { const j = i + d; if (j < 0 || j >= fields.length) return; const next = [...fields]; [next[i], next[j]] = [next[j], next[i]]; save({ fields: next }) }
   const filled = fields.filter((f) => (f.v || '').trim()).length
   const titles = { home: 'Project Settings', info: 'Project Info', stages: 'Stages' }
@@ -1259,14 +1257,6 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
               {stagesOf(project).map((x) => <button key={x.id} type="button" className="prs2-row" onClick={() => save({ status: x.id })}><i className="prw-dot prs2-dot" style={{ '--pc': x.c }} /><span className="prs2-t"><b>{x.name}</b></span>{project.status === x.id && <b className="prw-tick">{I.check}</b>}</button>)}
               {row('stages', 'Edit Stages', 'Rename, colour, add or take away', () => go('stages'))}
             </div>
-            <small className="prs2-cap">The date is called</small>
-            <div className="prs2-box">
-              {DATE_NAMES.map((d) => <button key={d} type="button" className="prs2-row" onClick={() => { save({ date_label: d }); setCustom('') }}><span className="prs2-t"><b>{d}</b></span>{d === dateName && <b className="prw-tick">{I.check}</b>}</button>)}
-              <form className="prs2-row prs2-own" onSubmit={(e) => { e.preventDefault(); const v = custom.trim(); if (v) save({ date_label: v.slice(0, 30) }); e.currentTarget.querySelector('input')?.blur() }}>
-                <input value={custom} maxLength={30} placeholder="Your own name" onChange={(e) => setCustom(e.target.value)} onBlur={() => { const v = custom.trim(); if (v && v !== dateName) save({ date_label: v.slice(0, 30) }) }} />
-                {!DATE_NAMES.includes(dateName) && <b className="prw-tick">{I.check}</b>}
-              </form>
-            </div>
             <small className="prs2-cap">{dateName}</small>
             <div className="prs2-box">
               <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></label>
@@ -1306,7 +1296,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [menu, setMenu] = useState('')
   const [stagesOpen, setStagesOpen] = useState(false)
   const [setOpen, setSetOpen] = useState(false) // the project's settings page
-  const [custom, setCustom] = useState('')
   const [mf, setMf] = useState('all')
   const [view, setView] = useState(null)
   const [doc, setDoc] = useState(null)
@@ -1414,7 +1403,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const fields = Array.isArray(project.fields) ? project.fields : []
   const ordinos = Array.isArray(project.ordinos) ? project.ordinos : []
   const st = stageOf(project)
-  const dateName = project.date_label || 'Shoot Date'
+  const dateName = 'Shoot Day' // the one date a project keeps (Alex, 22 Nov: "only the shoot day, the most important for everything")
   const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length + music.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', linkCount + places.length + maps.length], 
     ...(polls.length ? [['polls', 'Polls', polls.length]] : []), ...(cards.length ? [['contacts', 'Contacts', cards.length]] : []),
     ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0], adminIn ? ['admin', 'Admin'] : ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
@@ -1451,19 +1440,10 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           </Hang>
         </span>
         <span className="prw-pill date">
-          <span className="prw-hang">
-            <button type="button" className="prw-datename" onClick={() => setMenu(menu === 'date' ? '' : 'date')}>{I.calendar}<span>{dateName}</span><span className="prw-caret">{I.down}</span></button>
-            <Hang open={menu === 'date'} onClose={() => setMenu('')} portal={phone}>
-              {DATE_NAMES.map((d) => <button key={d} type="button" onClick={() => { save({ date_label: d }); setMenu('') }}><span>{d}</span>{d === dateName && <b className="prw-tick">{I.check}</b>}</button>)}
-              <hr />
-              <form className="prw-custom" onSubmit={(e) => { e.preventDefault(); const v = custom.trim(); if (v) { save({ date_label: v.slice(0, 30) }); setCustom(''); setMenu('') } }}>
-                <input value={custom} maxLength={30} placeholder="Your own name" enterKeyHint="done" onChange={(e) => setCustom(e.target.value)} onBlur={() => { const v = custom.trim(); if (v) { save({ date_label: v.slice(0, 30) }); setCustom('') } }} />
-              </form>
-            </Hang>
-          </span>
+          <span className="prw-dlabel">Shoot Day</span>
           {/* a phone: the date as words, with the phone's own date wheel laid unseen over them (an empty date field has no
               size on an iPhone, so it could not be tapped: Alex, 22 Nov) */}
-          <span className="prw-datewrap"><span className={project.due ? '' : 'none'}>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : `Set ${dateName}`}</span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></span>
+          <span className="prw-datewrap"><span className={project.due ? '' : 'none'}>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', ...(project.due.slice(0, 4) === String(new Date().getFullYear()) ? {} : { year: 'numeric' }) }) : 'Set the date'}</span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></span>
         </span>
         <span className="prw-faces">{members.map((id) => <Avatar key={id} src={people[id]?.avatar_url} name={nameOf(people[id])} size={30} />)}{(room.members || []).length > 5 && <i>+{room.members.length - 5}</i>}</span>
         {onSwap && !phone && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}

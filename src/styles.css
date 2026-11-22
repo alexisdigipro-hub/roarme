@@ -7428,3 +7428,7 @@ html[data-mode='dark']:root:root:root:root:root:root .rooms-area .tabs button[da
 html:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'].on { background: linear-gradient(var(--lg-chip, #e6e8ec), var(--lg-chip, #e6e8ec)), #f7f8fa !important; }
 html[data-mode='dark']:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'].on { background: linear-gradient(var(--lg-chip, rgba(255, 255, 255, .12)), var(--lg-chip, rgba(255, 255, 255, .12))), #2b2b30 !important; }
 .rooms-area .tabs.editing button[data-tab='archived'] .tab-x { display: none; }
+/* the settings page's boxes never squeeze when the keyboard comes up (Alex, 22 Nov, TestFlight: tapping a field folded
+   Details into one row): the page scrolls instead */
+.prs2-body > * { flex-shrink: 0; }
+.prs2-box, .prs2-field { flex-shrink: 0; }

@@ -7341,3 +7341,72 @@ html:root:root:root:root:root .prw-phone .prw-gear-wrap { position: absolute; z-
 html:root:root:root:root:root:root .prw-phone .prw-gear-wrap > .round, html:root:root:root:root:root:root .prw-phone .prw-gear-wrap > button { width: 44px; height: 44px; min-width: 44px; }
 .prw-phone .prw-top { grid-template-columns: minmax(0, max-content) minmax(0, 1fr); }
 .prw-phone-top { min-height: 44px; align-items: center; padding-left: 60px; padding-right: 60px; }
+/* the project's settings page (Alex, 22 Nov; pro.jsx ProSettings): it covers the workspace (on a phone the whole project
+   page), a head with Back or Close and the page's name, soft boxes of rows like the app's own Settings; each page slides
+   in from the side it goes to; Details sets the fields shown on the Overview */
+.prw-work { position: relative; }
+.prw-phone > .prw-work { position: static; }
+.prs2 { position: absolute; inset: 0; z-index: 40; display: flex; flex-direction: column; background: var(--bg, #f2f5fa); border-radius: inherit; overflow: hidden; }
+html[data-mode='dark'] .prs2 { background: #141416; }
+.prs2-head { flex: none; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 8px; padding: 12px 14px 8px; }
+.prw-phone .prs2-head { padding-top: calc(env(safe-area-inset-top, 0px) + 8px); }
+@media (min-width: 761px) { .prw-phone .prs2-head { padding-top: 12px; } }
+.prs2-head > b { text-align: center; font-size: 17px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:root:root:root:root:root .prs2-back { width: 44px; height: 44px; min-width: 44px; padding: 0; }
+.prs2-back svg { width: 20px; height: 20px; }
+.prs2-body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 6px 16px calc(28px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 8px; max-width: 640px; width: 100%; box-sizing: border-box; margin: 0 auto; }
+html.kb-native .prs2-body { padding-bottom: calc(var(--kbh, 0px) + 28px); }
+.prs2-cap { margin: 10px 4px 0; font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; opacity: .5; }
+.prs2-hint { margin: 2px 4px 4px; font-size: 13px; line-height: 1.45; opacity: .62; }
+.prs2-box { display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; background: rgba(255, 255, 255, .78); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .9), 0 4px 16px rgba(20, 30, 50, .05); }
+html[data-mode='dark'] .prs2-box { background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.prs2-box.prs2-pad { padding: 12px; }
+html:root:root:root:root:root .prs2-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; height: auto; padding: 8px 14px; border: 0; border-radius: 0; background: none; box-shadow: none; text-align: left; font: inherit; color: inherit; cursor: pointer; box-sizing: border-box; }
+.prs2-row + .prs2-row, .prs2-field + .prs2-field { border-top: 1px solid color-mix(in srgb, currentColor 7%, transparent); }
+html:root:root:root:root:root .prs2-row:active { background: color-mix(in srgb, currentColor 5%, transparent); }
+.prs2-ic { flex: none; width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; font-style: normal; color: var(--halo-mine, var(--accent)); background: color-mix(in srgb, var(--halo-mine, var(--accent)) 13%, transparent); }
+.prs2-ic svg { width: 18px; height: 18px; }
+.prs2-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.prs2-t b { font-size: 15px; font-weight: 550; }
+.prs2-t small { font-size: 12px; opacity: .55; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prs2-go { flex: none; display: grid; opacity: .35; }
+.prs2-go svg { width: 16px; height: 16px; }
+.prs2-row.danger { color: #e5483f; }
+.prs2-row.danger .prs2-ic { color: #e5483f; background: rgba(229, 72, 63, .12); }
+.prs2-field { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; }
+.prs2-fin { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prs2-fin input { min-width: 0; width: 100%; border: 0; outline: 0; background: none; color: inherit; font: inherit; padding: 2px 0; }
+.prs2-fin input.prs2-fk { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; opacity: .55; }
+.prs2-fin input.prs2-fv { font-size: 16px; font-weight: 550; }
+.prs2-fin input::placeholder { color: inherit; opacity: .35; }
+.prs2-facts { flex: none; display: flex; gap: 4px; }
+html:root:root:root:root:root .prs2-mini { width: 30px; height: 30px; min-width: 30px; padding: 0; }
+.prs2-mini svg { width: 14px; height: 14px; }
+html:root:root:root:root:root .prs2-mini:disabled { opacity: .25; }
+html:root:root:root:root:root .prs2-add { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px; border-radius: 19px; margin-top: 4px; }
+.prs2-add svg { width: 15px; height: 15px; }
+.prs2-pair { display: flex; gap: 8px; flex-wrap: wrap; }
+.prs2-own input { flex: 1; min-width: 0; height: 36px; border: 0; outline: 0; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 16px; color: inherit; background: color-mix(in srgb, currentColor 6%, transparent); }
+.prs2-dateline { position: relative; }
+.prs2-dateline input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px; cursor: pointer; -webkit-appearance: none; appearance: none; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-lite]):not([data-still]) .prs2 { animation: prs2-in .28s cubic-bezier(.25, .9, .35, 1) both; }
+  html:not([data-lite]):not([data-still]) .prs2-body.fwd { animation: prs2-fwd .26s cubic-bezier(.25, .9, .35, 1) both; }
+  html:not([data-lite]):not([data-still]) .prs2-body.bwd { animation: prs2-bwd .26s cubic-bezier(.25, .9, .35, 1) both; }
+}
+@keyframes prs2-in { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes prs2-fwd { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes prs2-bwd { from { transform: translateX(-28px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* the Overview shows only what is written, read only */
+.prw-fact.ro { gap: 3px; }
+.prw-fact.ro .prw-fact-k { font-size: 11px; }
+.prw-fact.ro .prw-fact-v { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+html:root:root:root:root .prw-details-add { display: flex; align-items: center; gap: 8px; width: 100%; height: auto; min-height: 54px; padding: 10px 16px; border: 2px dashed color-mix(in srgb, currentColor 12%, transparent); border-radius: 20px; background: none; box-shadow: none; font: inherit; color: inherit; cursor: pointer; opacity: .75; }
+.prw-details-add svg { width: 16px; height: 16px; }
+.prw-details-add span { font-weight: 600; font-size: 14px; }
+.prw-details-add small { margin-left: auto; font-size: 12px; opacity: .6; }
+/* the workspace's top row never pushes the gear out of sight on a narrower computer screen: the faces give way first */
+.prw-work > .prw-top { min-width: 0; }
+.prw-work > .prw-top > .prw-faces { flex: 0 1 auto; min-width: 0; overflow: hidden; margin-left: auto; }
+.prw-work > .prw-top > .prw-swap, .prw-work > .prw-top > .prw-gear-wrap { flex: none; }
+.prw-work > .prw-top > .prw-pill.date { flex: 0 1 auto; min-width: 0; }

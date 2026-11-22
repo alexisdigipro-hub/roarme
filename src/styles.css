@@ -7265,3 +7265,11 @@ html:root:root:root:root button.tgi-row { cursor: pointer; }
 .tgi-bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); transition: width .3s; }
 .tgi-now { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tgi-mark { font-style: normal; opacity: .75; }
+/* a project's gold button in the chat's head on a phone (Alex, 22 Nov: "the bar, the project, then the picture"); it
+   takes the floating Chat | Project switch's place */
+html:root:root:root:root:root:root .room-head .head-proj { display: none !important; }
+@media (max-width: 960px) {
+  html:root:root:root:root:root:root .room-head .head-proj { display: grid !important; place-items: center; flex: none; width: 44px; height: 44px; min-width: 44px; padding: 0; color: #b8862b; }
+  html[data-mode='dark']:root:root:root:root:root:root .room-head .head-proj { color: #f0c45a; }
+  html:root:root:root:root:root:root .room-head .head-proj svg { width: 22px; height: 22px; background: none; box-shadow: none; }
+}

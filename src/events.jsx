@@ -120,26 +120,27 @@ export function EventCard({ ev, who, sent, onJoin, canJoin = true }) {
     setTimeout(() => URL.revokeObjectURL(url), 2000)
   }
   const icon = ev.video ? I.video : I.phone
+  // compact and readable on any bubble (Alex, 22 Nov: "prettier, readable, smaller, gathered"): one row with the date tile,
+  // what it is and when; under it how long until it starts, Join and the calendar
   return (
-    <span className={`trx evc${over ? ' gone' : live ? ' live' : open || left < 3600e3 ? ' soon' : ''}`} onClick={(x) => x.stopPropagation()}>
-      <span className="trx-head"><span className="rt-mark"><i>{icon}</i><b>{ev.video ? 'Video' : 'Voice'}<span>Call</span></b></span></span>
-      <span className="trx-hero">
-        <i className="trx-type evc-cal"><small>{s.toLocaleDateString(locale(), { month: 'short' })}</small><b>{s.getDate()}</b></i>
-        <span className="trx-size evc-text"><b>{ev.title}</b><small>{fmtDay(s)} · {fmtTime(s)}{ev.end ? ` – ${fmtTime(e)}` : ''}</small></span>
-      </span>
-      {ev.note && <span className="evc-note">{ev.note}</span>}
-      <span className="trx-timeline">
-        <span className="trx-time"><i style={{ width: `${share * 100}%` }} /></span>
-        <span className="trx-left">{I.timer}<span>{when}</span></span>
-      </span>
-      {!over && (
-        <span className="trx-acts">
-          {canJoin
-            ? <button type="button" className="trx-get evc-join" disabled={!open} onClick={() => onJoin(ev.video)} title={open ? 'Join' : 'You can join from 10 minutes before'}>{icon}<span>{open ? 'Join' : `Join from ${fmtTime(new Date(opens))}`}</span></button>
-            : <button type="button" className="trx-get" onClick={save}>{I.calendar}<span>Add to calendar</span></button>}
-          {canJoin && <button type="button" className="trx-round" onClick={save} title="Add to calendar" aria-label="Add to calendar">{I.calendar}</button>}
+    <span className={`evx${over ? ' gone' : live ? ' live' : open || left < 3600e3 ? ' soon' : ''}`} onClick={(x) => x.stopPropagation()}>
+      <span className="evx-row">
+        <i className="evx-cal"><small>{s.toLocaleDateString(locale(), { month: 'short' })}</small><b>{s.getDate()}</b></i>
+        <span className="evx-text">
+          <span className="evx-kind">{icon}{ev.video ? 'Video call' : 'Voice call'}</span>
+          <b>{ev.title}</b>
+          <small>{fmtDay(s)} · {fmtTime(s)}{ev.end ? ` – ${fmtTime(e)}` : ''}</small>
         </span>
-      )}
+      </span>
+      {ev.note && <span className="evx-note">{ev.note}</span>}
+      <span className="evx-foot">
+        <span className="evx-when">{I.timer}<span>{when}</span></span>
+        {!over && (canJoin
+          ? <button type="button" className="evx-join" disabled={!open} onClick={() => onJoin(ev.video)} title={open ? 'Join' : 'You can join from 10 minutes before'}>{open ? 'Join' : `From ${fmtTime(new Date(opens))}`}</button>
+          : <button type="button" className="evx-join" onClick={save}>Add to calendar</button>)}
+        {!over && canJoin && <button type="button" className="evx-cal-btn" onClick={save} title="Add to calendar" aria-label="Add to calendar">{I.calendar}</button>}
+      </span>
+      <i className="evx-line" style={{ width: `${share * 100}%` }} />
     </span>
   )
 }

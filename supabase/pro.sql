@@ -72,3 +72,8 @@ alter table public.roar_pro_projects drop constraint if exists roar_pro_projects
 alter table public.roar_pro_projects add constraint roar_pro_projects_more_ok check (
   char_length(date_label) <= 30 and jsonb_typeof(scouts) = 'array' and pg_column_size(scouts) <= 200000
   and (stages is null or (jsonb_typeof(stages) = 'array' and pg_column_size(stages) <= 4000)));
+
+-- Ordinos made in Roardino from the project (Alex, 22 Nov): their links and details
+alter table public.roar_pro_projects add column if not exists ordinos jsonb not null default '[]'::jsonb;
+alter table public.roar_pro_projects drop constraint if exists roar_pro_projects_ordinos_ok;
+alter table public.roar_pro_projects add constraint roar_pro_projects_ordinos_ok check (jsonb_typeof(ordinos) = 'array' and pg_column_size(ordinos) <= 60000);

@@ -23,7 +23,8 @@ export const stageOf = (p) => stagesOf(p).find((s) => s.id === p?.status) || sta
 export const ProChip = ({ p }) => { const s = stageOf(p); return <span className="prj-chip" style={{ '--pc': s.c }}>{s.name}</span> }
 
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2))
-const FIELD_START = ['Client', 'Budget', 'Location', 'Lead']
+// a new project starts with Client and Budget; Add Field adds more (Alex, 22 Nov: "only client and budget")
+const FIELD_START = ['Client', 'Budget']
 
 // every project I can see, live
 export function useProjects(me, on) {
@@ -693,6 +694,46 @@ function DocView({ m, onClose }) {
   )
 }
 
+/* ---------- Roardino inside RoarMe (Alex, 22 Nov: "tap there, the ordino app pops up, you make it and it stays here"):
+   themadlions.com/roardino/?embed=1 in a window; it asks, RoarMe hands it this account's short-lived access token (never
+   the refresh token), and its Send hands back the ordino's link and details, kept in the project (ordinos). ---------- */
+const ROARDINO = 'https://themadlions.com'
+function OrdinoWindow({ onClose, onSent }) {
+  const frame = useRef(null)
+  useEffect(() => {
+    const hand = async () => {
+      const { data } = await supabase.auth.getSession()
+      const t = data?.session?.access_token
+      if (t) frame.current?.contentWindow?.postMessage({ type: 'roardino:session', access_token: t }, ROARDINO)
+    }
+    const on = (e) => {
+      if (e.origin !== ROARDINO || e.source !== frame.current?.contentWindow) return
+      const d = e.data || {}
+      if (d.type === 'roardino:ready') hand()
+      if (d.type === 'roardino:send' && d.ordino?.url && /^https:\/\//.test(d.ordino.url)) {
+        const o = d.ordino
+        onSent({ url: String(o.url).slice(0, 600), token: String(o.token || '').slice(0, 80), title: String(o.title || '').slice(0, 120), label: String(o.label || '').slice(0, 60), date: String(o.date || '').slice(0, 20), call: String(o.call || '').slice(0, 20), place: String(o.place || '').slice(0, 120), accent: /^#[0-9a-f]{3,8}$/i.test(o.accent || '') ? o.accent : '#d40000' })
+      }
+    }
+    window.addEventListener('message', on)
+    const { data: sub } = supabase.auth.onAuthStateChange((ev) => { if (ev === 'TOKEN_REFRESHED') hand() })
+    return () => { window.removeEventListener('message', on); sub?.subscription?.unsubscribe() }
+  }, [onSent])
+  useEffect(() => { const k = (e) => { if (e.key === 'Escape') onClose() }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [onClose])
+  return createPortal(
+    <div className="prd" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="prd-card prw-ordwin">
+        <div className="prd-head">
+          <span className="prj-ftext"><b>Roardino</b><small>Make the ordino, then press Send to keep it in this project</small></span>
+          <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
+        </div>
+        <iframe ref={frame} className="prw-ordframe" src={`${ROARDINO}/roardino/?embed=1`} title="Roardino" allow="clipboard-write" />
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
@@ -703,9 +744,15 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const [view, setView] = useState(null)
   const [tag, setTag] = useState('')
   const [doc, setDoc] = useState(null)
+  const [ordinoOpen, setOrdinoOpen] = useState(false)
   const [hidden, setHidden] = useState(() => { try { return JSON.parse(localStorage.getItem(hiddenKey(room.room_id)) || '[]') } catch { return [] } })
   const flipTab = (k) => { const next = hidden.includes(k) ? hidden.filter((x) => x !== k) : [...hidden, k]; setHidden(next); try { localStorage.setItem(hiddenKey(room.room_id), JSON.stringify(next)) } catch { /* private window */ } }
   const save = (patch) => kit.save(room.room_id, patch).catch((e) => toast(errText(e)))
+  // Location and Lead were in every project's first fields; they go (Alex, 22 Nov: "only client and budget")
+  useEffect(() => {
+    const f = Array.isArray(project.fields) ? project.fields : []
+    if (f.some((x) => x.k === 'Location' || x.k === 'Lead')) save({ fields: f.filter((x) => x.k !== 'Location' && x.k !== 'Lead') })
+  }, [project.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
   const goTab = (t) => { setTab(t); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
   // a tap on the small line in the chat ("2 photos went to Media") or on a #tag opens that tab
   useEffect(() => {
@@ -726,6 +773,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const tasks = Array.isArray(project.tasks) ? project.tasks : []
   const scouts = Array.isArray(project.scouts) ? project.scouts : []
   const fields = Array.isArray(project.fields) ? project.fields : []
+  const ordinos = Array.isArray(project.ordinos) ? project.ordinos : []
   const st = stageOf(project)
   const dateName = project.date_label || 'Shoot Date'
   const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', links.length], ['tags', 'Tags', tagged.length],
@@ -777,18 +825,18 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
       <div className="prw-body">
         {shownTab === 'overview' && (
           <div className="prw-over">
-            <div className="prw-box">
+            <div className="prw-box prw-brief-box">
               <h4>Brief</h4>
               <Field area className="prj-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} />
-              <div className="prj-kv">
+              <div className="prw-facts">
                 {fields.map((f, i) => (
-                  <div key={i} className="prj-kvrow">
-                    <Field className="prj-k" value={f.k} placeholder="Field" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
-                    <Field className="prj-v" value={f.v} placeholder="—" onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
+                  <div key={i} className="prw-fact">
+                    <Field className="prw-fact-k" value={f.k} placeholder="Field" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
+                    <Field className="prw-fact-v" value={f.v} placeholder="—" onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
                     <button type="button" className="prj-kvdel" onClick={() => save({ fields: fields.filter((_, n) => n !== i) })} aria-label="Remove field" title="Remove">{I.x}</button>
                   </div>
                 ))}
-                {fields.length < 20 && <button type="button" className="pill-btn prj-kvadd" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
+                {fields.length < 20 && <button type="button" className="prw-fact add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
               </div>
             </div>
             <div className="prw-box">
@@ -799,6 +847,23 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
                 <button type="button" onClick={() => goTab('scout')}><b>{scouts.filter((x) => x.st === 'confirmed').length}/{scouts.length}</b><span>Locations confirmed</span></button>
                 <button type="button" onClick={() => goTab('tasks')}><b>{tasks.filter((t) => t.s === 'done').length}/{tasks.length}</b><span>Tasks done</span></button>
               </div>
+            </div>
+            <div className="prw-box wide">
+              <div className="prw-boxhead"><h4>Ordinos</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => setOrdinoOpen(true)}>{I.plus}<span>New Ordino</span></button></div>
+              {ordinos.length ? (
+                <div className="prw-ordinos">
+                  {ordinos.map((o) => (
+                    <div key={o.token || o.url} className="prw-ordino" style={{ '--oa': o.accent || '#d40000' }}>
+                      <a href={o.url} target="_blank" rel="noopener noreferrer" className="prw-ordino-in">
+                        <span className="prw-ordino-label">{o.label || 'Ordino'}</span>
+                        <b>{o.title || title}</b>
+                        <small>{[o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ') || 'Open the call sheet'}</small>
+                      </a>
+                      <button type="button" className="prj-kvdel" onClick={() => save({ ordinos: ordinos.filter((x) => x !== o) })} aria-label="Remove from the project" title="Remove from the project">{I.x}</button>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="prj-quiet">No ordino yet. New Ordino opens Roardino; make the call sheet there and press Send, and it stays here.</p>}
             </div>
             {media.length > 0 && <div className="prw-box wide"><h4>Latest Media</h4><div className="prw-grid">{media.slice(0, 8).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} />)}</div></div>}
           </div>
@@ -826,6 +891,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
+      {ordinoOpen && <OrdinoWindow onClose={() => setOrdinoOpen(false)} onSent={(o) => { save({ ordinos: [o, ...ordinos.filter((x) => x.token !== o.token)].slice(0, 60) }); setOrdinoOpen(false); toast('Ordino saved in the project') }} />}
       {view && <Viewer items={view.items} index={view.index} people={people} me={me} onClose={() => setView(null)} />}
     </div>
   )

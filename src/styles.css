@@ -6677,3 +6677,65 @@ html[data-mode='dark'] .prd-card { background: #1d1d20; color: #f2f2f4; }
 .prd-body { background: #f1f2f5; }
 html[data-mode='dark'] .prd-body { background: #141416; }
 html:root:root:root:root .prw-bar > button { flex: 1 0 54px; padding: 0 4px; }
+/* the Overview made calmer (Alex, 22 Nov): the facts as small tiles, Ordinos from Roardino as cards */
+.prw-brief-box .prj-brief { font-size: 15px; min-height: 52px; }
+.prw-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 12px; }
+.prw-fact { position: relative; display: flex; flex-direction: column; gap: 1px; padding: 9px 12px 10px; border-radius: 14px; background: color-mix(in srgb, currentColor 5%, transparent); }
+.prw-fact input { min-width: 0; border: 0; outline: 0; background: none; color: inherit; font: inherit; padding: 0; }
+.prw-fact-k { font-size: 11px !important; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; opacity: .55; }
+.prw-fact-v { font-size: 15px; font-weight: 600; }
+.prw-fact input::placeholder { color: inherit; opacity: .35; }
+.prw-fact .prj-kvdel { position: absolute; top: 6px; right: 6px; }
+.prw-fact:hover .prj-kvdel { opacity: .5; }
+html:root:root:root:root .prw-fact.add { flex-direction: row; align-items: center; justify-content: center; gap: 6px; min-height: 54px; height: auto; border: 2px dashed color-mix(in srgb, currentColor 12%, transparent); background: none; box-shadow: none; font: inherit; font-size: 13px; font-weight: 600; color: inherit; opacity: .6; cursor: pointer; }
+html:root:root:root:root .prw-fact.add:hover { opacity: 1; }
+.prw-fact.add svg { width: 15px; height: 15px; }
+.prw-boxhead { display: flex; align-items: center; margin-bottom: 10px; }
+.prw-boxhead h4 { margin: 0; }
+html:root:root:root:root .prw-boxbtn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 15px; font-size: 12.5px; }
+.prw-boxbtn svg { width: 14px; height: 14px; }
+.prw-ordinos { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.prw-ordino { position: relative; border-radius: 16px; overflow: hidden; background: color-mix(in srgb, var(--panel, #fff) 92%, transparent); box-shadow: inset 4px 0 0 var(--oa), inset 0 0 0 1px color-mix(in srgb, currentColor 8%, transparent); }
+html[data-mode='dark'] .prw-ordino { background: rgba(255, 255, 255, .06); }
+.prw-ordino-in { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px 12px 18px; color: inherit; text-decoration: none; }
+.prw-ordino-label { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--oa); }
+.prw-ordino-in b { font-size: 15px; }
+.prw-ordino-in small { font-size: 12px; opacity: .6; }
+.prw-ordino .prj-kvdel { position: absolute; top: 8px; right: 8px; }
+.prw-ordino:hover .prj-kvdel { opacity: .5; }
+.prw-ordwin { width: min(1100px, 100%); }
+.prw-ordframe { flex: 1; width: 100%; border: 0; background: #0f0f10; }
+/* A scheduled call or meeting in the chat, compact and readable (Alex, 22 Nov): its own calm card in every bubble, even one's
+   own blue one; the date tile, the kind small above the title, the day and time; a slim foot with the time left, Join
+   and the calendar; a hairline along the foot shows how near it is */
+html:root:root:root:root .bubble.event-b { width: min(280px, var(--media-w, 280px)); padding: 4px !important; background: var(--evx-bg, #fff) !important; color: #16181d !important; }
+html[data-mode='dark']:root:root:root .bubble.event-b { --evx-bg: #2a2a2e; color: #f2f2f4 !important; }
+html:root:root:root:root .bubble.event-b .meta, html:root:root:root:root .bubble.event-b .meta * { color: rgba(127, 127, 135, .9) !important; }
+.evx { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 8px 8px 10px; overflow: hidden; border-radius: 14px; }
+.evx-row { display: flex; align-items: center; gap: 10px; }
+.evx-cal { flex: none; width: 44px; height: 46px; border-radius: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-style: normal; background: color-mix(in srgb, currentColor 6%, transparent); }
+.evx-cal small { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #e5483f; line-height: 1.2; }
+.evx-cal b { font-size: 19px; font-weight: 700; line-height: 1.1; }
+.evx-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.evx-kind { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--halo-mine, var(--accent)); }
+.evx-kind svg, .evx-kind .ic-mask { width: 13px; height: 13px; }
+.evx-text b { font-size: var(--fs, 14.5px); font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.evx-text small { font-size: calc(var(--fs, 14.5px) * .82); opacity: .62; }
+.evx-note { font-size: calc(var(--fs, 14.5px) * .9); line-height: 1.4; opacity: .85; padding: 0 2px; }
+.evx-foot { display: flex; align-items: center; gap: 6px; }
+.evx-when { display: inline-flex; align-items: center; gap: 4px; margin-right: auto; font-size: 12px; font-weight: 600; opacity: .7; }
+.evx-when svg { width: 13px; height: 13px; }
+.evx.soon .evx-when { color: #d97706; opacity: 1; }
+.evx.live .evx-when { color: #16a34a; opacity: 1; }
+html:root:root:root:root .evx-join { height: 30px; padding: 0 14px; border: 0; border-radius: 15px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--halo-ink, #fff) !important; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; box-shadow: none; backdrop-filter: none; }
+html:root:root:root:root .evx-join:disabled { cursor: default; color: inherit !important; background: color-mix(in srgb, currentColor 8%, transparent) !important; opacity: .8; }
+html:root:root:root:root .evx-cal-btn { width: 30px; height: 30px; min-width: 30px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; color: inherit; cursor: pointer; background: color-mix(in srgb, currentColor 8%, transparent); box-shadow: none; }
+.evx-cal-btn svg { width: 15px; height: 15px; }
+.evx-line { position: absolute; left: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--halo-mine, var(--accent)); opacity: .55; }
+.evx.gone { opacity: .6; }
+html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg .bubble.event-b:not(.pic):not(.big-emoji):not(.note-b),
+html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles][data-my-bubble] .msg.mine .bubble.event-b:not(.pic):not(.big-emoji):not(.note-b) { background: var(--evx-bg, #fff) !important; color: #16181d !important; box-shadow: 0 1px 3px rgba(20, 30, 50, .08), inset 0 0 0 1px rgba(20, 30, 50, .06) !important; }
+html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode='dark'][data-bubbles] .msg .bubble.event-b:not(.pic):not(.big-emoji):not(.note-b),
+html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode='dark'][data-bubbles][data-my-bubble] .msg.mine .bubble.event-b:not(.pic):not(.big-emoji):not(.note-b) { background: #2a2a2e !important; color: #f2f2f4 !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06) !important; }
+html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg .bubble.event-b :is(.meta, .meta *, .ticks, .ticks *) { color: rgba(110, 112, 122, .95) !important; }
+html:root:root:root:root:root:not([data-frost])[data-glass][data-skin][data-theme][data-mode][data-bubbles] .msg .bubble.event-b .evx { padding-bottom: 6px; }

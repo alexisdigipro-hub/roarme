@@ -1463,9 +1463,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           </span>
           {/* a phone: the date as words, with the phone's own date wheel laid unseen over them (an empty date field has no
               size on an iPhone, so it could not be tapped: Alex, 22 Nov) */}
-          {phone
-            ? <span className="prw-datewrap"><span className={project.due ? '' : 'none'}>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : `Set ${dateName}`}</span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></span>
-            : <input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} />}
+          <span className="prw-datewrap"><span className={project.due ? '' : 'none'}>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : `Set ${dateName}`}</span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></span>
         </span>
         <span className="prw-faces">{members.map((id) => <Avatar key={id} src={people[id]?.avatar_url} name={nameOf(people[id])} size={30} />)}{(room.members || []).length > 5 && <i>+{room.members.length - 5}</i>}</span>
         {onSwap && !phone && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}

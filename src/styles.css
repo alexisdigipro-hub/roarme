@@ -7409,7 +7409,7 @@ html:root:root:root:root .prw-details-add { display: flex; align-items: center; 
 .prw-work > .prw-top { min-width: 0; }
 .prw-work > .prw-top > .prw-faces { flex: 0 1 auto; min-width: 0; overflow: hidden; margin-left: auto; }
 .prw-work > .prw-top > .prw-swap, .prw-work > .prw-top > .prw-gear-wrap { flex: none; }
-.prw-work > .prw-top > .prw-pill.date { flex: 0 1 auto; min-width: 0; }
+.prw-work > .prw-top > .prw-pill.date { flex: none; }
 /* a project's menus on a phone live on the page itself (pro.jsx Hang portal): a veil over the whole screen that closes
    the menu at any tap beside it, and the menu just under the project's top row */
 .prw-portal .prw-scrim { position: fixed; inset: 0; z-index: 1000; background: rgba(20, 24, 34, .12); -webkit-tap-highlight-color: transparent; }
@@ -7436,3 +7436,17 @@ html[data-mode='dark']:root:root:root:root:root:root .rooms-area .tabs button[da
 .prs2-dot { width: 12px; height: 12px; margin: 0 10px 0 4px; }
 .prs2-brief { width: 100%; box-sizing: border-box; min-height: 60px; resize: none; overflow: hidden; border: 0; outline: 0; background: none; font: inherit; font-size: 16px; line-height: 1.45; color: inherit; padding: 2px; }
 .prs2-brief::placeholder { color: inherit; opacity: .4; }
+/* what was set right on a phone, on a computer too (Alex, 22 Nov: "all of it applies to the desktop as well, except the
+   placing"): the date as words with the date picker over them, Calls' three even buttons, Links rows with only the link,
+   a round + and the bin, no stage chip on the cover (it is in the row above) */
+html:root:root:root:root .prw-pill.date .prw-datewrap { min-width: 96px; }
+html:root:root:root:root:root .prw-pill.date .prw-datewrap input { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; margin: 0; padding: 0; opacity: 0; font-size: 16px; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.prw-pill.date .prw-datewrap input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; cursor: pointer; opacity: 0; }
+.prw-calls-top { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+html:root:root:root:root:root .prw-calls-top .btn { justify-content: center; min-width: 0; white-space: nowrap; }
+.prw-goto { display: none !important; }
+html:root:root:root:root:root .prw-addscout { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 50%; }
+.prw-addscout span { display: none; }
+.prw-hero-st { display: none !important; }
+html:root:root:root:root .prw-pill.date .prw-datename, .prw-pill.date .prw-datename > span { white-space: nowrap; }
+html:root:root:root:root .prw-pill.date .prw-datewrap { min-width: 84px; }

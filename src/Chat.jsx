@@ -701,8 +701,8 @@ export default function Chat({ me, setMe }) {
     if (d?.getSettings) d.getSettings().then((s) => { if (s?.tray) d.setSetting('tray', false) }).catch(() => {})
   }, [])
 
-  // with Pro on, Projects and Direct join the folders (Alex, 22 Nov: "the left column as the chat's own")
-  const BUILTIN = [['all', 'All'], ['unread', 'Unread'], ...(proOn ? [['projects', 'Projects'], ['direct', 'Direct']] : []), ['groups', 'Groups'], ['archived', 'Archived']]
+  // the folders are the same with Pro on or off (Alex, 22 Nov: "what was made once stays the same; Pro only changes the groups")
+  const BUILTIN = [['all', 'All'], ['unread', 'Unread'], ['groups', 'Groups'], ['archived', 'Archived']]
   // in the order dragged in Settings > Folders (Alex, 16 Oct); a folder not placed yet goes at the end
   const fOrder = prefs.folderOrder || []
   const fRank = (id) => { const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }

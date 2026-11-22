@@ -33,6 +33,7 @@ export const DEFAULTS = {
   autoplayGifs: true,
   callsTab: true,
   pro: false,
+  proBanner: false, // the project's cover banner on its Overview (Alex, 22 Nov: off to start, turned on in Project Settings)
   proNotes: false, // Pro: the small line in a project's chat for what went to the side (Alex, 22 Nov: off unless turned on) // RoarMe Pro, the website on a computer only (Alex, 22 Nov): the button in the bar at the foot
   tasksTab: false, // Tasks in the bar at the foot: off until turned on in Settings (Alex, 7 Nov)
   lite: false, // power saving: no animations, no glass blur

@@ -394,8 +394,17 @@ function Tile({ m, onOpen, onDrop }) {
 }
 
 /* ---------- small menus that hang from a button ---------- */
-function Hang({ open, onClose, children, className = '' }) {
+function Hang({ open, onClose, children, className = '', portal = false }) {
   if (!open) return null
+  // on a phone the menu and its veil go to the page itself, over everything: inside the project's page they sat under
+  // the tabs and the list, so a tap beside the menu reached the page and the menu never closed (Alex, 22 Nov)
+  if (portal) {
+    return createPortal(
+      <div className="prw-portal">
+        <span className="prw-scrim" onClick={onClose} />
+        <div className={`menu prw-menu ${className}`} onClick={(e) => e.stopPropagation()}>{children}</div>
+      </div>, document.body)
+  }
   return (
     <>
       <span className="prw-scrim" onClick={onClose} />
@@ -1433,7 +1442,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       <div className="prw-top">
         <span className="prw-hang">
           <button type="button" className="prw-pill stage" style={{ '--pc': st.c }} onClick={() => setMenu(menu === 'stage' ? '' : 'stage')}><i className="prw-dot" /><span className="prw-st-name">{st.name}</span><span className="prw-caret">{I.down}</span></button>
-          <Hang open={menu === 'stage'} onClose={() => setMenu('')}>
+          <Hang open={menu === 'stage'} onClose={() => setMenu('')} portal={phone}>
             {stagesOf(project).map((s) => <button key={s.id} type="button" onClick={() => { save({ status: s.id }); setMenu('') }}><i className="prw-dot" style={{ '--pc': s.c }} /><span>{s.name}</span>{s.id === st.id && <b className="prw-tick">{I.check}</b>}</button>)}
             <hr />
             <button type="button" onClick={() => { setMenu(''); setStagesOpen(true) }}>{I.edit || I.plus}<span>Rename Stages</span></button>
@@ -1442,11 +1451,11 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
         <span className="prw-pill date">
           <span className="prw-hang">
             <button type="button" className="prw-datename" onClick={() => setMenu(menu === 'date' ? '' : 'date')}>{I.calendar}<span>{dateName}</span><span className="prw-caret">{I.down}</span></button>
-            <Hang open={menu === 'date'} onClose={() => setMenu('')}>
+            <Hang open={menu === 'date'} onClose={() => setMenu('')} portal={phone}>
               {DATE_NAMES.map((d) => <button key={d} type="button" onClick={() => { save({ date_label: d }); setMenu('') }}><span>{d}</span>{d === dateName && <b className="prw-tick">{I.check}</b>}</button>)}
               <hr />
               <form className="prw-custom" onSubmit={(e) => { e.preventDefault(); const v = custom.trim(); if (v) { save({ date_label: v.slice(0, 30) }); setCustom(''); setMenu('') } }}>
-                <input value={custom} maxLength={30} placeholder="Your own name" onChange={(e) => setCustom(e.target.value)} />
+                <input value={custom} maxLength={30} placeholder="Your own name" enterKeyHint="done" onChange={(e) => setCustom(e.target.value)} onBlur={() => { const v = custom.trim(); if (v) { save({ date_label: v.slice(0, 30) }); setCustom('') } }} />
               </form>
             </Hang>
           </span>

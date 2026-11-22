@@ -7410,3 +7410,11 @@ html:root:root:root:root .prw-details-add { display: flex; align-items: center; 
 .prw-work > .prw-top > .prw-faces { flex: 0 1 auto; min-width: 0; overflow: hidden; margin-left: auto; }
 .prw-work > .prw-top > .prw-swap, .prw-work > .prw-top > .prw-gear-wrap { flex: none; }
 .prw-work > .prw-top > .prw-pill.date { flex: 0 1 auto; min-width: 0; }
+/* a project's menus on a phone live on the page itself (pro.jsx Hang portal): a veil over the whole screen that closes
+   the menu at any tap beside it, and the menu just under the project's top row */
+.prw-portal .prw-scrim { position: fixed; inset: 0; z-index: 1000; background: rgba(20, 24, 34, .12); -webkit-tap-highlight-color: transparent; }
+html:root:root:root:root:root:root:root:root .prw-portal .prw-menu { position: fixed !important; z-index: 1001; top: calc(env(safe-area-inset-top, 0px) + 116px) !important; left: 12px !important; right: 12px !important; bottom: auto !important; width: auto; min-width: 0; max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 150px); overflow-y: auto; }
+.prw-portal .prw-custom { padding: 6px 12px 12px; }
+.prw-portal .prw-custom input { box-sizing: border-box; display: block; width: 100%; height: 42px; border: 0; outline: 0; border-radius: 14px; padding: 0 14px; font: inherit; font-size: 16px; color: inherit; background: rgba(255, 255, 255, .7); box-shadow: inset 0 0 0 1px rgba(20, 30, 50, .1); }
+html[data-mode='dark'] .prw-portal .prw-custom input { background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
+.prw-portal .prw-mcap { display: block; }

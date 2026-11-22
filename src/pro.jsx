@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Avatar, CropModal, I, Lens, Modal } from './ui.jsx'
 import { AUDIO_EXT, mmss, player, shapeOf, usePlayer, useWave } from './player.jsx'
 import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib.js'
+import { hubCall, hubLink, hubMe, hubPull, hubSoon, hubState } from './hub.jsx'
 import { inApp } from './push.js'
 import { getPrefs, setPrefs, usePrefs } from './prefs.js'
 
@@ -60,7 +61,7 @@ export function useProjects(me, on) {
     const { data, error } = await supabase.from('roar_pro_projects').upsert({ room_id: roomId, ...patch }, { onConflict: 'room_id' }).select().single()
     if (error) { load(); throw error }
     setMap((m) => ({ ...m, [roomId]: data }))
-    if ('scouts' in patch) hubSoon(roomId)
+    if (['scouts', 'tasks', 'status', 'due', 'fields'].some((k) => k in patch)) hubSoon(roomId)
     return data
   }, [load])
   const remove = useCallback(async (roomId) => {
@@ -69,26 +70,6 @@ export function useProjects(me, on) {
     setMap((m) => { const n = { ...m }; delete n[roomId]; return n })
   }, [])
   return { map, save, remove, reload: load }
-}
-
-/* ---------- a project linked to a TML Hub (Alex, 22 Nov): Location Scout goes into the hub's locations ---------- */
-const hubCache = {} // room -> state from roar_hub_state (null = not linked)
-export async function hubState(roomId, fresh = false) {
-  if (!fresh && roomId in hubCache) return hubCache[roomId]
-  const { data } = await supabase.rpc('roar_hub_state', { r: roomId })
-  hubCache[roomId] = data || null
-  return hubCache[roomId]
-}
-export async function hubCall(body) {
-  const { data, error } = await supabase.functions.invoke('roar-hub', { body })
-  if (error) { let m = error.message; try { m = (await error.context.json()).error || m } catch { /* keep */ } throw new Error(m) }
-  if (body.room) delete hubCache[body.room]
-  return data
-}
-const hubTimers = {}
-function hubSoon(roomId) {
-  clearTimeout(hubTimers[roomId])
-  hubTimers[roomId] = setTimeout(async () => { try { if (await hubState(roomId)) await hubCall({ action: 'sync', room: roomId }) } catch { /* shown in Settings > TML Hub */ } }, 1200)
 }
 
 /* ---------- files in folders ---------- */
@@ -315,7 +296,7 @@ function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, on
           <span className="prj-make-ico">{I.folder}</span>
           <b>Make this group a project</b>
           <p>A stage, a due date, a brief, its files in folders and its tasks, beside the chat. The chat stays as it is.</p>
-          <button type="button" className="btn btn-main" onClick={() => save({ status: 'prep', fields: FIELD_START.map((k) => ({ k, v: '' })) })}>Make It a Project</button>
+          <button type="button" className="btn btn-main" onClick={() => save({ status: 'prep', fields: FIELD_START.map((k) => ({ k, v: '' })) }).then(() => hubLink(room.room_id))}>Make It a Project</button>
         </div>
         <Section id="files" title="Files" count={files ? files.filter(isFileMsg).length : null}><Files files={files} onJump={onJump} /></Section>
       </>
@@ -1316,12 +1297,13 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
   const keepStages = (next) => { setList(next); const clean = next.map((x) => ({ ...x, name: (x.name || '').trim().slice(0, 30) || 'Stage' })); save({ stages: clean, ...(clean.some((x) => x.id === project.status) ? {} : { status: clean[0].id }) }) }
   const move = (i, d) => { const j = i + d; if (j < 0 || j >= fields.length) return; const next = [...fields]; [next[i], next[j]] = [next[j], next[i]]; save({ fields: next }) }
   const filled = fields.filter((f) => (f.v || '').trim()).length
-  const titles = { home: 'Project Settings', info: 'Project Info', stages: 'Stages', hub: 'TML Hub' }
+  const titles = { home: 'Project Settings', info: 'Project Info', stages: 'Stages', hub: 'Production Hub' }
+  const [hubMine, setHubMine] = useState(null)
+  useEffect(() => { hubMe().then(setHubMine, () => {}) }, [])
   const [hub, setHub] = useState(undefined) // undefined while asking, null when not linked
-  const [hubKey, setHubKey] = useState('')
   const [hubBusy, setHubBusy] = useState(false)
   useEffect(() => { let gone = false; hubState(roomId, true).then((x) => { if (!gone) setHub(x) }, () => { if (!gone) setHub(null) }); return () => { gone = true } }, [roomId, page])
-  const hubDo = async (body, ok) => { setHubBusy(true); try { const r = await hubCall({ room: roomId, ...body }); setHub(await hubState(roomId, true)); if (r?.error) toast(r.error); else if (ok) toast(ok); if (body.action === 'connect') setHubKey('') } catch (e) { toast(e.message || 'The hub did not answer') } setHubBusy(false) }
+  const hubDo = async (body, ok) => { setHubBusy(true); try { const r = await hubCall({ room: roomId, ...body }); setHub(await hubState(roomId, true)); if (r?.error) toast(r.error); else if (ok) toast(ok); } catch (e) { toast(e.message || 'The hub did not answer') } setHubBusy(false) }
   const row = (k, label, sub, onClick) => <button type="button" className="prs2-row" onClick={onClick}><i className="prs2-ic">{SET_I[k]}</i><span className="prs2-t"><b>{label}</b>{sub && <small>{sub}</small>}</span><span className="prs2-go">{I.right}</span></button>
   return (
     <div ref={box} className="prs2" role="dialog" aria-label={titles[page]}>
@@ -1343,7 +1325,7 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
             </div>
             <small className="prs2-cap">Connections</small>
             <div className="prs2-box">
-              {row('hub', 'TML Hub', hub === undefined ? '' : hub ? `Linked to ${hub.hub} · locations go there by themselves` : 'Send this project\u2019s locations to your hub', () => go('hub'))}
+              {row('hub', 'Production Hub', hub === undefined ? '' : hub ? `A project of ${hub.hub}` : 'Not in a hub', () => go('hub'))}
             </div>
             <small className="prs2-cap">Chat</small>
             <div className="prs2-box">
@@ -1360,29 +1342,22 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
               <>
                 <div className="prs2-box prs2-pad prs2-hubon">
                   <i className="prs2-hubdot" />
-                  <span className="prs2-t"><b>Linked to {hub.hub}</b><small>{hub.synced ? `${hub.synced} location${hub.synced === 1 ? '' : 's'} in the hub` : 'No locations sent yet'}{hub.last ? ` · last sent ${new Date(hub.last).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}</small></span>
+                  <span className="prs2-t"><b>A project of {hub.hub}</b><small>{hub.last ? `Last kept the same ${new Date(hub.last).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : 'Not synced yet'}</small></span>
                 </div>
                 {hub.error && <p className="prs2-hint prs2-err">{hub.error}</p>}
-                <p className="prs2-hint">Every place in Location Scout goes into the hub&rsquo;s Locations, with its photos, and changes there as it changes here. A place taken out here leaves the hub too.</p>
+                <p className="prs2-hint">Its name, stage, shoot day, category, tasks and locations are kept the same here and in the hub.</p>
                 <div className="prs2-hubacts">
-                  <button type="button" className="pill-btn" disabled={hubBusy} onClick={() => hubDo({ action: 'sync' }, 'Sent to the hub')}>{hubBusy ? 'Sending\u2026' : 'Send Now'}</button>
-                  {boss && <button type="button" className="pill-btn danger" disabled={hubBusy} onClick={() => { if (window.confirm(`Unlink this project from ${hub.hub}? What is in the hub stays there.`)) hubDo({ action: 'disconnect' }, 'Unlinked') }}>Unlink</button>}
+                  <button type="button" className="pill-btn" disabled={hubBusy} onClick={() => hubDo({ action: 'sync' }, 'Up to date')}>{hubBusy ? 'Working\u2026' : 'Sync Now'}</button>
                 </div>
               </>
             ) : hub === null && (
-              <>
-                <p className="prs2-hint">Link this project to your TML Hub and every place in Location Scout goes into the hub&rsquo;s Locations by itself, with its photos.</p>
-                {boss ? (
-                  <>
-                    <small className="prs2-cap">Hub key</small>
-                    <div className="prs2-box prs2-pad">
-                      <input className="prs2-keyin" value={hubKey} onChange={(e) => setHubKey(e.target.value.trim())} placeholder="tmlhub_…" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} />
-                    </div>
-                    <p className="prs2-hint">In the hub: Settings, Integrations, Connected Apps, Make a Key. Paste it here.</p>
-                    <button type="button" className="btn btn-main prs2-hubgo" disabled={hubBusy || !/^tmlhub_[0-9a-f]{48}$/.test(hubKey)} onClick={() => hubDo({ action: 'connect', key: hubKey }, 'Linked. The locations are on their way.')}>{hubBusy ? 'Linking\u2026' : 'Link to the Hub'}</button>
-                  </>
-                ) : <p className="prs2-hint">Only an admin of the group can link it to a hub.</p>}
-              </>
+              hubMine ? (
+                <>
+                  <p className="prs2-hint">This project is not in {hubMine.hub} yet.</p>
+                  <button type="button" className="btn btn-main prs2-hubgo" disabled={hubBusy || !boss} onClick={() => hubDo({ action: 'link' }, `Now a project of ${hubMine.hub}`)}>{hubBusy ? 'Adding\u2026' : `Add to ${hubMine.hub}`}</button>
+                  {!boss && <p className="prs2-hint">Only an admin of the group can add it.</p>}
+                </>
+              ) : <p className="prs2-hint">Link RoarMe to your production hub in Settings, Production Hub, and every project here becomes a project there.</p>
             )}
           </>
         )}
@@ -1732,6 +1707,9 @@ const lsPut = (k, v) => { try { localStorage.setItem(k, String(Math.round(v))) }
 export function ProPanel(props) {
   // a project, or (Alex, 22 Nov) a chat with one person, whose profile page stands at the right
   const big = (props.room.kind === 'group' && !!props.project) || !!props.profile
+  // what changed in the Production Hub comes in when the workspace opens, and every minute while it is open
+  const pullRoom = props.room.kind === 'group' && props.project ? props.room.room_id : ''
+  useEffect(() => { if (!pullRoom) return undefined; hubPull(pullRoom); const t = setInterval(() => hubPull(pullRoom), 60000); return () => clearInterval(t) }, [pullRoom])
   const [w, setW] = useState(() => lsNum('roarme-pro-w', PRJ_W))
   const [cw, setCw] = useState(() => lsNum('roarme-pro-chat', CHAT_W))
   // the chat on the left or on the right of the workspace (Alex, 22 Nov: "a small button to bring the chat to the right")

@@ -64,6 +64,7 @@ import { WhatsNewHost } from './whatsnew.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
+import { hubLink, hubStart } from './hub.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -105,6 +106,8 @@ export default function Chat({ me, setMe }) {
   // workspace wherever it is opened; every other chat stays the normal chat
   const proOn = proOk()
   const proKit = useProjects(me, true)
+  // Production Hub: on starting, tie my project groups and bring the hub's new projects in as groups (hub.jsx)
+  useEffect(() => { hubStart() }, [])
   // on a computer a tap on a project chat's name shows or hides the Workspace beside it (Alex, 22 Nov); kept on the device
   const [proShut, setProShut] = useState(() => { try { return localStorage.getItem('roarme-pro-shut') === '1' } catch { return false } })
   useEffect(() => {
@@ -1866,7 +1869,7 @@ export default function Chat({ me, setMe }) {
             {!window.matchMedia('(max-width: 760px)').matches && <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>}
             {/* no Preview Messages: the messages are shown above the menu (Alex, 14 Nov) */}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
-            {roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }, { k: 'Budget', v: '' }] }).then(() => { toast('Moved to PROJECTS'); setActiveId(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
+            {roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }, { k: 'Budget', v: '' }] }).then(() => { toast('Moved to PROJECTS'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
               : (

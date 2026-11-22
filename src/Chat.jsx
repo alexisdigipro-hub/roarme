@@ -105,6 +105,13 @@ export default function Chat({ me, setMe }) {
   // workspace wherever it is opened; every other chat stays the normal chat
   const proOn = proOk()
   const proKit = useProjects(me, true)
+  // on a computer a tap on a project chat's name shows or hides the Workspace beside it (Alex, 22 Nov); kept on the device
+  const [proShut, setProShut] = useState(() => { try { return localStorage.getItem('roarme-pro-shut') === '1' } catch { return false } })
+  useEffect(() => {
+    const f = () => setProShut((v) => { try { localStorage.setItem('roarme-pro-shut', v ? '0' : '1') } catch { /* private window */ } return !v })
+    window.addEventListener('roarme-pro-toggle', f)
+    return () => window.removeEventListener('roarme-pro-toggle', f)
+  }, [])
   // the chat list and the people kept on the device show at once; the cloud's copy follows (cache.js, Alex, 19 Nov)
   const [rooms, setRooms] = useState(() => lsGet(`rooms-${me.id}`) || [])
   const [people, setPeople] = useState(() => { const p = lsGet(`people-${me.id}`) || {}; Object.values(p).forEach((x) => x?.id && setNameColor(x.id, x.name_color)); return p }) // id -> profile
@@ -1755,12 +1762,12 @@ export default function Chat({ me, setMe }) {
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} toast={toast} />
-        ) : active ? (<div className={proOn && active.kind === 'group' && proKit.map[active.room_id] ? 'prw big' : 'prw-off'}>
+        ) : active ? (<div className={proOn && active.kind === 'group' && proKit.map[active.room_id] && !proShut ? 'prw big' : 'prw-off'}>
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} proArtist={proOn ? String((proKit.map[active.room_id]?.fields || []).find((f) => f.k === 'Title')?.v || '').trim() : ''} />
-          {proOn && active.kind === 'group' && proKit.map[active.room_id] && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
+          {proOn && active.kind === 'group' && proKit.map[active.room_id] && !proShut && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
             <Suspense fallback={null}><Profile inline room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
               onClose={() => {}} onMessage={() => {}} onOpenRoom={(id) => setActiveId(id)} onChanged={loadRooms} onLeft={() => { setActiveId(''); loadRooms() }} loadPeople={loadPeople}
               blocked={blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={(v) => callRoom(active, v)} /></Suspense>
@@ -3640,7 +3647,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
         {(
           <>
-            <button type="button" className="head-card" onClick={onInfo} title="Info">
+            <button type="button" className="head-card" onClick={assetsAside && window.matchMedia('(min-width: 761px)').matches ? () => window.dispatchEvent(new Event('roarme-pro-toggle')) : onInfo} title={assetsAside && window.matchMedia('(min-width: 761px)').matches ? 'Show or hide the Workspace' : 'Info'}>
               {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
               {(room.kind === 'group' ? room.avatar_url : other?.avatar_url) && <i className="head-bg" aria-hidden="true" style={{ backgroundImage: `url("${room.kind === 'group' ? room.avatar_url : other?.avatar_url}")` }} />}
               <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={dotOf(other)} />

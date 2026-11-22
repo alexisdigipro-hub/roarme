@@ -876,23 +876,13 @@ function Stats({ room, people, me, project, compact = false }) {
    the category and the stage, Artist and Title large, how long until the date, and the brief written on it ---------- */
 // the cover's pictures, in turn with the arrows (Alex, 22 Nov: "the group's picture, switched left and right, and one I upload,
 // with crop and zoom"): one's own cover, the group's photo, then the project's newest photos
-function Hero({ photos = [], room, me, project, st, dateName, fields, onBrief, onCover, toast }) {
-  const list = [project.cover && { url: project.cover, own: true }, room.avatar_url && { url: room.avatar_url, group: true }, ...photos.slice(0, 8).map((m) => ({ m }))].filter(Boolean)
-  const [i, setI] = useState(() => { const n = Number(project.cover_pick); return Number.isFinite(n) ? n : 0 })
-  const at = list.length ? ((i % list.length) + list.length) % list.length : 0
-  const cur = list[at]
-  const [bg, setBg] = useState('')
+function Hero({ room, me, project, dateName, fields, onCover, toast }) {
+  // the cover: one's own picture, or the theme's colour (Alex, 22 Nov: "no arrows to change pictures; a photo I put, else
+  // the colour it had"); on it only the project's name; the shoot day stands under the banner
+  const bg = project.cover || ''
   const [crop, setCrop] = useState(null)
   const [busy, setBusy] = useState(false)
   const pick = useRef(null)
-  useEffect(() => {
-    let gone = false
-    if (!cur) { setBg(''); return undefined }
-    if (cur.url) { setBg(cur.url); return undefined }
-    picLink(cur.m.file).then((u) => { if (!gone && u) setBg(u) }).catch(() => {})
-    return () => { gone = true }
-  }, [cur?.url, cur?.m?.id])
-  const turn = (d) => { const n = at + d; setI(n); onCover({ cover_pick: ((n % list.length) + list.length) % list.length }) }
   const upload = async (f) => {
     setCrop(null)
     if (!f) return
@@ -903,35 +893,32 @@ function Hero({ photos = [], room, me, project, st, dateName, fields, onBrief, o
       if (up.error) throw up.error
       const url = supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl
       onCover({ cover: url, cover_pick: 0 })
-      setI(0)
     } catch (e) { toast(errText(e)) }
     setBusy(false)
   }
   const val = (k) => (fields.find((f) => f.k === k)?.v || '').trim()
-  const artist = val('Artist / Client'), work = val('Title'), cat = val('Category')
+  const artist = val('Artist / Client'), work = val('Title')
   let when = ''
   if (project.due) {
     const d = Math.round((new Date(`${project.due}T00:00:00`) - new Date(new Date().toDateString())) / 864e5)
     when = d === 0 ? `${dateName} is today` : d === 1 ? `${dateName} is tomorrow` : d > 1 ? `${dateName} in ${d} days` : `${dateName} was ${-d} day${d === -1 ? '' : 's'} ago`
   }
   return (
-    <section className={`prw-hero wide${bg ? ' has-bg' : ''}`}>
-      {bg && <i key={bg} className="prw-hero-bg" style={{ backgroundImage: `url(${bg})` }} />}
-      <span className="prw-hero-tools">
-        {list.length > 1 && <button type="button" className="round prw-hero-btn" onClick={() => turn(-1)} aria-label="Previous picture" title="Previous picture"><span className="flip">{I.right}</span></button>}
-        {list.length > 1 && <span className="prw-hero-dots">{list.map((x, n) => <i key={n} className={n === at ? 'on' : ''} />)}</span>}
-        {list.length > 1 && <button type="button" className="round prw-hero-btn" onClick={() => turn(1)} aria-label="Next picture" title="Next picture">{I.right}</button>}
-        <button type="button" className="round prw-hero-btn" disabled={busy} onClick={() => pick.current?.click()} aria-label="Upload a cover" title={project.cover ? 'Replace the cover' : 'Upload a cover'}>{I.image}</button>
-        {project.cover && cur?.own && <button type="button" className="round prw-hero-btn" onClick={() => { if (window.confirm('Remove your cover? The group photo and the project photos stay.')) { onCover({ cover: null, cover_pick: 0 }); setI(0) } }} aria-label="Remove the cover" title="Remove the cover">{I.trash}</button>}
-        <input ref={pick} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setCrop(f) }} />
-      </span>
-      <div className="prw-hero-in">
-        <span className="prw-hero-kick">{cat && <span className="prw-hero-cat">{cat}</span>}<span className="prw-hero-st" style={{ '--pc': st.c }}><i className="prw-dot" />{st.name}</span>{when && <span className="prw-hero-when">{I.calendar}{when}</span>}</span>
-        {(artist || work) && <h2>{artist}{artist && work && <span className="prw-hero-sep"> – </span>}{work && <em>{work}</em>}</h2>}
-        <Field area className="prw-hero-brief" value={project.brief} placeholder="Write the brief: what it is, where, when, the look…" onSave={onBrief} />
-      </div>
-      {crop && <CropModal file={crop} wide={3} title="Project cover" onDone={upload} onClose={() => setCrop(null)} />}
-    </section>
+    <>
+      <section className={`prw-hero wide${bg ? ' has-bg' : ''}`}>
+        {bg && <i key={bg} className="prw-hero-bg" style={{ backgroundImage: `url(${bg})` }} />}
+        <span className="prw-hero-tools">
+          <button type="button" className="round prw-hero-btn" disabled={busy} onClick={() => pick.current?.click()} aria-label="Upload a cover" title={bg ? 'Replace the cover' : 'Upload a cover'}>{I.image}</button>
+          {bg && <button type="button" className="round prw-hero-btn" onClick={() => { if (window.confirm('Remove the cover? The banner goes back to its colour.')) onCover({ cover: null, cover_pick: 0 }) }} aria-label="Remove the cover" title="Remove the cover">{I.trash}</button>}
+          <input ref={pick} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setCrop(f) }} />
+        </span>
+        <div className="prw-hero-in">
+          <h2>{artist || work ? <>{artist}{artist && work && <span className="prw-hero-sep"> – </span>}{work && <em>{work}</em>}</> : room.title}</h2>
+        </div>
+        {crop && <CropModal file={crop} wide={3} title="Project cover" onDone={upload} onClose={() => setCrop(null)} />}
+      </section>
+      {when && <div className="prw-when wide">{I.calendar}<span>{when}</span></div>}
+    </>
   )
 }
 
@@ -1456,7 +1443,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">
-            <Hero photos={media.filter((m) => folderOf(m) === 'photos' || m.file?.thumb)} room={room} me={me} project={project} st={st} dateName={dateName} fields={fields} toast={toast} onCover={save} onBrief={(v) => save({ brief: v.slice(0, 4000) })} />
+            <Hero room={room} me={me} project={project} dateName={dateName} fields={fields} toast={toast} onCover={save} />
             {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('files')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {/* the ordino as a slim bar under the cover (Alex, 22 Nov: "there is usually one, the big box stays empty") */}
             <div className="prw-ordbar wide">

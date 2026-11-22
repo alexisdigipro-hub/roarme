@@ -7,7 +7,7 @@ import { inApp } from './push.js'
    chat, with a group able to be a project. Only on the website on a computer for now (not the iPhone app, not the Mac
    apps). The chat list stays the chat list (Projects and Direct join its folders, a project shows its stage); the open
    chat keeps everything it has, and a panel at its right holds the project: stage, due date, brief, fields, its files in
-   folders and its tasks. Turning Pro off hides all of this; the rows in roar_projects stay (supabase/pro.sql). */
+   folders and its tasks. Turning Pro off hides all of this; the rows in roar_pro_projects stay (supabase/pro.sql). */
 
 export const proOk = () => typeof window !== 'undefined' && !inApp() && !window.roarDesktop && window.matchMedia('(min-width: 761px) and (pointer: fine)').matches
 
@@ -22,14 +22,14 @@ const FIELD_START = ['Client', 'Budget', 'Location', 'Lead']
 export function useProjects(me, on) {
   const [map, setMap] = useState({})
   const load = useCallback(async () => {
-    const { data, error } = await supabase.from('roar_projects').select('*')
+    const { data, error } = await supabase.from('roar_pro_projects').select('*')
     if (!error) setMap(Object.fromEntries((data || []).map((p) => [p.room_id, p])))
   }, [])
   useEffect(() => {
     if (!on) return undefined
     load()
-    const ch = supabase.channel(`roar-projects-${me.id}-${Date.now()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_projects' }, (ev) => {
+    const ch = supabase.channel(`roar-pro-projects-${me.id}-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_pro_projects' }, (ev) => {
         if (ev.eventType === 'DELETE') setMap((m) => { const n = { ...m }; delete n[ev.old.room_id]; return n })
         else if (ev.new?.room_id) setMap((m) => ({ ...m, [ev.new.room_id]: ev.new }))
       })
@@ -38,13 +38,13 @@ export function useProjects(me, on) {
   }, [on, me.id, load])
   const save = useCallback(async (roomId, patch) => {
     setMap((m) => ({ ...m, [roomId]: { ...(m[roomId] || {}), room_id: roomId, ...patch } }))
-    const { data, error } = await supabase.from('roar_projects').upsert({ room_id: roomId, ...patch }, { onConflict: 'room_id' }).select().single()
+    const { data, error } = await supabase.from('roar_pro_projects').upsert({ room_id: roomId, ...patch }, { onConflict: 'room_id' }).select().single()
     if (error) { load(); throw error }
     setMap((m) => ({ ...m, [roomId]: data }))
     return data
   }, [load])
   const remove = useCallback(async (roomId) => {
-    const { error } = await supabase.from('roar_projects').delete().eq('room_id', roomId)
+    const { error } = await supabase.from('roar_pro_projects').delete().eq('room_id', roomId)
     if (error) throw error
     setMap((m) => { const n = { ...m }; delete n[roomId]; return n })
   }, [])

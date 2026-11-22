@@ -6927,3 +6927,19 @@ html:root:root:root:root .prw-sendrow.on { background: color-mix(in srgb, var(--
 html:root:root:root:root .prw-ordtext { flex: 1 1 240px; }
 .prw-ordacts { margin-left: auto; }
 @media (max-width: 1400px) { .prw-ordacts .pill-btn span { display: inline; } html:root:root:root:root .prw-ordacts .pill-btn { width: auto; padding: 0 12px; } }
+/* an ordino in the chat (Alex, 22 Nov: "a View so everyone sees it at once, and the link with a Copy beside it"): on the
+   calm card of a scheduled call (.event-b), a stripe of the ordino's accent, View the Ordino, the link with Copy */
+.ordc { position: relative; display: flex; flex-direction: column; gap: 9px; padding: 10px 10px 10px 14px; border-radius: 14px; overflow: hidden; }
+.ordc::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--oa); }
+.ordc-top { display: flex; align-items: center; gap: 10px; }
+.ordc-ico { flex: none; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: var(--oa); background: color-mix(in srgb, var(--oa) 13%, transparent); }
+.ordc-ico svg { width: 20px; height: 20px; }
+.ordc-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ordc-label { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--oa); }
+.ordc-text b { font-size: var(--fs, 14.5px); font-weight: 650; line-height: 1.25; }
+.ordc-text small { font-size: calc(var(--fs, 14.5px) * .82); opacity: .62; }
+html:root:root:root:root .ordc-view { height: 34px; border: 0; border-radius: 17px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--halo-ink, #fff) !important; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; box-shadow: none; backdrop-filter: none; }
+.ordc-link { display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 10px; border-radius: 12px; background: color-mix(in srgb, currentColor 6%, transparent); }
+.ordc-link a { flex: 1; min-width: 0; font-size: 12px; color: inherit; opacity: .7; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:root:root:root:root .ordc-copy { flex: none; display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border: 0; border-radius: 13px; font: inherit; font-size: 12px; font-weight: 600; color: inherit; cursor: pointer; background: color-mix(in srgb, currentColor 8%, transparent); box-shadow: none; }
+.ordc-copy svg { width: 13px; height: 13px; }

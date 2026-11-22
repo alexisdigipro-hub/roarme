@@ -23,8 +23,9 @@ export const stageOf = (p) => stagesOf(p).find((s) => s.id === p?.status) || sta
 export const ProChip = ({ p }) => { const s = stageOf(p); return <span className="prj-chip" style={{ '--pc': s.c }}>{s.name}</span> }
 
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2))
-// a new project starts with Client and Budget; Add Field adds more (Alex, 22 Nov: "only client and budget")
-const FIELD_START = ['Client', 'Budget']
+// a project's first facts (Alex, 22 Nov: "artist / client, apart title, apart category"; Budget stays); Add Field adds more
+const FIELD_START = ['Artist / Client', 'Title', 'Category', 'Budget']
+const CATEGORIES = ['Music Video', 'Commercial', 'Feature Film', 'Short Film', 'Documentary', 'TV Series', 'Branded Content', 'Photoshoot', 'Live Event']
 
 // every project I can see, live
 export function useProjects(me, on) {
@@ -239,13 +240,13 @@ function Section({ id, title, count, children, extra }) {
 }
 
 /* ---------- text that saves when it lets go ---------- */
-function Field({ value, onSave, placeholder, area = false, className = '' }) {
+function Field({ value, onSave, placeholder, area = false, className = '', list }) {
   const [v, setV] = useState(value || '')
   const ref = useRef(null)
   useEffect(() => { if (document.activeElement !== ref.current) setV(value || '') }, [value])
   useEffect(() => { if (area && ref.current) { ref.current.style.height = 'auto'; ref.current.style.height = `${ref.current.scrollHeight}px` } }, [v, area])
   const done = () => { if ((v || '') !== (value || '')) onSave(v) }
-  const P = { ref, value: v, placeholder, className, onChange: (e) => setV(e.target.value), onBlur: done, onKeyDown: (e) => { if (e.key === 'Enter' && (!area || e.metaKey || e.ctrlKey)) { e.preventDefault(); e.currentTarget.blur() } if (e.key === 'Escape') { setV(value || ''); setTimeout(() => e.target.blur()) } } }
+  const P = { ref, value: v, placeholder, className, list, onChange: (e) => setV(e.target.value), onBlur: done, onKeyDown: (e) => { if (e.key === 'Enter' && (!area || e.metaKey || e.ctrlKey)) { e.preventDefault(); e.currentTarget.blur() } if (e.key === 'Escape') { setV(value || ''); setTimeout(() => e.target.blur()) } } }
   return area ? <textarea rows={2} {...P} /> : <input {...P} />
 }
 
@@ -779,10 +780,12 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
   const [hidden, setHidden] = useState(() => { try { return JSON.parse(localStorage.getItem(hiddenKey(room.room_id)) || '[]') } catch { return [] } })
   const flipTab = (k) => { const next = hidden.includes(k) ? hidden.filter((x) => x !== k) : [...hidden, k]; setHidden(next); try { localStorage.setItem(hiddenKey(room.room_id), JSON.stringify(next)) } catch { /* private window */ } }
   const save = (patch) => kit.save(room.room_id, patch).catch((e) => toast(errText(e)))
-  // Location and Lead were in every project's first fields; they go (Alex, 22 Nov: "only client and budget")
+  // the first facts brought to today's set, once: Location and Lead go, Client becomes Artist / Client, Title and Category
+  // come in, in FIELD_START's order with anything else after (Alex, 22 Nov)
   useEffect(() => {
-    const f = Array.isArray(project.fields) ? project.fields : []
-    if (f.some((x) => x.k === 'Location' || x.k === 'Lead')) save({ fields: f.filter((x) => x.k !== 'Location' && x.k !== 'Lead') })
+    const f = (Array.isArray(project.fields) ? project.fields : []).filter((x) => x.k !== 'Location' && x.k !== 'Lead').map((x) => (x.k === 'Client' ? { ...x, k: 'Artist / Client' } : x))
+    const next = [...FIELD_START.map((k) => f.find((x) => x.k === k) || { k, v: '' }), ...f.filter((x) => !FIELD_START.includes(x.k))]
+    if (JSON.stringify(next) !== JSON.stringify(project.fields || [])) save({ fields: next })
   }, [project.room_id]) // eslint-disable-line react-hooks/exhaustive-deps
   const goTab = (t) => { setTab(t); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
   // a tap on the small line in the chat ("2 photos went to Media") or on a #tag opens that tab
@@ -859,11 +862,12 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump }) {
             <div className="prw-box prw-brief-box">
               <h4>Brief</h4>
               <Field area className="prj-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} />
+              <datalist id="prw-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
               <div className="prw-facts">
                 {fields.map((f, i) => (
                   <div key={i} className="prw-fact">
                     <Field className="prw-fact-k" value={f.k} placeholder="Field" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
-                    <Field className="prw-fact-v" value={f.v} placeholder="—" onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
+                    <Field className="prw-fact-v" value={f.v} placeholder="—" list={f.k === 'Category' ? 'prw-cats' : undefined} onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
                     <button type="button" className="prj-kvdel" onClick={() => save({ fields: fields.filter((_, n) => n !== i) })} aria-label="Remove field" title="Remove">{I.x}</button>
                   </div>
                 ))}

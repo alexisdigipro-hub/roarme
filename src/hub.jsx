@@ -91,7 +91,7 @@ export function HubPage({ toast = () => {} }) {
             <i className="hb-dot" />
             <span className="hb-t"><b>Linked to {me.hub}</b><small>{me.projects ? `${me.projects} project${me.projects === 1 ? '' : 's'} tied` : 'No projects tied yet'} · since {new Date(me.at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}</small></span>
           </div>
-          <p className="hb-hint">Every group in PROJECTS is a project of {me.hub}: its name, stage, shoot day, category, tasks and locations stay the same on both sides. A project made in the hub brings a new group here, and a group made a project here makes one there.</p>
+          <p className="hb-hint">Every group in PROject is a project of {me.hub}: its name, stage, shoot day, category, tasks and locations stay the same on both sides. A project made in the hub brings a new group here, and a group made a project here makes one there.</p>
           <div className="hb-acts">
             <button type="button" className="pill-btn" disabled={busy} onClick={() => run({ action: 'linkall' }, 'Up to date.')}>{busy ? 'Working…' : 'Sync Now'}</button>
             <button type="button" className="pill-btn hb-off" disabled={busy} onClick={() => { if (window.confirm(`Unlink RoarMe from ${me.hub}? Your groups and the hub's projects both stay; they just stop following each other.`)) run({ action: 'disconnect' }, 'Unlinked') }}>Unlink</button>
@@ -99,7 +99,7 @@ export function HubPage({ toast = () => {} }) {
         </>
       ) : (
         <>
-          <p className="hb-hint">Link RoarMe to your production hub. Every group in PROJECTS becomes a project there, and every project there a group here, with tasks, locations, stage and shoot day kept the same on both sides.</p>
+          <p className="hb-hint">Link RoarMe to your production hub. Every group in PROject becomes a project there, and every project there a group here, with tasks, locations, stage and shoot day kept the same on both sides.</p>
           <small className="hb-cap">Hub key</small>
           <div className="set-box hb-pad">
             <input className="hb-key" value={key} onChange={(e) => setKey(e.target.value.trim())} placeholder="tmlhub_…" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} />

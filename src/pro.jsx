@@ -1494,7 +1494,8 @@ export function ProPanel(props) {
   }, [narrow, props.room.room_id])
   if (narrow) {
     // two pages: the chat as it is, and the project over it; a Chat | Project switch under the chat's head
-    const sw = <span className="prw-sw2" role="tablist"><button type="button" className={side === 'chat' ? 'on' : ''} onClick={() => setSide('chat')}>Chat</button><button type="button" className={side === 'proj' ? 'on' : ''} onClick={() => setSide('proj')}><span className="prw-gold">Project</span></button></span>
+    // the head of the project's page is the chat's own joined capsule: the group's name (back to the chat) and Project, lit
+    const sw = <span className="prw-join" role="tablist"><button type="button" className="prw-join-name" onClick={() => setSide('chat')}><b>{props.room.title || 'Chat'}</b></button><button type="button" className="on"><span className="prw-gold">Project</span></button></span>
     return (
       <>
         <span ref={anchor} hidden />

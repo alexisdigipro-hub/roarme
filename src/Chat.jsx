@@ -717,7 +717,8 @@ export default function Chat({ me, setMe }) {
   // PROJECTS, always there (Alex, 22 Nov): not deleted, not renamed; last until it is moved
   // in the order dragged in Settings > Folders (Alex, 16 Oct); a folder not placed yet goes at the end
   const fOrder = prefs.folderOrder || []
-  const fRank = (id) => { const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
+  // Archived is always last, held at the bar's right end, and never moved (Alex, 22 Nov: "stuck on the menu, the names go behind it")
+  const fRank = (id) => { if (id === 'archived') return 1e9; const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
   // the ready-made folders can be renamed and, except All, deleted (Alex, 16 Oct)
   const hiddenF = prefs.hiddenFolders || []
   const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), { id: 'projects', name: 'PROJECTS', fixed: true }]
@@ -783,10 +784,11 @@ export default function Chat({ me, setMe }) {
   }
   // a tab dragged sideways in the bar: it follows the finger and swaps places as it passes a neighbour's middle
   const tabDown = (e, f) => {
-    if (!editTabs || (e.button != null && e.button !== 0)) return
+    if (!editTabs || (e.button != null && e.button !== 0) || f.id === 'archived') return
     const nav = tabsLens.current
     const el = e.currentTarget
-    let d = { id: f.id, x0: e.clientX, moved: false, order: tabsShown.map((x) => x.id), shift: 0 }
+    const tail = tabsShown.some((x) => x.id === 'archived') ? ['archived'] : []
+    let d = { id: f.id, x0: e.clientX, moved: false, order: tabsShown.map((x) => x.id).filter((id) => id !== 'archived'), shift: 0 }
     const move = (ev) => {
       let off = ev.clientX - d.x0 - d.shift
       if (!d.moved) { if (Math.abs(ev.clientX - d.x0) < 6) return; d.moved = true }
@@ -797,13 +799,13 @@ export default function Chat({ me, setMe }) {
       const next = btns.find((b) => b.dataset.tab === d.order[at + 1]), prev = btns.find((b) => b.dataset.tab === d.order[at - 1])
       if (next && off > next.offsetWidth / 2) { const o = [...d.order]; [o[at], o[at + 1]] = [o[at + 1], o[at]]; d.order = o; d.shift += next.offsetWidth; off -= next.offsetWidth }
       else if (prev && off < -prev.offsetWidth / 2) { const o = [...d.order]; [o[at - 1], o[at]] = [o[at], o[at - 1]]; d.order = o; d.shift -= prev.offsetWidth; off += prev.offsetWidth }
-      setTabDrag({ id: d.id, dx: off, order: d.order })
+      setTabDrag({ id: d.id, dx: off, order: [...d.order, ...tail] })
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
-      if (d.moved) { setPrefs({ folderOrder: d.order }); tabSkip.current = Date.now() }
+      if (d.moved) { setPrefs({ folderOrder: [...d.order, ...tail] }); tabSkip.current = Date.now() }
       setTabDrag(null)
       d = null
     }

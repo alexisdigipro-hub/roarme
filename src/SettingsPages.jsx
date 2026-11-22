@@ -974,21 +974,7 @@ function Appearance({ p, toast, me, setMe }) {
       <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
     </div>
   )
-  // Roar or Frost (Alex, 14 Nov). Frost brings its own palette and wall; while it is on, only Theme and Day and Night show
-  const themeRow = (
-    <div className="set-row apx-line">
-      <span className="set-text">Theme</span>
-      <Lens className="seg" dep={p.frost ? 'frost' : 'glass'}>{[[false, 'Roar'], [true, 'Frost']].map(([v, l]) => <button key={l} type="button" className={!!p.frost === v ? 'on' : ''} onClick={(e) => revealFrom(e, () => setPrefs({ frost: v }))}>{l}</button>)}</Lens>
-    </div>
-  )
-  if (p.frost) {
-    return (
-      <Box note="Frost has its own colours and wall. Your colour, wallpaper and the rest come back when you choose Roar.">
-        {themeRow}
-        {modeRow}
-      </Box>
-    )
-  }
+  // one theme, Roar (Alex, 22 Nov: "take Frost out, we keep only Roar, so take both out"): no Theme row
   const tabs = (
     <div className="apx-tabs">
       <Lens className="seg" dep={tab}>{[['colours', 'Colours'], ['chats', 'Chats'], ['app', 'App']].map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => goTab(k)}>{l}</button>)}</Lens>
@@ -1002,7 +988,6 @@ function Appearance({ p, toast, me, setMe }) {
         <div className="apx-pane" key="colours">
           <Box>
             {colourPv}
-            {themeRow}
             {modeRow}
             {/* one colour (Alex, 19 Nov): it paints one's own messages, Send and the buttons; Message Colours, Accent
                 Opacity and Glass Look are gone */}

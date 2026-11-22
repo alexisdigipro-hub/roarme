@@ -996,7 +996,7 @@ function Stats({ room, people, me, project, compact = false }) {
 // with crop and zoom"): one's own cover, the group's photo, then the project's newest photos
 const MOVE_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" /></svg>
 const CROP_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></svg>
-function Hero({ room, me, project, dateName, fields, onCover, toast }) {
+function Hero({ room, me, project, dateName, fields, onCover, toast, banner = true }) {
   // the cover: one's own picture, else the Production Hub's, else the theme's colour; 'none' = no picture even with the hub's
   // (Alex, 22 Nov). One settings button opens a small menu: Change Photo, Reposition, Crop, Remove
   const bg = project.cover === 'none' ? '' : (project.cover || project.hub_cover || '')
@@ -1038,7 +1038,7 @@ function Hero({ room, me, project, dateName, fields, onCover, toast }) {
   }
   return (
     <>
-      <section className={`prw-hero wide${bg ? ' has-bg' : ''}${moving ? ' moving' : ''}`} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+      {banner && <section className={`prw-hero wide${bg ? ' has-bg' : ''}${moving ? ' moving' : ''}`} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         {bg && <i key={bg} className="prw-hero-bg" style={{ backgroundImage: `url(${bg})`, backgroundPosition: `${pos.x}% ${pos.y}%` }} />}
         <span className="prw-hero-tools">
           {moving ? (
@@ -1070,7 +1070,7 @@ function Hero({ room, me, project, dateName, fields, onCover, toast }) {
           <h2>{artist || work ? <>{artist}{artist && work && <span className="prw-hero-sep"> – </span>}{work && <em>{work}</em>}</> : room.title}</h2>
         </div>
         {crop && <CropModal file={crop} wide={3} title="Project cover" onDone={upload} onClose={() => setCrop(null)} />}
-      </section>
+      </section>}
       {when && <div className="prw-when wide">{I.calendar}<span>{when}</span></div>}
     </>
   )
@@ -1398,6 +1398,7 @@ function Admin({ room, people, me, project, toast }) {
 /* ---------- the project's settings, a page of its own (Alex, 22 Nov: "the gear opens a page with all of it, the details'
    fields set from there, only the written ones on the Overview; navigation inside, back and with a swipe") ---------- */
 const SET_I = {
+  banner: tsv(<><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m3 16 5-5 4 4 3-3 6 6" /><circle cx="16" cy="9" r="1.6" /></>),
   hub: tsv(<><circle cx="12" cy="12" r="3" /><circle cx="5" cy="6" r="2" /><circle cx="19" cy="6" r="2" /><circle cx="12" cy="20" r="2" /><path d="M6.6 7.3 9.7 10M17.4 7.3 14.3 10M12 15v3" /></>),
   details: tsv(<><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M8 9h8M8 13h8M8 17h5" /></>),
   stages: tsv(<><circle cx="6" cy="12" r="2.2" /><circle cx="12" cy="12" r="2.2" /><circle cx="18" cy="12" r="2.2" /></>),
@@ -1454,7 +1455,7 @@ function MembersChats({ room, me, people, boss, toast, onClose }) {
   )
 }
 
-function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, boss, toast, project, save, fields, setField, hidden, flipTab, adminIn, notesOn, dateName, onStop, onClose }) {
+function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, boss, toast, project, save, fields, setField, hidden, flipTab, adminIn, notesOn, bannerOn, dateName, onStop, onClose }) {
   const [stack, setStack] = useState([start]) // the pages walked into; back goes one step out
   const page = stack[stack.length - 1]
   const [dir, setDir] = useState(1)
@@ -1537,6 +1538,7 @@ function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, 
             <small className="prs2-cap">More</small>
             <div className="prs2-box">
               {row('hub', 'Production Hub', hub === undefined ? '' : hub ? `A project of ${hub.hub}` : 'Not in a hub', () => go('hub'))}
+              <button type="button" className="prs2-row" onClick={() => setPrefs({ proBanner: !getPrefs().proBanner })}><i className="prs2-ic">{SET_I.banner}</i><span className="prs2-t"><b>Banner</b><small>The project's cover picture with its name, on top of the Overview</small></span><i className={`prw-sw${bannerOn ? ' on' : ''}`} /></button>
               <button type="button" className="prs2-row" onClick={() => setPrefs({ proNotes: !getPrefs().proNotes })}><i className="prs2-ic">{SET_I.side}</i><span className="prs2-t"><b>Show What Went to the Side</b><small>A small line in the chat when a photo or file goes to the project</small></span><i className={`prw-sw${notesOn ? ' on' : ''}`} /></button>
               <button type="button" className="prs2-row danger" onClick={onStop}><i className="prs2-ic">{I.trash}</i><span className="prs2-t"><b>Stop Being a Project</b><small>The chat stays; the stage, details, tasks and locations go. In the hub the project stays, unlinked.</small></span></button>
             </div>
@@ -1644,6 +1646,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     return true
   }
   const notesOn = !!usePrefs().proNotes
+  const bannerOn = !!usePrefs().proBanner
   const [gone, setGone] = useState(() => new Set())
   const [isAdmin, setIsAdmin] = useState(false)
   useEffect(() => { supabase.rpc('roar_is_admin').then(({ data }) => setIsAdmin(data === true), () => {}) }, [])
@@ -1770,7 +1773,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">
-            <Hero room={room} me={me} project={project} dateName={dateName} fields={fields} toast={toast} onCover={save} />
+            <Hero room={room} me={me} project={project} dateName={dateName} fields={fields} toast={toast} onCover={save} banner={bannerOn} />
             {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('files')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {/* the ordino as a slim bar under the cover (Alex, 22 Nov: "there is usually one, the big box stays empty") */}
             <div className="prw-ordbar wide">
@@ -1866,7 +1869,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       </div>
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
-      {setOpen && <ProSettings key={String(setOpen)} start={setOpen === true ? 'home' : setOpen} roomId={room.room_id} room={room} me={me} people={people} boss={room.role === 'admin'} toast={toast} project={project} save={save} fields={fields} setField={setField} hidden={hidden} flipTab={flipTab} adminIn={adminIn} notesOn={notesOn} dateName={dateName} onClose={() => setSetOpen(false)}
+      {setOpen && <ProSettings key={String(setOpen)} start={setOpen === true ? 'home' : setOpen} roomId={room.room_id} room={room} me={me} people={people} boss={room.role === 'admin'} toast={toast} project={project} save={save} fields={fields} setField={setField} hidden={hidden} flipTab={flipTab} adminIn={adminIn} notesOn={notesOn} bannerOn={bannerOn} dateName={dateName} onClose={() => setSetOpen(false)}
         onStop={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields, tasks and locations are deleted; the chat stays.')) { setSetOpen(false); kit.remove(room.room_id).catch((e) => toast(errText(e))) } }} />}
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
       {ordView && <OrdinoView o={ordView} onClose={() => setOrdView(null)} onSend={() => { setOrdSend(ordView); setOrdView(null) }} />}

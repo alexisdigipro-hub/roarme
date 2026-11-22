@@ -84,6 +84,8 @@ export function getPrefs() {
     const p = { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY)) || {}) }
     // the folder tabs on the left became tabs at the bottom (Alex, 16 Oct)
     if (p.folderTabs === 'left') p.folderTabs = 'bottom'
+    // Frost is gone (Alex, 22 Nov): whoever wore it is back on Roar, with the colours and wallpaper they had there
+    p.frost = false
     // Glass was for a few hours a mode beside Light; it is a theme of its own (Alex, 12 Nov)
     if (p.mode === 'glass') { p.mode = 'light'; p.theme = 'glass' }
     // Stone, Halo and Air are gone (Alex, 12 Nov): everyone is on Glass. Halo's own look carries over as it is; a colour or

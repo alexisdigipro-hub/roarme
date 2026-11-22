@@ -1191,3 +1191,10 @@ html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .top-haze 
 html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .top-haze > b:nth-child(3) { height: 52%; -webkit-backdrop-filter: blur(6px) !important; backdrop-filter: blur(6px) !important; }
 html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > :is(.side-head, .nowbar, .search-wrap, .bday-pill),
 html:root:root:root:root[data-glass][data-skin='halo'] .app > .side > .rooms-area > * { position: relative; z-index: 3; }
+
+/* Copy link was rounder at the ends than Share (Alex, 22 Nov, Invite people): on an iPhone a backdrop blur on a
+   999px pill is drawn with smaller corners, so the accent buttons' blur showed as a rounded box inside the pill.
+   The accent buttons need no blur (their fill is nearly solid), and the invite's two buttons take exactly half their
+   44px height as corners, so they are the same pill on every browser. */
+html:root:root:root:root[data-glass] :is(.btn-main, .send.ready, .trx-get:not(.soft), .art-send, .nowbar-btn, .attach-send) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root:root:root[data-glass] .inv-acts .btn { border-radius: 22px !important; }

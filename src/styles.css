@@ -7303,3 +7303,14 @@ html:root:root:root:root:root .prw-join > button.on { flex: none; font-size: 14p
 .prw-phone-top { justify-content: flex-end; }
 .prw-join { width: auto; max-width: 100%; }
 html:root:root:root:root:root .prw-join-name { flex: 0 1 auto; padding: 0 20px; opacity: .7; }
+/* the project's date on a phone (Alex, 22 Nov: "the date does not show, cannot be picked"): words in the pill, the
+   phone's date wheel unseen over them; the name menu's own field is a clear box */
+.prw-datewrap { position: relative; flex: 1 1 0; min-width: 0; align-self: stretch; display: flex; align-items: center; padding: 0 8px 0 2px; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.prw-datewrap > span { overflow: hidden; text-overflow: ellipsis; }
+.prw-datewrap > span.none { font-weight: 500; opacity: .55; }
+html:root:root:root:root:root .prw-phone .prw-pill.date .prw-datewrap input { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; margin: 0; padding: 0; opacity: 0; font-size: 16px; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.prw-phone .prw-custom { padding: 6px 12px 12px; }
+.prw-phone .prw-custom input { box-sizing: border-box; height: 42px; border-radius: 14px; padding: 0 14px; font-size: 16px; background: rgba(255, 255, 255, .7); box-shadow: inset 0 0 0 1px rgba(20, 30, 50, .1); }
+html[data-mode='dark'] .prw-phone .prw-custom input { background: rgba(255, 255, 255, .1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12); }
+html:root:root:root:root:root:root:root .prw-phone .prw-menu .prw-custom { display: block; width: auto; height: auto; padding: 6px 12px 12px; }
+html:root:root:root:root:root:root:root .prw-phone .prw-menu .prw-custom input { display: block; width: 100% !important; min-width: 0; height: 42px; border-radius: 14px !important; }

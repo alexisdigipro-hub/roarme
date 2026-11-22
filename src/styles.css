@@ -7098,3 +7098,8 @@ html:root:root:root:root .prs-proj > div { font-size: 12px; gap: 3px 8px; }
 html:root:root:root:root .prs .prw-tagbar { margin: 0; gap: 4px; }
 html:root:root:root:root .prs .prw-tagchip { height: 24px; padding: 0 9px; font-size: 11.5px; }
 html:root:root:root:root .prs-person { grid-template-columns: 20px minmax(50px, 1.6fr) minmax(24px, 1fr) 22px; }
+/* Files in sections (Alex, 22 Nov: "music in Files, apart from the others: Documents, then a line, Music, anything else apart") */
+.prw-filesecs { display: flex; flex-direction: column; gap: 6px; }
+.prw-filesec + .prw-filesec { padding-top: 10px; border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+.prw-filesec .prw-h { display: flex; align-items: baseline; gap: 6px; margin: 4px 0 8px; }
+.prw-filesec .prw-h small { font-size: 10.5px; padding: 0 6px; border-radius: 8px; background: color-mix(in srgb, currentColor 9%, transparent); letter-spacing: 0; }

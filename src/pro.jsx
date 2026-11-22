@@ -92,7 +92,7 @@ export const asideTab = (m) => {
   if (f.location || f.live) return 'places'
   if (f.poll) return 'polls'
   if (f.contact) return 'contacts'
-  return isMediaMsg(m) ? 'media' : folderOf(m) === 'audio' ? 'music' : 'files'
+  return isMediaMsg(m) ? 'media' : 'files'
 }
 const isFileMsg = (m) => (m.kind === 'image' || m.kind === 'file') && !!m.file?.path && !m.file.groupcall
 const isMediaMsg = (m) => isFileMsg(m) && (folderOf(m) === 'photos' || folderOf(m) === 'videos')
@@ -305,8 +305,6 @@ function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, on
    =================================================================================================================== */
 
 const URL_RX = /https?:\/\/[^\s<>()"']+[^\s<>()"'.,;:!?]/g
-const TAG_RX = /(^|[^\p{L}\p{N}_&/#])#([\p{L}\p{N}_]{2,40})/gu
-const tagsIn = (t) => [...String(t || '').matchAll(TAG_RX)].map((x) => x[2])
 const day = (d) => new Date(d).toLocaleDateString([], { day: 'numeric', month: 'short' })
 
 // everything the workspace shows from the chat: messages with something attached, and text with links or #tags
@@ -318,7 +316,7 @@ function useRoomStuff(roomId) {
     const load = async () => {
       const [a, w, h] = await Promise.all([
         supabase.from('roar_messages').select('id, user_id, kind, body, file, created_at').eq('room_id', roomId).not('file', 'is', null).is('deleted_at', null).order('created_at', { ascending: false }).limit(600),
-        supabase.from('roar_messages').select('id, user_id, kind, body, created_at').eq('room_id', roomId).eq('kind', 'text').or('body.ilike.*http*,body.ilike.*#*').is('deleted_at', null).order('created_at', { ascending: false }).limit(600),
+        supabase.from('roar_messages').select('id, user_id, kind, body, created_at').eq('room_id', roomId).eq('kind', 'text').ilike('body', '%http%').is('deleted_at', null).order('created_at', { ascending: false }).limit(600),
         supabase.from('roar_msg_hides').select('message_id').eq('room_id', roomId),
       ])
       const hid = new Set((h.data || []).map((x) => x.message_id))
@@ -581,7 +579,7 @@ function Calls({ list, room, people, me, onDrop }) {
 
 /* ---------- Links and Tags ---------- */
 function Links({ words, people, me, onJump, onDrop }) {
-  const list = words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].map((u) => ({ u, m })))
+  const list = words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter((u) => !isMapLink(u)).map((u) => ({ u, m })))
   if (!list.length) return <p className="prj-quiet">No links yet. Links sent in the chat stay there and gather here too.</p>
   return (
     <div className="prj-list prw-links">
@@ -596,27 +594,6 @@ function Links({ words, people, me, onJump, onDrop }) {
           </div>
         )
       })}
-    </div>
-  )
-}
-
-function Tags({ words, people, me, onJump, pick, setPick }) {
-  const all = {}
-  words.forEach((m) => [...new Set(tagsIn(m.body).map((t) => t.toLowerCase()))].forEach((t) => { (all[t] = all[t] || []).push(m) }))
-  const tags = Object.entries(all).sort((a, b) => b[1].length - a[1].length)
-  if (!tags.length) return <p className="prj-quiet">No tags yet. Write #something in a message (#callsheet, #location, #wardrobe) and every message with it gathers here as one thread.</p>
-  const chosen = pick && all[pick] ? pick : tags[0][0]
-  return (
-    <div className="prw-tags">
-      <div className="prw-tagbar">{tags.map(([t, l]) => <button key={t} type="button" className={`prw-tagchip${t === chosen ? ' on' : ''}`} onClick={() => setPick(t)}>#{t}<small>{l.length}</small></button>)}</div>
-      <div className="prw-thread">
-        {[...all[chosen]].reverse().map((m) => (
-          <button key={m.id} type="button" className="prw-tmsg" onClick={() => onJump(m.id)} title="Show in chat">
-            <span className="prw-tmsg-head"><b>{m.user_id === me.id ? 'You' : nameOf(people[m.user_id])}</b><small>{new Date(m.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span>
-            <span className="prw-tmsg-text">{String(m.body).split(TAG_RX).map((part, n, arr) => (n % 3 === 2 ? <mark key={n}>#{part}</mark> : n % 3 === 1 ? part : arr[n]))}</span>
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
@@ -662,7 +639,6 @@ const TAB_I = {
   scout: tsv(<><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2l1.5-2h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /><circle cx="12" cy="12.5" r="3.5" /></>),
   calls: tsv(<><rect x="3" y="6" width="12.5" height="12" rx="3" /><path d="m15.5 10.5 5-3v9l-5-3" /></>),
   links: tsv(<><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>),
-  tags: tsv(<path d="M9 3.5 7 20.5M17 3.5l-2 17M4 8.5h16.5M3.5 15.5H20" />),
   polls: tsv(<path d="M5 20V12M10 20V5M15 20v-9M20 20V8" />),
   places: tsv(<><path d="M12 21s-6.5-5.8-6.5-11a6.5 6.5 0 0 1 13 0c0 5.2-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.4" /></>),
   contacts: tsv(<><circle cx="12" cy="8" r="3.8" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>),
@@ -670,7 +646,7 @@ const TAB_I = {
   admin: tsv(<><rect x="3.5" y="6.5" width="17" height="13" rx="3" /><path d="M9 6.5V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v1.5M3.5 12h17M12 11v2.5" /></>),
   stats: tsv(<><path d="M4 20h16" /><rect x="5.5" y="11" width="3" height="6.5" rx="1" /><rect x="10.5" y="6" width="3" height="11.5" rx="1" /><rect x="15.5" y="13.5" width="3" height="4" rx="1" /></>),
 }
-const OPTIONAL = [['music', 'Music'], ['scout', 'Location Scout'], ['calls', 'Calls & Meetings'], ['links', 'Links'], ['tags', 'Tags'], ['tasks', 'Tasks'], ['stats', 'Stats']]
+const OPTIONAL = [['scout', 'Location Scout'], ['calls', 'Calls & Meetings'], ['links', 'Links'], ['tasks', 'Tasks'], ['stats', 'Stats']]
 const hiddenKey = (roomId) => `roarme-pro-hide-${roomId}`
 
 /* ---------- a document read inside RoarMe (Alex, 22 Nov: "tap a document and read it, a preview of the text"):
@@ -831,9 +807,6 @@ function Stats({ room, people, me, project, compact = false }) {
   })
   const mMax = Math.max(1, ...month.map((x) => x.n)), hMax = Math.max(1, ...hours)
   const busyHour = hours.indexOf(Math.max(...hours)), busyDay = week.indexOf(Math.max(...week))
-  const tagCount = {}
-  rows.forEach((m) => [...new Set(tagsIn(m.body).map((t) => t.toLowerCase()))].forEach((t) => { tagCount[t] = (tagCount[t] || 0) + 1 }))
-  const tags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 12)
   const tasks = Array.isArray(project.tasks) ? project.tasks : []
   const scouts = Array.isArray(project.scouts) ? project.scouts : []
   const nameFor = (id) => (id === me.id ? 'You' : nameOf(people[id]))
@@ -875,7 +848,6 @@ function Stats({ room, people, me, project, compact = false }) {
             <div><span>Members</span><b>{(room.members || []).length}</b></div>
           </div>
         </div>
-        {tags.length > 0 && <div className="prw-box wide"><h4>Top Tags</h4><div className="prw-tagbar">{tags.map(([t, n]) => <span key={t} className="prw-tagchip static">#{t}<small>{n}</small></span>)}</div></div>}
       </div>
       {rows.length >= 5000 && <p className="prj-quiet">Counted from the newest 5,000 messages.</p>}
     </div>
@@ -1180,7 +1152,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [custom, setCustom] = useState('')
   const [mf, setMf] = useState('all')
   const [view, setView] = useState(null)
-  const [tag, setTag] = useState('')
   const [doc, setDoc] = useState(null)
   const [ordinoOpen, setOrdinoOpen] = useState(false)
   const [ordView, setOrdView] = useState(null)
@@ -1250,7 +1221,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const goTab = (t) => { setTab(t); try { sessionStorage.setItem(`roarme-pro-tab-${room.room_id}`, t) } catch { /* private window */ } }
   // a tap on the small line in the chat ("2 photos went to Media") or on a #tag opens that tab
   useEffect(() => {
-    const f = (e) => { if (e.detail?.room !== room.room_id) return; if (e.detail.tag) { setTag(e.detail.tag.toLowerCase()); goTab('tags') } else if (e.detail.tab) goTab(e.detail.tab) }
+    const f = (e) => { if (e.detail?.room !== room.room_id) return; const t = { places: 'links', music: 'files', contacts: 'contacts' }[e.detail.tab] || e.detail.tab; if (t) goTab(t) }
     window.addEventListener('roarme-pro-tab', f)
     return () => window.removeEventListener('roarme-pro-tab', f)
   }, [room.room_id])
@@ -1264,7 +1235,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const calls = [...assets.filter((m) => m.file.groupcall), ...(stuff.meets || []).filter((m) => !gone.has(m.id))]
   const words = stuff.words.filter((m) => !gone.has(m.id))
   const links = words.filter((m) => URL_RX.test(m.body) && ((URL_RX.lastIndex = 0), true))
-  const tagged = words.filter((m) => tagsIn(m.body).length)
+  const linkCount = links.reduce((a, m) => a + [...new Set(String(m.body).match(URL_RX) || [])].filter((u) => !isMapLink(u)).length, 0)
   const maps = words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter(isMapLink).map((u) => ({ u, m })))
   const tasks = Array.isArray(project.tasks) ? project.tasks : []
   const scouts = Array.isArray(project.scouts) ? project.scouts : []
@@ -1272,8 +1243,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const ordinos = Array.isArray(project.ordinos) ? project.ordinos : []
   const st = stageOf(project)
   const dateName = project.date_label || 'Shoot Date'
-  const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length], ['music', 'Music', music.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', links.length], ['tags', 'Tags', tagged.length],
-    ...(polls.length ? [['polls', 'Polls', polls.length]] : []), ...(places.length + maps.length ? [['places', 'Places', places.length + maps.length]] : []), ...(cards.length ? [['contacts', 'Contacts', cards.length]] : []),
+  const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length + music.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', linkCount + places.length + maps.length], 
+    ...(polls.length ? [['polls', 'Polls', polls.length]] : []), ...(cards.length ? [['contacts', 'Contacts', cards.length]] : []),
     ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0], adminIn ? ['admin', 'Admin'] : ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
   const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
   const shownMedia = media.filter((m) => mf === 'all' || folderOf(m) === mf)
@@ -1349,7 +1320,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 {fields.length < 20 && <button type="button" className="prw-fact add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
               </div>
             </div>
-            {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('music')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
+            {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('files')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {/* the ordino as a slim bar under the cover (Alex, 22 Nov: "there is usually one, the big box stays empty") */}
             <div className="prw-ordbar wide">
               {ordinos.length ? ordinos.map((o) => (
@@ -1381,21 +1352,34 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
             {stuff.assets === null ? <p className="prj-quiet">Loading…</p> : shownMedia.length ? <div className="prw-grid big">{shownMedia.map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(shownMedia, i)} onDrop={drop} />)}</div> : <p className="prj-quiet">No photos or videos yet. What is sent in the chat comes here.</p>}
           </>
         )}
-        {shownTab === 'files' && (files.length ? (
-          <div className="prj-list prw-files">{files.map((m) => (
-            <div key={m.id} className="prw-link"><button type="button" className="prj-row" onClick={() => (folderOf(m) === 'audio' ? openFile(m) : setDoc(m))}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button><Trash onClick={() => drop(m, 'this file')} /></div>
-          ))}</div>
-        ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents and sound files sent in the chat come here.'}</p>)}
-        {shownTab === 'music' && (music.length ? (
-          <div className="prw-songs">{music.map((m) => songBar(m))}</div>
-        ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No music yet. Drop an MP3 or WAV into the chat and it plays here.'}</p>)}
+        {shownTab === 'files' && (files.length + music.length ? (
+          <div className="prw-filesecs">
+            {[['docs', 'Documents'], ['audio', 'Music'], ['other', 'Other']].map(([k, label]) => {
+              const list = k === 'audio' ? music : files.filter((m) => (k === 'docs' ? folderOf(m) === 'docs' : folderOf(m) !== 'docs'))
+              if (!list.length) return null
+              return (
+                <section key={k} className="prw-filesec">
+                  <h6 className="prw-h">{label}<small>{list.length}</small></h6>
+                  {k === 'audio' ? <div className="prw-songs">{list.map((m) => songBar(m))}</div> : (
+                    <div className="prj-list prw-files">{list.map((m) => (
+                      <div key={m.id} className="prw-link"><button type="button" className="prj-row" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button><Trash onClick={() => drop(m, 'this file')} /></div>
+                    ))}</div>
+                  )}
+                </section>
+              )
+            })}
+          </div>
+        ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents, music and anything else sent in the chat come here.'}</p>)}
         {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
         {shownTab === 'calls' && <Calls list={calls} room={room} people={people} me={me} onDrop={drop} />}
-        {shownTab === 'links' && <Links words={links} people={people} me={me} onJump={onJump} onDrop={drop} />}
-        {shownTab === 'tags' && <Tags words={tagged} people={people} me={me} onJump={onJump} pick={tag} setPick={setTag} />}
+        {shownTab === 'links' && (linkCount + places.length + maps.length ? (
+          <div className="prw-filesecs">
+            {linkCount > 0 && <section className="prw-filesec"><h6 className="prw-h">Links<small>{linkCount}</small></h6><Links words={links} people={people} me={me} onJump={onJump} onDrop={drop} /></section>}
+            {places.length + maps.length > 0 && <section className="prw-filesec"><h6 className="prw-h">Places<small>{places.length + maps.length}</small></h6><Places list={places} maps={maps} people={people} me={me} onDrop={drop} hasUrl={(u) => scouts.some((x) => x.mapsUrl === u)}
+          onAdd={(p) => { save({ scouts: [...scouts, { id: uid(), type: 'Exterior', st: 'option', contact: '', phone: '', notes: '', tags: [], photos: [], ...p }] }); toast(`${p.name} added to Location Scout`) }} /></section>}
+          </div>
+        ) : <p className="prj-quiet">No links yet. Links and places sent in the chat stay there and gather here too.</p>)}
         {shownTab === 'polls' && <div className="prw-polls">{polls.map((m) => <div key={m.id} className="prj-poll prw-pollwrap"><Trash className="corner" onClick={() => drop(m, 'this poll')} /><Suspense fallback={<p className="prj-quiet">Poll</p>}><PollCard id={m.id} me={me.id} people={people} canStop={room.role === 'admin'} /></Suspense></div>)}</div>}
-        {shownTab === 'places' && <Places list={places} maps={maps} people={people} me={me} onDrop={drop} hasUrl={(u) => scouts.some((x) => x.mapsUrl === u)}
-          onAdd={(p) => { save({ scouts: [...scouts, { id: uid(), type: 'Exterior', st: 'option', contact: '', phone: '', notes: '', tags: [], photos: [], ...p }] }); toast(`${p.name} added to Location Scout`) }} />}
         {shownTab === 'contacts' && <Contacts list={cards} people={people} onDrop={drop} />}
         {shownTab === 'tasks' && <Board list={tasks} onChange={(next) => save({ tasks: next })} />}
         {shownTab === 'stats' && <Stats room={room} people={people} me={me} project={project} />}

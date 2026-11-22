@@ -665,8 +665,9 @@ const TAB_I = {
   places: tsv(<><path d="M12 21s-6.5-5.8-6.5-11a6.5 6.5 0 0 1 13 0c0 5.2-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.4" /></>),
   contacts: tsv(<><circle cx="12" cy="8" r="3.8" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>),
   tasks: tsv(<><rect x="4" y="3.5" width="16" height="17" rx="3.5" /><path d="m8 9 1.6 1.6L12.5 7.8M8 15l1.6 1.6 2.9-2.8M14.5 9.5H16M14.5 15.5H16" /></>),
+  stats: tsv(<><path d="M4 20h16" /><rect x="5.5" y="11" width="3" height="6.5" rx="1" /><rect x="10.5" y="6" width="3" height="11.5" rx="1" /><rect x="15.5" y="13.5" width="3" height="4" rx="1" /></>),
 }
-const OPTIONAL = [['scout', 'Location Scout'], ['calls', 'Calls & Meetings'], ['links', 'Links'], ['tags', 'Tags'], ['tasks', 'Tasks']]
+const OPTIONAL = [['scout', 'Location Scout'], ['calls', 'Calls & Meetings'], ['links', 'Links'], ['tags', 'Tags'], ['tasks', 'Tasks'], ['stats', 'Stats']]
 const hiddenKey = (roomId) => `roarme-pro-hide-${roomId}`
 
 /* ---------- a document read inside RoarMe (Alex, 22 Nov: "tap a document and read it, a preview of the text"):
@@ -780,6 +781,128 @@ function OrdinoWindow({ onClose, onSent }) {
   )
 }
 
+/* ---------- Stats: the whole chat in numbers (Alex, 22 Nov: "the statistics of the whole chat, made nicely, and more") ----------
+   the newest 5,000 messages, counted on the device; bars in the accent (one series, one hue), a hover names each one */
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+function Stats({ room, people, me, project }) {
+  const [rows, setRows] = useState(null)
+  useEffect(() => {
+    let gone = false
+    setRows(null)
+    ;(async () => {
+      const all = []
+      for (let from = 0; from < 5000; from += 1000) {
+        const { data, error } = await supabase.from('roar_messages').select('user_id, kind, body, file, created_at').eq('room_id', room.room_id).is('deleted_at', null).order('created_at', { ascending: false }).range(from, from + 999)
+        if (error || !data) break
+        all.push(...data)
+        if (data.length < 1000) break
+      }
+      if (!gone) setRows(all.filter((m) => m.kind !== 'system'))
+    })()
+    return () => { gone = true }
+  }, [room.room_id])
+  if (!rows) return <p className="prj-quiet">Counting…</p>
+  if (!rows.length) return <p className="prj-quiet">No messages yet.</p>
+  const media = rows.filter((m) => isFileMsg(m) && isMediaMsg(m)).length
+  const files = rows.filter((m) => isFileMsg(m) && !isMediaMsg(m)).length
+  const voice = rows.filter((m) => m.kind === 'voice')
+  const voiceMin = Math.round(voice.reduce((a, m) => a + (Number(m.file?.dur) || 0), 0) / 60)
+  const links = rows.reduce((a, m) => a + ((m.kind === 'text' && String(m.body || '').match(URL_RX)) || []).length, 0)
+  const bytes = rows.reduce((a, m) => a + (isFileMsg(m) ? Number(m.file.size) || 0 : 0), 0)
+  const first = rows[rows.length - 1].created_at
+  const days = new Set(rows.map((m) => new Date(m.created_at).toDateString())).size
+  const by = {}
+  rows.forEach((m) => { by[m.user_id] = (by[m.user_id] || 0) + 1 })
+  const talkers = Object.entries(by).sort((a, b) => b[1] - a[1])
+  const top = talkers[0]?.[1] || 1
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const month = Array.from({ length: 30 }, (_, i) => { const d = new Date(today); d.setDate(d.getDate() - 29 + i); return { d, n: 0 } })
+  const hours = Array(24).fill(0)
+  const week = Array(7).fill(0)
+  rows.forEach((m) => {
+    const t = new Date(m.created_at)
+    hours[t.getHours()] += 1
+    week[t.getDay()] += 1
+    const k = Math.floor((today - new Date(t.getFullYear(), t.getMonth(), t.getDate())) / 864e5)
+    if (k >= 0 && k < 30) month[29 - k].n += 1
+  })
+  const mMax = Math.max(1, ...month.map((x) => x.n)), hMax = Math.max(1, ...hours)
+  const busyHour = hours.indexOf(Math.max(...hours)), busyDay = week.indexOf(Math.max(...week))
+  const tagCount = {}
+  rows.forEach((m) => [...new Set(tagsIn(m.body).map((t) => t.toLowerCase()))].forEach((t) => { tagCount[t] = (tagCount[t] || 0) + 1 }))
+  const tags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 12)
+  const tasks = Array.isArray(project.tasks) ? project.tasks : []
+  const scouts = Array.isArray(project.scouts) ? project.scouts : []
+  const nameFor = (id) => (id === me.id ? 'You' : nameOf(people[id]))
+  const KPI = [['Messages', rows.length.toLocaleString()], ['Photos and videos', media], ['Files', files], ['Voice messages', voice.length, voiceMin ? `${voiceMin} min` : ''], ['Links', links], ['Shared', sizeText(bytes) || '0 KB'], ['Days active', days, `since ${day(first)}`]]
+  return (
+    <div className="prs">
+      <div className="prs-kpis">{KPI.map(([l, v, sub]) => <div key={l} className="prs-kpi"><b>{v}</b><span>{l}</span>{sub && <small>{sub}</small>}</div>)}</div>
+      <div className="prs-grid">
+        <div className="prw-box">
+          <h4>Who Writes Most</h4>
+          <div className="prs-people">
+            {talkers.slice(0, 8).map(([id, n]) => (
+              <div key={id} className="prs-person" title={`${nameFor(id)}: ${n} messages`}>
+                <Avatar src={people[id]?.avatar_url} name={nameOf(people[id])} size={28} />
+                <span className="prs-pname">{nameFor(id)}</span>
+                <span className="prs-track"><i style={{ width: `${Math.max(2, (n / top) * 100)}%` }} /></span>
+                <b>{n}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="prw-box">
+          <h4>Last 30 Days</h4>
+          <div className="prs-cols">{month.map((x, i) => <span key={i} className="prs-col" title={`${x.d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })}: ${x.n} messages`}><i style={{ height: `${x.n ? Math.max(4, (x.n / mMax) * 100) : 0}%` }} /></span>)}</div>
+          <div className="prs-axis"><span>{month[0].d.toLocaleDateString([], { day: 'numeric', month: 'short' })}</span><span>Today</span></div>
+        </div>
+        <div className="prw-box">
+          <h4>By Hour</h4>
+          <div className="prs-cols hours">{hours.map((n, h) => <span key={h} className={`prs-col${h === busyHour ? ' top' : ''}`} title={`${String(h).padStart(2, '0')}:00: ${n} messages`}><i style={{ height: `${n ? Math.max(4, (n / hMax) * 100) : 0}%` }} /></span>)}</div>
+          <div className="prs-axis four"><span>00</span><span>06</span><span>12</span><span>18</span></div>
+          <p className="prs-note">Busiest at <b>{String(busyHour).padStart(2, '0')}:00</b>, most on <b>{WEEKDAYS[busyDay]}s</b></p>
+        </div>
+        <div className="prw-box">
+          <h4>The Project</h4>
+          <div className="prs-proj">
+            <div><span>Tasks done</span><b>{tasks.filter((t) => t.s === 'done').length} of {tasks.length}</b><span className="prs-track"><i style={{ width: `${tasks.length ? (tasks.filter((t) => t.s === 'done').length / tasks.length) * 100 : 0}%` }} /></span></div>
+            <div><span>Locations confirmed</span><b>{scouts.filter((x) => x.st === 'confirmed').length} of {scouts.length}</b><span className="prs-track"><i style={{ width: `${scouts.length ? (scouts.filter((x) => x.st === 'confirmed').length / scouts.length) * 100 : 0}%` }} /></span></div>
+            <div><span>Ordinos</span><b>{(project.ordinos || []).length}</b></div>
+            <div><span>Members</span><b>{(room.members || []).length}</b></div>
+          </div>
+        </div>
+        {tags.length > 0 && <div className="prw-box wide"><h4>Top Tags</h4><div className="prw-tagbar">{tags.map(([t, n]) => <span key={t} className="prw-tagchip static">#{t}<small>{n}</small></span>)}</div></div>}
+      </div>
+      {rows.length >= 5000 && <p className="prj-quiet">Counted from the newest 5,000 messages.</p>}
+    </div>
+  )
+}
+
+/* ---------- the Overview's cover (Alex, 22 Nov: "make this page much more beautiful"): the newest photo behind, darkened,
+   the category and the stage, Artist and Title large, how long until the date, and the brief written on it ---------- */
+function Hero({ media, project, title, st, dateName, fields, onBrief }) {
+  const [bg, setBg] = useState('')
+  useEffect(() => { let gone = false; setBg(''); if (media) picLink(media.file).then((u) => { if (!gone && u) setBg(u) }).catch(() => {}); return () => { gone = true } }, [media?.id])
+  const val = (k) => (fields.find((f) => f.k === k)?.v || '').trim()
+  const artist = val('Artist / Client'), work = val('Title'), cat = val('Category')
+  let when = ''
+  if (project.due) {
+    const d = Math.round((new Date(`${project.due}T00:00:00`) - new Date(new Date().toDateString())) / 864e5)
+    when = d === 0 ? `${dateName} is today` : d === 1 ? `${dateName} is tomorrow` : d > 1 ? `${dateName} in ${d} days` : `${dateName} was ${-d} day${d === -1 ? '' : 's'} ago`
+  }
+  return (
+    <section className={`prw-hero wide${bg ? ' has-bg' : ''}`}>
+      {bg && <i className="prw-hero-bg" style={{ backgroundImage: `url(${bg})` }} />}
+      <div className="prw-hero-in">
+        <span className="prw-hero-kick">{cat && <span className="prw-hero-cat">{cat}</span>}<span className="prw-hero-st" style={{ '--pc': st.c }}><i className="prw-dot" />{st.name}</span>{when && <span className="prw-hero-when">{I.calendar}{when}</span>}</span>
+        <h2>{artist || work ? <>{artist}{artist && work && <span className="prw-hero-sep"> – </span>}{work && <em>{work}</em>}</> : title}</h2>
+        <Field area className="prw-hero-brief" value={project.brief} placeholder="Write the brief: what it is, where, when, the look…" onSave={onBrief} />
+      </div>
+    </section>
+  )
+}
+
 function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged }) {
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
@@ -846,7 +969,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const dateName = project.date_label || 'Shoot Date'
   const TABS = [['overview', 'Overview'], ['media', 'Media', media.length], ['files', 'Files', files.length], ['scout', 'Location Scout', scouts.length], ['calls', 'Calls & Meetings', calls.length], ['links', 'Links', links.length], ['tags', 'Tags', tagged.length],
     ...(polls.length ? [['polls', 'Polls', polls.length]] : []), ...(places.length + maps.length ? [['places', 'Places', places.length + maps.length]] : []), ...(cards.length ? [['contacts', 'Contacts', cards.length]] : []),
-    ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0]].filter(([k]) => !hidden.includes(k))
+    ['tasks', 'Tasks', tasks.length ? `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}` : 0], ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
   const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
   const shownMedia = media.filter((m) => mf === 'all' || folderOf(m) === mf)
   const openMedia = (list, i) => setView({ items: list, index: i })
@@ -906,9 +1029,9 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">
-            <div className="prw-box prw-brief-box">
-              <h4>Brief</h4>
-              <Field area className="prj-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} />
+            <Hero media={media[0]} project={project} title={title} st={st} dateName={dateName} fields={fields} onBrief={(v) => save({ brief: v.slice(0, 4000) })} />
+            <div className="prw-box prw-brief-box wide">
+              <h4>Details</h4>
               <datalist id="prw-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
               <div className="prw-facts">
                 {fields.map((f, i) => (
@@ -921,15 +1044,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 {fields.length < 20 && <button type="button" className="prw-fact add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
               </div>
             </div>
-            <div className="prw-box">
-              <h4>At a Glance</h4>
-              <div className="prw-glance">
-                <button type="button" onClick={() => goTab('media')}><b>{media.length}</b><span>Photos and videos</span></button>
-                <button type="button" onClick={() => goTab('files')}><b>{files.length}</b><span>Files</span></button>
-                <button type="button" onClick={() => goTab('scout')}><b>{scouts.filter((x) => x.st === 'confirmed').length}/{scouts.length}</b><span>Locations confirmed</span></button>
-                <button type="button" onClick={() => goTab('tasks')}><b>{tasks.filter((t) => t.s === 'done').length}/{tasks.length}</b><span>Tasks done</span></button>
-              </div>
-            </div>
             <div className="prw-box wide">
               <div className="prw-boxhead"><h4>Ordinos</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => setOrdinoOpen(true)}>{I.plus}<span>New Ordino</span></button></div>
               {ordinos.length ? (
@@ -937,6 +1051,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                   {ordinos.map((o) => (
                     <div key={o.token || o.url} className="prw-ordino" style={{ '--oa': o.accent || '#d40000' }}>
                       <a href={o.url} target="_blank" rel="noopener noreferrer" className="prw-ordino-in">
+                        {o.date && !Number.isNaN(new Date(o.date).getTime()) && <i className="prw-ordino-cal"><small>{new Date(o.date).toLocaleDateString([], { month: 'short' })}</small><b>{new Date(o.date).getDate()}</b></i>}
                         <span className="prw-ordino-label">{o.label || 'Ordino'}</span>
                         <b>{o.title || title}</b>
                         <small>{[o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ') || 'Open the call sheet'}</small>
@@ -947,7 +1062,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 </div>
               ) : <p className="prj-quiet">No ordino yet. New Ordino opens Roardino; make the call sheet there and press Send, and it stays here.</p>}
             </div>
-            {media.length > 0 && <div className="prw-box wide"><h4>Latest Media</h4><div className="prw-grid">{media.slice(0, 8).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
+            {media.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-grid mosaic">{media.slice(0, 7).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
           </div>
         )}
         {shownTab === 'media' && (
@@ -970,6 +1085,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           onAdd={(p) => { save({ scouts: [...scouts, { id: uid(), type: 'Exterior', st: 'option', contact: '', phone: '', notes: '', tags: [], photos: [], ...p }] }); toast(`${p.name} added to Location Scout`) }} />}
         {shownTab === 'contacts' && <Contacts list={cards} people={people} onDrop={drop} />}
         {shownTab === 'tasks' && <Board list={tasks} onChange={(next) => save({ tasks: next })} />}
+        {shownTab === 'stats' && <Stats room={room} people={people} me={me} project={project} />}
       </div>
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}

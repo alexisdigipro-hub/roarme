@@ -6825,3 +6825,69 @@ html:root:root:root:root .prw-fact:hover .prw-fact-del, html:root:root:root:root
 @media (hover: none) { html:root:root:root:root .prw-fact-del { opacity: .6; } }
 .prw-fact-del svg { width: 12px; height: 12px; }
 .prw-fact input.prw-fact-k { padding-right: 26px; }
+/* Stats (Alex, 22 Nov): numbers on top, then who writes most, the last 30 days, by hour, the project, top tags; one hue,
+   thin bars with 4px rounded ends and a 2px gap, the busiest hour a touch stronger, a hover names each bar */
+.prs { display: flex; flex-direction: column; gap: 14px; }
+.prs-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.prs-kpi { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 18px; background: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .58)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 0 0 1px rgba(255, 255, 255, .55), 0 8px 24px rgba(20, 30, 50, .06); }
+html[data-mode='dark'] .prs-kpi { background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .04)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.prs-kpi b { font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
+.prs-kpi span { font-size: 12px; opacity: .62; }
+.prs-kpi small { font-size: 11px; opacity: .5; }
+.prs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.prs-grid .wide { grid-column: 1 / -1; }
+@media (max-width: 1250px) { .prs-grid { grid-template-columns: 1fr; } }
+.prs-people { display: flex; flex-direction: column; gap: 8px; }
+.prs-person { display: grid; grid-template-columns: 28px minmax(60px, 120px) 1fr 40px; align-items: center; gap: 10px; font-size: 13px; }
+.prs-pname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prs-person b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.prs-track { display: block; height: 8px; border-radius: 4px; background: color-mix(in srgb, currentColor 7%, transparent); overflow: hidden; }
+.prs-track i { display: block; height: 100%; border-radius: 4px; background: var(--halo-mine, var(--accent)); }
+.prs-cols { display: flex; align-items: flex-end; gap: 2px; height: 120px; padding-top: 6px; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
+.prs-col { flex: 1; height: 100%; display: flex; align-items: flex-end; cursor: default; }
+.prs-col i { display: block; width: 100%; border-radius: 4px 4px 0 0; background: color-mix(in srgb, var(--halo-mine, var(--accent)) 70%, transparent); transition: background .15s; }
+.prs-col:hover i, .prs-col.top i { background: var(--halo-mine, var(--accent)); }
+.prs-axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; opacity: .5; }
+.prs-note { margin: 10px 0 0; font-size: 13px; opacity: .75; }
+.prs-proj { display: flex; flex-direction: column; gap: 12px; }
+.prs-proj > div { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: baseline; font-size: 13px; }
+.prs-proj > div > span:first-child { opacity: .62; }
+.prs-proj .prs-track { grid-column: 1 / -1; }
+html:root:root:root:root .prw-tagchip.static { cursor: default; }
+/* The Overview, with a cover (Alex, 22 Nov): the newest photo behind a dark fall, or the accent's own glow; the kicker line
+   (category, stage, the countdown) as small glass chips; Artist – Title large; the brief on it in light words. Details below,
+   four to a row on a wide screen; ordinos with a date tile; the latest media as a mosaic with the first one large */
+.prw-hero { position: relative; overflow: hidden; border-radius: 26px; min-height: 220px; display: flex; align-items: flex-end; color: #fff; background: radial-gradient(120% 120% at 0% 0%, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent)) 55%, color-mix(in srgb, var(--halo-mine, var(--accent)) 60%, #0b1020)); box-shadow: 0 14px 40px rgba(20, 30, 50, .16); }
+.prw-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transform: scale(1.04); }
+.prw-hero.has-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8, 10, 16, .15) 0%, rgba(8, 10, 16, .55) 55%, rgba(8, 10, 16, .85) 100%); }
+.prw-hero-in { position: relative; z-index: 1; width: 100%; padding: 22px 24px 18px; display: flex; flex-direction: column; gap: 8px; }
+.prw-hero-kick { display: flex; flex-wrap: wrap; gap: 6px; }
+.prw-hero-kick > span { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; border-radius: 13px; font-size: 12px; font-weight: 600; background: rgba(255, 255, 255, .16); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; }
+.prw-hero-kick svg { width: 13px; height: 13px; }
+.prw-hero-st .prw-dot { box-shadow: 0 0 0 2px rgba(255, 255, 255, .5); }
+.prw-hero h2 { margin: 2px 0 0; font-size: clamp(24px, 2.6vw, 34px); line-height: 1.12; font-weight: 750; letter-spacing: -.02em; text-wrap: balance; text-shadow: 0 2px 16px rgba(0, 0, 0, .25); }
+.prw-hero h2 em { font-style: normal; font-weight: 400; opacity: .92; }
+.prw-hero-sep { opacity: .55; font-weight: 300; }
+.prw-hero-brief { width: 100%; box-sizing: border-box; resize: none; overflow: hidden; border: 0; outline: 0; border-radius: 12px; padding: 6px 8px; margin: 0 -8px; font: inherit; font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, .92); background: transparent; transition: background .2s; }
+.prw-hero-brief:hover, .prw-hero-brief:focus { background: rgba(255, 255, 255, .1); }
+.prw-hero-brief::placeholder { color: rgba(255, 255, 255, .6); }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-lite]):not([data-still]) .prw-hero-bg { animation: prw-ken 18s ease-in-out infinite alternate; }
+  html:not([data-lite]):not([data-still]) .prw-hero h2, html:not([data-lite]):not([data-still]) .prw-hero-kick { animation: prw-in .5s cubic-bezier(.25, .9, .35, 1) both; }
+}
+@keyframes prw-ken { from { transform: scale(1.04) translate(0, 0); } to { transform: scale(1.12) translate(-1.5%, -1%); } }
+@media (min-width: 1300px) { .prw-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.prw-ordino-in { position: relative; padding-right: 64px; }
+.prw-ordino-cal { position: absolute; top: 12px; right: 12px; width: 42px; height: 44px; border-radius: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-style: normal; background: color-mix(in srgb, var(--oa) 12%, transparent); }
+.prw-ordino-cal small { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--oa); }
+.prw-ordino-cal b { font-size: 18px; font-weight: 700; line-height: 1.1; }
+.prw-ordino .prj-kvdel { top: auto; bottom: 8px; }
+.prw-boxbtn svg { width: 13px; height: 13px; }
+.prw-grid.mosaic { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 118px; gap: 8px; }
+.prw-grid.mosaic > .prw-tilewrap:first-child { grid-column: span 2; grid-row: span 2; }
+.prw-grid.mosaic > .prw-tilewrap { height: 100%; }
+html:root:root:root:root .prw-grid.mosaic .prw-tile { aspect-ratio: auto; height: 100%; }
+@media (min-width: 1300px) { .prw-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1560px) { .prw-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.prw-fact input.prw-fact-k { padding-right: 0; text-overflow: ellipsis; }
+.prw-fact:hover input.prw-fact-k, .prw-fact:focus-within input.prw-fact-k { padding-right: 24px; }

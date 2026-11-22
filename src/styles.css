@@ -7558,3 +7558,71 @@ html:root:root:root:root:root .prw-tabs:not(.slide) .prw-bar .prw-bi svg { width
 /* a song's waveform finer (Alex, 22 Nov): thin bars close together, from the sound itself */
 .prw-wave { gap: 1px; height: 30px; }
 .prw-wave i { min-width: 1px; border-radius: 1px; }
+/* on a computer the Workspace's tabs are words only, minimal and bold (Alex, 22 Nov: "only titles, bold, no icons; the
+   icons for the phone") */
+html:root:root:root:root:root:root:root .prw-work > .prw-tabs:not(.slide) .prw-bar > button { height: 40px; padding: 0 6px; }
+.prw-work > .prw-tabs:not(.slide) .prw-bl { display: block !important; font-size: 13px; font-weight: 700; letter-spacing: -.005em; }
+@container prwtabs (max-width: 520px) { .prw-work > .prw-tabs:not(.slide) .prw-bl { font-size: 11px; } html:root:root:root:root:root:root:root .prw-work > .prw-tabs:not(.slide) .prw-bar > button { height: 38px; padding: 0 2px; } }
+html:root:root:root:root:root:root:root .prw-work > .prw-tabs:not(.slide) .prw-bar > button { flex: 1 0 auto; min-width: max-content; padding: 0 10px; }
+.prw-work > .prw-tabs:not(.slide) .prw-bl { overflow: visible; text-overflow: clip; font-size: 12.5px; }
+html:root:root:root:root:root:root:root .prw-work > .prw-tabs:not(.slide) .prw-bar { overflow-x: auto; scrollbar-width: none; }
+.prw-work > .prw-tabs:not(.slide) .prw-bar::-webkit-scrollbar { display: none; }
+@container prwtabs (max-width: 520px) { html:root:root:root:root:root:root:root .prw-work > .prw-tabs:not(.slide) .prw-bar > button { padding: 0 8px; } }
+/* @ in a new task (Alex, 22 Nov): the group's members under the field, the chosen name lit in the task, faces at its end */
+.prj-addwrap { position: relative; flex: 1; min-width: 0; display: flex; }
+.prj-addwrap input { flex: 1; }
+.prj-atlist { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px); display: flex; flex-direction: column; padding: 6px; border-radius: 18px; background: rgba(242, 242, 246, .96); box-shadow: 0 10px 30px rgba(20, 30, 50, .16), inset 0 0 0 1px rgba(255, 255, 255, .8); }
+html[data-mode='dark'] .prj-atlist { background: rgba(44, 44, 49, .97); box-shadow: 0 10px 30px rgba(0, 0, 0, .4), inset 0 0 0 1px rgba(255, 255, 255, .06); }
+html:root:root:root:root:root .prj-atlist > button { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border: 0; border-radius: 12px; background: none; box-shadow: none; text-align: left; font: inherit; font-size: 14px; color: inherit; cursor: pointer; }
+html:root:root:root:root:root .prj-atlist > button.on, html:root:root:root:root:root .prj-atlist > button:hover { background: color-mix(in srgb, currentColor 7%, transparent); }
+.prj-at { font-weight: 650; color: var(--halo-mine, var(--accent)); }
+.prj-twho { flex: none; display: flex; margin-left: 4px; }
+.prj-twho > * + * { margin-left: -6px; }
+
+/* Tasks as the TML Hub's: one list, status inside each task (Alex, 22 Nov) */
+.tk-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tk-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 16px; background: color-mix(in srgb, currentColor 4%, transparent); }
+.tk-row.p-urgent { box-shadow: inset 3px 0 0 #e5484d; }
+.tk-row.p-high { box-shadow: inset 3px 0 0 #f08c00; }
+html:root:root:root:root .tk-check { flex: none; width: 22px; height: 22px; min-width: 22px; margin-top: 1px; padding: 0; border-radius: 50%; border: 1.7px solid rgba(128, 128, 128, .55); background: none; box-shadow: none; color: #fff; display: grid; place-items: center; cursor: pointer; }
+html:root:root:root:root .tk-check.sm { width: 18px; height: 18px; min-width: 18px; margin-top: 0; }
+html:root:root:root:root .tk-row.done > .tk-check, html:root:root:root:root .tk-subs li.done .tk-check { border-color: transparent; background: #14a37f; }
+.tk-check svg { width: 12px; height: 12px; stroke-width: 3; }
+.tk-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.tk-title { font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; cursor: text; }
+.tk-row.done .tk-title { opacity: .5; text-decoration: line-through; }
+.tk-flag { font-style: normal; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-right: 7px; padding: 1px 6px; border-radius: 6px; vertical-align: 1px; }
+.tk-flag.urgent { color: #e5484d; background: rgba(229, 72, 77, .12); }
+.tk-flag.high { color: #f08c00; background: rgba(240, 140, 0, .12); }
+html:root:root:root:root .tk-edit { width: 100%; font: inherit; font-size: 15px; padding: 4px 8px; border-radius: 9px; border: 1px solid color-mix(in srgb, currentColor 18%, transparent); background: transparent; color: inherit; }
+.tk-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+html:root:root:root:root .tk-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; border: 0; box-shadow: none; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--pc, currentColor); background: color-mix(in srgb, var(--pc, currentColor) 12%, transparent); white-space: nowrap; }
+html:root:root:root:root .tk-pill.plain { --pc: currentColor; color: inherit; background: color-mix(in srgb, currentColor 7%, transparent); font-weight: 500; }
+html:root:root:root:root .tk-pill.unset { opacity: .55; }
+html:root:root:root:root .tk-pill.on { opacity: 1; background: color-mix(in srgb, currentColor 13%, transparent); }
+html:root:root:root:root .tk-pill.late { color: #e5484d; background: rgba(229, 72, 77, .1); opacity: 1; }
+.tk-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pc); }
+.tk-pill select, .tk-pill input[type='date'] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0; font-size: 16px; }
+.tk-pill input[type='date']::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+.tk-who .prj-twho { display: inline-flex; }
+.tk-whowrap { position: relative; }
+.tk-veil { position: fixed; inset: 0; z-index: 40; }
+html:root:root:root:root .tk-whomenu { position: absolute; top: 30px; left: 0; z-index: 41; min-width: 220px; max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; }
+.tk-whomenu button { display: flex; align-items: center; gap: 10px; }
+.tk-whomenu .grow { flex: 1; text-align: left; }
+.tk-subs { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tk-subs li { display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 28px; }
+.tk-subs li .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.tk-subs li.done .grow { opacity: .5; text-decoration: line-through; }
+html:root:root:root:root .tk-subadd input { width: 100%; height: 32px; font: inherit; font-size: 14px; padding: 0 12px; border-radius: 10px; border: 1px dashed color-mix(in srgb, currentColor 22%, transparent); background: transparent; color: inherit; }
+html:root:root:root:root .tk-del { flex: none; width: 28px; height: 28px; min-width: 28px; padding: 0; border-radius: 50%; border: 0; box-shadow: none; background: none; color: inherit; opacity: .35; display: grid; place-items: center; cursor: pointer; }
+.tk-del svg { width: 14px; height: 14px; }
+@media (hover: hover) { html:root:root:root:root .tk-row > .tk-del { opacity: 0; } html:root:root:root:root .tk-row:hover > .tk-del { opacity: .45; } }
+html:root:root:root:root .tk-donebar { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; height: 32px; padding: 0 14px 0 10px; border-radius: 16px; border: 0; box-shadow: none; font: inherit; font-size: 13px; font-weight: 600; color: inherit; background: color-mix(in srgb, currentColor 6%, transparent); cursor: pointer; }
+.tk-chev { display: grid; transition: transform .2s; }
+.tk-chev.on { transform: rotate(90deg); }
+.tk-chev svg { width: 14px; height: 14px; }
+.tk-completed .tk-row { background: color-mix(in srgb, currentColor 2.5%, transparent); }
+.prw-board-wrap.tk { max-width: 860px; }
+html:root:root:root:root .tk-pill.pri-urgent { color: #e5484d; background: rgba(229, 72, 77, .12); font-weight: 600; }
+html:root:root:root:root .tk-pill.pri-high { color: #f08c00; background: rgba(240, 140, 0, .12); font-weight: 600; }

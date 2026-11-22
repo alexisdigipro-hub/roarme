@@ -12,7 +12,7 @@ export const DEFAULTS = {
   radius: 12, // corners of the Ember theme, 4 to 16
   motion: true, // smooth animations
   focusRings: false, // a bold ring around whatever has the keyboard
-  textSize: 0, // 0..4 (TEXT_SIZES); 12.5 px is how RoarMe starts and what Reset goes back to (Alex, 21 Nov, his own settings; 14.5 before)
+  textSize: 1, // 0..4 (TEXT_SIZES); 13.5 px is how RoarMe starts and what Reset goes back to (Alex, 22 Nov, his own settings; 12.5 on 21 Nov)
   bigEmoji: true,
   glassBubbles: true, // your own messages see-through with an accent edge, like a RoarTransfer (Alex, 17 Oct)
   listPreview: true, // the last message and its time in the chat list; on since 12 Nov, when Alex picked the list as a glass panel that shows them (it was off since 17 Oct)
@@ -73,7 +73,7 @@ export const DEFAULTS = {
   accentHex: '', // any accent colour of one's own (accent 'h-custom'); none at the start since 22 Nov
   myBubble: '#3AA7E8', // the colour of one's own messages: the accent's (applyLook sets it from the accent)
   theirBubble: '', // the colour of the others' messages
-  bubbleR: 6, // Message Corners in px (0 = the theme's own); 6 px is how RoarMe starts and what Reset goes back to (Alex, 21 Nov)
+  bubbleR: 13, // Message Corners in px (0 = the theme's own); 13 px is how RoarMe starts and what Reset goes back to (Alex, 22 Nov; 6 on 21 Nov)
 }
 export const WALLS = [['soft', 'Plain'], ['dots', 'Pattern'], ['grid', 'Grid'], ['night', 'Night'], ['ocean', 'Ocean'], ['dusk', 'Dusk'], ['forest', 'Forest'], ['ember', 'Ember'], ['stone', 'Frost']]
 // a step smaller (Alex, 8 Nov: "the letters a little smaller"); the middle one, the default, is 14.5

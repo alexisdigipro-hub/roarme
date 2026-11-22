@@ -255,6 +255,8 @@ export const themeFor = () => 'glass'
 // Halo's own colours (Alex, 12 Nov, from a palette he sent): the colour, its lighter form for the dark, the gradient your
 // messages and the main buttons wear, and the ink on them
 export const HALO_ACCENTS = [
+  // RoarMe's own blue, first (Alex, 22 Nov: "#3AA7E8, our basic colour")
+  ['h-roar', 'Roar Blue', '#3AA7E8', '#7cc6f1', ['#5cb9ef', '#2a8fd4'], '#ffffff'],
   ['h-navy', 'Navy', '#031B88', '#8f9ce8', ['#2a3aa8', '#8f9ce8'], '#ffffff'],
   ['h-blue', 'Blue', '#6096FD', '#7fa9fd', ['#6f97f6', '#e48aa0'], '#ffffff'],
   ['h-lilac', 'Lilac', '#AAB6FB', '#AAB6FB', ['#b4befc', '#6f9cfd'], '#1b2152'], // dark words, as on Pink (Alex, 12 Nov)
@@ -275,6 +277,11 @@ export const HALO_ACCENTS = [
   ['h-umber', 'Umber', '#3a2f26', '#c7b6a6', ['#6b5a4b', '#3a2f26'], '#fffaf4'],
   ['h-onyx', 'Onyx', '#1b1b20', '#c9c9d2', ['#4a4a55', '#0e0e12'], '#ffffff'],
   ['h-fire', 'Fire', '#E2572B', '#ff8a5c', ['#f6b73c', '#d92d3a'], '#ffffff'],
+  // four new ones (Alex, 22 Nov: "and four more we do not have")
+  ['h-mint', 'Mint', '#14B89A', '#5ee0c6', ['#3fd9bb', '#0c9c82'], '#ffffff'],
+  ['h-violet', 'Violet', '#7B4DFF', '#a98bff', ['#9a78ff', '#5a2fe0'], '#ffffff'],
+  ['h-magenta', 'Magenta', '#D6338A', '#f27ab8', ['#f05aa6', '#b01f6e'], '#ffffff'],
+  ['h-ocean', 'Ocean', '#0F6E7A', '#5cc2cf', ['#1f95a3', '#0a4f59'], '#ffffff'],
 ]
 const hexA = (h, a) => `rgba(${parseInt(h.slice(1, 3), 16)}, ${parseInt(h.slice(3, 5), 16)}, ${parseInt(h.slice(5, 7), 16)}, ${a})`
 export const ACCENTS = [['blue', 'Blue', '#3b82f6'], ['green', 'Green', '#22c55e'], ['yellow', 'Yellow', '#facc15'], ['orange', 'Orange', '#f97316'], ['red', 'Red', '#d40000'], ['magenta', 'Magenta', '#d946ef'], ['violet', 'Violet', '#8b5cf6'], ['cyan', 'Cyan', '#22d3ee'], ['coral', 'Coral', '#ff6b57'], ['white', 'White', '#ffffff'], ['black', 'Black', '#111111']]

@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, dotOf, statusOf, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
-import { ASIDE_TABS, ProChip, ProPanel, asideTab, isAsset, proOk, useProjects } from './pro.jsx'
+import { ASIDE_TABS, OrdinoCard, OrdinoView, ProChip, ProPanel, asideTab, isAsset, ordinoOf, proOk, useProjects } from './pro.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls, CALL_EDGE } from './calls.jsx'
@@ -2320,6 +2320,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }, [backTick, find, wallPick, schedOpen, rolesOpen, sealAsk])
   const [locOpen, setLocOpen] = useState(false)
   const [locView, setLocView] = useState(null)
+  const [ordView, setOrdView] = useState(null) // an ordino opened from its card in the chat
   const [pdfView, setPdfView] = useState(null) // a PDF opened inside RoarMe
   // the message box grows with what is written, wrapped lines too; past a few lines a corner button makes it big
   // (Alex, 17 Oct, as on Telegram) and it shrinks back once the message is sent
@@ -3357,7 +3358,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   /* The messages, drawn again only when something they show changes (Alex, 21 Oct: RoarMe lighter): typing in the box
      below no longer redraws every message. Their buttons call the newest handlers through `hands`. */
   const hands = useRef({})
-  hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setCinema, byId, picked, setReplyTo }
+  hands.current = { onTap, onDouble, onBubble, openMenu, goTo, react, hideForMe, setReplies, flipWide, openPhoto, onCall, setLocView, setOrdView, setCinema, byId, picked, setReplyTo }
   // Holding a message on a phone (Alex, 8 Nov: "when I hold it, a small pop-up so I know it took it"): the bubble gives
   // under the finger at once, and after 420 ms it pops, the phone ticks and the menu opens while the finger is still down.
   // Moving the finger (a scroll, a swipe to reply) lets it go. A short tap opens nothing (11 Nov).
@@ -3522,6 +3523,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           const isAud = m.kind === 'voice' || (m.kind === 'file' && !isTransfer && !m.file?.roartransfer && isAudioFile(m.file))
           const kindCls = `${m.file?.roartransfer ? ' rt-b' : ''}${isAud ? ' aud-b' : ''}${m.kind === 'file' && !isAud && !m.file?.roartransfer && !m.file?.event && !m.file?.location && !m.file?.article && (m.file?.asFile || !/^(image|video)\//.test(m.file?.type || '')) ? ' file-b' : ''}${!m.body && !(m.reply_to && byId[m.reply_to] && !byId[m.reply_to].deleted_at) && !(m.user_id !== me.id && room.kind === 'group') ? ' solo' : ''}`
           const isVideo = m.kind === 'file' && !isTransfer && !m.file?.asFile && /^video\//.test(m.file?.type || '')
+          const ord = !m.deleted_at && ordinoOf(m) // an ordino sent from Pro: a card with View and the link with Copy (Alex, 22 Nov)
           const isGifFile = m.kind === 'file' && !isTransfer && !m.file?.asFile && /gif/.test(m.file?.type || '')
           const vlink = !m.deleted_at && m.kind === 'text' ? videoLinkOf(m.body) : null
           const wide = wideIds.has(m.id)
@@ -3558,11 +3560,12 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <button type="button" className="who-ava" aria-label={`Chat with ${nameOf(who)}`} onClick={(e) => { e.stopPropagation(); toDm(m.user_id) }}><Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /></button> : <span className="av-gap" />)}
                 <div className="bubble-col">
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.poll && !m.deleted_at ? ' poll-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.poll && !m.deleted_at ? ' poll-b' : ''}${ord ? ' event-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && room.kind === 'group' && first && !big && <b className="who" role="button" tabIndex={0} style={{ '--who': colorOf(m.user_id) }} onClick={(e) => { e.stopPropagation(); toDm(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
                       : m.file?.capsule ? <CapsuleCard id={m.id} cap={m.file.capsule} mine={mine} />
+                      : ord ? <OrdinoCard o={ord} onView={() => hands.current.setOrdView(ord)} />
                       : m.file?.poll ? <Suspense fallback={<div className="poll pl-wait"><b>Poll</b></div>}><PollCard id={m.id} me={me.id} people={people} canStop={room.kind === 'group' && room.role === 'admin'} onError={(t) => setErr(t)} /></Suspense>
                       : m.file?.live ? <Suspense fallback={LOC_WAIT}><LiveCard id={m.id} first={m.file.location} mine={mine} onOpen={(loc) => hands.current.setLocView(loc)} /></Suspense>
                       : m.file?.location ? <Suspense fallback={LOC_WAIT}><LocationCard loc={m.file.location} onOpen={() => hands.current.setLocView(m.file.location)} /></Suspense>
@@ -3579,7 +3582,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'file' && isAudioFile(m.file) && !m.file?.asFile ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} onPdf={(url) => setPdfView({ url, name: m.file?.name })} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name, who: mine ? 'You' : nameOf(who), at: m.created_at, m }], index: 0 })} />
                       : null}
-                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && !m.file?.capsule && !m.file?.contact && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
+                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && !m.file?.capsule && !m.file?.contact && !ord && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
                     {/* reactions inside the bubble, on its outer side (Alex, 15 Nov: "never towards the middle, and inside the frame") */}
@@ -4072,6 +4075,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       {schedOpen && <ScheduleCall who={title} onClose={() => setSchedOpen(false)} onSend={(event) => sendCard(event.title, { event }, 'Call scheduled', () => setSchedOpen(false))} />}
       {locOpen && <Suspense fallback={null}><LocationPicker onClose={() => setLocOpen(false)} onSend={(location) => sendCard(location.name, { location }, '', () => setLocOpen(false))} /></Suspense>}
       {locView && <Suspense fallback={null}><LocationView loc={locView} onClose={() => setLocView(null)} /></Suspense>}
+      {ordView && <OrdinoView o={ordView} onClose={() => setOrdView(null)} />}
       {pinView && (
         <Modal title={pinnedList.length === 1 ? '1 pinned message' : `${pinnedList.length} pinned messages`} onClose={() => setPinView(false)}
           foot={pinnedList.length > 1 ? <button type="button" className="btn btn-danger pins-all" onClick={unpinAll}>{I.pin}<span>Unpin all</span></button> : null}>

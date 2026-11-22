@@ -905,15 +905,51 @@ function Hero({ media, project, title, st, dateName, fields, onBrief }) {
 
 const SEND_I = tsv(<path d="M4 12 20 4l-5 16-3.5-6.5z" />)
 const FWD_I = tsv(<><path d="M14 5l6 6-6 6" /><path d="M20 11H9a5 5 0 0 0-5 5v3" /></>)
+// an ordino message in the chat: sent with file.ordino, or (sent before that) the text "📋 Label: Title / when / link"
+const ORD_URL = /https:\/\/themadlions\.com\/roardino\/\?t=[\w-]+/
+export function ordinoOf(m) {
+  if (m.file?.ordino?.url) return m.file.ordino
+  if (m.kind !== 'text' || !String(m.body || '').startsWith('📋')) return null
+  const url = (String(m.body).match(ORD_URL) || [])[0]
+  if (!url) return null
+  const lines = String(m.body).split('\n').map((x) => x.trim()).filter(Boolean)
+  const head = lines[0].replace(/^📋\s*/, '')
+  const cut = head.indexOf(': ')
+  return { url, label: cut > 0 ? head.slice(0, cut) : 'Ordino', title: cut > 0 ? head.slice(cut + 2) : head, when: lines.length > 2 ? lines[1] : '' }
+}
+// its card: the label, the title, the day / call / place, View for everyone, and the link with Copy
+export function OrdinoCard({ o, onView }) {
+  const [done, setDone] = useState(false)
+  const when = o.when || [o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')
+  const copy = async (e) => {
+    e.stopPropagation()
+    try { await navigator.clipboard.writeText(o.url) } catch {
+      const t = document.createElement('textarea'); t.value = o.url; document.body.appendChild(t); t.select(); try { document.execCommand('copy') } catch { /* nothing more to try */ } t.remove()
+    }
+    setDone(true); setTimeout(() => setDone(false), 1600)
+  }
+  return (
+    <span className="ordc" style={{ '--oa': o.accent || '#d4a017' }} onClick={(e) => e.stopPropagation()}>
+      <span className="ordc-top">
+        <i className="ordc-ico">{TAB_I.files}</i>
+        <span className="ordc-text"><span className="ordc-label">{o.label || 'Ordino'}</span><b>{o.title || 'Ordino'}</b>{when && <small>{when}</small>}</span>
+      </span>
+      <button type="button" className="ordc-view" onClick={(e) => { e.stopPropagation(); onView() }}>View the Ordino</button>
+      <span className="ordc-link"><a href={o.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{o.url.replace(/^https:\/\//, '')}</a><button type="button" className="ordc-copy" onClick={copy}>{done ? I.check : COPY_I}<span>{done ? 'Copied' : 'Copy'}</span></button></span>
+    </span>
+  )
+}
+const COPY_I = <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="3" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>
+
 // the ordino read inside RoarMe, its own published page in a window
-function OrdinoView({ o, onClose, onSend }) {
+export function OrdinoView({ o, onClose, onSend }) {
   useEffect(() => { const k = (e) => { if (e.key === 'Escape') onClose() }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [onClose])
   return createPortal(
     <div className="prd" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="prd-card prw-ordwin">
         <div className="prd-head">
           <span className="prj-ftext"><b>{o.title || 'Ordino'}</b><small>{o.label || 'Ordino'}</small></span>
-          <button type="button" className="pill-btn" onClick={onSend}>{FWD_I}<span>Send to…</span></button>
+          {onSend && <button type="button" className="pill-btn" onClick={onSend}>{FWD_I}<span>Send to…</span></button>}
           <a className="pill-btn" href={o.url} target="_blank" rel="noopener noreferrer">{I.right}<span>Open</span></a>
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
         </div>
@@ -964,7 +1000,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const sendOrdino = async (o, ids) => {
     const when = [o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')
     const body = `📋 ${o.label || 'Ordino'}: ${o.title || title}${when ? `\n${when}` : ''}\n${o.url}`
-    const { error } = await supabase.from('roar_messages').insert(ids.map((id) => ({ room_id: id, user_id: me.id, kind: 'text', body })))
+    const { error } = await supabase.from('roar_messages').insert(ids.map((id) => ({ room_id: id, user_id: me.id, kind: 'text', body, file: { ordino: { url: o.url, token: o.token || '', label: o.label || '', title: o.title || title, date: o.date || '', call: o.call || '', place: o.place || '', accent: o.accent || '' } } })))
     if (error) { toast(errText(error)); return false }
     toast(ids.length === 1 && ids[0] === room.room_id ? 'Ordino sent to this chat' : `Ordino sent to ${ids.length} chat${ids.length === 1 ? '' : 's'}`)
     return true

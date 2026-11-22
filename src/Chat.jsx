@@ -1619,7 +1619,7 @@ export default function Chat({ me, setMe }) {
                   <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find someone</button>
                 </div>
               )}
-              {rooms.length > 0 && !shown.length && !hits.length && <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : myFolders.some((f) => f.id === folder) ? 'This folder is empty. Add chats to it under Edit folders.' : 'Nothing here.'}</p>}
+              {rooms.length > 0 && !shown.length && !hits.length && <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : myFolders.some((f) => f.id === folder) ? 'This folder is empty. Add chats to it under Edit folders.' : folder === 'archived' ? 'Nothing here in Archived.' : 'Nothing here.'}</p>}
               {shown.map((r) => roomRow(r))}
               {rowActs && (() => {
                 const r = rooms.find((x) => x.room_id === rowActs.id)

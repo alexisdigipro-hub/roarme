@@ -1176,11 +1176,11 @@ const SET_I = {
   down: tsv(<path d="M6 9l6 6 6-6" />),
 }
 function ProSettings({ start = 'home', project, save, fields, setField, hidden, flipTab, adminIn, notesOn, dateName, onStop, onClose }) {
-  const [page, setPage] = useState(start)
-  const opened = useRef(start) // opened straight on a page (Edit on the Overview): back closes
+  const [stack, setStack] = useState([start]) // the pages walked into; back goes one step out
+  const page = stack[stack.length - 1]
   const [dir, setDir] = useState(1)
-  const go = (p) => { opened.current = 'home'; setDir(1); setPage(p) }
-  const back = () => { if (page === 'home' || opened.current === page) onClose(); else { setDir(-1); setPage('home') } }
+  const go = (p) => { setDir(1); setStack((l) => [...l, p]) }
+  const back = () => { if (stack.length < 2) onClose(); else { setDir(-1); setStack((l) => l.slice(0, -1)) } }
   const backRef = useRef(back)
   backRef.current = back
   const box = useRef(null)
@@ -1202,12 +1202,12 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
   const [custom, setCustom] = useState(DATE_NAMES.includes(dateName) ? '' : dateName)
   const move = (i, d) => { const j = i + d; if (j < 0 || j >= fields.length) return; const next = [...fields]; [next[i], next[j]] = [next[j], next[i]]; save({ fields: next }) }
   const filled = fields.filter((f) => (f.v || '').trim()).length
-  const titles = { home: 'Project Settings', details: 'Details', stages: 'Stages', date: 'Date' }
+  const titles = { home: 'Project Settings', info: 'Project Info', stages: 'Stages' }
   const row = (k, label, sub, onClick) => <button type="button" className="prs2-row" onClick={onClick}><i className="prs2-ic">{SET_I[k]}</i><span className="prs2-t"><b>{label}</b>{sub && <small>{sub}</small>}</span><span className="prs2-go">{I.right}</span></button>
   return (
     <div ref={box} className="prs2" role="dialog" aria-label={titles[page]}>
       <div className="prs2-head">
-        <button type="button" className="round prs2-back" onClick={back} aria-label={page === 'home' ? 'Close' : 'Back'} title={page === 'home' ? 'Close' : 'Back'}>{page === 'home' || opened.current === page ? I.x : SET_I.back}</button>
+        <button type="button" className="round prs2-back" onClick={back} aria-label={stack.length < 2 ? 'Close' : 'Back'} title={stack.length < 2 ? 'Close' : 'Back'}>{stack.length < 2 ? I.x : SET_I.back}</button>
         <b>{titles[page]}</b>
         <span className="prs2-gap" />
       </div>
@@ -1216,9 +1216,7 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
           <>
             <small className="prs2-cap">Project</small>
             <div className="prs2-box">
-              {row('details', 'Details', filled ? `${filled} of ${fields.length} written` : 'Artist / Client, Title, Category, Budget…', () => go('details'))}
-              {row('stages', 'Stages', stagesOf(project).map((x) => x.name).join(' · '), () => go('stages'))}
-              {row('date', 'Date', `${dateName}${project.due ? ` · ${new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`, () => go('date'))}
+              {row('details', 'Project Info', [filled ? `${filled} of ${fields.length} details` : 'Artist / Client, Title, Category, Budget', stageOf(project).name, project.due ? `${dateName} ${new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short' })}` : ''].filter(Boolean).join(' · '), () => go('info'))}
             </div>
             <small className="prs2-cap">Tabs</small>
             <div className="prs2-box">
@@ -1233,9 +1231,10 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
             </div>
           </>
         )}
-        {page === 'details' && (
+        {page === 'info' && (
           <>
-            <p className="prs2-hint">What is written here shows on the Overview; empty ones stay hidden. Artist / Client and Title also name the group.</p>
+            <small className="prs2-cap">Details</small>
+            <p className="prs2-hint">What is written here shows on the cover. Artist / Client and Title also name the group.</p>
             <datalist id="prs2-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
             <div className="prs2-box">
               {fields.map((f, i) => (
@@ -1253,6 +1252,26 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
               ))}
             </div>
             {fields.length < 20 && <button type="button" className="pill-btn prs2-add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
+            <small className="prs2-cap">Brief</small>
+            <div className="prs2-box prs2-pad"><Field area className="prs2-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} /></div>
+            <small className="prs2-cap">Stage</small>
+            <div className="prs2-box">
+              {stagesOf(project).map((x) => <button key={x.id} type="button" className="prs2-row" onClick={() => save({ status: x.id })}><i className="prw-dot prs2-dot" style={{ '--pc': x.c }} /><span className="prs2-t"><b>{x.name}</b></span>{project.status === x.id && <b className="prw-tick">{I.check}</b>}</button>)}
+              {row('stages', 'Edit Stages', 'Rename, colour, add or take away', () => go('stages'))}
+            </div>
+            <small className="prs2-cap">The date is called</small>
+            <div className="prs2-box">
+              {DATE_NAMES.map((d) => <button key={d} type="button" className="prs2-row" onClick={() => { save({ date_label: d }); setCustom('') }}><span className="prs2-t"><b>{d}</b></span>{d === dateName && <b className="prw-tick">{I.check}</b>}</button>)}
+              <form className="prs2-row prs2-own" onSubmit={(e) => { e.preventDefault(); const v = custom.trim(); if (v) save({ date_label: v.slice(0, 30) }); e.currentTarget.querySelector('input')?.blur() }}>
+                <input value={custom} maxLength={30} placeholder="Your own name" onChange={(e) => setCustom(e.target.value)} onBlur={() => { const v = custom.trim(); if (v && v !== dateName) save({ date_label: v.slice(0, 30) }) }} />
+                {!DATE_NAMES.includes(dateName) && <b className="prw-tick">{I.check}</b>}
+              </form>
+            </div>
+            <small className="prs2-cap">{dateName}</small>
+            <div className="prs2-box">
+              <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></label>
+              {project.due && <button type="button" className="prs2-row danger" onClick={() => save({ due: null })}><span className="prs2-t"><b>Clear the Date</b></span></button>}
+            </div>
           </>
         )}
         {page === 'stages' && (
@@ -1273,23 +1292,6 @@ function ProSettings({ start = 'home', project, save, fields, setField, hidden, 
               {list.length < 10 && <button type="button" className="pill-btn prs2-add" onClick={() => keepStages([...list, { id: uid().slice(0, 8), name: 'New Stage', c: STAGE_COLOURS[list.length % STAGE_COLOURS.length] }])}>{I.plus}<span>Add Stage</span></button>}
               <button type="button" className="pill-btn prs2-add" onClick={() => { if (window.confirm('Back to the five stages RoarMe starts with?')) keepStages(DEFAULT_STAGES.map((x) => ({ ...x }))) }}><span>Reset</span></button>
             </span>
-          </>
-        )}
-        {page === 'date' && (
-          <>
-            <small className="prs2-cap">The date is called</small>
-            <div className="prs2-box">
-              {DATE_NAMES.map((d) => <button key={d} type="button" className="prs2-row" onClick={() => { save({ date_label: d }); setCustom('') }}><span className="prs2-t"><b>{d}</b></span>{d === dateName && <b className="prw-tick">{I.check}</b>}</button>)}
-              <form className="prs2-row prs2-own" onSubmit={(e) => { e.preventDefault(); const v = custom.trim(); if (v) save({ date_label: v.slice(0, 30) }); e.currentTarget.querySelector('input')?.blur() }}>
-                <input value={custom} maxLength={30} placeholder="Your own name" onChange={(e) => setCustom(e.target.value)} onBlur={() => { const v = custom.trim(); if (v && v !== dateName) save({ date_label: v.slice(0, 30) }) }} />
-                {!DATE_NAMES.includes(dateName) && <b className="prw-tick">{I.check}</b>}
-              </form>
-            </div>
-            <small className="prs2-cap">{dateName}</small>
-            <div className="prs2-box">
-              <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></label>
-              {project.due && <button type="button" className="prs2-row danger" onClick={() => save({ due: null })}><span className="prs2-t"><b>Clear the Date</b></span></button>}
-            </div>
           </>
         )}
       </div>
@@ -1476,18 +1478,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
         {shownTab === 'overview' && (
           <div className="prw-over">
             <Hero photos={media.filter((m) => folderOf(m) === 'photos' || m.file?.thumb)} room={room} me={me} project={project} st={st} dateName={dateName} fields={fields} toast={toast} onCover={save} onBrief={(v) => save({ brief: v.slice(0, 4000) })} />
-            {fields.some((f) => (f.v || '').trim()) ? (
-              <div className="prw-box prw-brief-box wide">
-                <div className="prw-boxhead"><h4>Details</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => setSetOpen('details')}>{I.edit}<span>Edit</span></button></div>
-                <div className="prw-facts">
-                  {fields.filter((f) => (f.v || '').trim()).map((f, i) => (
-                    <div key={i} className="prw-fact ro"><span className="prw-fact-k">{f.k || 'Field'}</span><span className="prw-fact-v">{f.v}</span></div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <button type="button" className="prw-details-add wide" onClick={() => setSetOpen('details')}>{I.plus}<span>Add Details</span><small>Artist / Client, Title, Category, Budget</small></button>
-            )}
             {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('files')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {/* the ordino as a slim bar under the cover (Alex, 22 Nov: "there is usually one, the big box stays empty") */}
             <div className="prw-ordbar wide">

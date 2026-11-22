@@ -13,6 +13,7 @@ export const NEWS = [
     sections: [
       { title: 'Everywhere', items: [
         'PROject: a gold PROject folder. Turn a group into a project from its long-press menu.',
+        'Production Hub: link RoarMe to your production hub in Settings, PROject. Projects stay the same on both sides, and PROject is free for now.',
         'A project has its own workspace: media, files, Location Scout, calls, links, tasks, and Admin for budget and fees.',
         'The project\u2019s Overview gives a taste of everything: small thumbnails, then the latest documents, locations, links and tasks.',
         'The project\u2019s banner is calmer: its name on your own photo or the theme\u2019s colour, the shoot day under it.',

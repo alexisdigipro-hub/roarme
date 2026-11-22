@@ -54,10 +54,16 @@ export function hubStart() {
 }
 
 // Settings > PROJECTS (Alex, 22 Nov: "the gold Projects in Settings, and inside it the hub you join, and the subscription"):
-// for now its Production Hub; the plan joins it once its terms are agreed
+// the plan (free for now, Subscribe "Coming soon") and the Production Hub
 export function ProjectsPage({ toast = () => {} }) {
   return (
     <div className="hb-page">
+      {/* the plan (Alex, 22 Nov: "make it free for now, subscribe Coming soon, we see the subscription later") */}
+      <small className="hb-cap hb-sec">Plan</small>
+      <div className="set-box hb-on hb-plan">
+        <span className="hb-t"><b>PROject is free for now</b><small>Every group can be a project, with its Workspace, tasks, locations and the Production Hub.</small></span>
+        <button type="button" className="pill-btn hb-soon" disabled>Coming soon</button>
+      </div>
       <small className="hb-cap hb-sec">Production Hub</small>
       <HubPage toast={toast} />
     </div>

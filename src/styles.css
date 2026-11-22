@@ -7874,3 +7874,10 @@ html[data-mode='light'] .hbm { background: rgba(255, 255, 255, .72); }
 html:root:root:root:root .hbm-chips > button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 16px; border: 0; background: color-mix(in srgb, currentColor 6%, transparent); box-shadow: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
 html:root:root:root:root .hbm-chips > button i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
 html:root:root:root:root .hbm-chips > button.on { color: var(--text); background: color-mix(in srgb, var(--c) 16%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); }
+
+/* A project chat on a computer: the Workspace button and the picture stand at the LEFT of the name's pill (Alex, 22 Nov) */
+@media (min-width: 761px) {
+  html:root:root:root:root:root:root .room-head.has-proj > .back { order: -3; }
+  html:root:root:root:root:root:root .room-head.has-proj > .head-ws { order: -2; }
+  html:root:root:root:root:root:root .room-head.has-proj > .plus-wrap { order: -1; }
+}

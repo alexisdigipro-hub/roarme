@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, dotOf, statusOf, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
-import { ProChip, ProPanel, proOk, useProjects } from './pro.jsx'
+import { ProChip, ProPanel, isAsset, proOk, useProjects } from './pro.jsx'
 import { REACTIONS, TEXT_SIZES, chime, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls, CALL_EDGE } from './calls.jsx'
@@ -1746,7 +1746,7 @@ export default function Chat({ me, setMe }) {
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
-            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} />
+            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} />
           {proOn && <ProPanel key={`pro-${active.room_id}`} room={active} other={otherOf(active)} project={proKit.map[active.room_id]} kit={proKit} rooms={rooms} titleOf={titleOf} toast={toast}
             onJump={(id) => libChat(active.room_id, id)} onOpenRoom={(id) => { setTab('chats'); setActiveId(id) }} />}
         </div>) : (
@@ -2040,7 +2040,7 @@ function sameMsgs(prev, got) {
   const extra = lastAt ? prev.filter((m) => !ids.has(m.id) && m.created_at > lastAt) : []
   return all && !extra.length ? prev : [...out, ...extra]
 }
-const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [] }) {
+const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [], assetsAside = false }) {
   const [rawMsgs, setMsgs] = useState(() => keptMsgs(room.room_id) || []) // the chat's last messages kept on the device show at once (cache.js)
   // Encrypted Chat (Alex, 17 Oct): whether it is on here, and the messages with the locked ones opened on this device
   const [sealOn, reloadSeal] = useEncrypted(room.room_id)
@@ -3286,7 +3286,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // photos, videos, voice, files and transfers, for the Files tab of the pinned window (Alex, 20 Oct)
   const isPinFile = (m) => m.kind === 'image' || m.kind === 'file' || m.kind === 'voice'
   // a deleted message simply goes, with nothing left in its place (Alex, 16 Oct)
-  const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt)), [msgs, clearedAt, hidden])
+  // in a Pro project the chat keeps only the talk and every photo, video and file goes to the panel at the side (Alex,
+  // 22 Nov: "when it becomes a project, no materials stay in the chat, only the conversations"); a caption stays as words
+  const shownMsgs = useMemo(() => msgs.filter((m) => !m.deleted_at && !hidden.has(m.id) && (!clearedAt || m.created_at > clearedAt))
+    .flatMap((m) => (!assetsAside || !isAsset(m) ? [m] : (m.body || '').trim() ? [{ ...m, kind: 'text', file: null, asideAsset: true }] : [])), [msgs, clearedAt, hidden, assetsAside])
   // what others ask me to delete, one at a time, above the writing box
   const askForMe = asks.filter((a) => a.owner === me.id && msgs.some((m) => m.id === a.message_id && !m.deleted_at))
   const askedByMe = new Set(asks.filter((a) => a.asked_by === me.id).map((a) => a.message_id))

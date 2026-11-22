@@ -32,6 +32,10 @@ const STAGE_COLOURS = ['#8a8f98', '#d48806', '#e5483f', '#7b4dff', '#14a37f', '#
 export const stagesOf = (p) => (Array.isArray(p?.stages) && p.stages.length ? p.stages : DEFAULT_STAGES)
 // a project at its Delivered stage (by name, or the starting stages' last one) sits in Archived Projects (Alex, 22 Nov)
 export const isDelivered = (p) => { if (!p) return false; const st = stagesOf(p).find((s) => s.id === p.status); return st ? /^delivered$/i.test((st.name || '').trim()) || st.id === 'done' : false }
+// the stages one picks from: not Development (before a project starts) or Delivered (Mark as Delivered, Alex 22 Nov)
+const edgeStage = (st) => st.id === 'dev' || st.id === 'done' || /^(development|delivered)$/i.test((st.name || '').trim())
+export const pickStages = (p) => stagesOf(p).filter((st) => !edgeStage(st))
+const doneStage = (p) => stagesOf(p).find((st) => st.id === 'done' || /^delivered$/i.test((st.name || '').trim()))
 export const stageOf = (p) => stagesOf(p).find((s) => s.id === p?.status) || stagesOf(p)[0]
 export const ProChip = ({ p }) => { const s = stageOf(p); return <span className="prj-chip" style={{ '--pc': s.c }}>{s.name}</span> }
 
@@ -1521,8 +1525,14 @@ function ProSettings({ start = 'home', roomId, boss, toast, project, save, field
             <div className="prs2-box prs2-pad"><Field area className="prs2-brief" value={project.brief} placeholder="What it is, where, when, the look…" onSave={(v) => save({ brief: v.slice(0, 4000) })} /></div>
             <small className="prs2-cap">Stage</small>
             <div className="prs2-box">
-              {stagesOf(project).map((x) => <button key={x.id} type="button" className="prs2-row" onClick={() => save({ status: x.id })}><i className="prw-dot prs2-dot" style={{ '--pc': x.c }} /><span className="prs2-t"><b>{x.name}</b></span>{project.status === x.id && <b className="prw-tick">{I.check}</b>}</button>)}
+              {pickStages(project).map((x) => <button key={x.id} type="button" className="prs2-row" onClick={() => save({ status: x.id })}><i className="prw-dot prs2-dot" style={{ '--pc': x.c }} /><span className="prs2-t"><b>{x.name}</b></span>{project.status === x.id && <b className="prw-tick">{I.check}</b>}</button>)}
               {row('stages', 'Edit Stages', 'Rename, colour, add or take away', () => go('stages'))}
+            </div>
+            {/* Delivered is not a stage to pick: one button sends the project to Archived Projects and brings it back */}
+            <div className="prs2-box">
+              {isDelivered(project)
+                ? <button type="button" className="prs2-row" onClick={() => save({ status: (pickStages(project).slice(-1)[0] || stagesOf(project)[0]).id })}><i className="prs2-ic">{I.archive || I.check}</i><span className="prs2-t"><b>Back to Active</b><small>Delivered, in Archived Projects</small></span></button>
+                : doneStage(project) && <button type="button" className="prs2-row" onClick={() => save({ status: doneStage(project).id })}><i className="prs2-ic">{I.check}</i><span className="prs2-t"><b>Mark as Delivered</b><small>It moves to Archived Projects</small></span></button>}
             </div>
             <small className="prs2-cap">{dateName}</small>
             <div className="prs2-box">
@@ -1708,8 +1718,11 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
         <span className="prw-hang">
           <button type="button" className="prw-pill stage" style={{ '--pc': st.c }} onClick={() => setMenu(menu === 'stage' ? '' : 'stage')}><i className="prw-dot" /><span className="prw-st-name">{st.name}</span><span className="prw-caret">{I.down}</span></button>
           <Hang open={menu === 'stage'} onClose={() => setMenu('')} portal={phone}>
-            {stagesOf(project).map((s) => <button key={s.id} type="button" onClick={() => { save({ status: s.id }); setMenu('') }}><i className="prw-dot" style={{ '--pc': s.c }} /><span>{s.name}</span>{s.id === st.id && <b className="prw-tick">{I.check}</b>}</button>)}
+            {pickStages(project).map((s) => <button key={s.id} type="button" onClick={() => { save({ status: s.id }); setMenu('') }}><i className="prw-dot" style={{ '--pc': s.c }} /><span>{s.name}</span>{s.id === st.id && <b className="prw-tick">{I.check}</b>}</button>)}
             <hr />
+            {isDelivered(project)
+              ? <button type="button" onClick={() => { save({ status: (pickStages(project).slice(-1)[0] || stagesOf(project)[0]).id }); setMenu('') }}>{I.check}<span>Back to Active</span></button>
+              : doneStage(project) && <button type="button" onClick={() => { save({ status: doneStage(project).id }); setMenu('') }}>{I.check}<span>Mark as Delivered</span></button>}
             <button type="button" onClick={() => { setMenu(''); setStagesOpen(true) }}>{I.edit || I.plus}<span>Rename Stages</span></button>
           </Hang>
         </span>

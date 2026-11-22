@@ -2091,7 +2091,7 @@ function sameMsgs(prev, got) {
   const extra = lastAt ? prev.filter((m) => !ids.has(m.id) && m.created_at > lastAt) : []
   return all && !extra.length ? prev : [...out, ...extra]
 }
-// the three chats and their stage colours (Pre orange, Production red, Post violet; version C of the sample, Alex 22 Nov)
+// the three chats and their stage colours (Pre orange, Production red, Post violet; version A of the sample, Alex 22 Nov)
 const CHANS = [['pre', 'Pre Production', '#d48806'], ['prod', 'Production', '#e5483f'], ['post', 'Post Production', '#7b4dff']]
 
 const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [], proArtist = '', assetsAside = false }) {
@@ -3770,13 +3770,15 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       )}
 
       {chans && chans.length > 1 && find === null && (
-        <nav className="ch-tabs" role="tablist" aria-label="Chats of the project">
-          {CHANS.filter(([k]) => chans.includes(k)).map(([k, l, c]) => {
-            // unread in a tab one is not looking at: messages of others since one last read the group
-            const n = chan === k ? 0 : msgs.filter((m) => (m.channel || 'pre') === k && m.user_id !== me.id && !m.deleted_at && room.last_read_at && m.created_at > room.last_read_at).length
-            return <button key={k} type="button" role="tab" aria-selected={chan === k} className={chan === k ? 'on' : ''} style={{ '--c': c }} onClick={() => setChan(k)}><span>{l}{n > 0 && <sup>{n > 99 ? '99+' : n}</sup>}</span></button>
-          })}
-        </nav>
+        <div className="ch-tabs" role="tablist" aria-label="Chats of the project">
+          {/* version A of the sample (Alex, 22 Nov): a glass capsule, a lens that travels, each chat's stage colour as a dot */}
+          <Lens className="seg ch-seg" dep={chan}>
+            {CHANS.filter(([k]) => chans.includes(k)).map(([k, l, c]) => {
+              const n = chan === k ? 0 : msgs.filter((m) => (m.channel || 'pre') === k && m.user_id !== me.id && !m.deleted_at && room.last_read_at && m.created_at > room.last_read_at).length
+              return <button key={k} type="button" role="tab" aria-selected={chan === k} className={chan === k ? 'on' : ''} style={{ '--c': c }} onClick={() => setChan(k)}><i className="ch-dot" />{l}{n > 0 && <sup>{n > 99 ? '99+' : n}</sup>}</button>
+            })}
+          </Lens>
+        </div>
       )}
       {room.kind === 'group' && find === null && <GroupCallBar call={gc.call} here={gc.here} people={people} me={me} inIt={gc.here.includes(me.id)} onJoin={joinGc} />}
 

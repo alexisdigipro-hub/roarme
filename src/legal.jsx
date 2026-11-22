@@ -25,6 +25,7 @@ const DOCS = {
           'What you send: messages, photos, videos, voice and video messages and files, and what you share in a chat (a place, a live location, a contact card, an event, a call), with reactions, pins, reminders, scheduled messages and the time each chat was last read. We keep them so they reach the people in the chat and stay in your history.',
           'Your "last seen" time, if your privacy settings allow it to be shown, and the list of people you have blocked.',
           'Your chat folders and the names you give your contacts, so they are the same on every device you use. Your other settings (theme, chat colours, wallpaper and similar) stay on your own device.',
+          'Your address book, if you use it: the contacts you add or import yourself (names, phone numbers, emails, addresses, birthdays, websites, notes, groups and a photo). Only you can see it; it is kept so you have it on every device, and you can export it as a .vcf file or delete any contact at any time. Contacts read from your iPhone are added only when you choose Import, and nothing is sent to the people in it.',
           'Reports: if you report a message or a person, we keep the report, your note and a copy of the reported message so we can review it. Reports are seen only by RoarMe\'s administrator.',
         ]],
         ['What we do not collect', [
@@ -96,6 +97,7 @@ const DOCS = {
           'Ό,τι στέλνεις: μηνύματα, φωτογραφίες, βίντεο, φωνητικά και βιντεομηνύματα και αρχεία, και ό,τι μοιράζεσαι σε μια συζήτηση (μια τοποθεσία, μια ζωντανή τοποθεσία, μια επαφή, ένα γεγονός, μια κλήση), μαζί με αντιδράσεις, καρφιτσώματα, υπενθυμίσεις, προγραμματισμένα μηνύματα και πότε διαβάστηκε κάθε συζήτηση. Τα κρατάμε για να φτάνουν σε όσους είναι στη συζήτηση και να μένουν στο ιστορικό σου.',
           'Πότε ήσουν τελευταία φορά συνδεδεμένος, αν το επιτρέπουν οι ρυθμίσεις απορρήτου σου, και τη λίστα με όσους έχεις μπλοκάρει.',
           'Τους φακέλους των συζητήσεών σου και τα ονόματα που δίνεις στις επαφές σου, για να είναι ίδια σε κάθε συσκευή σου. Οι υπόλοιπες ρυθμίσεις σου (θέμα, χρώματα, ταπετσαρία κ.λπ.) μένουν στη δική σου συσκευή.',
+          'Το βιβλίο επαφών σου, αν το χρησιμοποιείς: οι επαφές που προσθέτεις ή εισάγεις εσύ (ονόματα, τηλέφωνα, email, διευθύνσεις, γενέθλια, ιστοσελίδες, σημειώσεις, ομάδες και μια φωτογραφία). Το βλέπεις μόνο εσύ· κρατιέται για να το έχεις σε κάθε συσκευή σου, και μπορείς να το εξαγάγεις ως αρχείο .vcf ή να σβήσεις όποια επαφή θέλεις, όποτε θέλεις. Επαφές από το iPhone σου μπαίνουν μόνο όταν επιλέξεις Εισαγωγή, και δεν στέλνεται τίποτα στους ανθρώπους που περιέχει.',
           'Αναφορές: αν αναφέρεις ένα μήνυμα ή ένα άτομο, κρατάμε την αναφορά, το σημείωμά σου και ένα αντίγραφο του μηνύματος για να την εξετάσουμε. Τις αναφορές τις βλέπει μόνο ο διαχειριστής του RoarMe.',
         ]],
         ['Τι δεν συλλέγουμε', [

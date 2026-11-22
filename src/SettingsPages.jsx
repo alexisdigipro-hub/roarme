@@ -1060,7 +1060,7 @@ function Appearance({ p, toast, me, setMe }) {
             </div>
           </Box>
           <Box title="Effects">
-            <Switch on={p.motion !== false} set={(v) => setPrefs({ motion: v })} hint={p.lite ? 'Off while Power Saving Mode is on' : 'Fluid transitions for messages, menus and windows'}>Smooth Animations</Switch>
+            {/* Smooth Animations is always on, no switch (Alex, 22 Nov: "let it be smooth, give no choice") */}
             <Switch on={p.lite} set={(v) => setPrefs({ lite: v })} hint="No animations and no glass blur, easier on the battery">Power Saving Mode</Switch>
           </Box>
           {/* the look back to how RoarMe starts (Alex, 9 Nov); every chat's own wallpaper goes too */}

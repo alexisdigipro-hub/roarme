@@ -271,6 +271,8 @@ export function BookCard({ entry: e, person, onEdit, onClose, onMessage, onCall,
   const tel = e.phones?.[0]?.value
   const mail = e.emails?.[0]?.value
   const age = ageOf(e)
+  // on RoarMe and with a number: Call asks which (Alex, 22 Nov: "the choice to call through the carrier")
+  const [callMenu, setCallMenu] = useState(false)
   return (
     <Modal title="" onClose={onClose}>
       <div className="cc bk">
@@ -281,7 +283,18 @@ export function BookCard({ entry: e, person, onEdit, onClose, onMessage, onCall,
         {person ? <p className="bk-on"><i />On RoarMe · @{person.username}</p> : null}
         <div className="cc-acts">
           {person && <button type="button" onClick={onMessage} aria-label="Message">{I.chats}</button>}
-          {person ? <button type="button" onClick={() => onCall(false)} aria-label="Call">{I.phone}</button> : tel && <a href={telHref(tel)} aria-label="Call">{I.phone}</a>}
+          {person
+            ? <span className="bk-callwrap"><button type="button" className={callMenu ? 'on' : ''} onClick={() => (e.phones?.length ? setCallMenu((v) => !v) : onCall(false))} aria-label="Call">{I.phone}</button>
+              {callMenu && (
+                <>
+                  <button type="button" className="scrim" aria-label="Close" onClick={() => setCallMenu(false)} />
+                  <div className="menu bk-callmenu">
+                    <button type="button" onClick={() => { setCallMenu(false); onCall(false) }}>{I.chats}<span>RoarMe Call</span></button>
+                    {e.phones.map((p, i) => <a key={i} href={telHref(p.value)} onClick={() => setCallMenu(false)}>{I.phone}<span>{`Phone Call · ${p.value}`}</span></a>)}
+                  </div>
+                </>
+              )}</span>
+            : tel && <a href={telHref(tel)} aria-label="Call">{I.phone}</a>}
           {person && <button type="button" onClick={() => onCall(true)} aria-label="Video call">{I.video}</button>}
           {!person && tel && <a href={`sms:${tel.replace(/[^\d+]/g, '')}`} aria-label="Message">{I.chats}</a>}
           {mail && <a href={`mailto:${mail}`} aria-label="Email">{B.mail}</a>}

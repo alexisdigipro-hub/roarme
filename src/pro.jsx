@@ -268,7 +268,6 @@ function Field({ value, onSave, placeholder, area = false, className = '', list 
 }
 
 /* ---------- tasks ---------- */
-const TASK_COLS = [['todo', 'To do'], ['doing', 'Doing'], ['done', 'Done']]
 /* ---------- the panel ---------- */
 function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, onOpenRoom, me, people = {} }) {
   const files = useRoomFiles(room.room_id)
@@ -617,32 +616,131 @@ function Links({ words, people, me, onJump, onDrop }) {
 }
 
 /* ---------- tasks on a board ---------- */
-function Board({ list, onChange }) {
+// Tasks as the TML Hub's (Alex, 22 Nov: "doing and done not as columns, inside each task, in list mode"): one list; each
+// task has its own circle (done), its status as a tinted pill (To do, In progress, Blocked, Done), a due date, a priority,
+// who it is for (@ in the words, or the face button) and subtasks; Completed folds away at the foot.
+export const TASK_ST = [['todo', 'To do', '#8e8e93'], ['doing', 'In progress', '#3a86d8'], ['blocked', 'Blocked', '#e5484d'], ['done', 'Done', '#14a37f']]
+const stOf = (s) => TASK_ST.find((x) => x[0] === s) || TASK_ST[0]
+const PRI = [['normal', 'Normal'], ['high', 'High'], ['urgent', 'Urgent']]
+const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+const dueText = (d) => { if (!d) return ''; const t = todayIso(); if (d === t) return 'Today'; const x = new Date(`${d}T12:00`); const s = x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(x.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); return d < t ? `Overdue, ${s}` : s }
+function Board({ list, onChange, members = [], people = {}, me }) {
+  // @ in a new task finds the group's members and puts the chosen one on it (Alex, 22 Nov); the task keeps who in t.who (ids)
   const [add, setAdd] = useState('')
-  const step = (t) => onChange(list.map((x) => (x.id === t.id ? { ...x, s: x.s === 'todo' ? 'doing' : x.s === 'doing' ? 'done' : 'todo' } : x)))
+  const [who, setWho] = useState([])
+  const [pick, setPick] = useState(0)
+  const [openSubs, setOpenSubs] = useState(() => new Set())
+  const [showDone, setShowDone] = useState(false)
+  const [whoMenu, setWhoMenu] = useState(null)
+  const [edit, setEdit] = useState(null) // { id, text }
+  const inp = useRef(null)
+  const person = (id) => people[id] || (id === me?.id ? me : null)
+  const nm = (id) => (id === me?.id ? nameOf(me) : nameOf(people[id]))
+  const at = (add.match(/(?:^|\s)@([^\s@]*)$/) || [])[1]
+  const fold = (x) => String(x || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  const hits = at === undefined ? [] : members.filter((id) => fold(nm(id)).includes(fold(at)) || fold(person(id)?.username).includes(fold(at))).slice(0, 6)
+  const choose = (id) => {
+    const name = nm(id).split(' ')[0]
+    setAdd((v) => v.replace(/@([^\s@]*)$/, `@${name} `))
+    setWho((l) => (l.includes(id) ? l : [...l, id]))
+    setPick(0)
+    setTimeout(() => inp.current?.focus(), 0)
+  }
+  const submit = () => {
+    const t = add.trim()
+    if (!t) return
+    const named = who.filter((id) => t.includes(`@${nm(id).split(' ')[0]}`))
+    onChange([...list, { id: uid(), t: t.slice(0, 200), s: 'todo', ...(named.length ? { who: named } : {}) }])
+    setAdd(''); setWho([])
+  }
+  const patch = (id, v) => onChange(list.map((x) => (x.id === id ? { ...x, ...v } : x)))
+  const flip = (id) => setOpenSubs((o) => { const n = new Set(o); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const words = (t) => String(t.t).split(/(@[^\s@]+)/g).map((w, n) => (w.startsWith('@') ? <b key={n} className="prj-at">{w}</b> : w))
+  const t0 = todayIso()
+  const rank = { urgent: 0, high: 1 }
+  const open = list.filter((t) => t.s !== 'done').map((t, i) => [t, i]).sort((a, b) => (rank[a[0].pri] ?? 2) - (rank[b[0].pri] ?? 2) || a[1] - b[1]).map((x) => x[0])
+  const done = list.filter((t) => t.s === 'done')
+  const row = (t) => {
+    const st = stOf(t.s)
+    const subs = Array.isArray(t.subs) ? t.subs : []
+    const late = t.due && t.due < t0 && t.s !== 'done'
+    return (
+      <li key={t.id} className={`tk-row${t.s === 'done' ? ' done' : ''}${t.pri && t.pri !== 'normal' ? ` p-${t.pri}` : ''}`}>
+        <button type="button" className="tk-check" onClick={() => patch(t.id, { s: t.s === 'done' ? 'todo' : 'done' })} aria-label={t.s === 'done' ? 'Mark as not done' : 'Mark as done'}>{t.s === 'done' && I.check}</button>
+        <div className="tk-main">
+          {edit?.id === t.id
+            ? <input className="tk-edit" autoFocus value={edit.text} maxLength={200} onChange={(e) => setEdit({ id: t.id, text: e.target.value })} onBlur={() => { if (edit.text.trim()) patch(t.id, { t: edit.text.trim() }); setEdit(null) }} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEdit(null) }} />
+            : <div className="tk-title" onClick={() => setEdit({ id: t.id, text: t.t })}>{words(t)}</div>}
+          <div className="tk-meta">
+            <label className="tk-pill" style={{ '--pc': st[2] }} title="Status">
+              <i className="tk-dot" /><span>{st[1]}</span>
+              <select value={st[0]} onChange={(e) => patch(t.id, { s: e.target.value })} aria-label="Status">{TASK_ST.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+            </label>
+            <label className={`tk-pill plain${t.due ? '' : ' unset'}${late ? ' late' : ''}`} title="Due date">
+              <span>{t.due ? dueText(t.due) : 'Due date'}</span>
+              <input type="date" value={t.due || ''} onChange={(e) => patch(t.id, { due: e.target.value || undefined })} aria-label="Due date" />
+            </label>
+            <label className={`tk-pill plain${t.pri && t.pri !== 'normal' ? ` pri-${t.pri}` : ' unset'}`} title="Priority">
+              <span>{t.pri && t.pri !== 'normal' ? PRI.find((x) => x[0] === t.pri)[1] : 'Priority'}</span>
+              <select value={t.pri || 'normal'} onChange={(e) => patch(t.id, { pri: e.target.value === 'normal' ? undefined : e.target.value })} aria-label="Priority">{PRI.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+            </label>
+            <span className="tk-whowrap">
+              <button type="button" className={`tk-pill plain tk-who${(t.who || []).length ? '' : ' unset'}`} onClick={() => setWhoMenu(whoMenu === t.id ? null : t.id)} title="Assigned to">
+                {(t.who || []).length ? <><span className="prj-twho">{t.who.slice(0, 3).map((id) => <Avatar key={id} src={person(id)?.avatar_url} name={nm(id)} size={18} />)}</span><span>{t.who.length === 1 ? nm(t.who[0]).split(' ')[0] : `${t.who.length} people`}</span></> : <span>Nobody</span>}
+              </button>
+              {whoMenu === t.id && (
+                <>
+                  <span className="tk-veil" onClick={() => setWhoMenu(null)} />
+                  <span className="menu tk-whomenu">
+                    {members.map((id) => { const on = (t.who || []).includes(id); return <button key={id} type="button" className={on ? 'on' : ''} onClick={() => { const next = on ? t.who.filter((x) => x !== id) : [...(t.who || []), id]; patch(t.id, { who: next.length ? next : undefined }) }}><Avatar src={person(id)?.avatar_url} name={nm(id)} size={22} /><span className="grow">{nm(id)}</span>{on && I.check}</button> })}
+                  </span>
+                </>
+              )}
+            </span>
+            <button type="button" className={`tk-pill plain${subs.length ? '' : ' unset'}${openSubs.has(t.id) ? ' on' : ''}`} onClick={() => flip(t.id)} title="Subtasks">
+              <span>{subs.length ? `${subs.filter((x) => x.d).length}/${subs.length} subtasks` : 'Subtasks'}</span>
+            </button>
+          </div>
+          {openSubs.has(t.id) && (
+            <ul className="tk-subs">
+              {subs.map((x) => (
+                <li key={x.id} className={x.d ? 'done' : ''}>
+                  <button type="button" className="tk-check sm" onClick={() => patch(t.id, { subs: subs.map((y) => (y.id === x.id ? { ...y, d: !y.d } : y)) })} aria-label={x.d ? 'Mark as not done' : 'Mark as done'}>{x.d && I.check}</button>
+                  <span className="grow">{x.t}</span>
+                  <button type="button" className="tk-del" onClick={() => patch(t.id, { subs: subs.filter((y) => y.id !== x.id) })} aria-label="Remove subtask" title="Remove">{I.x}</button>
+                </li>
+              ))}
+              <li className="tk-subadd">
+                <input placeholder="Add a subtask" maxLength={160} autoFocus={!subs.length} onKeyDown={(e) => { const v = e.currentTarget.value.trim(); if (e.key === 'Enter' && v) { patch(t.id, { subs: [...subs, { id: uid(), t: v, d: false }] }); e.currentTarget.value = '' } }} />
+              </li>
+            </ul>
+          )}
+        </div>
+        <button type="button" className="tk-del" onClick={() => onChange(list.filter((x) => x.id !== t.id))} aria-label="Delete task" title="Delete">{I.x}</button>
+      </li>
+    )
+  }
   return (
-    <div className="prw-board-wrap">
-      <form className="prj-add" onSubmit={(e) => { e.preventDefault(); const t = add.trim(); if (!t) return; onChange([...list, { id: uid(), t: t.slice(0, 200), s: 'todo' }]); setAdd('') }}>
-        <input value={add} onChange={(e) => setAdd(e.target.value)} placeholder="Add a task" maxLength={200} />
+    <div className="prw-board-wrap tk">
+      <form className="prj-add" onSubmit={(e) => { e.preventDefault(); if (hits.length) { choose(hits[Math.min(pick, hits.length - 1)]); return } submit() }}>
+        <span className="prj-addwrap">
+          <input ref={inp} value={add} onChange={(e) => { setAdd(e.target.value); setPick(0) }} placeholder="Add a task · @ to give it to someone" maxLength={200}
+            onKeyDown={(e) => { if (!hits.length) return; if (e.key === 'ArrowDown') { e.preventDefault(); setPick((p) => (p + 1) % hits.length) } else if (e.key === 'ArrowUp') { e.preventDefault(); setPick((p) => (p - 1 + hits.length) % hits.length) } else if (e.key === 'Escape') setAdd((v) => v.replace(/@([^\s@]*)$/, '')) }} />
+          {hits.length > 0 && (
+            <span className="prj-atlist" role="listbox">
+              {hits.map((id, n) => <button key={id} type="button" className={n === pick ? 'on' : ''} onMouseDown={(e) => e.preventDefault()} onClick={() => choose(id)}><Avatar src={person(id)?.avatar_url} name={nm(id)} size={24} /><span>{nm(id)}</span></button>)}
+            </span>
+          )}
+        </span>
         <button type="submit" className="round" aria-label="Add task" disabled={!add.trim()}>{I.plus}</button>
       </form>
-      <div className="prw-board">
-        {TASK_COLS.map(([s, label]) => {
-          const rows = list.filter((t) => t.s === s)
-          return (
-            <div key={s} className={`prw-col prj-t-${s}`}>
-              <h5>{label}<small>{rows.length}</small></h5>
-              {rows.map((t) => (
-                <div key={t.id} className="prw-kc prj-task">
-                  <button type="button" className="prj-tick" onClick={() => step(t)} title={s === 'todo' ? 'Start' : s === 'doing' ? 'Done' : 'Back to To do'} aria-label="Move on">{s === 'done' ? I.check : s === 'doing' ? <i className="prj-half" /> : null}</button>
-                  <span className="prj-ttext">{t.t}</span>
-                  <button type="button" className="prj-tdel" onClick={() => onChange(list.filter((x) => x.id !== t.id))} aria-label="Delete task" title="Delete">{I.x}</button>
-                </div>
-              ))}
-            </div>
-          )
-        })}
-      </div>
+      {open.length > 0 ? <ul className="tk-list">{open.map(row)}</ul> : <p className="prj-quiet">{done.length ? 'Everything is done.' : 'No tasks yet.'}</p>}
+      {done.length > 0 && (
+        <>
+          <button type="button" className="tk-donebar" onClick={() => setShowDone((v) => !v)}><span className={`tk-chev${showDone ? ' on' : ''}`}>{I.right}</span>Completed</button>
+          {showDone && <ul className="tk-list tk-completed">{done.map(row)}</ul>}
+        </>
+      )}
     </div>
   )
 }
@@ -1444,7 +1542,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           <button type="button" className={`round prw-gear${setOpen ? ' on' : ''}`} onClick={() => setSetOpen(true)} aria-label="Project settings" title="Project settings">{I.gear}</button>
         </span>
       </div>
-      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}><span className="prw-bi">{TAB_I[k]}</span>{!phone && <span className="prw-bl">{TAB_SHORT[k] || l}</span>}</button>)}</Lens></div>
+      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}>{phone ? <span className="prw-bi">{TAB_I[k]}</span> : <span className="prw-bl">{TAB_SHORT[k] || l}</span>}</button>)}</Lens></div>
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">
@@ -1486,7 +1584,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 docs.length > 0 && box('files', 'Documents', files.length, docs.map((m) => <button key={m.id} type="button" className="prw-mrow" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prw-mtext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), day(m.created_at)].filter(Boolean).join(' · ')}</small></span></button>)),
                 sc.length > 0 && box('scout', 'Location Scout', scouts.length, sc.map((x) => { const [, label, c] = scoutSt(x.st); return <button key={x.id} type="button" className="prw-mrow" onClick={() => goTab('scout')}>{x.photos?.[0] ? <ScoutPhoto p={x.photos[0]} className="prw-mthumb" /> : <i className="prw-mthumb ic">{I.place}</i>}<span className="prw-mtext"><b>{x.name || 'Location'}</b><small>{x.address || x.addr || x.type || ''}</small></span><i className="prj-chip prw-st" style={{ '--pc': c }}>{label}</i></button> })),
                 lk.length > 0 && box('links', 'Links', linkCount, lk.map(({ u, m }, n) => <a key={`${m.id}-${n}`} className="prw-mrow" href={u} target="_blank" rel="noopener noreferrer"><i className="prw-mthumb ic letter">{host(u).slice(0, 1).toUpperCase()}</i><span className="prw-mtext"><b>{host(u)}</b><small>{u}</small></span></a>)),
-                !hidden.includes('tasks') && tasks.length > 0 && box('tasks', 'Tasks', `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}`, open.length ? open.slice(0, 4).map((t) => <button key={t.id} type="button" className="prw-mrow task" onClick={() => save({ tasks: tasks.map((x) => (x.id === t.id ? { ...x, s: x.s === 'todo' ? 'doing' : 'done' } : x)) })} title={t.s === 'todo' ? 'Start' : 'Done'}><i className={`prw-mtick ${t.s}`}>{t.s === 'doing' ? <i className="prj-half" /> : null}</i><span className="prw-mtext"><b>{t.t}</b></span></button>) : <p className="prj-quiet">Everything is done.</p>),
+                !hidden.includes('tasks') && tasks.length > 0 && box('tasks', 'Tasks', `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}`, open.length ? open.slice(0, 4).map((t) => <button key={t.id} type="button" className="prw-mrow task" onClick={() => save({ tasks: tasks.map((x) => (x.id === t.id ? { ...x, s: 'done' } : x)) })} title="Mark as done"><i className="prw-mtick" /><span className="prw-mtext"><b>{t.t}</b><small>{[stOf(t.s)[1], t.due && dueText(t.due)].filter(Boolean).join(' · ')}</small></span></button>) : <p className="prj-quiet">Everything is done.</p>),
               ].filter(Boolean)
               return parts.length ? <div className="prw-peeks wide">{parts}</div> : null
             })()}
@@ -1527,7 +1625,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
         ) : <p className="prj-quiet">No links yet. Links and places sent in the chat stay there and gather here too.</p>)}
         {shownTab === 'polls' && <div className="prw-polls">{polls.map((m) => <div key={m.id} className="prj-poll prw-pollwrap"><Trash className="corner" onClick={() => drop(m, 'this poll')} /><Suspense fallback={<p className="prj-quiet">Poll</p>}><PollCard id={m.id} me={me.id} people={people} canStop={room.role === 'admin'} /></Suspense></div>)}</div>}
         {shownTab === 'contacts' && <Contacts list={cards} people={people} onDrop={drop} />}
-        {shownTab === 'tasks' && <Board list={tasks} onChange={(next) => save({ tasks: next })} />}
+        {shownTab === 'tasks' && <Board list={tasks} members={room.members || []} people={people} me={me} onChange={(next) => save({ tasks: next })} />}
         {shownTab === 'stats' && <Stats room={room} people={people} me={me} project={project} />}
         {shownTab === 'admin' && <Admin room={room} people={people} me={me} project={project} toast={toast} />}
       </div>

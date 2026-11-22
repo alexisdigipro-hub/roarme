@@ -115,7 +115,7 @@ async function apnsToken() {
 const SOUNDS = ['glass', 'chime', 'pop', 'ping', 'drop', 'bells', 'roar']
 // 'iphone': the iPhone's own sound, which Apple plays for 'default' (Alex, 20 Nov)
 const soundFile = (k?: string | null) => (k === 'off' ? undefined : k === 'iphone' ? 'default' : `${SOUNDS.includes(k || '') ? k : 'glass'}.wav`)
-async function apns(endpoint: string, note: { title: string; body: string; room?: string; tag?: string; passive?: boolean; urgent?: boolean; sender?: { id: string; name: string; avatar: string; group?: string } }, sound?: string | null) {
+async function apns(endpoint: string, note: { title: string; body: string; room?: string; tag?: string; passive?: boolean; urgent?: boolean; badge?: number; sender?: { id: string; name: string; avatar: string; group?: string } }, sound?: string | null) {
   const jwt = await apnsToken()
   if (!jwt) return new Response('APNs key not set in Supabase (APNS_KEY_ID, APNS_TEAM_ID, APNS_KEY_P8)', { status: 503 })
   const r = await fetch(endpoint, {
@@ -126,7 +126,7 @@ async function apns(endpoint: string, note: { title: string; body: string; room?
       ...(note.tag ? { 'apns-collapse-id': note.tag.slice(0, 64) } : {}),
     },
     // Do Not Disturb (supabase/status.sql): 'passive' lands quietly in the notification list, no sound, no banner
-    body: JSON.stringify({ aps: { alert: { title: note.title, body: note.body }, sound: note.passive ? undefined : soundFile(sound), 'thread-id': note.room || 'roarme', ...(note.sender ? { 'mutable-content': 1 } : {}), ...(note.passive ? { 'interruption-level': 'passive' } : note.urgent ? { 'interruption-level': 'time-sensitive' } : {}) }, room: note.room || '', ...(note.sender ? { sender: note.sender } : {}) }),
+    body: JSON.stringify({ aps: { alert: { title: note.title, body: note.body }, ...(typeof note.badge === 'number' ? { badge: note.badge } : {}), sound: note.passive ? undefined : soundFile(sound), 'thread-id': note.room || 'roarme', ...(note.sender ? { 'mutable-content': 1 } : {}), ...(note.passive ? { 'interruption-level': 'passive' } : note.urgent ? { 'interruption-level': 'time-sensitive' } : {}) }, room: note.room || '', ...(note.sender ? { sender: note.sender } : {}) }),
   })
   if (r.status === 403) apnsJwt = null // a token Apple no longer takes: a fresh one next time
   // a token for an app that is gone: treated as gone, like Web Push's 410
@@ -134,7 +134,7 @@ async function apns(endpoint: string, note: { title: string; body: string; room?
   return r
 }
 
-async function push(t: { endpoint: string; p256dh: string; auth: string; sound?: string | null }, note: { title: string; body: string; room?: string; tag?: string; silent?: boolean; passive?: boolean; urgent?: boolean; sender?: { id: string; name: string; avatar: string; group?: string } }) {
+async function push(t: { endpoint: string; p256dh: string; auth: string; sound?: string | null }, note: { title: string; body: string; room?: string; tag?: string; silent?: boolean; passive?: boolean; urgent?: boolean; badge?: number; sender?: { id: string; name: string; avatar: string; group?: string } }) {
   if (t.endpoint.startsWith(APNS)) return apns(t.endpoint, note, t.sound)
   const r = await fetch(t.endpoint, {
     method: 'POST',
@@ -211,6 +211,15 @@ async function notify(id: string) {
   const quiet = !!mf.quiet
   const level = quiet ? 0 : Number(mf.level) || 0
   const text = (level === 2 ? '‼️ ' : level === 1 ? '❗ ' : '') + preview(m)
+  // the number on each one's app icon (supabase/badge.sql; Alex, 22 Nov): their unread messages in chats not muted or archived
+  const badges = new Map<string, number>()
+  if (targets?.length) {
+    const ids = [...new Set((targets as { user_id: string }[]).map((t) => t.user_id))]
+    const { data: rows, error } = await sb.rpc('roar_badge_counts', { ids })
+    // before supabase/badge.sql is run the call fails: no number is sent, the icon stays as it was
+    if (!error) for (const id of ids) badges.set(id, 0)
+    for (const x of (rows || []) as { user_id: string; n: number }[]) badges.set(x.user_id, x.n)
+  }
   let sent = 0
   const gone: string[] = []
   await Promise.all((targets as { endpoint: string; p256dh: string; auth: string; preview: boolean; unread: number; mention?: boolean; user_id: string }[]).map(async (t) => {
@@ -224,6 +233,7 @@ async function notify(id: string) {
       room: m.room_id,
       tag: `room-${m.room_id}`,
       count: t.unread,
+      badge: badges.has(t.user_id) ? Math.max(1, badges.get(t.user_id) || 0) : undefined,
       silent: !!own?.silent || dnd.has(t.user_id) || quiet,
       passive: dnd.has(t.user_id) || quiet,
       urgent: level > 0,

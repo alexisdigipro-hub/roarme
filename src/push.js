@@ -197,6 +197,12 @@ export async function pushFirstTap(preview) {
 
 // the unread count on the Home Screen icon while RoarMe is open (the service worker sets it while closed)
 export function setBadge(n) {
+  // inside the iPhone app: RoarMe's own plugin (mobile/ios-app/RoarBadge.swift) puts the number on the icon
+  const C = typeof window !== 'undefined' ? window.Capacitor : null
+  if (C?.isNativePlatform?.()) {
+    try { (C.Plugins?.RoarBadge?.set?.({ count: Math.max(0, n | 0) }) || C.nativePromise?.('RoarBadge', 'set', { count: Math.max(0, n | 0) }))?.catch?.(() => {}) } catch { /* a build without it */ }
+    return
+  }
   if (!badgeSupported()) return
   try { if (n > 0) navigator.setAppBadge(n); else navigator.clearAppBadge() } catch { /* not here */ }
 }

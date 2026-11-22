@@ -6,5 +6,6 @@ import Capacitor
 class RoarViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(RoarCameraPlugin())
+        bridge?.registerPluginInstance(RoarBadgePlugin())
     }
 }

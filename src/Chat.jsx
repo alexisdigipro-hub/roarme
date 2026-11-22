@@ -1748,12 +1748,12 @@ export default function Chat({ me, setMe }) {
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} toast={toast} />
-        ) : active ? (<div className={proOn ? `prw${(active.kind === 'group' && proKit.map[active.room_id]) || active.kind === 'direct' ? ' big' : ''}` : 'prw-off'}>
+        ) : active ? (<div className={proOn && active.kind === 'group' ? `prw${proKit.map[active.room_id] ? ' big' : ''}` : 'prw-off'}>
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} />
-          {proOn && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
+          {proOn && active.kind === 'group' && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
             <Suspense fallback={null}><Profile inline room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
               onClose={() => {}} onMessage={() => {}} onOpenRoom={(id) => setActiveId(id)} onChanged={loadRooms} onLeft={() => { setActiveId(''); loadRooms() }} loadPeople={loadPeople}
               blocked={blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={(v) => callRoom(active, v)} /></Suspense>

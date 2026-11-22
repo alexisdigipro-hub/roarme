@@ -124,7 +124,7 @@ jobs:
             p = Xcodeproj::Project.open("App.xcodeproj")
             t = p.targets.find { |x| x.name == "App" }
             g = p.main_group["App"]
-            %w[RoarCamera.swift RoarCameraPro.swift RoarViewController.swift].each do |n|
+            %w[RoarCamera.swift RoarCameraPro.swift RoarBadge.swift RoarViewController.swift].each do |n|
               next if g.files.any? { |x| x.path == n }
               t.source_build_phase.add_file_reference(g.new_reference(n))
             end

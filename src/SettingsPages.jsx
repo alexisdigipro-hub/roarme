@@ -450,8 +450,8 @@ function Notify({ p, toast }) {
         <EmailReminders />
       </Box>
       <Box title="App icon">
-        {desk.on || badgeSupported()
-          ? <Switch on={p.badge !== false} set={(v) => setPrefs({ badge: v })} hint={desk.on ? '' : 'On the Home Screen icon'}>Unread Count on the App Icon</Switch>
+        {desk.on || badgeSupported() || inApp()
+          ? <Switch on={p.badge !== false} set={(v) => { setPrefs({ badge: v }); syncPushSound() }} hint={desk.on || inApp() ? '' : 'On the Home Screen icon'}>Unread Count on the App Icon</Switch>
           : <Soon hint={isIOS() && !isStandalone() ? 'Add RoarMe to the Home Screen first' : 'Not in this browser'}>Unread Count on the App Icon</Soon>}
       </Box>
     </>

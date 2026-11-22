@@ -7181,3 +7181,20 @@ html:root:root:root:root:root:root:root .prw-bar::before { border-radius: 999px;
 html[data-mode='dark']:root:root:root:root:root:root .prw-bar::before { background: rgba(255, 255, 255, .12); }
 html:root:root:root:root:root .prw-bar .prw-bi svg { width: 21px; height: 21px; }
 html:root:root:root:root:root:root .prw-tabs.slide .prw-bar > button { flex: 1 0 48px; min-width: 48px; height: 42px; padding: 0; }
+/* the project's top row on a phone in one line (Alex, 22 Nov, a screenshot: the gear fell under, its menu opened off the
+   screen, the date was hidden): the stage, the date taking what is left, the gear at the end; the gear's menu and the
+   stage's menu are laid on the screen itself, inside its edges */
+.prw-phone .prw-top { flex-wrap: nowrap; gap: 6px; }
+.prw-phone .prw-top > .prw-hang:first-of-type { flex: 0 1 auto; min-width: 0; }
+html:root:root:root:root .prw-phone .prw-pill.stage { max-width: 150px; padding: 0 10px 0 12px; }
+.prw-phone .prw-pill.stage { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+html:root:root:root:root .prw-phone .prw-pill.date { flex: 1 1 auto; min-width: 0; padding: 0 4px 0 2px; }
+.prw-phone .prw-pill.date .prw-datename > span:not(.prw-caret) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 72px; }
+.prw-phone .prw-pill.date input { min-width: 0; width: 100%; font-size: 13px; }
+.prw-phone .prw-gear-wrap { flex: none; margin-left: 0; }
+html:root:root:root:root:root:root:root .prw-phone .prw-menu { position: fixed !important; top: calc(env(safe-area-inset-top, 0px) + 112px) !important; left: 12px !important; right: 12px !important; width: auto; min-width: 0; max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 140px); overflow-y: auto; }
+html:root:root:root:root:root:root:root .prw-phone .prw-menu.right { left: auto !important; width: min(300px, calc(100vw - 24px)); }
+.prw-phone .prw-pill.date .prw-datename > span:not(.prw-caret) { display: none; }
+html:root:root:root:root .prw-phone .prw-datename { padding: 0 6px; gap: 2px; }
+html:root:root:root:root .prw-phone .prw-pill.stage { max-width: none; font-size: 12.5px; }
+.prw-phone .prw-pill.date input { font-size: 12.5px; }

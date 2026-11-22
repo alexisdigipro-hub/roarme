@@ -1454,6 +1454,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [stagesOpen, setStagesOpen] = useState(false)
   const [setOpen, setSetOpen] = useState(false) // the project's settings page
   const [mf, setMf] = useState('all')
+  const [ff, setFf] = useState('all') // the Files tab's kind (Alex, 22 Nov: a menu of the kinds there are, in the middle)
   const [view, setView] = useState(null)
   const [doc, setDoc] = useState(null)
   const [ordinoOpen, setOrdinoOpen] = useState(false)
@@ -1664,24 +1665,35 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
             {stuff.assets === null ? <p className="prj-quiet">Loading…</p> : shownMedia.length ? <div className="prw-grid big">{shownMedia.map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(shownMedia, i)} onDrop={drop} />)}</div> : <p className="prj-quiet">No photos or videos yet. What is sent in the chat comes here.</p>}
           </>
         )}
-        {shownTab === 'files' && (files.length + music.length ? (
-          <div className="prw-filesecs">
-            {[['docs', 'Documents'], ['audio', 'Music'], ['other', 'Other']].map(([k, label]) => {
-              const list = k === 'audio' ? music : files.filter((m) => (k === 'docs' ? folderOf(m) === 'docs' : folderOf(m) !== 'docs'))
-              if (!list.length) return null
-              return (
-                <section key={k} className="prw-filesec">
-                  <h6 className="prw-h">{label}<small>{list.length}</small></h6>
-                  {k === 'audio' ? <div className="prw-songs">{list.map((m) => songBar(m))}</div> : (
-                    <div className="prj-list prw-files">{list.map((m) => (
-                      <div key={m.id} className="prw-link"><button type="button" className="prj-row" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button><Trash onClick={() => drop(m, 'this file')} /></div>
-                    ))}</div>
-                  )}
-                </section>
-              )
-            })}
-          </div>
-        ) : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents, music and anything else sent in the chat come here.'}</p>)}
+        {shownTab === 'files' && (files.length + music.length ? (() => {
+          // the kinds there are, each only when it has something; a new kind joins the menu by itself
+          const isPdf = (m) => EXT(m.file) === 'pdf' || m.file?.type === 'application/pdf'
+          const kinds = [
+            ['pdf', 'PDF', files.filter(isPdf)],
+            ['docs', 'Documents', files.filter((m) => folderOf(m) === 'docs' && !isPdf(m))],
+            ['audio', 'Music', music],
+            ['other', 'Other', files.filter((m) => folderOf(m) !== 'docs' && !isPdf(m))],
+          ].filter((k) => k[2].length)
+          const pick = kinds.some((k) => k[0] === ff) ? ff : 'all'
+          const shown = pick === 'all' ? kinds : kinds.filter((k) => k[0] === pick)
+          return (
+            <>
+              {kinds.length > 1 && <div className="prw-sub"><Lens className="seg prw-seg" dep={pick}>{[['all', 'All'], ...kinds.map(([k, l]) => [k, l])].map(([k, l]) => <button key={k} type="button" className={pick === k ? 'on' : ''} onClick={() => setFf(k)}>{l}</button>)}</Lens></div>}
+              <div className="prw-filesecs">
+                {shown.map(([k, label, list]) => (
+                  <section key={k} className="prw-filesec">
+                    {pick === 'all' && <h6 className="prw-h">{label}<small>{list.length}</small></h6>}
+                    {k === 'audio' ? <div className="prw-songs">{list.map((m) => songBar(m))}</div> : (
+                      <div className="prj-list prw-files">{list.map((m) => (
+                        <div key={m.id} className="prw-link"><button type="button" className="prj-row" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prj-ftext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), m.user_id === me.id ? 'You' : nameOf(people[m.user_id]), day(m.created_at)].filter(Boolean).join(' · ')}</small>{m.body?.trim() && <em>{m.body.trim()}</em>}</span></button><Trash onClick={() => drop(m, 'this file')} /></div>
+                      ))}</div>
+                    )}
+                  </section>
+                ))}
+              </div>
+            </>
+          )
+        })() : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents, music and anything else sent in the chat come here.'}</p>)}
         {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
         {shownTab === 'calls' && <Calls list={calls} room={room} people={people} me={me} onDrop={drop} />}
         {shownTab === 'links' && (linkCount + places.length + maps.length ? (

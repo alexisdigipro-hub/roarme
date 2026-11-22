@@ -9,7 +9,7 @@ import { report } from './report.jsx'
    picture and the name, round Message · Call · Video, then what we know: the username, their bio, my note for them,
    Share Contact and Add to Favourites, and Block Contact on its own. Edit (top right) is Edit Contact: my own name,
    photo and note for them, which only I see. */
-export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMessage, onCall, onClose, loadPeople, toast }) {
+export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMessage, onCall, onClose, loadPeople, toast, onAddBook }) {
   // Edit turns the card itself into the form (Alex, 21 Oct): my name for them, my note, my photo; Done saves
   const [editing, setEditing] = useState(false)
   const [nick, setNick] = useState('')
@@ -137,6 +137,7 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
         {editing && <p className="muted cc-hint">Only you see these. They keep their own name and photo for everyone else.</p>}
 
         <div className="cc-card">
+          {onAddBook && <button type="button" className="cc-row cc-link" onClick={onAddBook}>Add to Contacts</button>}
           <button type="button" className="cc-row cc-link" onClick={share}>Share Contact</button>
           <button type="button" className="cc-row cc-link" onClick={onFav}>{fav ? 'Remove from Favourites' : 'Add to Favourites'}</button>
         </div>

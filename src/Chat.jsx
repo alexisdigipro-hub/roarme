@@ -37,6 +37,7 @@ import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
 import { useFolderSync } from './folderSync.js'
 import { ContactCard } from './contactCard.jsx'
+import { BookCard, BookEdit, BookIO, deleteEntry, entryName, entryText, keptBook, loadBook, saveEntry, sortKey } from './book.jsx'
 import { PhoneContactsTail, PhoneFriends, contactsAvailable } from './phone.jsx'
 // the map and everything about places load only when one is shown (lighter start, 15 Nov)
 const LiveCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.LiveCard })))
@@ -1304,6 +1305,34 @@ export default function Chat({ me, setMe }) {
   useEffect(() => { const f = (e) => { if (e.detail) { setTab('chats'); setActiveId(e.detail) } }; window.addEventListener('roarme-goroom', f); return () => window.removeEventListener('roarme-goroom', f) }, [])
   useEffect(() => { const f = () => setModal((m) => (m ? m : 'info')); window.addEventListener('roarme-profile', f); return () => window.removeEventListener('roarme-profile', f) }, [])
   const [favs, setFavs] = useLocal('roarme-fav', [])
+  // the address book (book.jsx): kept on the device, fresh from the cloud whenever Contacts is opened
+  const [book, setBook] = useState(() => keptBook(me.id))
+  const [bookOpen, setBookOpen] = useState('') // a contact's id: its card
+  const [bookEdit, setBookEdit] = useState(null) // {} New Contact, or the contact being edited
+  const [bookIO, setBookIO] = useState(false)
+  const [bookGroup, setBookGroup] = useState('')
+  useEffect(() => { if (tab === 'contacts') loadBook(me.id).then(setBook).catch(() => {}) }, [tab, me.id])
+  const bookGroups = useMemo(() => [...new Set(book.flatMap((e) => e.groups || []))].sort((a, b) => a.localeCompare(b, 'el', { sensitivity: 'base' })), [book])
+  const bookPeople = useMemo(() => new Set(book.map((e) => e.person).filter(Boolean)), [book])
+  const findPerson = useMemo(() => {
+    const f = async (u) => { const { data } = await supabase.from('roar_people').select('*').eq('username', u).maybeSingle(); if (data) loadPeople([data.id]); return data || null }
+    f.byId = (id) => people[id] || null
+    return f
+  }, [people]) // eslint-disable-line react-hooks/exhaustive-deps
+  const putBook = (saved) => setBook((l) => (l.some((x) => x.id === saved.id) ? l.map((x) => (x.id === saved.id ? saved : x)) : [...l, saved]))
+  // Contacts' rows: the address book, then RoarMe people from my chats who are not in it yet
+  const cRows = useMemo(() => {
+    const seenOf = (p) => (onlineNow(p) ? Infinity : p.last_seen ? new Date(p.last_seen).getTime() : 0)
+    const q = cq.trim()
+    const b = book.filter((e) => !bookGroup || (e.groups || []).includes(bookGroup)).map((e) => {
+      const p = e.person ? people[e.person] || null : null
+      return { key: `b${e.id}`, e, p, name: entryName(e), fav: !!e.favourite || !!(p && favs.includes(p.id)), text: `${entryText(e)} ${p?.username || ''}`, seen: p ? seenOf(p) : -1, sort: sortKey(e) || entryName(e) }
+    })
+    const r = bookGroup ? [] : contacts.filter((p) => !bookPeople.has(p.id)).map((p) => ({ key: `p${p.id}`, p, name: nameOf(p), fav: favs.includes(p.id), text: `${nameOf(p)} ${p.username}`, seen: seenOf(p), sort: nameOf(p) }))
+    const all = [...b, ...r].filter((x) => !q || foldHas(x.text, q))
+    const abc = (x, y) => x.sort.localeCompare(y.sort, 'el', { sensitivity: 'base' })
+    return all.sort((x, y) => (y.fav - x.fav) || (contactSort === 'name' ? abc(x, y) : (y.seen - x.seen) || abc(x, y)))
+  }, [book, bookGroup, bookPeople, contacts, people, favs, cq, contactSort])
   const [contactSort, setContactSort] = useLocal('roarme-contacts-sort', 'seen') // Contacts: 'seen' (last seen first) or 'name'
   const [contactsMenu, setContactsMenu] = useState('') // Contacts' ⋯ ('sort') or + ('add') menu open
   const cardPerson = card ? people[card] : null
@@ -1476,7 +1505,10 @@ export default function Chat({ me, setMe }) {
                 <>
                   <button type="button" className="scrim" aria-label="Close" onClick={() => setContactsMenu('')} />
                   <div className="menu menu-left contacts-sort">
-                    {[['seen', 'by Last Seen'], ['name', 'by Name']].map(([k, l]) => <button key={k} type="button" className={contactSort === k ? 'on' : ''} onClick={() => { setContactSort(k); setContactsMenu('') }}><span className="menu-tick">{contactSort === k ? I.check : null}</span><span>{l}</span></button>)}
+                    {/* the chosen sort in the accent, no tick (Alex, 22 Nov: "not the tick, something minimal"); Import and Export under a line */}
+                    {[['seen', 'by Last Seen'], ['name', 'by Name']].map(([k, l]) => <button key={k} type="button" className={`csort${contactSort === k ? ' on' : ''}`} onClick={() => { setContactSort(k); setContactsMenu('') }}><span>{l}</span></button>)}
+                    <hr />
+                    <button type="button" onClick={() => { setContactsMenu(''); setBookIO(true) }}><span>Import and Export</span></button>
                   </div>
                 </>
               )}
@@ -1500,7 +1532,8 @@ export default function Chat({ me, setMe }) {
                 <>
                   <button type="button" className="scrim" aria-label="Close" onClick={() => setContactsMenu('')} />
                   <div className="menu">
-                    <button type="button" onClick={() => { setContactsMenu(''); setModal('newchat') }}>{I.addPerson}<span>New Contact</span></button>
+                    <button type="button" onClick={() => { setContactsMenu(''); setBookEdit({}) }}>{I.addPerson}<span>New Contact</span></button>
+                    <button type="button" onClick={() => { setContactsMenu(''); setModal('newchat') }}>{I.search}<span>Find on RoarMe</span></button>
                     <button type="button" onClick={() => { setContactsMenu(''); setModal('invite') }}>{I.link}<span>Invite Friends</span></button>
                     {/* inside the iPhone app: who of the phone's contacts is on RoarMe (Alex, 14 Nov: on the +, not a bar in the list) */}
                     {contactsAvailable() && <button type="button" onClick={() => { setContactsMenu(''); setModal('phonefriends') }}>{I.addPerson}<span>Find Friends From Contacts</span></button>}
@@ -1619,30 +1652,38 @@ export default function Chat({ me, setMe }) {
             </div>
             {/* the same rows as the chat list (Alex, 21 Oct): its sizes, gaps and lines between them */}
             {/* the favourites in a row of their own on top, to be slid sideways (Alex, 12 Nov, the third of the looks he was shown) */}
-            {!cq.trim() && contacts.some((p) => favs.includes(p.id)) && (
+            {/* groups of the address book, small, only when there are some (Alex, 22 Nov: "nicely grouped and lean") */}
+            {bookGroups.length > 0 && (
+              <div className="bk-groupbar">
+                <button type="button" className={`bk-chip${bookGroup ? '' : ' on'}`} onClick={() => setBookGroup('')}>All</button>
+                {bookGroups.map((g) => <button key={g} type="button" className={`bk-chip${bookGroup === g ? ' on' : ''}`} onClick={() => setBookGroup(bookGroup === g ? '' : g)}>{g}</button>)}
+              </div>
+            )}
+            {!cq.trim() && !bookGroup && cRows.some((x) => x.fav) && (
               <div className="contacts-favs">
                 <span className="contacts-favs-title">Favourites</span>
                 <div className="contacts-favs-row">
-                  {contacts.filter((p) => favs.includes(p.id)).map((p) => (
-                    <button key={p.id} type="button" className="contacts-fav" onClick={() => setCard(p.id)}><Avatar src={p.avatar_url} name={nameOf(p)} online={dotOf(p)} size={62} /><span>{nameOf(p).split(' ')[0]}</span></button>
+                  {cRows.filter((x) => x.fav).map((x) => (
+                    <button key={x.key} type="button" className="contacts-fav" onClick={() => (x.e ? setBookOpen(x.e.id) : setCard(x.p.id))}><Avatar src={x.e?.photo_url || x.p?.avatar_url} name={x.name} online={x.p ? dotOf(x.p) : undefined} size={62} /><span>{x.name.split(' ')[0]}</span></button>
                   ))}
                 </div>
               </div>
             )}
             <div className={`rooms contacts-list${cq.trim() ? ' searching' : ''}`}>
-            {[...contacts].sort((a, b) => favs.includes(b.id) - favs.includes(a.id) || (contactSort === 'name' ? nameOf(a).localeCompare(nameOf(b), 'el', { sensitivity: 'base' }) : 0)).filter((p) => !cq.trim() || foldHas(`${nameOf(p)} ${p.username}`, cq.trim().replace(/^@/, ''))).map((p) => (
-              <div key={p.id} className="room contact" role="button" tabIndex={0} onClick={() => setCard(p.id)} onKeyDown={(e) => { if (e.key === 'Enter') setCard(p.id) }}>
-                <Avatar src={p.avatar_url} name={nameOf(p)} online={dotOf(p)} size={prefs.listPreview ? 54 : 48} />
+            {cRows.map((x) => (
+              <div key={x.key} className="room contact" role="button" tabIndex={0} onClick={() => (x.e ? setBookOpen(x.e.id) : setCard(x.p.id))} onKeyDown={(ev) => { if (ev.key === 'Enter') { if (x.e) setBookOpen(x.e.id); else setCard(x.p.id) } }}>
+                <Avatar src={x.e?.photo_url || x.p?.avatar_url} name={x.name} online={x.p ? dotOf(x.p) : undefined} size={prefs.listPreview ? 54 : 48} />
                 <span className="room-main">
-                  <span className="room-top"><strong>{nameOf(p)}</strong></span>
-                  <span className="room-bottom"><span className={`room-prev${onlineNow(p) ? ' is-online' : ''}`} data-raw="">{[p.username ? `@${p.username}` : '', statusOf(p) || lastSeenText(p)].filter(Boolean).join(' · ')}</span></span>
+                  <span className="room-top"><strong>{x.name}</strong></span>
+                  <span className="room-bottom"><span className={`room-prev${x.p && onlineNow(x.p) ? ' is-online' : ''}`} data-raw="">{x.p
+                    ? [x.e && (x.e.job_title || x.e.company) ? [x.e.job_title, x.e.company].filter(Boolean).join(' · ') : (x.p.username ? `@${x.p.username}` : ''), statusOf(x.p) || lastSeenText(x.p)].filter(Boolean).join(' · ')
+                    : [x.e.job_title, x.e.company].filter(Boolean).join(' · ') || x.e.phones?.[0]?.value || x.e.emails?.[0]?.value || ''}</span></span>
                 </span>
-                {favs.includes(p.id) && <span className="contact-fav" title="Favourite">{FAV_STAR}</span>}
               </div>
             ))}
             </div>
             <PhoneContactsTail q={cq} />
-            {!contacts.length && <div className="calls-empty"><span className="side-panel-ico">{I.person}</span><b>No contacts yet</b><p>People you chat with show up here.</p><button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find people</button></div>}
+            {!contacts.length && !book.length && <div className="calls-empty"><span className="side-panel-ico">{I.person}</span><b>No contacts yet</b><p>People you chat with show up here.</p><button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find people</button></div>}
           </div>
         )}
         {tab === 'calls' && prefs.callsTab && (
@@ -1740,8 +1781,24 @@ export default function Chat({ me, setMe }) {
         <ContactCard me={me} person={cardPerson} toast={toast} loadPeople={loadPeople} onClose={() => setCard('')}
           fav={favs.includes(cardPerson.id)} onFav={() => { const on = favs.includes(cardPerson.id); setFavs(on ? favs.filter((x) => x !== cardPerson.id) : [...favs, cardPerson.id]); toast(on ? 'Removed from Favourites' : 'Added to Favourites') }}
           blocked={blocks.has(cardPerson.id)} onBlocks={loadBlocks}
-          onMessage={() => { setCard(''); chatWith(cardPerson) }} onCall={(v) => { setCard(''); startCall(cardPerson, directWith(cardPerson), v) }} />
+          onMessage={() => { setCard(''); chatWith(cardPerson) }} onCall={(v) => { setCard(''); startCall(cardPerson, directWith(cardPerson), v) }}
+          onAddBook={() => { const p = cardPerson; setCard(''); const parts = nameOf(p).split(' '); setBookEdit({ first_name: parts.shift() || '', last_name: parts.join(' '), person: p.id }) }} />
       )}
+      {bookOpen && book.find((e) => e.id === bookOpen) && (() => {
+        const e = book.find((x) => x.id === bookOpen)
+        const p = e.person ? people[e.person] || null : null
+        return (
+          <BookCard entry={e} person={p} toast={toast} onClose={() => setBookOpen('')}
+            onEdit={() => { setBookOpen(''); setBookEdit(e) }}
+            onMessage={() => { setBookOpen(''); if (p) chatWith(p) }} onCall={(v) => { setBookOpen(''); if (p) startCall(p, directWith(p), v) }}
+            onInvite={() => { setBookOpen(''); setModal('invite') }}
+            onFav={async () => { try { putBook(await saveEntry(me.id, { ...e, favourite: !e.favourite })); toast(e.favourite ? 'Removed from Favourites' : 'Added to Favourites') } catch (x) { toast(errText(x)) } }}
+            onDelete={async () => { if (!window.confirm(`Delete ${entryName(e)} from your contacts?`)) return; try { await deleteEntry(me.id, e.id); setBook((l) => l.filter((x) => x.id !== e.id)); setBookOpen(''); toast('Contact deleted') } catch (x) { toast(errText(x)) } }} />
+        )
+      })()}
+      {bookEdit && <BookEdit me={me} entry={bookEdit.id || bookEdit.person || bookEdit.first_name ? bookEdit : null} allGroups={bookGroups} findPerson={findPerson} onClose={() => setBookEdit(null)}
+        onSaved={(saved) => { putBook(saved); setBookEdit(null); setBookOpen(saved.id); toast('Contact saved') }} />}
+      {bookIO && <BookIO me={me} book={book} groups={bookGroups} toast={toast} onDone={setBook} onClose={() => setBookIO(false)} />}
       {modal === 'pickfolder' && (
         <Modal title="Add to a folder" onClose={() => setModal('')}>
           {myFolders.length ? (

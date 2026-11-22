@@ -1479,7 +1479,24 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 <button type="button" className="prw-ordmake" onClick={() => setOrdinoOpen(true)}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
               )}
             </div>
-            {media.length > 0 && <div className="prw-box wide"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-grid mosaic">{media.slice(0, 7).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} onDrop={drop} />)}</div></div>}
+            {/* a taste of each part, small, each with See All to its tab (Alex, 22 Nov: "latest media much smaller, like
+                thumbnails; under them the documents, Location Scout, links and tasks as lists, small") */}
+            {media.length > 0 && <div className="prw-box wide prw-peek"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-mini-grid">{media.slice(0, 12).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} />)}</div></div>}
+            {(() => {
+              const docs = files.slice(0, 3)
+              const sc = hidden.includes('scout') ? [] : scouts.slice(0, 3)
+              const lk = hidden.includes('links') ? [] : links.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter((u) => !isMapLink(u)).map((u) => ({ u, m }))).slice(0, 3)
+              const open = hidden.includes('tasks') ? [] : tasks.filter((t) => t.s !== 'done')
+              const box = (k, title, n, body) => <div key={k} className="prw-box prw-peek prw-peek-list"><div className="prw-boxhead"><h4>{title}<small>{n}</small></h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab(k)}><span>See All</span>{I.right}</button></div><div className="prw-mini-list">{body}</div></div>
+              const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return u } }
+              const parts = [
+                docs.length > 0 && box('files', 'Documents', files.length, docs.map((m) => <button key={m.id} type="button" className="prw-mrow" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prw-mtext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), day(m.created_at)].filter(Boolean).join(' · ')}</small></span></button>)),
+                sc.length > 0 && box('scout', 'Location Scout', scouts.length, sc.map((x) => { const [, label, c] = scoutSt(x.st); return <button key={x.id} type="button" className="prw-mrow" onClick={() => goTab('scout')}>{x.photos?.[0] ? <ScoutPhoto p={x.photos[0]} className="prw-mthumb" /> : <i className="prw-mthumb ic">{I.place}</i>}<span className="prw-mtext"><b>{x.name || 'Location'}</b><small>{x.address || x.addr || x.type || ''}</small></span><i className="prj-chip prw-st" style={{ '--pc': c }}>{label}</i></button> })),
+                lk.length > 0 && box('links', 'Links', linkCount, lk.map(({ u, m }, n) => <a key={`${m.id}-${n}`} className="prw-mrow" href={u} target="_blank" rel="noopener noreferrer"><i className="prw-mthumb ic letter">{host(u).slice(0, 1).toUpperCase()}</i><span className="prw-mtext"><b>{host(u)}</b><small>{u}</small></span></a>)),
+                !hidden.includes('tasks') && tasks.length > 0 && box('tasks', 'Tasks', `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}`, open.length ? open.slice(0, 4).map((t) => <button key={t.id} type="button" className="prw-mrow task" onClick={() => save({ tasks: tasks.map((x) => (x.id === t.id ? { ...x, s: x.s === 'todo' ? 'doing' : 'done' } : x)) })} title={t.s === 'todo' ? 'Start' : 'Done'}><i className={`prw-mtick ${t.s}`}>{t.s === 'doing' ? <i className="prj-half" /> : null}</i><span className="prw-mtext"><b>{t.t}</b></span></button>) : <p className="prj-quiet">Everything is done.</p>),
+              ].filter(Boolean)
+              return parts.length ? <div className="prw-peeks wide">{parts}</div> : null
+            })()}
           </div>
         )}
         {shownTab === 'media' && (

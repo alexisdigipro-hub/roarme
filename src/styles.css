@@ -7478,3 +7478,36 @@ html:root:root:root:root .wn-ok { min-width: 120px; }
 /* a computer (any width over a phone's) has no project switch in the chat's head: the name's pill fills it as before,
    with the group's full name (Alex, 22 Nov) */
 @media (min-width: 761px) { html:root:root:root:root:root:root:root .room-head .head-sw { display: none !important; } }
+/* the faces in the workspace's top row are never cut (Alex, 22 Nov, Mac: half a face showed beside ⇄): they keep their
+   size, and when the row is too narrow for them they step out whole */
+@media (min-width: 761px) {
+  .prw-work > .prw-top { container-type: inline-size; container-name: prwtop; }
+  .prw-work > .prw-top > .prw-faces { flex: none; overflow: visible; }
+  @container prwtop (max-width: 540px) { .prw-work > .prw-top > .prw-faces { display: none; } .prw-work > .prw-top > .prw-swap { margin-left: auto; } }
+}
+/* the Overview's taste of each part (Alex, 22 Nov): media as small thumbnails, then small lists for Documents, Location
+   Scout, Links and Tasks, two to a row on a computer, each with See All */
+.prw-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; margin-top: 10px; }
+.prw-mini-grid .prw-tilewrap { display: block; aspect-ratio: 1; min-width: 0; }
+html:root:root:root:root .prw-mini-grid .prw-tile { width: 100%; height: 100%; min-height: 0; border-radius: 12px; }
+.prw-mini-grid .prw-tile-meta, .prw-mini-grid .prw-trash { display: none; }
+.prw-mini-grid .prw-play { transform: scale(.7); }
+.prw-peeks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.prw-phone .prw-peeks { grid-template-columns: 1fr; }
+.prw-peek-list .prw-boxhead h4 small { margin-left: 6px; font-size: 11px; font-weight: 600; opacity: .5; letter-spacing: 0; }
+.prw-mini-list { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+html:root:root:root:root .prw-mrow { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; height: auto; padding: 5px 6px; border: 0; border-radius: 12px; background: none; box-shadow: none; text-align: left; font: inherit; color: inherit; text-decoration: none; cursor: pointer; box-sizing: border-box; }
+html:root:root:root:root .prw-mrow:hover { background: color-mix(in srgb, currentColor 5%, transparent); }
+.prw-mrow .prj-tag, .prw-mthumb { flex: none; width: 34px; height: 34px; border-radius: 9px; overflow: hidden; display: grid; place-items: center; font-style: normal; }
+.prw-mthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.prw-mthumb.ic { color: var(--halo-mine, var(--accent)); background: color-mix(in srgb, var(--halo-mine, var(--accent)) 13%, transparent); }
+.prw-mthumb.ic svg { width: 17px; height: 17px; }
+.prw-mthumb.letter { font-weight: 700; font-size: 14px; }
+.prw-mtext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.prw-mtext b { font-size: 13.5px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prw-mtext small { font-size: 11.5px; opacity: .55; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prw-mrow .prw-st { flex: none; font-size: 10.5px; }
+.prw-mtick { flex: none; width: 20px; height: 20px; margin: 0 7px; border-radius: 50%; box-shadow: inset 0 0 0 1.6px color-mix(in srgb, currentColor 35%, transparent); display: grid; place-items: center; font-style: normal; }
+.prw-mtick.doing { box-shadow: inset 0 0 0 1.6px #e8a33a; }
+.prw-mtick .prj-half { width: 10px; height: 10px; }
+.prw-mrow .prw-st { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 11px; font-style: normal; font-weight: 600; color: var(--pc); background: color-mix(in srgb, var(--pc) 14%, transparent); }

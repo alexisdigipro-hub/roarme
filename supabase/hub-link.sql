@@ -53,3 +53,14 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.roar_hub_me() from public, anon;
 grant execute on function public.roar_hub_me() to authenticated;
+
+-- every minute, groups for the hub projects that asked for one (the hub's Create PROject) or were made there since linking
+-- (Edge Function roar-hub, called with the Vault secret of supabase/transfer-cron-secret.sql; only while someone is linked)
+select cron.unschedule('roar-hub-pull') where exists (select 1 from cron.job where jobname = 'roar-hub-pull');
+select cron.schedule('roar-hub-pull', '* * * * *', $c$
+  select net.http_post(
+    url := 'https://bzmjhbnwhdwmncxkqkdl.supabase.co/functions/v1/roar-hub',
+    headers := public.roar_cron_headers(),
+    body := '{"action":"cron"}'::jsonb
+  ) where exists (select 1 from public.roar_hub_accounts)
+$c$);

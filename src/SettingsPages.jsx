@@ -166,7 +166,7 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
       )}
       {/* PROJECTS, the gold door (Alex, 22 Nov: "in Settings the tab is the gold Projects, and inside it the hub you join, and the subscription"), on a phone and a computer */}
       <div className="set-box">
-        <button type="button" className={`set-row set-pick set-nav set-proj${page === 'projects' || page === 'hub' ? ' on' : ''}`} onClick={() => onPage('projects')}><span className="nav-ico set-proj-ico">{FOOT_I.pro}</span><span className="set-text"><span className="tab-gold"><b>PRO</b>JECTS</span><small>Production Hub</small></span><i className="set-chev">{I.right}</i></button>
+        <button type="button" className={`set-row set-pick set-nav set-proj${page === 'projects' || page === 'hub' ? ' on' : ''}`} onClick={() => onPage('projects')}><span className="nav-ico set-proj-ico">{FOOT_I.pro}</span><span className="set-text"><span className="tab-gold"><b>PRO</b>ject</span><small>Production Hub</small></span><i className="set-chev">{I.right}</i></button>
       </div>
       {/* every update, with its bullets (Alex, 22 Nov) */}
       <div className="set-box">

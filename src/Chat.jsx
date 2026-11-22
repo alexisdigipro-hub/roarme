@@ -1851,7 +1851,7 @@ export default function Chat({ me, setMe }) {
         const e = book.find((x) => x.id === bookOpen)
         const p = e.person ? people[e.person] || null : null
         return (
-          <BookCard entry={e} person={p} toast={toast} onClose={() => setBookOpen('')}
+          <BookCard me={me} entry={e} person={p} toast={toast} onClose={() => setBookOpen('')}
             onEdit={() => { setBookOpen(''); setBookEdit(e) }}
             onMessage={() => { setBookOpen(''); if (p) chatWith(p) }} onCall={(v) => { setBookOpen(''); if (p) startCall(p, directWith(p), v) }}
             onInvite={() => { setBookOpen(''); setModal('invite') }}
@@ -4952,7 +4952,7 @@ function NewGroup({ me, start, onClose, onOpen }) {
         {marks.bar}
         <small className="as-label">{picked.length ? `Members · ${picked.length}` : 'Members'}</small>
         {picked.length > 0 && <div className="chips ng-chips">{picked.map((p) => <button key={p.id} type="button" className="chip" onClick={() => toggle(p)}>{nameOf(p)} {I.x}</button>)}</div>}
-        <label className="search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by @username or name" /></label>
+        <label className="search">{I.search}<input type="search" name="roar-add-people" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-1p-ignore="" data-lpignore="true" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by name" /></label>
         {err && <p className="auth-err">{err}</p>}
         <div className="people">
           {hits.map((p) => <PersonRow key={p.id} p={p} onClick={() => toggle(p)} right={<span className={`tick${picked.some((x) => x.id === p.id) ? ' on' : ''}`} />} />)}

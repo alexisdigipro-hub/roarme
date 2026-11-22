@@ -4,6 +4,7 @@ import { errText, lastSeenText, nameOf, onlineNow, dotOf, statusOf, supabase } f
 import { Avatar, CropModal, I, Modal } from './ui.jsx'
 import { inviteLink } from './invite.jsx'
 import { report } from './report.jsx'
+import { HubMemberBox } from './hub.jsx'
 
 /* A contact's card (Alex, 21 Oct, like the iPhone's Contacts): a tap on someone in Contacts opens it. The big
    picture and the name, round Message · Call · Video, then what we know: the username, their bio, my note for them,
@@ -136,6 +137,7 @@ export function ContactCard({ me, person: p, fav, onFav, blocked, onBlocks, onMe
         )}
         {editing && <p className="muted cc-hint">Only you see these. They keep their own name and photo for everyone else.</p>}
 
+        <HubMemberBox me={me} personId={p.id} toast={toast} />
         <div className="cc-card">
           {onAddBook && <button type="button" className="cc-row cc-link" onClick={onAddBook}>Add to Contacts</button>}
           <button type="button" className="cc-row cc-link" onClick={share}>Share Contact</button>

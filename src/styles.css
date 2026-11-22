@@ -7852,3 +7852,12 @@ html:root:root:root:root .ch-tabs .ch-seg > button::before, html:root:root:root:
 html:root:root:root:root .prs2-member { gap: 10px; cursor: default; }
 html:root:root:root:root .prs2-member .pf-chans > button:disabled { cursor: default; opacity: .75; }
 @media (max-width: 420px) { html:root:root:root:root .prs2-member .prs2-t small { display: none; } }
+
+/* A project on a computer: the round gold button in the chat's head shows or hides the Workspace (Alex, 22 Nov; the name opens the profile again) */
+html:root:root:root:root:root:root .room-head .head-ws { display: none !important; }
+@media (min-width: 761px) {
+  html:root:root:root:root:root:root .room-head .head-ws { display: grid !important; place-items: center; flex: none; width: 44px; height: 44px; min-width: 44px; padding: 0; color: #b8862b; }
+  html:root:root:root:root:root:root .room-head .head-ws svg { width: 21px; height: 21px; }
+  html:root:root:root:root:root:root .room-head .head-ws.on { background: linear-gradient(170deg, #f6d27a, #d9a440) !important; color: #3b2a0c; box-shadow: 0 4px 14px rgba(185, 134, 43, .35), inset 0 0 0 1px rgba(255, 255, 255, .45) !important; }
+  html[data-mode='dark']:root:root:root:root:root:root .room-head .head-ws:not(.on) { color: #f0c45a; }
+}

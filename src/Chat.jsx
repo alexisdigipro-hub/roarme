@@ -1791,7 +1791,7 @@ export default function Chat({ me, setMe }) {
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
-            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} proArtist={proOn ? String((proKit.map[active.room_id]?.fields || []).find((f) => f.k === 'Title')?.v || '').trim() : ''} />
+            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id]} wsOpen={!proShut} proArtist={proOn ? String((proKit.map[active.room_id]?.fields || []).find((f) => f.k === 'Title')?.v || '').trim() : ''} />
           {proOn && active.kind === 'group' && proKit.map[active.room_id] && !proShut && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
             <Suspense fallback={null}><Profile inline room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
               onClose={() => {}} onMessage={() => {}} onOpenRoom={(id) => setActiveId(id)} onChanged={loadRooms} onLeft={() => { setActiveId(''); loadRooms() }} loadPeople={loadPeople}
@@ -2094,7 +2094,7 @@ function sameMsgs(prev, got) {
 // the three chats and their stage colours (Pre orange, Production red, Post violet; version A of the sample, Alex 22 Nov)
 const CHANS = [['pre', 'Pre Production', '#d48806'], ['prod', 'Production', '#e5483f'], ['post', 'Post Production', '#7b4dff']]
 
-const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [], proArtist = '', assetsAside = false }) {
+const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [], proArtist = '', assetsAside = false, wsOpen = true }) {
   // a PROjects group is three chats (Alex, 22 Nov): PRE PRODUCTION, PRODUCTION, POST PRODUCTION; one sees the tabs the
   // group's admins gave them (roar_my_rooms channels; the server holds it, supabase/project-channels.sql). A new message goes
   // into the tab that is open: the server reads roar_members.cur_channel, which is set here as a tab is chosen
@@ -3686,7 +3686,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
         {(
           <>
-            <button type="button" className="head-card" onClick={assetsAside && window.matchMedia('(min-width: 761px)').matches ? () => window.dispatchEvent(new Event('roarme-pro-toggle')) : onInfo} title={assetsAside && window.matchMedia('(min-width: 761px)').matches ? 'Show or hide the Workspace' : 'Info'}>
+            <button type="button" className="head-card" onClick={onInfo} title="Info">
               {/* the profile picture, large, tilted and faint, behind the name (Alex, 17 Oct) */}
               {(room.kind === 'group' ? room.avatar_url : other?.avatar_url) && <i className="head-bg" aria-hidden="true" style={{ backgroundImage: `url("${room.kind === 'group' ? room.avatar_url : other?.avatar_url}")` }} />}
               <Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={40} group={room.kind === 'group'} online={dotOf(other)} />
@@ -3699,6 +3699,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             {onTasks && <button type="button" className="round tasks-btn only-phone" onClick={onTasks} aria-label="Tasks" title="Tasks">{I.tasks}{tasksCount > 0 && <i>{tasksCount > 99 ? '99+' : tasksCount}</i>}</button>}
             {/* a project on a phone: the gold button between the name and the picture opens the project's page (Alex, 22 Nov) */}
             {assetsAside && <span className="prw-sw2 head-sw" role="tablist"><button type="button" className="on" onClick={onInfo} title="Info"><span className="head-sw-name">{proArtist || title}</span></button><button type="button" onClick={() => window.dispatchEvent(new CustomEvent('roarme-pro-open', { detail: { room: room.room_id } }))}><span className="prw-gold">Project</span></button></span>}
+            {/* a project on a computer: a round gold button shows or hides the Workspace at the right (Alex, 22 Nov: the name opens the profile again) */}
+            {assetsAside && <button type="button" className={`round head-ws${wsOpen ? ' on' : ''}`} onClick={() => window.dispatchEvent(new Event('roarme-pro-toggle'))} aria-label={wsOpen ? 'Hide the Workspace' : 'Show the Workspace'} title={wsOpen ? 'Hide the Workspace' : 'Show the Workspace'}>{FOOT_I.pro}</button>}
             <span className="plus-wrap">
               {/* Halo shows the picture here, round, in place of ⋯ (Alex, 12 Nov, from a picture he sent); it opens the profile, as the name does */}
               <button type="button" className="head-ava" onClick={() => setCallsOpen(true)} aria-label="Call" title="Call"><Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={44} group={room.kind === 'group'} /></button>

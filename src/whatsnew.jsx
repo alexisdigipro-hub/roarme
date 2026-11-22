@@ -77,17 +77,37 @@ const SEEN = 'roarme-news-seen'
 const seen = () => { try { return localStorage.getItem(SEEN) || '' } catch { return '' } }
 const markSeen = () => { try { localStorage.setItem(SEEN, NEWS[0].id) } catch { /* private window */ } }
 
-function Entry({ n }) {
+// B of the sample https://claude.ai/artifact/AU8jUvGrMNKYDnFRb4ijGD (Alex, 22 Nov): a quiet timeline, each change a dot on a
+// fine line, its first words in bold (what comes before ": " when it is short), and All / Phone / Computer to filter
+const WHERE = { 'On a phone': 'phone', 'On a computer': 'computer' }
+const itemsOf = (n) => (n.sections || [{ title: '', items: n.items || [] }]).flatMap((g) => g.items.map((t) => ({ t, w: WHERE[g.title] || 'all' })))
+function Line({ t, w, showTag }) {
+  const i = t.indexOf(': ')
+  const head = i > 0 && i < 42 ? t.slice(0, i) : ''
+  return (
+    <li className="wn-i">
+      {head ? <><b>{head}.</b> <span className="wn-d">{t.slice(i + 2, i + 3).toUpperCase() + t.slice(i + 3)}</span></> : <span className="wn-d">{t}</span>}
+      {showTag && w !== 'all' && <span className="wn-tag">{w === 'phone' ? 'Phone' : 'Computer'}</span>}
+    </li>
+  )
+}
+function Entry({ n, where = 'all' }) {
+  const d = new Date(`${n.id}T12:00:00`)
+  const all = itemsOf(n)
+  const list = where === 'all' ? all : all.filter((x) => x.w === where)
+  if (!list.length) return null
   return (
     <section className="wn-entry">
-      <small className="wn-date">{n.date}</small>
-      {(n.sections || [{ title: '', items: n.items || [] }]).map((g) => (
-        <div key={g.title || 'all'} className="wn-sec">
-          {g.title && <small className="wn-sec-t">{g.title}</small>}
-          <ul className="wn-list">{g.items.map((t) => <li key={t}>{t}</li>)}</ul>
-        </div>
-      ))}
+      <div className="wn-date"><b>{d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</b><span>{d.getFullYear()}</span></div>
+      <ul className="wn-tl">{list.map((x) => <Line key={x.t} t={x.t} w={x.w} showTag={where === 'all'} />)}</ul>
     </section>
+  )
+}
+function WhereSeg({ where, setWhere }) {
+  return (
+    <div className="wn-seg" role="tablist">
+      {[['all', 'All'], ['phone', 'Phone'], ['computer', 'Computer']].map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={where === k} className={where === k ? 'on' : ''} onClick={() => setWhere(k)}>{l}</button>)}
+    </div>
   )
 }
 
@@ -108,17 +128,29 @@ export function WhatsNewHost() {
     document.addEventListener('visibilitychange', vis)
     return () => { clearTimeout(t); document.removeEventListener('visibilitychange', vis) }
   }, [])
+  const [where, setWhere] = useState('all')
   if (!open) return null
   const close = () => { markSeen(); setOpen(false) }
+  const kinds = new Set(itemsOf(NEWS[0]).map((x) => x.w))
   return (
     <Modal title="What's New" onClose={close} foot={<button type="button" className="btn btn-main wn-ok" onClick={close}>Got It</button>}>
-      <div className="wn"><Entry n={NEWS[0]} /></div>
+      <div className="wn">
+        {kinds.size > 1 && <WhereSeg where={where} setWhere={setWhere} />}
+        <Entry n={NEWS[0]} where={where} />
+      </div>
     </Modal>
   )
 }
 
 // Settings > What's New: every update
 export function WhatsNewPage() {
+  const [where, setWhere] = useState('all')
   useEffect(() => { markSeen() }, [])
-  return <div className="wn wn-page">{NEWS.map((n) => <div key={n.id} className="set-box wn-box"><Entry n={n} /></div>)}</div>
+  const shown = NEWS.filter((n) => where === 'all' || itemsOf(n).some((x) => x.w === where))
+  return (
+    <div className="wn wn-page">
+      <WhereSeg where={where} setWhere={setWhere} />
+      {shown.length ? shown.map((n) => <div key={n.id} className="set-box wn-box"><Entry n={n} where={where} /></div>) : <p className="wn-none">Nothing just for this one yet.</p>}
+    </div>
+  )
 }

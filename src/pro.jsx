@@ -1117,6 +1117,37 @@ function SendPick({ rooms, titleOf, here, onClose, onSend, title = 'Send the Ord
    playing when the chat changes and when the phone is locked; and send it as the other chats do"): the one player of the
    app plays it (so it goes on across chats, in the big player and on the lock screen); its waveform fills as it plays and
    a tap on it goes to that moment ---------- */
+/* ---------- the song's waveform, 1 of the sample (Alex, 22 Nov): 1px bars every 2px, mirrored round the middle, the
+   played part in the accent's pair, the rest a faint ink; drawn on a canvas at the screen's own sharpness ---------- */
+function FineWave({ peaks, frac }) {
+  const cv = useRef(null)
+  const [w, setW] = useState(0)
+  useEffect(() => { const el = cv.current; if (!el) return undefined; const ro = new ResizeObserver(() => setW(el.clientWidth)); ro.observe(el); return () => ro.disconnect() }, [])
+  useEffect(() => {
+    const el = cv.current
+    if (!el || !w || !peaks?.length) return
+    const r = window.devicePixelRatio || 1, H = el.clientHeight
+    el.width = Math.round(w * r); el.height = Math.round(H * r)
+    const g = el.getContext('2d')
+    g.setTransform(r, 0, 0, r, 0, 0); g.clearRect(0, 0, w, H)
+    const st = getComputedStyle(el)
+    const a1 = st.getPropertyValue('--halo-mine-top').trim() || st.getPropertyValue('--accent').trim() || '#3aa7e8'
+    const a2 = st.getPropertyValue('--halo-mine').trim() || a1
+    const grad = g.createLinearGradient(0, 0, w, 0); grad.addColorStop(0, a1); grad.addColorStop(1, a2)
+    const n = Math.max(8, Math.floor(w / 2)), mid = H / 2, px = w * frac, step = peaks.length / n
+    for (let i = 0; i < n; i++) {
+      let v = 0
+      for (let j = Math.floor(i * step); j < Math.max(Math.floor(i * step) + 1, Math.floor((i + 1) * step)); j++) v = Math.max(v, peaks[Math.min(peaks.length - 1, j)] || 0)
+      const x = i * 2 + 0.5, h = Math.max(0.75, v * (mid - 1))
+      const done = x < px
+      g.globalAlpha = done ? 1 : 0.32
+      g.fillStyle = done ? grad : st.color
+      g.fillRect(x, mid - h, 1, h * 2)
+    }
+  }, [peaks, frac, w])
+  return <canvas ref={cv} className="prw-fine" aria-hidden="true" />
+}
+
 function SongBar({ m, from, roomId, who, onSendHere, onSendTo, onDrop }) {
   const p = usePlayer()
   const [url, setUrl] = useState('')
@@ -1125,7 +1156,7 @@ function SongBar({ m, from, roomId, who, onSendHere, onSendTo, onDrop }) {
   const mine = p.key === key
   const playing = mine && p.playing
   const frac = mine && p.dur ? p.at / p.dur : 0
-  const real = useWave(m.file, 110)
+  const real = useWave(m.file, 240)
   const peaks = real || shapeOf(key)
   const name = (m.file.name || 'Audio').replace(AUDIO_EXT, '')
   const ext = ((m.file.name || '').match(AUDIO_EXT) || [])[1]?.toUpperCase() || 'AUDIO'
@@ -1136,8 +1167,8 @@ function SongBar({ m, from, roomId, who, onSendHere, onSendTo, onDrop }) {
       <button type="button" className="prw-song-play" onClick={go} disabled={!url} aria-label={playing ? 'Pause' : 'Play'}>{playing ? <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6.5" y="5" width="4" height="14" rx="1.2" /><rect x="13.5" y="5" width="4" height="14" rx="1.2" /></svg> : <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>}</button>
       <span className="prw-song-mid">
         <span className="prw-song-top"><b>{name}</b><small>{ext} · {sizeText(m.file.size)}{who ? ` · ${who}` : ''}</small></span>
-        <span className="prw-wave" onClick={seek} role="slider" aria-label="Position" aria-valuenow={Math.round(frac * 100)} tabIndex={0}>
-          {peaks.map((h, i) => <i key={i} className={i / peaks.length < frac ? 'done' : ''} style={{ height: `${Math.round(h * 100)}%` }} />)}
+        <span className="prw-wave fine" onClick={seek} role="slider" aria-label="Position" aria-valuenow={Math.round(frac * 100)} tabIndex={0}>
+          <FineWave peaks={peaks} frac={frac} />
         </span>
       </span>
       <span className="prw-song-time">{mine ? `${mmss(p.at)} / ${p.dur ? mmss(p.dur) : '–:––'}` : ''}</span>

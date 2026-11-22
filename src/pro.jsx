@@ -177,27 +177,27 @@ function Tasks({ list, onChange }) {
 }
 
 /* ---------- the panel ---------- */
-export function ProPanel({ room, other, project, kit, rooms, titleOf, toast, onJump, onOpenRoom }) {
+function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, onOpenRoom }) {
   const files = useRoomFiles(room.room_id)
   const save = (patch) => kit.save(room.room_id, patch).catch((e) => toast(errText(e)))
 
   if (room.kind !== 'group') {
     const together = rooms.filter((r) => r.kind === 'group' && kit.map[r.room_id] && other && (r.members || []).includes(other.id))
     return (
-      <aside className="prj">
+      <>
         <Section id="together" title="Projects together" count={together.length}>
           {together.length ? together.map((r) => (
             <button key={r.room_id} type="button" className="prj-link" onClick={() => onOpenRoom(r.room_id)}><b>{titleOf(r)}</b><ProChip p={kit.map[r.room_id]} /></button>
           )) : <p className="prj-quiet">No projects with {other ? nameOf(other).split(' ')[0] : 'them'} yet.</p>}
         </Section>
         <Section id="files" title="Shared files" count={files?.length}><Files files={files} onJump={onJump} /></Section>
-      </aside>
+      </>
     )
   }
 
   if (!project) {
     return (
-      <aside className="prj">
+      <>
         <div className="prj-make">
           <span className="prj-make-ico">{I.folder}</span>
           <b>Make this group a project</b>
@@ -205,7 +205,7 @@ export function ProPanel({ room, other, project, kit, rooms, titleOf, toast, onJ
           <button type="button" className="btn btn-main" onClick={() => save({ status: 'prep', fields: FIELD_START.map((k) => ({ k, v: '' })) })}>Make It a Project</button>
         </div>
         <Section id="files" title="Files" count={files?.length}><Files files={files} onJump={onJump} /></Section>
-      </aside>
+      </>
     )
   }
 
@@ -214,7 +214,7 @@ export function ProPanel({ room, other, project, kit, rooms, titleOf, toast, onJ
   const setField = (i, patch) => save({ fields: fields.map((f, n) => (n === i ? { ...f, ...patch } : f)) })
   const done = tasks.filter((t) => t.s === 'done').length
   return (
-    <aside className="prj">
+    <>
       <div className="prj-top">
         <div className="prj-stages" role="radiogroup" aria-label="Stage">
           {STAGES.map(([k, label]) => <button key={k} type="button" role="radio" aria-checked={project.status === k} className={`prj-stage prj-${k}${project.status === k ? ' on' : ''}`} onClick={() => save({ status: k })}>{label}</button>)}
@@ -237,6 +237,31 @@ export function ProPanel({ room, other, project, kit, rooms, titleOf, toast, onJ
       <Section id="files" title="Files" count={files?.length}><Files files={files} onJump={onJump} /></Section>
       <Section id="tasks" title="Tasks" count={tasks.length ? `${done}/${tasks.length}` : null}><Tasks list={tasks} onChange={(next) => save({ tasks: next })} /></Section>
       <button type="button" className="pill-btn prj-unmake" onClick={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields and tasks are deleted; the chat stays.')) kit.remove(room.room_id).catch((e) => toast(errText(e))) }}>Stop Being a Project</button>
-    </aside>
+    </>
+  )
+}
+
+/* the panel's width follows its left edge (Alex, 22 Nov: "this window should be dragged wider or narrower, left and right"):
+   kept on the device, a double click puts it back */
+const PRJ_W = 330
+const prjMax = () => Math.max(300, Math.min(640, window.innerWidth - 760))
+export function ProPanel(props) {
+  const [w, setW] = useState(() => { try { return Number(localStorage.getItem('roarme-pro-w')) || PRJ_W } catch { return PRJ_W } })
+  const keep = (v) => { try { localStorage.setItem('roarme-pro-w', String(Math.round(v))) } catch { /* private window */ } }
+  const drag = (e) => {
+    e.preventDefault()
+    const x0 = e.clientX, w0 = w
+    let last = w0
+    document.documentElement.classList.add('prj-dragging')
+    const move = (ev) => { last = Math.max(260, Math.min(prjMax(), w0 + (x0 - ev.clientX))); setW(last) }
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); document.documentElement.classList.remove('prj-dragging'); keep(last) }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+  return (
+    <div className="prj-wrap" style={{ width: Math.min(w, prjMax()) }}>
+      <span className="prj-grip" onPointerDown={drag} onDoubleClick={() => { setW(PRJ_W); keep(PRJ_W) }} title="Drag to widen or narrow, double-click to reset" />
+      <aside className="prj"><ProInner {...props} /></aside>
+    </div>
   )
 }

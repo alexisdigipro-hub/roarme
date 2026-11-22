@@ -1154,11 +1154,147 @@ function Admin({ room, people, me, project, toast }) {
   )
 }
 
+/* ---------- the project's settings, a page of its own (Alex, 22 Nov: "the gear opens a page with all of it, the details'
+   fields set from there, only the written ones on the Overview; navigation inside, back and with a swipe") ---------- */
+const SET_I = {
+  details: tsv(<><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M8 9h8M8 13h8M8 17h5" /></>),
+  stages: tsv(<><circle cx="6" cy="12" r="2.2" /><circle cx="12" cy="12" r="2.2" /><circle cx="18" cy="12" r="2.2" /></>),
+  date: tsv(<><rect x="4" y="5" width="16" height="15" rx="3" /><path d="M8 3v4M16 3v4M4 10h16" /></>),
+  tabs: tsv(<><rect x="3" y="6" width="18" height="12" rx="6" /><circle cx="9" cy="12" r="2" /></>),
+  side: tsv(<><path d="M4 6h10M4 12h7M4 18h10" /><path d="M17 9l3 3-3 3" /></>),
+  back: tsv(<path d="M15 5l-7 7 7 7" />),
+  up: tsv(<path d="M6 15l6-6 6 6" />),
+  down: tsv(<path d="M6 9l6 6 6-6" />),
+}
+function ProSettings({ start = 'home', project, save, fields, setField, hidden, flipTab, adminIn, notesOn, dateName, onStop, onClose }) {
+  const [page, setPage] = useState(start)
+  const opened = useRef(start) // opened straight on a page (Edit on the Overview): back closes
+  const [dir, setDir] = useState(1)
+  const go = (p) => { opened.current = 'home'; setDir(1); setPage(p) }
+  const back = () => { if (page === 'home' || opened.current === page) onClose(); else { setDir(-1); setPage('home') } }
+  const backRef = useRef(back)
+  backRef.current = back
+  const box = useRef(null)
+  // Escape and a slide to the right go one step back
+  useEffect(() => {
+    const k = (e) => { if (e.key === 'Escape') { e.stopPropagation(); backRef.current() } }
+    document.addEventListener('keydown', k, true)
+    const el = box.current
+    let s = null
+    const ts = (e) => { const t = e.touches[0]; s = e.touches.length === 1 && !e.target.closest?.('input, textarea, select') ? { x: t.clientX, y: t.clientY, t: Date.now() } : null }
+    const te = (e) => { if (!s) return; const t = e.changedTouches[0]; const dx = t.clientX - s.x, dy = t.clientY - s.y; const quick = Date.now() - s.t < 600; s = null; if (dx > 60 && Math.abs(dy) < Math.abs(dx) * 0.6 && quick) backRef.current() }
+    el?.addEventListener('touchstart', ts, { passive: true })
+    el?.addEventListener('touchend', te)
+    return () => { document.removeEventListener('keydown', k, true); el?.removeEventListener('touchstart', ts); el?.removeEventListener('touchend', te) }
+  }, [])
+  const [list, setList] = useState(() => stagesOf(project).map((x) => ({ ...x })))
+  const put = (i, patch) => setList((l) => l.map((x, n) => (n === i ? { ...x, ...patch } : x)))
+  const keepStages = (next) => { setList(next); const clean = next.map((x) => ({ ...x, name: (x.name || '').trim().slice(0, 30) || 'Stage' })); save({ stages: clean, ...(clean.some((x) => x.id === project.status) ? {} : { status: clean[0].id }) }) }
+  const [custom, setCustom] = useState(DATE_NAMES.includes(dateName) ? '' : dateName)
+  const move = (i, d) => { const j = i + d; if (j < 0 || j >= fields.length) return; const next = [...fields]; [next[i], next[j]] = [next[j], next[i]]; save({ fields: next }) }
+  const filled = fields.filter((f) => (f.v || '').trim()).length
+  const titles = { home: 'Project Settings', details: 'Details', stages: 'Stages', date: 'Date' }
+  const row = (k, label, sub, onClick) => <button type="button" className="prs2-row" onClick={onClick}><i className="prs2-ic">{SET_I[k]}</i><span className="prs2-t"><b>{label}</b>{sub && <small>{sub}</small>}</span><span className="prs2-go">{I.right}</span></button>
+  return (
+    <div ref={box} className="prs2" role="dialog" aria-label={titles[page]}>
+      <div className="prs2-head">
+        <button type="button" className="round prs2-back" onClick={back} aria-label={page === 'home' ? 'Close' : 'Back'} title={page === 'home' ? 'Close' : 'Back'}>{page === 'home' || opened.current === page ? I.x : SET_I.back}</button>
+        <b>{titles[page]}</b>
+        <span className="prs2-gap" />
+      </div>
+      <div key={page} className={`prs2-body ${dir > 0 ? 'fwd' : 'bwd'}`}>
+        {page === 'home' && (
+          <>
+            <small className="prs2-cap">Project</small>
+            <div className="prs2-box">
+              {row('details', 'Details', filled ? `${filled} of ${fields.length} written` : 'Artist / Client, Title, Category, Budget…', () => go('details'))}
+              {row('stages', 'Stages', stagesOf(project).map((x) => x.name).join(' · '), () => go('stages'))}
+              {row('date', 'Date', `${dateName}${project.due ? ` · ${new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`, () => go('date'))}
+            </div>
+            <small className="prs2-cap">Tabs</small>
+            <div className="prs2-box">
+              {OPTIONAL.map(([k, l]) => (k === 'stats' && adminIn ? ['admin', 'Admin'] : [k, l])).map(([k, l]) => <button key={k} type="button" className="prs2-row" onClick={() => flipTab(k)}><i className="prs2-ic">{TAB_I[k]}</i><span className="prs2-t"><b>{l}</b></span><i className={`prw-sw${hidden.includes(k) ? '' : ' on'}`} /></button>)}
+            </div>
+            <small className="prs2-cap">Chat</small>
+            <div className="prs2-box">
+              <button type="button" className="prs2-row" onClick={() => setPrefs({ proNotes: !getPrefs().proNotes })}><i className="prs2-ic">{SET_I.side}</i><span className="prs2-t"><b>Show What Went to the Side</b><small>A small line in the chat when a photo or file goes to the project</small></span><i className={`prw-sw${notesOn ? ' on' : ''}`} /></button>
+            </div>
+            <div className="prs2-box">
+              <button type="button" className="prs2-row danger" onClick={onStop}><i className="prs2-ic">{I.trash}</i><span className="prs2-t"><b>Stop Being a Project</b><small>The chat stays; the stage, details, tasks and locations go</small></span></button>
+            </div>
+          </>
+        )}
+        {page === 'details' && (
+          <>
+            <p className="prs2-hint">What is written here shows on the Overview; empty ones stay hidden. Artist / Client and Title also name the group.</p>
+            <datalist id="prs2-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
+            <div className="prs2-box">
+              {fields.map((f, i) => (
+                <div key={`${i}-${f.k}`} className="prs2-field">
+                  <span className="prs2-fin">
+                    <Field className="prs2-fk" value={f.k} placeholder="Field name" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
+                    <Field className="prs2-fv" value={f.v} placeholder="Not written" list={f.k === 'Category' ? 'prs2-cats' : undefined} onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
+                  </span>
+                  <span className="prs2-facts">
+                    <button type="button" className="round prs2-mini" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move up" title="Move up">{SET_I.up}</button>
+                    <button type="button" className="round prs2-mini" disabled={i === fields.length - 1} onClick={() => move(i, 1)} aria-label="Move down" title="Move down">{SET_I.down}</button>
+                    <Trash className="prs2-mini" onClick={() => { if (!(f.v || '').trim() || window.confirm(`Delete ${f.k || 'this field'}?`)) save({ fields: fields.filter((_, n) => n !== i) }) }} />
+                  </span>
+                </div>
+              ))}
+            </div>
+            {fields.length < 20 && <button type="button" className="pill-btn prs2-add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
+          </>
+        )}
+        {page === 'stages' && (
+          <>
+            <p className="prs2-hint">Tap a dot to change its colour. Changes are kept as you go.</p>
+            <div className="prs2-box prs2-pad">
+              <div className="prw-stages">
+                {list.map((x, i) => (
+                  <div key={x.id} className="prw-stage-row">
+                    <button type="button" className="prw-dotbtn" style={{ '--pc': x.c }} onClick={() => keepStages(list.map((y, n) => (n === i ? { ...y, c: STAGE_COLOURS[(STAGE_COLOURS.indexOf(y.c) + 1) % STAGE_COLOURS.length] } : y)))} aria-label="Change colour" title="Change colour" />
+                    <input value={x.name} maxLength={30} onChange={(e) => put(i, { name: e.target.value })} onBlur={() => keepStages(list)} />
+                    {list.length > 1 && <button type="button" className="round prw-del" onClick={() => keepStages(list.filter((_, n) => n !== i))} aria-label="Remove stage">{I.trash}</button>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <span className="prs2-pair">
+              {list.length < 10 && <button type="button" className="pill-btn prs2-add" onClick={() => keepStages([...list, { id: uid().slice(0, 8), name: 'New Stage', c: STAGE_COLOURS[list.length % STAGE_COLOURS.length] }])}>{I.plus}<span>Add Stage</span></button>}
+              <button type="button" className="pill-btn prs2-add" onClick={() => { if (window.confirm('Back to the five stages RoarMe starts with?')) keepStages(DEFAULT_STAGES.map((x) => ({ ...x }))) }}><span>Reset</span></button>
+            </span>
+          </>
+        )}
+        {page === 'date' && (
+          <>
+            <small className="prs2-cap">The date is called</small>
+            <div className="prs2-box">
+              {DATE_NAMES.map((d) => <button key={d} type="button" className="prs2-row" onClick={() => { save({ date_label: d }); setCustom('') }}><span className="prs2-t"><b>{d}</b></span>{d === dateName && <b className="prw-tick">{I.check}</b>}</button>)}
+              <form className="prs2-row prs2-own" onSubmit={(e) => { e.preventDefault(); const v = custom.trim(); if (v) save({ date_label: v.slice(0, 30) }); e.currentTarget.querySelector('input')?.blur() }}>
+                <input value={custom} maxLength={30} placeholder="Your own name" onChange={(e) => setCustom(e.target.value)} onBlur={() => { const v = custom.trim(); if (v && v !== dateName) save({ date_label: v.slice(0, 30) }) }} />
+                {!DATE_NAMES.includes(dateName) && <b className="prw-tick">{I.check}</b>}
+              </form>
+            </div>
+            <small className="prs2-cap">{dateName}</small>
+            <div className="prs2-box">
+              <label className="prs2-row prs2-dateline"><span className="prs2-t"><b>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not set'}</b></span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></label>
+              {project.due && <button type="button" className="prs2-row danger" onClick={() => save({ due: null })}><span className="prs2-t"><b>Clear the Date</b></span></button>}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+
 function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged, rooms = [], titleOf = () => '', onSwap, phone = false }) {
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
   const [menu, setMenu] = useState('')
   const [stagesOpen, setStagesOpen] = useState(false)
+  const [setOpen, setSetOpen] = useState(false) // the project's settings page
   const [custom, setCustom] = useState('')
   const [mf, setMf] = useState('all')
   const [view, setView] = useState(null)
@@ -1322,18 +1458,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
         </span>
         <span className="prw-faces">{members.map((id) => <Avatar key={id} src={people[id]?.avatar_url} name={nameOf(people[id])} size={30} />)}{(room.members || []).length > 5 && <i>+{room.members.length - 5}</i>}</span>
         {onSwap && !phone && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}
-        <span className="prw-hang prw-gear-wrap">
-          <button type="button" className={`round prw-gear${menu === 'gear' ? ' on' : ''}`} onClick={() => setMenu(menu === 'gear' ? '' : 'gear')} aria-label="Project settings" title="Project settings">{I.gear}</button>
-          <Hang open={menu === 'gear'} onClose={() => setMenu('')} className="right">
-            <span className="prw-mcap">Tabs</span>
-            {OPTIONAL.map(([k, l]) => (k === 'stats' && adminIn ? ['admin', 'Admin'] : [k, l])).map(([k, l]) => <button key={k} type="button" onClick={() => flipTab(k)}>{TAB_I[k]}<span>{l}</span><i className={`prw-sw${hidden.includes(k) ? '' : ' on'}`} /></button>)}
-            <hr />
-            <span className="prw-mcap">Chat</span>
-            <button type="button" onClick={() => setPrefs({ proNotes: !getPrefs().proNotes })}>{TAB_I.media}<span>Show What Went to the Side</span><i className={`prw-sw${notesOn ? ' on' : ''}`} /></button>
-            <hr />
-            <button type="button" onClick={() => { setMenu(''); setStagesOpen(true) }}>{I.edit}<span>Rename Stages</span></button>
-            <button type="button" className="danger" onClick={() => { setMenu(''); if (window.confirm('Stop this group being a project? Its stage, brief, fields, tasks and locations are deleted; the chat stays.')) kit.remove(room.room_id).catch((e) => toast(errText(e))) }}>{I.trash}<span>Stop Being a Project</span></button>
-          </Hang>
+        <span className="prw-gear-wrap">
+          <button type="button" className={`round prw-gear${setOpen ? ' on' : ''}`} onClick={() => setSetOpen(true)} aria-label="Project settings" title="Project settings">{I.gear}</button>
         </span>
       </div>
       <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l, n]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}><span className="prw-bi">{TAB_I[k]}{n ? <small>{n}</small> : null}</span></button>)}</Lens></div>
@@ -1341,20 +1467,18 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
         {shownTab === 'overview' && (
           <div className="prw-over">
             <Hero photos={media.filter((m) => folderOf(m) === 'photos' || m.file?.thumb)} room={room} me={me} project={project} st={st} dateName={dateName} fields={fields} toast={toast} onCover={save} onBrief={(v) => save({ brief: v.slice(0, 4000) })} />
-            <div className="prw-box prw-brief-box wide">
-              <h4>Details</h4>
-              <datalist id="prw-cats">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist>
-              <div className="prw-facts">
-                {fields.map((f, i) => (
-                  <div key={i} className="prw-fact">
-                    <Field className="prw-fact-k" value={f.k} placeholder="Field" onSave={(k) => setField(i, { k: k.slice(0, 40) })} />
-                    <Field className="prw-fact-v" value={f.v} placeholder="—" list={f.k === 'Category' ? 'prw-cats' : undefined} onSave={(v) => setField(i, { v: v.slice(0, 200) })} />
-                    <Trash className="prw-fact-del" onClick={() => { if (!(f.v || '').trim() || window.confirm(`Delete ${f.k || 'this field'}?`)) save({ fields: fields.filter((_, n) => n !== i) }) }} />
-                  </div>
-                ))}
-                {fields.length < 20 && <button type="button" className="prw-fact add" onClick={() => save({ fields: [...fields, { k: '', v: '' }] })}>{I.plus}<span>Add Field</span></button>}
+            {fields.some((f) => (f.v || '').trim()) ? (
+              <div className="prw-box prw-brief-box wide">
+                <div className="prw-boxhead"><h4>Details</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => setSetOpen('details')}>{I.edit}<span>Edit</span></button></div>
+                <div className="prw-facts">
+                  {fields.filter((f) => (f.v || '').trim()).map((f, i) => (
+                    <div key={i} className="prw-fact ro"><span className="prw-fact-k">{f.k || 'Field'}</span><span className="prw-fact-v">{f.v}</span></div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <button type="button" className="prw-details-add wide" onClick={() => setSetOpen('details')}>{I.plus}<span>Add Details</span><small>Artist / Client, Title, Category, Budget</small></button>
+            )}
             {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('files')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {/* the ordino as a slim bar under the cover (Alex, 22 Nov: "there is usually one, the big box stays empty") */}
             <div className="prw-ordbar wide">
@@ -1422,6 +1546,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       </div>
       </div>
       {stagesOpen && <Stages project={project} save={save} onClose={() => setStagesOpen(false)} />}
+      {setOpen && <ProSettings key={String(setOpen)} start={setOpen === true ? 'home' : setOpen} project={project} save={save} fields={fields} setField={setField} hidden={hidden} flipTab={flipTab} adminIn={adminIn} notesOn={notesOn} dateName={dateName} onClose={() => setSetOpen(false)}
+        onStop={() => { if (window.confirm('Stop this group being a project? Its stage, brief, fields, tasks and locations are deleted; the chat stays.')) { setSetOpen(false); kit.remove(room.room_id).catch((e) => toast(errText(e))) } }} />}
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
       {ordView && <OrdinoView o={ordView} onClose={() => setOrdView(null)} onSend={() => { setOrdSend(ordView); setOrdView(null) }} />}
       {songSend && <SendPick title="Send the Song" rooms={rooms} titleOf={titleOf} here={room.room_id} onClose={() => setSongSend(null)} onSend={async (ids) => { if (await sendSong(songSend, ids)) setSongSend(null) }} />}
@@ -1477,7 +1603,7 @@ export function ProPanel(props) {
     let s = null
     const start = (e) => {
       const t = e.target
-      s = e.touches.length === 1 && !t.closest?.('input, textarea, select, canvas, .prw-tabs, .prw-sw2, .prw-wave, .prs-cols, .prw-strip, .prw-hero-tools, .map, [id^="m-"], .compose, .composer') ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null
+      s = e.touches.length === 1 && !t.closest?.('input, textarea, select, canvas, .prw-tabs, .prw-sw2, .prw-wave, .prs-cols, .prw-strip, .prw-hero-tools, .prs2, .map, [id^="m-"], .compose, .composer') ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null
     }
     const end = (e) => {
       if (!s) return

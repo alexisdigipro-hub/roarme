@@ -8106,3 +8106,21 @@ html[data-mode='dark'] .ntc { background: color-mix(in srgb, var(--nc) 20%, #222
 .ntc-tx b { font-weight: 600; }
 html:root:root:root:root .ntc-x { flex: none; width: 18px; height: 18px; min-width: 18px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, currentColor 8%, transparent) !important; box-shadow: none !important; color: inherit; opacity: .7; cursor: pointer; }
 .prw-peeks > .peek-files { grid-column: 1 / -1; }
+
+/* The project's page on a phone set straight (Alex, 22 Nov, TestFlight 185): the Overview's column never wider than the
+   screen (its grid took the width of its content), the stage and the shoot day filling the row in the middle */
+html:root:root:root:root:root:root .prw-over, html:root:root:root:root:root:root .prw-peeks { grid-template-columns: minmax(0, 1fr) !important; }
+html:root:root:root:root:root:root .prw-over > *, html:root:root:root:root:root:root .prw-peeks > * { min-width: 0; max-width: 100%; }
+@media (max-width: 760px) {
+  html:root:root:root:root:root:root:root .prw-phone .prw-top { display: flex !important; justify-content: center; gap: 8px; }
+  html:root:root:root:root:root:root:root .prw-phone .prw-top > .prw-pill { flex: 1 1 0; min-width: 0; justify-content: center; height: 40px; }
+  html:root:root:root:root:root:root:root .prw-phone .prw-top > .prw-pill.date { flex: 1.5 1 0; }
+  html:root:root:root:root:root:root:root .prw-phone .prw-top > .prw-pill b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prw-phone .prw-top-gap { display: none; }
+  html:root:root:root:root:root:root:root .prw-phone .prw-over .prw-song-top { flex: 1 1 auto !important; }
+  html:root:root:root:root:root:root:root .prw-phone .prw-over .prw-song .prw-wave { display: none; }
+  html:root:root:root:root:root:root:root .prw-phone .prw-ordbar.with-plus > .prw-ordrow { margin-right: 52px; }
+  html:root:root:root:root:root:root:root .prw-phone .prw-ordacts .pill-btn { width: 34px; padding: 0 !important; justify-content: center; }
+  html:root:root:root:root:root:root:root .prw-phone .prw-ordacts .pill-btn span { display: none; }
+  .prw-phone .prw-team-cols > span:first-child { width: 44px; } .prw-phone .prw-team-cols > span:last-child { width: 76px; }
+}

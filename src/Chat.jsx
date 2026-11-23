@@ -246,7 +246,7 @@ export default function Chat({ me, setMe }) {
   // like Back at its top (Alex, 19 Oct): the page's own Back button is pressed, so it always goes where Back goes
   useEffect(() => {
     let s = null
-    const NO = 'input, textarea, [contenteditable="true"], .tabs, .themes, .dpick, .wheel, .walls, .seg, .viewer, .modal-back, .call, .menu, input[type="range"], [data-tabs-swipe="mid"], .prw-phone'
+    const NO = 'input, textarea, [contenteditable="true"], .tabs, .themes, .dpick, .wheel, .walls, .seg, .viewer, .modal-back, .call, .menu, input[type="range"], [data-tabs-swipe="mid"], .prw-phone, .chan-swipe'
     // the page follows the finger as it slides (Alex, 9 Nov: "with a slide it goes to the menu"), like an iPhone: let go
     // past about 90 px (a quarter of a phone's width), or with a quick flick, and it goes back; let go before, and it
     // springs back into place (Alex, 9 Nov: a third of the screen was too far, a normal slide sprang back)
@@ -2104,8 +2104,10 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // what was sent from the project's Workspace shows in the chat; each person may fold one into a dot (Alex, 22 Nov)
   const [dots, setDots] = useState(() => { try { return new Set(JSON.parse(localStorage.getItem(`roarme-dots-${room.room_id}`) || '[]')) } catch { return new Set() } })
   const flipDot = (id) => setDots((d) => { const n = new Set(d); if (n.has(id)) n.delete(id); else n.add(id); try { localStorage.setItem(`roarme-dots-${room.room_id}`, JSON.stringify([...n].slice(-500))) } catch { /* private window */ } return n })
+  const chanTouch = useRef(null)
   const [chanPick, setChan] = useState(() => { try { return localStorage.getItem(`roarme-chan-${room.room_id}`) || '' } catch { return '' } })
   const chan = chans ? (chans.includes(chanPick) ? chanPick : chans[0]) : null
+  const chanSwipeOn = !!(chans && chans.length > 1) && window.matchMedia('(max-width: 760px)').matches
   useEffect(() => {
     if (!chan) return
     try { localStorage.setItem(`roarme-chan-${room.room_id}`, chan) } catch { /* private window */ }
@@ -3711,7 +3713,19 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     export: () => exportChat(), auto: (h) => setAutoDelete(h ?? null), clear: () => act('clear'), roles: () => setRolesOpen(true), delete: () => act('delete'), import: () => setTgOpen(true),
   }
   return (
-    <div className={`room-view${find !== null ? ' finding' : ''}${prefs.compact ? ' compact' : ''}${prefs.frost || wall === (prefs.appBackground || prefs.background) && (!prefs.appBackground || (prefs.appWallStrength ?? prefs.wallStrength) === prefs.wallStrength) ? ' same-wall' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
+    <div onTouchStart={chanSwipeOn ? (e) => { const t = e.touches[0]; chanTouch.current = e.touches.length === 1 && !e.target.closest('.bubble, input, textarea, .menu, .seg, .compose-wrap') ? { x: t.clientX, y: t.clientY, at: Date.now() } : null } : undefined}
+      onTouchEnd={chanSwipeOn ? (e) => {
+        const s0 = chanTouch.current; chanTouch.current = null
+        if (!s0) return
+        const t = e.changedTouches[0], dx = t.clientX - s0.x, dy = t.clientY - s0.y
+        if (Date.now() - s0.at > 700 || Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.6) return
+        // slide through the project's chats, then to the project or back to the list (Alex, 22 Nov: "swipe right and left everywhere")
+        const list = CHANS.map(([k]) => k).filter((k) => chans.includes(k)), i = list.indexOf(chan)
+        if (dx < 0) { if (i < list.length - 1) setChan(list[i + 1]); else window.dispatchEvent(new CustomEvent('roarme-pro-open', { detail: { room: room.room_id } })) }
+        else if (i > 0) setChan(list[i - 1])
+        else onBack?.()
+      } : undefined}
+      className={`room-view${chanSwipeOn ? ' chan-swipe' : ''}${find !== null ? ' finding' : ''}${prefs.compact ? ' compact' : ''}${prefs.frost || wall === (prefs.appBackground || prefs.background) && (!prefs.appBackground || (prefs.appWallStrength ?? prefs.wallStrength) === prefs.wallStrength) ? ' same-wall' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[prefs.textSize] || 14.5}px`, ...look.style }}
       onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files?.length) dropIn([...e.dataTransfer.files]); else { const t = e.dataTransfer.getData('text/plain'); if (t) setText((v) => (v ? `${v} ${t}` : t)) } }}>
       <header className={`room-head${callsOpen ? ' calls-open' : ''}${assetsAside ? ' has-proj' : ''}`}>
         <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>

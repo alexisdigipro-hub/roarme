@@ -8021,3 +8021,50 @@ html:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.
 .prw-work.view-only :is(.prw-trash, .prw-share, .prw-ordplus, .prw-ordlink-btn, .prw-ordmake, .prw-ordlink, .prw-boxbtn) { display: none !important; }
 .prw-work.view-only .prw-ordacts .pill-btn:not(:first-child) { display: none !important; }
 .prw-work.view-only .prw-mrow.task { pointer-events: none; }
+/* round buttons on the Workspace: the glass fill alone, no rim and no shadow (Alex, 22 Nov: "strange lines round the round ones") */
+html:root:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.round, .prw-ibtn, .prw-trash, .prw-share, .prw-ordplus, .prw-gear, .prw-swap) { border: 0 !important; box-shadow: none !important; outline: 0 !important; }
+
+/* Appearance on one page, version A (Alex, 22 Nov): one preview on top, sticky, showing the chat, the list and the bar;
+   under it three small boxes */
+.apx-pvbox { position: sticky; top: 0; z-index: 3; padding: 2px 0 8px; }
+html:root:root:root:root:root .set-preview.apx-all { height: auto !important; min-height: 0 !important; max-height: none !important; padding: 0 10px 10px !important; display: flex; flex-direction: column; justify-content: flex-start !important; gap: 6px; border-radius: 24px; overflow: hidden; font-size: var(--fs, 14px); }
+html:root:root:root:root:root .set-preview.apx-all .pv-head { position: relative !important; inset: auto !important; margin: 0 -10px 4px !important; }
+html:root:root:root:root:root .set-preview.apx-all .pv-compose { position: static !important; inset: auto !important; margin: 2px 0 0 !important; }
+html:root:root:root:root:root .set-preview.apx-all .pv { font-size: var(--fs, 14px) !important; }
+.apx-pvlist { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 16px; background: rgba(255, 255, 255, .55); font-size: 13px; }
+html[data-mode='dark'] .apx-pvlist { background: rgba(255, 255, 255, .08); }
+.apx-pvlist > span { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.apx-pvlist small { opacity: .6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.apx-pvlist em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--halo-ink, #fff); background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)); border-radius: 9px; padding: 1px 6px; }
+.apx-pvav { width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center; font: 700 11px system-ui; font-style: normal; color: #fff; background: linear-gradient(135deg, #3fbf8a, #1f8a5c); }
+.apx-pvfoot { display: flex; justify-content: space-around; padding: 6px; border-radius: 20px; background: rgba(255, 255, 255, .6); }
+html[data-mode='dark'] .apx-pvfoot { background: rgba(255, 255, 255, .08); }
+.apx-pvfoot i { width: 22px; height: 22px; border-radius: 8px; background: currentColor; opacity: .22; }
+.apx-pvfoot i.on { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)); opacity: 1; }
+.apx-one { display: flex; flex-direction: column; gap: 10px; }
+.apx-one .set-row.set-col > .set-text { text-align: left; }
+/* version A compact: small dots and wallpapers, tighter rows, the box titles centred, no second "Colour" */
+.apx-one .apx-cap { display: none; }
+html:root:root:root:root:root:root .apx-one .set-box > h4, html:root:root:root:root:root:root .apx-one .set-sec > h4 { text-align: center; }
+html:root:root:root:root:root:root .apx-one .halo-accents { grid-template-columns: repeat(5, 30px) !important; gap: 10px !important; justify-content: center; }
+html:root:root:root:root:root:root .apx-one .halo-accents .acc { width: 30px !important; height: 30px !important; min-width: 30px; }
+html:root:root:root:root:root:root .apx-one .walls { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)) !important; gap: 10px 4px !important; }
+html:root:root:root:root:root:root .apx-one .walls .wall-tile { width: 40px !important; height: 40px !important; margin-bottom: 18px !important; }
+html:root:root:root:root:root:root .apx-one .walls .wall-tile small { bottom: -18px !important; font-size: 10.5px !important; }
+html:root:root:root:root:root:root .apx-one .set-row { padding-top: 8px; padding-bottom: 8px; }
+html:root:root:root:root:root:root .apx-one .apx-name .accents .acc { width: 26px !important; height: 26px !important; }
+
+/* The song inside a project chat's capsule (Alex, 22 Nov, B): while something plays, the capsule holds the three chats
+   and, under a hairline, a thin row with play, the name, the time and X, the progress along its foot */
+.ch-box { display: inline-flex; flex-direction: column; max-width: 100%; min-width: 0; }
+html:root:root:root:root:root .ch-box:has(.ch-np) { border-radius: 20px; background: var(--lg, rgba(255, 255, 255, .75)); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .9)); box-shadow: var(--lg-shadow, 0 6px 20px rgba(0, 0, 0, .08)); padding-bottom: 4px; }
+html:root:root:root:root:root:root .ch-box:has(.ch-np) > .ch-seg { background: none !important; border-color: transparent !important; box-shadow: none !important; }
+.ch-np { position: relative; display: flex; align-items: center; gap: 8px; margin: 0 8px; padding: 5px 2px 7px; border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); min-width: 0; }
+html:root:root:root:root:root .ch-np-pp { flex: none; width: 22px; height: 22px; min-width: 22px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink, #fff); box-shadow: none !important; }
+.ch-np-pp svg { width: 11px; height: 11px; }
+html:root:root:root:root:root .ch-np-t { flex: 1; min-width: 0; padding: 0; border: 0; background: none !important; box-shadow: none !important; text-align: left; font-size: 12px; font-weight: 600; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; height: auto; }
+.ch-np > small { flex: none; font-size: 11px; opacity: .6; font-variant-numeric: tabular-nums; }
+html:root:root:root:root:root .ch-np-x { flex: none; width: 20px; height: 20px; min-width: 20px; padding: 0; border: 0; background: none !important; box-shadow: none !important; display: grid; place-items: center; color: inherit; opacity: .7; }
+.ch-np-x svg { width: 12px; height: 12px; }
+.ch-np-line { position: absolute; left: 2px; right: 2px; bottom: 1px; height: 2px; border-radius: 2px; background: color-mix(in srgb, currentColor 10%, transparent); cursor: pointer; }
+.ch-np-line i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--halo-mine-top), var(--halo-mine)); }

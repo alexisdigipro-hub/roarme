@@ -955,32 +955,20 @@ function AppTextSize({ p }) {
 
 function Appearance({ p, toast, me, setMe }) {
   const [accentPick, setAccentPick] = useState(false)
-  // three tabs instead of one long page (Alex, 19 Nov: "tabs where needed, not many boxes downwards")
-  const [tab, setTab] = useState(() => { try { return sessionStorage.getItem('roarme-look-tab') || 'colours' } catch { return 'colours' } })
-  const goTab = (t) => { setTab(t); try { sessionStorage.setItem('roarme-look-tab', t) } catch { /* private */ } }
-  // a slide left or right on the page goes to the next tab (Alex, 19 Nov: "slide wherever there are pages"); on the
-  // first tab a slide to the right still goes back out of the page
-  const swipeRef = useRef(null)
-  useTabSwipe(swipeRef, ['colours', 'chats', 'app'], tab, goTab, p.frost ? 1 : 0)
+  // one page, no tabs (Alex, 22 Nov, version A of https://claude.ai/artifact/C7LfJgv4JLwTeQh9iJdekw): one preview on top
+  // shows everything changed under it, then three small boxes, Colour, Messages and App
   const look = wallLook(p.background, useWalls(true), p.wallStrength)
   const pickName = (c) => saveMe(me, setMe, { name_color: c }).then((e) => toast(e || 'Saved'))
-  // Colours: one message of yours and the writing box with Send, where the colour shows
-  const colourPv = (
-    <div className="pv-wrap" aria-hidden="true">
-      <div className="set-preview live pv-short" data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={look.style}>
+  const allPv = (
+    <div className="apx-pvbox" aria-hidden="true">
+      <div className={`set-preview live apx-all${p.compact ? ' compact' : ''}`} data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ ...look.style, '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px` }}>
+        <span className="pv-head"><i className="pv-ava">GK</i><span><b>Giorgos</b><small>online</small></span></span>
+        <span className="pv">Are we shooting at 10?</span>
         <span className="pv mine">Yes, on set at 10 👍</span>
         <span className="pv-compose"><span>Write a message…</span><i /></span>
+        <span className="apx-pvlist"><i className="apx-pvav">NS</i><span><b>Night Shoot</b><small>Nefeli: Call sheet is up</small></span><em>3</em></span>
+        <span className="apx-pvfoot"><i className="on" /><i /><i /><i /></span>
       </div>
-    </div>
-  )
-  // Chats: a little chat with the wallpaper, the text size and Compact Messages
-  const chatPv = (
-    <div className={`set-preview live${p.compact ? ' compact' : ''}`} aria-hidden="true" data-bg={look['data-bg']} data-img={look['data-img']} data-own={look['data-own']} data-wop={look['data-wop']} style={{ '--fs': `${TEXT_SIZES[p.textSize] || 14.5}px`, ...look.style }}>
-      <span className="pv-head"><i className="pv-ava">GK</i><span><b>Giorgos</b><small>online</small></span></span>
-      <span className="pv">Are we shooting at 10?</span>
-      <span className="pv mine"><i>Are we shooting at 10?</i>Yes, on set at 10 👍</span>
-      <span className="pv mine">Bring the lights 💡</span>
-      <span className="pv-compose"><span>Write a message…</span><i /></span>
     </div>
   )
   // Day and Night as a small capsule right under the preview, no title of its own (Alex, 22 Nov: "centred and compact")
@@ -989,20 +977,11 @@ function Appearance({ p, toast, me, setMe }) {
       <Lens className="seg" dep={`${p.mode}${p.theme}`}>{[['dark', 'Dark'], ['light', 'Light'], ['auto', 'Auto']].map(([k, l]) => <button key={k} type="button" className={p.mode === k ? 'on' : ''} onClick={(e) => revealFrom(e, () => { applyMode(k)(); setPrefs({ mode: k }) })}>{l}</button>)}</Lens>
     </div>
   )
-  // one theme, Roar (Alex, 22 Nov: "take Frost out, we keep only Roar, so take both out"): no Theme row
-  const tabs = (
-    <div className="apx-tabs">
-      <Lens className="seg" dep={tab}>{[['colours', 'Colours'], ['chats', 'Chats'], ['app', 'App']].map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => goTab(k)}>{l}</button>)}</Lens>
-    </div>
-  )
   return (
     <>
-      {tabs}
-      <div ref={swipeRef} className="apx-swipe" data-tabs-swipe={tab === 'colours' ? 'first' : 'mid'}>
-      {tab === 'colours' && (
-        <div className="apx-pane" key="colours">
-          <Box>
-            {colourPv}
+      {allPv}
+      <div className="apx-one">
+          <Box title="Colour">
             {modeRow}
             {/* one colour (Alex, 19 Nov): it paints one's own messages, Send and the buttons; Message Colours, Accent
                 Opacity and Glass Look are gone */}
@@ -1018,12 +997,7 @@ function Appearance({ p, toast, me, setMe }) {
               </div>
             </div>
           </Box>
-        </div>
-      )}
-      {tab === 'chats' && (
-        <div className="apx-pane" key="chats">
-          <Box>
-            {chatPv}
+          <Box title="Messages">
             <div className="set-row set-col">
               <span className="set-text">Message Text Size<small>{`${TEXT_SIZES[p.textSize] || 14.5} px`}</small></span>
               <div className="set-size">
@@ -1040,13 +1014,8 @@ function Appearance({ p, toast, me, setMe }) {
               <span className="range-labels"><small>Square</small><small>Round</small></span>
               {!!p.bubbleR && <button type="button" className="pill-btn corners-own" onClick={() => setPrefs({ bubbleR: 0 })}>Theme's Own</button>}
             </div>
-          </Box>
-          {/* one wallpaper for the chats and the whole app (Alex, 19 Nov); App background is gone */}
-          <Box title="Wallpaper" note="For the chats and the whole app. One chat can have its own from its ⋯ menu > Change Wallpaper.">
-            <div className="set-row set-col"><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
-          </Box>
-          {/* Your name in groups (Alex, 19 Nov): one short row, the line beside its title, small dots */}
-          <Box>
+            {/* one wallpaper for the chats and the whole app (Alex, 19 Nov); a chat can have its own from its ⋯ menu */}
+            <div className="set-row set-col"><span className="set-text">Wallpaper</span><WallTiles value={p.background} toast={toast} onPick={(k) => setPrefs({ background: k })} /></div>
             <div className="set-row set-col apx-name">
               <span className="set-text">Name Colour<small>How your name shows to others in groups</small></span>
               <div className="accents">
@@ -1056,11 +1025,7 @@ function Appearance({ p, toast, me, setMe }) {
               </div>
             </div>
           </Box>
-        </div>
-      )}
-      {tab === 'app' && (
-        <div className="apx-pane" key="app">
-          <Box>
+          <Box title="App">
             <AppTextSize p={p} />
             <div className="set-row apx-line">
               <span className="set-text">Font</span>
@@ -1075,13 +1040,9 @@ function Appearance({ p, toast, me, setMe }) {
               <span className="set-text">Contacts</span>
               <Lens className="seg" dep={p.contactShape === 'plain' || !p.contactShape ? 'plain' : 'pill'}>{[['plain', 'Plain'], ['pill', 'Capsule']].map(([k, l]) => <button key={k} type="button" className={((p.contactShape || 'plain') === 'plain' ? 'plain' : 'pill') === k ? 'on' : ''} onClick={() => setPrefs({ contactShape: k })}>{l}</button>)}</Lens>
             </div>
-          </Box>
-          <Box title="Effects">
             {/* Smooth Animations is always on, no switch (Alex, 22 Nov: "let it be smooth, give no choice") */}
             <Switch on={p.lite} set={(v) => setPrefs({ lite: v })} hint="No animations and no glass blur, easier on the battery">Power Saving Mode</Switch>
-          </Box>
-          {/* the look back to how RoarMe starts (Alex, 9 Nov); every chat's own wallpaper goes too */}
-          <Box note="Theme, colour, text, wallpaper, layout and effects go back to how RoarMe starts. Each chat's own wallpaper goes too.">
+            {/* the look back to how RoarMe starts (Alex, 9 Nov); every chat's own wallpaper goes too */}
             <button type="button" className="set-row set-pick danger" disabled={LOOK_KEYS.every((k) => JSON.stringify(p[k]) === JSON.stringify(DEFAULTS[k])) && !hasChatWalls()} onClick={() => {
               if (!window.confirm('Reset the look of RoarMe on this device?')) return
               setPrefs(Object.fromEntries(LOOK_KEYS.map((k) => [k, DEFAULTS[k]])))
@@ -1089,8 +1050,6 @@ function Appearance({ p, toast, me, setMe }) {
               toast('The look is back to how RoarMe starts')
             }}><span className="set-text">Reset Appearance</span></button>
           </Box>
-        </div>
-      )}
       </div>
     </>
   )

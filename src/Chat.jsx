@@ -30,7 +30,7 @@ import { Library, LibrarySide, useLibrary } from './media.jsx'
 import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
-import { NowPlaying, PlayerSheet, player } from './player.jsx'
+import { MiniNow, NowPlaying, PlayerSheet, player } from './player.jsx'
 import { fixKept, keepMsgs, keptMsgs, lsGet, lsSet, readMsgs } from './cache.js'
 import { onTyping, sendTyping, watchTyping } from './typing.js'
 import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
@@ -3789,19 +3789,22 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
       {chans && chans.length > 1 && find === null && (
         <div className="ch-tabs" role="tablist" aria-label="Chats of the project">
           {/* version A of the sample (Alex, 22 Nov): a glass capsule, a lens that travels, each chat's stage colour as a dot */}
+          <span className="ch-box">
           <Lens className="seg ch-seg" dep={chan}>
             {CHANS.filter(([k]) => chans.includes(k)).map(([k, l, c]) => {
               const n = chan === k ? 0 : msgs.filter((m) => (m.channel || 'pre') === k && m.user_id !== me.id && !m.deleted_at && room.last_read_at && m.created_at > room.last_read_at).length
               return <button key={k} type="button" role="tab" aria-selected={chan === k} className={chan === k ? 'on' : ''} style={{ '--c': c }} onClick={() => setChan(k)}><i className="ch-dot" />{l}{n > 0 && <sup>{n > 99 ? '99+' : n}</sup>}</button>
             })}
           </Lens>
+          {!window.matchMedia('(max-width: 760px)').matches && <MiniNow />}
+          </span>
         </div>
       )}
       {room.kind === 'group' && find === null && <GroupCallBar call={gc.call} here={gc.here} people={people} me={me} inIt={gc.here.includes(me.id)} onJoin={joinGc} />}
 
       {/* the song that is playing: under the chat's head, in the flow (Alex, 18 Nov, from Telegram's); a tap on its name
           goes to the chat it came from */}
-      {find === null && <NowPlaying className="in-room" onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} />}
+      {find === null && !(chans && chans.length > 1 && !window.matchMedia('(max-width: 760px)').matches) && <NowPlaying className="in-room" onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} />}
       {pinned && !picked && (
         <div className="pinbar" role="button" tabIndex={0} onClick={() => setPinView(true)} title="All pinned messages">
           <span className="pinbar-main"><b>{pinnedList.length > 1 ? `Pinned messages · ${pinnedList.length}` : 'Pinned message'}</b><span>{textOf(pinned)}</span></span>

@@ -8331,3 +8331,6 @@ html:root:root:root .tab-gold { font-family: Jost, var(--font, Inter), system-ui
 html:root:root:root .tabs button .tab-name .tab-gold { font-size: 12.5px; }
 html:root:root:root .tab-gold b { font-weight: 600; }
 html:root:root:root .tab-gold i { font-weight: 300; }
+
+/* The folders' words closer (Alex, 23 Nov: the room round each word 25% less; the bar's own edges unchanged): 15px each side -> 11px */
+html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .rooms-area .tabs button:not([data-tab='archived']) { padding-left: 11px; padding-right: 11px; }

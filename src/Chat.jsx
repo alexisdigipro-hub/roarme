@@ -3,6 +3,7 @@ import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo,
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, dotOf, statusOf, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { ASIDE_TABS, OrdinoCard, OrdinoView, ProChip, ProPanel, asideTab, isAsset, isDelivered, ordinoOf, proOk, useProjects } from './pro.jsx'
+import { Moji, mojify, mojiCount, mojiOf, mojiSend } from './moji.jsx'
 import { REACTIONS, TEXT_SIZES, chime, folderTint, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls, CALL_EDGE } from './calls.jsx'
@@ -3372,7 +3373,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const withMentions = (s) => {
     const parts = String(s).split(/(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|@[\p{L}\p{N}_]{2,24})/gu)
     return parts.map((p, i) => {
-      if (!(i % 2)) return p
+      if (!(i % 2)) return mojify(p) // our own emoji in place of the phone's (RoarMoji)
       if (p.startsWith('@')) return <span key={i} className={`mention${mentionsMe(p, me, roles) ? ' me' : ''}`}>{p}</span>
       const tail = (p.match(/[.,;:!?)\]]+$/) || [''])[0]
       const url = tail ? p.slice(0, -tail.length) : p
@@ -3640,7 +3641,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           const rx = reactsOf[m.id]
           const seen = mine && seenBy(m).length > 0
           const isPicked = picked?.includes(m.id)
-          const big = prefs.bigEmoji && m.kind === 'text' && !m.deleted_at && !quoted && isEmojiOnly(m.body)
+          const big = prefs.bigEmoji && m.kind === 'text' && !m.deleted_at && !quoted && (isEmojiOnly(m.body) || !!m.file?.moji)
+          const mj = big ? (m.file?.moji ? 1 : mojiCount(m.body)) : 0 // how many of ours, drawn big (RoarMoji)
           const isTransfer = m.kind === 'file' && m.file?.bucket === TRANSFER_BUCKET
           // what the message is, as classes on its bubble, so the themes need no :has() to find it out (Alex, 12 Nov: lighter):
           // rt-b a RoarTransfer card, aud-b a voice message or a song, file-b a file, solo with no words, quote or name over it
@@ -3710,7 +3712,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <button type="button" className="who-ava" aria-label={`Chat with ${nameOf(who)}`} onClick={(e) => { e.stopPropagation(); if (!ghost) toDm(m.user_id) }}><Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /></button> : <span className="av-gap" />)}
                 <div className="bubble-col">
                   {m.file?.fromPanel && !m.deleted_at && <button type="button" className="msg-hide" onClick={(e) => { e.stopPropagation(); flipDot(m.id) }} title="Fold into a dot" aria-label="Fold into a dot"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 12h12" /></svg></button>}
-                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.poll && !m.deleted_at ? ' poll-b' : ''}${ord ? ' event-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
+                  <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.poll && !m.deleted_at ? ' poll-b' : ''}${ord ? ' event-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}${mj ? ` mj-big mj-${Math.min(mj, 3)}` : ''}`}>
                     {!mine && (room.kind === 'group' || ghost) && first && !big && <b className="who" role="button" tabIndex={0} style={{ '--who': colorOf(ghost || m.user_id) }} onClick={(e) => { e.stopPropagation(); if (!ghost) toDm(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}
                     {m.deleted_at ? <i>Message deleted</i>
@@ -3732,13 +3734,14 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                       : m.kind === 'file' && isAudioFile(m.file) && !m.file?.asFile ? <MusicTile file={m.file} from={title} roomId={room.room_id} />
                       : m.kind === 'file' ? <FileTile file={m.file} onPdf={(url) => setPdfView({ url, name: m.file?.name })} onView={(url) => setViewer({ items: [{ url, type: m.file?.type, name: m.file?.name, who: mine ? 'You' : nameOf(who), at: m.created_at, m }], index: 0 })} />
                       : null}
-                    {!m.deleted_at && m.body && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && !m.file?.capsule && !m.file?.contact && !ord && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
+                    {!m.deleted_at && m.file?.moji && <span className="text"><Moji k={m.file.moji} /></span>}
+                    {!m.deleted_at && m.body && !m.file?.moji && !m.file?.event && !m.file?.location && !m.file?.roartransfer && !m.file?.poll && !m.file?.capsule && !m.file?.contact && !ord && <span className="text">{formatText(qs ? qs.rest : m.body, hit && findRx ? markFound : withMentions)}</span>}
                     {!m.deleted_at && m.sealed && !m.body && <span className="text sealed-none">{m.locked ? 'Encrypted message. This device has no key for it.' : 'Opening…'}</span>}
                     {vlink && <LinkVideo link={vlink} wide={wide} onWide={() => hands.current.flipWide(m.id)} onCinema={hands.current.setCinema} />}
                     {/* reactions inside the bubble, on its outer side (Alex, 15 Nov: "never towards the middle, and inside the frame") */}
                     {(rx || replyCount[m.id]) && (
                       <span className="rx rx-in">
-                        {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); hands.current.react(m, e) }}>{e === '❤️' ? RX_HEART : e}{v.n > 1 && <small>{v.n}</small>}</button>)}
+                        {rx && Object.entries(rx).map(([e, v]) => <button key={e} type="button" className={v.mine ? 'on' : ''} title={v.who.map((u) => (u === me.id ? 'You' : nameOf(people[u]))).join(', ')} onClick={(ev) => { ev.stopPropagation(); hands.current.react(m, e) }}>{mojiOf(e) ? <Moji e={e} /> : e === '❤️' ? RX_HEART : e}{v.n > 1 && <small>{v.n}</small>}</button>)}
                         {replyCount[m.id] > 0 && <button type="button" className="rx-replies" onClick={(ev) => { ev.stopPropagation(); hands.current.setReplies(m) }}>{I.reply}<small>{replyCount[m.id]}</small></button>}
                       </span>
                     )}
@@ -4152,7 +4155,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         <OnTop>
           <button type="button" className="scrim blur msg-veil" aria-label="Close" onClick={() => { if (!lifting()) setMenu(null) }} onContextMenu={(e) => { e.preventDefault(); setMenu(null) }} />
           <div ref={menuRef} className="msg-menu" style={{ left: menu.x, top: menu.y }} onClick={(e) => { if (e.target === e.currentTarget && !lifting()) setMenu(null) }} onClickCapture={(e) => { if (lifting()) { e.stopPropagation(); e.preventDefault() } }}>
-            <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{e}</button>)}</div>
+            <div className="rx-pick">{REACTIONS.map((e) => <button key={e} type="button" className={reactsOf[menu.m.id]?.[e]?.mine ? 'on' : ''} onClick={(ev) => { if (!reactsOf[menu.m.id]?.[e]?.mine) burst(e, ev.clientX, ev.clientY); react(menu.m, e) }}>{mojiOf(e) ? <Moji e={e} /> : e}</button>)}</div>
             <div className="menu-list">
               <button type="button" onClick={() => { setReplyTo(menu.m); setMenu(null) }}>{I.reply}<span>Reply</span></button>
               {menu.m.body && <button type="button" onClick={() => { const b = textOf(menu.m); copy(prefs.copyFormat === false ? plainText(b) : b, 'Text copied'); setMenu(null) }}>{I.copy}<span>Copy Text</span></button>}
@@ -4233,6 +4236,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         onLocation={(location) => sendCard(location.name, { location }, '', () => setAttach(null))}
         onLive={sendLive}
         onPoll={sendPoll}
+        onMoji={(k) => { const x = mojiSend(k); if (x) sendCard(x.body, x.file, '', () => setAttach(null)) }}
         contacts={shareable} onContact={(p) => sendCard(nameOf(p), { contact: { id: p.id, username: p.username, name: nameOf(p), avatar: p.avatar_url || '' } }, '', () => setAttach(null))} />}
       {transferOpen && (
         <TransferWindow title={title} hidden={transferHidden} slot={transferSlot} onHide={() => { setTransferHidden(true); if (transferSlot) setAttach(null) }} onProgress={setTransferPct}

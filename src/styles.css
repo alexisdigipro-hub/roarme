@@ -8313,3 +8313,21 @@ html[data-mode='dark'] .fold-tint { color: var(--fc-d, var(--fc)) !important; }
 .pf-row .pf-row-adm.pf-row-hist { margin-left: 6px; }
 .pf-hist-opt { cursor: pointer; }
 .pf-hist-opt .switch { margin-left: auto; flex: none; }
+
+/* Unread with a mouse (Alex, 23 Nov, C of https://claude.ai/artifact/D4rNyMqCdFbsykMiGVL5cE): hovering the folder bar lets the round
+   Unread button peek out from under its left end; a click on ALL (already chosen) brings it out whole, a second click puts it back */
+@media (hover: hover) and (pointer: fine) {
+  html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open):has(> .tabs:hover) > .tabs { margin-left: calc(var(--u-nm, 5px) + 16px) !important; }
+  html:root:root:root .wheel-box.u-has:not(.u-open):has(> .tabs:hover) > .u-pop.round { opacity: .9; transform: scale(.78); pointer-events: auto; }
+  html:root:root:root .wheel-box.u-has:not(.u-open) > .u-pop.round:hover { opacity: 1; }
+  html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open):has(> .u-pop:hover) > .tabs { margin-left: calc(var(--u-nm, 5px) + 16px) !important; }
+  html:root:root:root .wheel-box.u-has:not(.u-open):has(> .u-pop:hover) > .u-pop.round { opacity: 1; transform: scale(.78); pointer-events: auto; }
+  .rooms-area .wheel-box.u-has > .tabs { transition: margin-left .42s cubic-bezier(.25, 1.35, .45, 1); }
+}
+
+/* PROJECTS in Jost (Alex, 23 Nov, 1 of the same sample): PRO semi-bold, JECTS light, wider spacing, sized so its capitals stand
+   exactly as tall as the other folders' (Jost's capitals are shorter than Inter's, so 12.5px against their 12px) */
+html:root:root:root .tab-gold { font-family: Jost, var(--font, Inter), system-ui, sans-serif; letter-spacing: .08em; }
+html:root:root:root .tabs button .tab-name .tab-gold { font-size: 12.5px; }
+html:root:root:root .tab-gold b { font-weight: 600; }
+html:root:root:root .tab-gold i { font-weight: 300; }

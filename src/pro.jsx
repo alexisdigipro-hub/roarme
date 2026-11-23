@@ -1808,7 +1808,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [ordView, setOrdView] = useState(null)
   const artistOf = () => ((Array.isArray(project.fields) ? project.fields : []).find((f) => f.k === 'Artist / Client')?.v || '').trim()
   const [adminIn, setAdminIn] = useState(room.role === 'admin')
-  useEffect(() => { if (room.role === 'admin') { setAdminIn(true); return } supabase.from('roar_pro_admin').select('room_id').eq('room_id', room.room_id).maybeSingle().then(({ data }) => setAdminIn(!!data), () => {}) }, [room.room_id, room.role])
+  // the Admin tab only for the group's admins (Alex, 22 Nov: "nobody else")
+  useEffect(() => { setAdminIn(room.role === 'admin') }, [room.role])
   // a song sent on: into this chat again, or a copy of the file into each chosen chat (each chat keeps its own files)
   // anything of the Workspace sent on (Alex, 22 Nov: "the classic share arrow on all of them: one of our three chats, or
   // another chat or person"): into one of this project's chats (its channel), or a copy into each chosen chat (each

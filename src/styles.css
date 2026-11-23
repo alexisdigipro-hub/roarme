@@ -8203,3 +8203,5 @@ html:root .tab-gold i { font-style: normal; font-weight: 300; }
 @keyframes dot-beat { 0% { transform: scale(1); opacity: .75 } 55%, 100% { transform: scale(1.6); opacity: 0 } }
 html[data-lite] .tab-dot.lit::before { animation: none; opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .tab-dot.lit::before { animation: none; opacity: 0; } }
+/* the hairline right of the Unread dot a little nearer to it (Alex, 23 Nov) */
+.rooms-area .tabs button[data-tab='unread']::after { right: 5px; }

@@ -8176,3 +8176,17 @@ html[data-mode='dark'] .tab-dot::after { background: rgba(255, 255, 255, .24); }
 @keyframes dot-n { from { transform: scale(.4); opacity: 0 } to { transform: scale(1); opacity: 1 } }
 html[data-lite] .tab-dot.lit b { animation: none; }
 @media (prefers-reduced-motion: reduce) { .tab-dot.lit b { animation: none; } }
+/* the folder bar's two ends as version C of https://claude.ai/artifact/FhrKCorDNoVGH4usDQoiBc (Alex, 23 Nov, "c"): no
+   circle and no fill, only the sign in the bar's curve and a hairline between it and the folders; Unread a small faint dot,
+   and while something is unread the dot in the colour of one's own messages with the number; the chosen end in the
+   words' full colour */
+html:root .rooms-area .tabs .tab-circ { background: transparent !important; box-shadow: none !important; width: 34px; height: 34px; color: rgba(20, 24, 34, .45); }
+html[data-mode='dark']:root .rooms-area .tabs .tab-circ { color: rgba(255, 255, 255, .5); }
+html:root .rooms-area .tabs button.on .tab-circ { color: inherit; transform: scale(1.1); }
+.rooms-area .tabs .tab-dot::after { width: 6px; height: 6px; background: currentColor; }
+.tab-arch.tab-circ svg { width: 19px; height: 19px; }
+html:root:root:root:root:root:root .rooms-area .tabs button[data-tab='unread'], html:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'] { padding: 0 8px; }
+.rooms-area .tabs button[data-tab='unread']::after, .rooms-area .tabs button[data-tab='archived']::after { content: ""; position: absolute; top: 12px; bottom: 12px; width: 1px; background: rgba(20, 24, 34, .12); pointer-events: none; }
+html[data-mode='dark'] .rooms-area .tabs button[data-tab='unread']::after, html[data-mode='dark'] .rooms-area .tabs button[data-tab='archived']::after { background: rgba(255, 255, 255, .1); }
+.rooms-area .tabs button[data-tab='unread']::after { right: 0; }
+.rooms-area .tabs button[data-tab='archived']::after { left: 0; }

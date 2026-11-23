@@ -135,6 +135,22 @@ export default function Chat({ me, setMe }) {
   const [activeId, setActiveId] = useState('')
   // RoarMe always opens on All (Alex, 18 Oct: it opened on Archived, the folder left last time)
   const [folder, setFolder] = useState('all')
+  // Unread out of the folder bar (Alex, 23 Nov, https://claude.ai/artifact/HE48Bz3Cb4AnaWyP7VxNBo, "πάμε"): while something is
+  // unread a round accent button peeks in from the screen's left edge; a slide right on the bar brings it out whole with the
+  // number, pushing only the bar's left end; a tap shows the unread chats, a slide left puts it back
+  const [uOpen, setUOpen] = useState(false)
+  const uTouch = useRef(null)
+  const uPop = useRef(null)
+  // the folder bar's box is display: contents, so the button is placed from the bar itself: its top and left, and the
+  // place where only a sliver of it shows at the screen's edge
+  useEffect(() => {
+    const n = tabsLens.current, b = uPop.current
+    if (!n || !b) return
+    const r = n.getBoundingClientRect()
+    b.style.top = `${n.offsetTop + (n.offsetHeight - 44) / 2}px`
+    b.style.setProperty('--u-in', `${n.offsetLeft - (parseFloat(getComputedStyle(n).marginLeft) || 0)}px`)
+    b.style.setProperty('--u-peek', `${n.offsetLeft - r.left - 35}px`)
+  })
   const [q, setQ] = useState('')
   const [modal, setModal] = useState('') // '' | newchat | newgroup | info | folders | newfolder | pickfolder
   const [plus, setPlus] = useState(false)
@@ -1318,6 +1334,8 @@ export default function Chat({ me, setMe }) {
   }
   // the Unread dot also counts a chat marked as unread (one each), so it lights for those too (Alex, 23 Nov)
   const folderUnread = (f) => visible.filter((r) => inFolder(r, f.id) && !r.muted).reduce((a, r) => a + (r.unread || (f.id === 'unread' && marked.includes(r.room_id) ? 1 : 0)), 0)
+  const uCount = folderUnread({ id: 'unread' })
+  const uShown = (uOpen && uCount > 0) || folder === 'unread'
   const tagsOf = (r) => myFolders.filter((f) => f.rooms.includes(r.room_id)).map((f) => f.name)
 
   // Edit: pick chats, then Read / Archive / Folder / Delete for all of them
@@ -1617,10 +1635,14 @@ export default function Chat({ me, setMe }) {
             </div></div>
             <div className={`rooms-area${tabsDown && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
             {!q.trim() && (
-              <div className={`wheel-box${wheeling ? ' on' : ''}`}>
+              <div className={`wheel-box${wheeling ? ' on' : ''}${uCount > 0 ? ' u-has' : ''}${uShown ? ' u-open' : ''}`}
+                onTouchStart={(e) => { const t = e.touches[0]; uTouch.current = e.touches.length === 1 && !editTabs ? { x: t.clientX, y: t.clientY, sl: tabsLens.current?.scrollLeft || 0 } : null }}
+                onTouchEnd={(e) => { const u = uTouch.current; uTouch.current = null; if (!u) return; const t = e.changedTouches[0], dx = t.clientX - u.x, dy = t.clientY - u.y; if (Math.abs(dx) < 36 || Math.abs(dx) < Math.abs(dy) * 1.4) return; if (dx > 0 && u.sl <= 2 && uCount > 0 && !uShown) { haptic(8); setUOpen(true) } else if (dx < 0 && uShown && u.x < 140) { setUOpen(false); if (folder === 'unread') setFolder('all') } }}>
+              {!wheeling && <button ref={uPop} type="button" className={`u-pop${folder === 'unread' ? ' on' : ''}`} aria-label={uCount > 0 ? `Unread, ${uCount}` : 'Unread'} title="Unread" tabIndex={uShown ? 0 : -1}
+                onClick={() => { if (!uShown) { setUOpen(true); return } haptic(8); setFolder(folder === 'unread' ? 'all' : 'unread') }}><b key={uCount}>{uCount > 99 ? '99+' : uCount || ''}</b></button>}
               {wheeling && <i ref={pillRef} className="tabs lens lens-on wheel-pill" aria-hidden="true" />}
               <nav ref={tabsLens} className={`tabs lens tabs-scroll${editTabs ? ' editing' : ''}${wheeling ? ' tabs-wheel' : ''}`} data-travel="" onScroll={onWheelScroll} onWheel={(e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY }}>
-                {(wheeling ? Array.from({ length: WHEEL_COPIES }, (_, k) => k) : [WHEEL_MID]).flatMap((k) => tabsShown.map((f) => {
+                {(wheeling ? Array.from({ length: WHEEL_COPIES }, (_, k) => k) : [WHEEL_MID]).flatMap((k) => tabsShown.filter((f) => wheeling || f.id !== 'unread').map((f) => {
                   const twin = k !== WHEEL_MID
                   const n = folderUnread(f)
                   const dragged = tabDrag?.id === f.id

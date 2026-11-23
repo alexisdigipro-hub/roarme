@@ -8237,3 +8237,22 @@ html:root .rooms-area .tabs button[data-tab='archived'].on .tab-arch.tab-circ { 
 /* the Unread dot stays grey while all is read, in every theme (Halo's badge rule painted .quiet in the accent too) */
 html:root:root:root .rooms-area .tabs .tab-dot .badge.dot.quiet { background: rgba(20, 24, 34, .22) !important; box-shadow: none !important; }
 html[data-mode='dark']:root:root:root .rooms-area .tabs .tab-dot .badge.dot.quiet { background: rgba(255, 255, 255, .3) !important; }
+/* Unread out of the folder bar (Alex, 23 Nov): a round button in the accent, as tall as the bar, waits beyond the screen's
+   left edge; while something is unread a sliver of it peeks in and nudges now and then; a slide right on the bar brings it
+   in whole with the number and the bar gives way at its left end only; chosen (the unread chats showing) it wears a ring */
+html:root .rooms-area .wheel-box > .tabs { transition: margin-left .42s cubic-bezier(.25, 1.35, .45, 1), transform .3s; }
+.u-pop { position: absolute; z-index: 20; top: 0; left: -64px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent)))), var(--halo, var(--accent)); color: var(--halo-ink, #fff);
+  box-shadow: 0 6px 18px rgba(20, 60, 110, .28), inset 0 0 0 1px rgba(255, 255, 255, .3); opacity: 0; pointer-events: none;
+  transition: left .42s cubic-bezier(.25, 1.35, .45, 1), opacity .3s, box-shadow .25s; -webkit-tap-highlight-color: transparent; }
+.u-pop b { font-size: 15px; font-weight: 700; letter-spacing: 0; opacity: 0; transition: opacity .2s; }
+.wheel-box.u-has > .u-pop { left: var(--u-peek, -35px); opacity: 1; pointer-events: auto; animation: u-nudge 3.2s ease-in-out infinite; }
+.wheel-box.u-open > .u-pop { left: calc(var(--u-in, 12px) + 5px); animation: none; }
+.wheel-box.u-open > .u-pop b { opacity: 1; animation: dot-n .35s cubic-bezier(.25, 1.45, .45, 1); }
+.wheel-box.u-open > .u-pop.on { box-shadow: 0 6px 18px rgba(20, 60, 110, .28), 0 0 0 2.5px var(--bg, #fff), 0 0 0 4px var(--halo-mine, var(--accent)); }
+html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-open > .tabs { margin-left: calc(var(--u-nm, 5px) + 52px) !important; }
+@keyframes u-nudge { 0%, 70%, 100% { transform: translateX(0) } 78% { transform: translateX(6px) } 86% { transform: translateX(1px) } 92% { transform: translateX(4px) } }
+html[data-lite] .wheel-box.u-has > .u-pop, html[data-lite] .wheel-box > .tabs, html[data-lite] .u-pop { animation: none; transition: none; }
+@media (prefers-reduced-motion: reduce) { .wheel-box.u-has > .u-pop { animation: none; } }
+/* on a computer the peek sits inside the panel's own edge so it can be clicked */
+@media (min-width: 761px) and (pointer: fine) { .wheel-box.u-has > .u-pop { left: calc(var(--u-in, 12px) - 30px); } }

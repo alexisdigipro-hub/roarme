@@ -12,7 +12,7 @@ export const NEWS = [
     date: '23 November 2026',
     sections: [
       { title: 'Everywhere', items: [
-        'Unread is a round dot at the left of the folders: grey when all is read, in the colour of your messages with a heartbeat when something is new. RoarMe always opens on All; slide right to reach it.',
+        'Unread waits at the left edge: when something is new a round button peeks in. Slide the folders to the right to bring it out with the number, tap it for your unread chats.',
         'Archived is a round sign with three binders at the right of the folders.',
         'PROJECTS is written in capitals everywhere: PRO in gold and bold, JECTS thin.',
       ] },

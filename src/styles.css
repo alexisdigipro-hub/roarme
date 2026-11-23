@@ -8223,3 +8223,9 @@ html[data-mode='dark'] .rooms-area .tabs .tab-dot::after { background: rgba(255,
 html:root:root .rooms-area .tabs .tab-dot.lit::after { background: var(--my-bubble, var(--halo-mine, var(--accent))); }
 .rooms-area .tabs .tab-dot.lit::before { width: 8px; height: 8px; margin: -4px 0 0 -4px; border-width: 1.5px; }
 @keyframes dot-beat { 0% { transform: scale(1); opacity: .8 } 60%, 100% { transform: scale(3); opacity: 0 } }
+/* the Unread end's dot is the very dot a chat marked as unread carries in the list (Alex, 23 Nov: "exactly the same size
+   and design"): .badge.dot, grey (.quiet) while all is read; its heartbeat ring sized to it */
+html:root:root .rooms-area .tabs .tab-dot::after { display: none !important; }
+.rooms-area .tabs .tab-dot > .badge.dot { animation: none; }
+html:root:root .rooms-area .tabs .tab-dot.lit::before { width: 12px; height: 12px; margin: -6px 0 0 -6px; border-color: var(--halo, var(--accent)); }
+@keyframes dot-beat { 0% { transform: scale(1); opacity: .8 } 60%, 100% { transform: scale(2.4); opacity: 0 } }

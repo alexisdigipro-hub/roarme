@@ -3337,7 +3337,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
 
   // a chat with one person shows only the name; @username and last seen are in the profile (Alex, 14 Nov). Groups keep their count
-  const sub = room.kind === 'group' ? `${(room.members || []).length} ${(room.members || []).length === 1 ? 'member' : 'members'}` : ''
+  const sub = room.kind === 'group' && !room.project ? `${(room.members || []).length} ${(room.members || []).length === 1 ? 'member' : 'members'}` : ''
   // "typing…" under the name in the head too, small (Alex, 21 Nov: "everywhere, but discreetly")
   const [typer, setTyper] = useState('')
   useEffect(() => onTyping((m) => setTyper((t) => (m[room.room_id] || '') === t ? t : (m[room.room_id] || ''))), [room.room_id])

@@ -149,7 +149,9 @@ Deno.serve(async (req) => {
     const scouts: any[] = Array.isArray(proj.scouts) ? proj.scouts : []
     const locs = merge(scouts, Array.isArray(hub.locations) ? hub.locations : [], locCommon, locCommon, base.l)
     // the hub's photos of a place show in Location Scout (its public thumbnails), unless RoarMe has photos of its own for it
-    const hubPh = (h: any) => ((h?.photos?.length ? h.photos : h?.libPhotos || []) as any[]).filter((p) => p?.thumb).slice(0, 40).map((p) => ({ id: `hub-${p.id}`, url: p.thumb, w: p.w || 0, h: p.h || 0 }))
+    // the whole photos come as links beside the project (hub-bridge photoLinks), so the viewer shows them large (Alex, 22 Nov)
+    const links: Record<string, string> = hub?.photoLinks || {}
+    const hubPh = (h: any) => ((h?.photos?.length ? h.photos : h?.libPhotos || []) as any[]).filter((p) => p?.thumb).slice(0, 40).map((p) => ({ id: `hub-${p.id}`, url: links[p.id] || p.thumb, thumb: p.thumb, w: p.w || 0, h: p.h || 0 }))
     const roarScouts = locs.map(({ id, c, r, h }) => {
       const own = ((r?.photos || []) as any[]).filter((p) => p?.path)
       const photos = own.length ? r.photos : (h ? hubPh(h) : (r?.photos || []))

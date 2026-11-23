@@ -9,6 +9,7 @@ import { locale } from './i18n.js'
 import { ContactEdit } from './contactCard.jsx'
 import { useNameMarks } from './fancy.jsx'
 import { startGroupCall } from './groupcall.jsx'
+import { HubMemberBox } from './hub.jsx'
 
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
 const monthOf = (iso) => new Date(iso).toLocaleDateString(locale(), { month: 'long', year: 'numeric' }).toUpperCase()
@@ -429,6 +430,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
             {other.my_note && <button type="button" className="pf-field" onClick={() => setEditing(true)} title="Edit"><small>your note · only you see it</small><span className="pf-note">{other.my_note}</span><i>{I.edit}</i></button>}
           </div>
         )}
+        {/* Hub Member and its category on the person's own page too (Alex, 22 Nov), for whoever linked a Production Hub */}
+        {!group && other && <HubMemberBox me={me} personId={other.id} toast={toast} />}
         {err && <p className="auth-err">{err}</p>}
 
         <nav className="pf-tabs" ref={tabsRef}>

@@ -1167,7 +1167,7 @@ function ShareMenu({ at, chans, onClose, onChan, onOther }) {
       </div>
     </div>, document.body)
 }
-function SendPick({ rooms, titleOf, here, onClose, onSend, title = 'Send the Ordino' }) {
+function SendPick({ rooms, titleOf, here, onClose, onSend, title = 'Send the Ordino', people = {}, me = {} }) {
   const [q, setQ] = useState('')
   const [pick, setPick] = useState([])
   const [busy, setBusy] = useState(false)
@@ -1175,12 +1175,12 @@ function SendPick({ rooms, titleOf, here, onClose, onSend, title = 'Send the Ord
     .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'group' ? -1 : 1))
   const flip = (id) => setPick((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   return (
-    <Modal title={title} onClose={onClose} foot={<button type="button" className="btn btn-main" disabled={!pick.length || busy} onClick={async () => { setBusy(true); await onSend(pick); setBusy(false) }}>{pick.length ? `Send to ${pick.length}` : 'Send'}</button>}>
+    <Modal title={title} onClose={onClose} foot={<div className="prw-sendfoot"><button type="button" className="btn btn-main" disabled={!pick.length || busy} onClick={async () => { setBusy(true); try { await onSend(pick) } finally { setBusy(false) } }}>{busy ? 'Sending…' : pick.length ? `Send to ${pick.length}` : 'Send'}</button></div>}>
       <input className="prw-sendq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search chats" autoFocus />
       <div className="prw-sendlist">
         {list.map((r) => (
           <button key={r.room_id} type="button" className={`prw-sendrow${pick.includes(r.room_id) ? ' on' : ''}`} onClick={() => flip(r.room_id)}>
-            <Avatar src={r.avatar_url} name={titleOf(r)} size={34} group={r.kind === 'group'} />
+            <Avatar src={r.avatar_url || (r.kind === 'direct' ? people[(r.members || []).find((id) => id !== me.id)]?.avatar_url : '')} name={titleOf(r)} size={34} group={r.kind === 'group'} />
             <span className="prj-ftext"><b>{titleOf(r)}</b><small>{r.room_id === here ? 'This chat' : r.kind === 'group' ? `${(r.members || []).length} members` : 'Direct'}</small></span>
             <i className="prw-check">{pick.includes(r.room_id) && I.check}</i>
           </button>
@@ -1278,6 +1278,34 @@ function Fold({ id, title, children }) {
 /* ---------- People: who came in, how often, for how long, what they sent (Alex, 22 Nov) ---------- */
 const spent = (s) => { const m = Math.round((Number(s) || 0) / 60); return m < 1 ? 'under a minute' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60 ? `${m % 60} min` : ''}`.trim() }
 const ago = (t) => { if (!t) return ''; const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 2 ? 'now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago` }
+function Team({ room, people, me }) {
+  const [stats, setStats] = useState(null)
+  useEffect(() => {
+    let gone = false
+    supabase.rpc('roar_visit_stats', { r: room.room_id }).then(({ data }) => { if (!gone) setStats(Array.isArray(data) ? Object.fromEntries(data.map((x) => [x.user_id, x])) : {}) }, () => { if (!gone) setStats({}) })
+    return () => { gone = true }
+  }, [room.room_id])
+  const ids = room.members || []
+  if (!ids.length) return null
+  const has = stats && Object.keys(stats).length > 0
+  const rows = ids.map((id) => ({ id, v: stats?.[id] })).sort((a, b) => (Number(b.v?.secs) || 0) - (Number(a.v?.secs) || 0))
+  const nameFor = (id) => (id === me.id ? 'You' : nameOf(people[id]) || 'Member')
+  return (
+    <div className="prw-box wide prw-team">
+      <div className="prw-boxhead"><h4>Team<small>{ids.length}</small></h4>{has && <span className="prw-team-cols"><span>Visits</span><span>Time in</span></span>}</div>
+      <div className="prw-team-list">
+        {rows.map(({ id, v }) => (
+          <div key={id} className="prw-team-row">
+            <Avatar src={people[id]?.avatar_url || (id === me.id ? me.avatar_url : '')} name={id === me.id ? nameOf(me) : nameFor(id)} size={24} />
+            <b>{nameFor(id)}</b>
+            <small>{v?.last_at ? ago(v.last_at) : has ? 'not in yet' : ''}</small>
+            {has && <span className="prw-team-cols"><span>{Number(v?.opens) || 0}</span><span>{v?.secs ? spent(Number(v.secs)).replace('under a minute', '<1 min') : '–'}</span></span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 function People({ room, people, me }) {
   const [rows, setRows] = useState(null)
   useEffect(() => {
@@ -1697,7 +1725,10 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       let file = m.file ? { ...m.file } : null
       if (file) delete file.imported
       // a song from the hub has only a link that lasts a day: its sound is fetched once and put in the chat's own folder
-      if (file?.url && !file.path) {
+      // a big one (over the chat's 50 MB for a file) goes as the hub's own link, which lasts about two months
+      if (file?.url && !file.path && Number(file.size) > 48e6) {
+        file = { name: file.name || 'Song', size: file.size, type: file.type || 'audio/mpeg', url: file.keep || file.url, ...(Array.isArray(file.peaks) ? { peaks: file.peaks } : {}), hubLink: true }
+      } else if (file?.url && !file.path) {
         try {
           const r = await fetch(file.url)
           if (!r.ok) throw new Error('The hub did not give the file')
@@ -1707,14 +1738,14 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           const { error } = await supabase.storage.from('roar-files').upload(to, blob, { contentType: blob.type || 'audio/mpeg' })
           if (error) throw error
           file = { name, size: blob.size, type: blob.type || 'audio/mpeg', path: to, ...(Array.isArray(file.peaks) ? { peaks: file.peaks } : {}) }
-        } catch (e) { bad = e; continue }
+        } catch { file = { name: file.name || 'Song', size: file.size, type: file.type || 'audio/mpeg', url: file.keep || file.url, ...(Array.isArray(file.peaks) ? { peaks: file.peaks } : {}), hubLink: true } }
       } else if (file?.path && id !== room.room_id) {
         const to = `${id}/${uid()}-${file.path.split('/').pop().replace(/^[0-9a-f-]{36}-/, '')}`
         const { error } = await supabase.storage.from(file.bucket || 'roar-files').copy(file.path, to)
         if (error) { bad = error; continue }
         file = { ...file, path: to }
       }
-      const { error } = await supabase.from('roar_messages').insert({ room_id: id, user_id: me.id, kind: m.kind || 'file', body: m.body || '', file, ...(chan && id === room.room_id ? { channel: chan } : {}) })
+      const { error } = await supabase.from('roar_messages').insert({ room_id: id, user_id: me.id, kind: m.kind || 'file', body: m.body || '', file: id === room.room_id ? { ...(file || {}), fromPanel: true } : file, ...(chan && id === room.room_id ? { channel: chan } : {}) })
       if (error) bad = error
     }
     if (bad) { toast(errText(bad)); return false }
@@ -1743,7 +1774,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     const when = [o.date && new Date(o.date).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), o.call && `Call ${o.call}`, o.place].filter(Boolean).join(' · ')
     const name = ordName({ ...o, title: o.title || title }, artistOf())
     const body = `📋 ${o.label || 'Ordino'}: ${name}${when ? `\n${when}` : ''}\n${o.url}`
-    const { error } = await supabase.from('roar_messages').insert(ids.map((id) => ({ room_id: id, user_id: me.id, kind: 'text', body, ...(chan && id === room.room_id ? { channel: chan } : {}), file: { ordino: { url: o.url, token: o.token || '', label: o.label || '', title: o.title || title, artist: o.artist || artistOf(), date: o.date || '', call: o.call || '', place: o.place || '', accent: o.accent || '' } } })))
+    const { error } = await supabase.from('roar_messages').insert(ids.map((id) => ({ room_id: id, user_id: me.id, kind: 'text', body, ...(chan && id === room.room_id ? { channel: chan } : {}), file: { ...(id === room.room_id ? { fromPanel: true } : {}), ordino: { url: o.url, token: o.token || '', label: o.label || '', title: o.title || title, artist: o.artist || artistOf(), date: o.date || '', call: o.call || '', place: o.place || '', accent: o.accent || '' } } })))
     if (error) { toast(errText(error)); return false }
     toast(chan ? `Ordino sent to ${CHAN_NAME[chan]}` : ids.length === 1 && ids[0] === room.room_id ? 'Ordino sent to this chat' : `Ordino sent to ${ids.length} chat${ids.length === 1 ? '' : 's'}`)
     return true
@@ -1800,17 +1831,17 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     window.addEventListener('roarme-pro-tab', f)
     return () => window.removeEventListener('roarme-pro-tab', f)
   }, [room.room_id])
-  const assets = (stuff.assets || []).filter((m) => !gone.has(m.id))
+  const assets = (stuff.assets || []).filter((m) => !gone.has(m.id) && !m.file?.fromPanel) // a copy sent from here into the chat is not counted twice
   const media = assets.filter(isMediaMsg)
   const files = assets.filter((m) => isFileMsg(m) && !isMediaMsg(m) && folderOf(m) !== 'audio')
   // the Production Hub's songs stand first in Music (Alex, 22 Nov: "where is the song?"); they play from the hub's link
-  const hubSongs = (Array.isArray(project.hub_music) ? project.hub_music : []).filter((t) => t.url).map((t) => ({ id: `hub-${t.id}`, hub: true, user_id: '', created_at: t.addedAt || project.updated_at, body: '', file: { name: t.name, size: t.bytes, url: t.url, peaks: t.peaks, hubId: `hub-${t.id}`, type: `audio/${t.ext || 'mpeg'}` } }))
+  const hubSongs = (Array.isArray(project.hub_music) ? project.hub_music : []).filter((t) => t.url).map((t) => ({ id: `hub-${t.id}`, hub: true, user_id: '', created_at: t.addedAt || project.updated_at, body: '', file: { name: t.name, size: t.bytes, url: t.url, keep: t.keep || '', peaks: t.peaks, hubId: `hub-${t.id}`, type: `audio/${t.ext || 'mpeg'}` } }))
   const music = [...hubSongs, ...assets.filter((m) => isFileMsg(m) && folderOf(m) === 'audio')]
   const places = assets.filter((m) => m.file.location || m.file.live)
   const polls = assets.filter((m) => m.file.poll)
   const cards = assets.filter((m) => m.file.contact)
   const calls = [...assets.filter((m) => m.file.groupcall), ...(stuff.meets || []).filter((m) => !gone.has(m.id))]
-  const words = stuff.words.filter((m) => !gone.has(m.id))
+  const words = stuff.words.filter((m) => !gone.has(m.id) && !m.file?.fromPanel)
   const links = words.filter((m) => URL_RX.test(m.body) && ((URL_RX.lastIndex = 0), true))
   const linkCount = links.reduce((a, m) => a + [...new Set(String(m.body).match(URL_RX) || [])].filter((u) => !isMapLink(u)).length, 0)
   const maps = words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter(isMapLink).map((u) => ({ u, m })))
@@ -1923,7 +1954,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
             </div>
             {/* a taste of each part, small, each with See All to its tab (Alex, 22 Nov: "latest media much smaller, like
                 thumbnails; under them the documents, Location Scout, links and tasks as lists, small") */}
-            {media.length > 0 && <div className="prw-box wide prw-peek"><div className="prw-boxhead"><h4>Latest Media</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab('media')}><span>See All</span>{I.right}</button></div><div className="prw-mini-grid">{media.slice(0, 12).map((m, i) => <Tile key={m.id} m={m} onOpen={() => openMedia(media, i)} />)}</div></div>}
             {(() => {
               const docs = files.slice(0, 3)
               const sc = hidden.includes('scout') ? [] : scouts.slice(0, 3)
@@ -1933,12 +1963,15 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
               const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return u } }
               const parts = [
                 docs.length > 0 && box('files', 'Documents', files.length, docs.map((m) => <button key={m.id} type="button" className="prw-mrow" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prw-mtext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), day(m.created_at)].filter(Boolean).join(' · ')}</small></span></button>)),
-                sc.length > 0 && box('scout', 'Location Scout', scouts.length, sc.map((x) => { const [, label, c] = scoutSt(x.st); return <button key={x.id} type="button" className="prw-mrow" onClick={() => goTab('scout')}>{x.photos?.[0] ? <ScoutPhoto p={x.photos[0]} className="prw-mthumb" /> : <i className="prw-mthumb ic">{I.place}</i>}<span className="prw-mtext"><b>{x.name || 'Location'}</b><small>{x.address || x.addr || x.type || ''}</small></span><i className="prj-chip prw-st" style={{ '--pc': c }}>{label}</i></button> })),
+                false && sc.length > 0 && box('scout', 'Location Scout', scouts.length, sc.map((x) => { const [, label, c] = scoutSt(x.st); return <button key={x.id} type="button" className="prw-mrow" onClick={() => goTab('scout')}>{x.photos?.[0] ? <ScoutPhoto p={x.photos[0]} className="prw-mthumb" /> : <i className="prw-mthumb ic">{I.place}</i>}<span className="prw-mtext"><b>{x.name || 'Location'}</b><small>{x.address || x.addr || x.type || ''}</small></span><i className="prj-chip prw-st" style={{ '--pc': c }}>{label}</i></button> })),
                 lk.length > 0 && box('links', 'Links', linkCount, lk.map(({ u, m }, n) => <a key={`${m.id}-${n}`} className="prw-mrow" href={u} target="_blank" rel="noopener noreferrer"><i className="prw-mthumb ic letter">{host(u).slice(0, 1).toUpperCase()}</i><span className="prw-mtext"><b>{host(u)}</b><small>{u}</small></span></a>)),
-                !hidden.includes('tasks') && tasks.length > 0 && box('tasks', 'Tasks', `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}`, open.length ? open.slice(0, 4).map((t) => <button key={t.id} type="button" className="prw-mrow task" onClick={() => save({ tasks: tasks.map((x) => (x.id === t.id ? { ...x, s: 'done' } : x)) })} title="Mark as done"><i className="prw-mtick" /><span className="prw-mtext"><b>{t.t}</b><small>{[stOf(t.s)[1], t.due && dueText(t.due)].filter(Boolean).join(' · ')}</small></span></button>) : <p className="prj-quiet">Everything is done.</p>),
+                !hidden.includes('tasks') && open.length > 0 && box('tasks', 'Tasks', `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}`, open.length ? open.slice(0, 4).map((t) => <button key={t.id} type="button" className="prw-mrow task" onClick={() => save({ tasks: tasks.map((x) => (x.id === t.id ? { ...x, s: 'done' } : x)) })} title="Mark as done"><i className="prw-mtick" /><span className="prw-mtext"><b>{t.t}</b><small>{[stOf(t.s)[1], t.due && dueText(t.due)].filter(Boolean).join(' · ')}</small></span></button>) : <p className="prj-quiet">Everything is done.</p>),
               ].filter(Boolean)
               return parts.length ? <div className="prw-peeks wide">{parts}</div> : null
             })()}
+            {/* who is in the project, with the visits for those who see Admin, one slim line each (Alex, 22 Nov: "the
+                members, and who visited and for how long, much more minimal, ten people must not be chaos") */}
+            <Team room={room} people={people} me={me} />
           </div>
         )}
         {shownTab === 'media' && (
@@ -1998,7 +2031,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
       {ordView && <OrdinoView o={ordView} onClose={() => setOrdView(null)} onSend={() => { setSharePick({ ordino: ordView }); setOrdView(null) }} />}
       {share && <ShareMenu at={share.r} chans={myChans} onClose={() => setShare(null)} onChan={async (c) => { const x = share.x; setShare(null); await sendAny(x, [room.room_id], c) }} onOther={() => { setSharePick(share.x); setShare(null) }} />}
-      {sharePick && createPortal(<SendPick title="Send to…" rooms={rooms} titleOf={titleOf} here={room.room_id} onClose={() => setSharePick(null)} onSend={async (ids) => { if (await sendAny(sharePick, ids)) setSharePick(null) }} />, document.body)}
+      {sharePick && createPortal(<SendPick title="Send to…" people={people} me={me} rooms={rooms} titleOf={titleOf} here={room.room_id} onClose={() => setSharePick(null)} onSend={async (ids) => { if (await sendAny(sharePick, ids)) setSharePick(null) }} />, document.body)}
       {ordinoOpen && <OrdinoWindow onClose={() => setOrdinoOpen(false)} onSent={(o) => { save({ ordinos: [o, ...ordinos.filter((x) => x.token !== o.token)].slice(0, 60) }); setOrdinoOpen(false); toast('Ordino saved in the project') }} />}
       {view && <Viewer items={view.items} index={view.index} people={people} me={me} onClose={() => setView(null)} />}
     </div>

@@ -7930,3 +7930,52 @@ html:root:root:root:root .prs2-wsbg-acts .pill-btn { height: 32px; font-size: 13
 html:root:root:root:root:root .ctx.at { display: block; background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html:root:root:root:root:root .ctx.at .ctx-stack { position: fixed; left: var(--cx); top: var(--cy); width: 240px; max-height: calc(100vh - 24px); }
 html:root:root:root:root:root .ctx.at .ctx-menu { width: 100% !important; margin: 0 !important; max-height: none; }
+
+/* The Overview set straight (Alex, 22 Nov): the song and the ordino as slim capsules of the tab bar's height and
+   curve, then documents, links and open tasks, then the team in one slim line each */
+html:root:root:root:root:root:root .prw-over .prw-song, html:root:root:root:root:root:root .prw-over .prw-ordrow, html:root:root:root:root:root:root .prw-over .prw-ordmake { min-height: var(--prw-barh, 52px); height: var(--prw-barh, 52px); padding: 0 8px 0 6px; border-radius: 999px; flex-wrap: nowrap; row-gap: 0; overflow: hidden; }
+html:root:root:root:root:root:root .prw-over .prw-song > *:first-child, html:root:root:root:root:root:root .prw-over .prw-ordino-cal { flex: none; width: 38px; height: 38px; min-width: 38px; border-radius: 50%; }
+html:root:root:root:root:root:root .prw-over .prw-ordtext { min-width: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; line-height: 1.15; overflow: hidden; }
+html:root:root:root:root:root:root .prw-over .prw-ordtext > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html:root:root:root:root:root:root .prw-over .prw-ordtext .prw-ordino-label { display: none; }
+html:root:root:root:root:root:root .prw-over .prw-ordacts { flex: none; display: flex; gap: 4px; align-items: center; }
+html:root:root:root:root:root:root .prw-over .prw-ordacts .pill-btn { height: 34px; padding: 0 12px; font-size: 12.5px; }
+html:root:root:root:root:root:root .prw-over .prw-ordmake > span { min-width: 0; overflow: hidden; }
+html:root:root:root:root:root:root .prw-over .prw-ordmake small { display: none; }
+.prw-team { padding: 12px 14px 10px; }
+.prw-team .prw-boxhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.prw-team h4 small { margin-left: 6px; font-weight: 600; opacity: .55; }
+.prw-team-list { display: flex; flex-direction: column; }
+.prw-team-row { display: flex; align-items: center; gap: 8px; height: 34px; border-top: 1px solid color-mix(in srgb, currentColor 6%, transparent); font-size: 13px; }
+.prw-team-row:first-child { border-top: 0; }
+.prw-team-row > b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+.prw-team-row > small { color: var(--muted); font-size: 11.5px; white-space: nowrap; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.prw-team-cols { display: flex; flex: none; }
+.prw-team-cols > span { width: 64px; text-align: right; font-variant-numeric: tabular-nums; }
+.prw-boxhead .prw-team-cols > span { font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+html:root:root:root:root:root:root .prw-over .prw-song-mid { display: flex; flex-direction: row; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+html:root:root:root:root:root:root .prw-over .prw-song-top { flex: 0 1 42%; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+html:root:root:root:root:root:root .prw-over .prw-song-top > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html:root:root:root:root:root:root .prw-over .prw-song .prw-wave { flex: 1; min-width: 0; height: 26px; margin: 0; }
+html:root:root:root:root:root:root .prw-over :is(.prw-ordrow, .prw-ordmake) { border-left: 0 !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6), 0 6px 20px rgba(20, 30, 50, .06) !important; }
+html[data-mode='dark']:root:root:root:root:root:root .prw-over :is(.prw-ordrow, .prw-ordmake) { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07) !important; }
+html:root:root:root:root:root:root .prw-over :is(.prw-ordrow, .prw-ordmake)::before { display: none !important; }
+.prw-team-cols > span { width: 78px; white-space: nowrap; }
+html:root:root:root:root:root:root .prw-over .prw-song-top { flex: 0 0 40%; }
+html:root:root:root:root:root:root .prw-over .prw-song .prw-wave { flex: 1 1 0; overflow: hidden; }
+html:root:root:root:root:root:root .prw-over .prw-song .prw-wave canvas { width: 100% !important; height: 100% !important; display: block; }
+
+/* Sent from the Workspace: it shows in the chat with a small fold button; folded, it is a dot (Alex, 22 Nov) */
+.bubble-col { position: relative; }
+html:root:root:root:root .msg-hide { position: absolute; top: -6px; z-index: 2; width: 20px; height: 20px; min-width: 20px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .92); color: #555; box-shadow: 0 1px 4px rgba(0, 0, 0, .18); cursor: pointer; opacity: 0; transition: opacity .15s; }
+.msg:not(.mine) .msg-hide { right: -6px; }
+.msg.mine .msg-hide { left: -6px; }
+.msg:hover .msg-hide, .msg-hide:focus-visible { opacity: 1; }
+@media (hover: none) { html:root:root:root:root .msg-hide { opacity: .85; } }
+html[data-mode='dark']:root:root:root:root .msg-hide { background: rgba(60, 60, 66, .95); color: #ddd; }
+.msg-dot { display: flex; padding: 3px 14px; }
+.msg-dot.mine { justify-content: flex-end; }
+html:root:root:root:root .msg-dot button { width: 22px; height: 22px; min-width: 22px; padding: 0; border: 0; border-radius: 50%; background: none; box-shadow: none; display: grid; place-items: center; cursor: pointer; }
+.msg-dot button i { width: 9px; height: 9px; border-radius: 50%; background: color-mix(in srgb, var(--halo-mine, var(--accent)) 70%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--halo-mine, var(--accent)) 18%, transparent); }
+.prw-sendfoot { display: flex; justify-content: center; width: 100%; }
+html:root:root:root:root .prw-sendfoot .btn-main { min-width: 160px; }

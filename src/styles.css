@@ -8280,3 +8280,9 @@ html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u
 @keyframes u-ghost { 0%, 62% { translate: 0 0; scale: 1 1; opacity: 0 } 66% { opacity: .34 } 82% { translate: 26px 0; scale: 1.04 1; opacity: .16 } 92%, 100% { translate: 34px 0; scale: 1 1; opacity: 0 } }
 html[data-lite] .rooms-area .wheel-box.u-has > .tabs.lens::after { animation: none !important; opacity: 0 !important; }
 @media (prefers-reduced-motion: reduce) { .rooms-area .wheel-box.u-has > .tabs.lens::after { animation: none !important; opacity: 0 !important; } }
+/* Archived chosen (Alex, 23 Nov: "it vanishes when chosen; perhaps the accent"): its binders take the accent and stay
+   bare, no lens behind them; the sign a little larger (22px) and its hairline 3px nearer the folders */
+html:root:root:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'].on .tab-arch.tab-circ { color: var(--halo, var(--accent)) !important; background: transparent !important; box-shadow: none !important; transform: none; }
+html:root:root:root .rooms-area .tabs .tab-arch.tab-circ svg { width: 22px; height: 22px; }
+html:root:root .rooms-area .tabs button[data-tab='archived']::after { left: 10px; }
+html:root:root:root:root:root:root:root:root .rooms-area .tabs.lens.lens-on:has(> button[data-tab='archived'].on)::before { opacity: 0 !important; }

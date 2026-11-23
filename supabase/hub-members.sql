@@ -87,3 +87,9 @@ begin
 end $$;
 drop trigger if exists roar_project_add_hub_members on public.roar_pro_projects;
 create trigger roar_project_add_hub_members after insert on public.roar_pro_projects for each row execute function public.roar_project_add_hub_members();
+
+-- the trigger functions are not for calling from outside (security check, 22 Nov)
+revoke all on function public.roar_hub_member_on() from public, anon, authenticated;
+revoke all on function public.roar_member_hub_channels() from public, anon, authenticated;
+revoke all on function public.roar_project_add_hub_members() from public, anon, authenticated;
+revoke all on function public.roar_project_hub_channels() from public, anon, authenticated;

@@ -4,7 +4,6 @@ import { Avatar, CropModal, I, Lens, Modal } from './ui.jsx'
 import { AUDIO_EXT, mmss, player, shapeOf, usePlayer, useWave } from './player.jsx'
 import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib.js'
 import { hubCall, hubLink, hubMe, hubPull, hubSoon, hubState } from './hub.jsx'
-import { inApp } from './push.js'
 import { getPrefs, setPrefs, usePrefs } from './prefs.js'
 
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
@@ -233,9 +232,6 @@ function Places({ list, maps = [], people = {}, me, onAdd, hasUrl = () => false,
       })}
     </div>
   )
-}
-function Polls({ list, me, people, canStop }) {
-  return <div className="prj-polls">{list.map((m) => <div key={m.id} className="prj-poll"><Suspense fallback={<p className="prj-quiet">Poll</p>}><PollCard id={m.id} me={me.id} people={people} canStop={canStop} /></Suspense></div>)}</div>
 }
 function Contacts({ list, people, onDrop, share }) {
   return (
@@ -470,24 +466,6 @@ function Tile({ m, onOpen, onDrop, share }) {
 }
 
 /* ---------- small menus that hang from a button ---------- */
-function Hang({ open, onClose, children, className = '', portal = false }) {
-  if (!open) return null
-  // on a phone the menu and its veil go to the page itself, over everything: inside the project's page they sat under
-  // the tabs and the list, so a tap beside the menu reached the page and the menu never closed (Alex, 22 Nov)
-  if (portal) {
-    return createPortal(
-      <div className="prw-portal">
-        <span className="prw-scrim" onClick={onClose} />
-        <div className={`menu prw-menu ${className}`} onClick={(e) => e.stopPropagation()}>{children}</div>
-      </div>, document.body)
-  }
-  return (
-    <>
-      <span className="prw-scrim" onClick={onClose} />
-      <div className={`menu prw-menu ${className}`} onClick={(e) => e.stopPropagation()}>{children}</div>
-    </>
-  )
-}
 
 
 function Stages({ project, save, onClose }) {
@@ -1097,12 +1075,6 @@ async function toMp3(blob) {
   const end = enc.flush(); if (end.length) out.push(end)
   return new Blob(out, { type: 'audio/mpeg' })
 }
-// how far the shoot day is, beside the date in the top row (Alex, 22 Nov: "put it right of the date")
-function dueIn(due) {
-  if (!due) return ''
-  const d = Math.round((new Date(`${due}T00:00:00`) - new Date(new Date().toDateString())) / 864e5)
-  return d === 0 ? 'today' : d === 1 ? 'tomorrow' : d > 1 ? `in ${d} days` : `${-d} day${d === -1 ? '' : 's'} ago`
-}
 function Hero({ room, me, project, dateName, fields, onCover, toast, banner = true }) {
   // the cover: one's own picture, else the Production Hub's, else the theme's colour; 'none' = no picture even with the hub's
   // (Alex, 22 Nov). One settings button opens a small menu: Change Photo, Reposition, Crop, Remove
@@ -1673,8 +1645,6 @@ function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, 
   const [list, setList] = useState(() => stagesOf(project).map((x) => ({ ...x })))
   const put = (i, patch) => setList((l) => l.map((x, n) => (n === i ? { ...x, ...patch } : x)))
   const keepStages = (next) => { setList(next); const clean = next.map((x) => ({ ...x, name: (x.name || '').trim().slice(0, 30) || 'Stage' })); save({ stages: clean, ...(clean.some((x) => x.id === project.status) ? {} : { status: clean[0].id }) }) }
-  const move = (i, d) => { const j = i + d; if (j < 0 || j >= fields.length) return; const next = [...fields]; [next[i], next[j]] = [next[j], next[i]]; save({ fields: next }) }
-  const filled = fields.filter((f) => (f.v || '').trim()).length
   const titles = { home: 'Project Settings', info: 'Project Info', stages: 'Stages', hub: 'Production Hub' }
   const [hubMine, setHubMine] = useState(null)
   useEffect(() => { hubMe().then(setHubMine, () => {}) }, [])
@@ -1797,7 +1767,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const viewOnly = room.role !== 'admin' && !(Array.isArray(room.channels) ? room.channels : ['prod']).includes('pre')
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
-  const [menu, setMenu] = useState('')
   const [stagesOpen, setStagesOpen] = useState(false)
   const [setOpen, setSetOpen] = useState(false) // the project's settings page
   const [mf, setMf] = useState('all')
@@ -1996,7 +1965,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       supabase.from('roar_rooms').update({ title: name }).eq('id', room.room_id).then(({ error }) => { if (error) toast('Only an admin of the group can change its name'); else onChanged?.() })
     }
   }
-  const members = (room.members || []).slice(0, 5)
   return (
     <div className={`prw-work${project.ws_bg ? ' has-bg' : ''}${viewOnly ? ' view-only' : ''}`} style={project.ws_bg ? { '--wsbg': `url("${project.ws_bg}")`, '--wsop': (project.ws_bg_op ?? 40) / 100 } : undefined}>
       <div className="prw-top">
@@ -2047,18 +2015,11 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 </form>}
             </div>
             {/* a taste of each part, small, each with See All to its tab (Alex, 22 Nov: "latest media much smaller, like
-                thumbnails; under them the documents, Location Scout, links and tasks as lists, small") */}
+                thumbnails"); since 22 Nov only the open tasks stay on the Overview */}
             {(() => {
-              const docs = files.slice(0, 3)
-              const sc = hidden.includes('scout') ? [] : scouts.slice(0, 3)
-              const lk = hidden.includes('links') ? [] : links.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter((u) => !isMapLink(u)).map((u) => ({ u, m }))).slice(0, 3)
               const open = hidden.includes('tasks') ? [] : tasks.filter((t) => t.s !== 'done')
               const box = (k, title, n, body) => <div key={k} className={`prw-box prw-peek prw-peek-list peek-${k}`}><div className="prw-boxhead"><h4>{title}</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab(k)}><span>See All</span>{I.right}</button></div><div className="prw-mini-list">{body}</div></div>
-              const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return u } }
               const parts = [
-                false && docs.length > 0 && box('files', 'Documents', files.length, docs.map((m) => <button key={m.id} type="button" className="prw-mrow" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prw-mtext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), day(m.created_at)].filter(Boolean).join(' · ')}</small></span></button>)),
-                false && sc.length > 0 && box('scout', 'Location Scout', scouts.length, sc.map((x) => { const [, label, c] = scoutSt(x.st); return <button key={x.id} type="button" className="prw-mrow" onClick={() => goTab('scout')}>{x.photos?.[0] ? <ScoutPhoto p={x.photos[0]} className="prw-mthumb" /> : <i className="prw-mthumb ic">{I.place}</i>}<span className="prw-mtext"><b>{x.name || 'Location'}</b><small>{x.address || x.addr || x.type || ''}</small></span><i className="prj-chip prw-st" style={{ '--pc': c }}>{label}</i></button> })),
-                false && lk.length > 0 && box('links', 'Links', linkCount, lk.map(({ u, m }, n) => <a key={`${m.id}-${n}`} className="prw-mrow" href={u} target="_blank" rel="noopener noreferrer"><i className="prw-mthumb ic letter">{host(u).slice(0, 1).toUpperCase()}</i><span className="prw-mtext"><b>{host(u)}</b><small>{u}</small></span></a>)),
                 !hidden.includes('tasks') && open.length > 0 && box('tasks', 'Tasks', `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}`, open.length ? open.slice(0, 4).map((t) => <button key={t.id} type="button" className="prw-mrow task" onClick={() => save({ tasks: tasks.map((x) => (x.id === t.id ? { ...x, s: 'done' } : x)) })} title="Mark as done"><i className="prw-mtick" /><span className="prw-mtext"><b>{t.t}</b></span>{t.due && <small className="prw-tdue">{dueText(t.due)}</small>}</button>) : <p className="prj-quiet">Everything is done.</p>),
               ].filter(Boolean)
               return parts.length ? <div className="prw-peeks wide">{parts}</div> : null

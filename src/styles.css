@@ -8004,3 +8004,20 @@ html:root:root:root:root:root:root:root:root .prw-work .pill-btn.danger, html:ro
 .prw-ordbar.with-plus { position: relative; }
 .prw-ordbar.with-plus > .prw-ordrow { margin-right: 56px; }
 html:root:root:root:root:root:root .prw-ordbar.with-plus > .prw-ordplus { position: absolute; top: 4px; right: 0; width: 44px; height: 44px; min-width: 44px; padding: 0; }
+
+/* One glass for everything on the Workspace (Alex, 22 Nov: "the same colouring and the same opacity"): boxes, bars,
+   rows, pills and buttons all take --mg and the same rim; the stage keeps only its coloured dot */
+html:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.prw-box, .prw-bar, .prw-song, .prw-ordrow, .prw-ordmake, .prw-card, .prw-srow, .prw-link, .prw-call, .tk-row, .prw-team, .prw-peek, .prw-seg, .prw-pill, .pill-btn, .round:not(.prw-song-play), .prw-ibtn, .prw-boxbtn, .prw-ordlink-btn, .prw-gear, .prw-swap, .prw-ordplus) {
+  background: var(--mg) !important; background-image: none !important; border: 1px solid var(--mg-rim) !important; box-shadow: var(--mg-shadow) !important;
+}
+html:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.pill-btn, .round, .prw-ibtn, .prw-boxbtn, .prw-ordlink-btn, .prw-ordplus) { box-shadow: none !important; }
+html:root:root:root:root:root:root:root:root:root:root:root:root .prw-work .prw-pill.stage { color: inherit !important; }
+html:root:root:root:root:root:root:root:root:root:root:root:root .prw-work .prw-pill.stage .prw-dot { background: var(--pc) !important; }
+html:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.prw-bar, .prw-seg) > button.on { background: var(--mg) !important; box-shadow: inset 0 0 0 1px var(--mg-rim) !important; }
+.prw-pill.still { cursor: default; }
+.prw-pill.date.still b { font-weight: 600; font-size: 14px; margin-left: 6px; }
+.prw-top-gap { flex: 1; }
+/* look and listen only: no tools for a member who does not see Pre Production */
+.prw-work.view-only :is(.prw-trash, .prw-share, .prw-ordplus, .prw-ordlink-btn, .prw-ordmake, .prw-ordlink, .prw-boxbtn) { display: none !important; }
+.prw-work.view-only .prw-ordacts .pill-btn:not(:first-child) { display: none !important; }
+.prw-work.view-only .prw-mrow.task { pointer-events: none; }

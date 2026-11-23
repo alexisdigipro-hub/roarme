@@ -133,3 +133,14 @@ language sql stable security definer set search_path = public as $$
     and roar_sees(m.user_id, x.room_id, x.channel)
   group by m.user_id
 $$;
+
+-- the Overview for everyone in the group (Alex, 22 Nov: "all the kids see the Overview, whatever their chat, only to look
+-- and listen"): every member reads the project's row; only who sees Pre Production (and the admins) changes it
+drop policy if exists roar_pro_projects_pre on public.roar_pro_projects;
+drop policy if exists roar_pro_projects_pre_add on public.roar_pro_projects;
+drop policy if exists roar_pro_projects_pre_change on public.roar_pro_projects;
+drop policy if exists roar_pro_projects_pre_drop on public.roar_pro_projects;
+create policy roar_pro_projects_pre_add on public.roar_pro_projects as restrictive for insert to authenticated with check (roar_sees(auth.uid(), room_id, 'pre'));
+create policy roar_pro_projects_pre_change on public.roar_pro_projects as restrictive for update to authenticated using (roar_sees(auth.uid(), room_id, 'pre')) with check (roar_sees(auth.uid(), room_id, 'pre'));
+create policy roar_pro_projects_pre_drop on public.roar_pro_projects as restrictive for delete to authenticated using (roar_sees(auth.uid(), room_id, 'pre'));
+

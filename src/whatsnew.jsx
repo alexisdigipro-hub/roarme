@@ -8,6 +8,16 @@ import { Modal } from './ui.jsx'
 
 export const NEWS = [
   {
+    id: '2026-11-23',
+    date: '23 November 2026',
+    sections: [
+      { title: 'Everywhere', items: [
+        'Unread is a round dot at the left of the folders: faint when all is read, green with the number when something is new. RoarMe always opens on All; slide right to reach it.',
+        'Archived is a round sign with three binders at the right of the folders.',
+      ] },
+    ],
+  },
+  {
     id: '2026-11-22',
     date: '22 November 2026',
     sections: [

@@ -1485,6 +1485,50 @@ function MembersChats({ room, me, people, boss, toast, onClose }) {
   )
 }
 
+// the Workspace's own background (Alex, 22 Nov: "upload any background, with opacity and crop; the rest of the group
+// that sees it sees it too"): a picture cropped on the device, kept in roar-avatars under my folder, its address and
+// strength in roar_pro_projects (ws_bg, ws_bg_op), so everyone with the Workspace sees the same
+function WsBackground({ room = {}, me = {}, project = {}, save, toast }) {
+  const [crop, setCrop] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [op, setOp] = useState(project.ws_bg_op ?? 40)
+  useEffect(() => { setOp(project.ws_bg_op ?? 40) }, [project.ws_bg_op])
+  const t = useRef(null)
+  const pick = useRef(null)
+  const upload = async (f) => {
+    setCrop(null)
+    if (!f) return
+    setBusy(true)
+    try {
+      const path = `${me.id}/wsbg-${room.room_id}-${Date.now()}.jpg`
+      const up = await supabase.storage.from('roar-avatars').upload(path, f, { contentType: 'image/jpeg' })
+      if (up.error) throw up.error
+      save({ ws_bg: supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl })
+      toast?.('Background set')
+    } catch (e) { toast?.(errText(e)) }
+    setBusy(false)
+  }
+  const strength = (v) => { setOp(v); clearTimeout(t.current); t.current = setTimeout(() => save({ ws_bg_op: v }), 350) }
+  return (
+    <div className="prs2-wsbg">
+      <input ref={pick} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setCrop(f) }} />
+      <div className="prs2-row prs2-wsbg-top">
+        <i className="prs2-ic">{SET_I.banner}</i>
+        <span className="prs2-t"><b>Background</b><small>{project.ws_bg ? 'Everyone who sees the Workspace sees it' : 'A picture of your own behind the Workspace'}</small></span>
+        {project.ws_bg && <span className="prs2-wsbg-thumb" style={{ backgroundImage: `url("${project.ws_bg}")` }} />}
+      </div>
+      <div className="prs2-wsbg-acts">
+        <button type="button" className="pill-btn" disabled={busy} onClick={() => pick.current?.click()}>{busy ? 'Uploading…' : project.ws_bg ? 'Change' : 'Upload'}</button>
+        {project.ws_bg && <button type="button" className="pill-btn" onClick={async () => { try { const r = await fetch(project.ws_bg); const b = await r.blob(); setCrop(new File([b], 'bg.jpg', { type: b.type || 'image/jpeg' })) } catch { toast?.('Could not open the picture') } }}>Crop</button>}
+        {project.ws_bg && <button type="button" className="pill-btn danger" onClick={() => save({ ws_bg: null })}>Remove</button>}
+      </div>
+      {project.ws_bg && (
+        <label className="prs2-wsbg-op"><span>Opacity</span><input type="range" min="5" max="100" step="5" value={op} onChange={(e) => strength(Number(e.target.value))} /><b>{op}%</b></label>
+      )}
+      {crop && <CropModal file={crop} wide={0.8} title="Background" onDone={upload} onClose={() => setCrop(null)} />}
+    </div>
+  )
+}
 function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, boss, toast, project, save, fields, setField, hidden, flipTab, adminIn, notesOn, bannerOn, dateName, onStop, onClose }) {
   const [stack, setStack] = useState([start]) // the pages walked into; back goes one step out
   const page = stack[stack.length - 1]
@@ -1568,6 +1612,7 @@ function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, 
             <small className="prs2-cap">More</small>
             <div className="prs2-box">
               {row('hub', 'Production Hub', hub === undefined ? '' : hub ? `A project of ${hub.hub}` : 'Not in a hub', () => go('hub'))}
+              <WsBackground room={room} me={me} project={project} save={save} toast={toast} />
               <button type="button" className="prs2-row" onClick={() => setPrefs({ proBanner: !getPrefs().proBanner })}><i className="prs2-ic">{SET_I.banner}</i><span className="prs2-t"><b>Banner</b><small>The project's cover picture with its name, on top of the Overview</small></span><i className={`prw-sw${bannerOn ? ' on' : ''}`} /></button>
               <button type="button" className="prs2-row" onClick={() => setPrefs({ proNotes: !getPrefs().proNotes })}><i className="prs2-ic">{SET_I.side}</i><span className="prs2-t"><b>Show What Went to the Side</b><small>A small line in the chat when a photo or file goes to the project</small></span><i className={`prw-sw${notesOn ? ' on' : ''}`} /></button>
               <button type="button" className="prs2-row danger" onClick={onStop}><i className="prs2-ic">{I.trash}</i><span className="prs2-t"><b>Stop Being a Project</b><small>The chat stays; the stage, details, tasks and locations go. In the hub the project stays, unlinked.</small></span></button>
@@ -1772,7 +1817,18 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const tasks = Array.isArray(project.tasks) ? project.tasks : []
   const scouts = Array.isArray(project.scouts) ? project.scouts : []
   const fields = Array.isArray(project.fields) ? project.fields : []
-  const ordinos = Array.isArray(project.ordinos) ? project.ordinos : []
+  const ownOrdinos = Array.isArray(project.ordinos) ? project.ordinos : []
+  // the hub's published ordinos of this project come first (roar-hub keeps them; Alex, 22 Nov), then RoarMe's own
+  const ordinos = [...(Array.isArray(project.hub_ordinos) ? project.hub_ordinos : []).filter((o) => !ownOrdinos.some((x) => x.url === o.url)), ...ownOrdinos]
+  const [ordLink, setOrdLink] = useState(null)
+  const addOrdLink = () => {
+    const u = String(ordLink || '').trim()
+    if (!/^https?:\/\/\S+$/i.test(u)) { toast('Paste the ordino\'s link, starting with https://'); return }
+    if (ordinos.some((x) => x.url === u)) { setOrdLink(null); return }
+    const tok = (u.match(/[?#/]o\/([\w-]+)/) || [])[1] || ''
+    save({ ordinos: [...ownOrdinos, { url: u, token: tok, label: 'Ordino', title: '', date: '', call: '', place: '', linked: true }] })
+    setOrdLink(null)
+  }
   const st = stageOf(project)
   const dateName = 'Shoot Day' // the one date a project keeps (Alex, 22 Nov: "only the shoot day, the most important for everything")
   // the order Alex chose (22 Nov): Overview, Media, Files, Location Scout, Tasks, Links, Calls & Meetings, then Admin; no
@@ -1802,7 +1858,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   }
   const members = (room.members || []).slice(0, 5)
   return (
-    <div className="prw-work">
+    <div className={`prw-work${project.ws_bg ? ' has-bg' : ''}`} style={project.ws_bg ? { '--wsbg': `url("${project.ws_bg}")`, '--wsop': (project.ws_bg_op ?? 40) / 100 } : undefined}>
       <div className="prw-top">
         <span className="prw-hang">
           <button type="button" className="prw-pill stage" style={{ '--pc': st.c }} onClick={() => setMenu(menu === 'stage' ? '' : 'stage')}><i className="prw-dot" /><span className="prw-st-name">{st.name}</span><span className="prw-caret">{I.down}</span></button>
@@ -1847,13 +1903,23 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                   <span className="prw-ordacts">
                     <button type="button" className="pill-btn" onClick={() => setOrdView({ ...o, artist: o.artist || artistOf() })}>{TAB_I.files}<span>View</span></button>
                     <button type="button" className="pill-btn" onClick={onShare({ ordino: o })}>{FWD_I}<span>Send to…</span></button>
-                    <button type="button" className="round prw-ibtn" onClick={() => setOrdinoOpen(true)} title="Edit in Roardino" aria-label="Edit in Roardino">{I.edit}</button>
-                    <Trash className="prw-ibtn" onClick={() => { if (window.confirm('Take this ordino out of the project?') && window.confirm('Are you sure? The call sheet itself stays in Roardino.')) save({ ordinos: ordinos.filter((x) => x !== o) }) }} />
+                    {o.hub ? <span className="prw-ordhub">From the Hub</span> : <>
+                      {!o.linked && <button type="button" className="round prw-ibtn" onClick={() => setOrdinoOpen(true)} title="Edit in Roardino" aria-label="Edit in Roardino">{I.edit}</button>}
+                      <Trash className="prw-ibtn" onClick={() => { if (window.confirm('Take this ordino out of the project?') && window.confirm('Are you sure? The call sheet itself stays where it was made.')) save({ ordinos: ownOrdinos.filter((x) => x !== o) }) }} />
+                    </>}
                   </span>
                 </div>
               )) : (
                 <button type="button" className="prw-ordmake" onClick={() => setOrdinoOpen(true)}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
               )}
+              {/* an ordino made anywhere else: paste its link (Alex, 22 Nov: "just put a link and it shows there") */}
+              {ordLink === null
+                ? <button type="button" className="pill-btn prw-ordlink-btn" onClick={() => setOrdLink('')}>{I.plus}<span>Add Ordino Link</span></button>
+                : <form className="prw-ordlink" onSubmit={(e) => { e.preventDefault(); addOrdLink() }}>
+                  <input autoFocus type="url" inputMode="url" autoComplete="off" value={ordLink} onChange={(e) => setOrdLink(e.target.value)} placeholder="https://go.themadlions.com/?o/…" />
+                  <button type="submit" className="pill-btn on">Add</button>
+                  <button type="button" className="pill-btn" onClick={() => setOrdLink(null)}>Cancel</button>
+                </form>}
             </div>
             {/* a taste of each part, small, each with See All to its tab (Alex, 22 Nov: "latest media much smaller, like
                 thumbnails; under them the documents, Location Scout, links and tasks as lists, small") */}

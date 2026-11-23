@@ -8286,3 +8286,7 @@ html:root:root:root:root:root:root:root:root .rooms-area .tabs button[data-tab='
 html:root:root:root .rooms-area .tabs .tab-arch.tab-circ svg { width: 22px; height: 22px; }
 html:root:root .rooms-area .tabs button[data-tab='archived']::after { left: 10px; }
 html:root:root:root:root:root:root:root:root .rooms-area .tabs.lens.lens-on:has(> button[data-tab='archived'].on)::before { opacity: 0 !important; }
+/* PROJECTS on the accent lens (Alex, 23 Nov: "the letters get lost there, a lighter colour"): while the chosen folder's
+   lens is in the accent (something unread), PRO turns a pale gold and JECTS white, with a faint shadow so both read */
+html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on .tab-gold { color: #fff !important; -webkit-text-fill-color: #fff; text-shadow: 0 1px 2px rgba(0, 40, 80, .25); }
+html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on .tab-gold b { background: none !important; color: #ffe7a6 !important; -webkit-text-fill-color: #ffe7a6; }

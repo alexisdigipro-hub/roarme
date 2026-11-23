@@ -101,6 +101,21 @@ function usePeopleSearch(meId) {
 }
 
 /* ---------- the app ---------- */
+// Bring a folder's tab whole into sight in the folder bar (Alex, 23 Nov): clear of the bar's left edge and of
+// Archived, which is held over the bar's right end, so a tab chosen by a tap or a slide is never half hidden
+function showTab(btn) {
+  const nav = btn?.parentElement
+  if (!nav || nav.classList.contains('tabs-wheel') || nav.scrollWidth <= nav.clientWidth) return
+  const arch = btn.dataset.tab === 'archived' ? null : nav.querySelector(":scope > button[data-tab='archived']")
+  const room = 10, right = (arch ? arch.offsetWidth + 34 : 0) + room
+  const l = btn.offsetLeft, r = l + btn.offsetWidth
+  let to = nav.scrollLeft
+  if (l - room < to) to = l - room
+  else if (r + right > to + nav.clientWidth) to = r + right - nav.clientWidth
+  to = Math.max(0, Math.min(to, nav.scrollWidth - nav.clientWidth))
+  if (Math.abs(to - nav.scrollLeft) > 1) nav.scrollTo({ left: to, behavior: 'smooth' })
+}
+
 export default function Chat({ me, setMe }) {
   const prefs = usePrefs()
   // RoarMe Pro (Alex, 22 Nov): only on the website on a computer for now; the button in the bar at the foot turns it on and off
@@ -1117,7 +1132,7 @@ export default function Chat({ me, setMe }) {
         setSwipedTo(id)
         setFolder(id)
         setPageDrag(null)
-        setTimeout(() => { if (!document.querySelector('.tabs-wheel')) document.querySelector('.tabs-scroll > button.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }, 30)
+        setTimeout(() => showTab(document.querySelector('.tabs-scroll > button.on')), 30)
       })
     }
     el.addEventListener('touchstart', start, { passive: true })
@@ -1647,7 +1662,7 @@ export default function Chat({ me, setMe }) {
                   const n = folderUnread(f)
                   const dragged = tabDrag?.id === f.id
                   return <button key={`${k}:${f.id}`} type="button" data-tab={f.id} data-copy={k} title={f.name} aria-hidden={twin || undefined} tabIndex={twin ? -1 : undefined} className={`${folder === f.id && !twin ? 'on' : ''}${dragged ? ' tab-dragging' : ''}`} style={dragged ? { transform: `translateX(${tabDrag.dx}px)` } : undefined}
-                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; if (f.id === 'all' && (folder === 'all' || folder === 'unread') && uCount > 0 && window.matchMedia('(hover: hover) and (pointer: fine)').matches) { setUOpen((o) => !(o || folder === 'unread')); if (folder === 'unread') setFolder('all'); return } setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'direct' ? I.person : f.id === 'projects' ? <i className="tab-gold-ico">{FOOT_I.pro}</i> : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : f.id === 'archived' ? <i className="tab-arch tab-circ" role="img" aria-label="Archived" title="Archived">{ARCH_I}</i> : f.id === 'unread' ? <i className={`tab-dot tab-circ${n > 0 ? ' lit' : ''}`} role="img" aria-label={n > 0 ? `Unread, ${n}` : 'Unread'} title="Unread"><span className={`badge dot${n > 0 ? '' : ' quiet'}`} /></i> : f.color ? <span className="fold-tint" style={folderTint(f.color)}>{f.name}</span> : f.name}</span>{editTabs ? (f.id !== 'all' && f.id !== 'projects' && f.id !== 'unread' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && f.id !== 'unread' && <small>{n}</small>}</button>
+                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; if (f.id === 'all' && (folder === 'all' || folder === 'unread') && uCount > 0 && window.matchMedia('(hover: hover) and (pointer: fine)').matches) { setUOpen((o) => !(o || folder === 'unread')); if (folder === 'unread') setFolder('all'); return } setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else showTab(e.currentTarget) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'direct' ? I.person : f.id === 'projects' ? <i className="tab-gold-ico">{FOOT_I.pro}</i> : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : f.id === 'archived' ? <i className="tab-arch tab-circ" role="img" aria-label="Archived" title="Archived">{ARCH_I}</i> : f.id === 'unread' ? <i className={`tab-dot tab-circ${n > 0 ? ' lit' : ''}`} role="img" aria-label={n > 0 ? `Unread, ${n}` : 'Unread'} title="Unread"><span className={`badge dot${n > 0 ? '' : ' quiet'}`} /></i> : f.color ? <span className="fold-tint" style={folderTint(f.color)}>{f.name}</span> : f.name}</span>{editTabs ? (f.id !== 'all' && f.id !== 'projects' && f.id !== 'unread' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && f.id !== 'unread' && <small>{n}</small>}</button>
                 }))}
               </nav>
               </div>

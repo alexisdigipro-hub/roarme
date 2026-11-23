@@ -3,6 +3,7 @@ import { openCamera } from './camera.js'
 import { createPortal } from 'react-dom'
 import { errText, fileLink, fold, foldHas, lastSeenText, thumbOf, fmtBytes, shrinkImage, supabase, timeOf, picLink } from './lib.js'
 import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
+import { MojiPick } from './moji.jsx'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { ColorPick } from './themeEditor.jsx'
 import { Avatar, I, Modal, Slide, useLens, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
@@ -256,6 +257,7 @@ function AsThumb({ m, busy, onPick }) {
 // filled shapes, the holes cut out (even-odd), 22px
 const asSolid = (d) => <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" fillRule="evenodd" clipRule="evenodd" aria-hidden="true"><path d={d} /></svg>
 const AS_I = {
+  moji: asSolid('M12 2.5a9.5 9.5 0 1 1 0 19 9.5 9.5 0 0 1 0-19zM8.8 8.4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM15.2 8.4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM7.2 13.5c.6 2.3 2.5 3.9 4.8 3.9s4.2-1.6 4.8-3.9z'),
   gallery: asSolid('M6.5 3.5h11a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3zM15.6 7a1.9 1.9 0 1 0 0 3.8 1.9 1.9 0 0 0 0-3.8zM5.5 17.2l3.9-4.6a1.2 1.2 0 0 1 1.8 0l2.4 2.7 1.3-1.4a1.2 1.2 0 0 1 1.8 0l2.8 3.1V17.5a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1z'),
   file: asSolid('M7 2.5h6.4c.5 0 1 .2 1.4.6l4.6 4.6c.4.4.6.9.6 1.4V19a2.5 2.5 0 0 1-2.5 2.5H7A2.5 2.5 0 0 1 4.5 19V5A2.5 2.5 0 0 1 7 2.5zM13.5 4v3.6c0 .6.5 1.1 1.1 1.1h3.6zM8 13h8v1.6H8zM8 16.4h5.5V18H8z'),
   location: asSolid('M12 2.2a7.6 7.6 0 0 1 7.6 7.6c0 5.3-6.1 11.2-6.9 11.9a1 1 0 0 1-1.4 0c-.8-.7-6.9-6.6-6.9-11.9A7.6 7.6 0 0 1 12 2.2zM12 6.9a2.9 2.9 0 1 0 0 5.8 2.9 2.9 0 0 0 0-5.8z'),
@@ -534,7 +536,7 @@ function ContactPick({ contacts, who, setWho, searching, onContact }) {
   )
 }
 
-export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, onPoll, transferSlot, contacts, onContact }) {
+export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, onPoll, onMoji, transferSlot, contacts, onContact }) {
   const [files, setFiles] = useState(initial)
   const [caption, setCaption] = useState('')
   // the Gallery tab (and the camera) sends photos and videos made lighter; the File tab sends anything exactly as it is,
@@ -588,7 +590,7 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   const [whoOpen, setWhoOpen] = useState(false)
   // the tab bar is the chat's own menu at the foot: its glass, icon over word, the lens in GLASS TRAVEL (Alex, 15 Nov)
   const tabsLens = useLens(`${tab}|${files.length > 0}`)
-  useTabSwipe(bodyRef, ['gallery', 'file', onTransfer && 'transfer', onLocation && 'location', 'audio', onContact && 'contact', onPoll && 'poll'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
+  useTabSwipe(bodyRef, ['gallery', 'file', onTransfer && 'transfer', onLocation && 'location', 'audio', onContact && 'contact', onPoll && 'poll', onMoji && 'moji'].filter(Boolean), tab, setTab, `${edit}|${files.length > 0}`)
   const gal = useRef(null)
   const cam = useRef(null)
   // RoarMe's own camera in the iPhone app (camera.js), else the system's through the file input
@@ -658,9 +660,9 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
     onLocation && ['location', 'Location', AS_I.location],
     ['audio', 'Audio', AS_I.audio],
     // on a computer Contact and Poll are tabs of their own, no More (Alex, 21 Nov); the sheet is wider for them
-    ...(wideBar ? [onContact && ['contact', 'Contact', AS_I.contact], onPoll && ['poll', 'Poll', AS_I.poll]] : []),
+    ...(wideBar ? [onContact && ['contact', 'Contact', AS_I.contact], onPoll && ['poll', 'Poll', AS_I.poll], onMoji && ['moji', 'RoarMoji', AS_I.moji]] : []),
   ].filter(Boolean)
-  const MORE = wideBar ? [] : [onContact && ['contact', 'Contact', AS_I.contact], onPoll && ['poll', 'Poll', AS_I.poll]].filter(Boolean)
+  const MORE = wideBar ? [] : [onContact && ['contact', 'Contact', AS_I.contact], onPoll && ['poll', 'Poll', AS_I.poll], onMoji && ['moji', 'RoarMoji', AS_I.moji]].filter(Boolean)
   const NAMES = [...TABS, ...MORE]
   const go = (k) => { if (k === 'camera') { camera(); return } setTab(k) }
   // RoarTransfer opens in the sheet's body when its tab is chosen
@@ -680,7 +682,7 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   if (edit >= 0 && files[edit]) return <Suspense fallback={null}><PhotoEdit file={files[edit]} onClose={() => setEdit(-1)} onDone={(nf) => { setFiles((l) => l.map((x, k) => (k === edit ? nf : x))); setEdit(-1) }} /></Suspense>
   return createPortal(
     <div className={`as-back${camFirst ? ' asx-hide' : ''}`} onClick={onClose}>
-      <div ref={sheetRef} className={`as-sheet${wideBar ? ' as-wide' : ''}${tab === 'location' && !files.length ? ' as-loc' : ''}${(tab === 'transfer' || tab === 'poll' || libOn) && !files.length ? ' as-tall' : ''}${libOn && !files.length ? ' as-lib' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <div ref={sheetRef} className={`as-sheet${wideBar ? ' as-wide' : ''}${tab === 'location' && !files.length ? ' as-loc' : ''}${(tab === 'transfer' || tab === 'poll' || tab === 'moji' || libOn) && !files.length ? ' as-tall' : ''}${libOn && !files.length ? ' as-lib' : ''}`} role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <i className="as-grab" data-grab="" aria-hidden="true" />
         <div className={`as-head${tab === 'poll' && !files.length ? ' pl-head' : ''}`} data-grab="">
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
@@ -728,6 +730,8 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
           ) : tab === 'location' && onLocation ? (
             // Location is a tab of the sheet like the others (Alex, 14 Nov: it popped a window of its own and the sheet was gone)
             <Suspense fallback={<div className="loc loc-inline" />}><LocationPicker inline onSend={onLocation} onLive={onLive} onClose={onClose} /></Suspense>
+          ) : tab === 'moji' && onMoji ? (
+            <MojiPick onPick={onMoji} />
           ) : tab === 'poll' && onPoll ? (
             <Suspense fallback={null}><PollEditor onReady={(fn) => setPollOut(() => fn)} /></Suspense>
           ) : libOn ? (

@@ -8338,3 +8338,45 @@ html:root:root[data-glass][data-skin='halo'][data-theme='stone'][data-mode] .roo
 /* the folder palette's last dot, any colour (Alex, 23 Nov): a rainbow ring, the chosen colour inside once picked */
 .fold-pal .fold-sw-any i { background: conic-gradient(from 0deg, #ff3b30, #ff9500, #ffcc00, #34c759, #00c7be, #007aff, #af52de, #ff2d55, #ff3b30); position: relative; }
 .fold-pal .fold-sw-any.on i::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--c); }
+
+/* RoarMoji (Alex, 23 Nov): our own 3D emoji with a comic motion each: squash, stretch, bounce, and action lines
+   round the strong ones when they are big. Inline they sit on the text's line; alone in a message they are big. */
+.moji { position: relative; display: inline-block; width: 1.35em; height: 1.35em; vertical-align: -.32em; margin: 0 .03em; line-height: 0; }
+.moji img { display: block; width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 1; transform-origin: 50% 85%; animation: var(--ma, none) var(--mt, 1.8s) var(--me, cubic-bezier(.3, 1.6, .5, 1)) var(--md, 0s) infinite; -webkit-user-drag: none; user-select: none; pointer-events: none; }
+.moji.still img { animation: none; }
+.moji.m-boing { --ma: mj-boing; --mt: 1.8s; }
+.moji.m-roar { --ma: mj-roar; --mt: 2s; }
+.moji.m-beat { --ma: mj-beat; --mt: 1.3s; --me: ease-in-out; }
+.moji.m-shake { --ma: mj-shake; --mt: 1.5s; --me: ease-in-out; }
+.moji.m-blast { --ma: mj-blast; --mt: 2s; }
+.moji.m-zoom { --ma: mj-zoom; --mt: 1.8s; --me: ease-in-out; }
+.moji.m-clap { --ma: mj-clap; --mt: .8s; --me: ease-in-out; }
+.moji.m-jelly { --ma: mj-jelly; --mt: 2.2s; --me: ease-in-out; }
+.moji.m-flick { --ma: mj-flick; --mt: 1.1s; --me: ease-in-out; }
+@keyframes mj-boing { 0%, 55%, 100% { transform: none } 62% { transform: scale(1.18, .78) } 72% { transform: scale(.84, 1.22) translateY(-16%) } 82% { transform: scale(1.1, .9) } 90% { transform: scale(.97, 1.04) } }
+@keyframes mj-roar { 0%, 45%, 100% { transform: none } 52% { transform: scale(.9, 1.08) rotate(3deg) } 60% { transform: scale(1.24) rotate(-6deg) } 66% { transform: scale(1.2) rotate(6deg) } 72% { transform: scale(1.22) rotate(-4deg) } 80% { transform: scale(1.05, .95) } 88% { transform: scale(.98, 1.02) } }
+@keyframes mj-beat { 0%, 45%, 100% { transform: none } 55% { transform: scale(1.28, 1.18) } 62% { transform: scale(.92, .96) } 70% { transform: scale(1.18, 1.12) } 80% { transform: scale(1) } }
+@keyframes mj-shake { 0%, 40%, 100% { transform: none } 46% { transform: scale(1.15, .85) } 52% { transform: rotate(-12deg) scale(1.1) } 58% { transform: rotate(11deg) scale(1.1) } 64% { transform: rotate(-8deg) } 70% { transform: rotate(6deg) } 78% { transform: none } }
+@keyframes mj-blast { 0%, 50%, 100% { transform: none } 56% { transform: scale(.8, .86) } 66% { transform: scale(1.32) rotate(-6deg) } 76% { transform: scale(.94) rotate(3deg) } 86% { transform: scale(1.06) } }
+@keyframes mj-zoom { 0%, 100% { transform: none } 40% { transform: translate(-6%, 6%) scale(.94, 1.04) } 60% { transform: translate(14%, -14%) scale(1.08, .92) rotate(-4deg) } 75% { transform: translate(-3%, 2%) } }
+@keyframes mj-clap { 0%, 100% { transform: none } 40% { transform: scale(.82, 1.12) } 55% { transform: scale(1.12, .92) } }
+@keyframes mj-jelly { 0%, 60%, 100% { transform: none } 66% { transform: scale(1.14, .86) } 72% { transform: scale(.88, 1.12) } 78% { transform: scale(1.06, .94) } 84% { transform: scale(.97, 1.03) } }
+@keyframes mj-flick { 0%, 100% { transform: scale(1, 1) skewX(0) } 25% { transform: scale(.92, 1.14) skewX(-5deg) } 50% { transform: scale(1.06, .92) skewX(3deg) } 75% { transform: scale(.96, 1.1) skewX(-2deg) } }
+@keyframes mj-lines { 0%, 55% { opacity: 0; transform: scale(.7) } 64% { opacity: .5; transform: scale(1) } 80% { opacity: 0; transform: scale(1.18) } 100% { opacity: 0 } }
+/* big, alone in a message: one 112px, two or three 76px; the action lines only here */
+.bubble.mj-big .text { font-size: 44px; line-height: 1; display: flex; gap: 6px; padding: 10px 6px 4px; }
+.bubble.mj-big .moji { width: 76px; height: 76px; vertical-align: 0; margin: 0; }
+.bubble.mj-big.mj-1 .moji { width: 112px; height: 112px; }
+.bubble.mj-big .moji.ln::before { content: ""; position: absolute; inset: -20%; border-radius: 50%; background: repeating-conic-gradient(currentColor 0 3deg, transparent 3deg 30deg); -webkit-mask: radial-gradient(circle, transparent 52%, #000 54%, #000 64%, transparent 66%); mask: radial-gradient(circle, transparent 52%, #000 54%, #000 64%, transparent 66%); opacity: 0; animation: mj-lines var(--mt, 1.8s) ease-out var(--md, 0s) infinite; }
+.msg.mine .bubble.mj-big .text { color: var(--text, #1c1c1f); }
+/* reactions: the chip and the bar above the menu */
+.rx .moji, .rx-pick .moji { width: 1.25em; height: 1.25em; vertical-align: -.25em; margin: 0; }
+.rx-pick button .moji { width: 26px; height: 26px; }
+/* the RoarMoji tab of the attach sheet */
+.mj-pick { padding: 4px 4px 12px; }
+.mj-cap { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .55; text-align: center; margin: 10px 0 6px; }
+.mj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 4px; }
+html:root .mj-grid > button { all: unset; box-sizing: border-box; aspect-ratio: 1; display: grid; place-items: center; padding: 8px; border-radius: 16px; cursor: pointer; }
+html:root .mj-grid > button:active { background: rgba(127, 127, 127, .14); }
+.mj-grid .moji { width: 100%; height: 100%; vertical-align: 0; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .moji img, .moji::before { animation: none !important; } }

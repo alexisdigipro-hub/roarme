@@ -411,6 +411,8 @@ export const CHAT_THEMES = [
 
 // a folder's name in a colour of its own (Alex, 23 Nov): the key of one of HALO_ACCENTS, '' = the words' own colour
 export const folderTint = (key) => {
+  // any colour of one's own (Alex, 23 Nov): '#rrggbb', with a lighter form for the dark
+  if (/^#[0-9a-f]{6}$/i.test(key || '')) return { '--fc': key, '--fc-d': mixWhite(key, 0.35) }
   const a = key && HALO_ACCENTS.find(([k]) => k === key)
   return a ? { '--fc': a[2], '--fc-d': a[3] } : undefined
 }

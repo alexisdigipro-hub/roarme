@@ -1316,7 +1316,8 @@ export default function Chat({ me, setMe }) {
     const what = r.last_kind === 'image' ? 'Photo' : r.last_kind === 'voice' ? 'Voice message' : r.last_kind === 'file' ? 'File' : plainText(splitQuote(previewText(r.last_body, r.last_kind)).rest)
     return who + what
   }
-  const folderUnread = (f) => visible.filter((r) => inFolder(r, f.id) && !r.muted).reduce((a, r) => a + (r.unread || 0), 0)
+  // the Unread dot also counts a chat marked as unread (one each), so it lights for those too (Alex, 23 Nov)
+  const folderUnread = (f) => visible.filter((r) => inFolder(r, f.id) && !r.muted).reduce((a, r) => a + (r.unread || (f.id === 'unread' && marked.includes(r.room_id) ? 1 : 0)), 0)
   const tagsOf = (r) => myFolders.filter((f) => f.rooms.includes(r.room_id)).map((f) => f.name)
 
   // Edit: pick chats, then Read / Archive / Folder / Delete for all of them

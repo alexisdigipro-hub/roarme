@@ -31,6 +31,7 @@ import { InviteModal, clearInvite, pendingInvite } from './invite.jsx'
 import { EventCard, ScheduleCall } from './events.jsx'
 import { ScheduleMessage, ScheduledList, useScheduled, whenText } from './scheduled.jsx'
 import { MiniNow, NowPlaying, PlayerSheet, player } from './player.jsx'
+import { PayButton } from './pay.jsx'
 import { fixKept, keepMsgs, keptMsgs, lsGet, lsSet, readMsgs } from './cache.js'
 import { onTyping, sendTyping, watchTyping } from './typing.js'
 import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
@@ -1792,7 +1793,7 @@ export default function Chat({ me, setMe }) {
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
-            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id] && (active.role === 'admin' || (Array.isArray(active.channels) ? active.channels : ['prod']).includes('pre'))} wsOpen={!proShut} proArtist={proOn ? String((proKit.map[active.room_id]?.fields || []).find((f) => f.k === 'Title')?.v || '').trim() : ''} />
+            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id] && (active.role === 'admin' || (Array.isArray(active.channels) ? active.channels : ['prod']).includes('pre'))} wsOpen={!proShut} payOn={proOn && active.kind === 'group' && !!proKit.map[active.room_id]} proArtist={proOn ? String((proKit.map[active.room_id]?.fields || []).find((f) => f.k === 'Title')?.v || '').trim() : ''} />
           {proOn && active.kind === 'group' && proKit.map[active.room_id] && !proShut && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
             <Suspense fallback={null}><Profile inline room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
               onClose={() => {}} onMessage={() => {}} onOpenRoom={(id) => setActiveId(id)} onChanged={loadRooms} onLeft={() => { setActiveId(''); loadRooms() }} loadPeople={loadPeople}
@@ -2096,7 +2097,7 @@ function sameMsgs(prev, got) {
 // the three chats and their stage colours (Pre orange, Production red, Post violet; version A of the sample, Alex 22 Nov)
 const CHANS = [['pre', 'Pre Production', '#d48806'], ['prod', 'Production', '#e5483f'], ['post', 'Post Production', '#7b4dff']]
 
-const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [], proArtist = '', assetsAside = false, wsOpen = true }) {
+const Room = memo(function Room({ room, me, people, title, other, official = false, listen, onRead, onInfo, onBack, rooms, titleOf, toast, jump, onJumped, prefs, clearedAt, onAct, onNewGroup, blocked, onUnblock, onCall, onTasks, tasksCount = 0, roles = [], proArtist = '', assetsAside = false, wsOpen = true, payOn = false }) {
   // a PROjects group is three chats (Alex, 22 Nov): PRE PRODUCTION, PRODUCTION, POST PRODUCTION; one sees the tabs the
   // group's admins gave them (roar_my_rooms channels; the server holds it, supabase/project-channels.sql). A new message goes
   // into the tab that is open: the server reads roar_members.cur_channel, which is set here as a tab is chosen
@@ -4002,6 +4003,8 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             {editing && mediaMsg(editing) && <button type="button" className="round edit-media-btn" disabled={savingMedia} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setEditMenu({ left: r.left, bottom: window.innerHeight - r.top + 8 }) }} aria-label="Change Photo" title="Change Photo">{SWAP_I}</button>}
             {!editing && !sealOn && <button type="button" className="round" onClick={() => { attachCam.current = true; setAttach([]) }} aria-label="Photo, video or file" title="Photo, video or file">{I.plus}</button>}
             {!editing && !sealOn && <button type="button" className={`round compose-transfer${transferHidden ? ' busy' : ''}`} onClick={() => { setTransferOpen(true); setTransferHidden(false) }} aria-label="RoarTransfer" title={transferHidden ? `RoarTransfer: uploading, ${Math.round(transferPct * 100)}%` : 'RoarTransfer: big files as they are, one link for all, 1 day up to 5 GB or 3 days up to 3 GB'}>{I.transfer}{transferHidden && <i className="rt-pct">{Math.round(transferPct * 100)}%</i>}</button>}
+            {/* the $ (Alex, 22 Nov): only in PROjects, My Payment and Expenses straight to the Production Hub */}
+            {!editing && !sealOn && payOn && <PayButton room={room} toast={toast} />}
             <span className={`compose-box${replyTo || editing ? ' has-ref' : ''}`}>
               {sel && (
                 <span className="fmt-bar" role="toolbar" aria-label="Format" onMouseDown={(e) => e.preventDefault()}>

@@ -8124,3 +8124,29 @@ html:root:root:root:root:root:root .prw-over > *, html:root:root:root:root:root:
   html:root:root:root:root:root:root:root .prw-phone .prw-ordacts .pill-btn span { display: none; }
   .prw-phone .prw-team-cols > span:first-child { width: 44px; } .prw-phone .prw-team-cols > span:last-child { width: 76px; }
 }
+
+/* The $ in a project's chat and its two windows (Alex, 22 Nov) */
+.pay-portal { position: fixed; inset: 0; z-index: 1000; }
+html:root:root:root:root:root:root:root .pay-menu { position: fixed !important; left: var(--pl) !important; bottom: var(--pb) !important; top: auto !important; right: auto !important; width: 210px; margin: 0 !important; z-index: 1001; }
+.pay-menu > button { display: flex; align-items: center; gap: 12px; }
+.pay-menu > button.off { opacity: .4; }
+.pay-win { display: flex; flex-direction: column; gap: 12px; }
+.pay-proj { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, #d48806 10%, transparent); }
+.pay-proj > i { width: 9px; height: 9px; border-radius: 50%; background: #d48806; flex: none; }
+.pay-proj > span { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.pay-proj small { font-size: 11.5px; color: var(--muted); }
+.pay-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.pay-f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pay-f.full { grid-column: 1 / -1; }
+.pay-f > small { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pay-f .input { width: 100%; }
+.pay-seg { align-self: flex-start; }
+html:root:root:root:root .pay-seg > button { height: 30px; padding: 0 12px; font-size: 13px; white-space: nowrap; }
+.pay-foot { display: flex; justify-content: center; gap: 8px; width: 100%; }
+.pay-note, .pay-wait { margin: 0; text-align: center; font-size: 11.5px; color: var(--muted); }
+.pay-err { margin: 0; text-align: center; font-size: 12.5px; color: #e5483f; }
+.pay-shots { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+html:root:root:root:root .pay-shot { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px; border-radius: 18px; border: 1.5px dashed color-mix(in srgb, currentColor 22%, transparent) !important; background: none !important; box-shadow: none !important; color: inherit; font: inherit; font-weight: 600; cursor: pointer; height: auto; }
+.pay-file { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pay-file img { max-width: 100%; max-height: 220px; border-radius: 14px; object-fit: contain; }
+.pay-pdf { display: flex; align-items: center; gap: 8px; }

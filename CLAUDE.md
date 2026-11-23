@@ -494,3 +494,4 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - A hub song over 48 MB is turned into a 192 kbps MP3 on the device (pro.jsx toMp3 with lamejs 1.2.1 in public/vendor/lame.min.js, loaded only then) and kept as a file of the chat; if that fails it goes as the hub's long link. Not tried with a real WAV yet.
 - Round buttons on the Workspace have no rim or shadow (Alex, 22 Nov).
 
+- The Overview's Tasks box takes the whole width and is minimal: one 34px line a task (circle, words), its date at the right, a small See All (Alex, 22 Nov).

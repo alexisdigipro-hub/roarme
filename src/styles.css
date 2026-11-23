@@ -8068,3 +8068,15 @@ html:root:root:root:root:root .ch-np-x { flex: none; width: 20px; height: 20px; 
 .ch-np-x svg { width: 12px; height: 12px; }
 .ch-np-line { position: absolute; left: 2px; right: 2px; bottom: 1px; height: 2px; border-radius: 2px; background: color-mix(in srgb, currentColor 10%, transparent); cursor: pointer; }
 .ch-np-line i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--halo-mine-top), var(--halo-mine)); }
+
+/* The Overview's Tasks: the whole width, minimal (Alex, 22 Nov): a small head, one slim line a task, its date at the right */
+.prw-peeks > .peek-tasks { grid-column: 1 / -1; }
+html:root:root:root:root:root:root .prw-peek.peek-tasks { padding: 10px 14px 8px; }
+html:root:root:root:root:root:root .peek-tasks .prw-boxhead { margin-bottom: 2px; }
+html:root:root:root:root:root:root .peek-tasks .prw-boxbtn { height: 28px; padding: 0 10px; font-size: 12px; }
+html:root:root:root:root:root:root .peek-tasks .prw-mrow.task { min-height: 34px; height: 34px; padding: 0 4px; gap: 10px; border-radius: 10px; }
+html:root:root:root:root:root:root .peek-tasks .prw-mrow.task + .prw-mrow.task { border-top: 1px solid color-mix(in srgb, currentColor 6%, transparent); border-radius: 0; }
+html:root:root:root:root:root:root .peek-tasks .prw-mtick { width: 16px; height: 16px; flex: none; }
+html:root:root:root:root:root:root .peek-tasks .prw-mtext { flex: 1; min-width: 0; }
+html:root:root:root:root:root:root .peek-tasks .prw-mtext b { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.prw-tdue { flex: none; font-size: 11.5px; color: var(--muted); }

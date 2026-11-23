@@ -1888,8 +1888,8 @@ export default function Chat({ me, setMe }) {
             ) })()}
           </div>
           )}
-          <div className="room-menu menu-list ctx-menu">
-            {!window.matchMedia('(max-width: 760px)').matches && <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>}
+          {!(roomMenu.mouse && roomMenu.peek) && <div className="room-menu menu-list ctx-menu">
+            {/* no Open In Window (Alex, 22 Nov) */}
             {/* the long press shows the messages above the menu; a right click asks for them (Alex, 22 Nov) */}
             {roomMenu.mouse && !roomMenu.peek && <button type="button" onClick={(e) => { e.stopPropagation(); setRoomMenu((m) => ({ ...m, peek: true, sub: '' })) }}>{I.chats}<span>Preview Messages</span></button>}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
@@ -1931,7 +1931,7 @@ export default function Chat({ me, setMe }) {
             </div>
             <hr />
             <button type="button" className="danger" onClick={() => roomAct('delete')} onPointerEnter={(e) => { if (e.pointerType === 'mouse') setRoomMenu((m) => ({ ...m, sub: '' })) }}>{I.trash}<span>{roomMenu.r.kind === 'group' ? 'Delete and Leave' : 'Delete Chat'}</span></button>
-          </div>
+          </div>}
           </div>
           </div>
         </OnTop>
@@ -2101,6 +2101,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // group's admins gave them (roar_my_rooms channels; the server holds it, supabase/project-channels.sql). A new message goes
   // into the tab that is open: the server reads roar_members.cur_channel, which is set here as a tab is chosen
   const chans = room.kind === 'group' && room.project && Array.isArray(room.channels) && room.channels.length ? room.channels : null
+  // what was sent from the project's Workspace shows in the chat; each person may fold one into a dot (Alex, 22 Nov)
+  const [dots, setDots] = useState(() => { try { return new Set(JSON.parse(localStorage.getItem(`roarme-dots-${room.room_id}`) || '[]')) } catch { return new Set() } })
+  const flipDot = (id) => setDots((d) => { const n = new Set(d); if (n.has(id)) n.delete(id); else n.add(id); try { localStorage.setItem(`roarme-dots-${room.room_id}`, JSON.stringify([...n].slice(-500))) } catch { /* private window */ } return n })
   const [chanPick, setChan] = useState(() => { try { return localStorage.getItem(`roarme-chan-${room.room_id}`) || '' } catch { return '' } })
   const chan = chans ? (chans.includes(chanPick) ? chanPick : chans[0]) : null
   useEffect(() => {
@@ -3380,7 +3383,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     // of things from the same person; a tap on it opens that tab
     const out = []
     for (const m of base) {
-      if (!isAsset(m)) { out.push(m); continue }
+      if (!isAsset(m) || m.file?.fromPanel) { out.push(m); continue }
       const t = asideTab(m)
       if (!notes) { if ((m.kind === 'image' || m.kind === 'file') && (m.body || '').trim()) out.push({ ...m, kind: 'text', file: null, asideAsset: true }); continue }
       const last = out[out.length - 1]
@@ -3616,6 +3619,15 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               </div>
             )
           }
+          // sent from the Workspace and folded into a dot by me
+          if (m.file?.fromPanel && dots.has(m.id) && !m.deleted_at) {
+            return (
+              <div key={m.id} id={`m-${m.id}`}>
+                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+                <div className={`msg-dot${mine ? ' mine' : ''}`}><button type="button" onClick={() => flipDot(m.id)} title="Show" aria-label="Show"><i /></button></div>
+              </div>
+            )
+          }
           // a line in the middle when someone turns Encrypted Chat on or off
           if (m.kind === 'system') {
             return (
@@ -3637,6 +3649,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
                 {picked && <span className={`tick${isPicked ? ' on' : ''}`} />}
                 {!mine && room.kind === 'group' && prefs.faces && (first ? <button type="button" className="who-ava" aria-label={`Chat with ${nameOf(who)}`} onClick={(e) => { e.stopPropagation(); if (!ghost) toDm(m.user_id) }}><Avatar src={who?.avatar_url} name={nameOf(who)} size={30} /></button> : <span className="av-gap" />)}
                 <div className="bubble-col">
+                  {m.file?.fromPanel && !m.deleted_at && <button type="button" className="msg-hide" onClick={(e) => { e.stopPropagation(); flipDot(m.id) }} title="Fold into a dot" aria-label="Fold into a dot"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 12h12" /></svg></button>}
                   <div className={`bubble${(m.kind === 'image' || isVideo || isGifFile) && !m.deleted_at ? ' pic' : ''}${isVideo && m.file?.round && !m.deleted_at ? ' note-b' : ''}${!m.deleted_at ? kindCls : ''}${isTransfer && !m.deleted_at ? ' transfer-b' : ''}${m.file?.event && !m.deleted_at ? ' event-b' : ''}${m.file?.location && !m.deleted_at ? ' loc-b' : ''}${m.file?.poll && !m.deleted_at ? ' poll-b' : ''}${ord ? ' event-b ord-b' : ''}${m.deleted_at ? ' gone' : ''}${big ? ' big-emoji' : ''}`}>
                     {!mine && (room.kind === 'group' || ghost) && first && !big && <b className="who" role="button" tabIndex={0} style={{ '--who': colorOf(ghost || m.user_id) }} onClick={(e) => { e.stopPropagation(); if (!ghost) toDm(m.user_id) }}>{nameOf(who)}</b>}
                     {quoted && !quoted.deleted_at && <span className={`quote${qs?.quote ? ' q-part' : ''}`} onClick={(e) => { e.stopPropagation(); hands.current.goTo(quoted.id) }}><b>{quoted.user_id === me.id ? 'You' : nameOf(people[quoted.user_id])}</b><span>{qs?.quote || textOf(quoted)}</span>{qs?.quote && <i className="q-mark" aria-hidden="true">{I.qmark}</i>}</span>}

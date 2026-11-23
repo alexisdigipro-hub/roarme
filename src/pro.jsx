@@ -1040,6 +1040,37 @@ function Stats({ room, people, me, project, compact = false }) {
 // with crop and zoom"): one's own cover, the group's photo, then the project's newest photos
 const MOVE_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" /></svg>
 const CROP_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></svg>
+// a big sound turned into an MP3 on the device (Alex, 22 Nov: "make it an MP3 and copy it here, a file of this chat"):
+// lamejs, kept in public/vendor (no code from another site at run time), loaded only when needed; 192 kbps
+let lameP = null
+const loadLame = () => (lameP ||= new Promise((ok, no) => {
+  if (window.lamejs?.Mp3Encoder) { ok(window.lamejs); return }
+  const sc = document.createElement('script'); sc.src = new URL('vendor/lame.min.js', document.baseURI).href
+  sc.onload = () => (window.lamejs?.Mp3Encoder ? ok(window.lamejs) : no(new Error('No encoder')))
+  sc.onerror = () => { lameP = null; no(new Error('The encoder could not load')) }
+  document.head.appendChild(sc)
+}))
+async function toMp3(blob) {
+  const lame = await loadLame()
+  const AC = window.AudioContext || window.webkitAudioContext
+  const ac = new AC()
+  let buf
+  try { buf = await ac.decodeAudioData(await blob.arrayBuffer()) } finally { ac.close?.() }
+  const ch = Math.min(2, buf.numberOfChannels)
+  const enc = new lame.Mp3Encoder(ch, buf.sampleRate, 192)
+  const L = buf.getChannelData(0), Rr = ch > 1 ? buf.getChannelData(1) : null
+  const toI16 = (f, a, b) => { const o = new Int16Array(b - a); for (let i = a; i < b; i++) { const v = Math.max(-1, Math.min(1, f[i])); o[i - a] = v < 0 ? v * 0x8000 : v * 0x7fff } return o }
+  const out = []
+  const STEP = 1152 * 40
+  for (let i = 0; i < L.length; i += STEP) {
+    const e = Math.min(L.length, i + STEP)
+    const d = Rr ? enc.encodeBuffer(toI16(L, i, e), toI16(Rr, i, e)) : enc.encodeBuffer(toI16(L, i, e))
+    if (d.length) out.push(d)
+    if ((i / STEP) % 25 === 0) await new Promise((r) => setTimeout(r, 0))
+  }
+  const end = enc.flush(); if (end.length) out.push(end)
+  return new Blob(out, { type: 'audio/mpeg' })
+}
 // how far the shoot day is, beside the date in the top row (Alex, 22 Nov: "put it right of the date")
 function dueIn(due) {
   if (!due) return ''
@@ -1764,7 +1795,21 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       // a song from the hub has only a link that lasts a day: its sound is fetched once and put in the chat's own folder
       // a big one (over the chat's 50 MB for a file) goes as the hub's own link, which lasts about two months
       if (file?.url && !file.path && Number(file.size) > 48e6) {
-        file = { name: file.name || 'Song', size: file.size, type: file.type || 'audio/mpeg', url: file.keep || file.url, ...(Array.isArray(file.peaks) ? { peaks: file.peaks } : {}), hubLink: true }
+        // a big one becomes an MP3 file of the chat; if that cannot be done, the hub's link that lasts two to three months
+        try {
+          toast('Making an MP3 of it…')
+          const r = await fetch(file.url)
+          if (!r.ok) throw new Error('The hub did not give the file')
+          const mp3 = await toMp3(await r.blob())
+          if (mp3.size > 48e6) throw new Error('Still too big')
+          const name = `${(file.name || 'Song').replace(/\.[a-z0-9]+$/i, '')}.mp3`
+          const to = `${id}/${uid()}-${name.replace(/[^\w.\- ]+/g, '_')}`
+          const { error } = await supabase.storage.from('roar-files').upload(to, mp3, { contentType: 'audio/mpeg' })
+          if (error) throw error
+          file = { name, size: mp3.size, type: 'audio/mpeg', path: to, ...(Array.isArray(file.peaks) ? { peaks: file.peaks } : {}) }
+        } catch {
+          file = { name: file.name || 'Song', size: file.size, type: file.type || 'audio/mpeg', url: file.keep || file.url, ...(Array.isArray(file.peaks) ? { peaks: file.peaks } : {}), hubLink: true }
+        }
       } else if (file?.url && !file.path) {
         try {
           const r = await fetch(file.url)

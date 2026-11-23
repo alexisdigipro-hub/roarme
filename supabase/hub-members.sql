@@ -70,3 +70,20 @@ begin
 end $$;
 drop trigger if exists roar_project_hub_channels on public.roar_pro_projects;
 create trigger roar_project_hub_channels after insert on public.roar_pro_projects for each row execute function public.roar_project_hub_channels();
+
+-- a hub's members join every new project group of its owner, in their category (Alex, 22 Nov: "keep the ones I put in,
+-- they go into the others too; I take them out where needed")
+create or replace function public.roar_project_add_hub_members() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into roar_members (room_id, user_id, role, channels)
+  select distinct on (hm.member) new.room_id, hm.member, 'member', hm.channels
+  from roar_hub_members hm
+  join roar_members a on a.room_id = new.room_id and a.user_id = hm.owner and a.role = 'admin'
+  where not exists (select 1 from roar_members x where x.room_id = new.room_id and x.user_id = hm.member)
+  order by hm.member, hm.set_at desc
+  on conflict do nothing;
+  return new;
+end $$;
+drop trigger if exists roar_project_add_hub_members on public.roar_pro_projects;
+create trigger roar_project_add_hub_members after insert on public.roar_pro_projects for each row execute function public.roar_project_add_hub_members();

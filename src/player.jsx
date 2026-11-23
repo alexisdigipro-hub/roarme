@@ -287,6 +287,22 @@ export const mmss = (s) => `${Math.floor((s || 0) / 60)}:${String(Math.floor((s 
 
 /* the bar while a song is on: play/pause, the title and the chat it came from, a line to move through it, the time,
    and × to stop it */
+// the song inside a project chat's capsule of chats, a thin line under them (Alex, 22 Nov, B of the sample
+// https://claude.ai/artifact/TKsbgdiEY6V71wmpETL1YU); only in PROjects, the other chats keep NowPlaying
+export function MiniNow() {
+  const p = usePlayer()
+  if (!p.key) return null
+  const seek = (e) => { const r = e.currentTarget.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width) }
+  return (
+    <span className={`ch-np${p.playing ? ' on' : ''}`}>
+      <button type="button" className="ch-np-pp" onClick={() => (p.playing ? player.pause() : player.resume())} aria-label={p.playing ? 'Pause' : 'Play'}>{p.playing ? I.pause : I.play}</button>
+      <button type="button" className="ch-np-t" onClick={() => player.open()} title="Open Player">{p.title}</button>
+      <small>{mmss(p.at)}</small>
+      <button type="button" className="ch-np-x" onClick={() => player.stop()} aria-label="Stop">{I.x}</button>
+      <span className="ch-np-line" onClick={seek} role="slider" aria-label="Position" aria-valuenow={Math.round(p.at)}><i style={{ width: `${p.dur ? Math.min(100, (p.at / p.dur) * 100) : 0}%` }} /></span>
+    </span>
+  )
+}
 export function NowPlaying({ onOpen, className = '' }) {
   const p = usePlayer()
   if (!p.key) return null

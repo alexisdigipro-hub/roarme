@@ -69,7 +69,7 @@ export function hubStart() {
 }
 
 // the word PROjects, in the gold of its folder, wherever it is written (Alex, 22 Nov: "PROjects, gold, everywhere")
-const Gold = () => <span className="tab-gold"><b>PRO</b>jects</span>
+const Gold = () => <span className="tab-gold"><b>PRO</b><i>JECTS</i></span>
 
 // Settings > PROJECTS (Alex, 22 Nov: "the gold Projects in Settings, and inside it the hub you join, and the subscription"):
 // the plan (free for now, Subscribe "Coming soon") and the Production Hub

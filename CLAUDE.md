@@ -500,3 +500,4 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - The Overview no longer shows Documents or Links (Alex, 22 Nov): the song, the ordino, open Tasks (full width) and the Team.
 - Rows of files, links and places on the Workspace are laid out as the song's bar: one pane, even room each side, 34px round buttons at the right, 8px between rows (Alex, 22 Nov).
 
+- A project chat's head shows only its name, no "N members" (Alex, 22 Nov); other groups keep it.

@@ -8080,3 +8080,7 @@ html:root:root:root:root:root:root .peek-tasks .prw-mtick { width: 16px; height:
 html:root:root:root:root:root:root .peek-tasks .prw-mtext { flex: 1; min-width: 0; }
 html:root:root:root:root:root:root .peek-tasks .prw-mtext b { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .prw-tdue { flex: none; font-size: 11.5px; color: var(--muted); }
+/* the lists that hold rows (Location Scout's list, files) are not a pane of their own: only the rows are glass, so no
+   second frame with other corners round a row (Alex, 22 Nov) */
+html:root:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.prw-slist, .prw-cards, .prj-list, .prw-links, .prw-filesec) { background: none !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.prw-srow, .prw-card, .prw-link) { border-radius: 18px !important; overflow: hidden; }

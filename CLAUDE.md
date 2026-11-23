@@ -495,3 +495,4 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - Round buttons on the Workspace have no rim or shadow (Alex, 22 Nov).
 
 - The Overview's Tasks box takes the whole width and is minimal: one 34px line a task (circle, words), its date at the right, a small See All (Alex, 22 Nov).
+- On the Workspace only the rows and cards are glass, never the lists that hold them (.prw-slist, .prw-cards, .prj-list…): a glass list round a glass row drew a second frame with other corners (Alex, 22 Nov).

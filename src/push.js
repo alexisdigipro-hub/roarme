@@ -1,4 +1,4 @@
-import { SUPABASE_URL, supabase } from './lib.js'
+import { SUPABASE_URL, supabase, swAt } from './lib.js'
 import { getPrefs } from './prefs.js'
 
 /* Notifications with RoarMe closed (Alex, 18 Oct): Web Push on phones and browsers (supabase/push.sql, the Edge
@@ -98,7 +98,7 @@ export function onNotificationTap(open) {
 }
 
 const registration = async () => {
-  const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' })
+  const reg = await navigator.serviceWorker.register(...swAt())
   await navigator.serviceWorker.ready
   return reg
 }

@@ -35,6 +35,16 @@ jobs:
             || echo "Jost not fetched: the wordmark falls back to Futura"
           ls -la public/fonts
       - run: npm run build
+      # roarme.app is RoarMe's page and the app lives at /app/ (Alex, 23 Nov): the build moves into dist/app; the page
+      # (landing/), the service worker (one registration for the whole site, as before), the person links' 404 page,
+      # Apple's association file and RoarTransfer stay at the root
+      - run: |
+          mkdir dist/app
+          find dist -mindepth 1 -maxdepth 1 ! -name app ! -name .well-known ! -name 404.html -exec mv {} dist/app/ \;
+          cp dist/app/sw.js dist/sw.js
+          cp -r dist/app/transfer dist/transfer
+          cp -r landing/. dist/
+          ls -la dist dist/app | head -40
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:

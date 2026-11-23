@@ -8,11 +8,13 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()))
 // are kept on the device: RoarMe starts without fetching them again. The page itself always comes fresh, so a new
 // version is there on the next start as before (Alex, 21 Oct: RoarMe lighter)
 const ASSETS = 'roarme-assets-1'
+// on roarme.app the worker sits at the root and the app at /app/ (Alex, 23 Nov)
+const APP = /^https:\/\/roarme\.app\/$/.test(self.registration.scope) ? self.registration.scope + 'app/' : self.registration.scope
 self.addEventListener('fetch', (e) => {
   const req = e.request
   if (req.method !== 'GET') return
   const url = new URL(req.url)
-  if (!url.href.startsWith(new URL('./assets/', self.registration.scope).href)) return
+  if (!url.href.startsWith(new URL('./assets/', APP).href)) return
   e.respondWith((async () => {
     const cache = await caches.open(ASSETS)
     const hit = await cache.match(req)
@@ -49,10 +51,10 @@ self.addEventListener('push', (e) => {
 self.addEventListener('notificationclick', (e) => {
   e.notification.close()
   const room = (e.notification.data && e.notification.data.room) || ''
-  const url = new URL(room ? `./#c=${room}` : './', self.registration.scope).href
+  const url = new URL(room ? `./#c=${room}` : './', APP).href
   e.waitUntil((async () => {
     const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-    const open = list.find((c) => c.url.startsWith(self.registration.scope))
+    const open = list.find((c) => c.url.startsWith(APP))
     if (open) {
       await open.focus()
       if (room) open.postMessage({ roarOpen: room })

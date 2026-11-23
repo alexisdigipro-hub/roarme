@@ -12,7 +12,7 @@ export const NEWS = [
     date: '23 November 2026',
     sections: [
       { title: 'Everywhere', items: [
-        'Unread waits at the left edge: when something is new a round button peeks in. Slide the folders to the right to bring it out with the number, tap it for your unread chats.',
+        'Unread: when something is new the chosen folder lights up in your colour. Slide the folders to the right and a round button with the number appears under them; tap it for your unread chats.',
         'Archived is a round sign with three binders at the right of the folders.',
         'PROJECTS is written in capitals everywhere: PRO in gold and bold, JECTS thin.',
       ] },

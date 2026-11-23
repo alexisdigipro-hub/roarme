@@ -11,7 +11,7 @@ const hashOf = async (code, salt) => toHex(await crypto.subtle.digest('SHA-256',
 
 export async function setLockCode(code, after) {
   const salt = toHex(crypto.getRandomValues(new Uint8Array(16)))
-  localStorage.setItem(KEY, JSON.stringify({ salt, hash: await hashOf(code, salt), after: after || 5 }))
+  localStorage.setItem(KEY, JSON.stringify({ salt, hash: await hashOf(code, salt), after: after || 5, len: code.length }))
   window.dispatchEvent(new Event('roarme-lock'))
 }
 export function setLockAfter(after) {
@@ -22,7 +22,10 @@ export function setLockAfter(after) {
 }
 export async function checkCode(code) {
   const l = getLock()
-  return !!l && (await hashOf(code, l.salt)) === l.hash
+  const ok = !!l && (await hashOf(code, l.salt)) === l.hash
+  // a lock made before its length was kept learns it the first time it opens, so the next time opens on the last digit
+  if (ok && !l.len) try { localStorage.setItem(KEY, JSON.stringify({ ...l, len: code.length })) } catch { /* private */ }
+  return ok
 }
 export function clearLock() {
   localStorage.removeItem(KEY)
@@ -146,19 +149,27 @@ export function LockScreen({ onUnlock, onSignOut }) {
   // the keypad; a computer's keys still type, Backspace takes one off and Enter tries the code
   const codeRef = useRef('')
   codeRef.current = code
+  const pressRef = useRef(null)
   useEffect(() => {
     const k = (e) => {
-      if (/^\d$/.test(e.key)) { e.preventDefault(); setCode((c) => (c + e.key).slice(0, 8)) }
+      if (/^\d$/.test(e.key)) { e.preventDefault(); pressRef.current(e.key) }
       else if (e.key === 'Backspace') { e.preventDefault(); setCode((c) => c.slice(0, -1)) }
       else if (e.key === 'Enter') { e.preventDefault(); if (codeRef.current.length >= 4) try1(codeRef.current) }
     }
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  const press = (d) => {
-    const c = (code + d).slice(0, 8)
+  // opens on the last digit, no OK (Alex, 23 Nov): with the code's length known, the full length is tried at once
+  // (a wrong one shakes); without it (a lock from before), any 4 or more digits that are right open it
+  const len = getLock()?.len || 0
+  const press = async (d) => {
+    const c = (codeRef.current + d).slice(0, 8)
+    codeRef.current = c
     setCode(c)
+    if (len) { if (c.length === len) try1(c) }
+    else if (c.length >= 4 && await checkCode(c)) onUnlock()
   }
+  pressRef.current = press
   return (
     <div className="lock">
       <div className={`lock-card${bad ? ' shake' : ''}`}>
@@ -169,7 +180,7 @@ export function LockScreen({ onUnlock, onSignOut }) {
           {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => <button key={d} type="button" onClick={() => press(d)}>{d}</button>)}
           <button type="button" className="lock-ghost" onClick={() => setCode((c) => c.slice(0, -1))}>⌫</button>
           <button type="button" onClick={() => press('0')}>0</button>
-          <button type="button" className="lock-go" onClick={() => try1(code)} disabled={code.length < 4}>OK</button>
+          {len ? <span aria-hidden="true" /> : <button type="button" className="lock-go" onClick={() => try1(code)} disabled={code.length < 4}>OK</button>}
         </div>
         {bio && <button type="button" className="btn lock-bio" onClick={face}>{bioName()}</button>}
         <button type="button" className="link" onClick={onSignOut}>Forgot it? Sign out</button>

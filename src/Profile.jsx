@@ -20,6 +20,8 @@ const isAudio = (m) => m.kind === 'file' && isAudioFile(m.file)
 /* A chat's card, as in Telegram (Alex, 16 Oct): the big picture, the name, last seen, Message · Call ·
    Video · More, what we know about the person, and everything shared in the chat by kind. */
 // a group member's admin button (Alex, 15 Nov: "round icons"): a shield with a star; lit while they are an admin
+// earlier messages: a clock with the hands turned back
+const CLOCK_I = svg(<><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" /><path d="M3 4.5V8h3.5" /><path d="M12 7.5V12l3 2" /></>, 18)
 const ADMIN_I = svg(<><path d="M12 3 4.5 6v5.2c0 4.6 3.1 8.6 7.5 9.8 4.4-1.2 7.5-5.2 7.5-9.8V6z" /><path d="m12 8.3 1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.2-2.4 1.2.5-2.6-1.9-1.8 2.6-.4z" /></>, 18)
 // the Mute menu's signs (Alex, 15 Nov, from Telegram's): a bell with a z, a speaker crossed or sounding, two sliders
 const MUTE_FOR_I = svg(<><path d="M6 16V11a6 6 0 0 1 9-5.2M18 11v5l1.5 2h-15" /><path d="M10 20a2 2 0 0 0 4 0M15.5 3h4l-4 4.5h4" /></>, 22)
@@ -145,6 +147,15 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   const [roles, setRoles] = useState({})
   // the three chats of a PROjects group: an admin chooses who sees which (supabase/project-channels.sql, Alex 22 Nov)
   const [chans, setChans] = useState({})
+  // who sees the group's earlier messages (Alex, 23 Nov; supabase/history.sql): null history_from = sees them
+  const [hist, setHist] = useState({})
+  const [showOld, setShowOld] = useState(true)
+  const flipHist = async (p) => {
+    const sees = !!hist[p.id]
+    setHist((h) => ({ ...h, [p.id]: !sees }))
+    const { error } = await supabase.rpc('roar_set_history', { r: room.room_id, u: p.id, sees: !sees })
+    if (error) { setErr(errText(error)); loadRoles() } else toast(!sees ? `${nameOf(p)} sees earlier messages` : `${nameOf(p)} sees only messages from when they joined`)
+  }
   const flipChan = async (p, k) => {
     const had = chans[p.id] || ['prod']
     const next = had.includes(k) ? had.filter((x) => x !== k) : [...had, k]
@@ -157,6 +168,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     const { data } = await supabase.from('roar_members').select('*').eq('room_id', room.room_id)
     setRoles(Object.fromEntries((data || []).map((x) => [x.user_id, x.role])))
     setChans(Object.fromEntries((data || []).map((x) => [x.user_id, x.channels || ['prod']])))
+    setHist(Object.fromEntries((data || []).map((x) => [x.user_id, !x.history_from])))
   }
   useEffect(() => { loadRoles() }, [room.room_id, (room.members || []).length]) // eslint-disable-line react-hooks/exhaustive-deps
   const setAdmin = async (p, on) => {
@@ -242,7 +254,8 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
   }
   const add = async (p) => {
     const { error } = await supabase.rpc('roar_add_members', { r: room.room_id, people: [p.id] })
-    if (error) setErr(errText(error)); else { loadPeople([p.id]); onChanged(); setHits((h) => h.filter((x) => x.id !== p.id)); toast(`${nameOf(p)} added`) }
+    if (!error && admin && !showOld) await supabase.rpc('roar_set_history', { r: room.room_id, u: p.id, sees: false })
+    if (error) setErr(errText(error)); else { loadRoles(); loadPeople([p.id]); onChanged(); setHits((h) => h.filter((x) => x.id !== p.id)); toast(`${nameOf(p)} added`) }
   }
   const leave = async () => {
     setMore(false)
@@ -447,6 +460,13 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
               {(adding
                 ? <label className="search">{I.search}<input autoFocus type="search" name="roar-add-people" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-1p-ignore="" data-lpignore="true" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by name" /><button type="button" className="link" onClick={() => { setAdding(false); setQ('') }}>Done</button></label>
                 : <button type="button" className="pf-row" onClick={() => setAdding(true)}><span className="pf-row-ico add">{I.plus}</span><span className="pf-row-text"><b>Add people</b></span></button>)}
+              {adding && admin && (
+                <label className="pf-row pf-hist-opt">
+                  <span className="pf-row-ico">{CLOCK_I}</span>
+                  <span className="pf-row-text"><b>Show Earlier Messages</b><small>{showOld ? 'New people see the whole chat' : 'New people see only what comes after they join'}</small></span>
+                  <span className="switch"><input type="checkbox" checked={showOld} onChange={(e) => setShowOld(e.target.checked)} /><span /></span>
+                </label>
+              )}
               {hits.map((p) => (
                 <button key={p.id} type="button" className="pf-row" onClick={() => add(p)}>
                   <Avatar src={p.avatar_url} name={nameOf(p)} size={40} />
@@ -466,6 +486,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
                       {[['pre', 'Pre'], ['prod', 'Prod'], ['post', 'Post']].map(([k, l]) => <button key={k} type="button" className={(chans[p.id] || ['prod']).includes(k) ? 'on' : ''} aria-pressed={(chans[p.id] || ['prod']).includes(k)} onClick={() => flipChan(p, k)} title={`${{ pre: 'Pre Production', prod: 'Production', post: 'Post Production' }[k]} chat`}>{l}</button>)}
                     </span>
                   )}
+                  {admin && p.id !== me.id && roles[p.id] !== 'admin' && <button type="button" className={`round pf-row-adm pf-row-hist${hist[p.id] === false ? ' off' : ''}`} onClick={() => flipHist(p)} aria-pressed={hist[p.id] !== false} aria-label={hist[p.id] === false ? 'Show earlier messages' : 'Hide earlier messages'} title={hist[p.id] === false ? 'Sees only messages from when they joined. Tap to show earlier messages' : 'Sees earlier messages. Tap to hide them'}>{CLOCK_I}</button>}
                   {admin && p.id !== me.id && <button type="button" className="round danger pf-row-del" onClick={() => removeMember(p)} aria-label={`Remove ${nameOf(p)}`} title="Remove from the group">{I.trash}</button>}
                 </div>
               ))}

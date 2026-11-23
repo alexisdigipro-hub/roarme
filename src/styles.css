@@ -7885,3 +7885,22 @@ html:root:root:root:root .hbm-chips > button.on { color: var(--text); background
 html:root:root:root:root:root .prw-pill.date .prw-datewrap { font-size: 15px; }
 .prw-duein { flex: none; align-self: center; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; }
 .prw-duein.past { opacity: .7; }
+
+/* The Workspace's share arrow and its menu (Alex, 22 Nov): the three chats of the project, then another chat or person */
+html:root:root:root:root .prw-share.share-pic { position: absolute; top: 8px; right: 44px; z-index: 2; width: 30px; height: 30px; min-width: 30px; padding: 0; color: #fff; background: rgba(0, 0, 0, .45) !important; box-shadow: none !important; opacity: 0; transition: opacity .2s; }
+html:root:root:root:root .prw-share.share-pic svg { width: 15px; height: 15px; }
+html:root:root:root:root .prw-tilewrap:hover .prw-share.share-pic { opacity: 1; }
+@media (hover: none) { html:root:root:root:root .prw-share.share-pic { opacity: .85; } }
+.prw-share-portal { position: fixed; inset: 0; z-index: 90; }
+.prw-share-portal > .prw-scrim { position: fixed; inset: 0; }
+html:root:root:root:root:root:root:root .prw-share-menu { position: fixed !important; left: var(--sl) !important; top: var(--st) !important; bottom: var(--sb) !important; right: auto !important; width: var(--sw) !important; max-width: calc(100vw - 20px); margin: 0 !important; z-index: 91; transform: none !important; }
+html:root:root:root:root:root:root:root .prw-share-menu > button span { white-space: nowrap; overflow: visible; }
+.prw-share-cap { display: block; padding: 6px 16px 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.prw-share-dot { width: 9px; height: 9px; margin: 0 6px 0 5px; border-radius: 50%; background: var(--c); flex: none; }
+
+/* Hub Member's categories on one line (Alex, 22 Nov) */
+html:root:root:root:root .hbm-chips { flex-wrap: nowrap; gap: 5px; }
+html:root:root:root:root .hbm-chips > button { height: 30px; padding: 0 10px; font-size: 12.5px; white-space: nowrap; flex: 0 1 auto; min-width: 0; }
+/* the Workspace's viewer fills the screen even with a small picture (a hub location's photo, Alex, 22 Nov) */
+html:root:root:root:root .prv-stage img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0; box-shadow: none; }
+.pf-card + .hbm { margin: 12px 0; }

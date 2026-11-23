@@ -23,6 +23,8 @@ export const NEWS = [
         'Hub Member: with your hub linked, make a contact a member of your hub from their card and pick their category; put in a project group, they land in that category\'s chats.',
         'Add people suggests the people you talk to from the first letter.',
         'Banner: a project\'s cover banner is off to start; turn it on in Project Settings, More.',
+        'Send from the Workspace: photos, videos, files, songs, places, links, locations and the ordino have a send arrow: pick Pre Production, Production or Post Production, or another chat or person.',
+        'Hub Member is on a person\'s page too.',
         'A project has its own workspace: media, files, Location Scout, calls, links, tasks, and Admin for budget and fees.',
         'The project\u2019s Overview gives a taste of everything: small thumbnails, then the latest documents, locations, links and tasks.',
         'The project\u2019s banner is calmer: its name on your own photo or the theme\u2019s colour, the shoot day under it.',

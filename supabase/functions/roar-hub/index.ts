@@ -9,6 +9,7 @@
 //                                         makes a group for every hub project made since I connected that has none
 //   link { room }                         ties one project group (Make It a Project)
 //   unlink { room }                       unties one group (an admin, or who tied it); both sides stay
+//   pay.meta / pay.job / pay.receipt { room } the $ in a project's chat: My Payment and Expenses to the hub (hub-bridge)
 //   sync { room }                         both ways, for one group: title, stage, shoot day, category, tasks, locations;
 //                                         from the hub only: its cover (also the group's picture, unless it has one of its own),
 //                                         its songs, its locations' photos and its published ordinos
@@ -356,6 +357,28 @@ Deno.serve(async (req) => {
       return json({ ok: true, ...(await syncRoom(room)) })
     }
     if (action === 'sync') return json({ ok: true, ...(await syncRoom(room)) })
+    // My Payment and Expenses from the $ in a project's chat (Alex, 22 Nov): to the hub of who tied the project, as the
+    // person whose RoarMe email is a member there; a receipt's photo or PDF goes as a link to its place in roar-files
+    if (action === 'pay.meta' || action === 'pay.job' || action === 'pay.receipt') {
+      const { data: l } = await db.from('roar_hub_links').select('owner, hub_project').eq('room_id', room).maybeSingle()
+      if (!l?.hub_project) return json({ error: 'This project is not tied to a hub.' }, 400)
+      const acc = await accountOf(l.owner)
+      if (!acc) return json({ error: 'The hub of this project is not connected any more.' }, 400)
+      const email = (await db.auth.admin.getUserById(me)).data?.user?.email || ''
+      const extra: any = {}
+      if (action === 'pay.job') extra.job = body?.job || {}
+      if (action === 'pay.receipt') {
+        const r = { ...(body?.receipt || {}) }
+        const path = String(body?.receipt?.file?.path || '')
+        if (path) {
+          if (!path.startsWith(`${room}/`)) return json({ error: 'The receipt file is not right.' }, 400)
+          const { data: su } = await db.storage.from('roar-files').createSignedUrl(path, 600)
+          r.file = { url: su?.signedUrl || '', name: body.receipt.file.name || 'Receipt', type: body.receipt.file.type || '' }
+        } else delete r.file
+        extra.receipt = r
+      }
+      try { return json(await hubCall(acc.hub_key, { action, id: l.hub_project, email, ...extra })) } catch (e) { return json({ error: (e as Error).message }, 400) }
+    }
     if (action === 'unlink') {
       // Unlink in Project Settings, or Stop Being a Project: the group and the hub's project both stay
       const { data: l } = await db.from('roar_hub_links').select('owner, hub_project').eq('room_id', room).maybeSingle()

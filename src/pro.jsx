@@ -57,7 +57,9 @@ export function useProjects(me, on) {
     const ch = supabase.channel(`roar-pro-projects-${me.id}-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'roar_pro_projects' }, (ev) => {
         if (ev.eventType === 'DELETE') setMap((m) => { const n = { ...m }; delete n[ev.old.room_id]; return n })
-        else if (ev.new?.room_id) setMap((m) => ({ ...m, [ev.new.room_id]: ev.new }))
+        // a live change leaves out big unchanged columns (the hub's songs, ordinos, scouts with photos): what it does not
+        // carry is kept, so the songs no longer show and then vanish (Alex, 22 Nov)
+        else if (ev.new?.room_id) setMap((m) => ({ ...m, [ev.new.room_id]: { ...(m[ev.new.room_id] || {}), ...Object.fromEntries(Object.entries(ev.new).filter(([, v]) => v !== undefined)) } }))
       })
       .subscribe()
     // back in front (the phone froze the live link meanwhile): read them again
@@ -387,11 +389,44 @@ function Viewer({ items, index, onClose, people = {}, me }) {
   )
 }
 
+// a video with no still of its own: one small frame is taken from it once (320 px), kept on the device, and shown in
+// place of the video, so Media does not load and play whole videos (Alex, 22 Nov: "slow, and they play by themselves")
+const vStills = new Map()
+function videoStill(file) {
+  const key = `roarme-vthumb-${file.path || file.url}`
+  if (vStills.has(key)) return vStills.get(key)
+  let kept = ''
+  try { kept = localStorage.getItem(key) || '' } catch { /* private window */ }
+  if (kept) { const p = Promise.resolve(kept); vStills.set(key, p); return p }
+  const p = fileLink(file).then((u) => new Promise((done) => {
+    if (!u) { done(''); return }
+    const v = document.createElement('video')
+    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.crossOrigin = 'anonymous'
+    const stop = setTimeout(() => { v.removeAttribute('src'); v.load(); done('') }, 15000)
+    v.onloadeddata = () => { try { v.currentTime = Math.min(0.5, (v.duration || 1) / 2) } catch { /* not seekable */ } }
+    v.onseeked = () => {
+      try {
+        const w = 320, h = Math.round(320 * (v.videoHeight || 9) / (v.videoWidth || 16))
+        const c = document.createElement('canvas'); c.width = w; c.height = h
+        c.getContext('2d').drawImage(v, 0, 0, w, h)
+        const d = c.toDataURL('image/jpeg', 0.7)
+        try { localStorage.setItem(key, d) } catch { /* full */ }
+        done(d)
+      } catch { done('') }
+      clearTimeout(stop); v.removeAttribute('src'); v.load()
+    }
+    v.onerror = () => { clearTimeout(stop); done('') }
+    v.src = u
+  }))
+  vStills.set(key, p)
+  return p
+}
 function Tile({ m, onOpen, onDrop, share }) {
   const [src, setSrc] = useState('')
   useEffect(() => {
     let gone = false
-    picLink(m.file).then((u) => { if (!gone && u) setSrc(u) }).catch(() => {})
+    const vid = folderOf(m) === 'videos' && !m.file.thumb
+    ;(vid ? videoStill(m.file) : picLink(m.file)).then((u) => { if (!gone && u) setSrc(u) }).catch(() => {})
     return () => { gone = true }
   }, [m.id])
   const video = folderOf(m) === 'videos'
@@ -1701,6 +1736,8 @@ function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, 
 
 
 function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged, rooms = [], titleOf = () => '', onSwap, phone = false }) {
+  // a member who does not see Pre Production sees only the Overview, and only to look and listen (Alex, 22 Nov)
+  const viewOnly = room.role !== 'admin' && !(Array.isArray(room.channels) ? room.channels : ['prod']).includes('pre')
   const stuff = useRoomStuff(room.room_id)
   const [tab, setTab] = useState(() => { try { return sessionStorage.getItem(`roarme-pro-tab-${room.room_id}`) || 'overview' } catch { return 'overview' } })
   const [menu, setMenu] = useState('')
@@ -1765,7 +1802,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [sharePick, setSharePick] = useState(null)
   const myChans = room.project && Array.isArray(room.channels) ? (room.role === 'admin' ? ['pre', 'prod', 'post'] : room.channels) : null
   const onShare = (x) => (e) => { e?.preventDefault?.(); e?.stopPropagation?.(); const r = e?.currentTarget?.getBoundingClientRect?.(); setShare({ x, r }) }
-  const shareBtn = (x, cls = '') => <button type="button" className={`round prw-ibtn prw-share ${cls}`} onClick={onShare(x)} title="Send to…" aria-label="Send to…">{FWD_I}</button>
+  const shareBtn = (x, cls = '') => viewOnly ? null : <button type="button" className={`round prw-ibtn prw-share ${cls}`} onClick={onShare(x)} title="Send to…" aria-label="Send to…">{FWD_I}</button>
   const songBar = (m) => (m.hub
     ? <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who="From the Hub" onSendTo={onShare({ msg: { kind: 'file', body: '', file: m.file } })} />
     : <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who={m.user_id === me.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0]} onSendTo={onShare({ msg: m })} onDrop={() => drop(m, 'this song')} />)
@@ -1870,7 +1907,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   // on a phone the project opens on a home of its own (the cover, the songs, the ordino, the details) and tiles for the
   // rest; a tile opens its page with a back (Alex, 22 Nov: "the second, with the tiles")
   // a phone has version A (Alex, 22 Nov: "in the end I want version A"): the same tabs as a row that slides sideways
-  const shownTab = TABS.some((t) => t[0] === tab) ? tab : 'overview'
+  const shownTab = !viewOnly && TABS.some((t) => t[0] === tab) ? tab : 'overview'
   tabsRef.current = TABS.map((t) => t[0])
   tabRef.current = shownTab
   goTabRef.current = goTab
@@ -1889,33 +1926,18 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   }
   const members = (room.members || []).slice(0, 5)
   return (
-    <div className={`prw-work${project.ws_bg ? ' has-bg' : ''}`} style={project.ws_bg ? { '--wsbg': `url("${project.ws_bg}")`, '--wsop': (project.ws_bg_op ?? 40) / 100 } : undefined}>
+    <div className={`prw-work${project.ws_bg ? ' has-bg' : ''}${viewOnly ? ' view-only' : ''}`} style={project.ws_bg ? { '--wsbg': `url("${project.ws_bg}")`, '--wsop': (project.ws_bg_op ?? 40) / 100 } : undefined}>
       <div className="prw-top">
-        <span className="prw-hang">
-          <button type="button" className="prw-pill stage" style={{ '--pc': st.c }} onClick={() => setMenu(menu === 'stage' ? '' : 'stage')}><i className="prw-dot" /><span className="prw-st-name">{st.name}</span><span className="prw-caret">{I.down}</span></button>
-          <Hang open={menu === 'stage'} onClose={() => setMenu('')} portal={phone}>
-            {pickStages(project).map((s) => <button key={s.id} type="button" onClick={() => { save({ status: s.id }); setMenu('') }}><i className="prw-dot" style={{ '--pc': s.c }} /><span>{s.name}</span>{s.id === st.id && <b className="prw-tick">{I.check}</b>}</button>)}
-            <hr />
-            {isDelivered(project)
-              ? <button type="button" onClick={() => { save({ status: (pickStages(project).slice(-1)[0] || stagesOf(project)[0]).id }); setMenu('') }}>{I.check}<span>Back to Active</span></button>
-              : doneStage(project) && <button type="button" onClick={() => { save({ status: doneStage(project).id }); setMenu('') }}>{I.check}<span>Mark as Delivered</span></button>}
-            <button type="button" onClick={() => { setMenu(''); setStagesOpen(true) }}>{I.edit || I.plus}<span>Rename Stages</span></button>
-          </Hang>
-        </span>
-        <span className="prw-pill date">
-          <span className="prw-dlabel">Shoot Day</span>
-          {/* a phone: the date as words, with the phone's own date wheel laid unseen over them (an empty date field has no
-              size on an iPhone, so it could not be tapped: Alex, 22 Nov) */}
-          <span className="prw-datewrap"><span className={project.due ? '' : 'none'}>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', ...(project.due.slice(0, 4) === String(new Date().getFullYear()) ? {} : { year: 'numeric' }) }) : 'Set the date'}</span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></span>
-        </span>
-        {project.due && <span className={`prw-duein${dueIn(project.due).endsWith('ago') ? ' past' : ''}`}>{dueIn(project.due)}</span>}
-        <span className="prw-faces">{members.map((id) => <Avatar key={id} src={people[id]?.avatar_url} name={nameOf(people[id])} size={30} />)}{(room.members || []).length > 5 && <i>+{room.members.length - 5}</i>}</span>
-        {onSwap && !phone && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}
-        <span className="prw-gear-wrap">
+        {/* the stage and the shoot day only shown here; both change in Project Settings (Alex, 22 Nov) */}
+        <span className="prw-pill stage still" style={{ '--pc': st.c }}><i className="prw-dot" /><span className="prw-st-name">{st.name}</span></span>
+        {project.due && <span className="prw-pill date still"><span className="prw-dlabel">Shoot Day</span><b>{new Date(`${project.due}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', ...(project.due.slice(0, 4) === String(new Date().getFullYear()) ? {} : { year: 'numeric' }) })}</b></span>}
+        <span className="prw-top-gap" />
+        {onSwap && !phone && !viewOnly && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}
+        {!viewOnly && <span className="prw-gear-wrap">
           <button type="button" className={`round prw-gear${setOpen ? ' on' : ''}`} onClick={() => setSetOpen(true)} aria-label="Project settings" title="Project settings">{I.gear}</button>
-        </span>
+        </span>}
       </div>
-      <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}>{phone ? <span className="prw-bi">{TAB_I[k]}</span> : <span className="prw-bl">{TAB_SHORT[k] || l}</span>}</button>)}</Lens></div>
+      {!viewOnly && <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}>{phone ? <span className="prw-bi">{TAB_I[k]}</span> : <span className="prw-bl">{TAB_SHORT[k] || l}</span>}</button>)}</Lens></div>}
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">

@@ -1651,7 +1651,19 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     for (const id of ids) {
       let file = m.file ? { ...m.file } : null
       if (file) delete file.imported
-      if (file?.path && id !== room.room_id) {
+      // a song from the hub has only a link that lasts a day: its sound is fetched once and put in the chat's own folder
+      if (file?.url && !file.path) {
+        try {
+          const r = await fetch(file.url)
+          if (!r.ok) throw new Error('The hub did not give the file')
+          const blob = await r.blob()
+          const name = file.name || 'Song'
+          const to = `${id}/${uid()}-${name.replace(/[^\w.\- ]+/g, '_')}`
+          const { error } = await supabase.storage.from('roar-files').upload(to, blob, { contentType: blob.type || 'audio/mpeg' })
+          if (error) throw error
+          file = { name, size: blob.size, type: blob.type || 'audio/mpeg', path: to, ...(Array.isArray(file.peaks) ? { peaks: file.peaks } : {}) }
+        } catch (e) { bad = e; continue }
+      } else if (file?.path && id !== room.room_id) {
         const to = `${id}/${uid()}-${file.path.split('/').pop().replace(/^[0-9a-f-]{36}-/, '')}`
         const { error } = await supabase.storage.from(file.bucket || 'roar-files').copy(file.path, to)
         if (error) { bad = error; continue }
@@ -1679,7 +1691,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const onShare = (x) => (e) => { e?.preventDefault?.(); e?.stopPropagation?.(); const r = e?.currentTarget?.getBoundingClientRect?.(); setShare({ x, r }) }
   const shareBtn = (x, cls = '') => <button type="button" className={`round prw-ibtn prw-share ${cls}`} onClick={onShare(x)} title="Send to…" aria-label="Send to…">{FWD_I}</button>
   const songBar = (m) => (m.hub
-    ? <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who="From the Hub" />
+    ? <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who="From the Hub" onSendTo={onShare({ msg: { kind: 'file', body: '', file: m.file } })} />
     : <SongBar key={m.id} m={m} from={title} roomId={room.room_id} who={m.user_id === me.id ? 'You' : nameOf(people[m.user_id]).split(' ')[0]} onSendTo={onShare({ msg: m })} onDrop={() => drop(m, 'this song')} />)
   // the ordino goes into a chat as a message with its link (Alex, 22 Nov: "throw it in the group, or send it to another")
   const sendOrdino = async (o, ids, chan = null) => {
@@ -1920,7 +1932,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       {doc && <DocView m={doc} onClose={() => setDoc(null)} />}
       {ordView && <OrdinoView o={ordView} onClose={() => setOrdView(null)} onSend={() => { setSharePick({ ordino: ordView }); setOrdView(null) }} />}
       {share && <ShareMenu at={share.r} chans={myChans} onClose={() => setShare(null)} onChan={async (c) => { const x = share.x; setShare(null); await sendAny(x, [room.room_id], c) }} onOther={() => { setSharePick(share.x); setShare(null) }} />}
-      {sharePick && <SendPick title="Send to…" rooms={rooms} titleOf={titleOf} here={room.room_id} onClose={() => setSharePick(null)} onSend={async (ids) => { if (await sendAny(sharePick, ids)) setSharePick(null) }} />}
+      {sharePick && createPortal(<SendPick title="Send to…" rooms={rooms} titleOf={titleOf} here={room.room_id} onClose={() => setSharePick(null)} onSend={async (ids) => { if (await sendAny(sharePick, ids)) setSharePick(null) }} />, document.body)}
       {ordinoOpen && <OrdinoWindow onClose={() => setOrdinoOpen(false)} onSent={(o) => { save({ ordinos: [o, ...ordinos.filter((x) => x.token !== o.token)].slice(0, 60) }); setOrdinoOpen(false); toast('Ordino saved in the project') }} />}
       {view && <Viewer items={view.items} index={view.index} people={people} me={me} onClose={() => setView(null)} />}
     </div>

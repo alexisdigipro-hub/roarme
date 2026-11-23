@@ -473,3 +473,4 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - Hub photos large (Alex, 22 Nov: "the photos are very small"): hub-bridge (v7) project.get adds photoLinks { photoId: pCloud link } valid to the end of the next 30-day window (so it changes once a month, not every sync); roar-hub (v10) gives each hub photo url = that link and thumb = the hub's 320px thumbnail; ScoutPhoto shows the thumb, the viewer the url, and the viewer fills the stage whatever the picture's size.
 - Hub Member is also on a person's profile page, under the username (Profile.jsx), and its categories stand on one line.
 
+- From the Workspace a hub song is sent by fetching its day-long link and uploading the sound into the chosen chat's folder; Another Chat or Person… opens SendPick through a portal (inside the phone's project page it opened under it, Alex, 22 Nov).

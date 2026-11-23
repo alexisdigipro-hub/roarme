@@ -7893,6 +7893,7 @@ html:root:root:root:root .prw-tilewrap:hover .prw-share.share-pic { opacity: 1; 
 @media (hover: none) { html:root:root:root:root .prw-share.share-pic { opacity: .85; } }
 .prw-share-portal { position: fixed; inset: 0; z-index: 90; }
 .prw-share-portal > .prw-scrim { position: fixed; inset: 0; }
+html:root:root:root:root:root:root:root .prw-share-portal .prw-share-menu { z-index: 1001; }
 html:root:root:root:root:root:root:root .prw-share-menu { position: fixed !important; left: var(--sl) !important; top: var(--st) !important; bottom: var(--sb) !important; right: auto !important; width: var(--sw) !important; max-width: calc(100vw - 20px); margin: 0 !important; z-index: 91; transform: none !important; }
 html:root:root:root:root:root:root:root .prw-share-menu > button span { white-space: nowrap; overflow: visible; }
 .prw-share-cap { display: block; padding: 6px 16px 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -7904,3 +7905,28 @@ html:root:root:root:root .hbm-chips > button { height: 30px; padding: 0 10px; fo
 /* the Workspace's viewer fills the screen even with a small picture (a hub location's photo, Alex, 22 Nov) */
 html:root:root:root:root .prv-stage img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0; box-shadow: none; }
 .pf-card + .hbm { margin: 12px 0; }
+
+/* An ordino from the hub, and an ordino's link pasted (Alex, 22 Nov) */
+.prw-ordhub { align-self: center; font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--muted); padding: 0 6px; white-space: nowrap; }
+html:root:root:root:root .prw-ordlink-btn { align-self: center; margin: 6px auto 0; height: 32px; font-size: 12.5px; }
+.prw-ordlink { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+html:root:root:root:root .prw-ordlink input { flex: 1; min-width: 0; height: 38px; padding: 0 14px; border-radius: 19px; border: 1px solid var(--edge); background: var(--glass); color: var(--text); font: inherit; font-size: 14px; }
+html:root:root:root:root .prw-ordlink .pill-btn { height: 38px; flex: none; }
+
+/* The Workspace's own background (Project Settings > More > Background; Alex, 22 Nov): the picture at its opacity under
+   the glass of the boxes and buttons */
+.prw-work.has-bg { isolation: isolate; }
+.prw-work.has-bg::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: var(--wsbg) center / cover no-repeat; opacity: var(--wsop, .4); border-radius: inherit; }
+.prs2-wsbg { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid color-mix(in srgb, currentColor 7%, transparent); }
+.prs2-wsbg-top { cursor: default; }
+.prs2-wsbg-thumb { flex: none; width: 44px; height: 54px; border-radius: 10px; background: center / cover no-repeat; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4), 0 2px 8px rgba(0, 0, 0, .15); }
+.prs2-wsbg-acts { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+html:root:root:root:root .prs2-wsbg-acts .pill-btn { height: 32px; font-size: 13px; }
+.prs2-wsbg-op { display: flex; align-items: center; gap: 10px; padding: 0 14px; font-size: 13px; }
+.prs2-wsbg-op input { flex: 1; min-width: 0; accent-color: var(--halo, var(--accent)); }
+.prs2-wsbg-op b { width: 40px; text-align: right; font-weight: 600; }
+
+/* A right click on a chat (computer): only the menu, at the pointer, no blurred veil (Alex, 22 Nov) */
+html:root:root:root:root:root .ctx.at { display: block; background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root:root:root:root .ctx.at .ctx-stack { position: fixed; left: var(--cx); top: var(--cy); width: 240px; max-height: calc(100vh - 24px); }
+html:root:root:root:root:root .ctx.at .ctx-menu { width: 100% !important; margin: 0 !important; max-height: none; }

@@ -1244,7 +1244,8 @@ export default function Chat({ me, setMe }) {
     const w = 230, h = 380
     const x = Math.min(e.clientX, window.innerWidth - w - 12)
     // the side menus open to the left when there is no room on the right
-    setRoomMenu({ r, x, y: Math.max(12, Math.min(e.clientY, window.innerHeight - h - 12)), sub: '', flip: x + w + 200 > window.innerWidth })
+    // a right click on a computer: only the menu, at the pointer, with Preview Messages in it (Alex, 22 Nov)
+    setRoomMenu({ r, x, y: Math.max(12, Math.min(e.clientY, window.innerHeight - h - 12)), sub: '', flip: x + w + 200 > window.innerWidth, mouse: !window.matchMedia('(pointer: coarse)').matches })
   }
   const roomAct = async (what, arg, from) => {
     const r = from || roomMenu?.r
@@ -1873,11 +1874,11 @@ export default function Chat({ me, setMe }) {
       )}
       {roomMenu && (
         <OnTop>
-          <div className="ctx" onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 450) setRoomMenu(null) }} onPointerDown={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 450)) { e.preventDefault(); closedAt.current = Date.now(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
-          <div className="ctx-stack" onClick={(e) => { e.stopPropagation(); if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 450)) setRoomMenu(null) }} onClickCapture={(e) => { if (roomMenu.at && Date.now() - roomMenu.at < 450) { e.stopPropagation(); e.preventDefault() } }}>
+          <div className={`ctx${roomMenu.mouse && !roomMenu.peek ? ' at' : ''}`} onClick={() => { if (!roomMenu.at || Date.now() - roomMenu.at > 450) setRoomMenu(null) }} onPointerDown={(e) => { if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 450)) { e.preventDefault(); closedAt.current = Date.now(); setRoomMenu(null) } }} onContextMenu={(e) => { e.preventDefault(); setRoomMenu(null) }}>
+          <div className="ctx-stack" style={roomMenu.mouse && !roomMenu.peek ? { '--cx': `${roomMenu.x}px`, '--cy': `${roomMenu.y}px` } : undefined} onClick={(e) => { e.stopPropagation(); if (e.target === e.currentTarget && (!roomMenu.at || Date.now() - roomMenu.at > 450)) setRoomMenu(null) }} onClickCapture={(e) => { if (roomMenu.at && Date.now() - roomMenu.at < 450) { e.stopPropagation(); e.preventDefault() } }}>
           {/* the chat's last messages above the menu, on a phone too (Alex, 14 Nov: "the menu we have, plus a preview of
               the messages in it", from Telegram); a tap on them opens the chat */}
-          {(
+          {(!roomMenu.mouse || roomMenu.peek) && (
           <div className="ctx-card" role="button" tabIndex={0} onClick={() => { const r = roomMenu.r; setRoomMenu(null); setActiveId(r.room_id) }}>
             <span className="ctx-head"><b>{titleOf(roomMenu.r)}</b><small>{roomMenu.r.kind === 'group' ? 'Group' : otherOf(roomMenu.r) ? lastSeenText(otherOf(roomMenu.r)) : ''}</small></span>
             {(() => { const lk = lookOf(roomMenu.r.room_id); return (
@@ -1889,7 +1890,8 @@ export default function Chat({ me, setMe }) {
           )}
           <div className="room-menu menu-list ctx-menu">
             {!window.matchMedia('(max-width: 760px)').matches && <button type="button" onClick={() => roomAct('window')}>{I.popout}<span>Open In Window</span></button>}
-            {/* no Preview Messages: the messages are shown above the menu (Alex, 14 Nov) */}
+            {/* the long press shows the messages above the menu; a right click asks for them (Alex, 22 Nov) */}
+            {roomMenu.mouse && !roomMenu.peek && <button type="button" onClick={(e) => { e.stopPropagation(); setRoomMenu((m) => ({ ...m, peek: true, sub: '' })) }}>{I.chats}<span>Preview Messages</span></button>}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
             {proOn && roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }] }).then(() => { toast('Moved to PROjects'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
             {roomMenu.r.muted

@@ -11,7 +11,7 @@
 //   unlink { room }                       unties one group (an admin, or who tied it); both sides stay
 //   sync { room }                         both ways, for one group: title, stage, shoot day, category, tasks, locations;
 //                                         from the hub only: its cover (also the group's picture, unless it has one of its own),
-//                                         its songs and its locations' photos
+//                                         its songs, its locations' photos and its published ordinos
 //   (pg_cron, x-roar-cron)                every minute, for every linked account: a group for each hub project whose
 //                                         Create PROject was pressed, or that was made in the hub since linking, and a
 //                                         sync of every tied project the hub changed since its last sync (live both ways);
@@ -199,6 +199,9 @@ Deno.serve(async (req) => {
     const tracks: any[] = Array.isArray(hub.music) ? hub.music : []
     const sameSet = had.length === tracks.length && tracks.every((t, i) => had[i]?.id === t.id && had[i]?.name === t.name)
     if (!sameSet || had.some((t) => !(t.until > Date.now() + 6 * 3600 * 1000))) roarPatch.hub_music = tracks
+    // the hub's published ordinos of this project (Alex, 22 Nov: "I made the ordino in the hub and it does not connect")
+    const hubOrd = Array.isArray(hub.ordinos) ? hub.ordinos : []
+    if (hashOf(hubOrd) !== hashOf(proj.hub_ordinos || [])) roarPatch.hub_ordinos = hubOrd
     if (Object.keys(roarPatch).length) await db.from('roar_pro_projects').update(roarPatch).eq('room_id', room)
     // the group's picture is the hub's cover (Alex, 22 Nov), unless someone gave the group a picture of its own
     const roomPatch: any = {}

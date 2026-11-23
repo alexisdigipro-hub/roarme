@@ -86,3 +86,6 @@ grant select (pro_on), update (pro_on) on public.roar_profiles to authenticated;
 
 -- where the banner's picture stands (Reposition, Alex 22 Nov): { x, y } in % of background-position
 alter table public.roar_pro_projects add column if not exists cover_pos jsonb;
+
+-- the hub's published ordinos of a project, shown in its Workspace (roar-hub keeps them; Alex, 22 Nov)
+alter table public.roar_pro_projects add column if not exists hub_ordinos jsonb;

@@ -6786,8 +6786,8 @@ html:root:root:root:root:root .prw-seg { height: 42px; min-height: 42px; padding
 html:root:root:root:root:root .prw-seg > button { min-height: 0; height: 34px; padding: 0 20px; border-radius: 17px; font-size: 14px; font-weight: 600; }
 /* motion: off with Power Saving, Smooth Animations off and Reduce Motion */
 @media (prefers-reduced-motion: no-preference) {
-  html:not([data-lite]):not([data-still]) .prw-pane { animation: prw-in .32s cubic-bezier(.25, .9, .35, 1) both; }
-  html:not([data-lite]):not([data-still]) .prw-pane > .prw-cards, html:not([data-lite]):not([data-still]) .prw-pane > .prw-grid { animation: prw-in .4s cubic-bezier(.25, .9, .35, 1) both; }
+  html:not([data-lite]):not([data-still]) .prw-pane { animation: prw-in .32s cubic-bezier(.25, .9, .35, 1) backwards; }
+  html:not([data-lite]):not([data-still]) .prw-pane > .prw-cards, html:not([data-lite]):not([data-still]) .prw-pane > .prw-grid { animation: prw-in .4s cubic-bezier(.25, .9, .35, 1) backwards; }
   html:not([data-lite]):not([data-still]) .prw-card, html:not([data-lite]):not([data-still]) .prw-tile, html:not([data-lite]):not([data-still]) .prw-srow, html:not([data-lite]):not([data-still]) .prw-glance button, html:not([data-lite]):not([data-still]) .prw-fact, html:not([data-lite]):not([data-still]) .prw-ordino { transition: transform .26s cubic-bezier(.25, 1.3, .45, 1), box-shadow .26s ease; }
   html:not([data-lite]):not([data-still]) :is(.prw-card, .prw-ordino, .prw-glance button):hover { transform: translateY(-2px); }
   html:not([data-lite]):not([data-still]) .prw-tile:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 12px 28px rgba(20, 30, 50, .18); }
@@ -7979,3 +7979,28 @@ html:root:root:root:root .msg-dot button { width: 22px; height: 22px; min-width:
 .msg-dot button i { width: 9px; height: 9px; border-radius: 50%; background: color-mix(in srgb, var(--halo-mine, var(--accent)) 70%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--halo-mine, var(--accent)) 18%, transparent); }
 .prw-sendfoot { display: flex; justify-content: center; width: 100%; }
 html:root:root:root:root .prw-sendfoot .btn-main { min-width: 160px; }
+
+/* The Workspace in matte glass (Alex, 22 Nov: "nothing white: boxes, buttons, all of it see-through, glassmorphism,
+   matte"): every box, bar, row and button on the project's side is a frosted, flat pane that lets the background
+   through; no white fill, no gloss. Blur only on the larger panes (inside .main a backdrop blur needs !important). */
+.prw-work { --mg: rgba(255, 255, 255, .26); --mg-2: rgba(255, 255, 255, .4); --mg-rim: rgba(255, 255, 255, .42); --mg-shadow: 0 6px 22px rgba(20, 30, 50, .07); }
+html[data-mode='dark'] .prw-work { --mg: rgba(40, 40, 46, .32); --mg-2: rgba(70, 70, 78, .4); --mg-rim: rgba(255, 255, 255, .09); --mg-shadow: 0 6px 22px rgba(0, 0, 0, .25); }
+html:root:root:root:root:root:root:root:root .prw-work :is(.prw-box, .prw-bar, .prw-song, .prw-ordrow, .prw-ordmake, .prw-card, .prw-srow, .prw-link, .prw-call, .tk-row, .prw-team, .prw-hero-in, .prw-slist, .prw-peek, .prw-pollwrap, .prj-poll, .prw-filesec .prj-list > *, .prw-seg, .prw-pill) {
+  background: var(--mg) !important; background-image: none !important;
+  border: 1px solid var(--mg-rim) !important; box-shadow: var(--mg-shadow) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.15) !important; backdrop-filter: blur(18px) saturate(1.15) !important;
+}
+html:root:root:root:root:root:root:root:root .prw-work :is(.prw-bar, .prw-seg) { border-radius: 26px !important; }
+html:root:root:root:root:root:root:root:root .prw-work :is(.pill-btn, .round:not(.prw-song-play), .prw-ibtn, .prw-trash, .prw-share:not(.share-pic), .prw-boxbtn, .prw-ordlink-btn, .prw-gear, .prw-swap) {
+  background: var(--mg-2) !important; background-image: none !important;
+  border: 1px solid var(--mg-rim) !important; box-shadow: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+html:root:root:root:root:root:root:root:root .prw-work .prw-bar > button.on, html:root:root:root:root:root:root:root:root .prw-work .prw-seg > button.on { background: transparent !important; }
+html:root:root:root:root:root:root:root:root .prw-work :is(.prw-bar, .prw-seg) .lens, html:root:root:root:root:root:root:root:root .prw-work :is(.prw-bar, .prw-seg)::before { background: var(--mg-2) !important; box-shadow: none !important; }
+html:root:root:root:root:root:root:root:root .prw-work :is(input, select, textarea) { background: var(--mg) !important; border: 1px solid var(--mg-rim) !important; box-shadow: none !important; }
+html:root:root:root:root:root:root:root:root .prw-work .pill-btn.danger, html:root:root:root:root:root:root:root:root .prw-work .prw-trash { color: #e5483f; }
+/* the ordino's row ends a little early and a round + beside it adds an ordino's link (Alex, 22 Nov) */
+.prw-ordbar.with-plus { position: relative; }
+.prw-ordbar.with-plus > .prw-ordrow { margin-right: 56px; }
+html:root:root:root:root:root:root .prw-ordbar.with-plus > .prw-ordplus { position: absolute; top: 4px; right: 0; width: 44px; height: 44px; min-width: 44px; padding: 0; }

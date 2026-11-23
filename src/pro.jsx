@@ -1922,7 +1922,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
             <Hero room={room} me={me} project={project} dateName={dateName} fields={fields} toast={toast} onCover={save} banner={bannerOn} />
             {music.length > 0 && <div className="prw-songs wide">{music.slice(0, 3).map((m) => songBar(m))}{music.length > 3 && <button type="button" className="pill-btn prw-boxbtn prw-more-songs" onClick={() => goTab('files')}><span>All {music.length} songs</span>{I.right}</button>}</div>}
             {/* the ordino as a slim bar under the cover (Alex, 22 Nov: "there is usually one, the big box stays empty") */}
-            <div className="prw-ordbar wide">
+            <div className={`prw-ordbar wide${ordinos.length ? ' with-plus' : ''}`}>
+              {ordinos.length > 0 && <button type="button" className="round prw-ibtn prw-ordplus" onClick={(e) => { e.stopPropagation(); setOrdLink((v) => (v === null ? '' : null)) }} title="Add an ordino's link" aria-label="Add an ordino's link">{I.plus}</button>}
               {ordinos.length ? ordinos.map((o) => (
                 <div key={o.token || o.url} className="prw-ordrow" style={{ '--oa': o.accent || '#d40000' }}>
                   {o.date && !Number.isNaN(new Date(o.date).getTime()) ? <i className="prw-ordino-cal"><small>{new Date(o.date).toLocaleDateString([], { month: 'short' })}</small><b>{new Date(o.date).getDate()}</b></i> : <i className="prw-ordino-cal"><b>{TAB_I.files}</b></i>}
@@ -1934,7 +1935,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                   <span className="prw-ordacts">
                     <button type="button" className="pill-btn" onClick={() => setOrdView({ ...o, artist: o.artist || artistOf() })}>{TAB_I.files}<span>View</span></button>
                     <button type="button" className="pill-btn" onClick={onShare({ ordino: o })}>{FWD_I}<span>Send to…</span></button>
-                    {o.hub ? <span className="prw-ordhub">From the Hub</span> : <>
+                    {o.hub ? null : <>
                       {!o.linked && <button type="button" className="round prw-ibtn" onClick={() => setOrdinoOpen(true)} title="Edit in Roardino" aria-label="Edit in Roardino">{I.edit}</button>}
                       <Trash className="prw-ibtn" onClick={() => { if (window.confirm('Take this ordino out of the project?') && window.confirm('Are you sure? The call sheet itself stays where it was made.')) save({ ordinos: ownOrdinos.filter((x) => x !== o) }) }} />
                     </>}
@@ -1944,9 +1945,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                 <button type="button" className="prw-ordmake" onClick={() => setOrdinoOpen(true)}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
               )}
               {/* an ordino made anywhere else: paste its link (Alex, 22 Nov: "just put a link and it shows there") */}
-              {ordLink === null
-                ? <button type="button" className="pill-btn prw-ordlink-btn" onClick={() => setOrdLink('')}>{I.plus}<span>Add Ordino Link</span></button>
-                : <form className="prw-ordlink" onSubmit={(e) => { e.preventDefault(); addOrdLink() }}>
+              {!ordinos.length && ordLink === null && <button type="button" className="pill-btn prw-ordlink-btn" onClick={() => setOrdLink('')}>{I.plus}<span>Add Ordino Link</span></button>}
+              {ordLink !== null && <form className="prw-ordlink" onSubmit={(e) => { e.preventDefault(); addOrdLink() }}>
                   <input autoFocus type="url" inputMode="url" autoComplete="off" value={ordLink} onChange={(e) => setOrdLink(e.target.value)} placeholder="https://go.themadlions.com/?o/…" />
                   <button type="submit" className="pill-btn on">Add</button>
                   <button type="button" className="pill-btn" onClick={() => setOrdLink(null)}>Cancel</button>

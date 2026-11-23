@@ -18,6 +18,10 @@ export const NEWS = [
         'Earlier messages in groups: when you add people, an admin chooses whether they see the chat from before. The clock beside each member turns it on or off later.',
         'Folder colours: a round colour button beside B I U S in Edit Folder gives the folder name a colour of its own.',
         'Passcode: it opens as soon as the last digit is right, no OK. Each device keeps its own passcode.',
+        'PROJECTS is now in the same lettering as the RoarMe wordmark, as tall as the other folders.',
+      ] },
+      { title: 'On a computer', items: [
+        'Unread with a mouse: point at the folders and the round Unread button peeks out at the left; click ALL to bring it out, click again to put it back.',
       ] },
     ],
   },

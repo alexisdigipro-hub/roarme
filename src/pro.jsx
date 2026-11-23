@@ -996,6 +996,12 @@ function Stats({ room, people, me, project, compact = false }) {
 // with crop and zoom"): one's own cover, the group's photo, then the project's newest photos
 const MOVE_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" /></svg>
 const CROP_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></svg>
+// how far the shoot day is, beside the date in the top row (Alex, 22 Nov: "put it right of the date")
+function dueIn(due) {
+  if (!due) return ''
+  const d = Math.round((new Date(`${due}T00:00:00`) - new Date(new Date().toDateString())) / 864e5)
+  return d === 0 ? 'today' : d === 1 ? 'tomorrow' : d > 1 ? `in ${d} days` : `${-d} day${d === -1 ? '' : 's'} ago`
+}
 function Hero({ room, me, project, dateName, fields, onCover, toast, banner = true }) {
   // the cover: one's own picture, else the Production Hub's, else the theme's colour; 'none' = no picture even with the hub's
   // (Alex, 22 Nov). One settings button opens a small menu: Change Photo, Reposition, Crop, Remove
@@ -1031,11 +1037,6 @@ function Hero({ room, me, project, dateName, fields, onCover, toast, banner = tr
   const up = () => { drag.current = null }
   const val = (k) => (fields.find((f) => f.k === k)?.v || '').trim()
   const artist = val('Artist / Client'), work = val('Title')
-  let when = ''
-  if (project.due) {
-    const d = Math.round((new Date(`${project.due}T00:00:00`) - new Date(new Date().toDateString())) / 864e5)
-    when = d === 0 ? `${dateName} is today` : d === 1 ? `${dateName} is tomorrow` : d > 1 ? `${dateName} in ${d} days` : `${dateName} was ${-d} day${d === -1 ? '' : 's'} ago`
-  }
   return (
     <>
       {banner && <section className={`prw-hero wide${bg ? ' has-bg' : ''}${moving ? ' moving' : ''}`} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
@@ -1071,7 +1072,6 @@ function Hero({ room, me, project, dateName, fields, onCover, toast, banner = tr
         </div>
         {crop && <CropModal file={crop} wide={3} title="Project cover" onDone={upload} onClose={() => setCrop(null)} />}
       </section>}
-      {when && <div className="prw-when wide">{I.calendar}<span>{when}</span></div>}
     </>
   )
 }
@@ -1763,6 +1763,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
               size on an iPhone, so it could not be tapped: Alex, 22 Nov) */}
           <span className="prw-datewrap"><span className={project.due ? '' : 'none'}>{project.due ? new Date(`${project.due}T12:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', ...(project.due.slice(0, 4) === String(new Date().getFullYear()) ? {} : { year: 'numeric' }) }) : 'Set the date'}</span><input type="date" value={project.due || ''} onChange={(e) => save({ due: e.target.value || null })} aria-label={dateName} /></span>
         </span>
+        {project.due && <span className={`prw-duein${dueIn(project.due).endsWith('ago') ? ' past' : ''}`}>{dueIn(project.due)}</span>}
         <span className="prw-faces">{members.map((id) => <Avatar key={id} src={people[id]?.avatar_url} name={nameOf(people[id])} size={30} />)}{(room.members || []).length > 5 && <i>+{room.members.length - 5}</i>}</span>
         {onSwap && !phone && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}
         <span className="prw-gear-wrap">

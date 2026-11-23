@@ -8270,3 +8270,13 @@ html:root:root .wheel-box.u-open > .u-pop.round.u-on { box-shadow: var(--lg-shad
 html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs.lens::before { background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent)))), var(--halo, var(--accent)) !important; }
 html:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on, html:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on .tab-name { color: var(--halo-ink, #fff) !important; }
 html:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on small { background: rgba(255, 255, 255, .28) !important; color: var(--halo-ink, #fff) !important; }
+/* the hint to slide (Alex, 23 Nov, A of https://claude.ai/artifact/4jWYLsNx8CWvGvN2KXJ6aJ): while something is unread and
+   the round button is put away, a see-through copy of the blue lens drifts to the right and fades every 4.2 s, on the
+   slide's own spring, inviting the slide; the lens itself stays still */
+html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs.lens.lens-on::after {
+  content: ''; position: absolute; z-index: -1; left: 0; top: 0; width: var(--lw, 0); height: var(--lh, 0); border-radius: 999px; pointer-events: none;
+  transform: translate(var(--lx, 0), var(--ly, 0)); background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent))));
+  opacity: 0; animation: u-ghost 4.2s cubic-bezier(.25, 1.35, .45, 1) infinite; }
+@keyframes u-ghost { 0%, 62% { translate: 0 0; scale: 1 1; opacity: 0 } 66% { opacity: .34 } 82% { translate: 26px 0; scale: 1.04 1; opacity: .16 } 92%, 100% { translate: 34px 0; scale: 1 1; opacity: 0 } }
+html[data-lite] .rooms-area .wheel-box.u-has > .tabs.lens::after { animation: none !important; opacity: 0 !important; }
+@media (prefers-reduced-motion: reduce) { .rooms-area .wheel-box.u-has > .tabs.lens::after { animation: none !important; opacity: 0 !important; } }

@@ -288,7 +288,33 @@ function Field({ value, onSave, placeholder, area = false, className = '', list 
 /* ---------- the panel ---------- */
 function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, onOpenRoom, me, people = {} }) {
   const files = useRoomFiles(room.room_id)
-  const save = (patch) => kit.save(room.room_id, patch).catch((e) => toast(errText(e)))
+  // notices for one person (Alex, 22 Nov): put on a task, or a task of theirs marked done by someone else; a slim line in
+  // a chat of the project that person sees, with the message sound, seen by nobody else (roar_messages.only_for)
+  const noticeTasks = (before = [], after = []) => {
+    const old = Object.fromEntries((before || []).map((t) => [t.id, t]))
+    const rows = []
+    for (const t of after || []) {
+      const o = old[t.id]
+      const added = (t.who || []).filter((u) => u !== me.id && !(o?.who || []).includes(u))
+      added.forEach((u) => rows.push({ u, k: 'assign', t }))
+      if (o && o.s !== 'done' && t.s === 'done') (t.who || []).filter((u) => u !== me.id).forEach((u) => rows.push({ u, k: 'done', t }))
+    }
+    if (!rows.length) return
+    supabase.from('roar_members').select('user_id, role, channels').eq('room_id', room.room_id).in('user_id', [...new Set(rows.map((r) => r.u))]).then(({ data }) => {
+      const by = Object.fromEntries((data || []).map((m) => [m.user_id, m]))
+      const ins = rows.filter((r) => by[r.u]).map(({ u, k, t }) => {
+        const m = by[u]
+        const ch = m.role === 'admin' || (m.channels || ['prod']).includes('pre') ? 'pre' : (m.channels || ['prod'])[0]
+        const words = k === 'assign' ? 'put you on a task' : 'marked your task done'
+        return { room_id: room.room_id, user_id: me.id, kind: 'text', body: `${nameOf(me) || 'Someone'} ${words}: ${t.t || ''}`, channel: ch, only_for: u, file: { notice: { k, task: t.id, title: t.t || '' } } }
+      })
+      if (ins.length) supabase.from('roar_messages').insert(ins).then(({ error }) => { if (error) console.warn('notice', error.message) })
+    })
+  }
+  const save = (patch) => {
+    if (patch && Array.isArray(patch.tasks)) noticeTasks(project.tasks, patch.tasks)
+    return kit.save(room.room_id, patch).catch((e) => toast(errText(e)))
+  }
 
   if (room.kind !== 'group') {
     const together = rooms.filter((r) => r.kind === 'group' && kit.map[r.room_id] && other && (r.members || []).includes(other.id))
@@ -2029,9 +2055,9 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
               const box = (k, title, n, body) => <div key={k} className={`prw-box prw-peek prw-peek-list peek-${k}`}><div className="prw-boxhead"><h4>{title}</h4><button type="button" className="pill-btn prw-boxbtn" onClick={() => goTab(k)}><span>See All</span>{I.right}</button></div><div className="prw-mini-list">{body}</div></div>
               const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return u } }
               const parts = [
-                docs.length > 0 && box('files', 'Documents', files.length, docs.map((m) => <button key={m.id} type="button" className="prw-mrow" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prw-mtext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), day(m.created_at)].filter(Boolean).join(' · ')}</small></span></button>)),
+                false && docs.length > 0 && box('files', 'Documents', files.length, docs.map((m) => <button key={m.id} type="button" className="prw-mrow" onClick={() => setDoc(m)}><Thumb m={m} /><span className="prw-mtext"><b>{m.file.name || 'File'}</b><small>{[sizeText(m.file.size), day(m.created_at)].filter(Boolean).join(' · ')}</small></span></button>)),
                 false && sc.length > 0 && box('scout', 'Location Scout', scouts.length, sc.map((x) => { const [, label, c] = scoutSt(x.st); return <button key={x.id} type="button" className="prw-mrow" onClick={() => goTab('scout')}>{x.photos?.[0] ? <ScoutPhoto p={x.photos[0]} className="prw-mthumb" /> : <i className="prw-mthumb ic">{I.place}</i>}<span className="prw-mtext"><b>{x.name || 'Location'}</b><small>{x.address || x.addr || x.type || ''}</small></span><i className="prj-chip prw-st" style={{ '--pc': c }}>{label}</i></button> })),
-                lk.length > 0 && box('links', 'Links', linkCount, lk.map(({ u, m }, n) => <a key={`${m.id}-${n}`} className="prw-mrow" href={u} target="_blank" rel="noopener noreferrer"><i className="prw-mthumb ic letter">{host(u).slice(0, 1).toUpperCase()}</i><span className="prw-mtext"><b>{host(u)}</b><small>{u}</small></span></a>)),
+                false && lk.length > 0 && box('links', 'Links', linkCount, lk.map(({ u, m }, n) => <a key={`${m.id}-${n}`} className="prw-mrow" href={u} target="_blank" rel="noopener noreferrer"><i className="prw-mthumb ic letter">{host(u).slice(0, 1).toUpperCase()}</i><span className="prw-mtext"><b>{host(u)}</b><small>{u}</small></span></a>)),
                 !hidden.includes('tasks') && open.length > 0 && box('tasks', 'Tasks', `${tasks.filter((t) => t.s === 'done').length}/${tasks.length}`, open.length ? open.slice(0, 4).map((t) => <button key={t.id} type="button" className="prw-mrow task" onClick={() => save({ tasks: tasks.map((x) => (x.id === t.id ? { ...x, s: 'done' } : x)) })} title="Mark as done"><i className="prw-mtick" /><span className="prw-mtext"><b>{t.t}</b></span>{t.due && <small className="prw-tdue">{dueText(t.due)}</small>}</button>) : <p className="prj-quiet">Everything is done.</p>),
               ].filter(Boolean)
               return parts.length ? <div className="prw-peeks wide">{parts}</div> : null

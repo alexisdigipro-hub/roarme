@@ -3619,6 +3619,22 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               </div>
             )
           }
+          // a notice for one person (Alex, 22 Nov, C): a slim line in the middle, its kind's colour as a dot, an x that
+          // takes it away for me; a tap opens the project's tasks. Nobody else gets it (roar_messages.only_for)
+          if (m.file?.notice) {
+            if (m.only_for && m.only_for !== me.id) return null
+            const nk = m.file.notice.k
+            const nt = nk === 'assign' ? `${mine ? 'You' : nameOf(who)} put you on a task` : nk === 'done' ? `${mine ? 'You' : nameOf(who)} marked your task done` : nk === 'due' ? 'A task of yours is due tomorrow' : 'Notice'
+            return (
+              <div key={m.id} id={`m-${m.id}`}>
+                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+                <div className={`ntc ntc-${nk}`} role="button" tabIndex={0} onClick={() => window.dispatchEvent(new CustomEvent('roarme-pro-tab', { detail: { room: room.room_id, tab: 'tasks' } }))}>
+                  <i className="ntc-dot" /><span className="ntc-tx"><b>{nt}:</b> {m.file.notice.title || ''}</span>
+                  <button type="button" className="ntc-x" onClick={(e) => { e.stopPropagation(); hideForMe(m) }} aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+                </div>
+              </div>
+            )
+          }
           // sent from the Workspace and folded into a dot by me
           if (m.file?.fromPanel && dots.has(m.id) && !m.deleted_at) {
             return (

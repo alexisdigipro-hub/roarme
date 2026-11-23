@@ -43,7 +43,8 @@ import { BookCard, BookEdit, BookIO, deleteEntry, entryName, entryText, keptBook
 import { PhoneContactsTail, PhoneFriends, contactsAvailable } from './phone.jsx'
 // the map and everything about places load only when one is shown (lighter start, 15 Nov)
 // Archived in the folder bar is a sign, not a word (Alex, 22 Nov, D of the sample: a drawer)
-const ARCH_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M3 12h18M10 8h4M10 16h4" /></svg>
+// Archived as three binders (Alex, 23 Nov, from a picture of three ring binders)
+const ARCH_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3.5" width="5" height="17" rx=".8" /><rect x="9.5" y="3.5" width="5" height="17" rx=".8" /><rect x="16" y="3.5" width="5" height="17" rx=".8" /><rect x="4" y="5" width="3" height="5" rx=".4" /><rect x="10.5" y="5" width="3" height="5" rx=".4" /><rect x="17" y="5" width="3" height="5" rx=".4" /><circle cx="5.5" cy="16.5" r="1.1" /><circle cx="12" cy="16.5" r="1.1" /><circle cx="18.5" cy="16.5" r="1.1" /></svg>
 const LiveCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.LiveCard })))
 const LocationCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationCard })))
 const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationPicker })))
@@ -739,10 +740,11 @@ export default function Chat({ me, setMe }) {
   // in the order dragged in Settings > Folders (Alex, 16 Oct); a folder not placed yet goes at the end
   const fOrder = prefs.folderOrder || []
   // Archived is always last, held at the bar's right end, and never moved (Alex, 22 Nov: "stuck on the menu, the names go behind it")
-  const fRank = (id) => { if (id === 'archived') return 1e9; const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
+  // Unread is a round dot held at the bar's left end (Alex, 23 Nov), so always first and always there
+  const fRank = (id) => { if (id === 'archived') return 1e9; if (id === 'unread') return -1; const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
   // the ready-made folders can be renamed and, except All, deleted (Alex, 16 Oct)
   const hiddenF = prefs.hiddenFolders || []
-  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), ...(proOn ? [{ id: 'projects', name: 'PROjects', fixed: true }] : [])]
+  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || id === 'unread' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), ...(proOn ? [{ id: 'projects', name: 'PROjects', fixed: true }] : [])]
     .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
   const tabsShown = tabDrag?.order ? tabDrag.order.map((id) => allFolders.find((f) => f.id === id)).filter(Boolean) : allFolders
   const editTabs = tabsEdit || picking
@@ -805,11 +807,12 @@ export default function Chat({ me, setMe }) {
   }
   // a tab dragged sideways in the bar: it follows the finger and swaps places as it passes a neighbour's middle
   const tabDown = (e, f) => {
-    if (!editTabs || (e.button != null && e.button !== 0) || f.id === 'archived') return
+    if (!editTabs || (e.button != null && e.button !== 0) || f.id === 'archived' || f.id === 'unread') return
     const nav = tabsLens.current
     const el = e.currentTarget
     const tail = tabsShown.some((x) => x.id === 'archived') ? ['archived'] : []
-    let d = { id: f.id, x0: e.clientX, moved: false, order: tabsShown.map((x) => x.id).filter((id) => id !== 'archived'), shift: 0 }
+    const head = tabsShown.some((x) => x.id === 'unread') ? ['unread'] : []
+    let d = { id: f.id, x0: e.clientX, moved: false, order: tabsShown.map((x) => x.id).filter((id) => id !== 'archived' && id !== 'unread'), shift: 0 }
     const move = (ev) => {
       let off = ev.clientX - d.x0 - d.shift
       if (!d.moved) { if (Math.abs(ev.clientX - d.x0) < 6) return; d.moved = true }
@@ -820,13 +823,13 @@ export default function Chat({ me, setMe }) {
       const next = btns.find((b) => b.dataset.tab === d.order[at + 1]), prev = btns.find((b) => b.dataset.tab === d.order[at - 1])
       if (next && off > next.offsetWidth / 2) { const o = [...d.order]; [o[at], o[at + 1]] = [o[at + 1], o[at]]; d.order = o; d.shift += next.offsetWidth; off -= next.offsetWidth }
       else if (prev && off < -prev.offsetWidth / 2) { const o = [...d.order]; [o[at - 1], o[at]] = [o[at], o[at - 1]]; d.order = o; d.shift -= prev.offsetWidth; off += prev.offsetWidth }
-      setTabDrag({ id: d.id, dx: off, order: [...d.order, ...tail] })
+      setTabDrag({ id: d.id, dx: off, order: [...head, ...d.order, ...tail] })
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
-      if (d.moved) { setPrefs({ folderOrder: [...d.order, ...tail] }); tabSkip.current = Date.now() }
+      if (d.moved) { setPrefs({ folderOrder: [...head, ...d.order, ...tail] }); tabSkip.current = Date.now() }
       setTabDrag(null)
       d = null
     }
@@ -1621,7 +1624,7 @@ export default function Chat({ me, setMe }) {
                   const n = folderUnread(f)
                   const dragged = tabDrag?.id === f.id
                   return <button key={`${k}:${f.id}`} type="button" data-tab={f.id} data-copy={k} title={f.name} aria-hidden={twin || undefined} tabIndex={twin ? -1 : undefined} className={`${folder === f.id && !twin ? 'on' : ''}${dragged ? ' tab-dragging' : ''}`} style={dragged ? { transform: `translateX(${tabDrag.dx}px)` } : undefined}
-                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'direct' ? I.person : f.id === 'projects' ? <i className="tab-gold-ico">{FOOT_I.pro}</i> : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b>jects</span> : f.id === 'archived' ? <i className="tab-arch" role="img" aria-label="Archived" title="Archived">{ARCH_I}</i> : f.name}</span>{editTabs ? (f.id !== 'all' && f.id !== 'projects' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && <small>{n}</small>}</button>
+                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' }) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'direct' ? I.person : f.id === 'projects' ? <i className="tab-gold-ico">{FOOT_I.pro}</i> : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b>jects</span> : f.id === 'archived' ? <i className="tab-arch tab-circ" role="img" aria-label="Archived" title="Archived">{ARCH_I}</i> : f.id === 'unread' ? <i className={`tab-dot tab-circ${n > 0 ? ' lit' : ''}`} role="img" aria-label={n > 0 ? `Unread, ${n}` : 'Unread'} title="Unread">{n > 0 && <b key={n}>{n > 99 ? '99+' : n}</b>}</i> : f.name}</span>{editTabs ? (f.id !== 'all' && f.id !== 'projects' && f.id !== 'unread' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && f.id !== 'unread' && <small>{n}</small>}</button>
                 }))}
               </nav>
               </div>
@@ -1966,7 +1969,7 @@ export default function Chat({ me, setMe }) {
                 <button type="button" onClick={() => { const f = folderMenu.f; setFolderMenu(null); editFolder(f.id) }}>{I.edit}<span>Edit Folder</span></button>
                 <button type="button" onClick={() => { setFolderMenu(null); editFolder('new') }}>{I.plus}<span>New Folder</span></button>
                 {folderMenu.f.id !== 'archived' && folderMute}
-                {folderMenu.f.id !== 'all' && (
+                {folderMenu.f.id !== 'all' && folderMenu.f.id !== 'unread' && (
                   <>
                     <hr />
                     <button type="button" className="danger" onClick={() => {

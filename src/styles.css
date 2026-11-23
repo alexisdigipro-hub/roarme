@@ -8150,3 +8150,30 @@ html:root:root:root:root .pay-shot { width: 100%; display: flex; flex-direction:
 .pay-file { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .pay-file img { max-width: 100%; max-height: 220px; border-radius: 14px; object-fit: contain; }
 .pay-pdf { display: flex; align-items: center; gap: 8px; }
+/* Unread as a round dot held at the folder bar's left end, Archived as a round binders sign at its right (Alex, 23 Nov,
+   version B of https://claude.ai/artifact/J1Kzac5FWvtXRqM6TQc5Gv): faint while nothing is unread; green with the number
+   and a ring going out like a heartbeat while something is. Both stand on the bar's own ground so the folders slide
+   behind them; the circle itself is the inner .tab-circ */
+html:root:root:root:root:root:root .rooms-area .tabs button[data-tab='unread'] { position: sticky; left: 0; z-index: 3; flex: none; padding: 0 4px; min-width: 0; background: #f7f8fa !important; box-shadow: 14px 0 12px -4px #f7f8fa, -24px 0 0 6px #f7f8fa !important; }
+html[data-mode='dark']:root:root:root:root:root:root .rooms-area .tabs button[data-tab='unread'] { background: #2b2b30 !important; box-shadow: 14px 0 12px -4px #2b2b30, -24px 0 0 6px #2b2b30 !important; }
+html:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'] { padding: 0 4px; min-width: 0; }
+html:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'].on, html:root:root:root:root:root:root .rooms-area .tabs button[data-tab='unread'].on { background: #f7f8fa !important; }
+html[data-mode='dark']:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'].on, html[data-mode='dark']:root:root:root:root:root:root .rooms-area .tabs button[data-tab='unread'].on { background: #2b2b30 !important; }
+.rooms-area .tabs button[data-tab='unread'] .tab-ico, .rooms-area .tabs button[data-tab='archived'] .tab-ico { display: none; }
+.rooms-area .tabs.editing button[data-tab='unread'] .tab-x { display: none; }
+.tab-circ { position: relative; display: grid !important; place-items: center; width: 38px; height: 38px; padding: 0 !important; border-radius: 50%; font-style: normal; background: rgba(20, 24, 34, .07); transition: background .4s, box-shadow .4s, transform .25s cubic-bezier(.25, 1.45, .45, 1); }
+html[data-mode='dark'] .tab-circ { background: rgba(255, 255, 255, .08); }
+.tabs button.on .tab-circ { box-shadow: 0 0 0 2px var(--lg-chip, rgba(20, 24, 34, .14)); }
+html[data-mode='dark'] .tabs button.on .tab-circ { box-shadow: 0 0 0 2px var(--lg-chip, rgba(255, 255, 255, .2)); }
+.tabs button:active .tab-circ { transform: scale(.9); }
+.tab-arch.tab-circ svg { width: 22px; height: 22px; }
+.tab-dot::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: rgba(20, 24, 34, .22); transition: opacity .3s; }
+html[data-mode='dark'] .tab-dot::after { background: rgba(255, 255, 255, .24); }
+.tab-dot.lit::after { opacity: 0; position: absolute; }
+.tab-dot.lit { background: radial-gradient(120% 120% at 30% 20%, #8ff0a4 0%, #34c759 45%, #128a3c 100%) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25), 0 4px 14px rgba(52, 199, 89, .45) !important; }
+.tab-dot.lit b { position: absolute; font-size: 13px; font-weight: 700; letter-spacing: 0; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .2); animation: dot-n .35s cubic-bezier(.25, 1.45, .45, 1); }
+.tab-dot.lit::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #34c759; animation: dot-ring 2.8s ease-out infinite; pointer-events: none; }
+@keyframes dot-ring { 0% { transform: scale(1); opacity: .8 } 60%, 100% { transform: scale(1.38); opacity: 0 } }
+@keyframes dot-n { from { transform: scale(.4); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+html[data-lite] .tab-dot.lit::before, html[data-lite] .tab-dot.lit b { animation: none; }
+@media (prefers-reduced-motion: reduce) { .tab-dot.lit::before, .tab-dot.lit b { animation: none; } }

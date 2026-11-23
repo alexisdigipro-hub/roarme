@@ -7880,3 +7880,8 @@ html:root:root:root:root .hbm-chips > button.on { color: var(--text); background
   html:root:root:root:root:root:root .room-head.has-proj > .back { order: -3; }
   html:root:root:root:root:root:root .room-head.has-proj > .head-ws { order: -2; }
 }
+
+/* The shoot day's countdown stands right of the date in the Workspace's top row, and the date's letters are larger (Alex, 22 Nov) */
+html:root:root:root:root:root .prw-pill.date .prw-datewrap { font-size: 15px; }
+.prw-duein { flex: none; align-self: center; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.prw-duein.past { opacity: .7; }

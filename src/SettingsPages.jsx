@@ -1114,6 +1114,7 @@ function FolderEdit({ id, kit, onDone, toast }) {
   const first = useRef(true)
   const marks = useNameMarks(draft.name, (v) => setDraft((d) => ({ ...d, name: v })))
   const [paint, setPaint] = useState(false)
+  const [anyPick, setAnyPick] = useState(false)
   useEffect(() => {
     if (first.current) { first.current = false; if (saved) return }
     if (!draft.name.trim()) return
@@ -1168,8 +1169,11 @@ function FolderEdit({ id, kit, onDone, toast }) {
           <div className="fold-pal" role="group" aria-label="Name colour">
             <button type="button" className={`fold-sw fold-sw-def${!draft.color ? ' on' : ''}`} onClick={() => { set({ color: '' }); setPaint(false) }} title="Default" aria-label="Default"><i /></button>
             {HALO_ACCENTS.map(([k, l, c]) => <button key={k} type="button" className={`fold-sw${draft.color === k ? ' on' : ''}`} style={{ '--c': c }} onClick={() => { set({ color: k }); setPaint(false) }} title={l} aria-label={l}><i /></button>)}
+            {/* any colour (Alex, 23 Nov): the rainbow dot opens the same colour window as Appearance's Any colour */}
+            <button type="button" className={`fold-sw fold-sw-any${draft.color?.startsWith('#') ? ' on' : ''}`} style={draft.color?.startsWith('#') ? { '--c': draft.color } : undefined} onClick={() => setAnyPick(true)} title="Any colour" aria-label="Any colour"><i /></button>
           </div>
         )}
+        {anyPick && <ColorPick title="Colour" value={draft.color?.startsWith('#') ? draft.color.toUpperCase() : '#3AA7E8'} onSet={(h) => { set({ color: h }); setPaint(false) }} onClose={() => setAnyPick(false)} />}
       </Box>
       <Box title="Included chats" note="Choose the chats that will appear in this folder.">
         <button type="button" className="set-row set-pick set-add" onClick={() => { setQ(''); setPick('in') }}><i className="fold-plus">{I.plus}</i><span className="set-text">Add Chats</span></button>

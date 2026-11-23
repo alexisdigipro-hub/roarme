@@ -169,7 +169,7 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
       )}
       {/* PROjects, the gold door (Alex, 22 Nov: "in Settings the tab is the gold Projects, and inside it the hub you join, and the subscription"), on a phone and a computer */}
       <div className="set-box">
-        <button type="button" className={`set-row set-pick set-nav set-proj${page === 'projects' || page === 'hub' ? ' on' : ''}`} onClick={() => onPage('projects')}><span className="nav-ico set-proj-ico">{FOOT_I.pro}</span><span className="set-text"><span className="tab-gold"><b>PRO</b>jects</span><small>Production Hub</small></span><i className="set-chev">{I.right}</i></button>
+        <button type="button" className={`set-row set-pick set-nav set-proj${page === 'projects' || page === 'hub' ? ' on' : ''}`} onClick={() => onPage('projects')}><span className="nav-ico set-proj-ico">{FOOT_I.pro}</span><span className="set-text"><span className="tab-gold"><b>PRO</b><i>JECTS</i></span><small>Production Hub</small></span><i className="set-chev">{I.right}</i></button>
       </div>
       {/* every update, with its bullets (Alex, 22 Nov) */}
       <div className="set-box">
@@ -198,7 +198,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
         {parentOf(page)
           ? <button type="button" className="round" onClick={() => onPage(parentOf(page))} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
           : <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>}
-        <strong>{page === 'projects' || page === 'hub' ? <span className="tab-gold"><b>PRO</b>jects</span> : title}</strong>
+        <strong>{page === 'projects' || page === 'hub' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : title}</strong>
         {/* the folder is kept as it is typed; the tick takes you out (Alex, 21 Oct) */}
         {page.startsWith('folder:') && <button type="button" className="round set-done" onClick={() => (onFolderDone ? onFolderDone() : onPage('folders'))} aria-label="Done" title="Done">{svg(<path d="M5 12.5l4.5 4.5L19 7.5" />)}</button>}
       </header>
@@ -1267,7 +1267,7 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
             onClick={() => { if (drag.current?.moved) return; if (swipe.open) { setSwipe({ id: '', x: 0, open: false }); return } onFolders(`folder:${f.id}`) }}>
             <span className="fold-grip" aria-hidden="true">{svg(<><circle cx="9" cy="6" r="1.2" /><circle cx="15" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" /><circle cx="15" cy="18" r="1.2" /></>)}</span>
             <span className="fold-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span>
-            <span className="set-text">{f.name}{f.custom && <small>{`${f.rooms.length} chat${f.rooms.length === 1 ? '' : 's'}`}</small>}</span>
+            <span className="set-text">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : f.name}{f.custom && <small>{`${f.rooms.length} chat${f.rooms.length === 1 ? '' : 's'}`}</small>}</span>
             {f.custom && <><i className="fold-dot" style={{ background: colorOf(f.id) }} /><i className="set-chev">{I.right}</i></>}
           </button>
           </div>

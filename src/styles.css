@@ -8019,7 +8019,6 @@ html:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.
 .prw-top-gap { flex: 1; }
 /* look and listen only: no tools for a member who does not see Pre Production */
 .prw-work.view-only :is(.prw-trash, .prw-share, .prw-ordplus, .prw-ordlink-btn, .prw-ordmake, .prw-ordlink, .prw-boxbtn) { display: none !important; }
-.prw-work.view-only .prw-ordacts .pill-btn:not(:first-child) { display: none !important; }
 .prw-work.view-only .prw-mrow.task { pointer-events: none; }
 /* round buttons on the Workspace: the glass fill alone, no rim and no shadow (Alex, 22 Nov: "strange lines round the round ones") */
 html:root:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.round, .prw-ibtn, .prw-trash, .prw-share, .prw-ordplus, .prw-gear, .prw-swap) { border: 0 !important; box-shadow: none !important; outline: 0 !important; }

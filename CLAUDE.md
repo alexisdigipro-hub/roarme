@@ -501,3 +501,4 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - Rows of files, links and places on the Workspace are laid out as the song's bar: one pane, even room each side, 34px round buttons at the right, 8px between rows (Alex, 22 Nov).
 
 - A project chat's head shows only its name, no "N members" (Alex, 22 Nov); other groups keep it.
+- The Admin tab only for the group's admins (Alex, 22 Nov); members of Production and Post Production see only the Overview (song, ordino, open tasks, team), with Send to but no gear and no + beside the ordino.

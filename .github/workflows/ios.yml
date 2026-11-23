@@ -33,6 +33,15 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      # The newest released Xcode on the Mac (Apple's ITMS-90725: from April 2027 builds need the iOS 27 SDK);
+      # betas are left out, since App Store Connect does not take a build made with one
+      - name: Newest Xcode
+        run: |
+          ls -d /Applications/Xcode*.app || true
+          X=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -viE 'beta|_RC|Release_Candidate' | sort -V | tail -1)
+          if [ -n "$X" ]; then sudo xcode-select -s "$X/Contents/Developer"; fi
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
       - uses: actions/setup-node@v4
         with:
           node-version: 20

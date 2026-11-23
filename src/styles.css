@@ -8380,3 +8380,12 @@ html:root .mj-grid > button { all: unset; box-sizing: border-box; aspect-ratio: 
 html:root .mj-grid > button:active { background: rgba(127, 127, 127, .14); }
 .mj-grid .moji { width: 100%; height: 100%; vertical-align: 0; margin: 0; }
 @media (prefers-reduced-motion: reduce) { .moji img, .moji::before { animation: none !important; } }
+/* Roary's stickers (Alex, 23 Nov): bigger than an emoji, with their own two motions */
+.bubble.mj-big.mj-stk .moji { width: 156px; height: 156px; }
+.bubble.mj-big.mj-stk .moji.ln::before { display: none; }
+.mj-grid.mj-stk { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+.mj-grid.mj-stk > button { padding: 4px; }
+.moji.m-wave { --ma: mj-wave; --mt: 1.6s; --me: ease-in-out; }
+.moji.m-sleep { --ma: mj-sleep; --mt: 3s; --me: ease-in-out; }
+@keyframes mj-wave { 0%, 100% { transform: rotate(0) } 20% { transform: rotate(-7deg) } 40% { transform: rotate(5deg) } 60% { transform: rotate(-5deg) } 80% { transform: rotate(2deg) } }
+@keyframes mj-sleep { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.04) translateY(-2%) } }

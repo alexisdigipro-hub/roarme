@@ -12,6 +12,7 @@ export const NEWS = [
     date: '23 November 2026',
     sections: [
       { title: 'Everywhere', items: [
+        'Roary: our own sticker character, a plush lion cub in 20 poses that move. Tap + and choose RoarMoji, he is at the top.',
         'RoarMoji: our own 3D emoji that move, drawn wherever you send an emoji, big when a message is only emoji, and in reactions. Tap + and choose RoarMoji for all of them, with ten film cameras.',
         'Unread: when something is new the chosen folder lights up in your colour. Slide the folders to the right and a round button with the number appears under them; tap it for your unread chats.',
         'Archived is a round sign with three binders at the right of the folders.',

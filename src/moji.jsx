@@ -3,7 +3,7 @@
 // wherever there is one of ours; the cameras have no emoji of their own, so they go as '🎥' with file.moji.
 import { Fragment } from 'react'
 
-const KEYS = new Set(['lion', 'fire', 'heart', 'joy', 'rofl', 'hearteyes', 'love', 'kiss', 'smile', 'cool', 'thinking', 'mindblown', 'scream', 'sob', 'pleading', 'angry', 'sleepy', 'party', 'starstruck', 'wink', 'thumbsup', 'clap', 'pray', 'strong', 'eyes', 'hundred', 'sparkles', 'tada', 'rocket', 'clapper', 'popcorn', 'camera', 'trophy', 'cam-cinema', 'cam-cage', 'cam-gimbal', 'cam-drone', 'cam-shoulder', 'cam-tripod', 'cam-crane', 'cam-anamorphic', 'cam-dolly', 'cam-steadicam'])
+const KEYS = new Set(['lion', 'fire', 'heart', 'joy', 'rofl', 'hearteyes', 'love', 'kiss', 'smile', 'cool', 'thinking', 'mindblown', 'scream', 'sob', 'pleading', 'angry', 'sleepy', 'party', 'starstruck', 'wink', 'thumbsup', 'clap', 'pray', 'strong', 'eyes', 'hundred', 'sparkles', 'tada', 'rocket', 'clapper', 'popcorn', 'camera', 'trophy', 'cam-cinema', 'cam-cage', 'cam-gimbal', 'cam-drone', 'cam-shoulder', 'cam-tripod', 'cam-crane', 'cam-anamorphic', 'cam-dolly', 'cam-steadicam', 'roary-hello', 'roary-haha', 'roary-love', 'roary-action', 'roary-sad', 'roary-roar', 'roary-night', 'roary-gotit', 'roary-thinking', 'roary-angry', 'roary-shocked', 'roary-party', 'roary-coffee', 'roary-thanks', 'roary-facepalm', 'roary-shy', 'roary-dance', 'roary-popcorn', 'roary-camera', 'roary-cool'])
 const src = (k) => (KEYS.has(k) ? new URL(`./assets/moji/${k}.webp`, import.meta.url).href : null)
 
 // key, the emoji it stands for (several where they look alike), its motion, a name
@@ -23,6 +23,27 @@ export const MOJI = [
   ['cam-drone', '', 'zoom', 'Drone'], ['cam-shoulder', '', 'jelly', 'Shoulder Rig'], ['cam-tripod', '', 'jelly', 'Tripod'],
   ['cam-crane', '', 'jelly', 'Crane'], ['cam-anamorphic', '', 'blast', 'Anamorphic'], ['cam-dolly', '', 'zoom', 'Dolly'],
   ['cam-steadicam', '', 'jelly', 'Steadicam'],
+  // Roary, RoarMe's own sticker character (Alex, 23 Nov): a plush lion cub puppet in 20 poses
+  ['roary-hello', '', 'wave', 'Hello'],
+  ['roary-haha', '', 'shake', 'Haha'],
+  ['roary-love', '', 'beat', 'Love You'],
+  ['roary-action', '', 'clap', 'Action!'],
+  ['roary-sad', '', 'jelly', 'Sad'],
+  ['roary-roar', '', 'roar', 'Roar!'],
+  ['roary-night', '', 'sleep', 'Good Night'],
+  ['roary-gotit', '', 'boing', 'Got It'],
+  ['roary-thinking', '', 'jelly', 'Thinking'],
+  ['roary-angry', '', 'shake', 'Grumpy'],
+  ['roary-shocked', '', 'blast', 'Shocked'],
+  ['roary-party', '', 'blast', 'Party'],
+  ['roary-coffee', '', 'sleep', 'Coffee'],
+  ['roary-thanks', '', 'boing', 'Thank You'],
+  ['roary-facepalm', '', 'jelly', 'Facepalm'],
+  ['roary-shy', '', 'jelly', 'Shy'],
+  ['roary-dance', '', 'wave', 'Dance'],
+  ['roary-popcorn', '', 'boing', 'Popcorn'],
+  ['roary-camera', '', 'jelly', 'On Camera'],
+  ['roary-cool', '', 'boing', 'Cool'],
 ].map(([k, e, a, name]) => ({ k, e: e ? e.split(' ') : [], a, name })).filter((m) => src(m.k))
 
 const BY_KEY = Object.fromEntries(MOJI.map((m) => [m.k, m]))
@@ -30,14 +51,16 @@ const plain = (e) => String(e || '').replace(/️/g, '')
 const BY_EMOJI = {}
 MOJI.forEach((m) => m.e.forEach((e) => { BY_EMOJI[plain(e)] = m }))
 const LINES = new Set(['roar', 'shake', 'blast', 'zoom', 'clap', 'beat'])
+export const isSticker = (k) => String(k || '').startsWith('roary-')
 
 export const mojiOf = (e) => BY_EMOJI[plain(e)] || null
 export const mojiKey = (k) => BY_KEY[k] || null
 // what a picked moji sends: its own emoji as the words (lists, notifications and other apps read that),
-// and for the cameras, which have none, '🎥' with file.moji
+// for the cameras, which have none, '🎥' with file.moji, and for Roary's stickers '🦁' with file.moji
 export const mojiSend = (k) => {
   const m = BY_KEY[k]
   if (!m) return null
+  if (isSticker(k)) return { body: '🦁', file: { moji: k } }
   return m.e.length ? { body: m.e[0], file: null } : { body: '🎥', file: { moji: k } }
 }
 
@@ -83,10 +106,13 @@ export function mojiCount(s) {
 
 // the RoarMoji tab of the attach sheet: every one of ours, a tap sends it
 export function MojiPick({ onPick }) {
-  const faces = MOJI.filter((m) => !m.k.startsWith('cam-'))
+  const roary = MOJI.filter((m) => isSticker(m.k))
+  const faces = MOJI.filter((m) => !m.k.startsWith('cam-') && !isSticker(m.k))
   const cams = MOJI.filter((m) => m.k.startsWith('cam-'))
   return (
     <div className="mj-pick">
+      <div className="mj-cap">Roary</div>
+      <div className="mj-grid mj-stk">{roary.map((m) => <button key={m.k} type="button" title={m.name} onClick={() => onPick(m.k)}><Moji k={m.k} /></button>)}</div>
       <div className="mj-cap">Cameras</div>
       <div className="mj-grid">{cams.map((m) => <button key={m.k} type="button" title={m.name} onClick={() => onPick(m.k)}><Moji k={m.k} /></button>)}</div>
       <div className="mj-cap">RoarMoji</div>

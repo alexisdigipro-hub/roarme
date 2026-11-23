@@ -8229,3 +8229,11 @@ html:root:root .rooms-area .tabs .tab-dot::after { display: none !important; }
 .rooms-area .tabs .tab-dot > .badge.dot { animation: none; }
 html:root:root .rooms-area .tabs .tab-dot.lit::before { width: 12px; height: 12px; margin: -6px 0 0 -6px; border-color: var(--halo, var(--accent)); }
 @keyframes dot-beat { 0% { transform: scale(1); opacity: .8 } 60%, 100% { transform: scale(2.4); opacity: 0 } }
+/* Archived bare, with no grey round it (Alex, 23 Nov), and its hairline moved in to keep the same 6px from the sign as the
+   Unread side keeps from its circle */
+html:root .rooms-area .tabs .tab-arch.tab-circ { background: transparent !important; }
+html:root .rooms-area .tabs button[data-tab='archived'].on .tab-arch.tab-circ { box-shadow: none !important; color: inherit; }
+.rooms-area .tabs button[data-tab='archived']::after { left: 13px; }
+/* the Unread dot stays grey while all is read, in every theme (Halo's badge rule painted .quiet in the accent too) */
+html:root:root:root .rooms-area .tabs .tab-dot .badge.dot.quiet { background: rgba(20, 24, 34, .22) !important; box-shadow: none !important; }
+html[data-mode='dark']:root:root:root .rooms-area .tabs .tab-dot .badge.dot.quiet { background: rgba(255, 255, 255, .3) !important; }

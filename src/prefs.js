@@ -408,3 +408,9 @@ export const CHAT_THEMES = [
   ['night', 'Night', { background: 'night', myBubble: '#4b5fc7', theirBubble: '#262b3d', accentHex: '#6f83ff' }],
   ['frost', 'Frost', { background: 'stone', myBubble: '#efe8e0', theirBubble: '#a99c8f', accentHex: '#5a4a3c' }], // Frost's wall, bubbles and colour in Roar (Alex, 14 Nov)
 ]
+
+// a folder's name in a colour of its own (Alex, 23 Nov): the key of one of HALO_ACCENTS, '' = the words' own colour
+export const folderTint = (key) => {
+  const a = key && HALO_ACCENTS.find(([k]) => k === key)
+  return a ? { '--fc': a[2], '--fc-d': a[3] } : undefined
+}

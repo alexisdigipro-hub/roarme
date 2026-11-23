@@ -8292,3 +8292,24 @@ html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has.u-all:
 html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has.u-all:not(.u-open) > .tabs > button.on .tab-gold b { background: none !important; color: #ffe7a6 !important; -webkit-text-fill-color: #ffe7a6; }
 
 /* the blue lens and its ghost only on All (Alex, 23 Nov: "only on ALL blue; moved to another folder, as normal") */
+
+/* a folder's name in its own colour (Alex, 23 Nov): the button beside B I U S and its palette; the colour shows on the tab and in Chat Folders */
+.fold-tint { color: var(--fc) !important; }
+html[data-mode='dark'] .fold-tint { color: var(--fc-d, var(--fc)) !important; }
+.wheel-box.u-has.u-all:not(.u-open) .tabs button.on .fold-tint { color: inherit !important; }
+.name-row .fold-cbtn { flex: none; width: 32px; height: 32px; min-width: 32px; display: grid; place-items: center; margin-left: 6px; }
+.name-row .fold-cbtn i { width: 16px; height: 16px; border-radius: 50%; background: conic-gradient(#3aa7e8, #7b4dff, #d6338a, #f47318, #14b89a, #3aa7e8); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.6); }
+.name-row .fold-cbtn.open { box-shadow: inset 0 0 0 2px var(--halo, var(--accent)); }
+.fold-pal { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 10px 12px 12px; }
+.fold-pal .fold-sw { width: 30px; height: 30px; min-width: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; display: grid; place-items: center; cursor: pointer; }
+.fold-pal .fold-sw i { width: 22px; height: 22px; border-radius: 50%; background: var(--c); }
+.fold-pal .fold-sw-def i { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; position: relative; }
+.fold-pal .fold-sw-def i::after { content: ""; position: absolute; left: 50%; top: 3px; bottom: 3px; width: 1.5px; background: currentColor; transform: translateX(-50%) rotate(45deg); }
+.fold-pal .fold-sw.on { box-shadow: 0 0 0 2px var(--halo, var(--accent)); }
+
+/* a member's earlier messages (Alex, 23 Nov): the clock is lit while they see them, faint and struck while they don't */
+.pf-row .pf-row-hist { color: var(--halo, var(--accent)); }
+.pf-row .pf-row-hist.off { color: var(--muted); opacity: .55; }
+.pf-row .pf-row-adm.pf-row-hist { margin-left: 6px; }
+.pf-hist-opt { cursor: pointer; }
+.pf-hist-opt .switch { margin-left: auto; flex: none; }

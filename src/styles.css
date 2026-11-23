@@ -8084,3 +8084,6 @@ html:root:root:root:root:root:root .peek-tasks .prw-mtext b { font-size: 13.5px;
    second frame with other corners round a row (Alex, 22 Nov) */
 html:root:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.prw-slist, .prw-cards, .prj-list, .prw-links, .prw-filesec) { background: none !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html:root:root:root:root:root:root:root:root:root:root:root:root:root .prw-work :is(.prw-srow, .prw-card, .prw-link) { border-radius: 18px !important; overflow: hidden; }
+/* Calls: the three buttons in the middle, and the line under them too (Alex, 22 Nov) */
+@media (min-width: 761px) { html:root:root:root:root:root:root .prw-calls-top { justify-content: center !important; } html:root:root:root:root:root:root .prw-calls-top > .btn { flex: 0 1 200px !important; } }
+.prw-calls > .prj-quiet { text-align: center; }

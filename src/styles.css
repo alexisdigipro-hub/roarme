@@ -8196,3 +8196,10 @@ html:root .tab-gold { background: none !important; -webkit-background-clip: bord
 html:root .tab-gold b { font-weight: 800; background: linear-gradient(135deg, #d9a93a 0%, #a8761f 45%, #d4a03a 70%, #8a5e14 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
 html[data-mode='dark']:root .tab-gold b { background-image: linear-gradient(135deg, #ffe08a 0%, #e0ad45 45%, #ffd56e 70%, #c18a2b 100%); }
 html:root .tab-gold i { font-style: normal; font-weight: 300; }
+/* the lit Unread dot keeps its heartbeat (Alex, 23 Nov: "a ring goes out like a heartbeat"): a ring in the same colour
+   goes out from it every few seconds */
+.tab-dot.lit { position: relative; }
+.tab-dot.lit::before { content: ""; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; border: 2px solid var(--my-bubble, var(--halo-mine, var(--accent))); animation: dot-beat 2.6s ease-out infinite; pointer-events: none; }
+@keyframes dot-beat { 0% { transform: scale(1); opacity: .75 } 55%, 100% { transform: scale(1.6); opacity: 0 } }
+html[data-lite] .tab-dot.lit::before { animation: none; opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .tab-dot.lit::before { animation: none; opacity: 0; } }

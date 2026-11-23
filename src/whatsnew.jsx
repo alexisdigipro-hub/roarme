@@ -30,6 +30,7 @@ export const NEWS = [
         'Appearance on one page: one preview on top shows every change, then Colour, Messages and App.',
         'Every member of a project sees its Overview, to look and listen.',
         'Hub Members join every new project in their category.',
+        'Notices: when you are put on a task, a task of yours is done, or it is due tomorrow, a slim line comes into the project\'s chat for you alone, with the sound.',
         'A project has its own workspace: media, files, Location Scout, calls, links, tasks, and Admin for budget and fees.',
         'The project\u2019s Overview gives a taste of everything: small thumbnails, then the latest documents, locations, links and tasks.',
         'The project\u2019s banner is calmer: its name on your own photo or the theme\u2019s colour, the shoot day under it.',

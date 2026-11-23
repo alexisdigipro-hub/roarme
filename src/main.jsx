@@ -10,7 +10,7 @@ import './themes-glass.css'
 import './themes-frost.css' // Frost, worn only with data-frost on <html> (Alex, 14 Nov)
 import { startI18n } from './i18n.js'
 import { dressTheme } from './prefs.js'
-import { nativeTap } from './lib.js'
+import { nativeTap, swAt } from './lib.js'
 
 // the Privacy Policy and the Terms come only when opened, not with every start of RoarMe
 const LegalPage = lazy(() => import('./legal.jsx').then((m) => ({ default: m.LegalPage })))
@@ -129,7 +129,7 @@ if (window.matchMedia?.('(pointer: coarse)').matches) {
 // the service worker keeps the app's built files on the device, so RoarMe starts faster (public/sw.js); the desktop
 // app has its own; inside Roardino none, so the framed copy always loads fresh
 if ('serviceWorker' in navigator && !window.roarDesktop && import.meta.env.PROD) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {}))
+  window.addEventListener('load', () => navigator.serviceWorker.register(...swAt()).catch(() => {}))
 }
 
 // a RoarTransfer download link (?t=…) opens its own page, no account needed

@@ -6,6 +6,8 @@
         "components": [
           { "?": { "token_hash": "*" }, "comment": "the Confirm and sign-in links from RoarMe's emails open the app" },
           { "/": "/transfer", "exclude": true, "comment": "the transfer page stays on the web" },
+          { "/": "/app", "exclude": true, "comment": "the web app (roarme.app/app/) stays on the web" },
+          { "/": "/app/*", "exclude": true },
           { "/": "/*/*", "exclude": true, "comment": "nothing deeper than one name" },
           { "/": "/*.*", "exclude": true, "comment": "files (scripts, pictures, pages) stay on the web" },
           { "/": "/?*", "comment": "a person's link, roarme.app/username, opens the app and their chat" }

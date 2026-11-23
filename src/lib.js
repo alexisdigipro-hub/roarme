@@ -16,7 +16,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 // capacitor://localhost, which no email can open, so there it is the website's own address (Alex, 14 Nov)
 export const SITE_URL = 'https://roarme.app/'
 // inside the iPhone app (capacitor://) or the Mac App Store app (app://roarme) the page has no web address of its own
-export const appUrl = () => (window.Capacitor?.isNativePlatform?.() || !/^https?:$/.test(window.location.protocol) ? SITE_URL : window.location.origin + window.location.pathname)
+export const appUrl = () => (window.Capacitor?.isNativePlatform?.() || !/^https?:$/.test(window.location.protocol) ? SITE_URL : window.location.origin + window.location.pathname.replace(/\/app\/?$/, '/'))
+
+// the service worker: on roarme.app the app is at /app/ and the worker stays at the root with the whole site as its
+// scope (Alex, 23 Nov), so the registration and its notifications are the same one as before the move
+export const swAt = () => (/^\/app\//.test(window.location.pathname) && /^https?:$/.test(window.location.protocol) ? ['/sw.js', { scope: '/' }] : ['./sw.js', { scope: './' }])
 
 export const USERNAME_RE = /^[a-z0-9_]{3,24}$/
 export const cleanUsername = (v) => String(v || '').toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '').slice(0, 24)

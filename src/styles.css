@@ -8256,3 +8256,17 @@ html[data-lite] .wheel-box.u-has > .u-pop, html[data-lite] .wheel-box > .tabs, h
 @media (prefers-reduced-motion: reduce) { .wheel-box.u-has > .u-pop { animation: none; } }
 /* on a computer the peek sits inside the panel's own edge so it can be clicked */
 @media (min-width: 761px) and (pointer: fine) { .wheel-box.u-has > .u-pop { left: calc(var(--u-in, 12px) - 30px); } }
+/* Unread, second pass (Alex, 23 Nov: "the menu behind ALL in colour, and a swipe shows the round button from underneath,
+   the same glass"): no sliver at the edge; while something is unread the chosen folder's lens takes the accent's pair
+   (its word and count in the accent's ink); a slide right moves the bar's left end aside and the round button rises from
+   under it, in the same glass as the head's round buttons (.round), the number in the accent */
+html:root:root .wheel-box > .u-pop.round { z-index: 1; width: 44px; height: 44px; min-width: 44px; padding: 0; left: calc(var(--u-in, 12px) + 5px); color: var(--halo, var(--accent));
+  background: var(--lg, rgba(255, 255, 255, .7)) !important; box-shadow: var(--lg-shadow), inset 0 0 0 1px var(--lg-rim) !important;
+  opacity: 0; transform: scale(.6); pointer-events: none; animation: none; transition: opacity .25s, transform .42s cubic-bezier(.25, 1.35, .45, 1), box-shadow .25s; }
+html:root:root .wheel-box > .tabs { position: relative; z-index: 2; }
+html:root:root .wheel-box.u-open > .u-pop.round { opacity: 1; transform: none; pointer-events: auto; transition-delay: .06s; }
+html:root:root .wheel-box > .u-pop.round b { color: inherit; font-size: 15.5px; font-weight: 700; }
+html:root:root .wheel-box.u-open > .u-pop.round.u-on { box-shadow: var(--lg-shadow), inset 0 0 0 2px var(--halo, var(--accent)) !important; }
+html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs.lens::before { background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent)))), var(--halo, var(--accent)) !important; }
+html:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on, html:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on .tab-name { color: var(--halo-ink, #fff) !important; }
+html:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on small { background: rgba(255, 255, 255, .28) !important; color: var(--halo-ink, #fff) !important; }

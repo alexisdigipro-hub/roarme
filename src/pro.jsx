@@ -2002,7 +2002,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
       <div className="prw-top">
         {/* the stage and the shoot day only shown here; both change in Project Settings (Alex, 22 Nov) */}
         <span className="prw-pill stage still" style={{ '--pc': st.c }}><i className="prw-dot" /><span className="prw-st-name">{st.name}</span></span>
-        {project.due && <span className="prw-pill date still"><span className="prw-dlabel">Shoot Day</span><b>{new Date(`${project.due}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', ...(project.due.slice(0, 4) === String(new Date().getFullYear()) ? {} : { year: 'numeric' }) })}</b></span>}
+        {project.due && <span className="prw-pill date still"><span className="prw-dlabel">Shoot Day</span><b>{new Date(`${project.due}T12:00:00`).toLocaleDateString('en-GB', { weekday: phone ? 'short' : 'long', day: 'numeric', month: phone ? 'short' : 'long', ...(project.due.slice(0, 4) === String(new Date().getFullYear()) ? {} : { year: 'numeric' }) })}</b></span>}
         <span className="prw-top-gap" />
         {onSwap && !phone && !viewOnly && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}
         {!viewOnly && <span className="prw-gear-wrap">
@@ -2196,7 +2196,7 @@ export function ProPanel(props) {
       const ok = Date.now() - s.t < 600 && Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6
       s = null
       if (!ok) return
-      if (sideRef.current === 'chat') { if (dx < 0) setSide('proj'); return }
+      if (sideRef.current === 'chat') { if (dx < 0 && !e.target.closest?.('.chan-swipe')) setSide('proj'); return }
       window.dispatchEvent(new CustomEvent('roarme-pro-swipe', { detail: { dir: dx < 0 ? 1 : -1, room: props.room.room_id } }))
     }
     host.addEventListener('touchstart', start, { passive: true })
@@ -2210,7 +2210,9 @@ export function ProPanel(props) {
   if (narrow) {
     // two pages: the chat as it is, and the project over it; a Chat | Project switch under the chat's head
     // the head of the project's page is the chat's own joined capsule: the group's name (back to the chat) and Project, lit
-    const sw = <span className="prw-sw2 to-proj" role="tablist"><button type="button" onClick={() => setSide('chat')}>Chat</button><button type="button" className="on"><span className="prw-gold">Project</span></button></span>
+    // the project's page heads with the same switch as the chat: the project's name (back to the chat) | Project (Alex, 22 Nov)
+    const projName = String((props.project?.fields || []).find((f) => f.k === 'Title')?.v || '').trim() || props.title || 'Chat'
+    const sw = <span className="prw-sw2 to-proj" role="tablist"><button type="button" onClick={() => setSide('chat')}><span className="head-sw-name">{projName}</span></button><button type="button" className="on"><span className="prw-gold">Project</span></button></span>
     return (
       <>
         <span ref={anchor} hidden />

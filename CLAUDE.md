@@ -502,3 +502,6 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 
 - A project chat's head shows only its name, no "N members" (Alex, 22 Nov); other groups keep it.
 - The Admin tab only for the group's admins (Alex, 22 Nov); members of Production and Post Production see only the Overview (song, ordino, open tasks, team), with Send to but no gear and no + beside the ordino.
+- The project's page on a phone (Alex, 22 Nov, TestFlight 185): its head switch reads the project's Title (else the group's name) | Project, as the chat's; the stage and the shoot day ("Thu 26 Nov") fill their row in the middle; the Overview's grid is minmax(0, 1fr) (it took its content's width and ran off the screen); on a phone the song's bar has no waveform and the ordino's buttons are round icons.
+- Slides in a project chat on a phone (Alex, 22 Nov: "swipe right and left everywhere"): Room .chan-swipe takes the horizontal slide (not on a message, which is the reply): to the left the next of the project's chats, past the last the project's page; to the right the previous, before the first back to the list. The page-wide slide-back and ProPanel's slide to the project leave .chan-swipe alone.
+

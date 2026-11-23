@@ -16,10 +16,17 @@ alter table public.roar_hub_members enable row level security;
 revoke all on public.roar_hub_members from anon;
 grant select, insert, update, delete on public.roar_hub_members to authenticated;
 
+-- roar_hub_accounts is closed to members, so the check asks a definer function
+create or replace function public.roar_has_hub() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from roar_hub_accounts where user_id = auth.uid())
+$$;
+revoke all on function public.roar_has_hub() from public, anon;
+grant execute on function public.roar_has_hub() to authenticated;
 drop policy if exists roar_hub_members_own on public.roar_hub_members;
 create policy roar_hub_members_own on public.roar_hub_members for all to authenticated
   using (owner = auth.uid())
-  with check (owner = auth.uid() and exists (select 1 from public.roar_hub_accounts a where a.user_id = auth.uid()));
+  with check (owner = auth.uid() and public.roar_has_hub());
 
 -- a new member gets PROjects switched on
 create or replace function public.roar_hub_member_on() returns trigger

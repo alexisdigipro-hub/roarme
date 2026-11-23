@@ -3,14 +3,14 @@ import { locale } from './i18n.js'
 import { Wordmark } from './ui.jsx'
 import { appUrl } from './lib.js'
 
-/* Privacy Policy and Terms of Service (17 Oct 2026; brought up to date 15 Nov for the App Store: phone number and SMS,
+/* Privacy Policy and Terms of Service (17 Oct 2026; 23 Nov: PROjects, the Production Hub and the $; brought up to date 15 Nov for the App Store: phone number and SMS,
    contacts as hashes, location and live location, camera / microphone / photos, Apple push, group calls, reports,
    deletion inside the app; before that 25 Oct: emails, notifications, LiveKit calls,
    RoarTransfer on Cloudflare R2, folders synced, the other apps on the same account). Written to match what RoarMe really does: it keeps only what the
    chat needs, has no ads, no trackers and no analytics, and sells nothing. Greek when the app is in Greek.
    Shown in Settings > Privacy and Security, and as public pages: ?legal=privacy and ?legal=terms. */
 
-const UPDATED = { en: '22 November 2026', el: '22 Νοεμβρίου 2026' }
+const UPDATED = { en: '23 November 2026', el: '23 Νοεμβρίου 2026' }
 const CONTACT = 'info@themadlions.com'
 
 const DOCS = {
@@ -27,6 +27,8 @@ const DOCS = {
           'Your chat folders and the names you give your contacts, so they are the same on every device you use. Your other settings (theme, chat colours, wallpaper and similar) stay on your own device.',
           'Your address book, if you use it: the contacts you add or import yourself (names, phone numbers, emails, addresses, birthdays, websites, notes, groups and a photo). Only you can see it; it is kept so you have it on every device, and you can export it as a .vcf file or delete any contact at any time. Contacts read from your iPhone are added only when you choose Import, and nothing is sent to the people in it.',
           'Projects, if a group is made one: its stage, dates, brief and details (such as artist, title, category and budget), tasks, location scouting (places, addresses, contact names and numbers you enter, notes and photos), ordinos linked to it and a cover picture. Every member of the group can see and change these. The project\'s admin side (budget, expenses, who worked on it and their fees) is seen only by the group\'s admins and the members they choose, and so is how often each member opened the project and for how long. All of it is deleted when the group stops being a project or is deleted.',
+          'PROjects (optional, off until you turn it on): a project group has three chats (Pre Production, Production, Post Production); the group\'s admins choose who sees which, and only those in Pre Production and the admins can change the project; everyone in the group can see its Overview (song, ordino, open tasks and the team). A background picture a member uploads for the project is seen by everyone who sees it. Notices about tasks (put on a task, a task done, a task due) are shown only to the person they concern. Someone who linked a Production Hub can mark contacts as Hub Members with a category; these people are added to that person\'s new project groups in that category.',
+          'Production Hub: if a project is tied to a Production Hub (The Mad Lions\' production tool, a separate service you link with a key), its title, stage, shoot day, category, tasks and locations are kept the same on both sides, and the hub\'s cover, songs, location photos and published ordinos are shown in RoarMe. When you use the $ in a project\'s chat, what you enter (a payment: description, role, amount, status, notes; or an expense: amount, VAT, what for, category, shop, date, who paid, notes and the photo or PDF of the receipt) is sent to that hub, where you are found by your RoarMe email; it is kept there under the hub\'s own terms.',
           'Reports: if you report a message or a person, we keep the report, your note and a copy of the reported message so we can review it. Reports are seen only by RoarMe\'s administrator.',
         ]],
         ['What we do not collect', [
@@ -100,6 +102,8 @@ const DOCS = {
           'Τους φακέλους των συζητήσεών σου και τα ονόματα που δίνεις στις επαφές σου, για να είναι ίδια σε κάθε συσκευή σου. Οι υπόλοιπες ρυθμίσεις σου (θέμα, χρώματα, ταπετσαρία κ.λπ.) μένουν στη δική σου συσκευή.',
           'Το βιβλίο επαφών σου, αν το χρησιμοποιείς: οι επαφές που προσθέτεις ή εισάγεις εσύ (ονόματα, τηλέφωνα, email, διευθύνσεις, γενέθλια, ιστοσελίδες, σημειώσεις, ομάδες και μια φωτογραφία). Το βλέπεις μόνο εσύ· κρατιέται για να το έχεις σε κάθε συσκευή σου, και μπορείς να το εξαγάγεις ως αρχείο .vcf ή να σβήσεις όποια επαφή θέλεις, όποτε θέλεις. Επαφές από το iPhone σου μπαίνουν μόνο όταν επιλέξεις Εισαγωγή, και δεν στέλνεται τίποτα στους ανθρώπους που περιέχει.',
           'Τα projects, αν μια ομάδα γίνει project: η φάση, οι ημερομηνίες, η περιγραφή και τα στοιχεία του (όπως καλλιτέχνης, τίτλος, κατηγορία και budget), εργασίες, location scouting (χώροι, διευθύνσεις, ονόματα και τηλέφωνα επαφών που γράφεις, σημειώσεις και φωτογραφίες), ordinos που συνδέονται με αυτό και μια εικόνα εξωφύλλου. Τα βλέπουν και τα αλλάζουν όλα τα μέλη της ομάδας. Το διαχειριστικό κομμάτι (budget, έξοδα, ποιοι δούλεψαν και οι αμοιβές τους) το βλέπουν μόνο οι διαχειριστές της ομάδας και τα μέλη που επιλέγουν, όπως και πόσες φορές και για πόση ώρα άνοιξε το project κάθε μέλος. Όλα σβήνονται όταν η ομάδα πάψει να είναι project ή διαγραφεί.',
+          'PROjects (προαιρετικό, κλειστό μέχρι να το ανοίξεις): μια ομάδα project έχει τρία chat (Pre Production, Production, Post Production)· οι διαχειριστές της ομάδας επιλέγουν ποιος βλέπει ποιο, και μόνο όσοι είναι στο Pre Production και οι διαχειριστές μπορούν να αλλάξουν το project· όλοι στην ομάδα βλέπουν το Overview του (τραγούδι, ordino, ανοιχτές εργασίες και την ομάδα). Μια εικόνα φόντου που ανεβάζει ένα μέλος για το project τη βλέπουν όλοι όσοι το βλέπουν. Οι ειδοποιήσεις για εργασίες (σε έβαλαν σε μια εργασία, μια εργασία έγινε, μια εργασία λήγει) εμφανίζονται μόνο σε αυτόν που αφορούν. Όποιος έχει συνδέσει ένα Production Hub μπορεί να ορίσει επαφές ως Hub Members με μια κατηγορία· αυτοί μπαίνουν στις νέες ομάδες project του σε αυτή την κατηγορία.',
+          'Production Hub: αν ένα project είναι συνδεδεμένο με ένα Production Hub (το εργαλείο παραγωγής της The Mad Lions, ξεχωριστή υπηρεσία που συνδέεις με ένα κλειδί), ο τίτλος, η φάση, η μέρα γυρίσματος, η κατηγορία, οι εργασίες και οι τοποθεσίες μένουν ίδια και στις δύο πλευρές, και το εξώφυλλο, τα τραγούδια, οι φωτογραφίες τοποθεσιών και τα δημοσιευμένα ordinos του hub φαίνονται στο RoarMe. Όταν χρησιμοποιείς το $ στο chat ενός project, ό,τι γράφεις (μια πληρωμή: περιγραφή, ρόλος, ποσό, κατάσταση, σημειώσεις· ή ένα έξοδο: ποσό, ΦΠΑ, για τι, κατηγορία, κατάστημα, ημερομηνία, ποιος πλήρωσε, σημειώσεις και η φωτογραφία ή το PDF της απόδειξης) στέλνεται σε αυτό το hub, όπου σε βρίσκει από το email του RoarMe· φυλάσσεται εκεί με τους όρους του hub.',
           'Αναφορές: αν αναφέρεις ένα μήνυμα ή ένα άτομο, κρατάμε την αναφορά, το σημείωμά σου και ένα αντίγραφο του μηνύματος για να την εξετάσουμε. Τις αναφορές τις βλέπει μόνο ο διαχειριστής του RoarMe.',
         ]],
         ['Τι δεν συλλέγουμε', [
@@ -174,6 +178,9 @@ const DOCS = {
           'What you send stays yours. You allow us only to store it and deliver it to the people you send it to, so the app can work. We do not use it for anything else.',
           'You are responsible for what you send and for who you share RoarTransfer links with.',
         ]],
+        ['PROjects and the Production Hub', [
+          'PROjects is a tool for working together on a project in a group. A payment or expense you send to a Production Hub with the $ is a record for the production, not a payment: RoarMe does not move money. You are responsible for what you enter being correct; the hub\'s owner decides what to do with it under their own terms.',
+        ]],
         ['Free and paid', [
           'RoarMe is free. Some features may later be offered in a paid plan (Pro); if so, the price and what you get are shown before you pay, and nothing is ever charged without your clear order.',
         ]],
@@ -210,6 +217,9 @@ const DOCS = {
         ['Το περιεχόμενό σου', [
           'Ό,τι στέλνεις μένει δικό σου. Μας επιτρέπεις μόνο να το αποθηκεύουμε και να το παραδίδουμε σε όσους το στέλνεις, για να λειτουργεί η εφαρμογή. Δεν το χρησιμοποιούμε για τίποτε άλλο.',
           'Είσαι υπεύθυνος για ό,τι στέλνεις και για το σε ποιους δίνεις links του RoarTransfer.',
+        ]],
+        ['PROjects και Production Hub', [
+          'Τα PROjects είναι ένα εργαλείο για να δουλεύει μια ομάδα μαζί σε ένα project. Μια πληρωμή ή ένα έξοδο που στέλνεις σε ένα Production Hub με το $ είναι καταγραφή για την παραγωγή, όχι πληρωμή: το RoarMe δεν μεταφέρει χρήματα. Είσαι υπεύθυνος να είναι σωστά όσα γράφεις· ο κάτοχος του hub αποφασίζει τι θα κάνει με αυτά με τους δικούς του όρους.',
         ]],
         ['Δωρεάν και επί πληρωμή', [
           'Το RoarMe είναι δωρεάν. Ορισμένες λειτουργίες μπορεί αργότερα να προσφέρονται σε πληρωμένο πλάνο (Pro)· τότε η τιμή και τι περιλαμβάνει εμφανίζονται πριν πληρώσεις, και τίποτα δεν χρεώνεται ποτέ χωρίς τη ρητή εντολή σου.',

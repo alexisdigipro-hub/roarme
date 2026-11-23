@@ -1635,7 +1635,7 @@ export default function Chat({ me, setMe }) {
             </div></div>
             <div className={`rooms-area${tabsDown && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
             {!q.trim() && (
-              <div className={`wheel-box${wheeling ? ' on' : ''}${uCount > 0 ? ' u-has' : ''}${uShown ? ' u-open' : ''}`}
+              <div className={`wheel-box${wheeling ? ' on' : ''}${uCount > 0 ? ' u-has' : ''}${folder === 'all' ? ' u-all' : ''}${uShown ? ' u-open' : ''}`}
                 onTouchStart={(e) => { const t = e.touches[0]; uTouch.current = e.touches.length === 1 && !editTabs ? { x: t.clientX, y: t.clientY, sl: tabsLens.current?.scrollLeft || 0 } : null }}
                 onTouchEnd={(e) => { const u = uTouch.current; uTouch.current = null; if (!u) return; const t = e.changedTouches[0], dx = t.clientX - u.x, dy = t.clientY - u.y; if (Math.abs(dx) < 36 || Math.abs(dx) < Math.abs(dy) * 1.4) return; if (dx > 0 && u.sl <= 2 && uCount > 0 && !uShown) { haptic(8); setUOpen(true) } else if (dx < 0 && uShown && u.x < 140) { setUOpen(false); if (folder === 'unread') setFolder('all') } }}>
               {!wheeling && <button ref={uPop} type="button" className={`round u-pop${folder === 'unread' ? ' u-on' : ''}`} aria-label={uCount > 0 ? `Unread, ${uCount}` : 'Unread'} title="Unread" tabIndex={uShown ? 0 : -1}

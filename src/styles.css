@@ -8267,13 +8267,13 @@ html:root:root .wheel-box > .tabs { position: relative; z-index: 2; }
 html:root:root .wheel-box.u-open > .u-pop.round { opacity: 1; transform: none; pointer-events: auto; transition-delay: .06s; }
 html:root:root .wheel-box > .u-pop.round b { color: inherit; font-size: 15.5px; font-weight: 700; }
 html:root:root .wheel-box.u-open > .u-pop.round.u-on { box-shadow: var(--lg-shadow), inset 0 0 0 2px var(--halo, var(--accent)) !important; }
-html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs.lens::before { background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent)))), var(--halo, var(--accent)) !important; }
-html:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on, html:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on .tab-name { color: var(--halo-ink, #fff) !important; }
-html:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on small { background: rgba(255, 255, 255, .28) !important; color: var(--halo-ink, #fff) !important; }
+html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has.u-all:not(.u-open) > .tabs.lens::before { background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent)))), var(--halo, var(--accent)) !important; }
+html:root:root:root:root:root .rooms-area .wheel-box.u-has.u-all:not(.u-open) > .tabs > button.on, html:root:root:root:root:root .rooms-area .wheel-box.u-has.u-all:not(.u-open) > .tabs > button.on .tab-name { color: var(--halo-ink, #fff) !important; }
+html:root:root:root:root:root .rooms-area .wheel-box.u-has.u-all:not(.u-open) > .tabs > button.on small { background: rgba(255, 255, 255, .28) !important; color: var(--halo-ink, #fff) !important; }
 /* the hint to slide (Alex, 23 Nov, A of https://claude.ai/artifact/4jWYLsNx8CWvGvN2KXJ6aJ): while something is unread and
    the round button is put away, a see-through copy of the blue lens drifts to the right and fades every 4.2 s, on the
    slide's own spring, inviting the slide; the lens itself stays still */
-html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs.lens.lens-on::after {
+html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has.u-all:not(.u-open) > .tabs.lens.lens-on::after {
   content: ''; position: absolute; z-index: -1; left: 0; top: 0; width: var(--lw, 0); height: var(--lh, 0); border-radius: 999px; pointer-events: none;
   transform: translate(var(--lx, 0), var(--ly, 0)); background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent))));
   opacity: 0; animation: u-ghost 4.2s cubic-bezier(.25, 1.35, .45, 1) infinite; }
@@ -8288,5 +8288,7 @@ html:root:root .rooms-area .tabs button[data-tab='archived']::after { left: 10px
 html:root:root:root:root:root:root:root:root .rooms-area .tabs.lens.lens-on:has(> button[data-tab='archived'].on)::before { opacity: 0 !important; }
 /* PROJECTS on the accent lens (Alex, 23 Nov: "the letters get lost there, a lighter colour"): while the chosen folder's
    lens is in the accent (something unread), PRO turns a pale gold and JECTS white, with a faint shadow so both read */
-html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on .tab-gold { color: #fff !important; -webkit-text-fill-color: #fff; text-shadow: 0 1px 2px rgba(0, 40, 80, .25); }
-html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-open) > .tabs > button.on .tab-gold b { background: none !important; color: #ffe7a6 !important; -webkit-text-fill-color: #ffe7a6; }
+html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has.u-all:not(.u-open) > .tabs > button.on .tab-gold { color: #fff !important; -webkit-text-fill-color: #fff; text-shadow: 0 1px 2px rgba(0, 40, 80, .25); }
+html:root:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has.u-all:not(.u-open) > .tabs > button.on .tab-gold b { background: none !important; color: #ffe7a6 !important; -webkit-text-fill-color: #ffe7a6; }
+
+/* the blue lens and its ghost only on All (Alex, 23 Nov: "only on ALL blue; moved to another folder, as normal") */

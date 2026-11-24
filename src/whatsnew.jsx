@@ -16,6 +16,7 @@ export const NEWS = [
         'Group names in bold or italic show their first letter properly, not a box with a question mark.',
         'Archived is a word again in the folder bar, as every other folder.',
         'Empty folders: a small folder, one line, and Add Chats or Edit Folder right there.',
+        'Quieter buttons on empty screens: no colour, a fine line, all the same size.',
       ] },
       { title: 'On a phone', items: [
         'Transfer: the Transfer button no longer hides under the bar at the foot of the + sheet.',

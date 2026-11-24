@@ -104,6 +104,7 @@ function usePeopleSearch(meId) {
 // Bring a folder's tab whole into sight in the folder bar (Alex, 23 Nov): clear of the bar's left edge and of
 // Archived, which is held over the bar's right end, so a tab chosen by a tap or a slide is never half hidden
 // the empty folder's own drawing: a glass folder, its back and its open front (Alex, 24 Nov)
+const FE_PEN = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /></svg>
 const FOLD_EMPTY = (
   <svg className="fe-fold" viewBox="0 0 96 80" aria-hidden="true">
     <defs>
@@ -1700,7 +1701,7 @@ export default function Chat({ me, setMe }) {
                     <p>No chats in this folder yet.</p>
                     <div className="fold-empty-acts">
                       <button type="button" className="pill-btn fe-add" onClick={() => editFolder(folder, [], true)}>{I.plus}<span>Add Chats</span></button>
-                      <button type="button" className="pill-btn fe-edit" onClick={() => editFolder(folder)}>Edit Folder</button>
+                      <button type="button" className="pill-btn fe-edit" onClick={() => editFolder(folder)}>{FE_PEN}<span>Edit Folder</span></button>
                     </div>
                   </div>
                 : <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : folder === 'archived' ? 'Nothing here in Archived.' : 'Nothing here.'}</p>)}
@@ -1868,9 +1869,9 @@ export default function Chat({ me, setMe }) {
             <span className="pick-mark"><Wordmark by /></span>
             <p>Pick a chat, or start a new one.</p>
             <div className="pick-acts">
-              <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>{I.person} New chat</button>
-              <button type="button" className="btn" onClick={() => setModal('newgroup')}>{I.people} New group</button>
-              <button type="button" className="btn" onClick={() => setModal('invite')}>{I.link} Invite people</button>
+              <button type="button" className="btn" onClick={() => setModal('newchat')}>{I.person}<span>New chat</span></button>
+              <button type="button" className="btn" onClick={() => setModal('newgroup')}>{I.people}<span>New group</span></button>
+              <button type="button" className="btn" onClick={() => setModal('invite')}>{I.link}<span>Invite</span></button>
             </div>
           </div>
         )}

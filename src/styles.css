@@ -8617,3 +8617,14 @@ html:root:root:root:root .rmx-pics { display: inline-flex; align-items: center; 
 .rmx-wait-ico svg { width: 24px; height: 24px; }
 .rmx-wait p { margin: 6px 0 0; font-size: 14.5px; font-weight: 500; }
 .rmx-wait small { font-size: 13px; color: var(--muted); line-height: 1.4; max-width: 280px; }
+/* a mail's row keeps its own three lines even with Show Last Message off (.rooms.no-prev makes a chat's row a grid; Alex, 24 Nov: "everything mixed up") */
+html:root:root:root:root .rmx .room .room-main { display: flex; flex-direction: column; gap: 1px; padding-top: 0; }
+html:root:root:root:root .rmx .room .room-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+html:root:root:root:root .rmx .room .room-top strong { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html:root:root:root:root .rmx .room .room-top small { flex: none; display: inline-flex; align-items: center; }
+html:root:root:root:root .rmx .room .room-prev { display: -webkit-box; }
+html:root:root:root:root .rmx .room { text-align: left; }
+html:root:root:root:root .rmx .room .room-main { align-items: stretch; }
+html:root:root:root:root .rmx .rmx-sub { max-width: 100%; text-align: left; }
+html:root:root:root:root .rmx .room .room-bottom { justify-content: space-between; }
+html:root:root:root:root .rmx .rmx-abar { left: 0; }

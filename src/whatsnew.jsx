@@ -15,8 +15,8 @@ export const NEWS = [
         'Group pictures: a group with no photo wears the same round as a person with no photo, with the group sign in it, always the same colour for the same group.',
         'Group names in bold or italic show their first letter properly, not a box with a question mark.',
         'Archived is a word again in the folder bar, as every other folder.',
-        'Empty screens made calm: one line and one glass button (Add Chats in an empty folder, New chat when no chat is open).',
-        'On the computer, the welcome screen shows RoarMe without the mark, with by THEMADLIONS right under it.',
+        'Empty folders made calm: one line and one glass button, Add Chats.',
+        'On the computer, the welcome screen is only ROARME with by THEMADLIONS under it.',
         'On a computer the two panels have no white outline any more: the glass glows softly from its edges instead.',
       ] },
       { title: 'On a phone', items: [

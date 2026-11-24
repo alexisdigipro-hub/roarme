@@ -37,6 +37,10 @@ export function Auth() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [note, setNote] = useState('')
+  // the two boxes on sign-up (Alex, 24 Nov: "with ticks, to be sure"): the Terms must be ticked, the emails may be
+  const [agree, setAgree] = useState(false)
+  const [news, setNews] = useState(false)
+  const [nudge, setNudge] = useState(false)
   // a Confirm link from the email that could not be used (emailLink.js)
   useEffect(() => {
     const on = () => setErr('This link has expired or was used already. Sign in, or ask for a new email.')
@@ -53,7 +57,9 @@ export function Auth() {
         if (error) throw error
       } else if (mode === 'up') {
         if (password.length < 8) throw new Error('The password needs at least 8 characters.')
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: appUrl() } })
+        if (!agree) { setNudge(true); setTimeout(() => setNudge(false), 700); throw new Error('Please agree to the Terms of Service and the Privacy Policy to continue.') }
+        // when the person agreed, and whether they want the emails, kept on the account itself
+        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: appUrl(), data: { terms_at: new Date().toISOString(), news } } })
         if (error) throw error
         if (!data.session) setNote('Almost there: open the link we sent to your email, then sign in here.')
       } else {
@@ -88,10 +94,23 @@ export function Auth() {
         {mode !== 'forgot' && <PwField label="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'up' ? 'new-password' : 'current-password'} placeholder={mode === 'up' ? 'Password, at least 8 characters' : 'Password'} />}
         {err && <p className="auth-err">{err}</p>}
         {note && <p className="auth-note">{note}</p>}
+        {mode === 'up' && (
+          <div className="auth-checks">
+            <label className={`auth-check${nudge ? ' nudge' : ''}`}>
+              <input type="checkbox" checked={agree} onChange={(e) => { setAgree(e.target.checked); if (e.target.checked) setErr('') }} />
+              <span className="auth-box" aria-hidden="true" />
+              <span className="auth-check-t">I agree to the <a href={`${appUrl()}?legal=terms`} target="_blank" rel="noreferrer">Terms of Service</a> and the <a href={`${appUrl()}?legal=privacy`} target="_blank" rel="noreferrer">Privacy Policy</a>, with no tolerance for objectionable content or abusive users.</span>
+            </label>
+            <label className="auth-check">
+              <input type="checkbox" checked={news} onChange={(e) => setNews(e.target.checked)} />
+              <span className="auth-box" aria-hidden="true" />
+              <span className="auth-check-t">Send me news and updates from RoarMe by email.</span>
+            </label>
+          </div>
+        )}
         <button className="btn btn-main" disabled={busy}>{busy ? '…' : mode === 'in' ? 'Sign in' : mode === 'up' ? 'Sign up' : 'Send the link'}</button>
-        {mode === 'up' && <p className="auth-legal">By signing up you accept the <a href={`${appUrl()}?legal=terms`} target="_blank" rel="noreferrer">Terms of Service</a> and the <a href={`${appUrl()}?legal=privacy`} target="_blank" rel="noreferrer">Privacy Policy</a>, with no tolerance for objectionable content or abusive users.</p>}
         <div className="auth-links">
-          {mode === 'in' && <><button type="button" onClick={() => setMode('up')}>Create an account</button><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button></>}
+          {mode === 'in' && <><button type="button" onClick={() => { setMode('up'); setErr('') }}>Create an account</button><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button></>}
           {mode !== 'in' && <button type="button" onClick={() => setMode('in')}>I have an account, sign in</button>}
         </div>
       </form>

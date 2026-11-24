@@ -184,6 +184,15 @@ export function MailView() {
   if (step.s === 'accs') {
     return (
       <div className="rmx rmx-accl">
+        {/* Unread, every account's unread mail in one list (Alex, 24 Nov: "unified, in the unread; let's see how it works first") */}
+        <button type="button" className="room rmx-accrow" onClick={() => { setFwd(null); setStep({ s: 'list', acc: 'all', role: 'inbox', unseen: true, name: 'Unread' }) }}>
+          <span className="av av-init rmx-all rmx-unr" style={{ width: 50, height: 50, '--ia': '#5cc0f2', '--ib': '#3aa7e8' }}>{MAIL_I.unread}</span>
+          <span className="room-main">
+            <span className="room-top"><strong>Unread</strong></span>
+            <span className="room-bottom"><span className="room-prev">Every account's unread mail</span>{total > 0 && <span className="badge">{total}</span>}</span>
+          </span>
+          <i className="rmx-chev">{MAIL_I.chev}</i>
+        </button>
         {[all, ...accounts].map((a) => {
           const n = a.id === 'all' ? total : counts[a.id] || 0
           const off = a.id !== 'all' && on && !on.has(a.id)
@@ -248,12 +257,12 @@ export function MailView() {
   const targets = acc.id === 'all'
     ? accounts.filter((a) => on?.has(a.id)).map((a) => ({ account: a.id, path: setup.folders.find((f) => f.account === a.id && f.role === step.role)?.path })).filter((x) => x.path)
     : [{ account: acc.id, path: step.path }]
-  return <MailList key={`${step.acc}|${step.path || step.role}`} acc={acc} step={step} targets={targets} accounts={accounts} folders={setup.folders}
-    offline={acc.id !== 'all' && on && !on.has(acc.id)} onBack={() => back({ s: 'folders', acc: step.acc })} />
+  return <MailList key={`${step.acc}|${step.path || step.role}${step.unseen ? '|u' : ''}`} acc={acc} step={step} targets={targets} accounts={accounts} folders={setup.folders}
+    offline={acc.id !== 'all' && on && !on.has(acc.id)} onBack={() => back(step.unseen ? { s: 'accs' } : { s: 'folders', acc: step.acc })} />
 }
 
 function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
-  const ck = `${acc.id}|${step.path || step.role}`
+  const ck = `${acc.id}|${step.path || step.role}${step.unseen ? '|u' : ''}`
   const [rows, setRows] = useState(() => listCache.get(ck)?.rows || null)
   const [more, setMore] = useState(() => listCache.get(ck)?.more ?? true)
   const [page, setPage] = useState(() => listCache.get(ck)?.page || 0)
@@ -267,7 +276,7 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
     if (!targets.length) { setRows([]); setMore(false); return }
     setBusy(true); setErr('')
     try {
-      const j = await cloud({ action: 'list', items: targets, limit: 30, page: p })
+      const j = await cloud({ action: 'list', items: targets, limit: 30, page: p, unseen: !!step.unseen })
       const errs = Object.values(j.errors || {}).filter((e) => e !== 'missing')
       if (errs.length && !(j.items || []).length) setErr(errs[0])
       const got = j.items || []
@@ -309,7 +318,7 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
       {/* back, the folder and its filters in one slim capsule of liquid glass (Alex, 24 Nov, B of
           https://claude.ai/artifact/BWSMApRMEgeGjPpgRXjeut) */}
       <div className="rmx-head">
-        <Crumb title={step.name} sub={acc.id === 'all' ? 'All accounts' : acc.email} onBack={onBack} />
+        <Crumb title={step.name} sub={step.unseen ? 'Every account' : acc.id === 'all' ? 'All accounts' : acc.email} onBack={onBack} />
         <div className="rmx-fbar">
           <span className="rmx-filters">
             {FILTERS.map(([k, label]) => <button key={k} type="button" className={`round${filter === k ? ' on' : ''}`} aria-label={label} title={label} onClick={() => { setFilter((f) => (f === k ? '' : k)); if (k !== 'search') setQ('') }}>{MAIL_I[k]}</button>)}

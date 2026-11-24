@@ -17,6 +17,7 @@ export const NEWS = [
       ] },
       { title: 'On a phone', items: [
         'Transfer: the Transfer button no longer hides under the bar at the foot of the + sheet.',
+        'Transfer: while it uploads the ring keeps moving, a piece that hangs starts again by itself, and Stop and Keep Chatting stand side by side in the middle.',
       ] },
     ],
   },

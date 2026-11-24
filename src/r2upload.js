@@ -32,11 +32,11 @@ export function transferPro() {
   return proAsk
 }
 
-async function bridge(body) {
+async function bridge(body, note = '') {
   const { data } = await supabase.auth.getSession()
   const headers = { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' }
   if (data.session) headers.Authorization = `Bearer ${data.session.access_token}`
-  const r = await fetch(FN, { method: 'POST', headers, body: JSON.stringify(body) })
+  const r = await fetch(note ? `${FN}?${note}` : FN, { method: 'POST', headers, body: JSON.stringify(body) }) // note: how the upload went, readable in the function's own log (Alex, 24 Nov)
   let d = {}
   try { d = await r.json() } catch { /* not JSON */ }
   if (!r.ok) throw Object.assign(new Error(d.error === 'signed-out' ? 'Sign in again to send.' : d.error || `Error ${r.status}`), { fatal: r.status < 500 })
@@ -49,16 +49,22 @@ const wait = (ms) => new Promise((ok) => setTimeout(ok, ms))
 export function r2Transfer({ onProgress = () => {} } = {}) {
   let stopped = false
   let xhrs = []
+  // a piece that has said nothing at all for a while is started again (Alex, 24 Nov: a 580 KB photo hung 13 s before
+  // its first try gave up): 6 s, or longer for a big piece on a slow line (100 KB a second); any sign of life resets it
   const put = (url, body, onUp) => new Promise((ok, no) => {
     if (stopped) { no(new Error('cancelled')); return }
     const x = new XMLHttpRequest()
     xhrs.push(x)
-    const drop = () => { xhrs = xhrs.filter((y) => y !== x) }
+    const quiet = Math.max(6000, (body.size || 0) / 100)
+    let dog = 0
+    const watch = () => { clearTimeout(dog); dog = setTimeout(() => { x.stalled = true; x.abort() }, quiet) }
+    const drop = () => { clearTimeout(dog); xhrs = xhrs.filter((y) => y !== x) }
     x.open('PUT', url)
-    x.upload.onprogress = (e) => onUp(e.loaded)
+    x.upload.onprogress = (e) => { watch(); onUp(e.loaded) }
     x.onload = () => { drop(); ok(x) }
     x.onerror = () => { drop(); no(new Error('The connection dropped.')) }
-    x.onabort = () => { drop(); no(new Error('cancelled')) }
+    x.onabort = () => { drop(); no(new Error(x.stalled ? 'stalled' : 'cancelled')) }
+    watch()
     x.send(body)
   })
 
@@ -67,6 +73,8 @@ export function r2Transfer({ onProgress = () => {} } = {}) {
     const n = Math.max(1, Math.ceil(f.size / PART))
     let next = 1
     const urls = {}, etags = {}, loaded = {}
+    const t0 = Date.now()
+    let retries = 0
     const sum = () => Object.values(loaded).reduce((a, x) => a + x, 0)
     let signing = null // one signing request at a time, for the next 20 pieces
     const urlFor = async (i) => {
@@ -99,8 +107,9 @@ export function r2Transfer({ onProgress = () => {} } = {}) {
           } catch (e) {
             if (stopped || e.message === 'cancelled' || e.fatal) throw e
             loaded[i] = 0
+            retries++
             if (++tries > 6) throw e
-            await wait(Math.min(30000, 1000 * 2 ** tries))
+            await wait(e.message === 'stalled' ? 300 : Math.min(30000, 1000 * 2 ** tries))
           }
         }
       }
@@ -110,7 +119,7 @@ export function r2Transfer({ onProgress = () => {} } = {}) {
       throw e
     }
     const parts = Object.keys(etags).map((k) => ({ n: +k, etag: etags[k] }))
-    const fin = await bridge({ action: 'complete', key: made.key, uploadId: made.uploadId, parts, name: f.name || 'file', size: f.size, type: f.type || '', days })
+    const fin = await bridge({ action: 'complete', key: made.key, uploadId: made.uploadId, parts, name: f.name || 'file', size: f.size, type: f.type || '', days }, `kb=${Math.round(f.size / 1024)}&ms=${Date.now() - t0}&retries=${retries}`)
     return { name: f.name, size: fin.size || f.size, type: f.type || '', token: fin.token, expires: fin.expires }
   }
 

@@ -16,14 +16,17 @@
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
-<!-- RoarMe's page at roarme.app, redone light (Alex, 23 Nov 2026, after Google's Pixel store: "bright and grouped, PROjects
-     apart, in gold, with plenty of screens"). A floating pill bar, centred headings, rounded tiles with real screens of the
-     app (made-up people), a gold PROjects band with a carousel of the Workspace, then privacy, downloads and questions.
-     EN and GR with the switch in the bar. The app is at /app/. -->
+<!-- RoarMe's page at roarme.app, "Liquid Glass" (Alex, 24 Nov: version B of the sample, in the app's own colours, and a new
+     arrangement): a warm light grey ground with soft pools of light, white frosted glass, Roar Blue (#3AA7E8) for the main
+     buttons and icons. A centred hero with three floating phones; a sticky glass segmented nav (Chats · Calls · Files ·
+     PROjects) whose lens follows the scroll; each of those a large floating screen beside glass cards, sides alternating;
+     a bento of the smaller features; PROjects in its own cream and gold glass panel; privacy, downloads, questions and a
+     last call to action, all glass. EN and GR with the switch in the bar. The screens are made by scripts/landing-shots.mjs.
+     The app is at /app/. -->
 <title>RoarMe · The messenger for crews, with PROjects · by The Mad Lions</title>
 <link rel="canonical" href="https://roarme.app/">
 <meta name="description" content="RoarMe, the messenger for crews by The Mad Lions. Chats, calls and files up to 5 GB with just a username. PROjects turns a group into a whole production: three chats, a Workspace with tasks, locations and files, a link to your Production Hub and payments. Free, for iPhone, Mac, Windows and the browser.">
-<meta name="theme-color" content="#f5f7fb">
+<meta name="theme-color" content="#e9e8e6">
 <meta property="og:title" content="RoarMe · by The Mad Lions">
 <meta property="og:description" content="The messenger for crews. Chats, calls, 5 GB files, and PROjects: a whole production in one group.">
 <meta property="og:url" content="https://roarme.app/">
@@ -32,315 +35,328 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jost:wght@200;300;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Jost:wght@300;600;800&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: light;
-  --bg: #f5f7fb; --white: #ffffff; --ink: #1b1d22; --muted: #5b6270; --dim: #8a909c; --line: rgba(20, 26, 40, .1);
-  --tile: #e7eefa; --tile-2: #eef1f6; --tile-3: #e9f3ee; --tile-4: #f3ecf7;
-  --blue: #2f8fd0; --blue-hi: #3aa7e8;
-  --gold: #a87a1e; --gold-deep: #7d5810; --cream: #fbf5e7; --cream-2: #f5ead0;
-  --gold-grad: linear-gradient(135deg, #d9a93a 0%, #a8761f 45%, #d4a03a 70%, #8a5e14 100%);
-  --sans: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
-  --ease: cubic-bezier(.16, 1, .3, 1);
-  --side: max(20px, env(safe-area-inset-left, 0px));
-  --side-r: max(20px, env(safe-area-inset-right, 0px));
+  --sky1: #e6e5e3; --sky2: #efeeec; --ink: #1c1c1e; --soft: #6e6e73; --dim: #8e8e93;
+  --glass: rgba(255, 255, 255, .62); --glass-hi: rgba(255, 255, 255, .78); --rim: rgba(255, 255, 255, .95); --line: rgba(28, 28, 30, .08);
+  --b1: #55b4ee; --b2: #3aa1e2; --roar: #3aa7e8;
+  --shadow: inset 0 1px 0 #fff, 0 18px 40px rgba(0, 0, 0, .07);
+  --gold-grad: linear-gradient(120deg, #b8860b, #e8c25a 55%, #b8860b);
+  --gold-ink: #5a4313; --gold-soft: #7a6743;
+  --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --spring: cubic-bezier(.25, 1.45, .45, 1); --ease: cubic-bezier(.16, 1, .3, 1);
+  --side: max(16px, env(safe-area-inset-left, 0px)); --side-r: max(16px, env(safe-area-inset-right, 0px));
+  --blur: blur(22px) saturate(1.3);
 }
 * { box-sizing: border-box; }
-html { background: var(--bg); scroll-behavior: smooth; overflow-x: clip; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; line-height: 1.5; }
+html { background: var(--sky1); scroll-behavior: smooth; overflow-x: clip; scroll-padding-top: 150px; }
+body {
+  margin: 0; color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: clip;
+  background:
+    radial-gradient(70% 40% at 12% 4%, #f6f5f3 0, transparent 60%),
+    radial-gradient(60% 35% at 92% 18%, #dcdbd8 0, transparent 60%),
+    radial-gradient(60% 30% at 8% 52%, #f4f3f1 0, transparent 60%),
+    radial-gradient(55% 30% at 95% 78%, #dddcd9 0, transparent 60%),
+    linear-gradient(180deg, var(--sky1), var(--sky2) 40%, #f3f2f0 70%, var(--sky1));
+}
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; height: auto; }
 button { font: inherit; color: inherit; cursor: pointer; }
-:focus-visible { outline: 2px solid var(--blue-hi); outline-offset: 3px; border-radius: 10px; }
+:focus-visible { outline: 2px solid var(--roar); outline-offset: 3px; border-radius: 12px; }
 .wrap { max-width: 1180px; margin: 0 auto; padding-left: var(--side); padding-right: var(--side-r); }
-.rm { font-family: Jost, var(--sans); letter-spacing: .02em; } .rm .a { font-weight: 300; } .rm .b { font-weight: 800; }
-/* the PROJECTS word (Alex, 23 Nov): PRO gold and bold, JECTS black and thin */
-.gold-word { font-family: Jost, var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
+.glass { background: var(--glass); border: 1px solid var(--rim); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+.logo { font: 300 19px/1 var(--sans); letter-spacing: .08em; white-space: nowrap; } .logo b { font-weight: 800; }
+/* the PROJECTS word (Alex, 23 Nov): PRO gold and bold, JECTS in the words' colour and thin */
+.gold-word { font-family: Jost, var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
 .gold-word b { font-weight: 800; background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .gold-word i { font-style: normal; font-weight: 300; color: var(--ink); }
 
-/* the floating bar */
-.bar { position: fixed; z-index: 50; top: calc(env(safe-area-inset-top, 0px) + 12px); left: var(--side); right: var(--side-r); max-width: 1180px; margin: 0 auto; height: 60px; display: flex; align-items: center; gap: 12px; padding: 0 10px 0 22px; border-radius: 30px; background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: 0 6px 24px rgba(20, 30, 50, .1), inset 0 0 0 1px rgba(255, 255, 255, .7); }
-.bar .rm { font-size: 22px; }
-.bar nav { margin-left: auto; display: flex; gap: 2px; }
-.bar nav a { padding: 9px 14px; border-radius: 999px; font-size: 14.5px; font-weight: 500; color: var(--muted); transition: background .2s, color .2s; }
-.bar nav a:hover { background: var(--tile-2); color: var(--ink); }
-.bar nav a.pro { font-weight: 600; }
-.lang { display: flex; padding: 3px; border-radius: 999px; background: var(--tile-2); }
-.lang button { border: 0; background: none; height: 32px; padding: 0 11px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--dim); }
-.lang button.on { background: var(--white); color: var(--ink); box-shadow: 0 1px 4px rgba(0, 0, 0, .08); }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 26px; border-radius: 999px; font-size: 16px; font-weight: 600; border: 1.5px solid var(--ink); background: none; transition: transform .25s var(--ease), background .2s, color .2s; white-space: nowrap; }
-.btn:hover { background: var(--ink); color: #fff; }
-.btn:active { transform: scale(.97); }
-.btn.fill { background: var(--ink); color: #fff; }
-.btn.fill:hover { background: #33363d; }
-.btn.blue { background: var(--blue); border-color: var(--blue); color: #fff; }
-.btn.blue:hover { background: #2a7fb9; }
-.btn.goldb { border-color: var(--gold-deep); color: var(--gold-deep); }
-.btn.goldb:hover { background: var(--gold-deep); color: #fff; }
-.btn.goldf { background: var(--gold-grad); border: 0; color: #fff; }
-.btn.sm { height: 40px; padding: 0 18px; font-size: 14.5px; }
-.btn svg { width: 18px; height: 18px; flex: none; }
-.bar .btn.sm .short { display: none; }
+/* pills, the only buttons */
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; padding: 0 26px; border-radius: 999px; font: 700 15px/1 var(--sans); border: 1px solid var(--rim); background: var(--glass); color: var(--ink); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: inset 0 1px 0 #fff, 0 8px 24px rgba(0, 0, 0, .08); transition: transform .25s var(--spring), box-shadow .25s; white-space: nowrap; }
+.pill:hover { transform: scale(1.04); } .pill:active { transform: scale(.96); }
+.pill.main { background: linear-gradient(170deg, var(--b1), var(--b2)); color: #fff; border-color: rgba(255, 255, 255, .5); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 10px 24px rgba(58, 161, 226, .3); }
+.pill.gold { background: linear-gradient(160deg, #e3b94c, #b8860b); color: #fff; border-color: rgba(255, 255, 255, .55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 10px 24px rgba(184, 134, 11, .28); }
+.pill.sm { min-height: 40px; padding: 0 18px; font-size: 13.5px; }
+.pill svg { width: 18px; height: 18px; flex: none; }
+.ic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; flex: none; background: linear-gradient(170deg, var(--b1), var(--b2)); color: #fff; box-shadow: 0 8px 18px rgba(58, 161, 226, .28); }
+.ic svg { width: 22px; height: 22px; }
+
+/* the bar at the top */
+.bar { position: fixed; z-index: 60; top: calc(env(safe-area-inset-top, 0px) + 12px); left: var(--side); right: var(--side-r); max-width: 1180px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 7px 7px 7px 22px; border-radius: 999px; }
+.bar .logo { margin-right: auto; }
+.lang { display: flex; padding: 3px; border-radius: 999px; background: rgba(28, 28, 30, .06); }
+.lang button { border: 0; background: none; height: 32px; padding: 0 12px; border-radius: 999px; font: 700 12.5px/1 var(--sans); color: var(--soft); transition: background .2s, color .2s; }
+.lang button.on { background: #fff; color: var(--ink); box-shadow: 0 3px 10px rgba(0, 0, 0, .1); }
+.bar .pill .short { display: none; }
 
 /* sections */
-section { padding: 110px 0 0; }
-.head { text-align: center; max-width: 780px; margin: 0 auto; }
-.kick { font-size: 18px; font-weight: 500; color: var(--ink); margin: 0 0 14px; }
-h1, h2 { margin: 0; font-weight: 600; letter-spacing: -.025em; line-height: 1.06; text-wrap: balance; }
-h1 { font-size: clamp(42px, 7vw, 84px); }
-h2 { font-size: clamp(34px, 5.2vw, 62px); }
-.lead { font-size: clamp(17px, 2vw, 20px); color: var(--muted); margin: 22px auto 0; max-width: 640px; }
-.acts { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
+section { padding: 120px 0 0; }
+.head { text-align: center; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 999px; font: 600 13px/1.2 var(--sans); color: var(--soft); }
+.badge b { color: var(--roar); font-weight: 700; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font: 800 clamp(40px, 6.4vw, 84px)/1.03 var(--sans); letter-spacing: -.035em; max-width: 15ch; }
+h1 span, h2 span { background: linear-gradient(120deg, #2f97d8, #5cb9f0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+h2 { font: 800 clamp(32px, 4.6vw, 56px)/1.06 var(--sans); letter-spacing: -.03em; }
+.lede { font: 400 clamp(17px, 1.9vw, 19px)/1.6 var(--sans); color: var(--soft); max-width: 50ch; margin: 0; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
-/* hero */
-.hero { padding-top: calc(env(safe-area-inset-top, 0px) + 150px); }
-.hero .kick b { color: var(--blue); font-weight: 600; }
-.stage { margin-top: 56px; position: relative; border-radius: 36px; background: linear-gradient(180deg, #dfe9f8, #cfdff3); padding: clamp(24px, 5vw, 64px) clamp(16px, 5vw, 64px) 0; overflow: hidden; }
-.stage .desk { border-radius: 18px 18px 0 0; box-shadow: 0 30px 70px rgba(20, 40, 80, .22); width: 86%; }
-.stage .phone { position: absolute; right: clamp(16px, 5vw, 60px); bottom: -40px; width: clamp(130px, 23%, 270px); }
-.phone { border-radius: 38px; background: #0d0e10; padding: 9px; box-shadow: 0 30px 60px rgba(10, 20, 40, .28); }
-.phone img { border-radius: 30px; width: 100%; }
+/* hero: three phones floating */
+.hero { padding-top: calc(env(safe-area-inset-top, 0px) + 140px); }
+.phones { position: relative; height: 640px; width: 100%; max-width: 940px; margin: 36px auto 0; }
+.ph { position: absolute; top: 80px; width: 250px; border-radius: 46px; padding: 9px; background: rgba(255, 255, 255, .5); border: 1px solid var(--rim); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 40px 80px rgba(0, 0, 0, .16); }
+.ph img { border-radius: 37px; width: 100%; }
+.ph.a { left: 50%; top: 0; width: 280px; margin-left: -140px; z-index: 2; }
+.ph.b { left: 6%; rotate: -8deg; } .ph.c { right: 6%; rotate: 8deg; }
+.float { animation: bob 6s ease-in-out infinite; }
+@keyframes bob { 50% { translate: 0 -10px; } }
 
-/* tiles, as the Pixel store's: a soft coloured box, the picture inside, the words under it */
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; margin-top: 56px; }
-.tile { display: flex; flex-direction: column; gap: 18px; }
-.tile .box { border-radius: 30px; background: var(--tile); padding: 44px 36px 0; display: flex; justify-content: center; align-items: flex-start; overflow: hidden; aspect-ratio: 1 / 1; }
-.tile .box .phone { width: min(60%, 300px); flex: none; }
-.tile.t2 .box { background: var(--tile-3); } .tile.t3 .box { background: var(--tile-4); } .tile.t4 .box { background: #e3e6ec; }
-.tile p { margin: 0; font-size: clamp(19px, 2.1vw, 25px); line-height: 1.3; letter-spacing: -.01em; padding: 0 4px; }
-.tile p b { font-weight: 600; }
-.wide { margin-top: 28px; border-radius: 30px; background: var(--tile-2); padding: clamp(20px, 4vw, 48px) clamp(16px, 4vw, 48px) 0; overflow: hidden; }
-.wide img { border-radius: 16px 16px 0 0; box-shadow: 0 24px 60px rgba(20, 30, 60, .18); width: 100%; }
-.cap { margin: 18px 4px 0; font-size: clamp(19px, 2.1vw, 25px); line-height: 1.3; }
+/* the sticky segmented nav, its lens follows the scroll */
+.segbar { position: sticky; z-index: 50; top: calc(env(safe-area-inset-top, 0px) + 84px); display: flex; justify-content: center; margin: 70px 0 0; pointer-events: none; }
+.seg { position: relative; display: flex; padding: 5px; border-radius: 999px; pointer-events: auto; max-width: 100%; }
+.seg a { position: relative; z-index: 1; padding: 11px 20px; border-radius: 999px; font: 700 14px/1 var(--sans); color: var(--soft); transition: color .25s; white-space: nowrap; }
+.seg a.on { color: var(--ink); }
+.seg a .gold-word { font-size: 14px; }
+.lens { position: absolute; z-index: 0; top: 5px; bottom: 5px; left: 0; width: 0; border-radius: 999px; background: #fff; box-shadow: 0 4px 14px rgba(30, 90, 140, .15), inset 0 0 0 1px rgba(255, 255, 255, .9); transition: transform .45s var(--spring), width .45s var(--spring), opacity .3s; opacity: 0; }
 
-/* the gold band */
-.gold { margin-top: 130px; background: radial-gradient(1100px 500px at 50% 0%, #fff8e6, transparent 70%), var(--cream); padding: 110px 0 120px; }
-.gold section { padding-top: 0; }
-.gold .kick { font-size: 22px; }
-.gold .kick .gold-word { font-size: 30px; }
-.gold h2 { color: #2a2112; }
-.gold .lead { color: #6b5a3c; }
-.goldline { width: 64px; height: 3px; border-radius: 3px; background: var(--gold-grad); margin: 0 auto 26px; }
-.rail-wrap { position: relative; margin-top: 56px; }
-.rail { --edge: max(var(--side), calc((100vw - 1180px) / 2 + var(--side))); display: flex; gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 0 var(--edge) 8px; scroll-padding: 0 var(--edge); }
-.rail::-webkit-scrollbar { display: none; }
-.card { flex: none; width: min(78vw, 820px); scroll-snap-align: start; display: flex; flex-direction: column; gap: 16px; }
-.card .shot { border-radius: 26px; background: var(--cream-2); padding: 22px 22px 0; overflow: hidden; }
-.card .shot img { border-radius: 12px 12px 0 0; box-shadow: 0 18px 44px rgba(90, 60, 10, .2); }
-.card h3 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
-.card p { margin: -8px 0 0; color: #6b5a3c; font-size: 16px; max-width: 640px; }
-.arrows { display: flex; gap: 10px; justify-content: center; margin-top: 26px; }
-.arrows button { width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--white); box-shadow: 0 4px 14px rgba(90, 60, 10, .16); display: grid; place-items: center; transition: transform .2s var(--ease); }
-.arrows button:active { transform: scale(.92); }
-.arrows svg { width: 20px; height: 20px; }
-.gold .grid .box { background: var(--cream-2); }
-.gold .grid .t2 .box { background: #f1e3c3; } .gold .grid .t3 .box { background: #efe5d2; } .gold .grid .t4 .box { background: #f6e9cc; }
-.feats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 56px; }
-.feat { border-radius: 24px; background: rgba(255, 255, 255, .7); padding: 24px; box-shadow: inset 0 0 0 1px rgba(168, 122, 30, .14); }
-.feat i { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--gold-grad); color: #fff; margin-bottom: 14px; }
-.feat i svg { width: 22px; height: 22px; }
-.feat h4 { margin: 0 0 6px; font-size: 17px; font-weight: 600; color: #2a2112; }
-.feat p { margin: 0; font-size: 15px; color: #6b5a3c; }
-.free { margin-top: 30px; border-radius: 24px; background: rgba(255, 255, 255, .8); box-shadow: inset 0 0 0 1px rgba(168, 122, 30, .16); }
-.free summary { list-style: none; display: flex; align-items: center; gap: 16px; padding: 22px 26px; cursor: pointer; font-size: 18px; font-weight: 500; color: #2a2112; }
+/* a feature: one large floating screen beside glass cards, sides alternating */
+.feat-sec { padding-top: 110px; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: center; margin-top: 56px; }
+.split.flip .shot { order: 2; }
+.shot { position: relative; display: flex; justify-content: center; }
+.shot::before { content: ''; position: absolute; inset: 8% 4%; border-radius: 50%; background: radial-gradient(closest-side, rgba(85, 180, 238, .28), transparent); filter: blur(30px); z-index: 0; }
+.shot .ph { position: relative; top: auto; left: auto; right: auto; width: min(330px, 78%); z-index: 1; }
+.shot .desk { position: relative; z-index: 1; border-radius: 26px; padding: 8px; background: rgba(255, 255, 255, .5); border: 1px solid var(--rim); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 40px 80px rgba(0, 0, 0, .14); }
+.shot .desk img { border-radius: 19px; }
+.cards { display: flex; flex-direction: column; gap: 16px; }
+.card { padding: 24px 26px; border-radius: 30px; display: flex; gap: 18px; align-items: flex-start; }
+.card p { margin: 0; color: var(--soft); font-size: 16px; line-height: 1.55; }
+.card p b { display: block; color: var(--ink); font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.split.wide { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+
+/* bento */
+.bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(190px, auto); gap: 16px; margin-top: 56px; }
+.tile { border-radius: 32px; padding: 26px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; position: relative; }
+.tile h3 { font: 700 18px/1.25 var(--sans); }
+.tile p { margin: 0; color: var(--soft); font-size: 15px; line-height: 1.5; }
+.tile p b { display: block; color: var(--ink); font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.tile .ic { width: 40px; height: 40px; } .tile .ic svg { width: 19px; height: 19px; }
+.tile.big { grid-column: span 2; grid-row: span 2; }
+.tile.tall { grid-row: span 2; }
+.tile .crop { margin-top: auto; border-radius: 20px; overflow: hidden; box-shadow: 0 18px 40px rgba(0, 0, 0, .12); border: 1px solid var(--rim); }
+.tile.big .crop { margin: 8px -26px -26px; border-radius: 20px 20px 0 0; border-bottom: 0; }
+.tile.tall .crop { margin: 8px auto -26px; width: 82%; border-radius: 28px 28px 0 0; border-bottom: 0; aspect-ratio: 600 / 760; }
+.tile.tall .crop img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+/* PROjects, its own cream and gold glass panel */
+.pro { margin-top: 120px; border-radius: 44px; padding: 64px clamp(20px, 5vw, 64px); background: linear-gradient(150deg, rgba(255, 248, 232, .86), rgba(255, 255, 255, .6)); border: 1px solid var(--rim); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 #fff, 0 30px 60px rgba(160, 120, 30, .14); }
+.pro .head .gold-word { font-size: clamp(30px, 4vw, 44px); }
+.pro h2 { color: #2a2112; }
+.pro .lede { color: var(--gold-soft); }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.chip { display: inline-flex; align-items: center; gap: 9px; padding: 10px 18px; border-radius: 999px; font: 700 14px/1 var(--sans); background: rgba(255, 255, 255, .72); border: 1px solid var(--rim); box-shadow: inset 0 1px 0 #fff, 0 6px 16px rgba(120, 90, 20, .1); }
+.chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent); }
+.deskshow { margin-top: 44px; }
+.deskshow .screen { border-radius: 28px; padding: 9px; background: rgba(255, 255, 255, .55); border: 1px solid var(--rim); box-shadow: 0 34px 70px rgba(90, 60, 10, .18); }
+.deskshow .screen img { border-radius: 20px; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+.pick { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+.pick button { border: 1px solid var(--rim); background: rgba(255, 255, 255, .55); border-radius: 999px; padding: 11px 18px; font: 700 14px/1 var(--sans); color: var(--gold-soft); box-shadow: inset 0 1px 0 #fff; transition: background .2s, color .2s, transform .25s var(--spring); }
+.pick button:active { transform: scale(.96); }
+.pick button.on { background: #fff; color: #2a2112; box-shadow: inset 0 1px 0 #fff, 0 6px 16px rgba(120, 90, 20, .14); }
+.pcap { text-align: center; max-width: 620px; margin: 16px auto 0; color: var(--gold-soft); font-size: 16px; min-height: 3em; }
+.pphones { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 56px; }
+.pcard { border-radius: 30px; padding: 22px 20px; background: rgba(255, 255, 255, .6); border: 1px solid var(--rim); box-shadow: inset 0 1px 0 #fff, 0 14px 30px rgba(120, 90, 20, .08); display: flex; flex-direction: column; gap: 16px; }
+.pcard .mini { border-radius: 26px; padding: 6px; background: rgba(255, 255, 255, .7); border: 1px solid var(--rim); box-shadow: 0 16px 30px rgba(90, 60, 10, .14); width: 78%; margin: 0 auto; }
+.pcard .mini img { border-radius: 20px; }
+.pcard .dollar { margin: 18px auto; width: 110px; height: 110px; border-radius: 50%; display: grid; place-items: center; font: 800 52px/1 Jost, var(--sans); color: #fff; background: linear-gradient(160deg, #e3b94c, #b8860b); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .45), 0 20px 40px rgba(184, 134, 11, .3); }
+.pcard p { margin: 0; color: var(--gold-soft); font-size: 15px; line-height: 1.5; }
+.pcard p b { display: block; color: #2a2112; font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.pfeats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.pf { border-radius: 26px; padding: 22px; background: rgba(255, 255, 255, .55); border: 1px solid var(--rim); box-shadow: inset 0 1px 0 #fff; }
+.pf .gi { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(160deg, #e3b94c, #b8860b); color: #fff; margin-bottom: 12px; box-shadow: 0 8px 18px rgba(184, 134, 11, .25); }
+.pf .gi svg { width: 20px; height: 20px; }
+.pf h4 { margin: 0 0 6px; font: 700 17px/1.3 var(--sans); color: #2a2112; }
+.pf p { margin: 0; font-size: 15px; color: var(--gold-soft); }
+.free { margin-top: 16px; border-radius: 26px; background: rgba(255, 255, 255, .7); border: 1px solid var(--rim); box-shadow: inset 0 1px 0 #fff; }
+.free summary { list-style: none; display: flex; align-items: center; gap: 16px; padding: 18px 22px; cursor: pointer; font: 600 17px/1.4 var(--sans); color: #2a2112; }
 .free summary::-webkit-details-marker { display: none; }
-.free summary .ic { width: 40px; height: 40px; border-radius: 12px; background: var(--gold-grad); color: #fff; display: grid; place-items: center; flex: none; }
-.free summary .ic svg { width: 20px; height: 20px; }
-.free summary .chev { margin-left: auto; transition: transform .3s var(--ease); }
-.free[open] summary .chev { transform: rotate(180deg); }
-.free .in { padding: 0 26px 24px 82px; color: #6b5a3c; font-size: 16px; }
+.free summary .gi { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(160deg, #e3b94c, #b8860b); color: #fff; flex: none; }
+.free summary .gi svg { width: 19px; height: 19px; }
+.chev { margin-left: auto; flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .8); border: 1px solid var(--rim); transition: transform .35s var(--spring); }
+.chev svg { width: 16px; height: 16px; }
+details[open] .chev { transform: rotate(180deg); }
+.free .in { padding: 0 22px 22px 78px; color: var(--gold-soft); font-size: 16px; }
 
 /* privacy */
-.cards3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 52px; }
-.pc { border-radius: 28px; background: var(--white); padding: 30px; box-shadow: 0 1px 0 var(--line); }
-.pc i { width: 48px; height: 48px; border-radius: 16px; background: var(--tile); color: var(--blue); display: grid; place-items: center; margin-bottom: 18px; }
-.pc i svg { width: 24px; height: 24px; }
-.pc h4 { margin: 0 0 8px; font-size: 19px; font-weight: 600; }
-.pc p { margin: 0; color: var(--muted); font-size: 15.5px; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 52px; }
+.trio .tile { min-height: 0; }
 
-/* the rest, as a quiet list */
-.more { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 36px; margin-top: 48px; }
-.mi { padding: 22px 0; border-top: 1px solid var(--line); }
-.mi b { display: block; font-size: 17px; font-weight: 600; margin-bottom: 4px; }
-.mi span { color: var(--muted); font-size: 15px; }
-
-/* downloads */
+/* downloads, as glass platform cards */
 .dls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 52px; }
-.dl { border-radius: 28px; background: var(--white); padding: 28px 22px 22px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 0 var(--line); }
-.dl i { width: 44px; height: 44px; display: grid; place-items: center; color: var(--ink); }
-.dl i svg { width: 30px; height: 30px; }
-.dl h4 { margin: 4px 0 0; font-size: 21px; font-weight: 600; }
-.dl small { color: var(--muted); font-size: 14.5px; min-height: 44px; }
-.dl .btn { margin-top: auto; }
-.dl .btn + .btn { margin-top: 0; }
+.dl { border-radius: 32px; padding: 28px 22px 22px; display: flex; flex-direction: column; gap: 8px; }
+.dl .pi { width: 58px; height: 58px; border-radius: 20px; display: grid; place-items: center; background: #fff; border: 1px solid var(--rim); box-shadow: 0 10px 24px rgba(0, 0, 0, .08); margin-bottom: 8px; }
+.dl .pi svg { width: 28px; height: 28px; }
+.dl h3 { font: 800 22px/1.2 var(--sans); }
+.dl small { color: var(--soft); font-size: 14.5px; min-height: 44px; display: block; }
+.dl .pill { margin-top: auto; width: 100%; }
+.dl .pill + .pill { margin-top: 8px; }
 
-/* questions */
-.qa { max-width: 820px; margin: 48px auto 0; }
-.qa details { border-top: 1px solid var(--line); }
-.qa details:last-child { border-bottom: 1px solid var(--line); }
-.qa summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 4px; cursor: pointer; font-size: 18px; font-weight: 500; }
+/* questions, a glass accordion */
+.qa { max-width: 840px; margin: 48px auto 0; display: flex; flex-direction: column; gap: 10px; }
+.qa details { border-radius: 26px; }
+.qa summary { list-style: none; display: flex; align-items: center; gap: 16px; padding: 18px 18px 18px 26px; cursor: pointer; font: 700 17px/1.4 var(--sans); }
 .qa summary::-webkit-details-marker { display: none; }
-.qa summary::after { content: ''; width: 12px; height: 12px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-4px); transition: transform .3s var(--ease); flex: none; }
-.qa details[open] summary::after { transform: rotate(225deg) translateY(-2px); }
-.qa p { margin: 0 4px 22px; color: var(--muted); font-size: 16px; }
+.qa p { margin: 0; padding: 0 26px 22px; color: var(--soft); font-size: 16px; }
 
-footer { margin-top: 120px; border-top: 1px solid var(--line); padding: 34px 0 calc(34px + env(safe-area-inset-bottom, 0px)); }
-footer .wrap { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+/* the last call */
+.cta { margin-top: 120px; border-radius: 44px; padding: 64px clamp(20px, 5vw, 64px); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 18px; position: relative; overflow: hidden; }
+.cta::before { content: ''; position: absolute; inset: -40% 20% auto; height: 120%; background: radial-gradient(closest-side, rgba(85, 180, 238, .22), transparent); z-index: -1; }
+.cta img.mark { width: 76px; height: 76px; border-radius: 22px; box-shadow: 0 14px 34px rgba(0, 0, 0, .18); }
+
+footer { margin-top: 90px; padding: 0 0 calc(30px + env(safe-area-inset-bottom, 0px)); }
+footer .in { border-radius: 32px; padding: 22px 26px; display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; font-size: 14px; color: var(--soft); }
 footer nav { display: flex; gap: 8px; flex-wrap: wrap; }
-footer nav a { padding: 8px 14px; border-radius: 999px; background: var(--white); box-shadow: 0 1px 0 var(--line); }
-footer img { width: 128px; filter: invert(1); opacity: .5; }
+footer nav a { padding: 9px 15px; border-radius: 999px; background: rgba(255, 255, 255, .7); border: 1px solid var(--rim); box-shadow: inset 0 1px 0 #fff; font-weight: 600; color: var(--ink); }
+footer img { width: 128px; opacity: .72; }
 
 /* coming in */
 .rv { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
 .rv.in { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) { .rv { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: reduce) { .rv { opacity: 1; transform: none; transition: none; } .float { animation: none; } html { scroll-behavior: auto; } .lens { transition: none; } }
 
-@media (max-width: 980px) {
-  .bar nav { display: none; }
-  .bar .lang { margin-left: auto; }
-  .feats, .cards3, .more { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 1020px) {
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pphones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pfeats, .trio { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .phones { height: 560px; } .ph { width: 210px; } .ph.a { width: 240px; margin-left: -120px; } .ph.b { left: 2%; } .ph.c { right: 2%; }
 }
-/* a phone: everything centred (Alex, 23 Nov) */
-@media (max-width: 680px) {
-  section { padding-top: 84px; }
-  .bar { height: 54px; padding: 0 7px 0 18px; }
-  .bar .rm { font-size: 19px; }
-  .bar .btn.sm { padding: 0 15px; height: 38px; } .bar .btn.sm .long { display: none; } .bar .btn.sm .short { display: inline; }
-  .hero { padding-top: calc(env(safe-area-inset-top, 0px) + 118px); }
-  .stage { border-radius: 28px; margin-top: 40px; }
-  .stage .desk { width: 100%; }
-  .stage .phone { width: 34%; right: 12px; bottom: -28px; border-radius: 24px; padding: 5px; }
-  .stage .phone img { border-radius: 20px; }
-  .grid { grid-template-columns: minmax(0, 1fr); gap: 36px; margin-top: 40px; }
-  .tile, .tile p, .cap, .card, .card h3, .card p { text-align: center; }
-  .tile .box { padding: 28px 28px 0; }
-  .card { width: 86vw; } .card p { margin-left: auto; margin-right: auto; }
-  .card .shot { padding: 12px 12px 0; border-radius: 22px; }
-  .gold { margin-top: 90px; padding: 80px 0 90px; }
-  .feats, .cards3, .more, .dls { grid-template-columns: minmax(0, 1fr); }
-  .feat, .pc, .dl, .mi { text-align: center; }
-  .feat i, .pc i, .dl i { margin-left: auto; margin-right: auto; }
-  .dl { align-items: stretch; }
+/* a phone: one column, everything centred (Alex, 23 Nov), nothing spilling sideways */
+@media (max-width: 760px) {
+  html { scroll-padding-top: 130px; }
+  section, .feat-sec { padding-top: 84px; }
+  .bar { padding: 6px 6px 6px 18px; gap: 8px; }
+  .bar .logo { font-size: 17px; }
+  .bar .pill .long { display: none; } .bar .pill .short { display: inline; }
+  .hero { padding-top: calc(env(safe-area-inset-top, 0px) + 110px); }
+  .phones { height: 430px; overflow: hidden; margin-top: 24px; border-radius: 0 0 40px 40px; }
+  .ph { width: 158px; top: 56px; border-radius: 32px; padding: 6px; } .ph img { border-radius: 26px; }
+  .ph.a { width: 186px; margin-left: -93px; } .ph.b { left: -4%; } .ph.c { right: -4%; }
+  .segbar { margin-top: 40px; top: calc(env(safe-area-inset-top, 0px) + 74px); }
+  .seg a { padding: 10px 12px; font-size: 13px; } .seg a .gold-word { font-size: 13px; }
+  .split, .split.wide { grid-template-columns: minmax(0, 1fr); gap: 32px; margin-top: 36px; }
+  .split.flip .shot { order: 0; }
+  .card { flex-direction: column; align-items: center; text-align: center; padding: 22px; }
+  .bento, .pphones, .pfeats, .trio, .dls { grid-template-columns: minmax(0, 1fr); }
+  .tile.big, .tile.tall { grid-column: auto; grid-row: auto; }
+  .tile, .pcard, .pf, .dl { align-items: center; text-align: center; }
+  .tile.big .crop { margin: 8px -26px -26px; }
+  .tile.tall .crop { width: 70%; }
+  .pro, .cta { border-radius: 34px; padding: 44px 18px; margin-top: 84px; }
+  .pf .gi { margin-left: auto; margin-right: auto; }
   .free summary { flex-direction: column; text-align: center; gap: 10px; }
   .free summary .chev { margin: 0 auto; }
-  .free .in { padding: 0 22px 22px; text-align: center; }
-  .qa summary { justify-content: center; text-align: center; flex-direction: column; gap: 8px; }
-  .qa p { text-align: center; }
-  footer .wrap { flex-direction: column; justify-content: center; text-align: center; }
+  .free .in { padding: 0 20px 20px; text-align: center; }
+  .qa summary { flex-direction: column; text-align: center; gap: 10px; padding: 18px 18px 16px; }
+  .qa summary .chev { margin: 0 auto; }
+  .qa p { text-align: center; padding: 0 20px 20px; }
+  .deskshow .screen { border-radius: 20px; padding: 6px; } .deskshow .screen img { border-radius: 15px; }
+  footer .in { flex-direction: column; justify-content: center; text-align: center; }
   footer nav { justify-content: center; }
 }
+@media (max-width: 380px) { .seg a { padding: 10px 9px; font-size: 12.5px; } .lang button { padding: 0 9px; } }
 </style>
 </head>
 <body>
 
-<header class="bar">
-  <a href="#top" aria-label="RoarMe"><span class="rm"><span class="a">ROAR</span><span class="b">ME</span></span></a>
-  <nav aria-label="Sections">
-    <a href="#chat" data-t="nav.chat">Chat</a>
-    <a href="#projects" class="pro"><span class="gold-word"><b>PRO</b><i>JECTS</i></span></a>
-    <a href="#privacy" data-t="nav.privacy">Privacy</a>
-    <a href="#download" data-t="nav.download">Download</a>
-    <a href="#faq" data-t="nav.faq">Questions</a>
-  </nav>
+<header class="bar glass">
+  <a href="#top" class="logo" aria-label="RoarMe">ROAR<b>ME</b></a>
   <div class="lang" role="group" aria-label="Language"><button type="button" data-lang="en" class="on">EN</button><button type="button" data-lang="el">GR</button></div>
-  <a class="btn sm blue" href="/app/"><span class="long" data-t="cta.open">Open RoarMe</span><span class="short" data-t="cta.go">Open</span></a>
+  <a class="pill sm main" href="/app/"><span class="long" data-t="cta.open">Open RoarMe</span><span class="short" data-t="cta.go">Open</span></a>
 </header>
 
 <main id="top">
   <section class="hero">
     <div class="wrap">
       <div class="head rv">
-        <p class="kick" data-t="h.kick" data-html><b>RoarMe</b> · the messenger for crews</p>
-        <h1 data-t="h.title">Everything a crew says, in one place.</h1>
-        <p class="lead" data-t="h.lead">Chats, calls and files up to 5 GB with just a username. And PROjects, where a group becomes a whole production.</p>
-        <div class="acts">
-          <a class="btn fill" href="/app/" data-t="cta.open">Open RoarMe</a>
-          <a class="btn" href="#download" data-t="cta.dl">Download</a>
+        <span class="badge glass" data-t="h.kick" data-html><b>RoarMe</b> · the messenger for crews</span>
+        <h1 data-t="h.title" data-html>Everything a crew says, <span>in one place.</span></h1>
+        <p class="lede" data-t="h.lead">Chats, calls and files up to 5 GB with just a username. And PROjects, where a group becomes a whole production.</p>
+        <div class="row">
+          <a class="pill main" href="/app/" data-t="cta.open">Open RoarMe</a>
+          <a class="pill" href="#download" data-t="cta.dl">Download</a>
         </div>
       </div>
-      <div class="stage rv">
-        <img class="desk" src="screens/desk-chat.jpg" alt="RoarMe on a computer: the chat list and a chat" width="1600" height="1000">
-        <div class="phone"><img src="screens/phone-chat.jpg" alt="RoarMe on a phone: a chat" width="600" height="1304"></div>
+      <div class="phones rv" aria-hidden="true">
+        <div class="ph b float" style="animation-delay:-2s"><img src="screens/phone-chats.jpg" alt="" width="600" height="1303"></div>
+        <div class="ph a float"><img src="screens/phone-chat.jpg" alt="" width="600" height="1303"></div>
+        <div class="ph c float" style="animation-delay:-4s"><img src="screens/phone-pro-chat.jpg" alt="" width="600" height="1303"></div>
       </div>
     </div>
   </section>
 
-  <section id="chat">
-    <div class="wrap">
-      <div class="head rv">
-        <p class="kick" data-t="c.kick">Chat</p>
-        <h2 data-t="c.title">Talk, call, share. No phone number.</h2>
-        <p class="lead" data-t="c.lead">Sign up with an email and pick your @name. Friends find you by it, and your number stays yours.</p>
-      </div>
-      <div class="grid">
-        <div class="tile rv"><div class="box"><div class="phone"><img src="screens/phone-chats.jpg" alt="" loading="lazy" width="600" height="1304"></div></div><p data-t="c.t1" data-html><b>Folders that keep order.</b> Your own folders, Unread at one end, Archived at the other.</p></div>
-        <div class="tile t2 rv"><div class="box"><div class="phone"><img src="screens/phone-group.jpg" alt="" loading="lazy" width="600" height="1304"></div></div><p data-t="c.t2" data-html><b>Groups for every shoot.</b> Polls, places, replies and reactions, all in one thread.</p></div>
-        <div class="tile t3 rv"><div class="box"><div class="phone"><img src="screens/phone-calls.jpg" alt="" loading="lazy" width="600" height="1304"></div></div><p data-t="c.t3" data-html><b>Voice and video calls.</b> One to one or the whole group, with a link anyone can join.</p></div>
-        <div class="tile t4 rv"><div class="box"><div class="phone"><img src="screens/phone-dark.jpg" alt="" loading="lazy" width="600" height="1304"></div></div><p data-t="c.t4" data-html><b>Day and Night, your colour.</b> Pick a colour, a wallpaper and the corners of your messages.</p></div>
-      </div>
-      <div class="wide rv"><img src="screens/desk-dark.jpg" alt="RoarMe on a computer at night" loading="lazy" width="1600" height="1000"></div>
-      <p class="cap rv" data-t="c.wide" data-html><b>Files up to 5 GB</b> with one short link, encrypted chats when it matters, and the same account on every screen.</p>
-    </div>
-  </section>
-
-  <div class="gold" id="projects">
-    <section>
-      <div class="wrap">
-        <div class="head rv">
-          <div class="goldline"></div>
-          <p class="kick"><span class="gold-word"><b>PRO</b><i>JECTS</i></span></p>
-          <h2 data-t="p.title">A whole production in one group.</h2>
-          <p class="lead" data-t="p.lead">Turn any group into a project. It gets three chats, Pre Production, Production and Post Production, and a Workspace beside the chat where everything the crew sends lands in order.</p>
-          <div class="acts"><a class="btn goldf" href="/app/" data-t="p.try">Try PROjects</a><a class="btn goldb" href="#pfeats" data-t="p.how">How it works</a></div>
-        </div>
-      </div>
-      <div class="rail-wrap rv">
-        <div class="rail" id="rail">
-          <div class="card"><div class="shot"><img src="screens/desk-pro-overview.jpg" alt="" loading="lazy" width="1600" height="1000"></div><h3 data-t="p.c1t">The Overview</h3><p data-t="p.c1p">The song, the call sheet, the open tasks and the team, with who came in and for how long.</p></div>
-          <div class="card"><div class="shot"><img src="screens/desk-pro-tasks.jpg" alt="" loading="lazy" width="1600" height="1000"></div><h3 data-t="p.c2t">Tasks</h3><p data-t="p.c2p">Status, due date, priority and who it is for. Type @ to give it to someone, and they get a notice in the chat.</p></div>
-          <div class="card"><div class="shot"><img src="screens/desk-pro-locations.jpg" alt="" loading="lazy" width="1600" height="1000"></div><h3 data-t="p.c3t">Location Scout</h3><p data-t="p.c3p">Every place with photos, contact, permit and status: option, confirmed or rejected. One tap to the map.</p></div>
-          <div class="card"><div class="shot"><img src="screens/desk-pro-files.jpg" alt="" loading="lazy" width="1600" height="1000"></div><h3 data-t="p.c4t">Files and music</h3><p data-t="p.c4p">Scripts, call sheets and songs leave the chat for the Workspace. PDFs open inside RoarMe, songs play with their waveform.</p></div>
-        </div>
-        <div class="arrows"><button type="button" id="prev" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" id="next" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></div>
-      </div>
-      <div class="wrap">
-        <div class="grid">
-          <div class="tile rv"><div class="box"><div class="phone"><img src="screens/phone-pro-chat.jpg" alt="" loading="lazy" width="600" height="1304"></div></div><p data-t="p.t1" data-html><b>Three chats, the right people.</b> Admins choose who sees Pre Production, Production and Post Production.</p></div>
-          <div class="tile t2 rv"><div class="box"><div class="phone"><img src="screens/phone-pro-page.jpg" alt="" loading="lazy" width="600" height="1304"></div></div><p data-t="p.t2" data-html><b>The project in your pocket.</b> On a phone the Workspace is a page of its own, a slide away from the chat.</p></div>
-          <div class="tile t3 rv"><div class="box"><div class="phone"><img src="screens/phone-pro-list.jpg" alt="" loading="lazy" width="600" height="1304"></div></div><p data-t="p.t3" data-html><b>A gold folder for your work.</b> Every project in one place, its stage beside its name, delivered ones folded away.</p></div>
-          <div class="tile t4 rv"><div class="box"><div class="phone"><img src="screens/phone-pro-pay.jpg" alt="" loading="lazy" width="600" height="1304"></div></div><p data-t="p.t4" data-html><b>Fees and receipts, in a tap.</b> The $ in a project's chat sends your fee or an expense with its receipt straight to the hub.</p></div>
-        </div>
-        <div class="feats" id="pfeats">
-          <div class="feat rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></i><h4 data-t="f1.t">Three chats</h4><p data-t="f1.p">Pre Production, Production, Post Production. Everyone sees only theirs; admins see all.</p></div>
-          <div class="feat rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></i><h4 data-t="f2.t">The Workspace</h4><p data-t="f2.p">Media, files, locations, tasks, links, calls and the budget beside the chat, with your own background.</p></div>
-          <div class="feat rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg></i><h4 data-t="f3.t">Production Hub</h4><p data-t="f3.p">Link your hub with one key: stage, shoot day, tasks, locations, cover and songs stay the same on both sides.</p></div>
-          <div class="feat rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></i><h4 data-t="f4.t">Notices for you alone</h4><p data-t="f4.p">A task given to you, a task of yours done, one due tomorrow: a slim line in the chat only you see.</p></div>
-          <div class="feat rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg></i><h4 data-t="f5.t">Your team, everywhere</h4><p data-t="f5.p">Mark the people you work with as Hub Members with their department, and they join every new project in the right chat.</p></div>
-          <div class="feat rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M16.5 7.5c0-1.7-2-3-4.5-3s-4.5 1.3-4.5 3S9.5 10.4 12 11s4.5 1.6 4.5 3.5-2 3-4.5 3-4.5-1.3-4.5-3"/></svg></i><h4 data-t="f6.t">The $</h4><p data-t="f6.p">Your fee into your finances and the project's budget, or an expense with a photo of the receipt. RoarMe moves no money.</p></div>
-        </div>
-        <details class="free rv">
-          <summary><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg></span><span data-t="p.free">PROjects is free for now. Turn it on in Settings, PROjects.</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary>
-          <div class="in" data-t="p.freein">It starts off, so RoarMe stays a plain messenger for anyone who does not need it. Turn it on and a gold PROjects folder shows; make any group a project from its long-press menu. Nothing is locked while it is in beta.</div>
-        </details>
-      </div>
-    </section>
+  <div class="segbar">
+    <nav class="seg glass" id="seg" aria-label="Sections">
+      <span class="lens" id="lens"></span>
+      <a href="#chats" data-t="nav.chats">Chats</a>
+      <a href="#calls" data-t="nav.calls">Calls</a>
+      <a href="#files" data-t="nav.files">Files</a>
+      <a href="#projects"><span class="gold-word"><b>PRO</b><i>JECTS</i></span></a>
+    </nav>
   </div>
 
-  <section id="privacy">
+  <section class="feat-sec" id="chats">
     <div class="wrap">
       <div class="head rv">
-        <p class="kick" data-t="pv.kick">Privacy</p>
-        <h2 data-t="pv.title">Quiet by design.</h2>
-        <p class="lead" data-t="pv.lead">We keep what a chat needs to work and nothing to sell. No ads, no tracking, no phone book.</p>
-        <div class="acts"><a class="btn sm" href="/app/?legal=privacy" data-t="pv.policy">Privacy Policy</a><a class="btn sm" href="/app/?legal=terms" data-t="pv.terms">Terms</a></div>
+        <span class="badge glass" data-t="c.kick">Chat</span>
+        <h2 data-t="c.title">Talk, call, share. No phone number.</h2>
+        <p class="lede" data-t="c.lead">Sign up with an email and pick your @name. Friends find you by it, and your number stays yours.</p>
       </div>
-      <div class="cards3">
-        <div class="pc rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.6"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></svg></i><h4 data-t="pv1.t">Encrypted when you want it</h4><p data-t="pv1.p">Turn on Encrypted Chat with the lock in the writing box: only the devices in that chat can read it.</p></div>
-        <div class="pc rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></i><h4 data-t="pv2.t">You decide who reaches you</h4><p data-t="pv2.p">Who may add you, call you and see you online, set in Settings. Block and report from any chat.</p></div>
-        <div class="pc rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></i><h4 data-t="pv3.t">Leave any time</h4><p data-t="pv3.p">Delete your account inside the app and what is yours goes with it. Deleted means deleted.</p></div>
+      <div class="split">
+        <div class="shot rv"><div class="ph float"><img src="screens/phone-group.jpg" alt="A group chat in RoarMe with a poll" loading="lazy" width="600" height="1303"></div></div>
+        <div class="cards">
+          <div class="card glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><p data-t="c.t1" data-html><b>Folders that keep order.</b> Your own folders, Unread at one end, Archived at the other.</p></div>
+          <div class="card glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg></span><p data-t="c.t2" data-html><b>Groups for every shoot.</b> Polls, places, replies and reactions, all in one thread.</p></div>
+          <div class="card glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2M9 9.5h.01M15 9.5h.01"/></svg></span><p data-t="c.t5" data-html><b>Stickers of our own.</b> Roary the lion cub and RoarMoji, RoarMe's own 3D emoji, each with a little motion.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="feat-sec" id="calls">
+    <div class="wrap">
+      <div class="head rv">
+        <span class="badge glass" data-t="ca.kick">Calls</span>
+        <h2 data-t="ca.title" data-html>Call one person, <span>or the whole crew.</span></h2>
+        <p class="lede" data-t="ca.lead">Voice and video in the same app as your chats, with a log of every call and a link for anyone who is not on RoarMe yet.</p>
+      </div>
+      <div class="split flip">
+        <div class="shot rv"><div class="ph float" style="animation-delay:-3s"><img src="screens/phone-calls.jpg" alt="Recent calls in RoarMe" loading="lazy" width="600" height="1303"></div></div>
+        <div class="cards">
+          <div class="card glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="3"/><path d="M15.5 10.5 21 7.5v9l-5.5-3"/></svg></span><p data-t="c.t3" data-html><b>Voice and video calls.</b> One to one or the whole group, with a link anyone can join.</p></div>
+          <div class="card glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span><p data-t="ca.c2" data-html><b>Video chats for the group.</b> Start one from the group and everyone joins with a tap, cameras off until they turn them on.</p></div>
+          <div class="card glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg></span><p data-t="m5.c" data-html><b>Your status.</b> Online, Away, Do Not Disturb or Invisible, with a line of your own.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="feat-sec" id="files">
+    <div class="wrap">
+      <div class="head rv">
+        <span class="badge glass" data-t="fi.kick">Files</span>
+        <h2 data-t="fi.title" data-html>Send the master, <span>not a squashed copy.</span></h2>
+        <p class="lede" data-t="fi.lead">Photos go light and sharp, files go exactly as they are, and the big ones travel as one short link.</p>
+      </div>
+      <div class="split wide">
+        <div class="shot rv"><div class="desk"><img src="screens/desk-chat.jpg" alt="RoarMe on a computer: the chat list and a chat" loading="lazy" width="1600" height="1000"></div></div>
+        <div class="cards">
+          <div class="card glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span><p data-t="m1.c" data-html><b>Files up to 5 GB.</b> One short link anyone can open, kept 1, 3 or 7 days.</p></div>
+          <div class="card glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg></span><p data-t="m6.c" data-html><b>The photo editor.</b> Crop, draw, looks and colour on photos and videos before they go.</p></div>
+          <div class="card glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span><p data-t="fi.c3" data-html><b>PDFs open inside.</b> Scripts and call sheets open in RoarMe, page by page, with Save and Share.</p></div>
+        </div>
       </div>
     </div>
   </section>
@@ -348,19 +364,84 @@ footer img { width: 128px; filter: invert(1); opacity: .5; }
   <section>
     <div class="wrap">
       <div class="head rv">
-        <p class="kick" data-t="m.kick">And all a crew needs</p>
+        <span class="badge glass" data-t="m.kick">And all a crew needs</span>
         <h2 data-t="m.title">The rest, briefly.</h2>
       </div>
-      <div class="more">
-        <div class="mi rv"><b data-t="m1.t">Files up to 5 GB</b><span data-t="m1.p">One short link anyone can open, kept 1, 3 or 7 days.</span></div>
-        <div class="mi rv"><b data-t="m2.t">Voice, places, polls</b><span data-t="m2.p">Voice messages, live location and polls with a right answer.</span></div>
-        <div class="mi rv"><b data-t="m3.t">Locked messages</b><span data-t="m3.p">A message that opens at a time, or only at a place.</span></div>
-        <div class="mi rv"><b data-t="m4.t">Send Without Sound</b><span data-t="m4.p">Hold Send to send quietly, schedule it, or mark it urgent.</span></div>
-        <div class="mi rv"><b data-t="m5.t">Your status</b><span data-t="m5.p">Online, Away, Do Not Disturb or Invisible, with a line of your own.</span></div>
-        <div class="mi rv"><b data-t="m6.t">The photo editor</b><span data-t="m6.p">Crop, draw, looks and colour on photos and videos before they go.</span></div>
-        <div class="mi rv"><b data-t="m7.t">An address book</b><span data-t="m7.p">Contacts with every detail, imported and exported as vCards.</span></div>
-        <div class="mi rv"><b data-t="m8.t">Import from Telegram</b><span data-t="m8.p">Bring a chat over with its photos, files and dates.</span></div>
-        <div class="mi rv"><b data-t="m9.t">English and Greek</b><span data-t="m9.p">The whole app in either language; your words are never touched.</span></div>
+      <div class="bento">
+        <div class="tile big glass rv"><p data-t="c.wide" data-html><b>Files up to 5 GB</b> with one short link, encrypted chats when it matters, and the same account on every screen.</p><div class="crop"><img src="screens/desk-dark.jpg" alt="RoarMe on a computer at night" loading="lazy" width="1600" height="1000"></div></div>
+        <div class="tile tall glass rv"><p data-t="c.t4" data-html><b>Day and Night, your colour.</b> Pick a colour, a wallpaper and the corners of your messages.</p><div class="crop"><img src="screens/phone-dark.jpg" alt="RoarMe on a phone at night" loading="lazy" width="600" height="1303"></div></div>
+        <div class="tile glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><h3 data-t="m2.t">Voice, places, polls</h3><p data-t="m2.p">Voice messages, live location and polls with a right answer.</p></div>
+        <div class="tile glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.6"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></svg></span><h3 data-t="m3.t">Locked messages</h3><p data-t="m3.p">A message that opens at a time, or only at a place.</p></div>
+        <div class="tile glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 21 3l-8 18-2-8z"/></svg></span><h3 data-t="m4.t">Send Without Sound</h3><p data-t="m4.p">Hold Send to send quietly, schedule it, or mark it urgent.</p></div>
+        <div class="tile glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><circle cx="12" cy="10" r="2.6"/><path d="M8 17a4 4 0 0 1 8 0"/></svg></span><h3 data-t="m7.t">An address book</h3><p data-t="m7.p">Contacts with every detail, imported and exported as vCards.</p></div>
+        <div class="tile glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg></span><h3 data-t="m8.t">Import from Telegram</h3><p data-t="m8.p">Bring a chat over with its photos, files and dates.</p></div>
+        <div class="tile glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h8M8 3v2M5.5 5c.8 3.5 3 6 6 7.5M10.5 5c-.8 3.5-3 6-6 7.5M13 21l4-10 4 10M14.5 17.5h5"/></svg></span><h3 data-t="m9.t">English and Greek</h3><p data-t="m9.p">The whole app in either language; your words are never touched.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="pro" id="projects">
+      <div class="head rv">
+        <span class="gold-word"><b>PRO</b><i>JECTS</i></span>
+        <h2 data-t="p.title">A whole production in one group.</h2>
+        <p class="lede" data-t="p.lead">Turn any group into a project. It gets three chats, Pre Production, Production and Post Production, and a Workspace beside the chat where everything the crew sends lands in order.</p>
+        <div class="chips" aria-label="The three chats">
+          <span class="chip" style="--c:#d48806"><i></i>Pre Production</span>
+          <span class="chip" style="--c:#e5483f"><i></i>Production</span>
+          <span class="chip" style="--c:#7b4dff"><i></i>Post Production</span>
+        </div>
+        <div class="row"><a class="pill gold" href="/app/" data-t="p.try">Try PROjects</a><a class="pill" href="#pfeats" data-t="p.how">How it works</a></div>
+      </div>
+      <div class="deskshow rv">
+        <div class="screen"><img id="pshot" src="screens/desk-pro-overview.jpg" alt="The Workspace of a project in RoarMe" loading="lazy" width="1600" height="1000"></div>
+        <div class="pick" role="tablist" aria-label="Workspace">
+          <button type="button" class="on" data-shot="desk-pro-overview" data-cap="p.c1p" data-t="p.c1t">The Overview</button>
+          <button type="button" data-shot="desk-pro-tasks" data-cap="p.c2p" data-t="p.c2t">Tasks</button>
+          <button type="button" data-shot="desk-pro-locations" data-cap="p.c3p" data-t="p.c3t">Location Scout</button>
+          <button type="button" data-shot="desk-pro-files" data-cap="p.c4p" data-t="p.c4t">Files and music</button>
+        </div>
+        <p class="pcap" id="pcap"></p>
+        <div hidden>
+          <span data-t="p.c1p">The song, the call sheet, the open tasks and the team, with who came in and for how long.</span>
+          <span data-t="p.c2p">Status, due date, priority and who it is for. Type @ to give it to someone, and they get a notice in the chat.</span>
+          <span data-t="p.c3p">Every place with photos, contact, permit and status: option, confirmed or rejected. One tap to the map.</span>
+          <span data-t="p.c4p">Scripts, call sheets and songs leave the chat for the Workspace. PDFs open inside RoarMe, songs play with their waveform.</span>
+        </div>
+      </div>
+      <div class="pphones">
+        <div class="pcard rv"><div class="mini"><img src="screens/phone-pro-chat.jpg" alt="" loading="lazy" width="600" height="1303"></div><p data-t="p.t1" data-html><b>Three chats, the right people.</b> Admins choose who sees Pre Production, Production and Post Production.</p></div>
+        <div class="pcard rv"><div class="mini"><img src="screens/phone-pro-page.jpg" alt="" loading="lazy" width="600" height="1303"></div><p data-t="p.t2" data-html><b>The project in your pocket.</b> On a phone the Workspace is a page of its own, a slide away from the chat.</p></div>
+        <div class="pcard rv"><div class="mini"><img src="screens/phone-pro-list.jpg" alt="" loading="lazy" width="600" height="1303"></div><p data-t="p.t3" data-html><b>A gold folder for your work.</b> Every project in one place, its stage beside its name, delivered ones folded away.</p></div>
+        <div class="pcard rv"><div class="dollar" aria-hidden="true">$</div><p data-t="p.t4" data-html><b>Fees and receipts, in a tap.</b> The $ in a project's chat sends your fee or an expense with its receipt straight to the hub.</p></div>
+      </div>
+      <div class="pfeats" id="pfeats">
+        <div class="pf rv"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><h4 data-t="f1.t">Three chats</h4><p data-t="f1.p">Pre Production, Production, Post Production. Everyone sees only theirs; admins see all.</p></div>
+        <div class="pf rv"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></span><h4 data-t="f2.t">The Workspace</h4><p data-t="f2.p">Media, files, locations, tasks, links, calls and the budget beside the chat, with your own background.</p></div>
+        <div class="pf rv"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg></span><h4 data-t="f3.t">Production Hub</h4><p data-t="f3.p">Link your hub with one key: stage, shoot day, tasks, locations, cover and songs stay the same on both sides.</p></div>
+        <div class="pf rv"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></span><h4 data-t="f4.t">Notices for you alone</h4><p data-t="f4.p">A task given to you, a task of yours done, one due tomorrow: a slim line in the chat only you see.</p></div>
+        <div class="pf rv"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg></span><h4 data-t="f5.t">Your team, everywhere</h4><p data-t="f5.p">Mark the people you work with as Hub Members with their department, and they join every new project in the right chat.</p></div>
+        <div class="pf rv"><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M16.5 7.5c0-1.7-2-3-4.5-3s-4.5 1.3-4.5 3S9.5 10.4 12 11s4.5 1.6 4.5 3.5-2 3-4.5 3-4.5-1.3-4.5-3"/></svg></span><h4 data-t="f6.t">The $</h4><p data-t="f6.p">Your fee into your finances and the project's budget, or an expense with a photo of the receipt. RoarMe moves no money.</p></div>
+      </div>
+      <details class="free rv">
+        <summary><span class="gi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg></span><span data-t="p.free">PROjects is free for now. Turn it on in Settings, PROjects.</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+        <div class="in" data-t="p.freein">It starts off, so RoarMe stays a plain messenger for anyone who does not need it. Turn it on and a gold PROjects folder shows; make any group a project from its long-press menu. Nothing is locked while it is in beta.</div>
+      </details>
+    </div>
+  </div>
+
+  <section id="privacy">
+    <div class="wrap">
+      <div class="head rv">
+        <span class="badge glass" data-t="pv.kick">Privacy</span>
+        <h2 data-t="pv.title">Quiet by design.</h2>
+        <p class="lede" data-t="pv.lead">We keep what a chat needs to work and nothing to sell. No ads, no tracking, no phone book.</p>
+        <div class="row"><a class="pill sm" href="/app/?legal=privacy" data-t="pv.policy">Privacy Policy</a><a class="pill sm" href="/app/?legal=terms" data-t="pv.terms">Terms</a></div>
+      </div>
+      <div class="trio">
+        <div class="tile glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.6"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></svg></span><h3 data-t="pv1.t">Encrypted when you want it</h3><p data-t="pv1.p">Turn on Encrypted Chat with the lock in the writing box: only the devices in that chat can read it.</p></div>
+        <div class="tile glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><h3 data-t="pv2.t">You decide who reaches you</h3><p data-t="pv2.p">Who may add you, call you and see you online, set in Settings. Block and report from any chat.</p></div>
+        <div class="tile glass rv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></span><h3 data-t="pv3.t">Leave any time</h3><p data-t="pv3.p">Delete your account inside the app and what is yours goes with it. Deleted means deleted.</p></div>
       </div>
     </div>
   </section>
@@ -368,39 +449,50 @@ footer img { width: 128px; filter: invert(1); opacity: .5; }
   <section id="download">
     <div class="wrap">
       <div class="head rv">
-        <p class="kick" data-t="d.kick">Download</p>
+        <span class="badge glass" data-t="d.kick">Download</span>
         <h2 data-t="d.title">Get RoarMe. It is free.</h2>
-        <p class="lead" data-t="d.lead">Make an account once and use it everywhere. The computer apps update themselves.</p>
+        <p class="lede" data-t="d.lead">Make an account once and use it everywhere. The computer apps update themselves.</p>
       </div>
       <div class="dls">
-        <div class="dl rv"><i><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6s-2.5-1-2.5-3.8zM14.2 5.9c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.7-1.3z"/></svg></i><h4>Mac</h4><small data-t="d.mac">For Macs with Apple chips (M1 and newer).</small><a class="btn fill sm" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Mac-arm64.dmg" data-t="cta.dl">Download</a><a class="btn sm" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Mac-x64.dmg" data-t="d.intel">Intel Mac</a></div>
-        <div class="dl rv"><i><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.1H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></svg></i><h4>Windows</h4><small data-t="d.win">Windows 10 and 11.</small><a class="btn fill sm" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Windows-Setup.exe" data-t="cta.dl">Download</a></div>
-        <div class="dl rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/></svg></i><h4 data-t="d.webt">Browser</h4><small data-t="d.web">Chrome, Safari, Edge, Firefox. Nothing to install.</small><a class="btn blue sm" href="/app/" data-t="cta.open">Open RoarMe</a></div>
-        <div class="dl rv"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></i><h4>iPhone</h4><small data-t="d.ios">Coming to the App Store. Until then, open it in Safari and add it to your Home Screen.</small><a class="btn sm" href="/app/" data-t="cta.open">Open RoarMe</a></div>
+        <div class="dl glass rv"><span class="pi"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6s-2.5-1-2.5-3.8zM14.2 5.9c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.7-1.3z"/></svg></span><h3>Mac</h3><small data-t="d.mac">For Macs with Apple chips (M1 and newer).</small><a class="pill sm main" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Mac-arm64.dmg" data-t="cta.dl">Download</a><a class="pill sm" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Mac-x64.dmg" data-t="d.intel">Intel Mac</a></div>
+        <div class="dl glass rv"><span class="pi"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.1H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></svg></span><h3>Windows</h3><small data-t="d.win">Windows 10 and 11.</small><a class="pill sm main" href="https://github.com/alexisdigipro-hub/roarme/releases/latest/download/RoarMe-Windows-Setup.exe" data-t="cta.dl">Download</a></div>
+        <div class="dl glass rv"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/></svg></span><h3 data-t="d.webt">Browser</h3><small data-t="d.web">Chrome, Safari, Edge, Firefox. Nothing to install.</small><a class="pill sm main" href="/app/" data-t="cta.open">Open RoarMe</a></div>
+        <div class="dl glass rv"><span class="pi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span><h3>iPhone</h3><small data-t="d.ios">Coming to the App Store. Until then, open it in Safari and add it to your Home Screen.</small><a class="pill sm" href="/app/" data-t="cta.open">Open RoarMe</a></div>
       </div>
     </div>
   </section>
 
   <section id="faq">
     <div class="wrap">
-      <div class="head rv"><h2 data-t="q.title">Questions.</h2></div>
+      <div class="head rv"><span class="badge glass" data-t="q.kick">Questions</span><h2 data-t="q.title">Questions.</h2></div>
       <div class="qa">
-        <details class="rv"><summary data-t="q1.q">Is RoarMe free?</summary><p data-t="q1.a">Yes. RoarMe and PROjects are free while in beta. There are no ads and nothing is sold.</p></details>
-        <details class="rv"><summary data-t="q2.q">Do I need a phone number?</summary><p data-t="q2.a">No. You sign up with an email and pick an @name. A number is optional, only to find friends from your contacts.</p></details>
-        <details class="rv"><summary data-t="q3.q">What is PROjects?</summary><p data-t="q3.a">A way to run a production inside a group: three chats with the right people in each, and a Workspace with media, files, locations, tasks, links, calls and the budget. Turn it on in Settings, PROjects.</p></details>
-        <details class="rv"><summary data-t="q4.q">What is the Production Hub?</summary><p data-t="q4.a">The production manager of The Mad Lions. Link it with one key and a project stays the same on both sides; a project made in one makes its twin in the other.</p></details>
-        <details class="rv"><summary data-t="q5.q">Does the $ send money?</summary><p data-t="q5.a">No. It records your fee or an expense, with its receipt, in the hub's finances and the project's budget. RoarMe moves no money.</p></details>
-        <details class="rv"><summary data-t="q6.q">Can I use it on several devices?</summary><p data-t="q6.a">Yes. Your chats live in the cloud: sign in on a phone, a computer and the browser and everything is there.</p></details>
+        <details class="glass rv"><summary><span data-t="q1.q">Is RoarMe free?</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary><p data-t="q1.a">Yes. RoarMe and PROjects are free while in beta. There are no ads and nothing is sold.</p></details>
+        <details class="glass rv"><summary><span data-t="q2.q">Do I need a phone number?</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary><p data-t="q2.a">No. You sign up with an email and pick an @name. A number is optional, only to find friends from your contacts.</p></details>
+        <details class="glass rv"><summary><span data-t="q3.q">What is PROjects?</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary><p data-t="q3.a">A way to run a production inside a group: three chats with the right people in each, and a Workspace with media, files, locations, tasks, links, calls and the budget. Turn it on in Settings, PROjects.</p></details>
+        <details class="glass rv"><summary><span data-t="q4.q">What is the Production Hub?</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary><p data-t="q4.a">The production manager of The Mad Lions. Link it with one key and a project stays the same on both sides; a project made in one makes its twin in the other.</p></details>
+        <details class="glass rv"><summary><span data-t="q5.q">Does the $ send money?</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary><p data-t="q5.a">No. It records your fee or an expense, with its receipt, in the hub's finances and the project's budget. RoarMe moves no money.</p></details>
+        <details class="glass rv"><summary><span data-t="q6.q">Can I use it on several devices?</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary><p data-t="q6.a">Yes. Your chats live in the cloud: sign in on a phone, a computer and the browser and everything is there.</p></details>
       </div>
     </div>
   </section>
+
+  <div class="wrap">
+    <div class="cta glass rv">
+      <img class="mark" src="icon.png" alt="" width="76" height="76">
+      <h2 data-t="z.title" data-html>Your crew is <span>waiting.</span></h2>
+      <p class="lede" data-t="z.lead">Free on every screen. Open it in the browser now, or download it for your computer.</p>
+      <div class="row"><a class="pill main" href="/app/" data-t="cta.open">Open RoarMe</a><a class="pill" href="#download" data-t="cta.dl">Download</a></div>
+    </div>
+  </div>
 </main>
 
 <footer>
   <div class="wrap">
-    <a href="https://themadlions.com/" aria-label="The Mad Lions"><img src="wordmark.png" alt="The Mad Lions"></a>
-    <nav><a href="https://themadlions.com/lab/">The Mad Lions Lab</a><a href="https://roardino.com/">Roardino</a><a href="/app/?legal=privacy" data-t="pv.policy">Privacy Policy</a><a href="/app/?legal=terms" data-t="pv.terms">Terms</a></nav>
-    <span>© 2026 The Mad Lions · RoarMe</span>
+    <div class="in glass">
+      <a href="https://themadlions.com/" aria-label="The Mad Lions"><img src="wordmark.png" alt="The Mad Lions"></a>
+      <nav><a href="https://themadlions.com/lab/">The Mad Lions Lab</a><a href="https://roardino.com/">Roardino</a><a href="/app/?legal=privacy" data-t="pv.policy">Privacy Policy</a><a href="/app/?legal=terms" data-t="pv.terms">Terms</a></nav>
+      <span>© 2026 The Mad Lions · RoarMe</span>
+    </div>
   </div>
 </footer>
 
@@ -412,19 +504,47 @@ footer img { width: 128px; filter: invert(1); opacity: .5; }
   const io = new IntersectionObserver((list) => list.forEach((x) => { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target) } }), { rootMargin: '0px 0px -8% 0px' })
   els.forEach((e) => io.observe(e))
 })()
-// the Workspace carousel's arrows
+// the segmented nav: its lens sits under the section in view
 ;(() => {
-  const r = document.getElementById('rail'); if (!r) return
-  const step = () => (r.querySelector('.card')?.offsetWidth || 600) + 22
-  document.getElementById('prev').onclick = () => r.scrollBy({ left: -step(), behavior: 'smooth' })
-  document.getElementById('next').onclick = () => r.scrollBy({ left: step(), behavior: 'smooth' })
+  const seg = document.getElementById('seg'), lens = document.getElementById('lens')
+  const links = [...seg.querySelectorAll('a')]
+  const secs = links.map((a) => document.querySelector(a.getAttribute('href')))
+  let cur = -1
+  const place = () => {
+    const a = links[cur]
+    if (!a) { lens.style.opacity = '0'; links.forEach((l) => l.classList.remove('on')); return }
+    lens.style.opacity = '1'; lens.style.width = `${a.offsetWidth}px`; lens.style.transform = `translateX(${a.offsetLeft}px)`
+    links.forEach((l, i) => l.classList.toggle('on', i === cur))
+  }
+  const pick = () => {
+    const mid = innerHeight * 0.4
+    let n = -1
+    secs.forEach((s, i) => { if (s && s.getBoundingClientRect().top <= mid) n = i })
+    const last = secs[secs.length - 1]
+    if (n === secs.length - 1 && last.getBoundingClientRect().bottom < mid) n = -1
+    if (n !== cur) { cur = n; place() }
+  }
+  addEventListener('scroll', pick, { passive: true }); addEventListener('resize', () => { place(); pick() })
+  window.__segPlace = place
+  pick()
+})()
+// the Workspace: four screens on one glass stage, a pill picks each
+;(() => {
+  const img = document.getElementById('pshot'), cap = document.getElementById('pcap')
+  const btns = [...document.querySelectorAll('.pick button')]
+  const capOf = (b) => document.querySelector(`[hidden] [data-t="${b.dataset.cap}"]`).innerHTML
+  const show = (b) => { btns.forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b) }); img.src = `screens/${b.dataset.shot}.jpg`; cap.innerHTML = capOf(b) }
+  btns.forEach((b) => { b.setAttribute('role', 'tab'); b.onclick = () => show(b) })
+  window.__proCap = () => show(btns.find((b) => b.classList.contains('on')) || btns[0])
+  window.__proCap()
+  btns.forEach((b) => { const i = new Image(); i.src = `screens/${b.dataset.shot}.jpg` })
 })()
 // English and Greek
 ;(() => {
   const EL = {
-    'nav.chat': 'Chat', 'nav.privacy': 'Απόρρητο', 'nav.download': 'Λήψη', 'nav.faq': 'Ερωτήσεις',
+    'nav.chats': 'Chat', 'nav.calls': 'Κλήσεις', 'nav.files': 'Αρχεία',
     'cta.open': 'Άνοιξε το RoarMe', 'cta.go': 'Άνοιξε', 'cta.dl': 'Λήψη',
-    'h.kick': '<b>RoarMe</b> · το chat για συνεργεία', 'h.title': 'Ό,τι λέει ένα συνεργείο, σε ένα μέρος.',
+    'h.kick': '<b>RoarMe</b> · το chat για συνεργεία', 'h.title': 'Ό,τι λέει ένα συνεργείο, <span>σε ένα μέρος.</span>',
     'h.lead': 'Συζητήσεις, κλήσεις και αρχεία έως 5 GB μόνο με ένα username. Και τα PROjects, όπου μια ομάδα γίνεται ολόκληρη παραγωγή.',
     'c.kick': 'Chat', 'c.title': 'Μίλα, κάλεσε, στείλε. Χωρίς αριθμό τηλεφώνου.',
     'c.lead': 'Κάνεις λογαριασμό με email και διαλέγεις το @όνομά σου. Οι φίλοι σε βρίσκουν από αυτό, και ο αριθμός σου μένει δικός σου.',
@@ -432,7 +552,17 @@ footer img { width: 128px; filter: invert(1); opacity: .5; }
     'c.t2': '<b>Ομάδες για κάθε γύρισμα.</b> Ψηφοφορίες, τοποθεσίες, απαντήσεις και αντιδράσεις, όλα σε μία συζήτηση.',
     'c.t3': '<b>Φωνητικές και βιντεοκλήσεις.</b> Ένας με έναν ή όλη η ομάδα, με ένα link που μπαίνει όποιος θέλει.',
     'c.t4': '<b>Μέρα και νύχτα, στο χρώμα σου.</b> Διάλεξε χρώμα, ταπετσαρία και γωνίες για τα μηνύματά σου.',
+    'c.t5': '<b>Δικά μας αυτοκόλλητα.</b> Ο Roary το λιονταράκι και τα RoarMoji, τα δικά μας 3D emoji, το καθένα με μια μικρή κίνηση.',
     'c.wide': '<b>Αρχεία έως 5 GB</b> με ένα σύντομο link, κρυπτογραφημένα chat όταν μετράει, και ο ίδιος λογαριασμός σε κάθε οθόνη.',
+    'ca.kick': 'Κλήσεις', 'ca.title': 'Κάλεσε έναν άνθρωπο, <span>ή όλο το συνεργείο.</span>',
+    'ca.lead': 'Φωνή και εικόνα στην ίδια εφαρμογή με τις συζητήσεις σου, με ιστορικό κάθε κλήσης και ένα link για όποιον δεν είναι ακόμα στο RoarMe.',
+    'ca.c2': '<b>Βιντεοσυζητήσεις για την ομάδα.</b> Ξεκίνα μία από την ομάδα και μπαίνουν όλοι με ένα πάτημα, με την κάμερα κλειστή ώσπου να την ανοίξουν.',
+    'm5.c': '<b>Η κατάστασή σου.</b> Online, Away, Do Not Disturb ή Invisible, με μια δική σου γραμμή.',
+    'fi.kick': 'Αρχεία', 'fi.title': 'Στείλε το master, <span>όχι ένα συμπιεσμένο αντίγραφο.</span>',
+    'fi.lead': 'Οι φωτογραφίες φεύγουν ελαφριές και καθαρές, τα αρχεία ακριβώς όπως είναι, και τα μεγάλα ταξιδεύουν ως ένα σύντομο link.',
+    'm1.c': '<b>Αρχεία έως 5 GB.</b> Ένα σύντομο link που ανοίγει ο καθένας, για 1, 3 ή 7 μέρες.',
+    'm6.c': '<b>Επεξεργασία φωτογραφίας.</b> Περικοπή, ζωγραφική, looks και χρώμα σε φωτογραφίες και βίντεο πριν φύγουν.',
+    'fi.c3': '<b>Τα PDF ανοίγουν μέσα.</b> Σενάρια και ορντίνα ανοίγουν στο RoarMe, σελίδα σελίδα, με Αποθήκευση και Κοινοποίηση.',
     'p.title': 'Ολόκληρη η παραγωγή σε μία ομάδα.',
     'p.lead': 'Κάνε οποιαδήποτε ομάδα project. Παίρνει τρία chat, Pre Production, Production και Post Production, και ένα Workspace δίπλα στη συζήτηση όπου ό,τι στέλνει το συνεργείο μπαίνει σε τάξη.',
     'p.try': 'Δοκίμασε τα PROjects', 'p.how': 'Πώς δουλεύει',
@@ -458,25 +588,23 @@ footer img { width: 128px; filter: invert(1); opacity: .5; }
     'pv2.t': 'Εσύ αποφασίζεις ποιος σε βρίσκει', 'pv2.p': 'Ποιος σε προσθέτει, σε καλεί και σε βλέπει online, από τις Ρυθμίσεις. Μπλοκάρισμα και αναφορά από κάθε chat.',
     'pv3.t': 'Φεύγεις όποτε θες', 'pv3.p': 'Διέγραψε τον λογαριασμό σου μέσα από την εφαρμογή και ό,τι είναι δικό σου φεύγει μαζί. Διαγραφή σημαίνει διαγραφή.',
     'm.kick': 'Και ό,τι χρειάζεται ένα συνεργείο', 'm.title': 'Τα υπόλοιπα, εν συντομία.',
-    'm1.t': 'Αρχεία έως 5 GB', 'm1.p': 'Ένα σύντομο link που ανοίγει ο καθένας, για 1, 3 ή 7 μέρες.',
     'm2.t': 'Φωνή, τοποθεσίες, ψηφοφορίες', 'm2.p': 'Φωνητικά μηνύματα, ζωντανή τοποθεσία και ψηφοφορίες με σωστή απάντηση.',
     'm3.t': 'Κλειδωμένα μηνύματα', 'm3.p': 'Ένα μήνυμα που ανοίγει σε μια ώρα, ή μόνο σε ένα μέρος.',
     'm4.t': 'Αποστολή χωρίς ήχο', 'm4.p': 'Κράτα το Send για αθόρυβη αποστολή, προγραμματισμό ή επείγον.',
-    'm5.t': 'Η κατάστασή σου', 'm5.p': 'Online, Away, Do Not Disturb ή Invisible, με μια δική σου γραμμή.',
-    'm6.t': 'Επεξεργασία φωτογραφίας', 'm6.p': 'Περικοπή, ζωγραφική, looks και χρώμα σε φωτογραφίες και βίντεο πριν φύγουν.',
     'm7.t': 'Ατζέντα επαφών', 'm7.p': 'Επαφές με κάθε στοιχείο, με εισαγωγή και εξαγωγή σε vCard.',
     'm8.t': 'Εισαγωγή από Telegram', 'm8.p': 'Φέρε μια συζήτηση με τις φωτογραφίες, τα αρχεία και τις ημερομηνίες της.',
     'm9.t': 'Αγγλικά και Ελληνικά', 'm9.p': 'Όλη η εφαρμογή σε όποια γλώσσα θες· τα λόγια σου δεν αλλάζουν ποτέ.',
     'd.kick': 'Λήψη', 'd.title': 'Πάρε το RoarMe. Είναι δωρεάν.', 'd.lead': 'Κάνε λογαριασμό μία φορά και χρησιμοποίησέ τον παντού. Οι εφαρμογές υπολογιστή ενημερώνονται μόνες τους.',
     'd.mac': 'Για Mac με Apple chip (M1 και νεότερα).', 'd.intel': 'Mac με Intel', 'd.win': 'Windows 10 και 11.', 'd.webt': 'Browser', 'd.web': 'Chrome, Safari, Edge, Firefox. Χωρίς εγκατάσταση.',
     'd.ios': 'Έρχεται στο App Store. Ως τότε, άνοιξέ το στο Safari και πρόσθεσέ το στην αρχική οθόνη.',
-    'q.title': 'Ερωτήσεις.',
+    'q.kick': 'Ερωτήσεις', 'q.title': 'Ερωτήσεις.',
     'q1.q': 'Είναι δωρεάν το RoarMe;', 'q1.a': 'Ναι. Το RoarMe και τα PROjects είναι δωρεάν όσο είναι σε beta. Χωρίς διαφημίσεις, τίποτα δεν πουλιέται.',
     'q2.q': 'Χρειάζομαι αριθμό τηλεφώνου;', 'q2.a': 'Όχι. Κάνεις λογαριασμό με email και διαλέγεις @όνομα. Ο αριθμός είναι προαιρετικός, μόνο για να βρεις φίλους από τις επαφές σου.',
     'q3.q': 'Τι είναι τα PROjects;', 'q3.a': 'Ένας τρόπος να τρέχεις μια παραγωγή μέσα σε μια ομάδα: τρία chat με τους σωστούς ανθρώπους στο καθένα, και ένα Workspace με μέσα, αρχεία, τοποθεσίες, εργασίες, links, κλήσεις και τον προϋπολογισμό. Άνοιξέ τα στις Ρυθμίσεις, PROjects.',
     'q4.q': 'Τι είναι το Production Hub;', 'q4.a': 'Το εργαλείο διαχείρισης παραγωγών του The Mad Lions. Σύνδεσέ το με ένα κλειδί και ένα project μένει ίδιο και στις δύο μεριές· ένα project που φτιάχνεται στη μία φτιάχνει το δίδυμό του στην άλλη.',
     'q5.q': 'Στέλνει χρήματα το $;', 'q5.a': 'Όχι. Καταγράφει την αμοιβή σου ή ένα έξοδο, με την απόδειξη, στα οικονομικά του hub και στον προϋπολογισμό του project. Το RoarMe δεν μετακινεί χρήματα.',
     'q6.q': 'Μπορώ να το έχω σε πολλές συσκευές;', 'q6.a': 'Ναι. Οι συζητήσεις σου ζουν στο cloud: μπαίνεις σε κινητό, υπολογιστή και browser και είναι όλα εκεί.',
+    'z.title': 'Το συνεργείο σου <span>περιμένει.</span>', 'z.lead': 'Δωρεάν σε κάθε οθόνη. Άνοιξέ το τώρα στον browser, ή κατέβασέ το για τον υπολογιστή σου.',
   }
   const nodes = [...document.querySelectorAll('[data-t]')]
   const EN = new Map(nodes.map((n) => [n, n.innerHTML]))
@@ -485,6 +613,8 @@ footer img { width: 128px; filter: invert(1); opacity: .5; }
     nodes.forEach((n) => { const k = n.dataset.t; n.innerHTML = lang === 'el' && EL[k] ? EL[k] : EN.get(n) })
     document.querySelectorAll('.lang button').forEach((b) => b.classList.toggle('on', b.dataset.lang === lang))
     try { localStorage.setItem('roarme-site-lang', lang) } catch (e) {}
+    window.__proCap && window.__proCap()
+    window.__segPlace && window.__segPlace()
   }
   document.querySelectorAll('.lang button').forEach((b) => { b.onclick = () => set(b.dataset.lang) })
   let start = 'en'

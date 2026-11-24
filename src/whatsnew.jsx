@@ -11,6 +11,10 @@ export const NEWS = [
     id: '2026-11-24',
     date: '24 November 2026',
     sections: [
+      { title: 'Everywhere', items: [
+        'Group pictures: a group with no photo now wears its own soft aurora of colours, always the same for the same group.',
+        'Group names in bold or italic show their first letter properly, not a box with a question mark.',
+      ] },
       { title: 'On a phone', items: [
         'Transfer: the Transfer button no longer hides under the bar at the foot of the + sheet.',
       ] },

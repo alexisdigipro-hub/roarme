@@ -352,7 +352,7 @@ function MailRead({ m, accounts, folders, onBack, onNext, onSeen, onFlag, onGone
     const body = mail.html || `<pre style="white-space:pre-wrap;font:inherit;margin:0">${(mail.text || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</pre>`
     const csp = `default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:${pics ? ' https: http:' : ''}`
     return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank">
-<style>html,body{margin:0;padding:0;background:#fff;color:#1d1d24;font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;word-wrap:break-word;overflow-wrap:anywhere}body{padding:14px 14px 18px}img{max-width:100%;height:auto}table{max-width:100%!important}a{color:#1a7fd0}</style></head><body>${body}</body></html>`
+<style>html,body{margin:0;padding:0;background:#fff;color:#1d1d24;font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;word-wrap:break-word;overflow-wrap:anywhere}body{padding:${mail.html ? '0' : '14px 16px 18px'}}img{max-width:100%;height:auto}table{max-width:100%!important}a{color:#1a7fd0}</style></head><body>${body}</body></html>`
   }, [mail, pics])
   // the frame as tall as what is in it
   const fit = () => {

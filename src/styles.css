@@ -8644,3 +8644,14 @@ html:root:root:root:root .side:has(.rmx-rd) .rooms-pager { margin-left: 0; margi
 html:root:root:root:root .side:has(.rmx-rd) > .side-col > :not(.rooms-area) { margin-left: 12px; margin-right: 12px; }
 html:root:root:root:root .side:has(.rmx-rd) .rooms-area .tabs { margin-left: 17px !important; margin-right: 17px !important; }
 html:root:root:root:root .side:has(.rmx-rd) > .foot { margin-left: 20px !important; margin-right: 20px !important; }
+/* the bar over the mails: one slim capsule of liquid glass (Alex, 24 Nov, B of https://claude.ai/artifact/BWSMApRMEgeGjPpgRXjeut) */
+html:root:root:root:root .rmx-head { display: flex; align-items: center; gap: 6px; margin: 2px 12px 12px; padding: 5px; border-radius: 999px; background: var(--lg); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .8)); box-shadow: var(--lg-shadow, 0 10px 30px rgba(40, 50, 80, .12)); -webkit-backdrop-filter: blur(24px) saturate(1.4) !important; backdrop-filter: blur(24px) saturate(1.4) !important; position: relative; z-index: 3; }
+html:root:root:root:root .rmx-head .rmx-crumb { padding: 0; flex: 1; min-width: 0; gap: 8px; }
+html:root:root:root:root .rmx-head .rmx-crumb .round { width: 40px; height: 40px; min-width: 40px; }
+html:root:root:root:root .rmx-head .rmx-cw b { font-size: 15px; }
+html:root:root:root:root .rmx-head .rmx-cw small { font-size: 11.5px; }
+html:root:root:root:root .rmx-head .rmx-fbar { padding: 0; flex: none; }
+html:root:root:root:root .rmx-head .rmx-filters { gap: 0; justify-content: flex-end; }
+html:root:root:root:root:root .rmx-head .rmx-filters .round { width: 34px; height: 34px; min-width: 34px; background: transparent !important; border: 0 !important; box-shadow: none !important; color: inherit; }
+html:root:root:root:root:root .rmx-head .rmx-filters .round.on { background: var(--lg-chip, rgba(255, 255, 255, .95)) !important; box-shadow: 0 2px 8px rgba(40, 50, 80, .14) !important; color: var(--halo) !important; }
+html:root:root:root:root .rmx-head .rmx-filters .round svg { width: 17px; height: 17px; }

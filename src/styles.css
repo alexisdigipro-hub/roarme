@@ -8656,3 +8656,7 @@ html:root:root:root:root:root .rmx-head .rmx-filters .round { width: 34px; heigh
 html:root:root:root:root:root .rmx-head .rmx-filters .round.on { background: var(--lg-chip, rgba(255, 255, 255, .95)) !important; box-shadow: 0 2px 8px rgba(40, 50, 80, .14) !important; color: var(--halo) !important; }
 html:root:root:root:root .rmx-head .rmx-filters .round svg { width: 17px; height: 17px; }
 .rmx-unr svg { width: 16px !important; height: 16px !important; }
+/* ROARMAIL's pages never scroll or stand sideways (Alex, 24 Nov: "most pages spill out, make them steady") */
+html:root:root:root:root .rooms:has(> .rmx) { overflow-x: hidden; overscroll-behavior-x: none; }
+html:root:root:root:root .rmx { max-width: 100%; overflow-x: clip; touch-action: pan-y; }
+html:root:root:root:root .rmx .rmx-box, html:root:root:root:root .rmx .room { max-width: 100%; min-width: 0; }

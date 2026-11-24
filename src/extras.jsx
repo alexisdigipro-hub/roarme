@@ -6,7 +6,7 @@ import { EMOJIS, haloish, setPrefs, usePrefs } from './prefs.js'
 import { MojiPick } from './moji.jsx'
 import { ownColor, ownPhoto, photoValue, useWalls, wallUrl } from './walls.js'
 import { ColorPick } from './themeEditor.jsx'
-import { Avatar, I, Modal, Slide, useLens, useSeen, useSwipeClose, useTabSwipe } from './ui.jsx'
+import { Avatar, I, Modal, Slide, useLens, useSeen, useTabSwipe } from './ui.jsx'
 import { AUDIO_EXT, isAudioFile, mmss, player, usePlayer } from './player.jsx'
 import { locale } from './i18n.js'
 // the photo editor and the map load only when they are opened (lighter start, 15 Nov)
@@ -312,10 +312,45 @@ const LIB_COLS = [2, 3, 4, 5, 6, 8, 10, 13]
 const libColsKept = () => { try { const n = +localStorage.getItem('roarme-lib-cols'); return LIB_COLS.includes(n) ? n : 3 } catch { return 3 } }
 const thumbFor = (c) => (c <= 2 ? 480 : c <= 5 ? 300 : 150)
 const scrollerOf = (el) => { for (let n = el?.parentElement; n; n = n.parentElement) { const o = getComputedStyle(n).overflowY; if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight) return n } return null }
-function LibraryGrid({ picked, onPick, onOpen, onFail }) {
+/* The camera as the library's first square (Alex, 24 Nov, as Telegram's: "the camera inside, Media is camera and media
+   together"): a live picture when the camera is already allowed (never asks for it here), else a dark square with the
+   camera's sign; a tap opens RoarMe's own camera, the live picture let go first so the two never hold it at once. */
+function CamCell({ onOpen }) {
+  const vid = useRef(null)
+  const stream = useRef(null)
+  const alive = useRef(true)
+  const [live, setLive] = useState(false)
+  const stop = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null; setLive(false) }
+  const start = async () => {
+    try {
+      const st = await navigator.permissions?.query?.({ name: 'camera' })
+      if (!alive.current || st?.state !== 'granted' || !navigator.mediaDevices?.getUserMedia) return
+      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 480 }, height: { ideal: 480 } }, audio: false })
+      if (!alive.current) { s.getTracks().forEach((t) => t.stop()); return }
+      stream.current = s
+      if (vid.current) { vid.current.srcObject = s; vid.current.play().catch(() => {}) }
+      setLive(true)
+    } catch { /* no live picture: the sign alone */ }
+  }
+  useEffect(() => { alive.current = true; start(); return () => { alive.current = false; stop() } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const open = async () => { stop(); await onOpen(); if (alive.current) start() }
+  return (
+    <button type="button" className={`lib-cell lib-cam${live ? ' live' : ''}`} onClick={open} aria-label="Camera">
+      <video ref={vid} muted playsInline autoPlay aria-hidden="true" />
+      <i className="lib-cam-ico">{AS_I.camera}</i>
+    </button>
+  )
+}
+
+function LibraryGrid({ picked, onPick, onOpen, onFail, onCamera, cat: catIn, onCat, onAlbums }) {
   const [items, setItems] = useState(null)
   const [want, setWant] = useState(LIB_STEP)
-  const [cat, setCat] = useState('all')
+  // the album may be chosen by the sheet's head (Recents ⌄, Alex 24 Nov), else by the row of chips here
+  const [catOwn, setCatOwn] = useState('all')
+  const cat = catIn ?? catOwn
+  const setCat = onCat || setCatOwn
+  const catWas = useRef(cat)
+  useEffect(() => { if (catWas.current === cat) return; catWas.current = cat; setItems(null); setWant(LIB_STEP) }, [cat])
   const [albums, setAlbums] = useState([])
   const [cols, setCols] = useState(libColsKept)
   const [month, setMonth] = useState('')
@@ -339,7 +374,7 @@ function LibraryGrid({ picked, onPick, onOpen, onFail }) {
       }
       const has = await Promise.all(smart.map((a) => call('getMedias', { quantity: 1, albumIdentifier: a.identifier, types: 'all', thumbnailWidth: 8, thumbnailHeight: 8 }).then((m) => (m?.medias || []).length > 0).catch(() => false)))
       const own = all.filter((x) => x.type !== 'smart' && x.name).sort((x, y) => x.name.localeCompare(y.name))
-      if (alive) setAlbums([...smart.filter((_, i) => has[i]), ...own])
+      if (alive) { const got = [...smart.filter((_, i) => has[i]), ...own]; setAlbums(got); onAlbums?.(got) }
     }).catch(() => {})
     return () => { alive = false }
   }, [])
@@ -453,15 +488,18 @@ function LibraryGrid({ picked, onPick, onOpen, onFail }) {
     io.observe(el)
     return () => io.disconnect()
   }, [items, want])
-  const pick = (c) => { if (c === cat) return; setItems(null); setWant(LIB_STEP); setCat(c) }
+  const pick = (c) => { if (c === cat) return; setCat(c) }
   const chips = [['all', 'All'], ['photos', 'Photos'], ['videos', 'Videos'], ...albums.map((a) => [a.identifier, a.name])]
   return (
     <>
-      <div className="lbc-row" role="tablist">
-        {chips.map(([k, label]) => <button key={k} type="button" role="tab" aria-selected={cat === k} className={`lbc-chip${cat === k ? ' on' : ''}`} onClick={() => pick(k)}>{label}</button>)}
-      </div>
+      {!onCat && (
+        <div className="lbc-row" role="tablist">
+          {chips.map(([k, label]) => <button key={k} type="button" role="tab" aria-selected={cat === k} className={`lbc-chip${cat === k ? ' on' : ''}`} onClick={() => pick(k)}>{label}</button>)}
+        </div>
+      )}
       {month && <div className="lbz-month" aria-hidden="true">{month}</div>}
       <div ref={grid} data-cols={cols} className={`lib-grid lbz${cols >= 6 ? ' lbz-dense' : ''}`} style={{ '--lbz': cols }}>
+        {onCamera && <CamCell onOpen={onCamera} />}
         {(items || []).map((a) => {
           const n = picked.findIndex((p) => p.identifier === a.identifier)
           return (
@@ -481,17 +519,18 @@ function LibraryGrid({ picked, onPick, onOpen, onFail }) {
 }
 
 // a file sent before, as Telegram's list: its picture (or its kind), the name, the size and when
-function RecentFile({ m, onPick }) {
+function RecentFile({ m, onPick, on }) {
   const f = m.file || {}
   const [ref, seen] = useSeen()
   const [url, setUrl] = useState('')
   const ext = extOf(f.name) || ''
   useEffect(() => { if (!seen || !f.thumb) return undefined; let alive = true; picLink(thumbOf(f)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [seen, f.thumb])
   return (
-    <button ref={ref} type="button" className="as-row as-recent" onClick={() => onPick(m)}>
+    <button ref={ref} type="button" className={`as-row as-recent${on ? ' on' : ''}`} onClick={() => onPick(m)}>
       {url ? <i className="as-ext as-rthumb"><img src={url} alt="" loading="lazy" /></i>
         : <i className="as-ext" style={{ '--tint': EXT_TINT[ext] || '#8e8e93' }}>{ext ? <b>{ext.slice(0, 4)}</b> : I.file}</i>}
       <span className="as-text"><b>{f.name || 'File'}</b><small>{fmtBytes(f.size)} · {whenSent(m.created_at)}</small></span>
+      {on !== undefined && <i className="asf-ring" aria-hidden="true">{on && I.check}</i>}
     </button>
   )
 }
@@ -534,6 +573,164 @@ function ContactPick({ contacts, who, setWho, searching, onContact }) {
       ))}
     </div>
   )
+}
+
+/* Files, made for work (Alex, 24 Nov: "a much nicer media management, more detailed, more professional"): the ways in,
+   then everything sent as a file, with a search, its kinds as chips (only those there are), a sort (newest, name,
+   largest, kind) and a list or grid; a tap picks (several), Send sends the picked ones again. */
+const FKIND = [
+  ['pdf', 'PDF', '#e5483f', /^pdf$/],
+  ['doc', 'Documents', '#2f6fe0', /^(docx?|pages|txt|rtf|odt|md|xlsx?|csv|numbers|key|pptx?|fdx|fountain)$/],
+  ['vid', 'Video', '#0f6e7a', /^(mov|mp4|m4v|avi|mkv|webm|braw|r3d|mxf)$/],
+  ['img', 'Photos', '#d6338a', /^(jpe?g|png|heic|heif|webp|gif|dng|arw|cr2|cr3|nef|raf|orf|tiff?|psd|raw|exr)$/],
+  ['zip', 'Archives', '#8a6a2c', /^(zip|rar|7z|gz|tar|tgz)$/],
+  ['aud', 'Audio', '#7b4dff', /^(mp3|wav|m4a|aac|flac|aiff?|ogg|opus)$/],
+]
+const kindOf = (f) => { const e = extOf(f?.name) || ''; const k = FKIND.find((x) => x[3].test(e)); if (k) return k[0]; const t = f?.type || ''; return /^video\//.test(t) ? 'vid' : /^image\//.test(t) ? 'img' : /^audio\//.test(t) ? 'aud' : 'oth' }
+const KIND_TINT = Object.fromEntries([...FKIND.map((k) => [k[0], k[2]]), ['oth', '#8e8e93']])
+const FSORT = [['date', 'Newest First'], ['name', 'Name A to Z'], ['size', 'Largest First'], ['kind', 'Kind']]
+const FVIEW_I = {
+  list: <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" /></svg>,
+  grid: <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2" /><rect x="13" y="4" width="7" height="7" rx="2" /><rect x="4" y="13" width="7" height="7" rx="2" /><rect x="13" y="13" width="7" height="7" rx="2" /></svg>,
+}
+const kept = (k, d) => { try { return localStorage.getItem(k) || d } catch { return d } }
+const keep = (k, v) => { try { localStorage.setItem(k, v) } catch { /* private */ } }
+function FilesPane({ list, sel, setSel, children }) {
+  const [q, setQ] = useState('')
+  const [kind, setKind] = useState('all')
+  const [sort, setSort] = useState(() => kept('roarme-files-sort', 'date'))
+  const [view, setView] = useState(() => kept('roarme-files-view', 'list'))
+  const [sortOpen, setSortOpen] = useState(false)
+  const all = list || []
+  const kinds = [...FKIND.map((k) => k[0]), 'oth'].filter((k) => all.some((m) => kindOf(m.file) === k))
+  const shown = all.filter((m) => (kind === 'all' || kindOf(m.file) === kind) && (!q.trim() || foldHas(m.file?.name || '', q)))
+  shown.sort((a, b) => (sort === 'name' ? (a.file?.name || '').localeCompare(b.file?.name || '') : sort === 'size' ? (b.file?.size || 0) - (a.file?.size || 0) : sort === 'kind' ? kindOf(a.file).localeCompare(kindOf(b.file)) || new Date(b.created_at) - new Date(a.created_at) : new Date(b.created_at) - new Date(a.created_at)))
+  const on = (m) => sel.some((x) => x.id === m.id)
+  const toggle = (m) => setSel((l) => (l.some((x) => x.id === m.id) ? l.filter((x) => x.id !== m.id) : [...l, m]))
+  const label = (k) => (k === 'oth' ? 'Other' : FKIND.find((x) => x[0] === k)?.[1])
+  return (
+    <div className="asf">
+      <label className="search as-search asf-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search files" />{q && <button type="button" className="asf-qx" onClick={() => setQ('')} aria-label="Clear">{I.x}</button>}</label>
+      {kinds.length > 1 && (
+        <div className="asf-chips" role="tablist">
+          <button type="button" role="tab" aria-selected={kind === 'all'} className={kind === 'all' ? 'on' : ''} onClick={() => setKind('all')}>All</button>
+          {kinds.map((k) => <button key={k} type="button" role="tab" aria-selected={kind === k} className={kind === k ? 'on' : ''} onClick={() => setKind(k)}><i style={{ background: KIND_TINT[k] }} />{label(k)}</button>)}
+        </div>
+      )}
+      <div className="as-card as-ways">{children}</div>
+      <div className="asf-bar">
+        <small className="as-label">Sent Files{list ? ` · ${shown.length}` : ''}</small>
+        <span className="asf-tools">
+          <span className="asf-sortw">
+            <button type="button" className="pill-btn asf-sort" onClick={() => setSortOpen((v) => !v)} aria-haspopup="menu">{FSORT.find(([k]) => k === sort)?.[1]}<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></button>
+            {sortOpen && (
+              <>
+                <button type="button" className="scrim" aria-label="Close" onClick={() => setSortOpen(false)} />
+                <div className="menu asf-sortm" role="menu">
+                  {FSORT.map(([k, l]) => <button key={k} type="button" role="menuitem" className={sort === k ? 'on' : ''} onClick={() => { setSort(k); keep('roarme-files-sort', k); setSortOpen(false) }}><span>{l}</span>{sort === k && <i className="sub-check">{I.check}</i>}</button>)}
+                </div>
+              </>
+            )}
+          </span>
+          <span className="asf-view" role="tablist">
+            {['list', 'grid'].map((v) => <button key={v} type="button" role="tab" aria-selected={view === v} aria-label={v === 'list' ? 'List' : 'Grid'} className={view === v ? 'on' : ''} onClick={() => { setView(v); keep('roarme-files-view', v) }}>{FVIEW_I[v]}</button>)}
+          </span>
+        </span>
+      </div>
+      {!list && <div className="as-card"><span className="as-row as-wait">Loading…</span></div>}
+      {list && !shown.length && <div className="as-card"><span className="as-row as-wait">{all.length ? 'No files match.' : 'Files you send from here will wait here, to send again with a tap.'}</span></div>}
+      {shown.length > 0 && (view === 'grid'
+        ? <div className="asf-grid">{shown.map((m) => <FileCard key={m.id} m={m} on={on(m)} onPick={toggle} />)}</div>
+        : <div className="as-card">{shown.map((m) => <RecentFile key={m.id} m={m} on={on(m)} onPick={toggle} />)}</div>)}
+    </div>
+  )
+}
+function FileCard({ m, on, onPick }) {
+  const f = m.file || {}
+  const [ref, seen] = useSeen()
+  const [url, setUrl] = useState('')
+  const ext = extOf(f.name) || ''
+  useEffect(() => { if (!seen || !f.thumb) return undefined; let alive = true; picLink(thumbOf(f)).then((u) => { if (alive) setUrl(u) }); return () => { alive = false } }, [seen, f.thumb])
+  return (
+    <button ref={ref} type="button" className={`asf-card${on ? ' on' : ''}`} onClick={() => onPick(m)}>
+      <span className="asf-pic" style={{ '--tint': KIND_TINT[kindOf(f)] }}>{url ? <img src={url} alt="" loading="lazy" /> : <b>{ext ? ext.slice(0, 4).toUpperCase() : 'FILE'}</b>}</span>
+      <span className="asf-name">{f.name || 'File'}</span>
+      <small>{fmtBytes(f.size)} · {whenSent(m.created_at)}</small>
+      <i className="asf-ring" aria-hidden="true">{on && I.check}</i>
+    </button>
+  )
+}
+
+/* The + sheet on a phone (Alex, 24 Nov, as Telegram's): it opens at two thirds of the screen, every tab the same; pulled
+   up by its head (or by the list while it is at two thirds) it fills the screen under the clock, pulled down it goes back
+   to two thirds, and on down it closes. The list pulled down from its top does the same as the head. Its height moves,
+   so the bar, the caption and Send at its foot always stay in sight. A field that takes the focus fills the screen. */
+const topInset = () => { const p = document.createElement('i'); p.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top,0px);visibility:hidden'; document.body.appendChild(p); const h = p.offsetHeight; p.remove(); return h }
+function useSnapSheet(sheetRef, bodyRef, onClose, on) {
+  const [snap, setSnap] = useState('half')
+  const st = useRef('half')
+  const go = useRef(() => {})
+  useEffect(() => {
+    const el = sheetRef.current
+    if (!el || !on) return undefined
+    const safe = topInset()
+    const full = () => Math.round((window.visualViewport?.height || window.innerHeight) - safe - 8)
+    const half = () => Math.round(full() * 0.68)
+    const put = (h, anim) => { el.classList.toggle('asn-drag', !anim); el.style.setProperty('--ash', `${h}px`) }
+    go.current = (s) => { st.current = s; put(s === 'full' ? full() : half(), true); setSnap(s) }
+    go.current(st.current)
+    let d = null
+    const skip = (t) => t.closest('input, textarea, select, canvas, video, .loc-map, .leaflet-container, .lbc-row, .cp-index, .pl-grip, .asf-chips, [data-nodrag]')
+    const start = (e) => {
+      d = null
+      if (e.touches.length !== 1) return
+      const t = e.target
+      const grab = !!t.closest('[data-grab]')
+      if (!grab && (!bodyRef.current?.contains(t) || skip(t))) return
+      d = { y0: e.touches[0].clientY, x0: e.touches[0].clientX, h0: el.offsetHeight, h: el.offsetHeight, t0: Date.now(), grab, active: false }
+    }
+    const move = (e) => {
+      if (!d || e.touches.length !== 1) return
+      const dy = e.touches[0].clientY - d.y0
+      const dx = e.touches[0].clientX - d.x0
+      if (!d.active) {
+        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { d = null; return }
+        if (Math.abs(dy) < 7) return
+        const top = (bodyRef.current?.scrollTop || 0) <= 0
+        if (!d.grab && !((dy > 0 && top) || (dy < 0 && st.current === 'half'))) { d = null; return }
+        d.active = true
+        d.y0 = e.touches[0].clientY
+        d.t0 = Date.now()
+      }
+      e.preventDefault()
+      d.h = Math.max(120, Math.min(full(), d.h0 - (e.touches[0].clientY - d.y0)))
+      put(d.h, false)
+    }
+    const end = () => {
+      const w = d
+      d = null
+      if (!w?.active) return
+      const v = (w.h - w.h0) / Math.max(1, Date.now() - w.t0) // up (taller) is positive
+      const hh = half()
+      if (w.h < hh - 90 || (v < -0.6 && w.h0 <= hh + 4)) { put(0, true); el.classList.add('asn-out'); setTimeout(onClose, 200); return }
+      if (v > 0.4) go.current('full')
+      else if (v < -0.4) go.current('half')
+      else go.current(w.h > (hh + full()) / 2 ? 'full' : 'half')
+    }
+    const focus = (e) => { if (e.target.matches?.('input, textarea') && st.current !== 'full') go.current('full') }
+    const fit = () => go.current(st.current)
+    el.addEventListener('touchstart', start, { passive: true })
+    el.addEventListener('touchmove', move, { passive: false })
+    el.addEventListener('touchend', end)
+    el.addEventListener('touchcancel', end)
+    el.addEventListener('focusin', focus)
+    window.addEventListener('resize', fit)
+    return () => {
+      el.removeEventListener('touchstart', start); el.removeEventListener('touchmove', move); el.removeEventListener('touchend', end)
+      el.removeEventListener('touchcancel', end); el.removeEventListener('focusin', focus); window.removeEventListener('resize', fit)
+    }
+  }, [on]) // eslint-disable-line react-hooks/exhaustive-deps
+  return [snap, (s) => go.current(s)]
 }
 
 export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend, onClose, onSend, onTransfer, onLocation, onLive, onPoll, onMoji, transferSlot, contacts, onContact }) {
@@ -585,7 +782,12 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   // the sheet is pulled down by its top to close, and a slide left or right goes from Gallery to File to Audio
   const sheetRef = useRef(null)
   const bodyRef = useRef(null)
-  useSwipeClose(sheetRef, onClose, 'y', edit)
+  // Media's album, chosen from the head's "Recents ⌄" (Alex, 24 Nov), and the files picked in Files to send again
+  const [alb, setAlb] = useState('all')
+  const [albums, setAlbums] = useState([])
+  const [albOpen, setAlbOpen] = useState(false)
+  const [fsel, setFsel] = useState([])
+  const [fBusy, setFBusy] = useState(false)
   const [who, setWho] = useState('')
   const [whoOpen, setWhoOpen] = useState(false)
   // the tab bar is the chat's own menu at the foot: its glass, icon over word, the lens in GLASS TRAVEL (Alex, 15 Nov)
@@ -598,7 +800,7 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   const camTabs = () => ['camera', 'gallery', onTransfer && 'transfer', onLocation && 'location', 'audio', (onContact || onPoll) && 'more'].filter(Boolean)
   const goTab = (k) => { if (k === 'more') setMoreOpen(true); else setTab(k) }
   const camera = async (asScan = false) => {
-    const r = await openCamera(asScan ? { only: 'photo' } : { tabs: camTabs() })
+    const r = await openCamera(asScan ? { only: 'photo' } : {})
     if (r === undefined) { (asScan ? scan : cam).current?.click(); return }
     if (r === 'gallery') { if (lib) setTab('gallery'); else gal.current?.click(); return }
     if (r?.tab) { goTab(r.tab); return }
@@ -606,7 +808,7 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   }
   // the chat's + opens the camera first (Alex, 21 Nov): the sheet waits unseen behind it; the camera's library picture
   // brings the Gallery, its X the whole sheet, a photo or video goes on to the editor as any picked one
-  const [camFirst, setCamFirst] = useState(() => cameraFirst && !initial.length && !!window.Capacitor?.isNativePlatform?.())
+  const [camFirst, setCamFirst] = useState(false) // the + opens the sheet on Media now, the camera its first square (Alex, 24 Nov)
   useEffect(() => {
     if (!camFirst) return
     (async () => {
@@ -653,9 +855,10 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   const pick = async (m) => { if (!onResend || sending) return; setSending(m.id); const ok = await onResend(m); setSending(''); if (ok !== false) onClose() }
   // Camera first, then Gallery, Transfer, Location, Audio, and a + at the end that holds Contact and Poll (Alex, 21 Nov)
   const wideBar = !touchOnly && typeof window !== 'undefined' && window.innerWidth >= 761
+  // Media (the camera is its first square) · Files · Transfer · Location · Audio · More (Alex, 24 Nov)
   const TABS = [
-    ['camera', 'Camera', AS_I.camera],
-    ['gallery', 'Gallery', AS_I.gallery],
+    ['gallery', 'Media', AS_I.gallery],
+    ['file', 'Files', AS_I.file],
     onTransfer && ['transfer', 'Transfer', AS_I.transfer],
     onLocation && ['location', 'Location', AS_I.location],
     ['audio', 'Audio', AS_I.audio],
@@ -664,14 +867,25 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
   ].filter(Boolean)
   const MORE = wideBar ? [] : [onContact && ['contact', 'Contact', AS_I.contact], onPoll && ['poll', 'Poll', AS_I.poll], onMoji && ['moji', 'RoarMoji', AS_I.moji]].filter(Boolean)
   const NAMES = [...TABS, ...MORE]
-  const go = (k) => { if (k === 'camera') { camera(); return } setTab(k) }
+  const go = (k) => { if (k === 'camera') { camera(); return } setLibRaw(false); setLibPicked([]); setFsel([]); setTab(k) }
   // RoarTransfer opens in the sheet's body when its tab is chosen
   useEffect(() => { if (tab === 'transfer' && !files.length) onTransfer?.() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
-  const title = files.length ? `${files.length} selected` : tab === 'poll' ? 'New Poll' : (tab === 'file' ? 'Gallery' : NAMES.find(([k]) => k === tab)?.[1]) || 'Send'
+  const title = files.length ? `${files.length} selected` : tab === 'poll' ? 'New Poll' : NAMES.find(([k]) => k === tab)?.[1] || 'Send'
   const libOn = lib && (tab === 'gallery' || (tab === 'file' && libRaw)) // the app's own library: Photos, or Files > Select from Gallery
   const asFile = pickedRaw || (tab === 'file' && files.length > 0) // anything picked while on the File tab goes raw
   const big = files.filter((f) => f.size > 50e6 && !(!asFile && /^video\//.test(f.type)))
   const list = recent ? (tab === 'audio' ? recent.audio : recent.mine) : null
+  const psShown = !psOff && files.length > 0 && !asFile && files.every((f) => /^(image|video)\//.test(f.type || ''))
+  const [, snapTo] = useSnapSheet(sheetRef, bodyRef, onClose, !wideBar && !camFirst && !psShown && !(edit >= 0 && files[edit]))
+  const ALB_NAMES = [['all', 'Recents'], ['photos', 'Photos'], ['videos', 'Videos'], ...albums.map((a) => [a.identifier, a.name])]
+  const albName = ALB_NAMES.find(([k]) => k === alb)?.[1] || 'Recents'
+  const sendFiles = async () => {
+    if (fBusy || !fsel.length || !onResend) return
+    setFBusy(true)
+    for (const m of fsel) await onResend(m) // eslint-disable-line no-await-in-loop
+    setFBusy(false)
+    onClose()
+  }
   // photos and videos from the Gallery (or the library) go through the full-screen editor before they are sent
   if (!psOff && files.length > 0 && !asFile && files.every((f) => /^(image|video)\//.test(f.type || ''))) {
     return <PsGuard onFail={() => setPsOff(true)}><Suspense fallback={null}><PhotoSend files={files} start={psStart} caption={caption} setCaption={setCaption}
@@ -686,24 +900,18 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
         <i className="as-grab" data-grab="" aria-hidden="true" />
         <div className={`as-head${tab === 'poll' && !files.length ? ' pl-head' : ''}`} data-grab="">
           <button type="button" className="round" onClick={onClose} aria-label="Close">{I.x}</button>
-          <b>{title}</b>
+          {tab === 'gallery' && libOn && !files.length
+            ? <button type="button" className={`asx-alb${albOpen ? ' open' : ''}`} onClick={() => setAlbOpen((v) => !v)} aria-haspopup="menu" aria-expanded={albOpen}><b>{albName}</b><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></button>
+            : <b>{title}</b>}
           {tab === 'poll' && !files.length
             ? <button type="button" className={`pill-btn pl-send${pollOut ? ' on' : ''}`} disabled={!pollOut || pollBusy} onClick={sendPoll}>Send</button>
             : tab === 'contact' && !files.length
             ? <button type="button" className="round" onClick={() => { setWhoOpen((v) => !v); setWho('') }} aria-label="Search contacts">{whoOpen ? I.x : I.search}</button>
-            : tab === 'file' && !files.length
-            ? <button type="button" className="round" onClick={() => setFileQ((q) => (q === null ? '' : null))} aria-label="Search files">{fileQ === null ? I.search : I.x}</button>
+            : tab === 'file' && libRaw && !files.length
+            ? <button type="button" className="pill-btn asf-done" onClick={() => { setLibRaw(false); setLibPicked([]) }}>Files</button>
             : <span className="as-head-pad" />}
         </div>
         <div className="as-body" ref={bodyRef}>
-          {!files.length && (tab === 'gallery' || tab === 'file') && (
-            // what is picked goes as a photo (lighter, through the editor) or as a file (exactly as it is)
-            <div className={`as-seg${tab === 'file' ? ' r' : ''}`} role="tablist">
-              <i className="as-seg-lens" aria-hidden="true" />
-              <button type="button" role="tab" aria-selected={tab === 'gallery'} className={tab === 'gallery' ? 'on' : ''} onClick={() => { setLibRaw(false); setLibPicked([]); setTab('gallery') }}>Photos</button>
-              <button type="button" role="tab" aria-selected={tab === 'file'} className={tab === 'file' ? 'on' : ''} onClick={() => { setLibRaw(false); setLibPicked([]); setTab('file') }}>Files</button>
-            </div>
-          )}
           {files.length > 0 ? (
             <>
               <div className="attach-grid">
@@ -735,7 +943,9 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
           ) : tab === 'poll' && onPoll ? (
             <Suspense fallback={null}><PollEditor onReady={(fn) => setPollOut(() => fn)} /></Suspense>
           ) : libOn ? (
-            <LibraryGrid picked={libPicked} onPick={pickLib} onOpen={tab === 'file' ? pickLib : openLib} onFail={() => setLib(false)} />
+            tab === 'file'
+              ? <LibraryGrid picked={libPicked} onPick={pickLib} onOpen={pickLib} onFail={() => setLib(false)} />
+              : <LibraryGrid picked={libPicked} onPick={pickLib} onOpen={openLib} onFail={() => setLib(false)} onCamera={() => camera()} cat={alb} onCat={setAlb} onAlbums={setAlbums} />
           ) : tab === 'gallery' ? (
             <>
               <div className="as-tiles">
@@ -752,6 +962,12 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
               )}
               {recent && !recent.photos.length && <p className="as-empty">{I.image}<span>The photos and videos you send will wait here, to send again with a tap.</span></p>}
             </>
+          ) : tab === 'file' ? (
+            <FilesPane list={recent?.mine} sel={fsel} setSel={setFsel}>
+              <button type="button" className="as-row as-way" onClick={() => doc.current?.click()}>{FT_I.files}<span>{touchOnly ? 'From iPhone Files' : 'From This Computer'}</span></button>
+              <button type="button" className="as-row as-way" onClick={() => { if (lib) { setLibPicked([]); setLibRaw(true) } else galRaw.current?.click() }}>{FT_I.gallery}<span>Photos as Files, Full Quality</span></button>
+              {touchOnly && <button type="button" className="as-row as-way" onClick={() => camera(true)}>{FT_I.scan}<span>Scan Document</span></button>}
+            </FilesPane>
           ) : (
             <>
               {tab === 'audio' ? (
@@ -782,6 +998,11 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
             <input className="input attach-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" />
             <button type="button" className={`round send ready attach-send${libBusy ? ' busy' : ''}`} disabled={libBusy} onClick={sendLib} aria-label={`Send ${libPicked.length}`} title="Send">{I.send}<b className="lib-count">{libPicked.length}</b></button>
           </div>
+        ) : tab === 'file' && !libOn && fsel.length > 0 ? (
+          <div className="as-send asf-send">
+            <button type="button" className="pill-btn asf-clear" onClick={() => setFsel([])}>Clear</button>
+            <button type="button" className={`pill-btn asf-go${fBusy ? ' busy' : ''}`} disabled={fBusy} onClick={sendFiles}>{fBusy ? 'Sending…' : `Send ${fsel.length === 1 ? '1 File' : `${fsel.length} Files`}`}</button>
+          </div>
         ) : files.length > 0 ? (
           <div className="as-send">
             <input className="input attach-caption" value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption…" />
@@ -789,9 +1010,17 @@ export function AttachSheet({ initial = [], cameraFirst = false, meId, onResend,
           </div>
         ) : (
           <nav ref={tabsLens} className="as-tabs lens" data-travel="">
-            {TABS.map(([k, label, ico]) => <button key={k} type="button" className={tab === k || (k === 'gallery' && tab === 'file') ? 'on' : ''} onClick={() => go(k)}>{ico}<span>{label}</span></button>)}
+            {TABS.map(([k, label, ico]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => go(k)}>{ico}<span>{label}</span></button>)}
             {MORE.length > 0 && <button type="button" className={MORE.some(([k]) => k === tab) ? 'on' : ''} onClick={() => setMoreOpen(true)} aria-label="More">{AS_I.more}<span>{MORE.find(([k]) => k === tab)?.[1] || 'More'}</span></button>}
           </nav>
+        )}
+        {albOpen && (
+          <>
+            <button type="button" className="scrim" aria-label="Close" onClick={() => setAlbOpen(false)} />
+            <div className="menu asx-albs" role="menu">
+              {ALB_NAMES.map(([k, label]) => <button key={k} type="button" role="menuitem" className={alb === k ? 'on' : ''} onClick={() => { setAlb(k); setAlbOpen(false) }}><span>{label}</span>{alb === k && <i className="sub-check">{I.check}</i>}</button>)}
+            </div>
+          </>
         )}
         {moreOpen && (
           <>

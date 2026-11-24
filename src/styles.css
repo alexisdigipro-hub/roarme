@@ -8429,3 +8429,70 @@ html:root:root:root:root:root:root:root:root:root .rooms-area .tabs button[data-
 html:root:root:root:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived'].on { background: transparent !important; }
 html:root:root:root:root:root:root:root:root:root .rooms-area .tabs button[data-tab='archived']::after { content: none !important; }
 html:root:root:root:root:root:root:root:root:root .rooms-area .tabs.lens.lens-on:has(> button[data-tab='archived'].on)::before { opacity: 1 !important; }
+
+/* The + sheet as Telegram's (Alex, 24 Nov, sample https://claude.ai/artifact/HXaoC5S1A1cJ1fSC3tZ3Sm): on a phone it opens at
+   two thirds of the screen and is dragged up to fill it under the clock (extras.jsx useSnapSheet sets --ash); its height
+   moves, so the bar, the caption and Send stay at its foot */
+@media (max-width: 760px) {
+  html:root:root:root:root .as-back > .as-sheet { height: var(--ash, 68dvh) !important; max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 8px) !important; transition: height .42s cubic-bezier(.22, 1, .36, 1), opacity .2s; }
+  html:root:root:root:root .as-back > .as-sheet.asn-drag { transition: none !important; }
+  html:root:root:root:root .as-back > .as-sheet.asn-out { opacity: 0; }
+}
+.as-sheet .as-grab, .as-sheet .as-head { touch-action: none; }
+/* the head: X at the left, the album's name with its arrow in the middle */
+html:root:root .as-sheet .as-head { grid-template-columns: minmax(44px, auto) 1fr minmax(44px, auto); }
+.asx-alb { justify-self: center; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; padding: 6px 10px; border: 0; border-radius: 14px; background: none; color: var(--text); font: inherit; cursor: pointer; }
+.asx-alb b { font-size: 18px; font-weight: 700; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.asx-alb svg { flex: none; color: var(--muted); transition: transform .25s; }
+.asx-alb.open svg { transform: rotate(180deg); }
+html:root:root:root .as-sheet .menu.asx-albs { position: absolute; top: 66px !important; left: 50% !important; right: auto !important; bottom: auto !important; translate: -50% 0; z-index: 9; min-width: 240px; max-width: calc(100% - 28px); max-height: 56%; overflow-y: auto; }
+.menu.asx-albs > button, .menu.asf-sortm > button { justify-content: space-between; }
+.menu.asx-albs .sub-check svg, .menu.asf-sortm .sub-check svg { width: 16px; height: 16px; }
+html:root:root .as-sheet .asf-done { height: 36px; padding: 0 14px; font-size: 14px; }
+/* the camera, the library's first square */
+.lib-cell.lib-cam { position: relative; overflow: hidden; background: radial-gradient(120% 90% at 30% 20%, #3c4652, #15181d 62%, #0b0d10); }
+.lib-cam video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.lib-cam.live video { opacity: 1; }
+.lib-cam .lib-cam-ico { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: rgba(255, 255, 255, .18); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-style: normal; }
+.lib-cam .lib-cam-ico svg { width: 24px; height: 24px; }
+/* the bar at the foot: one frosted capsule, round at both ends, the chosen one on a soft grey lens in the accent */
+html:root:root:root:root:root:root:root .as-sheet .as-tabs { left: 12px; right: 12px; border-radius: 36px !important; padding: 5px !important; background: rgba(250, 250, 252, .74) !important; -webkit-backdrop-filter: blur(24px) saturate(1.8) !important; backdrop-filter: blur(24px) saturate(1.8) !important; border: 1px solid rgba(255, 255, 255, .9) !important; box-shadow: 0 10px 34px rgba(40, 50, 80, .18), inset 0 1px 0 rgba(255, 255, 255, .9) !important; }
+html[data-mode='dark']:root:root:root:root:root:root .as-sheet .as-tabs { background: rgba(44, 44, 49, .74) !important; border-color: rgba(255, 255, 255, .1) !important; box-shadow: 0 10px 34px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .08) !important; }
+html:root:root:root:root:root:root .as-sheet .as-tabs > button { height: 58px !important; border-radius: 30px !important; font-size: 11px; font-weight: 500; }
+html:root:root:root:root:root:root .as-sheet .as-tabs > button svg { width: 26px; height: 26px; }
+/* Files */
+.asf { display: flex; flex-direction: column; gap: 10px; }
+.asf-search { position: relative; margin: 0 !important; }
+.asf-qx { display: grid; place-items: center; width: 26px; height: 26px; margin-left: auto; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--muted); }
+.asf-qx svg { width: 13px; height: 13px; }
+.asf-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
+.asf-chips::-webkit-scrollbar { display: none; }
+.asf-chips button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 13px; border: 0; border-radius: 16px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+.asf-chips button i { width: 7px; height: 7px; border-radius: 50%; }
+html:root:root:root .asf-chips button.on { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; color: var(--halo-ink, #fff) !important; }
+html:root:root:root .asf-chips button.on i { background: currentColor !important; }
+.asf-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.asf-bar .as-label { margin: 0 !important; padding: 0 4px; }
+.asf-tools { display: inline-flex; align-items: center; gap: 6px; }
+.asf-sortw { position: relative; }
+html:root:root .as-sheet .asf-sort { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 12px; font-size: 13px; }
+html:root:root:root .as-sheet .menu.asf-sortm { position: absolute; top: 36px !important; right: 0 !important; left: auto !important; bottom: auto !important; z-index: 9; min-width: 190px; }
+.asf-view { display: inline-flex; padding: 3px; border-radius: 16px; background: color-mix(in srgb, var(--text) 7%, transparent); }
+.asf-view button { display: grid; place-items: center; width: 32px; height: 24px; border: 0; border-radius: 12px; background: none; color: var(--muted); cursor: pointer; }
+.asf-view button.on { background: var(--float, #fff); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
+.as-recent .asf-ring, .asf-card .asf-ring { flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin-left: auto; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--text) 28%, transparent); color: var(--halo-ink, #fff); font-style: normal; }
+.as-recent.on .asf-ring, .asf-card.on .asf-ring { border-color: transparent; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))); }
+.asf-ring svg { width: 13px; height: 13px; }
+.asf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 761px) { .asf-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.asf-card { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px; border: 0; border-radius: 16px; background: var(--float, var(--panel)); color: var(--text); text-align: left; font: inherit; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .06); }
+.asf-card.on { box-shadow: 0 0 0 2px var(--halo-mine, var(--accent)); }
+.asf-pic { display: grid; place-items: center; aspect-ratio: 4 / 3; margin-bottom: 5px; border-radius: 10px; overflow: hidden; background: linear-gradient(160deg, color-mix(in srgb, var(--tint) 75%, #fff), var(--tint)); color: #fff; }
+.asf-pic img { width: 100%; height: 100%; object-fit: cover; }
+.asf-pic b { font-size: 13px; font-weight: 800; letter-spacing: .03em; }
+.asf-name { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.asf-card small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.asf-card .asf-ring { position: absolute; top: 13px; right: 13px; margin: 0; border-color: #fff; box-shadow: 0 0 4px rgba(0, 0, 0, .3); }
+.asf-send { justify-content: flex-end; }
+html:root:root:root:root .as-sheet .asf-send .pill-btn { height: 46px; padding: 0 20px; font-size: 15px; font-weight: 600; }
+html:root:root:root:root .as-sheet .asf-send .asf-go { flex: 1; max-width: 240px; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; color: var(--halo-ink, #fff) !important; border: 0 !important; box-shadow: 0 6px 18px rgba(0, 0, 0, .18) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }

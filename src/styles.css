@@ -8409,3 +8409,7 @@ html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth
    holder grows with what it holds, so the sheet's own room at the foot (safe area + 108px) comes after the button */
 html:root:root .as-sheet .as-transfer { flex: 1 0 auto; min-height: auto; }
 html:root:root .as-sheet .as-transfer .rt-slot { padding-bottom: 16px; }
+/* While a transfer goes up, Stop and Keep Chatting are one even pair in the middle, each on one line (Alex, 24 Nov:
+   they stood to the right and Keep chatting broke in two; .rt-acts of the transfers list pushed them aside) */
+html:root:root .rt .rt-up-acts { display: flex; justify-content: center; gap: 10px; width: 100%; margin: 2px 0 0; }
+html:root:root .rt .rt-up-acts .btn { flex: 1 1 0; min-width: 0; max-width: 180px; height: 46px; justify-content: center; white-space: nowrap; font-size: 15px; }

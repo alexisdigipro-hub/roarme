@@ -100,7 +100,16 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
   const total = files.reduce((n, f) => n + f.size, 0)
   const tooBig = total > max
   const add = (list) => setFiles((l) => [...l, ...list.filter((f) => !l.some((x) => x.name === f.name && x.size === f.size))])
-  const p = total ? Math.min(1, done / total) : 0
+  // the ring moves on its own while the phone reports nothing (inside the iPhone app the upload says how far it is
+  // only now and then; Alex, 24 Nov: it stood at 0%), creeping toward 95% and never ahead of the truth once it speaks
+  const [creep, setCreep] = useState(0)
+  useEffect(() => {
+    if (phase !== 'up') { setCreep(0); return }
+    const t = setInterval(() => setCreep((c) => c + (0.95 - c) * 0.04), 300)
+    return () => clearInterval(t)
+  }, [phase])
+  const real = total ? Math.min(1, done / total) : 0
+  const p = phase === 'up' ? Math.max(real, Math.min(creep, real + 0.6)) : real
   useEffect(() => { if (phase === 'up') onProgress?.(p) }, [p, phase]) // eslint-disable-line react-hooks/exhaustive-deps
   const until = (iso) => `${untilDate(new Date(iso).getTime())} ${untilTime(new Date(iso).getTime())}`
 
@@ -196,11 +205,11 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
               </svg>
               <b>{Math.round(p * 100)}%</b>
             </span>
-            <p className="rt-sub">{fmtBytes(Math.min(done, total))} of {fmtBytes(total)}</p>
+            <p className="rt-sub">{fmtBytes(Math.min(Math.round(p * total), total))} of {fmtBytes(total)}</p>
             <p className="rt-hint">You can keep chatting: it goes on uploading, and the link comes into the chat when it is done.</p>
-            <div className="rt-acts">
+            <div className="rt-acts rt-up-acts">
               <button type="button" className="btn" onClick={cancel}>{I.x}<span>Stop</span></button>
-              <button type="button" className="btn btn-main" onClick={onHide}>{I.check}<span>Keep chatting</span></button>
+              <button type="button" className="btn btn-main" onClick={onHide}>{I.check}<span>Keep Chatting</span></button>
             </div>
           </>
         )}
@@ -292,11 +301,11 @@ export function TransferWindow({ title, hidden = false, onHide, onClose, onSent,
               </svg>
               <b>{Math.round(p * 100)}%</b>
             </span>
-            <p className="rt-sub">{fmtBytes(Math.min(done, total))} of {fmtBytes(total)}</p>
+            <p className="rt-sub">{fmtBytes(Math.min(Math.round(p * total), total))} of {fmtBytes(total)}</p>
             <p className="rt-hint">You can keep chatting: it goes on uploading, and the link comes into the chat when it is done.</p>
-            <div className="rt-acts">
+            <div className="rt-acts rt-up-acts">
               <button type="button" className="btn" onClick={cancel}>{I.x}<span>Stop</span></button>
-              <button type="button" className="btn btn-main" onClick={onHide}>{I.check}<span>Keep chatting</span></button>
+              <button type="button" className="btn btn-main" onClick={onHide}>{I.check}<span>Keep Chatting</span></button>
             </div>
           </>
         )}

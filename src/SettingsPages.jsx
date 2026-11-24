@@ -1186,7 +1186,7 @@ function FolderEdit({ id, kit, onDone, toast }) {
       </Box>
       {pick && (
         <Modal title={pick === 'in' ? 'Included chats' : 'Excluded chats'} onClose={() => setPick('')} foot={<button type="button" className="btn btn-main" onClick={() => setPick('')}>Done</button>}>
-          <input className="input fold-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" autoFocus />
+          <label className="search fold-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search chats" autoFocus /></label>
           <div className="people">
             {list.map((r) => {
               const on = (pick === 'in' ? draft.rooms : draft.exclude).includes(r.room_id)

@@ -26,7 +26,9 @@ export const USERNAME_RE = /^[a-z0-9_]{3,24}$/
 export const cleanUsername = (v) => String(v || '').toLowerCase().replace(/^@/, '').replace(/[^a-z0-9_]/g, '').slice(0, 24)
 
 export const nameOf = (p) => (p ? p.display_name || `@${p.username}` : 'Someone')
-export const initialsOf = (s) => String(s || '?').replace(/^@/, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?'
+// a name written with RoarMe's bold / italic letters (fancy.jsx) or under / strike lines gives its plain first letters,
+// not half a character (Alex, 23 Nov: a "?" box on a group named in bold)
+export const initialsOf = (s) => String(s || '?').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/^@/, '').split(/\s+/).map((w) => [...w].find((c) => /[\p{L}\p{N}]/u.test(c)) || '').filter(Boolean).slice(0, 2).join('').toUpperCase() || '?'
 
 export const onlineNow = (p) => !!p?.last_seen && Date.now() - new Date(p.last_seen).getTime() < 3 * 60 * 1000
 // the sign on someone's picture (Alex, 20 Nov, status.jsx): while they are here, a green dot, a moon (away) or a red sign

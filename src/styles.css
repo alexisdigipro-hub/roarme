@@ -8405,3 +8405,7 @@ html:root .mj-grid > button:active { background: rgba(127, 127, 127, .14); }
 .auth-check.nudge .auth-box { border-color: #ff3b30; animation: auth-nudge .5s ease; }
 @keyframes auth-nudge { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
 html:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-check { color: var(--muted) !important; }
+/* The Transfer tab's button stands above the sheet's tab bar (Alex, 24 Nov: it fell under the bar): the transfer's
+   holder grows with what it holds, so the sheet's own room at the foot (safe area + 108px) comes after the button */
+html:root:root .as-sheet .as-transfer { flex: 1 0 auto; min-height: auto; }
+html:root:root .as-sheet .as-transfer .rt-slot { padding-bottom: 16px; }

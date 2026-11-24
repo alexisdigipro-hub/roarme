@@ -8,6 +8,15 @@ import { Modal } from './ui.jsx'
 
 export const NEWS = [
   {
+    id: '2026-11-24',
+    date: '24 November 2026',
+    sections: [
+      { title: 'On a phone', items: [
+        'Transfer: the Transfer button no longer hides under the bar at the foot of the + sheet.',
+      ] },
+    ],
+  },
+  {
     id: '2026-11-23',
     date: '23 November 2026',
     sections: [

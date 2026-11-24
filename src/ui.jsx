@@ -112,7 +112,27 @@ export const colorOf = (id) => ownColors[id] || NAME_COLORS[[...String(id || '')
 // glass, each with a colour of its own); Glass draws them with its grain, themes-glass.css .av-init
 const INIT_PAIRS = [['#3ccf86', '#11734a'], ['#ff9a3c', '#fb7b8e'], ['#aab6fb', '#2a3aa8'], ['#f48fa6', '#5a8cf5'], ['#4fd3ee', '#0e86c0'], ['#f3d27a', '#b8811a'], ['#ff5a5f', '#b3122b'], ['#b4befc', '#6f9cfd']]
 const inkOf = (name) => { const [a, b] = INIT_PAIRS[[...String(name || '')].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7) % INIT_PAIRS.length]; return { '--ia': a, '--ib': b } }
+/* A group with no photo wears an aurora (Alex, 23 Nov, C of https://claude.ai/artifact/LX5MSikxQGLAWmoWk8ZRCT): two soft
+   bands of colour on a deeper ground and a small white chip with people in it. The colours come from the group's name,
+   always the same for the same name; they drift slowly only in the big picture of a group's page (size 100 and up). */
+const AURA = [
+  ['#5ec8ff', '#7b5cff', '#2a7fd4', '#2a7fd4'], ['#ff8a5c', '#ff3f7f', '#c2306a', '#d3365f'],
+  ['#ffd86b', '#ff9a3d', '#f07a2a', '#e07620'], ['#6ff0c4', '#21b4a6', '#0f7e86', '#0f8a7a'],
+  ['#b9a4ff', '#ff7ad9', '#7348e0', '#6d3fd6'], ['#8ee6ff', '#3aa7e8', '#1c5fa8', '#1f6fb8'],
+  ['#ffb3c7', '#ff6b6b', '#c43b52', '#c8394f'], ['#c8f56b', '#3ccf86', '#178a5b', '#178a5b'],
+]
+const auraOf = (name) => { const [a, b, c, d] = AURA[[...String(name || '')].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7) % AURA.length]; return { '--g1': a, '--g2': b, '--g3': c, '--g4': d } }
+const AURA_I = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2" /><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6" /><circle cx="16.5" cy="9.5" r="2.5" /><path d="M15.5 14.3c2.3 0 4.2 1.4 4.8 4" /></svg>
+
 export function Avatar({ src, name, size = 44, online = false, group = false }) {
+  if (group && !src) {
+    return (
+      <span className={`av av-group av-aura${size >= 100 ? ' moving' : ''}`} style={{ width: size, height: size, ...auraOf(name) }}>
+        <i className="aura-a" /><i className="aura-b" /><em className="aura-chip" style={{ width: Math.round(size * 0.46), height: Math.round(size * 0.46) }}>{AURA_I}</em>
+        {online && <i className={`av-on${online === 'dnd' ? ' dnd' : online === 'away' ? ' away' : ''}`} />}
+      </span>
+    )
+  }
   return (
     <span className={`av${group ? ' av-group' : ''}${src ? '' : ' av-init'}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.36), ...(src ? null : inkOf(name)) }}>
       {src ? <img src={src} alt="" loading="lazy" decoding="async" /> : <span>{initialsOf(name)}</span>}

@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { SUPABASE_KEY, SUPABASE_URL, supabase } from './lib.js'
 import { Avatar, I } from './ui.jsx'
 import { onPhone } from './push.js'
+import { dropKv, keepKv, keptKv, lsGet, lsSet, readKv } from './cache.js'
 
 const KEY = 'roarme-mail-on'
 // only on a phone (Alex, 24 Nov: "the mail in our chat is only for the phone; on the desktop there is the app itself")
@@ -97,6 +98,34 @@ function Crumb({ title, sub, pic, onBack }) {
 
 const listCache = new Map()
 
+// ---- kept on the phone (Alex, 24 Nov: "the mail should be on the phone, at least the latest, so it does not load every
+// time"): the accounts, folders and counts in localStorage, each list's newest 60 and every mail opened (up to KEEP) in
+// IndexedDB; what is kept shows at once and the cloud's answer replaces it when it comes. The newest few of a list are
+// fetched ahead, quietly (seen stays as it is), so they open at once too.
+const KEEP = 150
+const mailKey = (m) => `mm:${m.account}|${m.path}|${m.uid}`
+function keepMail(m, j) {
+  const k = mailKey(m)
+  keepKv(k, j)
+  const list = (lsGet('mail-kept') || []).filter((x) => x !== k)
+  list.unshift(k)
+  list.slice(KEEP).forEach((x) => dropKv(x))
+  lsSet('mail-kept', list.slice(0, KEEP), 0)
+}
+function keepList(ck, val) {
+  listCache.set(ck, val)
+  keepKv(`ml:${ck}`, { rows: (val.rows || []).slice(0, 60), more: true, page: 0 })
+}
+let ahead = Promise.resolve()
+function fetchAhead(rows) {
+  rows.slice(0, 8).forEach((m) => {
+    ahead = ahead.then(async () => {
+      if (keptKv(mailKey(m)) || await readKv(mailKey(m))) return
+      try { const j = await cloud({ action: 'get', account: m.account, path: m.path, uid: m.uid, seen: false }); keepMail(m, j) } catch { /* next time */ }
+    })
+  })
+}
+
 // a slide right goes one step back, a slide left one step on (Alex, 24 Nov: "swipe right and left in all the mail"); the
 // page follows the finger a little and springs back if let go early; fields, the mail's own frame and files are left alone
 function useSlide(onRight, onLeft) {
@@ -131,17 +160,17 @@ function useSlide(onRight, onLeft) {
 }
 
 export function MailView() {
-  const [setup, setSetup] = useState(null)       // null loading · { accounts, folders } · { error }
-  const [on, setOn] = useState(null)             // the accounts RoarMe can read: Map id -> { status, error }
-  const [counts, setCounts] = useState({})       // account id -> unread in its Inbox
+  const [setup, setSetup] = useState(() => lsGet('mail-setup'))       // null loading · { accounts, folders } · { error }
+  const [on, setOn] = useState(() => { const l = lsGet('mail-on'); return l ? new Map(l) : null }) // the accounts RoarMe can read
+  const [counts, setCounts] = useState(() => lsGet('mail-counts') || {}) // account id -> unread in its Inbox
   const [step, setStep] = useState({ s: 'accs' }) // accs · folders { acc } · list { acc, role|path, name } · read
   const [fwd, setFwd] = useState(null) // the step a slide right left, so a slide left can go on to it again
   const back = (to) => { setFwd(step); setStep(to) }
   const foldSlide = useSlide(() => back({ s: 'accs' }), fwd && fwd.s === 'list' && fwd.acc === step.acc ? () => setStep(fwd) : null)
   useEffect(() => {
     let gone = false
-    loadSetup().then((x) => { if (!gone) setSetup(x) }, (e) => { if (!gone) setSetup({ error: e.message || 'Could not read RoarMail' }) })
-    cloud({ action: 'state' }).then((j) => { if (!gone) setOn(new Map((j.accounts || []).map((a) => [a.account_id, a]))) }, () => { if (!gone) setOn(new Map()) })
+    loadSetup().then((x) => { if (!gone) setSetup(x); lsSet('mail-setup', x) }, (e) => { if (!gone) setSetup((had) => had?.accounts ? had : { error: e.message || 'Could not read RoarMail' }) })
+    cloud({ action: 'state' }).then((j) => { const l = (j.accounts || []).map((a) => [a.account_id, a]); lsSet('mail-on', l); if (!gone) setOn(new Map(l)) }, () => { if (!gone) setOn((had) => had || new Map()) })
     return () => { gone = true }
   }, [])
   const accounts = setup?.accounts || []
@@ -153,12 +182,12 @@ export function MailView() {
     if (!items.length) return
     cloud({ action: 'counts', items }).then((j) => {
       const c = {}; for (const it of items) c[it.account] = j.counts?.[`${it.account}|${it.path}`]?.unseen || 0
-      setCounts(c)
+      setCounts(c); lsSet('mail-counts', c)
     }, () => {})
   }, [setup, on])
   // unread in every folder of the account opened (Alex, 24 Nov: "the numbers of the unread on the folders"); for All
   // Inboxes every account's folder of each kind. Asked 30 at a time, kept for the visit.
-  const [fcounts, setFcounts] = useState({})
+  const [fcounts, setFcounts] = useState(() => lsGet('mail-fcounts') || {})
   useEffect(() => {
     if (step.s !== 'folders' || !setup?.folders || !on || !on.size) return
     const items = setup.folders.filter((f) => on.has(f.account) && (step.acc === 'all' ? ROLES.some(([r]) => r === f.role) : f.account === step.acc))
@@ -166,7 +195,7 @@ export function MailView() {
     if (!items.length) return
     let gone = false
     for (let i = 0; i < items.length; i += 30) {
-      cloud({ action: 'counts', items: items.slice(i, i + 30) }).then((j) => { if (!gone) setFcounts((c) => ({ ...c, ...Object.fromEntries(Object.entries(j.counts || {}).map(([k, v]) => [k, v.unseen || 0])) })) }, () => {})
+      cloud({ action: 'counts', items: items.slice(i, i + 30) }).then((j) => { if (!gone) setFcounts((c) => { const n = { ...c, ...Object.fromEntries(Object.entries(j.counts || {}).map(([k, v]) => [k, v.unseen || 0])) }; lsSet('mail-fcounts', n); return n }) }, () => {})
     }
     return () => { gone = true }
   }, [step.s, step.acc, setup, on])
@@ -277,7 +306,8 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
       setRows((r) => {
         const next = p === 0 ? got : [...(r || []), ...got.filter((x) => !(r || []).some((y) => y.account === x.account && y.path === x.path && y.uid === x.uid))]
         const hasMore = Object.entries(j.totals || {}).some(([, t]) => t > 30 * (p + 1))
-        listCache.set(ck, { rows: next, more: hasMore, page: p })
+        keepList(ck, { rows: next, more: hasMore, page: p })
+        if (p === 0) fetchAhead(got)
         setMore(hasMore)
         return next
       })
@@ -285,7 +315,11 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
     } catch (e) { setErr(e.message || 'Could not read the mail') }
     setBusy(false)
   }
-  useEffect(() => { if (!offline) load(0) }, [])
+  useEffect(() => {
+    if (offline) return
+    if (!rows) readKv(`ml:${ck}`).then((v) => { if (v?.rows) setRows((r) => r || v.rows) })
+    load(0)
+  }, [])
   const colourOf = (id) => accounts.find((a) => a.id === id)?.color
   const shown = useMemo(() => (rows || []).filter((m) => {
     if (filter === 'unread' && m.seen) return false
@@ -295,8 +329,8 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
     if (k && !`${nameOf(m.from)} ${m.from?.address} ${m.subject} ${m.snippet}`.toLowerCase().includes(k)) return false
     return true
   }), [rows, filter, q])
-  const patch = (m, p) => setRows((r) => { const next = (r || []).map((x) => x === m || (x.account === m.account && x.path === m.path && x.uid === m.uid) ? { ...x, ...p } : x); listCache.set(ck, { rows: next, more, page }); return next })
-  const drop = (m) => setRows((r) => { const next = (r || []).filter((x) => !(x.account === m.account && x.path === m.path && x.uid === m.uid)); listCache.set(ck, { rows: next, more, page }); return next })
+  const patch = (m, p) => setRows((r) => { const next = (r || []).map((x) => x === m || (x.account === m.account && x.path === m.path && x.uid === m.uid) ? { ...x, ...p } : x); keepList(ck, { rows: next, more, page }); return next })
+  const drop = (m) => setRows((r) => { const next = (r || []).filter((x) => !(x.account === m.account && x.path === m.path && x.uid === m.uid)); keepList(ck, { rows: next, more, page }); return next })
   const same = (a, b) => a && b && a.account === b.account && a.path === b.path && a.uid === b.uid
   const openMail = (m) => { lastOpen.current = m; setOpen(m); if (!m.seen) patch(m, { seen: true }) }
   const nextOf = (m) => { const i = shown.findIndex((x) => same(x, m)); return i >= 0 ? shown[i + 1] : null }
@@ -342,7 +376,7 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
 
 // a mail's own page: what it says drawn in a sealed frame (no scripts, no forms, nothing from outside until Show Images)
 function MailRead({ m, accounts, folders, onBack, onNext, onSeen, onFlag, onGone }) {
-  const [mail, setMail] = useState(null)
+  const [mail, setMail] = useState(() => keptKv(mailKey(m)) || null)
   const [err, setErr] = useState('')
   const [pics, setPics] = useState(false)
   const [busy, setBusy] = useState('')
@@ -351,7 +385,12 @@ function MailRead({ m, accounts, folders, onBack, onNext, onSeen, onFlag, onGone
   const acc = accounts.find((a) => a.id === m.account)
   useEffect(() => {
     let gone = false
-    cloud({ action: 'get', account: m.account, path: m.path, uid: m.uid }).then((j) => { if (!gone) setMail(j) }, (e) => { if (!gone) setErr(e.message || 'Could not open this mail') })
+    // kept on the phone: shown at once (and marked read on the server quietly); else fetched and kept
+    readKv(mailKey(m)).then((had) => {
+      if (gone) return
+      if (had) { setMail(had); if (!m.seen) cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }).catch(() => {}); return }
+      cloud({ action: 'get', account: m.account, path: m.path, uid: m.uid }).then((j) => { keepMail(m, j); if (!gone) setMail(j) }, (e) => { if (!gone) setErr(e.message || 'Could not open this mail') })
+    })
     return () => { gone = true }
   }, [])
   const doc = useMemo(() => {

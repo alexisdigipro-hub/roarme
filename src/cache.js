@@ -68,7 +68,21 @@ export function fixKept(m) {
   if (msgMem.has(m.room_id)) run(msgMem.get(m.room_id)); else readMsgs(m.room_id).then(run)
 }
 
+// any value kept on the device by key (ROARMAIL's lists and mails, 24 Nov: "the mail should be on the phone, not loaded
+// every time"), with a copy in memory for the visit
+const kvMem = new Map()
+export const keptKv = (k) => kvMem.get(k)
+export async function readKv(k) {
+  if (kvMem.has(k)) return kvMem.get(k)
+  const v = await kv('readonly', (os) => os.get(k))
+  if (v != null) kvMem.set(k, v)
+  return v
+}
+export function keepKv(k, v) { kvMem.set(k, v); return kv('readwrite', (os) => os.put(v, k)) }
+export function dropKv(k) { kvMem.delete(k); return kv('readwrite', (os) => os.delete(k)) }
+
 export async function dropKept() {
+  kvMem.clear()
   msgMem.clear()
   try { Object.keys(localStorage).filter((k) => k.startsWith(PRE)).forEach((k) => localStorage.removeItem(k)) } catch { /* private */ }
   const db = dbp ? await dbp : null

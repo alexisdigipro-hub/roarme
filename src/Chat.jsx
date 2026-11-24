@@ -103,19 +103,6 @@ function usePeopleSearch(meId) {
 /* ---------- the app ---------- */
 // Bring a folder's tab whole into sight in the folder bar (Alex, 23 Nov): clear of the bar's left edge and of
 // Archived, which is held over the bar's right end, so a tab chosen by a tap or a slide is never half hidden
-// the empty folder's own drawing: a glass folder, its back and its open front (Alex, 24 Nov)
-const FE_PEN = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /></svg>
-const FOLD_EMPTY = (
-  <svg className="fe-fold" viewBox="0 0 96 80" aria-hidden="true">
-    <defs>
-      <linearGradient id="fe-b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--fe3)" /><stop offset="1" stopColor="var(--fe4)" /></linearGradient>
-      <linearGradient id="fe-f" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stopColor="var(--fe1)" /><stop offset="1" stopColor="var(--fe2)" /></linearGradient>
-    </defs>
-    <path d="M10 14a6 6 0 0 1 6-6h20l7 7h37a6 6 0 0 1 6 6v45a6 6 0 0 1-6 6H16a6 6 0 0 1-6-6z" fill="url(#fe-b)" />
-    <path d="M22 24h54a6 6 0 0 1 6 7l-6 36a6 6 0 0 1-6 5H12a5 5 0 0 1-5-6l9-37a6 6 0 0 1 6-5z" fill="url(#fe-f)" stroke="rgba(255,255,255,.7)" strokeWidth="1" />
-    <path d="M22 26h52" stroke="rgba(255,255,255,.85)" strokeWidth="1.5" strokeLinecap="round" />
-  </svg>
-)
 function showTab(btn) {
   const nav = btn?.parentElement
   if (!nav || nav.classList.contains('tabs-wheel') || nav.scrollWidth <= nav.clientWidth) return
@@ -1697,11 +1684,9 @@ export default function Chat({ me, setMe }) {
               {rooms.length > 0 && !shown.length && !hits.length && (!q.trim() && myFolders.some((f) => f.id === folder)
                 // an empty folder of one's own (Alex, 24 Nov, C of https://claude.ai/artifact/GAKLEmbkT2TYJx7eEF8nFP)
                 ? <div className="fold-empty">
-                    {FOLD_EMPTY}
-                    <p>No chats in this folder yet.</p>
+                    <p>This folder is empty.</p>
                     <div className="fold-empty-acts">
                       <button type="button" className="pill-btn fe-add" onClick={() => editFolder(folder, [], true)}>{I.plus}<span>Add Chats</span></button>
-                      <button type="button" className="pill-btn fe-edit" onClick={() => editFolder(folder)}>{FE_PEN}<span>Edit Folder</span></button>
                     </div>
                   </div>
                 : <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : folder === 'archived' ? 'Nothing here in Archived.' : 'Nothing here.'}</p>)}
@@ -1870,8 +1855,6 @@ export default function Chat({ me, setMe }) {
             <p>Pick a chat, or start a new one.</p>
             <div className="pick-acts">
               <button type="button" className="btn" onClick={() => setModal('newchat')}>{I.person}<span>New chat</span></button>
-              <button type="button" className="btn" onClick={() => setModal('newgroup')}>{I.people}<span>New group</span></button>
-              <button type="button" className="btn" onClick={() => setModal('invite')}>{I.link}<span>Invite</span></button>
             </div>
           </div>
         )}

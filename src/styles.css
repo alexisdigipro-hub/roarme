@@ -8531,3 +8531,7 @@ html:root:root:root:root:root .pick-acts .btn svg, html:root:root:root:root:root
 html:root:root:root:root:root .pick-acts .btn:hover, html:root:root:root:root:root .fold-empty-acts .pill-btn:hover { background: rgba(255, 255, 255, .78) !important; }
 html:root:root:root:root:root[data-mode='dark'] .pick-acts .btn:hover, html:root:root:root:root:root[data-mode='dark'] .fold-empty-acts .pill-btn:hover { background: rgba(255, 255, 255, .12) !important; }
 .fold-empty { gap: 14px; }
+
+/* A folder's Included chats window (Alex, 24 Nov: "the search is very thin; check the window's colours, light and dark"): the app's own search pill (label.search) in place of a bare field; the empty tick circles show by Night too */
+.fold-search { margin-bottom: 12px; }
+html:root:root:root:root[data-mode='dark'] .modal .people .tick:not(.on) { border-color: rgba(255, 255, 255, .32) !important; }

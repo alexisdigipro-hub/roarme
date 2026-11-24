@@ -8492,3 +8492,6 @@ html:root:root:root .as-sheet .menu.asf-sortm { position: absolute; top: 36px !i
 .asf-send { justify-content: flex-end; }
 html:root:root:root:root .as-sheet .asf-send .pill-btn { height: 46px; padding: 0 20px; font-size: 15px; font-weight: 600; }
 html:root:root:root:root .as-sheet .asf-send .asf-go { flex: 1; max-width: 240px; background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; color: var(--halo-ink, #fff) !important; border: 0 !important; box-shadow: 0 6px 18px rgba(0, 0, 0, .18) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+/* A folder's grip in Settings > Chat Folders takes the finger itself, so a phone can drag it up and down (Alex, 24 Nov);
+   a wider place to press, the same look */
+.fold-row .fold-grip { touch-action: none; width: 34px; height: 44px; margin: -12px -10px -12px -14px; opacity: .6; }

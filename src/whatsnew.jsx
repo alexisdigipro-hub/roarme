@@ -24,6 +24,7 @@ export const NEWS = [
         'Media: the camera is the first square of your photos, and Recents at the top opens your albums.',
         'Files: a tab of its own, with search, kinds, sort, list or grid, and several sent files picked at once to send again.',
         'The bar at the foot of the sheet is one frosted capsule.',
+        'Chat Folders: drag a folder up or down by its dots to change the order of the tabs.',
       ] },
     ],
   },

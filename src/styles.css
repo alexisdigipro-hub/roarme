@@ -8495,3 +8495,16 @@ html:root:root:root:root .as-sheet .asf-send .asf-go { flex: 1; max-width: 240px
 /* A folder's grip in Settings > Chat Folders takes the finger itself, so a phone can drag it up and down (Alex, 24 Nov);
    a wider place to press, the same look */
 .fold-row .fold-grip { touch-action: none; width: 34px; height: 44px; margin: -12px -10px -12px -14px; opacity: .6; }
+/* An empty folder of one's own (Alex, 24 Nov, C of the empty folder sample): a glass folder that floats a little, one
+   line, kept minimal (Alex: "just more minimal"): Add Chats in the accent and Edit Folder in glass, side by side in the middle */
+.fold-empty { --fe1: #f4f7fb; --fe2: #cfd8e3; --fe3: #aab7c6; --fe4: #93a3b6; display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 16vh auto 0; padding: 0 24px; text-align: center; animation: fe-in .5s cubic-bezier(.22, 1, .36, 1) both; }
+html[data-mode='dark'] .fold-empty { --fe1: #e9edf2; --fe2: #b9c3cf; --fe3: #8b98a8; --fe4: #6d7a8b; }
+.fold-empty p { margin: 0; font-size: 14px; font-weight: 500; color: var(--muted); }
+.fe-fold { width: 64px; height: 54px; opacity: .9; }
+@keyframes fe-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+html[data-lite] .fold-empty, html[data-lite] .fe-fold { animation: none; }
+@media (prefers-reduced-motion: reduce) { .fold-empty, .fe-fold { animation: none; } }
+.fold-empty-acts { display: flex; gap: 8px; justify-content: center; }
+html:root:root:root:root .fold-empty-acts .pill-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 16px; font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+.fold-empty-acts .pill-btn svg { width: 13px; height: 13px; }
+html:root:root:root:root .fold-empty-acts .fe-add { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; color: var(--halo-ink, #fff) !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }

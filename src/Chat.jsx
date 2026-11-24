@@ -103,6 +103,18 @@ function usePeopleSearch(meId) {
 /* ---------- the app ---------- */
 // Bring a folder's tab whole into sight in the folder bar (Alex, 23 Nov): clear of the bar's left edge and of
 // Archived, which is held over the bar's right end, so a tab chosen by a tap or a slide is never half hidden
+// the empty folder's own drawing: a glass folder, its back and its open front (Alex, 24 Nov)
+const FOLD_EMPTY = (
+  <svg className="fe-fold" viewBox="0 0 96 80" aria-hidden="true">
+    <defs>
+      <linearGradient id="fe-b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--fe3)" /><stop offset="1" stopColor="var(--fe4)" /></linearGradient>
+      <linearGradient id="fe-f" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stopColor="var(--fe1)" /><stop offset="1" stopColor="var(--fe2)" /></linearGradient>
+    </defs>
+    <path d="M10 14a6 6 0 0 1 6-6h20l7 7h37a6 6 0 0 1 6 6v45a6 6 0 0 1-6 6H16a6 6 0 0 1-6-6z" fill="url(#fe-b)" />
+    <path d="M22 24h54a6 6 0 0 1 6 7l-6 36a6 6 0 0 1-6 5H12a5 5 0 0 1-5-6l9-37a6 6 0 0 1 6-5z" fill="url(#fe-f)" stroke="rgba(255,255,255,.7)" strokeWidth="1" />
+    <path d="M22 26h52" stroke="rgba(255,255,255,.85)" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+)
 function showTab(btn) {
   const nav = btn?.parentElement
   if (!nav || nav.classList.contains('tabs-wheel') || nav.scrollWidth <= nav.clientWidth) return
@@ -246,7 +258,8 @@ export default function Chat({ me, setMe }) {
   // a folder is edited on a page of its own in Settings, like Telegram's (Alex, 16 Oct)
   const openFolders = () => { setModal(''); setTab('settings'); setSetPage('folders') }
   const folderBack = useRef('') // the screen a folder was opened for editing from: its tick goes back there
-  const editFolder = (id, seed = []) => { folderBack.current = tab === 'settings' ? '' : tab; setModal(''); setFolderSeed(seed); setTab('settings'); setSetPage(`folder:${id}`) }
+  const [folderPick, setFolderPick] = useState(false) // Add Chats from an empty folder opens the chats picker at once
+  const editFolder = (id, seed = [], pickNow = false) => { folderBack.current = tab === 'settings' ? '' : tab; setModal(''); setFolderSeed(seed); setFolderPick(pickNow); setTab('settings'); setSetPage(`folder:${id}`) }
   const doneFolder = () => { document.activeElement?.blur?.(); const back = folderBack.current; folderBack.current = ''; if (back) { setSetPage(''); setTab(back) } else setSetPage('folders') }
   const tabsLens = useLens(`${tab}|${folder}|${prefs.folderTabs}|${prefs.theme}|${myFolders.length}|${!q.trim()}`)
   // the folder tabs fade at the right edge only while more tabs wait past it (Alex, 21 Oct: the last tab looked shaded)
@@ -1680,7 +1693,17 @@ export default function Chat({ me, setMe }) {
                   <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find someone</button>
                 </div>
               )}
-              {rooms.length > 0 && !shown.length && !hits.length && <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : myFolders.some((f) => f.id === folder) ? 'This folder is empty. Add chats to it under Edit folders.' : folder === 'archived' ? 'Nothing here in Archived.' : 'Nothing here.'}</p>}
+              {rooms.length > 0 && !shown.length && !hits.length && (!q.trim() && myFolders.some((f) => f.id === folder)
+                // an empty folder of one's own (Alex, 24 Nov, C of https://claude.ai/artifact/GAKLEmbkT2TYJx7eEF8nFP)
+                ? <div className="fold-empty">
+                    {FOLD_EMPTY}
+                    <p>No chats in this folder yet.</p>
+                    <div className="fold-empty-acts">
+                      <button type="button" className="pill-btn fe-add" onClick={() => editFolder(folder, [], true)}>{I.plus}<span>Add Chats</span></button>
+                      <button type="button" className="pill-btn fe-edit" onClick={() => editFolder(folder)}>Edit Folder</button>
+                    </div>
+                  </div>
+                : <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : folder === 'archived' ? 'Nothing here in Archived.' : 'Nothing here.'}</p>)}
               {(folder === 'projects' && !q.trim() ? shown.filter((r) => !isDelivered(proKit.map[r.room_id])) : shown).map((r) => roomRow(r))}
               {folder === 'projects' && !q.trim() && (() => {
                 // delivered projects fold away at the foot of PROjects (Alex, 22 Nov, "B"); kept open or shut on the device
@@ -1825,7 +1848,7 @@ export default function Chat({ me, setMe }) {
         {tab === 'settings' ? (
           <Suspense fallback={<div className="set-body" />}><SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} onFolderDone={doneFolder} toast={toast} me={me} setMe={setMe}
             profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : m.startsWith('delete:') ? deleteFolder(allFolders.find((f) => f.id === m.slice(7))) : openFolders())}
-            folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
+            folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, pickNow: folderPick, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} toast={toast} />

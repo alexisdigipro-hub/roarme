@@ -1109,7 +1109,7 @@ function FolderEdit({ id, kit, onDone, toast }) {
   const [fid] = useState(() => (id === 'new' ? crypto.randomUUID() : id))
   const saved = kit.folders.find((f) => f.id === fid)
   const [draft, setDraft] = useState(() => (saved ? { exclude: [], types: {}, ...saved } : { id: fid, name: '', rooms: kit.seed || [], exclude: [], types: {} }))
-  const [pick, setPick] = useState('') // 'in' | 'out': the chats picker
+  const [pick, setPick] = useState(() => (kit.pickNow && id !== 'new' ? 'in' : '')) // 'in' | 'out': the chats picker; an empty folder's Add Chats opens it at once
   const [q, setQ] = useState('')
   const first = useRef(true)
   const marks = useNameMarks(draft.name, (v) => setDraft((d) => ({ ...d, name: v })))

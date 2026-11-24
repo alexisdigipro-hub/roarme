@@ -15,6 +15,7 @@ export const NEWS = [
         'Group pictures: a group with no photo wears the same round as a person with no photo, with the group sign in it, always the same colour for the same group.',
         'Group names in bold or italic show their first letter properly, not a box with a question mark.',
         'Archived is a word again in the folder bar, as every other folder.',
+        'Empty folders: a small folder, one line, and Add Chats or Edit Folder right there.',
       ] },
       { title: 'On a phone', items: [
         'Transfer: the Transfer button no longer hides under the bar at the foot of the + sheet.',

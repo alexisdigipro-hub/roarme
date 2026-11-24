@@ -97,11 +97,44 @@ function Crumb({ title, sub, pic, onBack }) {
 
 const listCache = new Map()
 
+// a slide right goes one step back, a slide left one step on (Alex, 24 Nov: "swipe right and left in all the mail"); the
+// page follows the finger a little and springs back if let go early; fields, the mail's own frame and files are left alone
+function useSlide(onRight, onLeft) {
+  const g = useRef(null)
+  const el = useRef(null)
+  const put = (x, ease) => { const n = el.current; if (!n) return; n.style.transition = ease ? 'transform .26s cubic-bezier(.22,1,.36,1)' : 'none'; n.style.transform = x ? `translate3d(${x}px,0,0)` : '' }
+  return {
+    ref: el,
+    onTouchStart: (e) => { if (e.touches.length !== 1 || e.target.closest('input, textarea, .rmx-files')) { g.current = null; return } g.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', t: Date.now() } },
+    onTouchMove: (e) => {
+      const s = g.current; if (!s) return
+      const dx = e.touches[0].clientX - s.x, dy = e.touches[0].clientY - s.y
+      if (!s.lock) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; s.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y' }
+      if (s.lock !== 'x') return
+      const can = dx > 0 ? onRight : onLeft
+      s.dx = dx
+      put(can ? dx * 0.55 : dx * 0.12)
+    },
+    onTouchEnd: () => {
+      const s = g.current; g.current = null
+      if (!s || s.lock !== 'x') return
+      const fast = Math.abs(s.dx || 0) > 30 && Date.now() - s.t < 260
+      const go = Math.abs(s.dx || 0) > 80 || fast
+      put(0, true)
+      if (!go) return
+      if (s.dx > 0 && onRight) onRight(); else if (s.dx < 0 && onLeft) onLeft()
+    },
+  }
+}
+
 export function MailView() {
   const [setup, setSetup] = useState(null)       // null loading · { accounts, folders } · { error }
   const [on, setOn] = useState(null)             // the accounts RoarMe can read: Map id -> { status, error }
   const [counts, setCounts] = useState({})       // account id -> unread in its Inbox
   const [step, setStep] = useState({ s: 'accs' }) // accs · folders { acc } · list { acc, role|path, name } · read
+  const [fwd, setFwd] = useState(null) // the step a slide right left, so a slide left can go on to it again
+  const back = (to) => { setFwd(step); setStep(to) }
+  const foldSlide = useSlide(() => back({ s: 'accs' }), fwd && fwd.s === 'list' && fwd.acc === step.acc ? () => setStep(fwd) : null)
   useEffect(() => {
     let gone = false
     loadSetup().then((x) => { if (!gone) setSetup(x) }, (e) => { if (!gone) setSetup({ error: e.message || 'Could not read RoarMail' }) })
@@ -141,7 +174,7 @@ export function MailView() {
           const n = a.id === 'all' ? total : counts[a.id] || 0
           const off = a.id !== 'all' && on && !on.has(a.id)
           return (
-            <button key={a.id} type="button" className="room rmx-accrow" onClick={() => setStep({ s: 'folders', acc: a.id })}>
+            <button key={a.id} type="button" className="room rmx-accrow" onClick={() => { if (fwd?.acc !== a.id) setFwd(null); setStep({ s: 'folders', acc: a.id }) }}>
               <AccPic a={a} />
               <span className="room-main">
                 <span className="room-top"><strong>{a.name}</strong></span>
@@ -166,10 +199,10 @@ export function MailView() {
     const own = mine.filter((f) => !f.role || !ROLES.some(([r]) => r === f.role)).filter((f) => f.role !== 'flagged')
       .sort((a, b) => a.path.localeCompare(b.path))
     const off = acc.id !== 'all' && on && !on.has(acc.id)
-    const open = (r) => setStep({ s: 'list', acc: acc.id, role: r.role, path: r.path, name: r.name })
+    const open = (r) => { setFwd(null); setStep({ s: 'list', acc: acc.id, role: r.role, path: r.path, name: r.name }) }
     return (
-      <div className="rmx rmx-fl">
-        <Crumb title={acc.name} sub={acc.email} pic={<AccPic a={acc} size={34} />} onBack={() => setStep({ s: 'accs' })} />
+      <div className="rmx rmx-fl" {...foldSlide}>
+        <Crumb title={acc.name} sub={acc.email} pic={<AccPic a={acc} size={34} />} onBack={() => back({ s: 'accs' })} />
         {off && <p className="rmx-note">To read this account here, open RoarMail on your computer: Settings › Roar Account › My mail in RoarMe › Send to RoarMe.</p>}
         <div className="rmx-box">
           {roleRows.map((r) => (
@@ -199,7 +232,7 @@ export function MailView() {
     ? accounts.filter((a) => on?.has(a.id)).map((a) => ({ account: a.id, path: setup.folders.find((f) => f.account === a.id && f.role === step.role)?.path })).filter((x) => x.path)
     : [{ account: acc.id, path: step.path }]
   return <MailList key={`${step.acc}|${step.path || step.role}`} acc={acc} step={step} targets={targets} accounts={accounts} folders={setup.folders}
-    offline={acc.id !== 'all' && on && !on.has(acc.id)} onBack={() => setStep({ s: 'folders', acc: step.acc })} />
+    offline={acc.id !== 'all' && on && !on.has(acc.id)} onBack={() => back({ s: 'folders', acc: step.acc })} />
 }
 
 function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
@@ -212,6 +245,7 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
   const [filter, setFilter] = useState('')
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(null)
+  const lastOpen = useRef(null)
   const load = async (p = 0) => {
     if (!targets.length) { setRows([]); setMore(false); return }
     setBusy(true); setErr('')
@@ -243,13 +277,18 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
   }), [rows, filter, q])
   const patch = (m, p) => setRows((r) => { const next = (r || []).map((x) => x === m || (x.account === m.account && x.path === m.path && x.uid === m.uid) ? { ...x, ...p } : x); listCache.set(ck, { rows: next, more, page }); return next })
   const drop = (m) => setRows((r) => { const next = (r || []).filter((x) => !(x.account === m.account && x.path === m.path && x.uid === m.uid)); listCache.set(ck, { rows: next, more, page }); return next })
+  const same = (a, b) => a && b && a.account === b.account && a.path === b.path && a.uid === b.uid
+  const openMail = (m) => { lastOpen.current = m; setOpen(m); if (!m.seen) patch(m, { seen: true }) }
+  const nextOf = (m) => { const i = shown.findIndex((x) => same(x, m)); return i >= 0 ? shown[i + 1] : null }
+  const listSlide = useSlide(onBack, lastOpen.current && !open ? () => setOpen(lastOpen.current) : null)
 
   if (open) {
-    return <MailRead m={open} accounts={accounts} folders={folders} onBack={() => setOpen(null)}
+    const nx = nextOf(open)
+    return <MailRead key={`${open.account}|${open.path}|${open.uid}`} m={open} accounts={accounts} folders={folders} onBack={() => setOpen(null)} onNext={nx ? () => openMail(nx) : null}
       onSeen={(v) => patch(open, { seen: v })} onFlag={(v) => { patch(open, { flagged: v }); setOpen({ ...open, flagged: v }) }} onGone={() => { drop(open); setOpen(null) }} />
   }
   return (
-    <div className="rmx rmx-ml">
+    <div className="rmx rmx-ml" {...listSlide}>
       <Crumb title={step.name} sub={acc.id === 'all' ? 'All accounts' : acc.email} onBack={onBack} />
       <div className="rmx-fbar">
         <span className="rmx-filters">
@@ -262,7 +301,7 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
         : err && !rows.length ? <p className="rmx-note">{err}</p>
         : !shown.length ? <p className="muted rooms-none">{targets.length ? 'Nothing here.' : 'No account is in RoarMe yet. Send one from RoarMail on your computer.'}</p>
         : shown.map((m) => (
-          <button key={`${m.account}|${m.path}|${m.uid}`} type="button" className={`room rmx-row${m.seen ? '' : ' rmx-un'}`} onClick={() => { setOpen(m); if (!m.seen) patch(m, { seen: true }) }}>
+          <button key={`${m.account}|${m.path}|${m.uid}`} type="button" className={`room rmx-row${m.seen ? '' : ' rmx-un'}`} onClick={() => openMail(m)}>
             <Avatar name={nameOf(m.from) || '?'} size={50} />
             <span className="room-main">
               <span className="room-top"><strong>{nameOf(m.from) || '(no sender)'}</strong><small>{m.files > 0 && <i className="rmx-mi">{MAIL_I.clip}</i>}{m.flagged && <i className="rmx-mi rmx-star">{MAIL_I.starF}</i>}{when(m.date)}</small></span>
@@ -278,12 +317,13 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
 }
 
 // a mail's own page: what it says drawn in a sealed frame (no scripts, no forms, nothing from outside until Show Images)
-function MailRead({ m, accounts, folders, onBack, onSeen, onFlag, onGone }) {
+function MailRead({ m, accounts, folders, onBack, onNext, onSeen, onFlag, onGone }) {
   const [mail, setMail] = useState(null)
   const [err, setErr] = useState('')
   const [pics, setPics] = useState(false)
   const [busy, setBusy] = useState('')
   const frame = useRef(null)
+  const readSlide = useSlide(onBack, onNext)
   const acc = accounts.find((a) => a.id === m.account)
   useEffect(() => {
     let gone = false
@@ -298,7 +338,19 @@ function MailRead({ m, accounts, folders, onBack, onSeen, onFlag, onGone }) {
 <style>html,body{margin:0;padding:0;background:#fff;color:#1d1d24;font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;word-wrap:break-word;overflow-wrap:anywhere}body{padding:14px 14px 18px}img{max-width:100%;height:auto}table{max-width:100%!important}a{color:#1a7fd0}</style></head><body>${body}</body></html>`
   }, [mail, pics])
   // the frame as tall as what is in it
-  const fit = () => { const f = frame.current; try { const h = f.contentDocument.documentElement.scrollHeight; f.style.height = `${Math.max(120, h)}px` } catch { /* sealed */ } }
+  const fit = () => {
+    const f = frame.current
+    try {
+      const h = f.contentDocument.documentElement.scrollHeight; f.style.height = `${Math.max(120, h)}px`
+      // the mail's own frame keeps a finger to itself, so its touches are handed to the page's slide (by screen place)
+      const r = () => f.getBoundingClientRect()
+      const as = (e) => ({ touches: [...e.touches].map((t) => ({ clientX: t.clientX + r().left, clientY: t.clientY + r().top })), target: f })
+      const d = f.contentDocument
+      d.addEventListener('touchstart', (e) => readSlide.onTouchStart(as(e)), { passive: true })
+      d.addEventListener('touchmove', (e) => readSlide.onTouchMove(as(e)), { passive: true })
+      d.addEventListener('touchend', () => readSlide.onTouchEnd(), { passive: true })
+    } catch { /* sealed */ }
+  }
   const folderOf = (role) => folders.find((f) => f.account === m.account && f.role === role)?.path
   const act = async (what) => {
     setBusy(what)
@@ -325,7 +377,7 @@ function MailRead({ m, accounts, folders, onBack, onSeen, onFlag, onGone }) {
   }
   const from = mail?.from || m.from
   return (
-    <div className="rmx rmx-rd">
+    <div className="rmx rmx-rd" {...readSlide}>
       <Crumb title={m.subject || '(no subject)'} sub={acc?.email} onBack={onBack} />
       <article className="rmx-mail">
         <div className="rmx-mh">

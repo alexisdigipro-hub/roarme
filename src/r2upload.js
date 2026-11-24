@@ -55,7 +55,7 @@ export function r2Transfer({ onProgress = () => {} } = {}) {
     if (stopped) { no(new Error('cancelled')); return }
     const x = new XMLHttpRequest()
     xhrs.push(x)
-    const quiet = Math.max(6000, (body.size || 0) / 100)
+    const quiet = Math.max(6000, (body.size || body.byteLength || 0) / 100)
     let dog = 0
     const watch = () => { clearTimeout(dog); dog = setTimeout(() => { x.stalled = true; x.abort() }, quiet) }
     const drop = () => { clearTimeout(dog); xhrs = xhrs.filter((y) => y !== x) }
@@ -75,6 +75,7 @@ export function r2Transfer({ onProgress = () => {} } = {}) {
     const urls = {}, etags = {}, loaded = {}
     const t0 = Date.now()
     let retries = 0
+    let why = '' // what went wrong last, for the function's log when the upload gives up
     const sum = () => Object.values(loaded).reduce((a, x) => a + x, 0)
     let signing = null // one signing request at a time, for the next 20 pieces
     const urlFor = async (i) => {
@@ -96,16 +97,24 @@ export function r2Transfer({ onProgress = () => {} } = {}) {
         const i = next++
         if (i > n) return
         const from = (i - 1) * PART
-        const piece = f.slice(from, Math.min(from + PART, f.size))
+        // the piece is read into memory first and its bytes are sent (Alex, 24 Nov: on the iPhone a picked file the
+        // system no longer lets us read failed six times as "The connection dropped"); a file that cannot be read says so
+        let piece
+        try { piece = await f.slice(from, Math.min(from + PART, f.size)).arrayBuffer() } catch {
+          why = 'read'
+          throw Object.assign(new Error("Couldn't read the file. Pick it again."), { fatal: true })
+        }
+        const size = piece.byteLength
         let tries = 0
         for (;;) {
           try {
             const r = await put(await urlFor(i), piece, (x) => { loaded[i] = x; onProgress(before + sum()) })
-            if (r.status >= 200 && r.status < 300) { etags[i] = r.getResponseHeader('ETag') || ''; loaded[i] = piece.size; onProgress(before + sum()); break }
+            if (r.status >= 200 && r.status < 300) { etags[i] = r.getResponseHeader('ETag') || ''; loaded[i] = size; onProgress(before + sum()); break }
             if (r.status === 403) delete urls[i] // its signature ran out: sign it again
             throw new Error(`Upload failed (${r.status})`)
           } catch (e) {
             if (stopped || e.message === 'cancelled' || e.fatal) throw e
+            why = e.message === 'stalled' ? 'stall' : e.message === 'The connection dropped.' ? 'net' : e.message.replace(/\D+/g, '') ? `http${e.message.replace(/\D+/g, '')}` : 'other'
             loaded[i] = 0
             retries++
             if (++tries > 6) throw e
@@ -115,7 +124,8 @@ export function r2Transfer({ onProgress = () => {} } = {}) {
       }
     }
     try { await Promise.all([worker(), worker(), worker()]) } catch (e) {
-      bridge({ action: 'abort', key: made.key, uploadId: made.uploadId }).catch(() => {})
+      if (!stopped) why ||= 'other'
+      bridge({ action: 'abort', key: made.key, uploadId: made.uploadId }, why ? `fail=${why}&kb=${Math.round(f.size / 1024)}&ms=${Date.now() - t0}&retries=${retries}` : '').catch(() => {})
       throw e
     }
     const parts = Object.keys(etags).map((k) => ({ n: +k, etag: etags[k] }))

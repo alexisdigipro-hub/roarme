@@ -46,6 +46,11 @@ jobs:
           npm install --no-audit --no-fund
           npx cap add ios
           npx cap sync ios
+          # iOS 15 at the least (Apple, ITMS-90068: from April 2027 a lower target is refused)
+          find ios -name project.pbxproj -exec sed -i '' -E 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]+;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' {} +
+          [ -f ios/App/Podfile ] && sed -i '' -E "s/platform :ios, '[0-9.]+'/platform :ios, '15.0'/" ios/App/Podfile || true
+          find ios -name Package.swift -exec sed -i '' -E 's/\.iOS\(\.v1[0-4]\)/.iOS(.v15)/g' {} + || true
+          grep -rho 'IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*' ios | sort | uniq -c
           cat ios/App/App/capacitor.config.json
       - name: Permission texts, name and version
         working-directory: roarref-ios

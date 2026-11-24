@@ -14,6 +14,7 @@ export const NEWS = [
       { title: 'Everywhere', items: [
         'Group pictures: a group with no photo now wears its own Glass Orb, a ball of soft colour under frosted glass, always the same colour for the same group.',
         'Group names in bold or italic show their first letter properly, not a box with a question mark.',
+        'Archived is a word again in the folder bar, as every other folder.',
       ] },
       { title: 'On a phone', items: [
         'Transfer: the Transfer button no longer hides under the bar at the foot of the + sheet.',

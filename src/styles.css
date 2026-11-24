@@ -8523,3 +8523,11 @@ html:root:root:root:root .pick-acts .btn:active, html:root:root:root:root .fold-
 html:root:root:root:root:root:root .pick-mark .wordmark.with-by .rm-mark { display: none !important; }
 html:root:root:root:root:root:root .pick-mark .wordmark.with-by .by-tml, html:root:root:root:root:root:root .pick-mark .wordmark.with-by .by-tml b, html:root:root:root:root:root:root .pick-mark .wordmark.with-by .by-tml b strong { font-size: 13px !important; }
 html:root:root:root:root:root:root .pick-mark .wordmark.with-by .by-tml { margin-top: -6px !important; }
+
+/* Empty screens, version B of https://claude.ai/artifact/PQWXfWDRF6CxeHFanGGQNG (Alex, 24 Nov): one line and one glass pill, no picture, no colour */
+html:root:root:root:root:root .pick-acts .btn, html:root:root:root:root:root .fold-empty-acts .pill-btn { width: auto; height: 34px; padding: 0 16px; border-radius: 17px; gap: 6px; font-size: 13px; background: rgba(255, 255, 255, .6) !important; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .95), inset 0 0 12px rgba(255, 255, 255, .7), 0 6px 18px rgba(40, 50, 80, .1), 0 1px 3px rgba(40, 50, 80, .06) !important; -webkit-backdrop-filter: blur(16px) !important; backdrop-filter: blur(16px) !important; }
+html:root:root:root:root:root[data-mode='dark'] .pick-acts .btn, html:root:root:root:root:root[data-mode='dark'] .fold-empty-acts .pill-btn { background: rgba(255, 255, 255, .07) !important; box-shadow: inset 0 1px 1px rgba(255, 255, 255, .14), inset 0 0 12px rgba(255, 255, 255, .12), 0 6px 18px rgba(0, 0, 0, .4) !important; }
+html:root:root:root:root:root .pick-acts .btn svg, html:root:root:root:root:root .fold-empty-acts .pill-btn svg { width: 16px; height: 16px; }
+html:root:root:root:root:root .pick-acts .btn:hover, html:root:root:root:root:root .fold-empty-acts .pill-btn:hover { background: rgba(255, 255, 255, .78) !important; }
+html:root:root:root:root:root[data-mode='dark'] .pick-acts .btn:hover, html:root:root:root:root:root[data-mode='dark'] .fold-empty-acts .pill-btn:hover { background: rgba(255, 255, 255, .12) !important; }
+.fold-empty { gap: 14px; }

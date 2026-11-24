@@ -8535,3 +8535,11 @@ html:root:root:root:root:root[data-mode='dark'] .pick-acts .btn:hover, html:root
 /* A folder's Included chats window (Alex, 24 Nov: "the search is very thin; check the window's colours, light and dark"): the app's own search pill (label.search) in place of a bare field; the empty tick circles show by Night too */
 .fold-search { margin-bottom: 12px; }
 html:root:root:root:root[data-mode='dark'] .modal .people .tick:not(.on) { border-color: rgba(255, 255, 255, .32) !important; }
+
+/* The profile no longer slides sideways on a phone (Alex, 24 Nov: "it spills over"): the folded bar's backing reached 2px past the page's 14px padding, which made the page scroll sideways; and in a project group the Pre · Prod · Post chips squeezed the members' names to nothing, so they go on a line of their own under the name */
+.pf-dock::before { left: -14px; right: -14px; }
+@media (max-width: 760px) {
+  .pf-row:has(> .pf-chans) { flex-wrap: wrap; row-gap: 6px; }
+  .pf-row:has(> .pf-chans) > .pf-row-text { flex: 1 1 0; min-width: 0; }
+  .pf-row > .pf-chans { order: 9; flex: 0 0 auto; margin-left: 52px; }
+}

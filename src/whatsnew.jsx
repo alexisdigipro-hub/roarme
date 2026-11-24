@@ -17,6 +17,7 @@ export const NEWS = [
         'Archived is a word again in the folder bar, as every other folder.',
         'Empty folders made calm: one line and one glass button, Add Chats.',
         'On the computer, the welcome screen is only ROARME with by THEMADLIONS under it.',
+        'A group'\''s page no longer slides sideways on a phone, and in a PROject the Pre, Prod and Post choices sit under each name.',
         'On a computer the two panels have no white outline any more: the glass glows softly from its edges instead.',
       ] },
       { title: 'On a phone', items: [

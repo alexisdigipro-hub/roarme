@@ -12,6 +12,7 @@ import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { WhatsNewPage } from './whatsnew.jsx'
 import { ProjectsPage } from './hub.jsx'
+import { MAIL_I, MailPage, MailWord } from './mail.jsx'
 import { MyTransfers } from './transfer.jsx'
 import { useNameMarks } from './fancy.jsx'
 import { PhoneField, showPhone, smsErr, toE164, usePhoneAuth } from './phone.jsx'
@@ -45,7 +46,7 @@ const parentOf = (id) => (id?.startsWith('folder:') ? 'folders' : PARENT[id] || 
 // pages that are no longer doors of their own in the menu: they open from inside General, Chats or Privacy and Security
 const SUBS = { general: 'App, Features, Language', chats: 'Folders, Auto-Reply, Data and Storage', privacy: 'Privacy, Active Sessions' }
 const TUCKED = ['features', 'language', 'transfer', 'folders', 'autoreply', 'data', 'sessions']
-export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : id === 'news' ? "What's New" : id === 'hub' || id === 'projects' ? 'PROjects' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
+export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : id === 'news' ? "What's New" : id === 'hub' || id === 'projects' ? 'PROjects' : id === 'mail' ? 'RoarMail' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 // the top of a page: its icon in its colour and what it holds
 // a settings page opens with its title alone (Alex, 12 Nov): the large sign and the line under it are gone
@@ -170,6 +171,7 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
       {/* PROjects, the gold door (Alex, 22 Nov: "in Settings the tab is the gold Projects, and inside it the hub you join, and the subscription"), on a phone and a computer */}
       <div className="set-box">
         <button type="button" className={`set-row set-pick set-nav set-proj${page === 'projects' || page === 'hub' ? ' on' : ''}`} onClick={() => onPage('projects')}><span className="nav-ico set-proj-ico">{FOOT_I.pro}</span><span className="set-text"><span className="tab-gold"><b>PRO</b><i>JECTS</i></span><small>Production Hub</small></span><i className="set-chev">{I.right}</i></button>
+        {inThemeLab(me) && <button type="button" className={`set-row set-pick set-nav set-proj${page === 'mail' ? ' on' : ''}`} onClick={() => onPage('mail')}><span className="nav-ico set-proj-ico">{MAIL_I.mail}</span><span className="set-text"><MailWord /><small>Only you see this</small></span><i className="set-chev">{I.right}</i></button>}
       </div>
       {/* every update, with its bullets (Alex, 22 Nov) */}
       <div className="set-box">
@@ -198,7 +200,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
         {parentOf(page)
           ? <button type="button" className="round" onClick={() => onPage(parentOf(page))} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
           : <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>}
-        <strong>{page === 'projects' || page === 'hub' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : title}</strong>
+        <strong>{page === 'projects' || page === 'hub' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : page === 'mail' ? <MailWord /> : title}</strong>
         {/* the folder is kept as it is typed; the tick takes you out (Alex, 21 Oct) */}
         {page.startsWith('folder:') && <button type="button" className="round set-done" onClick={() => (onFolderDone ? onFolderDone() : onPage('folders'))} aria-label="Done" title="Done">{svg(<path d="M5 12.5l4.5 4.5L19 7.5" />)}</button>}
       </header>
@@ -223,6 +225,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
         {page === 'keys' && <Keys p={p} />}
         {page === 'news' && <WhatsNewPage />}
         {(page === 'hub' || page === 'projects') && <ProjectsPage toast={toast} me={me} />}
+        {page === 'mail' && inThemeLab(me) && <MailPage />}
         {page === 'notify' && <Notify p={p} toast={toast} />}
         {page === 'autoreply' && <AutoReply toast={toast} />}
         {page === 'privacy' && <><Privacy me={me} setMe={setMe} toast={toast} /><Sessions me={me} setMe={setMe} toast={toast} /></>}

@@ -4,7 +4,7 @@ import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusU
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
 import { ASIDE_TABS, OrdinoCard, OrdinoView, ProChip, ProPanel, asideTab, isAsset, isDelivered, ordinoOf, proOk, useProjects } from './pro.jsx'
 import { Moji, isSticker, mojify, mojiCount, mojiOf, mojiSend } from './moji.jsx'
-import { REACTIONS, TEXT_SIZES, chime, folderTint, getPrefs, haloish, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
+import { REACTIONS, TEXT_SIZES, chime, folderTint, getPrefs, haloish, inThemeLab, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls, CALL_EDGE } from './calls.jsx'
 import { tr } from './i18n.js'
@@ -67,6 +67,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { hubLink, hubStart, proSwitchLoad, proSwitchNow } from './hub.jsx'
+import { MAIL_I, MailView, MailWord, mailSwitchNow } from './mail.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -124,6 +125,10 @@ export default function Chat({ me, setMe }) {
   const [proSwitch, setProSwitch] = useState(proSwitchNow)
   useEffect(() => { proSwitchLoad(me.id).catch(() => {}); const f = (e) => setProSwitch(!!e.detail); window.addEventListener('roarme-pro-switch', f); return () => window.removeEventListener('roarme-pro-switch', f) }, [me.id])
   const proOn = proOk() && proSwitch
+  // RoarMail inside RoarMe (Alex, 24 Nov): a hidden switch only he sees (Settings > RoarMail), kept on the device; on, the gold ROARMAIL folder
+  const [mailSwitch, setMailSwitch] = useState(mailSwitchNow)
+  useEffect(() => { const f = (e) => setMailSwitch(!!e.detail); window.addEventListener('roarme-mail-switch', f); return () => window.removeEventListener('roarme-mail-switch', f) }, [])
+  const mailOn = inThemeLab(me) && mailSwitch
   const proKit = useProjects(me, true)
   // Production Hub: on starting, tie my project groups and bring the hub's new projects in as groups (hub.jsx)
   useEffect(() => { if (proOn) hubStart() }, [proOn])
@@ -775,7 +780,7 @@ export default function Chat({ me, setMe }) {
   const fRank = (id) => { if (id === 'archived') return 1e9; if (id === 'unread') return -1; const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
   // the ready-made folders can be renamed and, except All, deleted (Alex, 16 Oct)
   const hiddenF = prefs.hiddenFolders || []
-  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || id === 'unread' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), ...(proOn ? [{ id: 'projects', name: 'PROjects', fixed: true }] : [])]
+  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || id === 'unread' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), ...(proOn ? [{ id: 'projects', name: 'PROjects', fixed: true }] : []), ...(mailOn ? [{ id: 'mail', name: 'RoarMail', fixed: true }] : [])]
     .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
   const tabsShown = tabDrag?.order ? tabDrag.order.map((id) => allFolders.find((f) => f.id === id)).filter(Boolean) : allFolders
   const editTabs = tabsEdit || picking
@@ -869,7 +874,7 @@ export default function Chat({ me, setMe }) {
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', up)
   }
-  useEffect(() => { if (folder !== 'all' && (hiddenF.includes(folder) || (!proOn && (folder === 'projects' || folder === 'direct')))) setFolder('all') }, [hiddenF.join(), folder, proOn])
+  useEffect(() => { if (folder !== 'all' && (hiddenF.includes(folder) || (!proOn && (folder === 'projects' || folder === 'direct')) || (!mailOn && folder === 'mail'))) setFolder('all') }, [hiddenF.join(), folder, proOn, mailOn])
   const fits = (r, f) => {
     if (f === 'archived') return r.archived
     if (r.archived) return false
@@ -877,6 +882,7 @@ export default function Chat({ me, setMe }) {
     if (f === 'unread') return r.unread > 0 || marked.includes(r.room_id) || (prefs.folderExtra?.unread || []).includes(r.room_id)
     if (f === 'groups') return r.kind === 'group' || (prefs.folderExtra?.groups || []).includes(r.room_id)
     if (f === 'projects') return r.kind === 'group' && (!!r.project || !!proKit.map[r.room_id])
+    if (f === 'mail') return false
     const mine = myFolders.find((x) => x.id === f)
     if (mine) {
       if ((mine.exclude || []).includes(r.room_id)) return false
@@ -1662,7 +1668,7 @@ export default function Chat({ me, setMe }) {
                   const n = folderUnread(f)
                   const dragged = tabDrag?.id === f.id
                   return <button key={`${k}:${f.id}`} type="button" data-tab={f.id} data-copy={k} title={f.name} aria-hidden={twin || undefined} tabIndex={twin ? -1 : undefined} className={`${folder === f.id && !twin ? 'on' : ''}${dragged ? ' tab-dragging' : ''}`} style={dragged ? { transform: `translateX(${tabDrag.dx}px)` } : undefined}
-                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; if (f.id === 'all' && (folder === 'all' || folder === 'unread') && uCount > 0 && window.matchMedia('(hover: hover) and (pointer: fine)').matches) { setUOpen((o) => !(o || folder === 'unread')); if (folder === 'unread') setFolder('all'); return } setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else showTab(e.currentTarget) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'direct' ? I.person : f.id === 'projects' ? <i className="tab-gold-ico">{FOOT_I.pro}</i> : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : f.id === 'unread' ? <i className={`tab-dot tab-circ${n > 0 ? ' lit' : ''}`} role="img" aria-label={n > 0 ? `Unread, ${n}` : 'Unread'} title="Unread"><span className={`badge dot${n > 0 ? '' : ' quiet'}`} /></i> : f.color ? <span className="fold-tint" style={folderTint(f.color)}>{f.name}</span> : f.name}</span>{editTabs ? (f.id !== 'all' && f.id !== 'projects' && f.id !== 'unread' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && f.id !== 'unread' && <small>{n}</small>}</button>
+                    {...(editTabs ? { onPointerDown: (e) => tabDown(e, f) } : tabPress(f))} onClick={(e) => { if (Date.now() - tabSkip.current < 400) return; if (f.id === 'all' && (folder === 'all' || folder === 'unread') && uCount > 0 && window.matchMedia('(hover: hover) and (pointer: fine)').matches) { setUOpen((o) => !(o || folder === 'unread')); if (folder === 'unread') setFolder('all'); return } setFolder(f.id); if (wheeling) { const nav = tabsLens.current, t = toMiddleCopy(nav, e.currentTarget); nav.scrollTo({ left: t.offsetLeft + t.offsetWidth / 2 - nav.clientWidth / 2, behavior: 'smooth' }) } else showTab(e.currentTarget) }} onContextMenu={(e) => { e.preventDefault(); setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) }) }}><span className="tab-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'direct' ? I.person : f.id === 'projects' ? <i className="tab-gold-ico">{FOOT_I.pro}</i> : f.id === 'mail' ? <i className="tab-gold-ico">{MAIL_I.mail}</i> : f.id === 'archived' ? I.archive : I.folder}</span><span className="tab-name">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : f.id === 'mail' ? <MailWord /> : f.id === 'unread' ? <i className={`tab-dot tab-circ${n > 0 ? ' lit' : ''}`} role="img" aria-label={n > 0 ? `Unread, ${n}` : 'Unread'} title="Unread"><span className={`badge dot${n > 0 ? '' : ' quiet'}`} /></i> : f.color ? <span className="fold-tint" style={folderTint(f.color)}>{f.name}</span> : f.name}</span>{editTabs ? (f.id !== 'all' && f.id !== 'projects' && f.id !== 'mail' && f.id !== 'unread' && <i className="tab-x" role="button" aria-label={`Delete ${f.name}`} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteFolder(f) }}>{I.x}</i>) : n > 0 && f.id !== 'archived' && f.id !== 'unread' && <small>{n}</small>}</button>
                 }))}
               </nav>
               </div>
@@ -1681,7 +1687,8 @@ export default function Chat({ me, setMe }) {
                   <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find someone</button>
                 </div>
               )}
-              {rooms.length > 0 && !shown.length && !hits.length && (!q.trim() && myFolders.some((f) => f.id === folder)
+              {folder === 'mail' && <MailView />}
+              {folder !== 'mail' && rooms.length > 0 && !shown.length && !hits.length && (!q.trim() && myFolders.some((f) => f.id === folder)
                 // an empty folder of one's own (Alex, 24 Nov, C of https://claude.ai/artifact/GAKLEmbkT2TYJx7eEF8nFP)
                 ? <div className="fold-empty">
                     <p>This folder is empty.</p>
@@ -1833,7 +1840,7 @@ export default function Chat({ me, setMe }) {
         <NowPlaying onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
         {tab === 'settings' ? (
           <Suspense fallback={<div className="set-body" />}><SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} onFolderDone={doneFolder} toast={toast} me={me} setMe={setMe}
-            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : m.startsWith('delete:') ? deleteFolder(allFolders.find((f) => f.id === m.slice(7))) : openFolders())}
+            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders.filter((f) => f.id !== 'mail')} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : m.startsWith('delete:') ? deleteFolder(allFolders.find((f) => f.id === m.slice(7))) : openFolders())}
             folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, pickNow: folderPick, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (
@@ -1962,7 +1969,7 @@ export default function Chat({ me, setMe }) {
               {roomMenu.sub === 'folder' && (
                 <SubFly at={roomMenu.subAt}>
                   {/* every folder in the tabs, the ready-made ones too (Alex, 19 Oct); All holds every chat already */}
-                  {allFolders.filter((f) => f.id !== 'all').map((f) => {
+                  {allFolders.filter((f) => f.id !== 'all' && f.id !== 'mail').map((f) => {
                     const r = roomMenu.r
                     const on = f.custom ? f.rooms.includes(r.room_id) : f.id === 'archived' ? r.archived : (prefs.folderExtra?.[f.id] || []).includes(r.room_id)
                     const fixed = f.id === 'groups' && r.kind === 'group'

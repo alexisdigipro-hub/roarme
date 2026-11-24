@@ -17,6 +17,7 @@ export const NEWS = [
         'Archived is a word again in the folder bar, as every other folder.',
         'Empty folders: a small folder, one line, and Add Chats or Edit Folder right there.',
         'Quieter buttons on empty screens: no colour, a fine line, all the same size.',
+        'On a computer the two panels have no white outline any more: the glass glows softly from its edges instead.',
       ] },
       { title: 'On a phone', items: [
         'Transfer: the Transfer button no longer hides under the bar at the foot of the + sheet.',

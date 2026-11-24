@@ -8543,3 +8543,27 @@ html:root:root:root:root[data-mode='dark'] .modal .people .tick:not(.on) { borde
   .pf-row:has(> .pf-chans) > .pf-row-text { flex: 1 1 0; min-width: 0; }
   .pf-row > .pf-chans { order: 9; flex: 0 0 auto; margin-left: 52px; }
 }
+
+/* RoarMail inside RoarMe, step 1 (Alex, 24 Nov, from https://claude.ai/artifact/Yb79GqDnoCkSXzMy7AVyGP): the ROARMAIL folder's accounts row and filter bar on RoarMe's own pieces */
+.rmx-accs { display: flex; gap: 14px; padding: 4px 16px 8px; position: relative; z-index: 3; }
+.rmx-acc { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; border: 0; background: none; padding: 0; width: 52px; cursor: pointer; color: var(--muted); font: inherit; }
+.rmx-ring { border-radius: 50%; padding: 2px; box-shadow: 0 0 0 1.5px transparent; transition: box-shadow .2s; }
+.rmx-acc.on .rmx-ring { box-shadow: 0 0 0 2px var(--halo-l, #3aa7e8); }
+.rmx-acc .rmx-an { font-size: 11px; font-weight: 500; }
+.rmx-acc.on .rmx-an { color: var(--text); font-weight: 600; }
+.rmx-all { display: grid; place-items: center; color: #fff; }
+.rmx-all svg { width: 22px; height: 22px; }
+.rmx-n { position: absolute; top: -3px; right: -2px; }
+.rmx-fbar { display: flex; align-items: center; gap: 6px; padding: 0 12px 8px; position: relative; z-index: 3; }
+html:root:root:root:root .rmx-fold { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 10px 0 14px; font-size: 13.5px; font-weight: 600; text-transform: none; letter-spacing: 0; flex: none; }
+.rmx-fold svg { width: 14px; height: 14px; }
+.rmx-filters { flex: 1; min-width: 0; display: flex; justify-content: space-between; }
+html:root:root:root:root .rmx-filters .round { width: 36px; height: 36px; min-width: 36px; }
+.rmx-filters .round svg { width: 16px; height: 16px; }
+.rmx { display: flex; flex-direction: column; padding-top: 4px; }
+.rmx-fold:disabled { opacity: 1; }
+.rmx-wait { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 12vh auto 0; padding: 0 28px; text-align: center; }
+.rmx-wait-ico { width: 52px; height: 52px; border-radius: 26px; display: grid; place-items: center; color: var(--halo-l, #3aa7e8); background: color-mix(in srgb, var(--halo-l, #3aa7e8) 12%, transparent); }
+.rmx-wait-ico svg { width: 24px; height: 24px; }
+.rmx-wait p { margin: 6px 0 0; font-size: 14.5px; font-weight: 500; }
+.rmx-wait small { font-size: 13px; color: var(--muted); line-height: 1.4; max-width: 280px; }

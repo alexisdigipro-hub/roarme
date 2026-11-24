@@ -8,8 +8,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SUPABASE_KEY, SUPABASE_URL, supabase } from './lib.js'
 import { Avatar, I } from './ui.jsx'
+import { onPhone } from './push.js'
 
 const KEY = 'roarme-mail-on'
+// only on a phone (Alex, 24 Nov: "the mail in our chat is only for the phone; on the desktop there is the app itself")
+export const mailHere = () => onPhone()
 export const mailSwitchNow = () => { try { return localStorage.getItem(KEY) === '1' } catch { return false } }
 export const mailSwitchSet = (v) => {
   try { localStorage.setItem(KEY, v ? '1' : '0') } catch { /* private window */ }

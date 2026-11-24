@@ -67,7 +67,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { hubLink, hubStart, proSwitchLoad, proSwitchNow } from './hub.jsx'
-import { MAIL_I, MailView, MailWord, mailSwitchNow } from './mail.jsx'
+import { MAIL_I, MailView, MailWord, mailHere, mailSwitchNow } from './mail.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -128,7 +128,7 @@ export default function Chat({ me, setMe }) {
   // RoarMail inside RoarMe (Alex, 24 Nov): a hidden switch only he sees (Settings > RoarMail), kept on the device; on, the gold ROARMAIL folder
   const [mailSwitch, setMailSwitch] = useState(mailSwitchNow)
   useEffect(() => { const f = (e) => setMailSwitch(!!e.detail); window.addEventListener('roarme-mail-switch', f); return () => window.removeEventListener('roarme-mail-switch', f) }, [])
-  const mailOn = inThemeLab(me) && mailSwitch
+  const mailOn = inThemeLab(me) && mailHere() && mailSwitch
   const proKit = useProjects(me, true)
   // Production Hub: on starting, tie my project groups and bring the hub's new projects in as groups (hub.jsx)
   useEffect(() => { if (proOn) hubStart() }, [proOn])

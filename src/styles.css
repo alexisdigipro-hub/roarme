@@ -8508,3 +8508,6 @@ html[data-lite] .fold-empty, html[data-lite] .fe-fold { animation: none; }
 html:root:root:root:root .fold-empty-acts .pill-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 16px; font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; white-space: nowrap; }
 .fold-empty-acts .pill-btn svg { width: 13px; height: 13px; }
 html:root:root:root:root .fold-empty-acts .fe-add { background: linear-gradient(170deg, var(--halo-mine-top, var(--accent)), var(--halo-mine, var(--accent))) !important; color: var(--halo-ink, #fff) !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* What's New: the chosen All / Phone / Computer readable by Night (24 Nov) */
+html[data-mode='dark']:root:root:root:root .wn-seg button.on, html.dark:root:root:root:root .wn-seg button.on { background: rgba(255, 255, 255, .14); color: #fff; box-shadow: none; }

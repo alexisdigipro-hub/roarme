@@ -1226,7 +1226,12 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
     if (e.button !== 0) return
     if (swipe.open && swipe.id !== f.id) setSwipe({ id: '', x: 0, open: false })
     const base = swipe.open && swipe.id === f.id ? -DEL_W : 0
-    drag.current = { id: f.id, y0: e.clientY, x0: e.clientX, moved: false, side: false, base }
+    // on a phone a folder moves up or down only from its grip (Alex, 24 Nov: "the folders do not drag up and down"): the
+    // row lets the page scroll (touch-action pan-y), so a vertical slide that starts on it is the page's; the grip takes
+    // the finger itself (touch-action none) and the page's scroll is held while it drags
+    const grip = e.pointerType === 'mouse' || !!e.target.closest?.('.fold-grip')
+    drag.current = { id: f.id, y0: e.clientY, x0: e.clientX, moved: false, side: false, base, grip }
+    const hold = (ev) => { if (drag.current?.moved && !drag.current.side) ev.preventDefault() }
     const move = (ev) => {
       const d = drag.current
       if (!d) return
@@ -1234,7 +1239,7 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
       const sx = ev.clientX - d.x0
       if (d.side) { ev.preventDefault(); setSwipe({ id: d.id, x: Math.max(-DEL_W - 30, Math.min(0, d.base + sx)), open: false }); return }
       if (!d.moved && f.id !== 'all' && Math.abs(sx) > 8 && Math.abs(sx) > Math.abs(off) * 1.2) { d.side = true; d.moved = true; return }
-      if (!d.moved) { if (Math.abs(off) < 6) return; d.moved = true; setDragId(d.id) }
+      if (!d.moved) { if (Math.abs(off) < 6) return; if (!d.grip) { up(); return } d.moved = true; setDragId(d.id) }
       ev.preventDefault()
       if (d.lock) { setDy(off); return }
       // pass a neighbour's middle and the two swap places
@@ -1247,6 +1252,7 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
       setDy(off)
     }
     const up = () => {
+      window.removeEventListener('touchmove', hold)
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
@@ -1262,6 +1268,7 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
         setTimeout(() => { drag.current = null }, 0) // the click that ends a drag opens nothing
       } else drag.current = null
     }
+    window.addEventListener('touchmove', hold, { passive: false })
     window.addEventListener('pointermove', move, { passive: false })
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', up)

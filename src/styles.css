@@ -8518,3 +8518,8 @@ html:root:root:root:root .pick-acts .btn, html:root:root:root:root .fold-empty-a
 html:root:root:root:root .pick-acts .btn svg, html:root:root:root:root .fold-empty-acts .pill-btn svg { width: 14px; height: 14px; flex: none; }
 html:root:root:root:root .pick-acts .btn:hover, html:root:root:root:root .fold-empty-acts .pill-btn:hover { background: color-mix(in srgb, currentColor 6%, transparent) !important; }
 html:root:root:root:root .pick-acts .btn:active, html:root:root:root:root .fold-empty-acts .pill-btn:active { transform: scale(.94); background: color-mix(in srgb, currentColor 9%, transparent) !important; }
+
+/* Pick a chat's brand (Alex, 24 Nov: "take the mark off above RoarMe, by THE MAD LIONS a little bigger and a little higher, close to RoarMe") */
+html:root:root:root:root:root:root .pick-mark .wordmark.with-by .rm-mark { display: none !important; }
+html:root:root:root:root:root:root .pick-mark .wordmark.with-by .by-tml, html:root:root:root:root:root:root .pick-mark .wordmark.with-by .by-tml b, html:root:root:root:root:root:root .pick-mark .wordmark.with-by .by-tml b strong { font-size: 13px !important; }
+html:root:root:root:root:root:root .pick-mark .wordmark.with-by .by-tml { margin-top: -6px !important; }

@@ -995,6 +995,7 @@ export default function Chat({ me, setMe }) {
       const n = pagerNow.current
       if (e.touches.length !== 1) { g = null; return }
       if (e.target.closest?.('.row-acts')) { g = null; return } // a tap on Mute, Delete, Unread or Pin
+      if (e.target.closest?.('.rmx:not(.rmx-accl)')) { g = null; return } // inside ROARMAIL a slide goes back or on (mail.jsx), not to another folder
       // a call's own slide to Delete starts only at the screen's right edge (Alex, 19 Nov: "from the edge only; in the
       // middle the whole screen moves to another tab"); there the page stays put, and an open Delete is shut first
       if (e.target.closest?.('.call-row') && (e.touches[0].clientX > window.innerWidth - CALL_EDGE || e.target.closest('.call-row.slid, .call-row.armed'))) { g = null; return }

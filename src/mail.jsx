@@ -306,11 +306,15 @@ function MailList({ acc, step, targets, accounts, folders, offline, onBack }) {
   }
   return (
     <div className="rmx rmx-ml" {...listSlide}>
-      <Crumb title={step.name} sub={acc.id === 'all' ? 'All accounts' : acc.email} onBack={onBack} />
-      <div className="rmx-fbar">
-        <span className="rmx-filters">
-          {FILTERS.map(([k, label]) => <button key={k} type="button" className={`round${filter === k ? ' on' : ''}`} aria-label={label} title={label} onClick={() => { setFilter((f) => (f === k ? '' : k)); if (k !== 'search') setQ('') }}>{MAIL_I[k]}</button>)}
-        </span>
+      {/* back, the folder and its filters in one slim capsule of liquid glass (Alex, 24 Nov, B of
+          https://claude.ai/artifact/BWSMApRMEgeGjPpgRXjeut) */}
+      <div className="rmx-head">
+        <Crumb title={step.name} sub={acc.id === 'all' ? 'All accounts' : acc.email} onBack={onBack} />
+        <div className="rmx-fbar">
+          <span className="rmx-filters">
+            {FILTERS.map(([k, label]) => <button key={k} type="button" className={`round${filter === k ? ' on' : ''}`} aria-label={label} title={label} onClick={() => { setFilter((f) => (f === k ? '' : k)); if (k !== 'search') setQ('') }}>{MAIL_I[k]}</button>)}
+          </span>
+        </div>
       </div>
       {filter === 'search' && <label className="search rmx-search">{I.search}<input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search these mails" /></label>}
       {offline ? <p className="rmx-note">To read this account here, open RoarMail on your computer: Settings › Roar Account › My mail in RoarMe › Send to RoarMe.</p>

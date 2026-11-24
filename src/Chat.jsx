@@ -1852,10 +1852,6 @@ export default function Chat({ me, setMe }) {
         </div>) : (
           <div className="pick">
             <span className="pick-mark"><Wordmark by /></span>
-            <p>Pick a chat, or start a new one.</p>
-            <div className="pick-acts">
-              <button type="button" className="btn" onClick={() => setModal('newchat')}>{I.person}<span>New chat</span></button>
-            </div>
           </div>
         )}
       </main>

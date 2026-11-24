@@ -105,7 +105,7 @@ function useSlide(onRight, onLeft) {
   const put = (x, ease) => { const n = el.current; if (!n) return; n.style.transition = ease ? 'transform .26s cubic-bezier(.22,1,.36,1)' : 'none'; n.style.transform = x ? `translate3d(${x}px,0,0)` : '' }
   return {
     ref: el,
-    onTouchStart: (e) => { if (e.touches.length !== 1 || e.target.closest('input, textarea, .rmx-files')) { g.current = null; return } g.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', t: Date.now() } },
+    onTouchStart: (e) => { put(0); if (e.touches.length !== 1 || e.target.closest('input, textarea, .rmx-files')) { g.current = null; return } g.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', t: Date.now() } },
     onTouchMove: (e) => {
       const s = g.current; if (!s) return
       const dx = e.touches[0].clientX - s.x, dy = e.touches[0].clientY - s.y
@@ -124,6 +124,9 @@ function useSlide(onRight, onLeft) {
       if (!go) return
       if (s.dx > 0 && onRight) onRight(); else if (s.dx < 0 && onLeft) onLeft()
     },
+    // the iPhone cancels a touch once it decides the page is being scrolled: the page goes back to its place, never
+    // left shifted to one side (Alex, 24 Nov: "most pages spill out sideways")
+    onTouchCancel: () => { g.current = null; put(0, true) },
   }
 }
 
@@ -184,15 +187,6 @@ export function MailView() {
   if (step.s === 'accs') {
     return (
       <div className="rmx rmx-accl">
-        {/* Unread, every account's unread mail in one list (Alex, 24 Nov: "unified, in the unread; let's see how it works first") */}
-        <button type="button" className="room rmx-accrow" onClick={() => { setFwd(null); setStep({ s: 'list', acc: 'all', role: 'inbox', unseen: true, name: 'Unread' }) }}>
-          <span className="av av-init rmx-all rmx-unr" style={{ width: 50, height: 50, '--ia': '#5cc0f2', '--ib': '#3aa7e8' }}>{MAIL_I.unread}</span>
-          <span className="room-main">
-            <span className="room-top"><strong>Unread</strong></span>
-            <span className="room-bottom"><span className="room-prev">Every account's unread mail</span>{total > 0 && <span className="badge">{total}</span>}</span>
-          </span>
-          <i className="rmx-chev">{MAIL_I.chev}</i>
-        </button>
         {[all, ...accounts].map((a) => {
           const n = a.id === 'all' ? total : counts[a.id] || 0
           const off = a.id !== 'all' && on && !on.has(a.id)
@@ -379,6 +373,7 @@ function MailRead({ m, accounts, folders, onBack, onNext, onSeen, onFlag, onGone
       d.addEventListener('touchstart', (e) => readSlide.onTouchStart(as(e)), { passive: true })
       d.addEventListener('touchmove', (e) => readSlide.onTouchMove(as(e)), { passive: true })
       d.addEventListener('touchend', () => readSlide.onTouchEnd(), { passive: true })
+      d.addEventListener('touchcancel', () => readSlide.onTouchCancel(), { passive: true })
     } catch { /* sealed */ }
   }
   const folderOf = (role) => folders.find((f) => f.account === m.account && f.role === role)?.path

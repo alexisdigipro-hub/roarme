@@ -153,6 +153,20 @@ export function MailView() {
       setCounts(c)
     }, () => {})
   }, [setup, on])
+  // unread in every folder of the account opened (Alex, 24 Nov: "the numbers of the unread on the folders"); for All
+  // Inboxes every account's folder of each kind. Asked 30 at a time, kept for the visit.
+  const [fcounts, setFcounts] = useState({})
+  useEffect(() => {
+    if (step.s !== 'folders' || !setup?.folders || !on || !on.size) return
+    const items = setup.folders.filter((f) => on.has(f.account) && (step.acc === 'all' ? ROLES.some(([r]) => r === f.role) : f.account === step.acc))
+      .map((f) => ({ account: f.account, path: f.path }))
+    if (!items.length) return
+    let gone = false
+    for (let i = 0; i < items.length; i += 30) {
+      cloud({ action: 'counts', items: items.slice(i, i + 30) }).then((j) => { if (!gone) setFcounts((c) => ({ ...c, ...Object.fromEntries(Object.entries(j.counts || {}).map(([k, v]) => [k, v.unseen || 0])) })) }, () => {})
+    }
+    return () => { gone = true }
+  }, [step.s, step.acc, setup, on])
 
   if (setup === null) return <div className="rmx-wait"><span className="rmx-wait-ico">{MAIL_I.mail}</span><p>Looking for your RoarMail accounts…</p></div>
   if (setup.error || !accounts.length) {
@@ -199,6 +213,9 @@ export function MailView() {
     const own = mine.filter((f) => !f.role || !ROLES.some(([r]) => r === f.role)).filter((f) => f.role !== 'flagged')
       .sort((a, b) => a.path.localeCompare(b.path))
     const off = acc.id !== 'all' && on && !on.has(acc.id)
+    // a folder's unread: its own count, or for All Inboxes the sum over the accounts' folders of that kind
+    const unreadOf = (r) => r.path ? fcounts[`${acc.id}|${r.path}`] || 0
+      : setup.folders.filter((f) => f.role === r.role).reduce((n, f) => n + (fcounts[`${f.account}|${f.path}`] || 0), 0)
     const open = (r) => { setFwd(null); setStep({ s: 'list', acc: acc.id, role: r.role, path: r.path, name: r.name }) }
     return (
       <div className="rmx rmx-fl" {...foldSlide}>
@@ -208,7 +225,7 @@ export function MailView() {
           {roleRows.map((r) => (
             <button key={r.key} type="button" className="rmx-fr" onClick={() => open(r)}>
               {MAIL_I[r.icon]}<span>{r.name}</span>
-              {r.role === 'inbox' && (acc.id === 'all' ? total : counts[acc.id]) > 0 && <span className="badge">{acc.id === 'all' ? total : counts[acc.id]}</span>}
+              {unreadOf(r) > 0 && <span className="badge">{unreadOf(r)}</span>}
               <i className="rmx-chev">{MAIL_I.chev}</i>
             </button>
           ))}
@@ -218,7 +235,7 @@ export function MailView() {
           <div className="rmx-box">
             {own.map((f) => (
               <button key={f.path} type="button" className="rmx-fr" onClick={() => open({ path: f.path, name: f.name })}>
-                {MAIL_I.folder}<span>{f.name}</span><i className="rmx-chev">{MAIL_I.chev}</i>
+                {MAIL_I.folder}<span>{f.name}</span>{unreadOf(f) > 0 && <span className="badge">{unreadOf(f)}</span>}<i className="rmx-chev">{MAIL_I.chev}</i>
               </button>
             ))}
           </div>

@@ -1290,8 +1290,8 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
             onContextMenu={(e) => { e.preventDefault(); onFolderMenu?.(f, e) }}
             onClick={() => { if (drag.current?.moved) return; if (swipe.open) { setSwipe({ id: '', x: 0, open: false }); return } onFolders(`folder:${f.id}`) }}>
             <span className="fold-grip" aria-hidden="true">{svg(<><circle cx="9" cy="6" r="1.2" /><circle cx="15" cy="6" r="1.2" /><circle cx="9" cy="12" r="1.2" /><circle cx="15" cy="12" r="1.2" /><circle cx="9" cy="18" r="1.2" /><circle cx="15" cy="18" r="1.2" /></>)}</span>
-            <span className="fold-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : I.folder}</span>
-            <span className="set-text">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : f.color ? <span className="fold-tint" style={folderTint(f.color)}>{f.name}</span> : f.name}{f.custom && <small>{`${f.rooms.length} chat${f.rooms.length === 1 ? '' : 's'}`}</small>}</span>
+            <span className="fold-ico">{f.id === 'all' ? I.chats : f.id === 'unread' ? I.unread : f.id === 'groups' ? I.people : f.id === 'archived' ? I.archive : f.id === 'mail' ? MAIL_I.mail : I.folder}</span>
+            <span className="set-text">{f.id === 'projects' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : f.id === 'mail' ? <MailWord /> : f.color ? <span className="fold-tint" style={folderTint(f.color)}>{f.name}</span> : f.name}{f.custom && <small>{`${f.rooms.length} chat${f.rooms.length === 1 ? '' : 's'}`}</small>}</span>
             {f.custom && <><i className="fold-dot" style={{ background: colorOf(f.id) }} /><i className="set-chev">{I.right}</i></>}
           </button>
           </div>

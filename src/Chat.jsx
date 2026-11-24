@@ -1840,7 +1840,7 @@ export default function Chat({ me, setMe }) {
         <NowPlaying onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
         {tab === 'settings' ? (
           <Suspense fallback={<div className="set-body" />}><SettingsPage page={setPage || 'general'} chosen={!!setPage} onPage={setSetPage} onBack={() => setSetPage('')} onFolderDone={doneFolder} toast={toast} me={me} setMe={setMe}
-            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders.filter((f) => f.id !== 'mail')} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : m.startsWith('delete:') ? deleteFolder(allFolders.find((f) => f.id === m.slice(7))) : openFolders())}
+            profile={<Settings me={me} setMe={setMe} inline />} folders={allFolders} onFolders={(m) => (m === 'newfolder' ? editFolder('new') : m.startsWith('folder:') ? editFolder(m.slice(7)) : m.startsWith('delete:') ? deleteFolder(allFolders.find((f) => f.id === m.slice(7))) : openFolders())}
             folderKit={{ folders: myFolders, setFolders: setMyFolders, rooms: visible, titleOf, seed: folderSeed, pickNow: folderPick, face: (r, size = 36) => <Avatar src={r.kind === 'group' ? r.avatar_url : otherOf(r)?.avatar_url} name={titleOf(r)} size={size} group={r.kind === 'group'} />, onDeleted: (id) => { if (folder === id) setFolder('all') } }}
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (

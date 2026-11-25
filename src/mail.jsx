@@ -420,7 +420,7 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking }) {
   const g = useRef(null), lp = useRef(0), skip = useRef(0), self = useRef(null), row = useRef(null)
   self.current = () => setX(0)
   useEffect(() => () => { clearTimeout(lp.current); if (openRow === self) openRow = null }, [])
-  const settle = (open) => { setDrag(false); setX(open ? -ACTS_W : 0); if (open) openRow = self; else if (openRow === self) openRow = null; skip.current = Date.now() }
+  const settle = (open) => { if (open && !x) haptic(8); setDrag(false); setX(open ? -ACTS_W : 0); if (open) openRow = self; else if (openRow === self) openRow = null; skip.current = Date.now() }
   const h = {
     onTouchStart: (e) => {
       if (e.touches.length !== 1) return

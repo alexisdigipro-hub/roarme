@@ -5,6 +5,7 @@
 // folder's mails, and a mail opens over them. The accounts and folders come from the Roar Account (roarmail_sync, which
 // RoarMail on the computer keeps); the mail itself is read through RoarMe's Edge Function roarmail-cloud, for the
 // accounts sent there with RoarMail's Send to RoarMe (their passwords locked in Supabase Vault).
+import { stayGet, staySet } from './stay.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { SUPABASE_KEY, SUPABASE_URL, haptic, supabase } from './lib.js'
@@ -374,8 +375,10 @@ export function MailView({ me, people, book }) {
   // a mail tapped in the app's Unread opens here, over its account's Inbox
   const [step, setStep] = useState(() => {
     const m = pendingOpen; pendingOpen = null
-    return m ? { s: 'list', acc: m.account, role: 'inbox', path: m.path, name: 'Inbox', open: m } : { s: 'accs' }
-  }) // accs · folders { acc } · list { acc, role|path, name } · read
+    return m ? { s: 'list', acc: m.account, role: 'inbox', path: m.path, name: 'Inbox', open: m } : stayGet('mail', { s: 'accs' })
+  })
+  // a pull to refresh comes back to the same step (an open mail comes back as its folder's list)
+  useEffect(() => { const { open: _o, from: _f, ...rest } = step; staySet('mail', rest.s === 'folders' || rest.s === 'list' ? rest : { s: 'accs' }) }, [step]) // accs · folders { acc } · list { acc, role|path, name } · read
   useEffect(() => { const f = (e) => { pendingOpen = null; const m = e.detail; setStep({ s: 'list', acc: m.account, role: 'inbox', path: m.path, name: 'Inbox', open: m }) }; window.addEventListener('roarme-mail-open', f); return () => window.removeEventListener('roarme-mail-open', f) }, [])
   const [fwd, setFwd] = useState(null) // the step a slide right left, so a slide left can go on to it again
   const [editHome, setEditHome] = useState(false)

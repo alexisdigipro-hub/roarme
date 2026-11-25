@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, dotOf, statusOf, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
-import { ASIDE_TABS, OrdinoCard, OrdinoView, ProChip, ProPanel, asideTab, isAsset, isDelivered, ordinoOf, proOk, useProjects } from './pro.jsx'
+import { ASIDE_TABS, OrdinoCard, OrdinoView, ProChip, ProPanel, asideTab, isAsset, isDelivered, ordinoOf, proOk, useProjects, wsAllPatch } from './pro.jsx'
 import { Moji, isSticker, mojify, mojiCount, mojiOf, mojiSend } from './moji.jsx'
 import { REACTIONS, TEXT_SIZES, chime, folderTint, getPrefs, haloish, inThemeLab, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -1958,7 +1958,7 @@ export default function Chat({ me, setMe }) {
             {/* the long press shows the messages above the menu; a right click asks for them (Alex, 22 Nov) */}
             {roomMenu.mouse && !roomMenu.peek && <button type="button" onClick={(e) => { e.stopPropagation(); setRoomMenu((m) => ({ ...m, peek: true, sub: '' })) }}>{I.chats}<span>Preview Messages</span></button>}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
-            {proOn && roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }] }).then(() => { toast('Moved to PROjects'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
+            {proOn && roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }], ...wsAllPatch() }).then(() => { toast('Moved to PROjects'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
               : (

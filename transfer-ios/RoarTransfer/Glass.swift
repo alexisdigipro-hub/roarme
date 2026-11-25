@@ -14,9 +14,18 @@ enum Glass {
     static let land = Animation.timingCurve(0.25, 1.45, 0.45, 1, duration: 0.3)
     static let spring = Animation.spring(response: 0.42, dampingFraction: 0.68)
     static var calm: Bool { UIAccessibility.isReduceMotionEnabled }
-    // how many windows are open: a sideways slide turns no page while one is
-    static var windows = 0
+    // how many windows are open: a sideways slide turns no page while one is, and the site's foot steps aside
+    // (Alex, 25 Nov: it lay over a transfer window and hid its Delete)
+    static var windows: Int {
+        get { OpenWindows.shared.count }
+        set { OpenWindows.shared.count = newValue }
+    }
     static func tap(_ s: UIImpactFeedbackGenerator.FeedbackStyle = .light) { UIImpactFeedbackGenerator(style: s).impactOccurred() }
+}
+
+final class OpenWindows: ObservableObject {
+    static let shared = OpenWindows()
+    @Published var count = 0
 }
 
 // the split colours at a rim, as thin coloured shadows

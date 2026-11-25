@@ -54,6 +54,7 @@ export const MAIL_I = {
   block: s(<><circle cx="12" cy="12" r="8.5" /><path d="M6 6l12 12" /></>),
   read: s(<><path d="M3 10l9-6 9 6v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M3.5 10.5L12 16l8.5-5.5" /></>),
   x: s(<path d="M6 6l12 12M18 6L6 18" />),
+  plus: s(<path d="M12 5v14M5 12h14" />),
   send: s(<><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></>),
 }
 // eight filters, as RoarMail on the Mac (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL):
@@ -403,7 +404,7 @@ export function MailView({ me, people, book }) {
   // New Mail: a round button of the accent at the foot of every step but the open mail (Alex, 24 Nov: "I found nowhere to write a new mail")
   // New Mail is the bar at the foot's middle button inside ROARMAIL (Alex, 25 Nov: the round pencil "totally off")
   const newBtn = null
-  const composer = compose && <Compose init={compose} accounts={accounts} on={on} setup={setup} who={who} onClose={() => setCompose(null)} />
+  const composer = compose && <Compose init={compose} accounts={accounts} on={on} setup={setup} who={who} abook={book || keptBook(me?.id)} onClose={() => setCompose(null)} />
 
   if (step.s === 'contacts') {
     return <><MailContacts who={who} setup={setup} me={me} people={people} book={book} onBack={() => setStep(step.from && step.from.s !== 'contacts' ? step.from : { s: 'accs' })}
@@ -994,7 +995,7 @@ function MailContacts({ who, setup, me, book, onBack, onWrite }) {
   )
 }
 
-function Compose({ init, accounts, on, setup, who, onClose }) {
+function Compose({ init, accounts, on, setup, who, abook, onClose }) {
   const prefs = usePrefs()
   const usable = accounts.filter((a) => on?.has(a.id))
   const m = init.m
@@ -1005,6 +1006,7 @@ function Compose({ init, accounts, on, setup, who, onClose }) {
   const [cc, setCc] = useState('')
   const [bcc, setBcc] = useState('')
   const [moreFields, setMoreFields] = useState(false)
+  const [pickOpen, setPickOpen] = useState(false)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [files, setFiles] = useState([])
@@ -1051,9 +1053,10 @@ function Compose({ init, accounts, on, setup, who, onClose }) {
   const total = files.reduce((a, f) => a + f.size, 0)
   const book = useMemo(() => {
     const l = new Map()
-    for (const [e, n] of Object.entries(setup.contacts || {})) l.set(e, n)
-    return [...l.entries()].slice(0, 400)
-  }, [setup])
+    for (const e of abook || []) for (const x of e.emails || []) { const k = String(x.value || '').trim().toLowerCase(); if (k) l.set(k, entryName(e)) }
+    for (const [e, n] of Object.entries(setup.contacts || {})) if (!l.has(e)) l.set(e, n)
+    return [...l.entries()].sort((a, b) => String(a[1] || a[0]).localeCompare(String(b[1] || b[0]))).slice(0, 800)
+  }, [setup, abook])
   const send = async () => {
     const T = parseAddrs(to), C = parseAddrs(cc), B = parseAddrs(bcc)
     const bad = [...T, ...C, ...B].find((a) => !okAddr(a))
@@ -1082,30 +1085,48 @@ function Compose({ init, accounts, on, setup, who, onClose }) {
   const close = () => { if (typed.current && !window.confirm('Discard this mail?')) return; onClose() }
   const title = init.mode === 'forward' ? 'Forward' : init.mode === 'reply' || init.mode === 'replyAll' ? 'Reply' : 'New Mail'
   const t = (set) => (e) => { typed.current = true; set(e.target.value) }
+  const ready = !busy && usable.length && (to.trim() || cc.trim() || bcc.trim())
+  const fromAcc = usable.find((a) => a.id === from)
+  // + beside To: pick from the people with an address, written in as they are tapped
+  const addTo = (e) => { typed.current = true; setTo((v) => { const l = v.split(/[,;]/).map((x) => x.trim()).filter(Boolean); return l.includes(e) ? v : [...l, e].join(', ') + ', ' }) }
+  const toLast = to.split(/[,;]/).pop().trim().toLowerCase()
+  const picks = pickOpen ? book.filter(([e, n]) => !toLast || e.includes(toLast) || String(n || '').toLowerCase().includes(toLast)).slice(0, 60) : []
+  // the page as Apple's Mail writes a mail (Alex, 25 Nov, its screenshot: "clean, nice, a full page to write what you want"):
+  // X at the left and the round Send at the right, the title large, To · Cc/Bcc, From · Subject as hairline rows, then
+  // the whole page for the words
   return (
-    <Modal title={title} onClose={close} foot={<div className="rmx-cfoot">
-      <label className="round rmx-attach" aria-label="Add files" title="Add files">{MAIL_I.clip}<input type="file" multiple onChange={(e) => { typed.current = true; addFiles([...e.target.files]); e.target.value = '' }} /></label>
-      <button type="button" className="btn btn-main rmx-send" disabled={busy || !usable.length} onClick={send}>{busy ? 'Sending…' : 'Send'}</button>
-    </div>}>
-      <div className="rmx-compose">
+    <Modal title={title} onClose={close}>
+      <div className="rmx-c2">
+        <div className="rmx-c2-top">
+          <button type="button" className="round" onClick={close} aria-label="Close" title="Close">{MAIL_I.x}</button>
+          <button type="button" className={`round rmx-c2-send${ready ? ' on' : ''}`} disabled={!ready} onClick={send} aria-label="Send" title="Send">{busy ? <i className="rmx-spin" /> : MAIL_I.send}</button>
+        </div>
+        <h1 className="rmx-c2-title">{title === 'New Mail' ? 'New Message' : title}</h1>
         {!usable.length ? <p className="rmx-note">To write from an account here, send it to RoarMe from RoarMail on your computer first.</p> : <>
-          <label className="rmx-cf"><span>From</span>
-            <select value={from} onChange={(e) => setFrom(e.target.value)}>{usable.map((a) => <option key={a.id} value={a.id}>{a.display ? `${a.display} <${a.email}>` : a.email}</option>)}</select>
+          <label className="rmx-c2-row"><span>To:</span>
+            <input type="email" multiple inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} value={to} onChange={t(setTo)} onFocus={() => setPickOpen(false)} />
+            <button type="button" className="round rmx-c2-plus" onClick={(e) => { e.preventDefault(); setPickOpen((v) => !v) }} aria-label="Add from contacts" title="Add from contacts">{MAIL_I.plus || '+'}</button>
           </label>
-          <label className="rmx-cf"><span>To</span><input type="email" multiple list="rmx-addrs" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} value={to} onChange={t(setTo)} placeholder="name@example.com" />
-            {!moreFields && <button type="button" className="rmx-ccb" onClick={() => setMoreFields(true)}>Cc Bcc</button>}</label>
-          {moreFields && <>
-            <label className="rmx-cf"><span>Cc</span><input type="email" multiple list="rmx-addrs" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} value={cc} onChange={t(setCc)} /></label>
-            <label className="rmx-cf"><span>Bcc</span><input type="email" multiple list="rmx-addrs" inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} value={bcc} onChange={t(setBcc)} /></label>
-          </>}
-          <datalist id="rmx-addrs">{book.map(([e, n]) => <option key={e} value={e}>{n}</option>)}</datalist>
-          <label className="rmx-cf"><span>Subject</span><input value={subject} onChange={t(setSubject)} /></label>
-          <textarea className="rmx-body" value={body} onChange={t(setBody)} placeholder={init.m && !mail ? 'Getting the mail…' : 'Write your mail'} />
+          {pickOpen && <div className="rmx-c2-picks">
+            {picks.length ? picks.map(([e, n]) => <button key={e} type="button" onClick={() => addTo(e)}><b>{n || e}</b>{n && <small>{e}</small>}</button>) : <p className="rmx-hint">Nobody with that name or address.</p>}
+          </div>}
+          {!moreFields
+            ? <button type="button" className="rmx-c2-row rmx-c2-more" onClick={() => setMoreFields(true)}><span>Cc/Bcc, From:</span><em>{fromAcc?.email || ''}</em></button>
+            : <>
+              <label className="rmx-c2-row"><span>Cc:</span><input type="email" multiple inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} value={cc} onChange={t(setCc)} autoFocus /></label>
+              <label className="rmx-c2-row"><span>Bcc:</span><input type="email" multiple inputMode="email" autoCapitalize="off" autoCorrect="off" spellCheck={false} value={bcc} onChange={t(setBcc)} /></label>
+              <label className="rmx-c2-row rmx-c2-from"><span>From:</span><em>{fromAcc?.email || ''}</em>
+                <select value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From">{usable.map((a) => <option key={a.id} value={a.id}>{a.display ? `${a.display} <${a.email}>` : a.email}</option>)}</select></label>
+            </>}
+          <label className="rmx-c2-row"><span>Subject:</span><input value={subject} onChange={t(setSubject)} />
+            <label className="round rmx-c2-clip" aria-label="Add files" title="Add files" onClick={(e) => e.stopPropagation()}>{MAIL_I.clip}<input type="file" multiple onChange={(e) => { typed.current = true; addFiles([...e.target.files]); e.target.value = '' }} /></label>
+          </label>
           {files.length > 0 && <div className="rmx-cfiles">{files.map((f, i) => (
             <span key={i} className="rmx-cfile"><b>{f.name}</b><small>{sizeOf(f.size)}</small><button type="button" className="round" aria-label={`Remove ${f.name}`} onClick={() => setFiles((x) => x.filter((_, k) => k !== i))}>{MAIL_I.x}</button></span>
           ))}</div>}
           {init.mode === 'forward' && mail?.files?.length > 0 && <p className="rmx-hint">The mail's {mail.files.length === 1 ? 'file goes' : `${mail.files.length} files go`} with it.</p>}
           {err && <p className="rmx-note">{err}</p>}
+          <textarea className="rmx-c2-body" value={body} onChange={t(setBody)} placeholder={init.m && !mail ? 'Getting the mail…' : ''} />
         </>}
       </div>
     </Modal>

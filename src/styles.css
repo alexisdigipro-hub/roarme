@@ -8893,3 +8893,42 @@ html:root:root:root:root:root:root .rmx-seg > button { white-space: nowrap; min-
 /* ROARMAIL never pans sideways on an iPhone (Alex, 25 Nov): the boxes that hold it take no sideways scroll at all */
 html:root:root:root:root:root .side .rooms-pager:has(.rmx), html:root:root:root:root:root .side .rooms-pager:has(.rmx) .rooms-track, html:root:root:root:root:root .side .rooms-pager:has(.rmx) .rooms { overflow-x: hidden !important; overscroll-behavior-x: none; touch-action: pan-y; }
 html:root:root:root:root:root .rmx .rmx-sw { overflow: hidden; max-width: 100%; }
+/* writing a mail as Apple's Mail (Alex, 25 Nov, its screenshot): the window's own head steps aside; X and the round Send
+   at the top, the title large, hairline rows, then the page for the words */
+html:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) > .modal-head { display: none; }
+html:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) > .modal-body { display: flex; flex-direction: column; padding: 14px 20px 18px; }
+.rmx-c2 { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.rmx-c2-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+html:root:root:root:root:root .rmx-c2-top .round { width: 44px; height: 44px; min-width: 44px; }
+html:root:root:root:root:root .rmx-c2-send:disabled { opacity: .45; }
+html:root:root:root:root:root .rmx-c2-send.on { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink) !important; border-color: transparent !important; }
+.rmx-c2-send svg { width: 20px; height: 20px; }
+.rmx-spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: rmx-spin .8s linear infinite; }
+@keyframes rmx-spin { to { transform: rotate(360deg); } }
+.rmx-c2-title { margin: 0 0 18px; font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+html:root:root:root:root:root .rmx-c2-row { display: flex; align-items: center; gap: 8px; min-height: 46px; margin: 0; padding: 0; border: 0; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); background: none !important; box-shadow: none !important; border-radius: 0; width: 100%; text-align: left; font: inherit; color: inherit; position: relative; }
+.rmx-c2-row > span { flex: none; font-size: 15px; color: var(--muted); }
+html:root:root:root:root:root .rmx-c2-row input { flex: 1; min-width: 0; height: 44px; border: 0 !important; background: none !important; box-shadow: none !important; outline: none; padding: 0; font: inherit; font-size: 16px; color: inherit; border-radius: 0; }
+.rmx-c2-row em { font-style: normal; font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.rmx-c2-more { cursor: pointer; }
+.rmx-c2-from select { position: absolute; inset: 0; opacity: 0; width: 100%; font-size: 16px; cursor: pointer; }
+html:root:root:root:root:root .rmx-c2-plus, html:root:root:root:root:root .rmx-c2-clip { width: 32px; height: 32px; min-width: 32px; flex: none; background: color-mix(in srgb, currentColor 9%, transparent) !important; border: 0 !important; box-shadow: none !important; position: relative; }
+.rmx-c2-plus svg, .rmx-c2-clip svg { width: 18px; height: 18px; }
+.rmx-c2-clip input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.rmx-c2-picks { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
+html:root:root:root:root:root .rmx-c2-picks button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 9px 4px; border: 0; background: none !important; box-shadow: none !important; text-align: left; color: inherit; font: inherit; border-radius: 0; }
+.rmx-c2-picks b { font-size: 15px; font-weight: 600; }
+.rmx-c2-picks small { font-size: 12.5px; color: var(--muted); }
+html:root:root:root:root:root .rmx-c2-body { flex: 1; min-height: 260px; margin-top: 14px; border: 0 !important; background: none !important; box-shadow: none !important; outline: none; resize: none; padding: 0; font: inherit; font-size: 16px; line-height: 1.45; color: inherit; border-radius: 0; }
+@media (max-width: 760px) {
+  html:root:root:root:root:root .modal-back:has(.rmx-c2) { padding: calc(env(safe-area-inset-top, 0px) + 10px) 0 0 !important; align-items: stretch !important; }
+  html:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) { width: 100% !important; max-width: none !important; height: 100% !important; max-height: 100% !important; margin: 0 !important; border-radius: 28px 28px 0 0 !important; }
+  html:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) > .modal-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); }
+}
+html:root:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) { background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-mode='dark']:root:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2), html.dark:root:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) { background: #1c1c1e !important; }
+/* with the keyboard up in the iPhone app the page for the mail ends at the keyboard's top (the window's own rule, kept) */
+@media (max-width: 760px) {
+  html.kb-native:root:root:root:root:root:root .modal-back:has(.rmx-c2) { padding-bottom: var(--kbh, 0px) !important; }
+  html.kb-native:root:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) { border-radius: 28px !important; height: calc(100dvh - var(--kbh, 0px) - 10px - env(safe-area-inset-top, 0px)) !important; max-height: calc(100dvh - var(--kbh, 0px) - 10px - env(safe-area-inset-top, 0px)) !important; }
+}

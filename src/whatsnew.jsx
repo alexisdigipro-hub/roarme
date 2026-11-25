@@ -31,6 +31,7 @@ export const NEWS = [
         'Over the mails one bar, as wide as the folders: back and the filters; no Unread filter, unread mail shows anyway.',
         'RoarMail settings that work, and more: Preview Lines, Sender Pictures, Mail in Unread, Check Every, Quote in Replies, Send New Mail From, an account in All Inboxes or not, how much is kept.',
         'Junk: mail from blocked senders leaves the Inbox by itself; Blocked Senders with Unblock; hold a mail for Move to Junk, Not Junk and Block @domain.',
+        'Writing a mail as Apple\'s Mail: a full, clean page, X and a round Send at the top, To with + for your contacts, Cc/Bcc and From folded in one line, Subject with the clip, then the whole page for your words.',
         'Every head in RoarMail is the same slim bar: an account\'s folders, an open mail and Contacts.',
         'Slide a mail from the right edge of the screen: Read, Star, Move, Block and Trash come out and stay until you tap.',
         'Hold a mail: Reply, Reply All, Forward, Move To, Archive, All From This Sender, Block Sender and Delete.',

@@ -65,7 +65,7 @@ export const MAIL_I = {
 // eight filters, as RoarMail on the Mac (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL):
 // one glass capsule as tall as the folder bar, back and the name at the left, the filters at the right, sliding
 // no Unread filter: unread mail shows as such anyway (Alex, 25 Nov)
-const FILTERS = [['star', 'Starred'], ['clip', 'With attachments'], ['day', 'Mail of one day'], ['sort', 'Oldest first'], ['sender', 'Same sender']]
+const FILTERS = [['star', 'Starred'], ['clip', 'With attachments'], ['conv', 'Conversations'], ['day', 'Mail of one day'], ['sort', 'Oldest first'], ['sender', 'Same sender']]
 // the folders every account has, in RoarMail's order; for All Inboxes the same, across the accounts
 const ROLES = [['inbox', 'Inbox'], ['drafts', 'Drafts'], ['sent', 'Sent'], ['spam', 'Junk'], ['trash', 'Trash'], ['archive', 'Archive']]
 const ROLE_I = { inbox: 'inbox', drafts: 'drafts', sent: 'sent', spam: 'spam', trash: 'trash', archive: 'archive', flagged: 'flagged' }
@@ -784,7 +784,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const [busy, setBusy] = useState(false)
   const [filter, setFilter] = useState(() => (step.preset === 'today' ? 'day' : step.preset || ''))   // search · unread · star · clip · day · sender (one at a time); a smart mailbox starts with its own
   const [oldest, setOldest] = useState(() => prefs.oldest)
-  const conv = !!prefs.conv // Conversations lives in Settings > ROARMAIL > Reading (Alex, 25 Nov), not in the bar
+  const conv = !!prefs.conv // Conversations: a sign in the bar again (Alex, 25 Nov, "put the group conversation after all"), kept as a setting
   const [thread, setThread] = useState('')   // a conversation opened
   useMailBack(() => (thread ? setThread('') : onBack()))
   const [q, setQ] = useState('')
@@ -985,6 +985,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const pick = (k) => {
     setThread('')
     if (k === 'sort') { setOldest((o) => !o); return }
+    if (k === 'conv') { setMailPref('conv', !conv); return }
     setFilter((f) => (f === k ? '' : k))
     if (k !== 'search') setQ('')
     if (k !== 'sender') setSender(null)
@@ -1726,7 +1727,6 @@ export function MailPage() {
           {seg('lines', 'Preview Lines', [[0, 'None'], [1, '1'], [2, '2']])}
           {sw('pics', 'Sender Pictures', 'The round picture beside each mail.')}
           {sw('oldest', 'Oldest First', 'The order a folder opens in.')}
-          {sw('conv', 'Conversations', 'A mail and its replies together, as one row.')}
         </div>
         <div className="set-title">New Mail</div>
         <div className="set-box">

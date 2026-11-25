@@ -31,6 +31,7 @@ export const NEWS = [
         'The iPhone app stays upright when you turn the phone on its side.',
       ] },
       { title: 'RoarMail', lab: true, items: [
+        'Search sits at the top beside the +, on every page of the mail. Conversations moved to Settings > RoarMail, so the bar over the mails is shorter.',
         'Swipe between the tabs at the bottom in their order: Contacts, Calls, Messages, Mail, Settings.',
         'The dots at the top work for the page you are on: edit the mailboxes, move folders up or down, select several mails, or the open mail\'s menu.',
         'With one account, RoarMail opens straight on its folders.',

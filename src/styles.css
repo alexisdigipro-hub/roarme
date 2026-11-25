@@ -9011,3 +9011,27 @@ html:root:root:root:root:root .rmx.rmx-show-from .rmx-sub { display: none !impor
 html:root:root:root:root:root .rmx.rmx-show-subject .room-top > strong { display: none !important; }
 html:root:root:root:root:root .rmx.rmx-show-subject .room-top { justify-content: flex-end; }
 html:root:root:root:root:root .rmx.rmx-show-subject .rmx-sub { font-size: 16px; }
+
+/* RoarMail on a computer: a page that shows what it is and the download (Alex, 25 Nov) */
+.rmp { display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; padding: 8px 0 24px; }
+.rmp-hero { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 12px 4px; }
+.rmp-ico { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 22px; color: #fff; background: linear-gradient(160deg, #e9c46a, #b8862b); box-shadow: 0 10px 28px rgba(184, 134, 43, .32); animation: rmp-in .5s cubic-bezier(.25, 1.3, .45, 1) both; }
+.rmp-ico svg { width: 38px; height: 38px; }
+.rmp-hero .mail-word, .rmp-hero > span:nth-child(2) { font-size: 24px; letter-spacing: .08em; }
+.rmp-hero h2 { margin: 6px 0 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
+.rmp-hero p { margin: 0; max-width: 420px; color: var(--muted); font-size: 14.5px; line-height: 1.45; }
+.rmp-points { width: 100%; max-width: 520px; text-align: left; padding: 6px 0 !important; }
+.rmp-pt { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; }
+.rmp-pt + .rmp-pt { border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+.rmp-pi { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: var(--halo); background: color-mix(in srgb, var(--halo) 12%, transparent); }
+.rmp-pi svg { width: 18px; height: 18px; }
+.rmp-pt b { display: block; font-size: 15px; }
+.rmp-pt small { display: block; color: var(--muted); font-size: 13.5px; line-height: 1.4; margin-top: 2px; }
+.rmp-dl { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; max-width: 520px; }
+.rmp-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-width: 150px; height: 52px !important; padding: 0 18px !important; border-radius: 26px !important; text-decoration: none; }
+.rmp-btn b { font-size: 14.5px; }
+.rmp-btn small { font-size: 11.5px; opacity: .72; }
+html:root:root:root:root .rmp-btn.main { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink) !important; border: 0 !important; }
+.rmp-more { text-decoration: none; height: 38px; padding: 0 18px; display: inline-flex; align-items: center; }
+@keyframes rmp-in { from { opacity: 0; transform: scale(.7); } }
+html[data-lite] .rmp-ico { animation: none; }

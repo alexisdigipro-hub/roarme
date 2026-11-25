@@ -1493,3 +1493,40 @@ export function MailPage() {
     </div>
   )
 }
+
+// RoarMail on a computer (Alex, 25 Nov: "under PROjects, as on the phone; on the desktop a page that tells people to
+// download the real RoarMail app"): what it is, and the download for the computer in use. Inside the Mac App Store
+// build only the way to its page (an App Store app does not hand out other software's installers).
+const RM_DL = 'https://github.com/alexisdigipro-hub/roarmail/releases/latest/download/'
+export function MailPromo() {
+  const ua = navigator.userAgent
+  const mac = /Mac/i.test(ua), win = /Windows/i.test(ua)
+  const store = !!window.roarDesktop?.store
+  const dl = [
+    ['Mac', 'Apple Silicon', `${RM_DL}RoarMail-Mac-arm64.dmg`],
+    ['Mac', 'Intel', `${RM_DL}RoarMail-Mac-x64.dmg`],
+    ['Windows', '10 and 11', `${RM_DL}RoarMail-Windows-Setup.exe`],
+  ].sort((a, b) => (b[0] === (mac ? 'Mac' : win ? 'Windows' : '')) - (a[0] === (mac ? 'Mac' : win ? 'Windows' : '')))
+  const POINTS = [
+    ['inbox', 'Every mailbox, one inbox', 'Gmail, iCloud, Outlook and your own domain side by side.'],
+    ['block', 'Private', 'Trackers blocked, fakes caught, and no server of ours between you and your mail.'],
+    ['star', 'Made for work', 'Snooze, undo, contacts with their photos, RoarTransfer links and PROjects inside.'],
+    ['mail', 'Here on your phone too', 'Turn it on in RoarMe on your iPhone and your mail is in the bar at the bottom.'],
+  ]
+  return (
+    <div className="rmp">
+      <div className="rmp-hero">
+        <span className="rmp-ico">{MAIL_I.mail}</span>
+        <h2>Every mailbox. One private inbox.</h2>
+        <p>RoarMail is The Mad Lions' mail app for Mac and Windows. Free, and it updates itself.</p>
+      </div>
+      <div className="set-box rmp-points">
+        {POINTS.map(([ic, t, d]) => <div key={t} className="rmp-pt"><span className="rmp-pi">{MAIL_I[ic]}</span><span><b>{t}</b><small>{d}</small></span></div>)}
+      </div>
+      {!store && <div className="rmp-dl">
+        {dl.map(([os, sub, href], i) => <a key={href} className={`pill-btn rmp-btn${i === 0 ? ' main' : ''}`} href={href} target="_blank" rel="noreferrer"><b>Download for {os}</b><small>{sub}</small></a>)}
+      </div>}
+      <a className="pill-btn rmp-more" href="https://themadlions.com/lab/roarmail/" target="_blank" rel="noreferrer">See RoarMail</a>
+    </div>
+  )
+}

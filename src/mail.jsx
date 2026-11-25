@@ -362,7 +362,6 @@ function HomeEdit({ order, rowOf, isShown, onToggle, onOrder }) {
           </div>
         )
       })}
-      <p className="rmx-hint">Tick what shows on the home page; drag the lines at the right to put them in order.</p>
     </div>
   )
 }
@@ -380,6 +379,8 @@ export function MailView({ me, people, book }) {
   useEffect(() => { const f = (e) => { pendingOpen = null; const m = e.detail; setStep({ s: 'list', acc: m.account, role: 'inbox', path: m.path, name: 'Inbox', open: m }) }; window.addEventListener('roarme-mail-open', f); return () => window.removeEventListener('roarme-mail-open', f) }, [])
   const [fwd, setFwd] = useState(null) // the step a slide right left, so a slide left can go on to it again
   const [editHome, setEditHome] = useState(false)
+  useEffect(() => { window.dispatchEvent(new CustomEvent('roarme-mail-edit', { detail: editHome })) }, [editHome])
+  useEffect(() => { if (step.s !== 'accs') setEditHome(false) }, [step.s])
   const [compose, setCompose] = useState(null) // { mode: 'new' | 'reply' | 'replyAll' | 'forward', m?, account? }
   const back = (to) => { setFwd(step); setStep(to) }
   // inside ROARMAIL the bar at the foot is Contacts · New Mail · Settings (Alex, 25 Nov); its buttons speak through
@@ -391,6 +392,7 @@ export function MailView({ me, people, book }) {
       const what = e.detail?.what, st = stepRef.current
       if (what === 'new') setCompose({ mode: 'new', account: st.acc && st.acc !== 'all' ? st.acc : '' })
       else if (what === 'home') { setFwd(null); setStep({ s: 'accs' }) }
+      else if (what === 'edit') { if (st.s !== 'accs') { setFwd(null); setStep({ s: 'accs' }); setEditHome(true) } else setEditHome((v) => !v) }
       else if (what === 'contacts') { if (st.s !== 'contacts') { setFwd(null); setStep({ s: 'contacts', from: st }) } }
     }
     window.addEventListener('roarme-mail-cmd', f)
@@ -407,7 +409,7 @@ export function MailView({ me, people, book }) {
     boxes.forEach((b) => { b.scrollLeft = 0; b.addEventListener('scroll', fix, { passive: true }) })
     return () => boxes.forEach((b) => b.removeEventListener('scroll', fix))
   }, [step.s])
-  useEffect(() => () => window.dispatchEvent(new CustomEvent('roarme-mail-step', { detail: '' })), [])
+  useEffect(() => () => { window.dispatchEvent(new CustomEvent('roarme-mail-step', { detail: '' })); window.dispatchEvent(new CustomEvent('roarme-mail-edit', { detail: false })) }, [])
   const foldSlide = useSlide(() => back({ s: 'accs' }), fwd && fwd.s === 'list' && fwd.acc === step.acc ? () => setStep(fwd) : null)
   const who = useWho(me, people, book, setup)
   useEffect(() => {
@@ -491,11 +493,6 @@ export function MailView({ me, people, book }) {
     const toggle = (k) => save(order, isShown(k) ? [...hidden, k] : hidden.filter((x) => x !== k))
     return (
       <div className="rmx rmx-accl">
-        <div className="rmx-crumb rmx-cap rmx-homecap">
-          <span />
-          <span className="rmx-cw"><b>{editHome ? 'Edit Mailboxes' : 'Mailboxes'}</b></span>
-          <button type="button" className={`round rmx-hback rmx-homeedit${editHome ? ' done' : ''}`} onClick={() => setEditHome((v) => !v)} aria-label={editHome ? 'Done' : 'Edit Mailboxes'} title={editHome ? 'Done' : 'Edit Mailboxes'}>{editHome ? MAIL_I.tick : MAIL_I.more}</button>
-        </div>
         {editHome ? <HomeEdit order={order} rowOf={rowOf} isShown={isShown} onToggle={toggle} onOrder={(o) => save(o, hidden)} />
           : order.filter(isShown).map(rowOf).filter(Boolean).map((r) => (
             <button key={r.k} type="button" className="room rmx-accrow" onClick={r.go}>

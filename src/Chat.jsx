@@ -175,7 +175,13 @@ export default function Chat({ me, setMe }) {
     const t = setTimeout(() => setMailSlide(''), 420)
     return () => clearTimeout(t)
   }, [folder])
-  useEffect(() => { const f = (e) => setMailStep(e.detail || ''); window.addEventListener('roarme-mail-step', f); return () => window.removeEventListener('roarme-mail-step', f) }, [])
+  const [mailEdit, setMailEdit] = useState(false)
+  useEffect(() => {
+    const f = (e) => setMailStep(e.detail || '')
+    const g = (e) => setMailEdit(!!e.detail)
+    window.addEventListener('roarme-mail-step', f); window.addEventListener('roarme-mail-edit', g)
+    return () => { window.removeEventListener('roarme-mail-step', f); window.removeEventListener('roarme-mail-edit', g) }
+  }, [])
   // Unread out of the folder bar (Alex, 23 Nov, https://claude.ai/artifact/HE48Bz3Cb4AnaWyP7VxNBo, "πάμε"): while something is
   // unread a round accent button peeks in from the screen's left edge; a slide right on the bar brings it out whole with the
   // number, pushing only the bar's left end; a tap shows the unread chats, a slide left puts it back
@@ -1610,7 +1616,10 @@ export default function Chat({ me, setMe }) {
       <aside className={`side${mailOn && folder === 'mail' ? ' mail-env' : ''}${mailSlide ? ` mail-${mailSlide}` : ''}`}>
         <div className="side-col" {...onStopTouch}>
         <div className="side-head">
-          {tab === 'calls' && !picking && !tabsEdit ? (
+          {inMail ? (
+            // inside ROARMAIL the head's own ⋯ is Edit Mailboxes and its + is New Mail (Alex, 25 Nov, from Apple Mail)
+            <button type="button" className={`pill-btn head-edit${mailEdit ? ' on' : ''}`} aria-label={mailEdit ? 'Done' : 'Edit Mailboxes'} title={mailEdit ? 'Done' : 'Edit Mailboxes'} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'edit' } }))}><span className="he-word">{mailEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{mailEdit ? I.check : DOTS3}</span></button>
+          ) : tab === 'calls' && !picking && !tabsEdit ? (
             <button type="button" className={`pill-btn head-edit${callsEdit ? ' on' : ''}`} aria-label={callsEdit ? 'Done' : 'Edit calls'} title={callsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); setCallsEdit((v) => !v) }}><span className="he-word">{callsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{callsEdit ? I.check : DOTS3}</span></button>
           ) : tab === 'contacts' && !picking && !tabsEdit ? (
             // on Contacts the same ⋯ sorts the list (Alex, 14 Nov, from Telegram's Contacts: "on the buttons themselves")
@@ -1643,7 +1652,8 @@ export default function Chat({ me, setMe }) {
           ) : (
             <span className="side-acts">
             <span className="plus-wrap">
-              {tab === 'calls' && callsEdit ? <button type="button" className="pill-btn calls-del-all" onClick={() => setCallsClear((n) => n + 1)}>Delete All</button> : (
+              {inMail ? <button type="button" className="round head-newmail" aria-label="New Mail" title="New Mail" onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'new' } }))}>{MAIL_NEW_I}</button>
+              : tab === 'calls' && callsEdit ? <button type="button" className="pill-btn calls-del-all" onClick={() => setCallsClear((n) => n + 1)}>Delete All</button> : (
               <button type="button" className={`round${plus || contactsMenu === 'add' ? ' on' : ''}`} onClick={() => { if (tab === 'calls') { setPlus(false); setModal('newcall'); return } if (tab === 'contacts') { setPlus(false); setContactsMenu((v) => (v === 'add' ? '' : 'add')) } else setPlus((v) => !v) }} aria-label="New" title={tab === 'contacts' ? 'New contact or invite' : 'New chat, group or folder'}>{I.plus}</button>
               )}
               {tab === 'contacts' && contactsMenu === 'add' && (
@@ -1865,7 +1875,6 @@ export default function Chat({ me, setMe }) {
               <button type="button" className="foot-roarme" onClick={() => setFolder(mailBack.current && mailBack.current !== 'mail' ? mailBack.current : 'all')}>{FOOT_I.messages}<span>RoarMe</span></button>
               {/* Mail: back to the accounts, RoarMail's home (Alex, 25 Nov: "a button beside the contacts that goes back to where all the mail is") */}
               <button type="button" className={`foot-main foot-mailhome${mailStep !== 'contacts' ? ' on' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'home' } }))}><span className="foot-ico">{FOOT_I.mail}</span><span>Mail</span></button>
-              <button type="button" className="foot-newmail" onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'new' } }))}><span className="foot-ico">{FOOT_I.newmail}</span><span>New Mail</span></button>
             </> : <>
             <button type="button" className={`foot-contacts${tab === 'contacts' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('contacts')}>{FOOT_I.contacts}<span>Contacts</span></button>
             {prefs.callsTab && <button type="button" className={`foot-calls${tab === 'calls' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('calls')}>{FOOT_I.calls}<span>Calls</span></button>}
@@ -2151,6 +2160,8 @@ const RX_HEART = <svg className="rx-heart" viewBox="0 0 24 24" aria-hidden="true
 const mediaMsg = (m) => !!m && !m.sealed && !m.file?.asFile && !m.file?.round && !m.file?.bucket && (m.kind === 'image' || /^video\//.test(m.file?.type || ''))
 const SWAP_I = svg(<><rect x="3.5" y="3.5" width="8" height="8" rx="2" /><rect x="12.5" y="12.5" width="8" height="8" rx="2" /><path d="M15 4.5h2.5a3 3 0 0 1 3 3V10M18.5 8l2 2 2-2M9 19.5H6.5a3 3 0 0 1-3-3V14M5.5 16l-2-2-2 2" /></>, 20)
 const LOCK_OPEN = svg(<><rect x="5" y="10.5" width="14" height="10" rx="2.6" /><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 6.9-.8" /></>, 16) // Encrypted Chat off
+// New Mail in ROARMAIL's head: a square with a pen across it, as Apple Mail's
+const MAIL_NEW_I = svg(<><path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5" /><path d="M17.6 3.6a1.9 1.9 0 0 1 2.8 2.8L12 14.8 8.5 15.5l.7-3.5z" /></>)
 const DOTS3 = <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.8" /><circle cx="12" cy="12" r="2.8" /><circle cx="19" cy="12" r="2.8" /></svg>
 const WHEEL_COPIES = 5, WHEEL_MID = 2 // the folder wheel at the foot: copies of the folders in a row, the middle one the real one
 // how far a chat slides open: two buttons on the left (Unread, Pin), three on the right (Mute, Delete, Archive)

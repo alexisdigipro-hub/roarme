@@ -14,7 +14,7 @@ on:
         description: listing, screenshots or upload-screenshots
         default: listing
         type: choice
-        options: [listing, submit, screenshots, upload-screenshots, status, crashes]
+        options: [listing, submit, screenshots, upload-screenshots, status, crashes, all]
       platform:
         description: IOS (iPhone and iPad) or MAC_OS (the Mac App Store)
         default: IOS
@@ -30,14 +30,14 @@ permissions:
 
 jobs:
   listing:
-    if: inputs.mode == 'listing' || inputs.mode == 'submit' || inputs.mode == 'status' || inputs.mode == 'crashes'
+    if: inputs.mode == 'listing' || inputs.mode == 'submit' || inputs.mode == 'status' || inputs.mode == 'crashes' || inputs.mode == 'all'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node scripts/${{ inputs.mode == 'status' && 'appstore-status.mjs' || inputs.mode == 'crashes' && 'appstore-crashes.mjs' || 'appstore.mjs' }}
+      - run: node scripts/${{ inputs.mode == 'status' && 'appstore-status.mjs' || inputs.mode == 'crashes' && 'appstore-crashes.mjs' || inputs.mode == 'all' && 'appstore-all.mjs' || 'appstore.mjs' }}
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}

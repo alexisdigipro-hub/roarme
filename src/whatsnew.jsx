@@ -31,6 +31,10 @@ export const NEWS = [
         'The iPhone app stays upright when you turn the phone on its side.',
       ] },
       { title: 'RoarMail', lab: true, items: [
+        'Swipe between the tabs at the bottom in their order: Contacts, Calls, Messages, Mail, Settings.',
+        'The dots at the top work for the page you are on: edit the mailboxes, move folders up or down, select several mails, or the open mail\'s menu.',
+        'With one account, RoarMail opens straight on its folders.',
+        'A mail\'s long-press menu stands in the middle of the screen.',
         'The + at the top right is back, and inside RoarMail it starts a new message.',
         'No more bar with the name over the mail: back is at the top left, beside the dots.',
         'RoarMail moved from the folders at the top to the bar at the bottom: Mail, right of Messages, with its unread count. The bar stays the same inside the mail; tap Mail there to go back to your accounts. Mail no longer stands in Unread.',

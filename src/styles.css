@@ -8993,3 +8993,6 @@ html[data-lite] .side.mail-in .rooms-pager, html[data-lite] .side.mail-out .room
 .side-head .mail-hl { display: inline-flex; align-items: center; gap: 8px; }
 .side-head .mail-hl .mail-hback { width: 44px; height: 44px; flex: none; }
 .side-head .mail-hl .mail-hback svg { width: 22px; height: 22px; }
+
+/* A mail's long-press menu stands in the middle of the screen, whichever mail was pressed (Alex, 25 Nov: "it comes out at the edge") */
+html:root:root:root:root .menu.rmx-lp { inset: 0 !important; margin: auto !important; width: min(300px, calc(100vw - 32px)) !important; height: fit-content !important; max-height: calc(100dvh - 48px); transform-origin: 50% 50%; }

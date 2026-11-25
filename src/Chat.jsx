@@ -1467,11 +1467,14 @@ export default function Chat({ me, setMe }) {
   // on a phone the swipe runs on through the bar at the foot (Alex, 19 Oct): Contacts · Calls · Messages and its folders ·
   // Tasks and its tabs · Settings. Coming into Messages or Tasks from the right lands on its last folder or tab.
   const goStop = (dir) => {
-    const stops = ['contacts', ...(prefs.callsTab ? ['calls'] : []), 'chats', ...(prefs.tasksTab ? ['tasks'] : []), 'settings']
-    const next = stops[stops.indexOf(tasksOpen ? 'tasks' : tab === 'media' ? 'settings' : tab) + dir]
+    // the same order as the bar: Mail stands between Messages and Settings while it is on (Alex, 25 Nov)
+    const stops = ['contacts', ...(prefs.callsTab ? ['calls'] : []), 'chats', ...(mailOn ? ['mail'] : []), ...(prefs.tasksTab ? ['tasks'] : []), 'settings']
+    const cur = tasksOpen ? 'tasks' : tab === 'media' ? 'settings' : tab === 'chats' && folder === 'mail' && mailOn ? 'mail' : tab
+    const next = stops[stops.indexOf(cur) + dir]
     if (!next) return
     if (next === 'tasks') { try { localStorage.setItem('roarme-tasks-tab', dir > 0 ? 'all' : 'done') } catch { /* private window */ } showTasks(true); return }
     if (tasksOpen) showTasks(false)
+    if (next === 'mail') { setTab('chats'); setFolder('mail'); return }
     setTab(next)
     if (next === 'chats') { const f = allFolders[dir > 0 ? 0 : allFolders.length - 1]; if (f) setFolder(f.id) }
   }

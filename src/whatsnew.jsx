@@ -16,6 +16,7 @@ export const NEWS = [
     date: '25 November 2026',
     sections: [
       { title: 'Everywhere', items: [
+        'Sliding a chat or a mail sideways is steadier: the whole row moves with your finger and its buttons come in whole from the edge, never over the words.',
         'Pull down to refresh on Settings, Calls, Media and the mail too; you come back to the same page.',
         'Unread shows only chats again. Tap the dots there to select several: Delete, Read, Move, Archive.',
         'RoarTransfer: a file that got stuck on its way up (100% and nothing more) now goes on another way by itself and arrives.',

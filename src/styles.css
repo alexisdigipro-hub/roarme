@@ -8873,3 +8873,20 @@ html:root:root:root:root:root:root .rmx .rmx-cap .rmx-cw b { font-size: 15px; fo
 .rmx-cap-end { display: grid; place-items: center; font-size: 12px; opacity: .6; }
 html:root:root:root:root:root:root:root .rmx-fl .rmx-crumb.rmx-cap { margin-left: -9px; margin-right: -9px; }
 html:root:root:root:root:root:root:root .rmx-rd .rmx-crumb.rmx-cap { margin-left: 17px; margin-right: 17px; }
+/* Settings > ROARMAIL that work (Alex, 25 Nov: "nothing works"): Preview Lines lost to the row rule; now stronger */
+html:root:root:root:root:root:root .rmx.rmx-l0 .room .rmx-sn, html:root:root:root:root:root:root .rmx.rmx-l0 .room .room-prev.rmx-sn { display: none !important; }
+html:root:root:root:root:root:root .rmx.rmx-l1 .room .room-prev.rmx-sn { display: -webkit-box !important; -webkit-line-clamp: 1 !important; line-clamp: 1; white-space: normal; }
+html:root:root:root:root:root:root .rmx.rmx-l2 .room .room-prev.rmx-sn { display: -webkit-box !important; -webkit-line-clamp: 2 !important; line-clamp: 2; white-space: normal; }
+html:root:root:root:root:root:root .rmx.rmx-l0 .room .room-bottom { min-height: 0; }
+/* Sender Pictures off: no round picture beside a mail */
+html:root:root:root:root:root:root .rmx.rmx-nopic .rmx-row > .av { display: none !important; }
+html:root:root:root:root:root:root .rmx.rmx-nopic .rmx-row { padding-left: 14px; }
+/* an account's In All Inboxes switch, a picker row with the system's list over it, the blocked list's arrow */
+.rmx-inall { display: flex; align-items: center; gap: 6px; flex: none; }
+.rmx-inall small { font-size: 11px; opacity: .6; }
+.rmx-pickrow { position: relative; cursor: pointer; }
+.rmx-pickrow select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px; cursor: pointer; border: 0; appearance: none; -webkit-appearance: none; }
+.rmx-chev-down svg { transform: rotate(90deg); transition: transform .2s; }
+.rmx-blockrow .rmx-st b { word-break: break-all; }
+html:root:root:root:root:root:root .rmx-seg { flex: none; display: inline-flex; gap: 2px; }
+html:root:root:root:root:root:root .rmx-seg > button { white-space: nowrap; min-width: 40px; padding: 0 11px; height: 32px; }

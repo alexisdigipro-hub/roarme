@@ -33,6 +33,7 @@ export const NEWS = [
         'The iPhone app stays upright when you turn the phone on its side.',
       ] },
       { title: 'RoarMail', lab: true, items: [
+        'Add Account at the foot of Mailboxes: Gmail, iCloud, Outlook, Yahoo, AOL or any mail, with the steps each one asks for, or Import from RoarMail on your computer.',
         'An open mail keeps room at its left and right edges, so the words never touch the screen.',
         'On a computer, Settings > RoarMail shows what RoarMail is, with the download for Mac and Windows.',
         'A mail wider than the screen is drawn smaller to fit whole, no longer cut at the sides.',

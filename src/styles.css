@@ -9052,3 +9052,87 @@ html:root:root:root:root:root .rmx-sw > .rmx-swacts button { flex: none !importa
    (Alex, 25 Nov: "it is not solid, they squeeze strangely"); words are never cut */
 html:root:root:root:root[data-glass][data-skin='halo'] .row-acts .ra-in { width: auto !important; gap: 8px !important; padding: 0 10px !important; }
 html:root:root:root:root[data-glass][data-skin='halo'] .row-acts button { flex: none !important; width: 62px !important; }
+
+/* ROARMAIL Add Account (Alex, 25 Nov, sample https://claude.ai/artifact/RJeD4N28wVHkkhxZPJmLt3, "Το 1 ναι"): Import from
+   RoarMail first, then each service with its logo; the app password steps, Sign in with Microsoft by a short code */
+.rma { display: flex; flex-direction: column; gap: 12px; padding: 4px 2px 24px; animation: rma-in .3s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes rma-in { from { transform: translateX(26px); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .rma, .rma-done { animation: none !important } }
+html[data-lite] .rma, html[data-lite] .rma-done { animation: none !important; }
+.rma-h2 { font-size: 26px; font-weight: 700; letter-spacing: -.01em; margin: 2px 4px 0; text-wrap: balance; }
+.rma-lead { font-size: 13.5px; color: var(--muted); margin: -4px 4px 0; line-height: 1.4; }
+.rma-cap { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 4px 6px -6px; }
+.rma-note { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.4; margin: 0 10px; }
+.rma-err { font-size: 13px; color: #e5483f; text-align: center; margin: 0 8px; line-height: 1.4; }
+html[data-mode='dark'] .rma-err { color: #ff6961; }
+.rma-box { flex-shrink: 0; border-radius: 22px; overflow: hidden; background: color-mix(in srgb, #fff 70%, transparent); border: 1px solid rgba(255, 255, 255, .9); box-shadow: 0 6px 18px rgba(40, 50, 80, .06); }
+html[data-mode='dark'] .rma-box { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .1); box-shadow: none; }
+.rma-pad { padding: 0 16px 16px; }
+.rma-rw { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 14px; min-height: 58px; font: inherit; text-align: left; border: 0; background: none; color: inherit; position: relative; cursor: pointer; }
+.rma-rw + .rma-rw::before { content: ""; position: absolute; top: 0; left: 62px; right: 0; height: .5px; background: color-mix(in srgb, currentColor 12%, transparent); }
+.rma-rw:active { background: color-mix(in srgb, currentColor 6%, transparent); }
+.rma-rw:disabled { cursor: default; opacity: 1; }
+.rma-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rma-t b { font-size: 15.5px; font-weight: 500; }
+.rma-t small { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rma-logo { width: 36px; height: 36px; border-radius: 10px; flex: none; overflow: hidden; display: block; }
+.rma-logo svg { width: 100%; height: 100%; display: block; }
+.rma-big { width: 64px; height: 64px; border-radius: 18px; margin: 6px auto 0; box-shadow: 0 6px 18px rgba(40, 50, 80, .12); }
+.rma-center { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rma-center .rma-h2 { margin-top: 4px; }
+.rma-center .rma-lead { margin: 0 12px; }
+.rma-imp { display: flex; gap: 14px; align-items: center; padding: 16px; }
+.rma-imp-ic { width: 52px; height: 52px; border-radius: 15px; flex: none; display: grid; place-items: center; background: linear-gradient(150deg, #f2c35b, #c9962e); color: #fff; box-shadow: 0 6px 16px rgba(201, 150, 46, .3); }
+.rma-imp-ic svg { width: 26px; height: 26px; }
+.rma-imp-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rma-imp-t b { font-size: 16px; } .rma-imp-t b i { font-style: normal; font-weight: 300; }
+.rma-gold { color: #c9962e; } html[data-mode='dark'] .rma-gold { color: #e3b553; }
+.rma-imp-t small { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+html:root:root:root:root .rma-go { box-sizing: border-box; width: 100%; height: 46px; border-radius: 23px; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-weight: 600; font-size: 15.5px; text-decoration: none; cursor: pointer; flex-shrink: 0;
+  color: var(--halo-ink, #fff) !important; background: linear-gradient(170deg, var(--halo-mine-top, #5cc0f2), var(--halo-mine, #3aa7e8)) !important; box-shadow: 0 6px 16px color-mix(in srgb, var(--halo-mine, #3aa7e8) 32%, transparent) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root:root:root .rma-go:disabled { opacity: .45; cursor: default; }
+html:root:root:root:root .rma-go svg { width: 17px; height: 17px; }
+html:root:root:root:root .rma-go.rma-ms { color: #fff !important; background: #2f2f33 !important; box-shadow: none !important; }
+html:root:root:root:root[data-mode='dark'] .rma-go.rma-ms { color: #15171c !important; background: #f2f2f4 !important; }
+html:root:root:root:root .rma-go.rma-first { width: auto; padding: 0 26px; margin-top: 14px; }
+.rma-ghost { box-sizing: border-box; width: 100%; height: 44px; border-radius: 22px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-weight: 600; font-size: 14.5px; text-decoration: none; color: inherit; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .9); background: color-mix(in srgb, #fff 72%, transparent); box-shadow: 0 4px 12px rgba(40, 50, 80, .06); }
+html[data-mode='dark'] .rma-ghost { border-color: rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .08); box-shadow: none; }
+.rma-ghost svg { width: 17px; height: 17px; }
+.rma-hint { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.rma-hint > b { font-size: 14.5px; display: flex; gap: 8px; align-items: center; }
+.rma-hint > b svg { width: 18px; height: 18px; color: var(--halo-l, #3aa7e8); flex: none; }
+.rma-hint p { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.45; }
+.rma-steps { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.rma-steps li { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; line-height: 1.4; }
+.rma-steps li span { width: 22px; height: 22px; border-radius: 11px; flex: none; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: color-mix(in srgb, var(--halo-l, #3aa7e8) 16%, transparent); color: var(--halo-l, #3aa7e8); }
+.rma-fl { display: flex; align-items: center; gap: 10px; padding: 0 10px 0 16px; min-height: 52px; position: relative; }
+.rma-fl + .rma-fl::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: color-mix(in srgb, currentColor 12%, transparent); }
+.rma-fl label { width: 86px; font-size: 14px; color: var(--muted); flex: none; }
+html:root:root:root:root .rma-fl input { flex: 1; min-width: 0; border: 0 !important; background: none !important; box-shadow: none !important; padding: 0 !important; font: inherit; font-size: 16px; color: inherit; outline: none; height: 50px; border-radius: 0 !important; }
+.rma-eye { width: 34px; height: 34px; border-radius: 17px; display: grid; place-items: center; color: var(--muted); border: 0; background: none; cursor: pointer; flex: none; }
+.rma-eye svg { width: 17px; height: 17px; }
+.rma-tick { width: 26px; height: 26px; border-radius: 13px; flex: none; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, currentColor 40%, transparent); color: transparent; }
+.rma-tick svg { width: 14px; height: 14px; }
+.rma-tick.on { background: linear-gradient(170deg, var(--halo-mine-top, #5cc0f2), var(--halo-mine, #3aa7e8)); box-shadow: none; color: var(--halo-ink, #fff); }
+.rma-in { font-size: 12px; color: #22a45d; display: flex; align-items: center; gap: 4px; flex: none; }
+.rma-in svg { width: 14px; height: 14px; }
+.rma-code { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 16px; text-align: center; }
+.rma-code small { font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.rma-code > b { font-size: 32px; font-weight: 700; letter-spacing: .14em; font-variant-numeric: tabular-nums; user-select: all; -webkit-user-select: all; }
+.rma-wait { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 18px; text-align: center; }
+.rma-wait b { font-size: 16px; } .rma-wait p { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.45; }
+.rma-spin { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(255, 255, 255, .35); border-top-color: #fff; animation: rma-sp .8s linear infinite; }
+.rma-spin-d { width: 28px; height: 28px; border-width: 3px; border-color: color-mix(in srgb, currentColor 12%, transparent); border-top-color: var(--halo-l, #3aa7e8); }
+@keyframes rma-sp { to { transform: rotate(360deg) } }
+.rma-done { width: 64px; height: 64px; border-radius: 32px; display: grid; place-items: center; background: rgba(34, 164, 93, .15); color: #22a45d; margin: 26px auto 0; animation: rma-pop .45s cubic-bezier(.25, 1.45, .45, 1) both; }
+.rma-done svg { width: 30px; height: 30px; }
+@keyframes rma-pop { from { transform: scale(.5); opacity: 0 } }
+.rma-plus { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; color: var(--halo-l, #3aa7e8); background: color-mix(in srgb, var(--halo-l, #3aa7e8) 14%, transparent); flex: none; }
+.rma-plus svg { width: 22px; height: 22px; }
+.rma-addrow strong { color: var(--halo-l, #3aa7e8); }
+.rma-addbox .rma-addrow { width: 100%; }
+html:root:root:root:root .rma-del { width: 34px; height: 34px; min-width: 34px; flex: none; color: #e5483f; }
+html:root:root:root:root .rma-del svg { width: 17px; height: 17px; }
+html:root:root:root:root:root .rmx-accrow .rma-plus { background: color-mix(in srgb, var(--halo-l, #3aa7e8) 14%, transparent) !important; color: var(--halo-l, #3aa7e8) !important; box-shadow: none !important; border: 0 !important; }
+html:root:root:root:root:root .rmx-accrow .rma-plus::before, html:root:root:root:root:root .rmx-accrow .rma-plus::after { content: none !important; }

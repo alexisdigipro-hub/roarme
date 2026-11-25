@@ -84,12 +84,18 @@ export const MailWord = () => <span className="tab-gold"><b>ROAR</b><i>MAIL</i><
 
 /** RoarMail's setup from the Roar Account: the accounts (with their pictures) and their folders */
 async function loadSetup() {
-  const { data, error } = await supabase.from('roarmail_sync').select('data').maybeSingle()
+  // RoarMail's own setup, and the accounts added in RoarMe itself (Add Account, 25 Nov), which only the cloud knows
+  const [{ data, error }, st] = await Promise.all([supabase.from('roarmail_sync').select('data').maybeSingle(), cloud({ action: 'state' }).catch(() => null)])
   if (error) throw error
   const T = data?.data?.tables || {}
   const accounts = (T.accounts || []).filter((a) => a.enabled !== 0 && a.enabled !== false).sort((a, b) => (a.sort || 0) - (b.sort || 0))
     .map((a) => ({ id: String(a.id), email: a.email, name: a.description || a.display_name || a.email.split('@')[0], display: a.display_name || '', color: a.color || '#3aa7e8', avatar: /^data:image\/|^https:\/\//.test(a.avatar || '') ? a.avatar : '' }))
   const folders = (T.folders || []).filter((f) => !f.hidden).map((f) => ({ account: String(f.account_id), path: f.path, name: f.name || f.path.split(f.delimiter || '/').pop(), role: f.role || '' }))
+  for (const a of st?.accounts || []) {
+    if (!a.own || accounts.some((x) => x.id === a.account_id)) continue
+    accounts.push({ id: a.account_id, email: a.email, name: a.own.name || a.email.split('@')[0], display: '', color: a.own.color || '#3aa7e8', avatar: '', own: true, kind: a.own.kind })
+    for (const f of a.own.folders || []) folders.push({ account: a.account_id, path: f.path, name: f.name || f.path, role: f.role || '' })
+  }
   // the names RoarMail knows for addresses, and who is blocked
   const contacts = {}, blocked = []
   for (const c of T.contacts || []) { const e = String(c.email || '').toLowerCase(); if (!e) continue; if (c.blocked) blocked.push(e); else if (c.name) contacts[e] = c.name }
@@ -144,6 +150,8 @@ async function cloud(body) {
   }
   return data
 }
+
+const loadOn = () => cloud({ action: 'state' }).then((j) => { const l = (j.accounts || []).map((a) => [a.account_id, a]); lsSet('mail-on', l); return l })
 
 const when = (d) => {
   const t = new Date(d); if (Number.isNaN(t.getTime())) return ''
@@ -454,13 +462,20 @@ export function MailView({ me, people, book }) {
   useEffect(() => {
     let gone = false
     loadSetup().then((x) => { if (!gone) setSetup(x); lsSet('mail-setup', x) }, (e) => { if (!gone) setSetup((had) => had?.accounts ? had : { error: e.message || 'Could not read RoarMail' }) })
-    cloud({ action: 'state' }).then((j) => { const l = (j.accounts || []).map((a) => [a.account_id, a]); lsSet('mail-on', l); if (!gone) setOn(new Map(l)) }, () => { if (!gone) setOn((had) => had || new Map()) })
+    loadOn().then((l) => { if (!gone) setOn(new Map(l)) }, () => { if (!gone) setOn((had) => had || new Map()) })
     const f = (e) => setCounts(e.detail || {})
     const g = (e) => { if (e.detail) setSetup(e.detail) }
     window.addEventListener('roarme-mail-counts', f)
     window.addEventListener('roarme-mail-setup', g)
     return () => { gone = true; window.removeEventListener('roarme-mail-counts', f); window.removeEventListener('roarme-mail-setup', g) }
   }, [])
+  // after Add Account: the accounts and which are in RoarMe, read again
+  const reload = async () => {
+    const [x, l] = await Promise.all([loadSetup().catch(() => null), loadOn().catch(() => null)])
+    if (x) { setSetup(x); lsSet('mail-setup', x); tell('roarme-mail-setup', x) }
+    if (l) setOn(new Map(l))
+    warmMail(true)
+  }
   const accounts = setup?.accounts || []
   // one account: RoarMail opens straight on its folders, Inbox, Drafts, Sent… (Alex, 25 Nov); no step back to a home of one
   const single = accounts.length === 1 ? accounts[0].id : ''
@@ -495,11 +510,14 @@ export function MailView({ me, people, book }) {
   }, [step.s, step.acc, setup, on])
 
   if (setup === null) return <div className="rmx-wait"><span className="rmx-wait-ico">{MAIL_I.mail}</span><p>Looking for your RoarMail accounts…</p></div>
+  const addPage = step.s === 'add' && <AddAccount setup={setup?.accounts ? setup : null} on={on} onBack={() => setStep(step.from || { s: 'accs' })} onDone={reload} />
+  if (addPage) return addPage
   if (setup.error || !accounts.length) {
     return (
       <div className="rmx-wait"><span className="rmx-wait-ico">{MAIL_I.mail}</span>
-        <p>No RoarMail accounts yet.</p>
-        <small>Add your accounts in RoarMail on your computer, signed in with this Roar Account, and they show here.</small>
+        <p>No mail accounts yet.</p>
+        <small>Add Gmail, iCloud, Outlook or any mail here, or bring the ones you set up in RoarMail on your computer.</small>
+        <button type="button" className="rma-go rma-first" onClick={() => setStep({ s: 'add' })}>Add Account</button>
       </div>
     )
   }
@@ -550,6 +568,7 @@ export function MailView({ me, people, book }) {
               <i className="rmx-chev">{MAIL_I.chev}</i>
             </button>
           ))}
+        {!editHome && <AddAccountRow onClick={() => setStep({ s: 'add', from: { s: 'accs' } })} />}
         {newBtn}{composer}
       </div>
     )
@@ -610,6 +629,7 @@ export function MailView({ me, people, book }) {
             ))}
           </div>
         </>}
+        {single && <div className="rmx-box rma-addbox"><AddAccountRow onClick={() => setStep({ s: 'add', from: { s: 'folders', acc: acc.id } })} /></div>}
         {newBtn}{composer}
       </div>
     )
@@ -1160,6 +1180,250 @@ const okAddr = (a) => /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(a.address)
 
 /* Contacts inside ROARMAIL (Alex, 25 Nov, "all together"): everyone with an email in the address book, RoarMail's own
    contacts and whoever wrote to me in the mail kept on this phone, one row each; a tap writes them a new mail */
+// ---- Add Account, in RoarMe itself (Alex, 25 Nov: sample https://claude.ai/artifact/RJeD4N28wVHkkhxZPJmLt3, "Το 1 ναι") ----
+// Import from RoarMail first (RoarMail on the computer asks Allow, then sends the accounts), then each service with its
+// logo and the exact steps it asks for. The password is checked against the mail server and kept in RoarMe's vault by
+// roarmail-cloud ('add'); Microsoft signs in on its own page with a short code ('msStart' / 'msPoll').
+const LOGO = {
+  gmail: <svg viewBox="0 0 48 48"><rect width="48" height="48" fill="#fff" /><path d="M9 15v20h6V22l9 7 9-7v13h6V15l-3-2-12 9-12-9z" fill="#ea4335" /><path d="M9 15v20h6V22z" fill="#4285f4" /><path d="M33 22v13h6V15z" fill="#34a853" /><path d="M39 15l-3-2-3 2.3V22z" fill="#fbbc04" /><path d="M9 15l3-2 3 2.3V22z" fill="#c5221f" /></svg>,
+  icloud: <svg viewBox="0 0 48 48"><defs><linearGradient id="rma-ic" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#5fc3fb" /><stop offset="1" stopColor="#1b8cf0" /></linearGradient></defs><rect width="48" height="48" fill="url(#rma-ic)" /><path d="M16 32h17a6 6 0 0 0 .6-12 8 8 0 0 0-15.3-1.6A6.8 6.8 0 0 0 16 32z" fill="#fff" /></svg>,
+  outlook: <svg viewBox="0 0 48 48"><rect width="48" height="48" fill="#0a64c9" /><rect x="22" y="13" width="17" height="22" rx="2" fill="#4fa3f5" /><path d="M22 18l8.5 6 8.5-6" stroke="#0a64c9" strokeWidth="2" fill="none" /><rect x="9" y="15" width="17" height="18" rx="2.5" fill="#fff" /><ellipse cx="17.5" cy="24" rx="4.4" ry="5.4" fill="none" stroke="#0a64c9" strokeWidth="2.6" /></svg>,
+  yahoo: <svg viewBox="0 0 48 48"><rect width="48" height="48" fill="#6001d2" /><path d="M11 16h6l4.5 9 4.5-9h6l-8 15v6h-5v-6z" fill="#fff" /><circle cx="35" cy="33.5" r="2.6" fill="#fff" /><path d="M33.5 14h4l-1.2 15h-1.6z" fill="#fff" /></svg>,
+  aol: <svg viewBox="0 0 48 48"><rect width="48" height="48" fill="#111" /><text x="24" y="29.5" textAnchor="middle" fontFamily="Arial, Helvetica, sans-serif" fontWeight="700" fontSize="15" fill="#fff">Aol.</text></svg>,
+  other: <svg viewBox="0 0 48 48"><rect width="48" height="48" fill="#8e8e96" /><rect x="11" y="15" width="26" height="18" rx="3" fill="none" stroke="#fff" strokeWidth="2.4" /><path d="M12 17l12 8.5L36 17" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinejoin="round" /></svg>,
+}
+const PROV = {
+  gmail: { n: 'Gmail', sub: 'Google Mail and Google Workspace', word: 'app password', where: 'Google', url: 'https://myaccount.google.com/apppasswords', btn: 'Open Google App Passwords', ph: 'name@gmail.com',
+    steps: ['Turn on 2-Step Verification in your Google Account.', 'Open App Passwords, name it RoarMe and press Create.', 'Copy the 16 letters and paste them below.'] },
+  icloud: { n: 'iCloud Mail', sub: 'icloud.com, me.com, mac.com', word: 'app-specific password', where: 'Apple', url: 'https://account.apple.com/account/manage', btn: 'Open Apple Account', ph: 'name@icloud.com',
+    steps: ['Sign in at account.apple.com.', 'Sign-In and Security > App-Specific Passwords > +, name it RoarMe.', 'Copy the password and paste it below.'] },
+  outlook: { n: 'Outlook', sub: 'Outlook.com, Hotmail, Live, Office 365', ms: true },
+  yahoo: { n: 'Yahoo Mail', sub: 'yahoo.com, ymail.com', word: 'app password', where: 'Yahoo', url: 'https://login.yahoo.com/account/security', btn: 'Open Yahoo Security', ph: 'name@yahoo.com',
+    steps: ['Open Account Security in Yahoo.', 'Generate app password, name it RoarMe.', 'Copy it and paste it below.'] },
+  aol: { n: 'AOL Mail', sub: 'aol.com', word: 'app password', where: 'AOL', url: 'https://login.aol.com/account/security', btn: 'Open AOL Security', ph: 'name@aol.com',
+    steps: ['Open Account Security in AOL.', 'Generate app password, name it RoarMe.', 'Copy it and paste it below.'] },
+  other: { n: 'Other Mail', sub: 'Any address with IMAP, your own domain too', other: true },
+}
+const ADD_I = {
+  key: s(<><circle cx="8" cy="15" r="4" /><path d="M11 12l8-8M16 7l2.5 2.5M14 9l2 2" /></>),
+  link: s(<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />),
+  laptop: s(<><rect x="4" y="5" width="16" height="11" rx="2" /><path d="M2 19h20" /></>),
+  eye: s(<><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" /></>),
+  check: s(<path d="M5 12.5l4.5 4.5L19 7.5" />),
+  copy: s(<><rect x="8" y="8" width="12" height="12" rx="2.5" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></>),
+  plus: s(<path d="M12 5v14M5 12h14" />),
+}
+const MS_LOGO = <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="3" width="8.5" height="8.5" fill="#f25022" /><rect x="12.5" y="3" width="8.5" height="8.5" fill="#7fba00" /><rect x="3" y="12.5" width="8.5" height="8.5" fill="#00a4ef" /><rect x="12.5" y="12.5" width="8.5" height="8.5" fill="#ffb900" /></svg>
+const hostPort = (v, def) => { const m = String(v || '').trim().toLowerCase().match(/^([a-z0-9.-]+)\s*(?::\s*(\d+))?$/); return m ? { host: m[1], port: Number(m[2]) || def } : null }
+
+/** the row at the foot of Mailboxes (and of a single account's folders) */
+export function AddAccountRow({ onClick }) {
+  return (
+    <button type="button" className="room rmx-accrow rma-addrow" onClick={onClick}>
+      <span className="av rma-plus">{ADD_I.plus}</span>
+      <span className="room-main"><span className="room-top"><strong>Add Account</strong></span></span>
+    </button>
+  )
+}
+
+function AddAccount({ setup, on, onBack, onDone }) {
+  const [view, setView] = useState({ v: 'list' }) // list · prov {k} · imp · wait {t, ask?} · done {t}
+  const [form, setForm] = useState({})
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [ms, setMs] = useState(null)
+  const [pick, setPick] = useState({})
+  const [shown, setShown] = useState(false)
+  const alive = useRef(true)
+  useEffect(() => () => { alive.current = false }, [])
+  const go = (v) => { setErr(''); setForm({}); setShown(false); setMs(null); setView(v) }
+  useMailBack(() => { if (view.v === 'list' || view.v === 'done') onBack(); else if (view.v === 'wait' && view.ask) cancelAsk(); else go({ v: 'list' }) })
+  const fromPc = (setup?.accounts || []).filter((a) => !a.own)
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+  const finish = (t) => { if (alive.current) setView({ v: 'done', t }) }
+
+  // Other Mail: the servers found for the address as soon as it is written
+  const detected = useRef('')
+  const detect = async () => {
+    const em = String(form.em || '').trim().toLowerCase()
+    if (!/@.+\./.test(em) || detected.current === em) return
+    detected.current = em
+    try { const j = await cloud({ action: 'detect', email: em }); const c = j.cfg; if (c && alive.current) setForm((f) => ({ ...f, in: f.in || `${c.imap_host}:${c.imap_port}`, out: f.out || `${c.smtp_host}:${c.smtp_port}` })) } catch { /* they write them */ }
+  }
+  const connect = async () => {
+    const k = view.k, p = PROV[k]
+    const em = String(form.em || '').trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setErr('Write the whole email address.'); return }
+    const body = { action: 'add', email: em, password: form.pw || '' }
+    if (p.other) {
+      const i = hostPort(form.in, 993), o = hostPort(form.out, 465)
+      if (!i) { setErr('Write the incoming server, like imap.domain.com.'); return }
+      body.cfg = { imap_host: i.host, imap_port: i.port, smtp_host: o?.host || '', smtp_port: o?.port || 465, smtp_tls: (o?.port || 465) === 465 ? 'tls' : 'starttls' }
+    }
+    setBusy(true); setErr('')
+    try {
+      const j = await cloud(body)
+      if (!alive.current) return
+      if (j.ok) { await onDone(false); finish([`${p.n} is in ROARMAIL`, 'Your mail starts coming in now.']) } else setErr(j.error || 'That did not work.')
+    } catch (e) { if (alive.current) setErr(e.message || 'That did not work.') } finally { if (alive.current) setBusy(false) }
+  }
+  // Microsoft: a short code, typed on Microsoft's own page; RoarMe asks every few seconds until it is signed in
+  const msGo = async () => {
+    setErr(''); setBusy(true)
+    try {
+      const d = await cloud({ action: 'msStart' })
+      if (!alive.current) return
+      setMs(d); setBusy(false)
+      try { await navigator.clipboard?.writeText(d.code) } catch { /* shown anyway */ }
+      const until = Date.now() + d.expires * 1e3
+      while (alive.current && Date.now() < until) {
+        await new Promise((r) => setTimeout(r, d.every * 1e3))
+        if (!alive.current) return
+        let j
+        try { j = await cloud({ action: 'msPoll', device: d.device }) } catch (e) { j = { ok: false, error: e.message } }
+        if (j.pending) continue
+        if (!alive.current) return
+        if (j.ok) { await onDone(false); finish(['Outlook is in ROARMAIL', 'Your mail starts coming in now.']) } else { setMs(null); setErr(j.error || 'The sign-in did not finish.') }
+        return
+      }
+      if (alive.current) { setMs(null); setErr('The code expired. Start again.') }
+    } catch (e) { if (alive.current) { setBusy(false); setErr(e.message || 'Microsoft did not answer.') } }
+  }
+  // Import: an ask RoarMail on the computer answers with Allow (it checks every minute)
+  const askRef = useRef(null)
+  const cancelAsk = async () => { const id = askRef.current; askRef.current = null; if (id) await supabase.from('roarmail_cloud_asks').delete().eq('id', id); go({ v: 'imp' }) }
+  const bring = async () => {
+    const ids = fromPc.filter((a) => pick[a.id]).map((a) => a.id)
+    if (!ids.length) return
+    setBusy(true); setErr('')
+    const { data, error } = await supabase.from('roarmail_cloud_asks').insert({ accounts: ids }).select('id').single()
+    setBusy(false)
+    if (error || !data) { setErr(error?.message || 'The ask did not go.'); return }
+    askRef.current = data.id
+    const n = ids.length
+    setView({ v: 'wait', ask: data.id, t: ['Allow it on your computer', `RoarMail on your computer asks to send ${n} ${n > 1 ? 'accounts' : 'account'} to RoarMe. Press Allow there. RoarMail has to be open.`] })
+    const t0 = Date.now()
+    while (alive.current && askRef.current === data.id && Date.now() - t0 < 10 * 60e3) {
+      await new Promise((r) => setTimeout(r, 3000))
+      const { data: a } = await supabase.from('roarmail_cloud_asks').select('state, error').eq('id', data.id).maybeSingle()
+      if (!alive.current || askRef.current !== data.id) return
+      if (!a) return
+      if (a.state === 'done') { askRef.current = null; setPick({}); await onDone(false); finish([`${n > 1 ? `${n} accounts are` : 'The account is'} in ROARMAIL`, a.error || 'Your mail starts coming in now.']); return }
+      if (a.state === 'declined') { askRef.current = null; setView({ v: 'imp' }); setErr('RoarMail on the computer did not allow it.'); return }
+    }
+  }
+
+  const fl = (id, lab, ph, type = 'text', extra = {}) => (
+    <div className="rma-fl">
+      <label htmlFor={`rma-${id}`}>{lab}</label>
+      <input id={`rma-${id}`} type={type === 'password' && shown ? 'text' : type} placeholder={ph} value={form[id] || ''} onChange={set(id)}
+        autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} {...extra} />
+      {type === 'password' && <button type="button" className="rma-eye" aria-label={shown ? 'Hide password' : 'Show password'} onClick={() => setShown((v) => !v)}>{ADD_I.eye}</button>}
+    </div>
+  )
+  const goBtn = (label, fn, ok = true) => <button type="button" className="rma-go" disabled={!ok || busy} onClick={fn}>{busy ? <span className="rma-spin" /> : label}</button>
+
+  let body
+  if (view.v === 'list') {
+    body = <>
+      <div className="rma-h2">Add Account</div>
+      {fromPc.length > 0 && (
+        <div className="rma-box">
+          <div className="rma-imp">
+            <span className="rma-imp-ic">{ADD_I.laptop}</span>
+            <span className="rma-imp-t"><b>Import from <span className="rma-gold">ROAR</span><i>MAIL</i></b><small>Bring the accounts you set up in RoarMail on your computer. No passwords to type here.</small></span>
+          </div>
+          <div className="rma-pad">{goBtn('Import', () => go({ v: 'imp' }))}</div>
+        </div>
+      )}
+      {fromPc.length > 0 && <div className="rma-cap">Or add one here</div>}
+      <div className="rma-box">
+        {Object.entries(PROV).map(([k, p]) => (
+          <button key={k} type="button" className="rma-rw" onClick={() => go({ v: 'prov', k })}>
+            <span className="rma-logo">{LOGO[k]}</span>
+            <span className="rma-t"><b>{p.n}</b><small>{p.sub}</small></span>
+            <i className="rmx-chev">{MAIL_I.chev}</i>
+          </button>
+        ))}
+      </div>
+    </>
+  } else if (view.v === 'prov') {
+    const k = view.k, p = PROV[k]
+    const top = <div className="rma-center"><span className="rma-logo rma-big">{LOGO[k]}</span><div className="rma-h2">{p.n}</div></div>
+    if (p.ms) {
+      body = <>{top}
+        {!ms && <>
+          <p className="rma-lead">Microsoft signs you in on its own page. RoarMe never sees your password.</p>
+          <button type="button" className="rma-go rma-ms" disabled={busy} onClick={msGo}>{busy ? <span className="rma-spin" /> : <>{MS_LOGO}Sign in with Microsoft</>}</button>
+          <p className="rma-note">Works for Outlook.com, Hotmail, Live and work or school accounts on Office 365.</p>
+        </>}
+        {ms && <div className="rma-box rma-code">
+          <small>Your code</small>
+          <b>{ms.code}</b>
+          <button type="button" className="rma-ghost" onClick={() => { navigator.clipboard?.writeText(ms.code).catch(() => {}) }}>{ADD_I.copy}Copy the Code</button>
+          <a className="rma-go" href={ms.url} target="_blank" rel="noreferrer">{ADD_I.link}Open Microsoft</a>
+          <p className="rma-note">Paste the code on Microsoft's page and sign in. RoarMe goes on by itself.</p>
+          <span className="rma-spin rma-spin-d" />
+        </div>}
+      </>
+    } else if (p.other) {
+      body = <>{top}
+        <p className="rma-lead">Write your address and password. RoarMe finds the servers for most providers by itself.</p>
+        <div className="rma-box">{fl('em', 'Email', 'name@domain.com', 'email', { onBlur: detect, inputMode: 'email' })}{fl('pw', 'Password', 'Required', 'password')}</div>
+        <div className="rma-cap">Servers</div>
+        <div className="rma-box">{fl('in', 'Incoming', 'imap.domain.com:993', 'text', { onFocus: detect })}{fl('out', 'Outgoing', 'smtp.domain.com:465')}</div>
+        <p className="rma-note">Outgoing mail from RoarMe goes on port 465 (SSL).</p>
+        {err && <p className="rma-err">{err}</p>}
+        {goBtn('Connect', connect, form.em && form.pw)}
+      </>
+    } else {
+      body = <>{top}
+        <div className="rma-box rma-hint">
+          <b>{ADD_I.key}{p.n} asks for an {p.word}</b>
+          <p>Not your usual password. {p.where} makes one just for RoarMe, and you can take it back at any time.</p>
+          <ol className="rma-steps">{p.steps.map((x, i) => <li key={i}><span>{i + 1}</span>{x}</li>)}</ol>
+          <a className="rma-ghost" href={p.url} target="_blank" rel="noreferrer">{ADD_I.link}{p.btn}</a>
+        </div>
+        <div className="rma-box">{fl('em', 'Email', p.ph, 'email', { inputMode: 'email' })}{fl('pw', 'Password', p.word, 'password')}</div>
+        {err && <p className="rma-err">{err}</p>}
+        {goBtn('Connect', connect, form.em && form.pw)}
+      </>
+    }
+    if (p.ms && err) body = <>{body}<p className="rma-err">{err}</p></>
+  } else if (view.v === 'imp') {
+    const n = fromPc.filter((a) => pick[a.id]).length
+    body = <>
+      <div className="rma-h2">Import</div>
+      <p className="rma-lead">Your accounts in RoarMail on the computer. Pick the ones to bring here.</p>
+      <div className="rma-box">
+        {fromPc.map((a) => {
+          const inRm = on?.has(a.id)
+          return (
+            <button key={a.id} type="button" className="rma-rw" disabled={inRm} onClick={() => setPick((x) => ({ ...x, [a.id]: !x[a.id] }))}>
+              <AccPic a={a} size={36} />
+              <span className="rma-t"><b>{a.name}</b><small>{a.email}</small></span>
+              {inRm ? <span className="rma-in">{ADD_I.check}In RoarMe</span> : <span className={`rma-tick${pick[a.id] ? ' on' : ''}`}>{ADD_I.check}</span>}
+            </button>
+          )
+        })}
+      </div>
+      {err && <p className="rma-err">{err}</p>}
+      {goBtn(n ? `Bring ${n} ${n > 1 ? 'Accounts' : 'Account'}` : 'Pick an Account', bring, n > 0)}
+      <p className="rma-note">RoarMail on the computer asks you to allow it, then sends them over. Passwords travel sealed and are kept in RoarMe's vault.</p>
+    </>
+  } else if (view.v === 'wait') {
+    body = <div className="rma-box rma-wait"><span className="rma-spin rma-spin-d" /><b>{view.t[0]}</b><p>{view.t[1]}</p>
+      {view.ask && <button type="button" className="rma-ghost" onClick={cancelAsk}>Cancel</button>}</div>
+  } else {
+    body = <>
+      <div className="rma-done">{ADD_I.check}</div>
+      <div className="rma-center"><div className="rma-h2">{view.t[0]}</div><p className="rma-lead">{view.t[1]}</p></div>
+      <button type="button" className="rma-go" onClick={onBack}>Done</button>
+    </>
+  }
+  return <div className="rmx rma" key={view.v + (view.k || '')}>{body}</div>
+}
+
 function MailContacts({ who, setup, me, book, onBack, onWrite }) {
   const [q, setQ] = useState('')
   const [extra, setExtra] = useState([])
@@ -1396,6 +1660,15 @@ export function MailPage() {
     loadSetup().then((x) => { setSetup(x); lsSet('mail-setup', x) }, () => {})
     cloud({ action: 'state' }).then((j) => { const l = (j.accounts || []).map((a) => [a.account_id, a]); lsSet('mail-on', l); setState(new Map(l)) }, () => {})
   }, [on])
+  // an account added in RoarMe itself goes out of RoarMe again (its password out of the vault)
+  const removeOwn = async (a) => {
+    if (!window.confirm(`Remove ${a.email} from RoarMe? Its mail stays on the mail server.`)) return
+    try {
+      await cloud({ action: 'disconnect', account_id: a.id })
+      const x = await loadSetup(); setSetup(x); lsSet('mail-setup', x); tell('roarme-mail-setup', x)
+      const l = await loadOn(); setState(new Map(l))
+    } catch (e) { window.alert(e.message || 'Not removed') }
+  }
   const sw = (k, label, sub) => (
     <label className="set-row rmx-setrow"><span className="rmx-st"><b>{label}</b>{sub && <small>{sub}</small>}</span>
       <span className="switch"><input type="checkbox" checked={!!prefs[k]} onChange={(e) => setMailPref(k, e.target.checked)} /><span /></span></label>
@@ -1432,7 +1705,8 @@ export function MailPage() {
             return (
               <div key={a.id} className="set-row rmx-setacc">
                 <Avatar src={a.avatar} name={a.name} size={34} />
-                <span className="rmx-st"><b>{a.name}</b><small>{a.email} · {st ? (st.status === 'ok' ? 'In RoarMe' : 'Send again from RoarMail') : 'Not sent yet'}</small></span>
+                <span className="rmx-st"><b>{a.name}</b><small>{a.email} · {st ? (st.status === 'ok' ? (a.own ? 'Added here' : 'In RoarMe') : (a.own ? 'Remove it and add it again' : 'Send again from RoarMail')) : 'Not sent yet'}</small></span>
+                {a.own && <button type="button" className="round rma-del" aria-label={`Remove ${a.name}`} onClick={() => removeOwn(a)}>{MAIL_I.trash}</button>}
                 {st?.status === 'ok'
                   ? <label className="rmx-inall" title="In All Inboxes and Unread"><small>All</small><span className="switch"><input type="checkbox" checked={inAll} onChange={(e) => setMailPref('allHide', e.target.checked ? (prefs.allHide || []).filter((x) => x !== a.id) : [...(prefs.allHide || []), a.id])} /><span /></span></label>
                   : <em className={`rmx-tag${st ? ' bad' : ''}`}>{st ? 'Send again' : 'Not sent'}</em>}
@@ -1441,7 +1715,7 @@ export function MailPage() {
           })}
           {!setup?.accounts?.length && <p className="hb-hint">No accounts yet.</p>}
         </div>
-        <p className="hb-hint">The switch puts an account in All Inboxes and in the app's Unread. An account comes here from RoarMail on your computer: Settings › Roar Account › My mail in RoarMe › Send to RoarMe.</p>
+        <p className="hb-hint">The switch puts an account in All Inboxes and in the app's Unread. Add an account at the foot of Mailboxes in ROARMAIL, or bring it from RoarMail on your computer.</p>
         <div className="set-title">Reading</div>
         <div className="set-box">
           {sw('markRead', 'Mark as Read When Opened')}

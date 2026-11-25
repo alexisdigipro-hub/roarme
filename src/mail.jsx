@@ -58,7 +58,8 @@ export const MAIL_I = {
 }
 // eight filters, as RoarMail on the Mac (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL):
 // one glass capsule as tall as the folder bar, back and the name at the left, the filters at the right, sliding
-const FILTERS = [['search', 'Search'], ['unread', 'Unread'], ['star', 'Starred'], ['clip', 'With attachments'], ['conv', 'Conversations'], ['day', 'Mail of one day'], ['sort', 'Oldest first'], ['sender', 'Same sender']]
+// no Unread filter: unread mail shows as such anyway (Alex, 25 Nov)
+const FILTERS = [['search', 'Search'], ['star', 'Starred'], ['clip', 'With attachments'], ['conv', 'Conversations'], ['day', 'Mail of one day'], ['sort', 'Oldest first'], ['sender', 'Same sender']]
 // the folders every account has, in RoarMail's order; for All Inboxes the same, across the accounts
 const ROLES = [['inbox', 'Inbox'], ['drafts', 'Drafts'], ['sent', 'Sent'], ['spam', 'Junk'], ['trash', 'Trash'], ['archive', 'Archive']]
 const ROLE_I = { inbox: 'inbox', drafts: 'drafts', sent: 'sent', spam: 'spam', trash: 'trash', archive: 'archive', flagged: 'flagged' }
@@ -719,7 +720,8 @@ function MailList({ acc, step, targets, accounts, folders, who, offline, onBack,
       {/* one glass capsule as tall as the folder bar: back and the folder's name, then every filter, sliding sideways
           (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL) */}
       <div className="rmx-head">
-        <Crumb title={thread ? (shown[0]?.subject || step.name) : step.name} sub={sub} onBack={thread ? () => setThread('') : onBack} />
+        {/* back alone, in the same line as the filters; no folder name or address over the mails (Alex, 25 Nov) */}
+        <button type="button" className="round rmx-hback" onClick={thread ? () => setThread('') : onBack} aria-label="Back" title={thread ? 'Back' : `Back · ${step.name}`} data-back="">{MAIL_I.back}</button>
         <div className="rmx-fbar">
           <span className="rmx-filters">
             {FILTERS.map(([k, label]) => k === 'day' && filter !== 'day'
@@ -731,6 +733,7 @@ function MailList({ acc, step, targets, accounts, folders, who, offline, onBack,
       </div>
       {filter === 'search' && <label className="search rmx-search">{I.search}<input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search these mails" /></label>}
       {filter === 'sender' && !sender && <p className="rmx-hint">Tap a mail to see all mail from its sender.</p>}
+      {((filter === 'sender' && sender) || (filter === 'day' && day)) && <p className="rmx-hint">{sub}</p>}
       {emptyable && rows && rows.length > 0 && !filter && <div className="rmx-more rmx-emptyrow"><button type="button" className="pill-btn" disabled={busy} onClick={emptyAll}>{MAIL_I.trash}<span>{role === 'trash' ? 'Empty Trash' : 'Empty Junk'}</span></button></div>}
       {offline ? <p className="rmx-note">To read this account here, open RoarMail on your computer: Settings › Roar Account › My mail in RoarMe › Send to RoarMe.</p>
         : rows === null && !found?.rows ? <p className="muted rooms-none">{busy ? 'Getting your mail…' : ''}</p>

@@ -8859,3 +8859,8 @@ html:root:root:root:root .rmx .rmx-ct-row { align-items: center; padding-right: 
 .rmx-ct-go svg { width: 18px; height: 18px; }
 html:root:root:root:root:root .rmx .rmx-ct-row .room-prev { display: block !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html:root:root:root:root:root .rmx .rmx-ct-row .room-bottom { display: flex !important; }
+/* the bar over the mails is one line: back, then the seven filters spread across (Alex, 25 Nov) */
+html:root:root:root:root:root:root .rmx-head .rmx-hback { flex: none; width: 36px; height: 36px; min-width: 36px; background: var(--lg-chip, rgba(255, 255, 255, .9)) !important; border: 0 !important; box-shadow: 0 1px 4px rgba(40, 50, 80, .12) !important; color: inherit; }
+html:root:root:root:root:root:root .rmx-head .rmx-filters { flex: 1; display: flex; justify-content: space-between; min-width: max-content; }
+html:root:root:root:root:root:root .rmx-head .rmx-fbar { flex: 1; min-width: 0; }
+html:root:root:root:root:root:root .rmx-head { margin-left: 5px; margin-right: 5px; }

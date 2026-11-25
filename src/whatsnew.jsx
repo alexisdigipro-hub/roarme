@@ -16,6 +16,7 @@ export const NEWS = [
     date: '25 November 2026',
     sections: [
       { title: 'Everywhere', items: [
+        'Unread shows only chats again. Tap the dots there to select several: Delete, Read, Move, Archive.',
         'RoarTransfer: a file that got stuck on its way up (100% and nothing more) now goes on another way by itself and arrives.',
         'Pull to refresh keeps you where you were: the same tab, folder, chat or Settings page.',
         "PROjects: the Production Hub's Calendar in a project's Overview, above the Team: the month with its dots, the day's events, All types, Not available and +, with everything you see in the hub.",
@@ -32,7 +33,7 @@ export const NEWS = [
       { title: 'RoarMail', lab: true, items: [
         'The + at the top right is back, and inside RoarMail it starts a new message.',
         'No more bar with the name over the mail: back is at the top left, beside the dots.',
-        'RoarMail moved from the folders at the top to the bar at the bottom: Mail, right of Messages, with its unread count. The bar stays the same inside the mail; tap Mail there to go back to your accounts.',
+        'RoarMail moved from the folders at the top to the bar at the bottom: Mail, right of Messages, with its unread count. The bar stays the same inside the mail; tap Mail there to go back to your accounts. Mail no longer stands in Unread.',
         'Inside RoarMail the top reads ROARMAIL.',
         'Inside RoarMail the bar at the bottom is Contacts, New Mail and Settings. Contacts lists everyone with an email; tap one to write to them.',
         'Every account shows its address under its name, and the unread counts stand in one line.',

@@ -16,6 +16,7 @@ export const NEWS = [
     date: '25 November 2026',
     sections: [
       { title: 'Everywhere', items: [
+        'RoarTransfer: a file that got stuck on its way up (100% and nothing more) now goes on another way by itself and arrives.',
         'Pull to refresh keeps you where you were: the same tab, folder, chat or Settings page.',
         "PROjects: the Production Hub's Calendar in a project's Overview, above the Team: the month with its dots, the day's events, All types, Not available and +, with everything you see in the hub.",
         'Make the Ordino: its + also lets you add an ordino by its link, so it takes no line of its own.',

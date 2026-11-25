@@ -30,6 +30,7 @@ export const NEWS = [
         'The iPhone app stays upright when you turn the phone on its side.',
       ] },
       { title: 'RoarMail', lab: true, items: [
+        'The + at the top right is back, and inside RoarMail it starts a new message.',
         'No more bar with the name over the mail: back is at the top left, beside the dots.',
         'RoarMail moved from the folders at the top to the bar at the bottom: Mail, right of Messages, with its unread count. The bar stays the same inside the mail; tap Mail there to go back to your accounts.',
         'Inside RoarMail the top reads ROARMAIL.',

@@ -8980,3 +8980,11 @@ html:root:root:root:root:root:root .rmx .av.rmx-smart { background: color-mix(in
 html:root:root:root:root:root:root .rmx .rmx-check:not(.on) { border-color: rgba(120, 124, 138, .55) !important; }
 html[data-mode='dark']:root:root:root:root:root:root .rmx .rmx-check:not(.on) { border-color: rgba(200, 204, 214, .5) !important; }
 html:root:root:root:root:root:root .rmx .rmx-row:not(.rmx-checked) .rmx-check { border-color: rgba(120, 124, 138, .55); }
+/* ROARMAIL as a place of its own (Alex, 25 Nov): going in, the page slides in from the right; going back to RoarMe, the
+   chats slide in from the left. The folder bar is not drawn inside it: the mail's own bar stands in its place */
+@keyframes mail-env-in { from { opacity: 0; transform: translate3d(48px, 0, 0); } }
+@keyframes mail-env-out { from { opacity: 0; transform: translate3d(-48px, 0, 0); } }
+html:root:root:root:root .side.mail-in .rooms-pager, html:root:root:root:root .side.mail-in .side-head { animation: mail-env-in .34s cubic-bezier(.22, 1, .36, 1) both; }
+html:root:root:root:root .side.mail-out .rooms-pager, html:root:root:root:root .side.mail-out .wheel-box { animation: mail-env-out .34s cubic-bezier(.22, 1, .36, 1) both; }
+html[data-lite] .side.mail-in .rooms-pager, html[data-lite] .side.mail-out .rooms-pager, html[data-lite] .side.mail-in .side-head, html[data-lite] .side.mail-out .wheel-box { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .side.mail-in .rooms-pager, .side.mail-out .rooms-pager, .side.mail-in .side-head, .side.mail-out .wheel-box { animation: none !important; } }

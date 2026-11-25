@@ -161,6 +161,20 @@ export default function Chat({ me, setMe }) {
   const [folder, setFolder] = useState('all')
   // which step ROARMAIL is on, told by MailView (for the bar at the foot inside it)
   const [mailStep, setMailStep] = useState('')
+  // ROARMAIL as a place of its own (Alex, 25 Nov: "it slides, as if you enter another environment"): the folder bar
+  // steps out while it is open, the chats come back with a slide the other way; the folder left is remembered
+  const mailBack = useRef('all')
+  const [mailSlide, setMailSlide] = useState('')
+  const lastFolder = useRef(folder)
+  useEffect(() => {
+    const was = lastFolder.current
+    lastFolder.current = folder
+    if (folder === 'mail' && was !== 'mail') { mailBack.current = was; setMailSlide('in') }
+    else if (was === 'mail' && folder !== 'mail') setMailSlide('out')
+    else return undefined
+    const t = setTimeout(() => setMailSlide(''), 420)
+    return () => clearTimeout(t)
+  }, [folder])
   useEffect(() => { const f = (e) => setMailStep(e.detail || ''); window.addEventListener('roarme-mail-step', f); return () => window.removeEventListener('roarme-mail-step', f) }, [])
   // Unread out of the folder bar (Alex, 23 Nov, https://claude.ai/artifact/HE48Bz3Cb4AnaWyP7VxNBo, "πάμε"): while something is
   // unread a round accent button peeks in from the screen's left edge; a slide right on the bar brings it out whole with the
@@ -1593,7 +1607,7 @@ export default function Chat({ me, setMe }) {
   return (
     <div className={`app${intro ? ' intro' : ''}${tasksOpen ? ' tasks-open' : ''}`} style={{ '--side-w': `${sideW}px` }}>
       <span className="side-grip" onPointerDown={drag} onDoubleClick={() => { setSideW(370); try { localStorage.setItem('roarme-side', '370') } catch { /* private window */ } }} title="Drag to widen, double-click to reset" />
-      <aside className="side">
+      <aside className={`side${mailOn && folder === 'mail' ? ' mail-env' : ''}${mailSlide ? ` mail-${mailSlide}` : ''}`}>
         <div className="side-col" {...onStopTouch}>
         <div className="side-head">
           {tab === 'calls' && !picking && !tabsEdit ? (
@@ -1672,7 +1686,7 @@ export default function Chat({ me, setMe }) {
                 onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur(); setSearchOpen(false) } }} /></label>
             </div></div>
             <div className={`rooms-area${tabsDown && !q.trim() ? ' bottom' : ''}`} onWheel={onListWheel}>
-            {!q.trim() && (
+            {!q.trim() && !(mailOn && folder === 'mail') && (
               <div className={`wheel-box${wheeling ? ' on' : ''}${uCount > 0 ? ' u-has' : ''}${folder === 'all' ? ' u-all' : ''}${uShown ? ' u-open' : ''}`}
                 onTouchStart={(e) => { const t = e.touches[0]; uTouch.current = e.touches.length === 1 && !editTabs ? { x: t.clientX, y: t.clientY, sl: tabsLens.current?.scrollLeft || 0 } : null }}
                 onTouchEnd={(e) => { const u = uTouch.current; uTouch.current = null; if (!u) return; const t = e.changedTouches[0], dx = t.clientX - u.x, dy = t.clientY - u.y; if (Math.abs(dx) < 36 || Math.abs(dx) < Math.abs(dy) * 1.4) return; if (dx > 0 && u.sl <= 2 && uCount > 0 && !uShown) { haptic(8); setUOpen(true) } else if (dx < 0 && uShown && u.x < 140) { setUOpen(false); if (folder === 'unread') setFolder('all') } }}>
@@ -1846,8 +1860,9 @@ export default function Chat({ me, setMe }) {
           <nav ref={footLens} className="foot lens" data-travel="" onClickCapture={(e) => { if (tasksOpen && !e.target.closest('.foot-tasks') && window.matchMedia('(max-width: 760px)').matches) showTasks(false) }}>
             {/* Contacts · Calls · Messages in the middle, a little bigger · Tasks · Settings (Alex, 19 Oct); AllMedia lives in Settings */}
             {inMail ? <>
-              {/* inside ROARMAIL: Contacts of the mail · New Mail · Settings (Alex, 25 Nov; no Calls there) */}
-              <button type="button" className={`foot-contacts${mailStep === 'contacts' ? ' on' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'contacts' } }))}>{FOOT_I.contacts}<span>Contacts</span></button>
+              {/* inside ROARMAIL: RoarMe (back to the chats) · Mail · New Mail · Settings (Alex, 25 Nov: "take Contacts out, we put it
+                  elsewhere; put RoarMe in the bar and it goes back") */}
+              <button type="button" className="foot-roarme" onClick={() => setFolder(mailBack.current && mailBack.current !== 'mail' ? mailBack.current : 'all')}>{FOOT_I.messages}<span>RoarMe</span></button>
               {/* Mail: back to the accounts, RoarMail's home (Alex, 25 Nov: "a button beside the contacts that goes back to where all the mail is") */}
               <button type="button" className={`foot-main foot-mailhome${mailStep !== 'contacts' ? ' on' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'home' } }))}><span className="foot-ico">{FOOT_I.mail}</span><span>Mail</span></button>
               <button type="button" className="foot-newmail" onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'new' } }))}><span className="foot-ico">{FOOT_I.newmail}</span><span>New Mail</span></button>

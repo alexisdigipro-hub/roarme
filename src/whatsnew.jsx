@@ -35,7 +35,7 @@ export const NEWS = [
         'Junk: mail from blocked senders leaves the Inbox by itself; Blocked Senders with Unblock; hold a mail for Move to Junk, Not Junk and Block @domain.',
         'Writing a mail as Apple\'s Mail: a full, clean page, X and a round Send at the top, To with + for your contacts, Cc/Bcc and From folded in one line, Subject with the clip, then the whole page for your words.',
         'Pick several mails: hold a mail and choose Select, tap the others, then Read, Star, Move, Junk or Delete for all of them.',
-        'Mail in the bar at the bottom takes you back to all your accounts.',
+        'RoarMail is a place of its own: it slides in, the folder bar steps aside for the mail\'s own bar, and RoarMe in the bar at the bottom slides you back to your chats. Mail there takes you back to all your accounts.',
         'Edit Mailboxes: the round dots on the RoarMail home. Tick what shows, drag to reorder, and add All Sent, All Drafts, All Trash, All Junk, All Archive, Flagged, Unread, Attachments or Today.',
         'Slide right goes back on every RoarMail page, inside an open mail too.',
         'Every head in RoarMail is the same slim bar: an account\'s folders, an open mail and Contacts.',

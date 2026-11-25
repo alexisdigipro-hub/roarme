@@ -1660,6 +1660,7 @@ export default function Chat({ me, setMe }) {
           ) : (
             <span className="side-acts">
             <span className="plus-wrap">
+              {inMail && <button type="button" className="round head-mailsearch" aria-label="Search Mail" title="Search Mail" onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'search' } }))}>{I.search}</button>}
               {inMail ? <button type="button" className="round head-newmail" aria-label="New Message" title="New Message" onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'new' } }))}>{I.plus}</button>
               : tab === 'calls' && callsEdit ? <button type="button" className="pill-btn calls-del-all" onClick={() => setCallsClear((n) => n + 1)}>Delete All</button> : (
               <button type="button" className={`round${plus || contactsMenu === 'add' ? ' on' : ''}`} onClick={() => { if (tab === 'calls') { setPlus(false); setModal('newcall'); return } if (tab === 'contacts') { setPlus(false); setContactsMenu((v) => (v === 'add' ? '' : 'add')) } else setPlus((v) => !v) }} aria-label="New" title={tab === 'contacts' ? 'New contact or invite' : 'New chat, group or folder'}>{I.plus}</button>

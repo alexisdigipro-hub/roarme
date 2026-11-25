@@ -65,7 +65,7 @@ export const MAIL_I = {
 // eight filters, as RoarMail on the Mac (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL):
 // one glass capsule as tall as the folder bar, back and the name at the left, the filters at the right, sliding
 // no Unread filter: unread mail shows as such anyway (Alex, 25 Nov)
-const FILTERS = [['search', 'Search'], ['star', 'Starred'], ['clip', 'With attachments'], ['conv', 'Conversations'], ['day', 'Mail of one day'], ['sort', 'Oldest first'], ['sender', 'Same sender']]
+const FILTERS = [['star', 'Starred'], ['clip', 'With attachments'], ['day', 'Mail of one day'], ['sort', 'Oldest first'], ['sender', 'Same sender']]
 // the folders every account has, in RoarMail's order; for All Inboxes the same, across the accounts
 const ROLES = [['inbox', 'Inbox'], ['drafts', 'Drafts'], ['sent', 'Sent'], ['spam', 'Junk'], ['trash', 'Trash'], ['archive', 'Archive']]
 const ROLE_I = { inbox: 'inbox', drafts: 'drafts', sent: 'sent', spam: 'spam', trash: 'trash', archive: 'archive', flagged: 'flagged' }
@@ -161,7 +161,7 @@ const keyM = (m) => `${m.account}|${m.path}|${m.uid}`
 // Settings > ROARMAIL, kept on this phone (Alex, 24 Nov: "the settings of RoarMail in our RoarMail tab")
 const PREF_KEY = 'roarme-mail-prefs'
 const PREF_START = { images: false, markRead: true, lines: 2, oldest: false, askDelete: false, askBlock: true, signature: true,
-  pics: true, quote: true, defAcc: '', countUnread: true, every: 3, autoJunk: true, keep: 150, allHide: [], home: null }
+  pics: true, conv: false, quote: true, defAcc: '', countUnread: true, every: 3, autoJunk: true, keep: 150, allHide: [], home: null }
 export const mailPrefs = () => { try { return { ...PREF_START, ...JSON.parse(localStorage.getItem(PREF_KEY) || '{}') } } catch { return { ...PREF_START } } }
 const setMailPref = (k, v) => {
   const n = { ...mailPrefs(), [k]: v }
@@ -427,6 +427,11 @@ export function MailView({ me, people, book }) {
       if (what === 'new') setCompose({ mode: 'new', account: st.acc && st.acc !== 'all' ? st.acc : '' })
       else if (what === 'home') { setFwd(null); setStep({ s: 'accs' }) }
       else if (what === 'edit') mailDotsNow()
+      else if (what === 'search') {
+        // on a list its own search; elsewhere the Inbox of the account in sight (All Inboxes from the home) with its search open
+        if (st.s === 'list') window.dispatchEvent(new CustomEvent('roarme-mail-search'))
+        else { const a = st.s === 'folders' ? st.acc : singleRef.current || 'all'; setFwd(null); setStep({ s: 'list', acc: a, role: 'inbox', path: a === 'all' ? undefined : inboxRef.current(a), name: 'Inbox', preset: 'search' }) }
+      }
       else if (what === 'contacts') { if (st.s !== 'contacts') { setFwd(null); setStep({ s: 'contacts', from: st }) } }
     }
     window.addEventListener('roarme-mail-cmd', f)
@@ -461,6 +466,9 @@ export function MailView({ me, people, book }) {
   const single = accounts.length === 1 ? accounts[0].id : ''
   useEffect(() => { if (single && step.s === 'accs') setStep({ s: 'folders', acc: single }) }, [single, step.s]) // eslint-disable-line react-hooks/exhaustive-deps
   const inboxOf = (id) => setup?.folders.find((f) => f.account === id && f.role === 'inbox')?.path || 'INBOX'
+  const singleRef = useRef(''), inboxRef = useRef(inboxOf)
+  singleRef.current = single
+  inboxRef.current = inboxOf
   // unread in each Inbox, once the accounts in RoarMe are known
   useEffect(() => {
     if (!setup?.accounts || !on || !on.size) return
@@ -750,7 +758,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const [busy, setBusy] = useState(false)
   const [filter, setFilter] = useState(() => (step.preset === 'today' ? 'day' : step.preset || ''))   // search · unread · star · clip · day · sender (one at a time); a smart mailbox starts with its own
   const [oldest, setOldest] = useState(() => prefs.oldest)
-  const [conv, setConv] = useState(false)
+  const conv = !!prefs.conv // Conversations lives in Settings > ROARMAIL > Reading (Alex, 25 Nov), not in the bar
   const [thread, setThread] = useState('')   // a conversation opened
   useMailBack(() => (thread ? setThread('') : onBack()))
   const [q, setQ] = useState('')
@@ -764,6 +772,8 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   useEffect(() => { tellEdit(!!sel); return undefined }, [!!sel]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => tellEdit(false), [])
   useMailDots(() => { if (open) setMenu({ m: open, at: null }); else setSel((x) => (x ? null : new Set())) })
+  useEffect(() => { const f = () => searchRef.current?.(); window.addEventListener('roarme-mail-search', f); return () => window.removeEventListener('roarme-mail-search', f) }, [])
+  const searchRef = useRef(null)
   const [flash, setFlash] = useState('')
   const lastOpen = useRef(null)
   const flashT = useRef(0)
@@ -949,13 +959,15 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const pick = (k) => {
     setThread('')
     if (k === 'sort') { setOldest((o) => !o); return }
-    if (k === 'conv') { setConv((c) => !c); return }
     setFilter((f) => (f === k ? '' : k))
     if (k !== 'search') setQ('')
     if (k !== 'sender') setSender(null)
     if (k !== 'day') setDay('')
   }
   const isOn = (k) => (k === 'sort' ? oldest : k === 'conv' ? conv : filter === k)
+  // the head's search, at the left of the + (Alex, 25 Nov: "the search beside the plus, on every page of the mail"): on a
+  // list it opens or closes the list's own search field
+  searchRef.current = () => { setOpen(null); setSel(null); pick('search') }
   const flashEl = flash && createPortal(<div className="rmx-flash">{flash}</div>, document.body)
   const sheets = <>
     {menu && <MailMenu m={menu.m} at={menu.at} inJunk={role === 'spam'} noSelect={!!open} onAct={(k) => act(k, menu.m)} onClose={() => setMenu(null)} />}
@@ -1427,6 +1439,7 @@ export function MailPage() {
           {seg('lines', 'Preview Lines', [[0, 'None'], [1, '1'], [2, '2']])}
           {sw('pics', 'Sender Pictures', 'The round picture beside each mail.')}
           {sw('oldest', 'Oldest First', 'The order a folder opens in.')}
+          {sw('conv', 'Conversations', 'A mail and its replies together, as one row.')}
         </div>
         <div className="set-title">New Mail</div>
         <div className="set-box">

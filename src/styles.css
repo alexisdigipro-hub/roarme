@@ -9139,3 +9139,8 @@ html:root:root:root:root:root .rmx-accrow .rma-plus::before, html:root:root:root
 /* the filters over the mails stand evenly, in from the bar's ends (Alex, 25 Nov: "centre them a little, not so much at the edges") */
 html:root:root:root:root:root:root .rmx-head .rmx-fbar { -webkit-mask: none; mask: none; }
 html:root:root:root:root:root:root .rmx-head .rmx-filters { justify-content: space-evenly; padding: 0 8px; }
+/* the head's round signs are drawn as the bar at the foot's (Alex, 25 Nov: "much chunkier and bigger than the menu"):
+   24px with a 1.6 line, on every page's head, ROARMAIL's included */
+html:root:root:root:root:root:root:root .side-head .round > svg { width: 24px !important; height: 24px !important; stroke-width: 1.6 !important; }
+html:root:root:root:root:root:root:root .side-head .round > svg * { stroke-width: 1.6 !important; }
+html:root:root:root:root:root:root:root .side-head .round > svg[fill="currentColor"] { width: 22px !important; height: 22px !important; }

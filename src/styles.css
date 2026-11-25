@@ -8662,14 +8662,16 @@ html:root:root:root:root .rmx { max-width: 100%; overflow-x: clip; touch-action:
 html:root:root:root:root .rmx .rmx-box, html:root:root:root:root .rmx .room { max-width: 100%; min-width: 0; }
 
 /* ROARMAIL, second round (Alex, 24 Nov) ---------------------------------------------------------------------------- */
-/* the filters, version A of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL: the folder's name on its line, under it one
-   glass bar as wide and as tall as the folder bar with all eight filters across */
-html:root:root:root:root:root .rmx-head { display: block; margin: 2px 17px 10px; padding: 0; border: 0 !important; border-radius: 0; background: none !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-html:root:root:root:root:root .rmx-head .rmx-crumb { padding: 0 0 8px; }
+/* the filters, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL (Alex, 24 Nov, "B"): one glass capsule as
+   wide and as tall as the folder bar, back and the folder's name at the left, the eight filters at the right, sliding */
+html:root:root:root:root:root .rmx-head { margin: 2px 17px 10px; height: 44px; padding: 3px; gap: 4px; }
+html:root:root:root:root:root .rmx-head .rmx-crumb { flex: 0 0 40%; min-width: 0; }
 html:root:root:root:root:root .rmx-head .rmx-crumb .round { width: 36px; height: 36px; min-width: 36px; }
-html:root:root:root:root:root .rmx-head .rmx-cw b { font-size: 16px; }
-html:root:root:root:root:root .rmx-head .rmx-fbar { height: 44px; padding: 0 6px; border-radius: 999px; background: var(--lg); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .8)); box-shadow: var(--lg-shadow, 0 10px 30px rgba(40, 50, 80, .12)); -webkit-backdrop-filter: blur(24px) saturate(1.4) !important; backdrop-filter: blur(24px) saturate(1.4) !important; }
-html:root:root:root:root:root .rmx-head .rmx-filters { justify-content: space-between; width: 100%; }
+html:root:root:root:root:root .rmx-head .rmx-cw b { font-size: 14px; }
+html:root:root:root:root:root .rmx-head .rmx-cw small { display: none; }
+html:root:root:root:root:root .rmx-head .rmx-fbar { flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; -webkit-mask: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 18px), transparent); mask: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 18px), transparent); }
+html:root:root:root:root:root .rmx-head .rmx-fbar::-webkit-scrollbar { display: none; }
+html:root:root:root:root:root .rmx-head .rmx-filters { flex: none; }
 html:root:root:root:root:root:root .rmx-head .rmx-filters .round { width: 34px; height: 34px; min-width: 34px; }
 .rmx-dayb { position: relative; display: grid; place-items: center; cursor: pointer; }
 .rmx-dayb input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; -webkit-appearance: none; appearance: none; }
@@ -8746,3 +8748,6 @@ html:root:root:root:root .rmx-send { min-width: 120px; }
 .rmx-tag.bad { color: #e5483f; background: rgba(229, 72, 63, .12); }
 .rmx-seg { flex: none; }
 .rmx-movebox { margin: 0; }
+/* an unread mail among the chats in Unread (Alex, 24 Nov, B): a row of the list, not a page */
+html:root:root:root:root .rmx.rmx-mu1 { padding-bottom: 0; }
+.side-brand .calls-seg.u-kind button { min-width: 56px; padding: 0 12px; }

@@ -62,12 +62,12 @@ import { CAPSULE_BODY, CapsuleCard, CapsuleWindow } from './capsule.jsx'
 import { GroupCallBar, GroupCallCard, GroupCallHost, LinkCallCard, joinCall, startGroupCall, useGroupCall } from './groupcall.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
 import { ReportHost, report } from './report.jsx'
-import { WhatsNewHost } from './whatsnew.jsx'
+import { WhatsNewHost, newsLab } from './whatsnew.jsx'
 import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { hubLink, hubStart, proSwitchLoad, proSwitchNow } from './hub.jsx'
-import { MAIL_I, MailUnread, MailView, MailWord, mailHere, mailSwitchNow, useMailUnread } from './mail.jsx'
+import { MAIL_I, MailView, MailWord, UnreadMail, mailHere, mailSwitchNow, useMailUnread, useMailWho, useUnreadMails } from './mail.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -129,8 +129,11 @@ export default function Chat({ me, setMe }) {
   const [mailSwitch, setMailSwitch] = useState(mailSwitchNow)
   useEffect(() => { const f = (e) => setMailSwitch(!!e.detail); window.addEventListener('roarme-mail-switch', f); return () => window.removeEventListener('roarme-mail-switch', f) }, [])
   const mailOn = inThemeLab(me) && mailHere() && mailSwitch
+  newsLab(inThemeLab(me)) // What's New shows the lines of what is still being built only to who sees it
   // every account's unread mail joins the app's Unread (Alex, 24 Nov), counted and fetched ahead in the background
   const mailUn = useMailUnread(mailOn)
+  const uMail = useUnreadMails(mailOn)
+  const [uKind, setUKind] = useState('all') // Unread: all · chats · mail (Alex, 24 Nov, B)
   const proKit = useProjects(me, true)
   // Production Hub: on starting, tie my project groups and bring the hub's new projects in as groups (hub.jsx)
   useEffect(() => { if (proOn) hubStart() }, [proOn])
@@ -1403,6 +1406,7 @@ export default function Chat({ me, setMe }) {
   const [bookIO, setBookIO] = useState(false)
   const [bookGroup, setBookGroup] = useState('')
   useEffect(() => { if (tab === 'contacts') loadBook(me.id).then(setBook).catch(() => {}) }, [tab, me.id])
+  const mailWho = useMailWho(me, people, book)
   const bookGroups = useMemo(() => [...new Set(book.flatMap((e) => e.groups || []))].sort((a, b) => a.localeCompare(b, 'el', { sensitivity: 'base' })), [book])
   const bookPeople = useMemo(() => new Set(book.map((e) => e.person).filter(Boolean)), [book])
   // the RoarMe people the book links to, also those with no chat with me yet, so their cards say they are on RoarMe
@@ -1611,6 +1615,9 @@ export default function Chat({ me, setMe }) {
           <span className="side-brand">{picking ? (picked.length ? `${picked.length} selected` : 'Select chats') : tab === 'calls' ? (
             // on Calls the head holds All | Missed in place of the name (Alex, 14 Nov, from the iPhone's Phone app)
             <Lens className="seg calls-seg" dep={callsFilter}>{[['all', 'All'], ['missed', 'Missed']].map(([k, l]) => <button key={k} type="button" className={callsFilter === k ? 'on' : ''} onClick={() => setCallsFilter(k)}>{l}</button>)}</Lens>
+          ) : tab === 'chats' && folder === 'unread' && mailOn ? (
+            // Unread with mail: chats and mails together by time, or one kind (Alex, 24 Nov, B: "minimal, no line of its own")
+            <Lens className="seg calls-seg u-kind" dep={uKind}>{[['all', 'All'], ['chats', 'Chats'], ['mail', 'Mail']].map(([k, l]) => <button key={k} type="button" className={uKind === k ? 'on' : ''} onClick={() => setUKind(k)}>{l}</button>)}</Lens>
           ) : <Wordmark />}</span>
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
@@ -1692,7 +1699,7 @@ export default function Chat({ me, setMe }) {
                 </div>
               )}
               {folder === 'mail' && <MailView me={me} people={people} book={book} />}
-              {folder !== 'mail' && !(folder === 'unread' && mailUn > 0) && rooms.length > 0 && !shown.length && !hits.length && (!q.trim() && myFolders.some((f) => f.id === folder)
+              {folder !== 'mail' && rooms.length > 0 && !(folder === 'unread' && mailOn ? (uKind !== 'mail' ? shown.length : 0) + (uKind !== 'chats' ? uMail.rows.length : 0) : shown.length) && !hits.length && (!q.trim() && myFolders.some((f) => f.id === folder)
                 // an empty folder of one's own (Alex, 24 Nov, C of https://claude.ai/artifact/GAKLEmbkT2TYJx7eEF8nFP)
                 ? <div className="fold-empty">
                     <p>This folder is empty.</p>
@@ -1701,7 +1708,10 @@ export default function Chat({ me, setMe }) {
                     </div>
                   </div>
                 : <p className="muted rooms-none">{q.trim() ? 'Nothing found.' : folder === 'archived' ? 'Nothing here in Archived.' : 'Nothing here.'}</p>)}
-              {(folder === 'projects' && !q.trim() ? shown.filter((r) => !isDelivered(proKit.map[r.room_id])) : shown).map((r) => roomRow(r))}
+              {folder === 'unread' && mailOn && !q.trim()
+                ? [...(uKind !== 'mail' ? shown.map((r) => ({ t: Date.parse(r.last_message_at) || 0, r })) : []), ...(uKind !== 'chats' ? uMail.rows.map((m) => ({ t: Date.parse(m.date) || 0, m })) : [])]
+                    .sort((a, b) => b.t - a.t).map((x) => (x.r ? roomRow(x.r) : <UnreadMail key={`m|${x.m.account}|${x.m.path}|${x.m.uid}`} m={x.m} who={mailWho} onDrop={uMail.drop} />))
+                : (folder === 'projects' && !q.trim() ? shown.filter((r) => !isDelivered(proKit.map[r.room_id])) : shown).map((r) => roomRow(r))}
               {folder === 'projects' && !q.trim() && (() => {
                 // delivered projects fold away at the foot of PROjects (Alex, 22 Nov, "B"); kept open or shut on the device
                 const done = shown.filter((r) => isDelivered(proKit.map[r.room_id]))
@@ -1733,7 +1743,6 @@ export default function Chat({ me, setMe }) {
                   </div>
                 )
               })()}
-              {folder === 'unread' && mailOn && !q.trim() && <MailUnread me={me} people={people} book={book} />}
               {hits.length > 0 && (
                 <>
                   <div className="hits-head">Messages</div>

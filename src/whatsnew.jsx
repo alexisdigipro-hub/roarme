@@ -6,7 +6,28 @@
 import { useEffect, useState } from 'react'
 import { Modal } from './ui.jsx'
 
+// a section with lab: true shows only to who sees what is still being built (inThemeLab; Chat.jsx sets it with newsLab)
+let LAB = false
+export const newsLab = (v) => { LAB = !!v }
+
 export const NEWS = [
+  {
+    id: '2026-11-25',
+    date: '25 November 2026',
+    sections: [
+      { title: 'RoarMail', lab: true, items: [
+        'Slide a mail from the right edge of the screen: Read, Star, Move, Block and Trash come out and stay until you tap.',
+        'Hold a mail: Reply, Reply All, Forward, Move To, Archive, All From This Sender, Block Sender and Delete.',
+        'New Mail: the round pencil at the bottom right of every RoarMail page. Reply and Forward from an open mail; a forward carries its files.',
+        'Eight filters under the folder name: Search, Unread, Starred, Attachments, Conversations, one day, oldest first, one sender.',
+        'Empty Trash and Empty Junk.',
+        'Senders in your contacts show with the name and photo you have for them.',
+        'Faster: the newest mail and every unread one are fetched in the background, so they open at once.',
+        'Unread holds your mail too, mixed with the chats by time; All, Chats or Mail at the top.',
+        'Settings, RoarMail: your accounts, reading, actions, signature and the mail kept on this phone.',
+      ] },
+    ],
+  },
   {
     id: '2026-11-24',
     date: '24 November 2026',
@@ -139,12 +160,14 @@ export const NEWS = [
 
 const SEEN = 'roarme-news-seen'
 const seen = () => { try { return localStorage.getItem(SEEN) || '' } catch { return '' } }
-const markSeen = () => { try { localStorage.setItem(SEEN, NEWS[0].id) } catch { /* private window */ } }
+const markSeen = () => { try { localStorage.setItem(SEEN, newest().id) } catch { /* private window */ } }
 
 // B of the sample https://claude.ai/artifact/AU8jUvGrMNKYDnFRb4ijGD (Alex, 22 Nov): a quiet timeline, each change a dot on a
 // fine line, its first words in bold (what comes before ": " when it is short), and All / Phone / Computer to filter
-const WHERE = { 'On a phone': 'phone', 'On a computer': 'computer' }
-const itemsOf = (n) => (n.sections || [{ title: '', items: n.items || [] }]).flatMap((g) => g.items.map((t) => ({ t, w: WHERE[g.title] || 'all' })))
+const WHERE = { 'On a phone': 'phone', 'On a computer': 'computer', RoarMail: 'phone' }
+const itemsOf = (n) => (n.sections || [{ title: '', items: n.items || [] }]).filter((g) => !g.lab || LAB).flatMap((g) => g.items.map((t) => ({ t, w: WHERE[g.title] || 'all' })))
+// the newest entry with something for this person (an entry of lab lines alone is nothing for everyone else)
+const newest = () => NEWS.find((n) => itemsOf(n).length) || NEWS[0]
 function Line({ t, w, showTag }) {
   const i = t.indexOf(': ')
   const head = i > 0 && i < 42 ? t.slice(0, i) : ''
@@ -179,11 +202,11 @@ function WhereSeg({ where, setWhere }) {
 export function WhatsNewHost() {
   const [open, setOpen] = useState(false)
   useEffect(() => {
-    if (seen() === NEWS[0].id) return undefined
+    if (seen() === newest().id || seen() > newest().id) return undefined
     // after the app has settled, in sight, with no other window or the lock over it; tried again until it can show
     let t = 0
     const tryOpen = () => {
-      if (seen() === NEWS[0].id) return
+      if (seen() === newest().id || seen() > newest().id) return
       if (document.hidden || document.querySelector('.modal-back, .lock, .prs2')) { t = setTimeout(tryOpen, 1500); return }
       setOpen(true)
     }
@@ -195,12 +218,12 @@ export function WhatsNewHost() {
   const [where, setWhere] = useState('all')
   if (!open) return null
   const close = () => { markSeen(); setOpen(false) }
-  const kinds = new Set(itemsOf(NEWS[0]).map((x) => x.w))
+  const kinds = new Set(itemsOf(newest()).map((x) => x.w))
   return (
     <Modal title="What's New" onClose={close} foot={<button type="button" className="btn btn-main wn-ok" onClick={close}>Got It</button>}>
       <div className="wn">
         {kinds.size > 1 && <WhereSeg where={where} setWhere={setWhere} />}
-        <Entry n={NEWS[0]} where={where} />
+        <Entry n={newest()} where={where} />
       </div>
     </Modal>
   )
@@ -210,7 +233,7 @@ export function WhatsNewHost() {
 export function WhatsNewPage() {
   const [where, setWhere] = useState('all')
   useEffect(() => { markSeen() }, [])
-  const shown = NEWS.filter((n) => where === 'all' || itemsOf(n).some((x) => x.w === where))
+  const shown = NEWS.filter((n) => itemsOf(n).length && (where === 'all' || itemsOf(n).some((x) => x.w === where)))
   return (
     <div className="wn wn-page">
       <WhereSeg where={where} setWhere={setWhere} />

@@ -56,8 +56,8 @@ export const MAIL_I = {
   x: s(<path d="M6 6l12 12M18 6L6 18" />),
   send: s(<><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></>),
 }
-// eight filters, as RoarMail on the Mac (Alex, 24 Nov, version A of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL):
-// the name on its line, under it one glass bar as wide and as tall as the folder bar with all of them across
+// eight filters, as RoarMail on the Mac (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL):
+// one glass capsule as tall as the folder bar, back and the name at the left, the filters at the right, sliding
 const FILTERS = [['search', 'Search'], ['unread', 'Unread'], ['star', 'Starred'], ['clip', 'With attachments'], ['conv', 'Conversations'], ['day', 'Mail of one day'], ['sort', 'Oldest first'], ['sender', 'Same sender']]
 // the folders every account has, in RoarMail's order; for All Inboxes the same, across the accounts
 const ROLES = [['inbox', 'Inbox'], ['drafts', 'Drafts'], ['sent', 'Sent'], ['spam', 'Junk'], ['trash', 'Trash'], ['archive', 'Archive']]
@@ -696,8 +696,8 @@ function MailList({ acc, step, targets, accounts, folders, who, offline, onBack,
   const finding = find && found?.key === findKey && !found.rows
   return (
     <div className={`rmx rmx-ml rmx-l${prefs.lines}`} {...listSlide}>
-      {/* the folder's name on its line, under it one glass bar as wide and as tall as the folder bar with every filter
-          (Alex, 24 Nov, version A of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL) */}
+      {/* one glass capsule as tall as the folder bar: back and the folder's name, then every filter, sliding sideways
+          (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL) */}
       <div className="rmx-head">
         <Crumb title={thread ? (shown[0]?.subject || step.name) : step.name} sub={sub} onBack={thread ? () => setThread('') : onBack} />
         <div className="rmx-fbar">
@@ -961,32 +961,47 @@ function Compose({ init, accounts, on, setup, who, onClose }) {
   )
 }
 
-// the unread mails, under the chats in the app's own Unread (Alex, 24 Nov, version A: chats first, then a Mail part)
-export function MailUnread({ me, people, book }) {
+// the unread mails in the app's own Unread, version B (Alex, 24 Nov: "all together by time, with a minimal choice that
+// takes no line of its own"): Chat.jsx mixes these rows with the unread chats by time, and the head's All · Chats · Mail
+// (in the place of ROARME, as Calls' All | Missed) shows one kind or both
+export function useUnreadMails(on) {
   const [list, setList] = useState(() => keptKv('mu') || null)
-  const setup = lsGet('mail-setup')
-  const who = useWho(me, people, book, setup)
   useEffect(() => {
+    if (!on) return
     if (!list) readKv('mu').then((v) => { if (v) setList((l) => l || v) })
     const f = (e) => setList(e.detail || [])
     window.addEventListener('roarme-mail-unread', f)
-    warmMail()
     return () => window.removeEventListener('roarme-mail-unread', f)
-  }, [])
-  const rows = (list || []).filter((m) => !m.seen)
-  if (!rows.length) return null
-  const colourOf = (id) => setup?.accounts?.find((a) => a.id === id)?.color
+  }, [on])
+  const drop = (m) => setList((l) => { const n = (l || []).filter((x) => !sameM(x, m)); keepKv('mu', n); return n })
+  return { rows: on ? (list || []).filter((m) => !m.seen) : [], drop }
+}
+export function useMailWho(me, people, book) { return useWho(me, people, book, lsGet('mail-setup')) }
+
+/** one unread mail among the chats: the same row, slide and long press as in ROARMAIL; what needs the folder opens it there */
+export function UnreadMail({ m, who, onDrop }) {
+  const [menu, setMenu] = useState(null)
+  const setup = lsGet('mail-setup')
+  const prefs = mailPrefs()
+  const folderOf = (role) => setup?.folders?.find((f) => f.account === m.account && f.role === role)?.path
+  const act = async (k) => {
+    try {
+      if (k === 'read') { onDrop(m); await cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }) }
+      else if (k === 'star') await cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'flagged', on: !m.flagged })
+      else if (k === 'archive' && folderOf('archive')) { onDrop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to: folderOf('archive') }) }
+      else if (k === 'trash') { if (prefs.askDelete && !window.confirm('Delete this mail?')) return; onDrop(m); await cloud({ action: 'delete', account: m.account, path: m.path, uid: m.uid, trash: folderOf('trash') || '' }) }
+      else if (k === 'block') {
+        const name = who(m.from).name || m.from?.address
+        if (!m.from?.address || (prefs.askBlock && !window.confirm(`Block ${name}? Their mail goes to Junk, here and in RoarMail on your computers.`))) return
+        onDrop(m); await cloud({ action: 'block', email: m.from.address, name: m.from.name || '', account: m.account, path: m.path, uid: m.uid, junk: folderOf('spam') || '' })
+      } else { openMailFromUnread(m); return }
+      warmMail(true)
+    } catch { warmMail(true) }
+  }
   return (
-    <div className="rmx rmx-mu">
-      <div className="hits-head rmx-muh"><span className="rmx-muw"><MailWord /></span><small>{rows.length}</small></div>
-      {rows.map((m) => (
-        <MailRow key={keyM(m)} m={m} who={who} bar={colourOf(m.account)} onOpen={() => openMailFromUnread(m)} onMenu={() => openMailFromUnread(m)}
-          onAct={(k) => {
-            const drop = () => setList((l) => { const n = (l || []).filter((x) => !sameM(x, m)); keepKv('mu', n); return n })
-            if (k === 'read') { drop(); cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }).then(() => warmMail(true), () => {}) }
-            else openMailFromUnread(m)
-          }} />
-      ))}
+    <div className="rmx rmx-mu1">
+      <MailRow m={m} who={who} bar={setup?.accounts?.find((a) => a.id === m.account)?.color} onOpen={() => openMailFromUnread(m)} onAct={act} onMenu={(at) => setMenu({ at })} />
+      {menu && <MailMenu m={m} at={menu.at} onAct={act} onClose={() => setMenu(null)} />}
     </div>
   )
 }

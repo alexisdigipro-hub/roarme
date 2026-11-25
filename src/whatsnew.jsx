@@ -16,6 +16,8 @@ export const NEWS = [
     date: '25 November 2026',
     sections: [
       { title: 'Everywhere', items: [
+        'Pull down to refresh now catches on every page, and inside Mail too.',
+        'Slide right to go back works on every page, even when your finger starts on a button or a colour; from the screen\'s left edge it always goes back.',
         'Sliding a chat or a mail sideways is steadier: the whole row moves with your finger and its buttons come in whole from the edge, never over the words.',
         'Pull down to refresh on Settings, Calls, Media and the mail too; you come back to the same page.',
         'Unread shows only chats again. Tap the dots there to select several: Delete, Read, Move, Archive.',

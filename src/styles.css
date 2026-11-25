@@ -8660,3 +8660,89 @@ html:root:root:root:root .rmx-head .rmx-filters .round svg { width: 17px; height
 html:root:root:root:root .rooms:has(> .rmx) { overflow-x: hidden; overscroll-behavior-x: none; }
 html:root:root:root:root .rmx { max-width: 100%; overflow-x: clip; touch-action: pan-y; }
 html:root:root:root:root .rmx .rmx-box, html:root:root:root:root .rmx .room { max-width: 100%; min-width: 0; }
+
+/* ROARMAIL, second round (Alex, 24 Nov) ---------------------------------------------------------------------------- */
+/* the filters, version A of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL: the folder's name on its line, under it one
+   glass bar as wide and as tall as the folder bar with all eight filters across */
+html:root:root:root:root:root .rmx-head { display: block; margin: 2px 17px 10px; padding: 0; border: 0 !important; border-radius: 0; background: none !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root:root:root:root .rmx-head .rmx-crumb { padding: 0 0 8px; }
+html:root:root:root:root:root .rmx-head .rmx-crumb .round { width: 36px; height: 36px; min-width: 36px; }
+html:root:root:root:root:root .rmx-head .rmx-cw b { font-size: 16px; }
+html:root:root:root:root:root .rmx-head .rmx-fbar { height: 44px; padding: 0 6px; border-radius: 999px; background: var(--lg); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .8)); box-shadow: var(--lg-shadow, 0 10px 30px rgba(40, 50, 80, .12)); -webkit-backdrop-filter: blur(24px) saturate(1.4) !important; backdrop-filter: blur(24px) saturate(1.4) !important; }
+html:root:root:root:root:root .rmx-head .rmx-filters { justify-content: space-between; width: 100%; }
+html:root:root:root:root:root:root .rmx-head .rmx-filters .round { width: 34px; height: 34px; min-width: 34px; }
+.rmx-dayb { position: relative; display: grid; place-items: center; cursor: pointer; }
+.rmx-dayb input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; -webkit-appearance: none; appearance: none; }
+.rmx-hint { margin: 0 20px 8px; font-size: 13px; color: var(--muted); text-align: center; }
+.rmx-cnt { font-style: normal; font-size: 11px; font-weight: 600; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; display: inline-grid; place-items: center; margin-left: 6px; background: color-mix(in srgb, currentColor 10%, transparent); }
+html:root:root:root:root .rmx-l0 .rmx-sn { display: none; }
+html:root:root:root:root .rmx-l1 .rmx-sn { -webkit-line-clamp: 1; }
+.rmx-emptyrow { padding-top: 0; }
+.rmx-emptyrow .pill-btn { gap: 6px; }
+.rmx-emptyrow .pill-btn svg { width: 16px; height: 16px; }
+
+/* a mail slid from the screen's right edge: the row moves aside and five capsules of colour grow out of the edge, each
+   with its word under it, as a chat's row does; let go past a third and they stay out until a tap */
+.rmx-sw { position: relative; touch-action: pan-y; }
+.rmx-sw > .rmx-row { transform: translate3d(var(--sx, 0px), 0, 0); transition: transform .32s cubic-bezier(.25, 1.2, .45, 1); position: relative; z-index: 1; }
+.rmx-sw.drag > .rmx-row, .rmx-sw.drag > .rmx-swacts { transition: none; }
+.rmx-swacts { position: absolute; top: 0; bottom: 0; right: 0; z-index: 0; width: max(0px, calc(-1 * var(--sx, 0px))); overflow: hidden; display: flex; align-items: center; gap: 4px; padding: 0 6px 0 2px; box-sizing: border-box; transition: width .32s cubic-bezier(.25, 1.2, .45, 1); }
+.rmx-sw:not(.open):not(.drag) > .rmx-swacts { visibility: hidden; }
+html:root:root:root:root .rmx-swacts button { --c: 255, 59, 48; flex: 1 1 0; min-width: 0; height: auto; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; color: var(--muted); font: inherit; font-size: 10px; font-weight: 500; }
+.rmx-swacts button i { display: grid; place-items: center; width: 100%; max-width: 54px; height: 32px; border-radius: 999px; color: #fff; font-style: normal;
+  background: var(--grain, none), linear-gradient(170deg, rgba(var(--c), .95), rgba(var(--c), .78)); border: 1px solid rgba(255, 255, 255, .4); box-shadow: 0 4px 10px rgba(var(--c), .24), inset 0 1px 0 rgba(255, 255, 255, .45); transition: transform .28s cubic-bezier(.25, 1.45, .45, 1); }
+.rmx-swacts button i svg { width: 16px; height: 16px; }
+.rmx-swacts button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rmx-swacts button:active i { transform: scale(.92); transition-duration: .07s; }
+html:root:root:root:root .rmx-swacts .rsa-read { --c: 58, 141, 255; }
+html:root:root:root:root .rmx-swacts .rsa-star { --c: 245, 166, 35; }
+html:root:root:root:root .rmx-swacts .rsa-move { --c: 123, 77, 255; }
+html:root:root:root:root .rmx-swacts .rsa-block { --c: 110, 110, 122; }
+.rmx-sw.open > .rmx-row { border-radius: 28px; background: var(--lg-chip, rgba(127, 127, 127, .12)) !important; }
+.rmx-pickme { outline: 1.5px dashed color-mix(in srgb, var(--halo, #3aa7e8) 45%, transparent); outline-offset: -4px; border-radius: 22px; }
+
+/* the long-press menu, fixed under (or over) the mail pressed */
+html:root:root:root:root .rmx-lpveil { z-index: 60; background: rgba(70, 76, 92, .16); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+html:root:root:root:root .menu.rmx-lp { position: fixed; z-index: 61; min-width: 248px; max-width: calc(100vw - 32px); max-height: calc(100vh - 24px); overflow-y: auto; }
+
+/* New Mail: a round button in the accent's pair that stays at the list's foot, over the menu */
+.rmx-newwrap { position: sticky; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); display: flex; justify-content: flex-end; padding: 10px 18px 0; pointer-events: none; z-index: 4; margin-top: auto; }
+html:root:root:root:root:root .rmx-new { pointer-events: auto; width: 54px; height: 54px; min-width: 54px; border: 0 !important; color: var(--halo-ink, #fff) !important; background: linear-gradient(170deg, var(--halo-mine-top, #5cc0f2), var(--halo-mine, #3aa7e8)) !important; box-shadow: 0 10px 26px rgba(30, 60, 110, .28) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root:root:root:root .rmx-new svg { width: 22px; height: 22px; }
+.rmx-flash { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 104px); transform: translateX(-50%); z-index: 70; padding: 9px 16px; border-radius: 999px; font-size: 13.5px; font-weight: 500; color: #fff; background: rgba(30, 30, 36, .88); box-shadow: 0 8px 24px rgba(0, 0, 0, .2); white-space: nowrap; max-width: calc(100vw - 40px); overflow: hidden; text-overflow: ellipsis; animation: rmx-flash .22s cubic-bezier(.25, 1.3, .45, 1); }
+@keyframes rmx-flash { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+/* writing a mail: slim rows with their word at the left, the text under them, files as chips */
+.rmx-compose { display: flex; flex-direction: column; min-height: 0; }
+.rmx-cf { display: flex; align-items: center; gap: 10px; min-height: 46px; border-bottom: 1px solid color-mix(in srgb, currentColor 9%, transparent); }
+.rmx-cf > span { flex: none; width: 58px; font-size: 14px; color: var(--muted); }
+html:root:root:root:root .rmx-cf input, html:root:root:root:root .rmx-cf select { flex: 1; min-width: 0; height: 44px; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; color: inherit; font: inherit; font-size: 15.5px; outline: none; -webkit-appearance: none; appearance: none; }
+html:root:root:root:root .rmx-ccb { flex: none; height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; color: var(--muted); background: color-mix(in srgb, currentColor 6%, transparent) !important; border: 0 !important; box-shadow: none !important; }
+html:root:root:root:root .rmx-body { min-height: 38vh; margin-top: 10px; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; resize: none; color: inherit; font: inherit; font-size: 15.5px; line-height: 1.5; outline: none; }
+.rmx-cfiles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rmx-cfile { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px 4px 4px 12px; border-radius: 999px; background: color-mix(in srgb, currentColor 7%, transparent); font-size: 13px; }
+.rmx-cfile b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46vw; }
+.rmx-cfile small { color: var(--muted); }
+html:root:root:root:root .rmx-cfile .round { width: 26px; height: 26px; min-width: 26px; }
+.rmx-cfile .round svg { width: 13px; height: 13px; }
+.rmx-cfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+.rmx-attach { position: relative; display: grid; place-items: center; cursor: pointer; }
+.rmx-attach input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; }
+html:root:root:root:root .rmx-send { min-width: 120px; }
+
+/* the unread mails under the chats in Unread */
+.rmx-mu { padding-bottom: 0; }
+.rmx-muh { display: flex; align-items: center; justify-content: space-between; }
+.rmx-muh small { font-size: 12px; color: var(--muted); }
+
+/* Settings > ROARMAIL */
+.rmx-set .set-title { margin: 18px 6px 6px; font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.rmx-setrow, .rmx-setacc { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 14px; }
+.rmx-st { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rmx-st b { font-weight: 500; font-size: 15px; }
+.rmx-st small { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.rmx-tag { font-style: normal; font-size: 12px; padding: 3px 9px; border-radius: 999px; color: var(--muted); background: color-mix(in srgb, currentColor 7%, transparent); white-space: nowrap; }
+.rmx-tag.ok { color: #1f9d55; background: rgba(31, 157, 85, .12); }
+.rmx-tag.bad { color: #e5483f; background: rgba(229, 72, 63, .12); }
+.rmx-seg { flex: none; }
+.rmx-movebox { margin: 0; }

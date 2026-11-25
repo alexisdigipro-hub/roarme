@@ -105,6 +105,19 @@ export function isBlocked(from, setup) {
 const PERSONAL = new Set(['gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'yahoo.com', 'yahoo.gr', 'ymail.com',
   'icloud.com', 'me.com', 'mac.com', 'aol.com', 'proton.me', 'protonmail.com', 'gmx.com', 'gmx.net', 'zoho.com', 'yandex.com', 'otenet.gr', 'hol.gr', 'windowslive.com'])
 // the sender's domain, only when it can be blocked as a whole (never a mailbox provider like gmail.com)
+// a block or an unblock done here is in the kept setup at once, so every other mail of that sender leaves the Inbox now,
+// not when RoarMail's list is read again (Alex, 25 Nov: "why does Block Sender not work")
+function noteBlock(kind, value, on) {
+  const st = lsGet('mail-setup'); if (!st) return
+  const v = String(value || '').toLowerCase().trim(); if (!v) return
+  const b = st.block || { emails: [], names: [], domains: [], list: [] }
+  const key = kind === 'email' ? 'emails' : kind === 'domain' ? 'domains' : kind === 'name' ? 'names' : ''
+  const nb = { ...b, list: on ? (b.list.some((x) => x.kind === kind && x.value.toLowerCase() === v) ? b.list : [...b.list, { kind, value: v, label: v }]) : b.list.filter((x) => !(x.kind === kind && x.value.toLowerCase() === v)) }
+  if (key) nb[key] = on ? [...new Set([...(b[key] || []), v])] : (b[key] || []).filter((x) => x.toLowerCase() !== v)
+  const next = { ...st, block: nb, blockedCount: nb.list.length }
+  lsSet('mail-setup', next, 0)
+  window.dispatchEvent(new CustomEvent('roarme-mail-setup', { detail: next }))
+}
 const domainOf = (a) => { const d = String(a?.address || '').toLowerCase().split('@')[1] || ''; return d && !PERSONAL.has(d) && !PERSONAL.has(d.split('.').slice(-2).join('.')) ? d : '' }
 
 async function cloud(body) {
@@ -343,8 +356,10 @@ export function MailView({ me, people, book }) {
     loadSetup().then((x) => { if (!gone) setSetup(x); lsSet('mail-setup', x) }, (e) => { if (!gone) setSetup((had) => had?.accounts ? had : { error: e.message || 'Could not read RoarMail' }) })
     cloud({ action: 'state' }).then((j) => { const l = (j.accounts || []).map((a) => [a.account_id, a]); lsSet('mail-on', l); if (!gone) setOn(new Map(l)) }, () => { if (!gone) setOn((had) => had || new Map()) })
     const f = (e) => setCounts(e.detail || {})
+    const g = (e) => { if (e.detail) setSetup(e.detail) }
     window.addEventListener('roarme-mail-counts', f)
-    return () => { gone = true; window.removeEventListener('roarme-mail-counts', f) }
+    window.addEventListener('roarme-mail-setup', g)
+    return () => { gone = true; window.removeEventListener('roarme-mail-counts', f); window.removeEventListener('roarme-mail-setup', g) }
   }, [])
   const accounts = setup?.accounts || []
   const inboxOf = (id) => setup?.folders.find((f) => f.account === id && f.role === 'inbox')?.path || 'INBOX'
@@ -706,21 +721,28 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
         if (!m.from?.address) return
         if (prefs.askBlock && !window.confirm(`Block ${name}? Their mail goes to Junk, here and in RoarMail on your computers.`)) return
         const junk = folderOf(m, 'spam')
-        drop(m); await cloud({ action: 'block', email: m.from.address, name: m.from.name || '', account: m.account, path: m.path, uid: m.uid, junk: junk && junk !== m.path ? junk : '' }); say(`${name} is blocked`)
+        drop(m); await cloud({ action: 'block', email: m.from.address, name: m.from.name || '', account: m.account, path: m.path, uid: m.uid, junk: junk && junk !== m.path ? junk : '' })
+        noteBlock('email', m.from.address, true); say(`${name} is blocked, their mail goes to Junk`)
+        // every other mail of theirs in this list goes too, as RoarMail on the computer sweeps them
+        const addr = String(m.from.address).toLowerCase()
+        for (const x of (rows || []).filter((r) => !sameM(r, m) && String(r.from?.address || '').toLowerCase() === addr)) {
+          const to = folderOf(x, 'spam'); drop(x)
+          if (to && to !== x.path) cloud({ action: 'move', account: x.account, path: x.path, uid: x.uid, to }).catch(() => {})
+        }
       } else if (k === 'junk') {
         const to = folderOf(m, 'spam'); if (!to) throw new Error('This account has no Junk folder.')
         drop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to }); say('Moved to Junk')
       } else if (k === 'notjunk') {
         const to = folderOf(m, 'inbox') || 'INBOX'
         drop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to })
-        if (m.from?.address && isBlocked(m.from, setup)) await cloud({ action: 'unblock', kind: 'email', value: m.from.address }).catch(() => {})
+        if (m.from?.address && isBlocked(m.from, setup)) { await cloud({ action: 'unblock', kind: 'email', value: m.from.address }).catch(() => {}); noteBlock('email', m.from.address, false) }
         say('Back in the Inbox')
       } else if (k === 'domain') {
         const d = domainOf(m.from); if (!d) return
         if (!window.confirm(`Block everyone at @${d}? Their mail goes to Junk, here and in RoarMail on your computers.`)) return
         const junk = folderOf(m, 'spam')
         await cloud({ action: 'blockDomain', domain: d, account: m.account, path: m.path, uid: m.uid, junk: junk && junk !== m.path ? junk : '' })
-        drop(m); say(`Everyone at @${d} is blocked`)
+        drop(m); noteBlock('domain', d, true); say(`Everyone at @${d} is blocked`)
       } else if (k === 'reply' || k === 'replyAll' || k === 'forward') onCompose({ mode: k, m })
       else if (k === 'sender') { setOpen(null); setThread(''); setSender(m.from); setFilter('sender') }
     } catch (e) { say(e.message || 'Not done'); load(0) }
@@ -1124,10 +1146,11 @@ export function UnreadMail({ m, who, onDrop }) {
         const name = who(m.from).name || m.from?.address
         if (!m.from?.address || (prefs.askBlock && !window.confirm(`Block ${name}? Their mail goes to Junk, here and in RoarMail on your computers.`))) return
         onDrop(m); await cloud({ action: 'block', email: m.from.address, name: m.from.name || '', account: m.account, path: m.path, uid: m.uid, junk: folderOf('spam') || '' })
+        noteBlock('email', m.from.address, true)
       } else if (k === 'junk' && folderOf('spam')) { onDrop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to: folderOf('spam') }) }
       else if (k === 'domain') {
         const d = domainOf(m.from); if (!d || !window.confirm(`Block everyone at @${d}? Their mail goes to Junk, here and in RoarMail on your computers.`)) return
-        onDrop(m); await cloud({ action: 'blockDomain', domain: d, account: m.account, path: m.path, uid: m.uid, junk: folderOf('spam') || '' })
+        onDrop(m); await cloud({ action: 'blockDomain', domain: d, account: m.account, path: m.path, uid: m.uid, junk: folderOf('spam') || '' }); noteBlock('domain', d, true)
       } else { openMailFromUnread(m); return }
       warmMail(true)
     } catch { warmMail(true) }
@@ -1168,7 +1191,7 @@ export function MailPage() {
   const unblockOne = async (x) => {
     const k = `${x.kind}:${x.value}`
     setBusy(k)
-    try { await cloud({ action: 'unblock', kind: x.kind, value: x.value }); setGone((g) => [...g, k]); loadSetup().then((n) => { setSetup(n); lsSet('mail-setup', n) }, () => {}) } catch (e) { window.alert(e.message || 'Not unblocked') }
+    try { await cloud({ action: 'unblock', kind: x.kind, value: x.value }); noteBlock(x.kind, x.value, false); setGone((g) => [...g, k]); loadSetup().then((n) => { setSetup(n); lsSet('mail-setup', n) }, () => {}) } catch (e) { window.alert(e.message || 'Not unblocked') }
     setBusy('')
   }
   const clearKept = () => {

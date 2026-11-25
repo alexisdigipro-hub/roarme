@@ -9136,3 +9136,6 @@ html:root:root:root:root .rma-del { width: 34px; height: 34px; min-width: 34px; 
 html:root:root:root:root .rma-del svg { width: 17px; height: 17px; }
 html:root:root:root:root:root .rmx-accrow .rma-plus { background: color-mix(in srgb, var(--halo-l, #3aa7e8) 14%, transparent) !important; color: var(--halo-l, #3aa7e8) !important; box-shadow: none !important; border: 0 !important; }
 html:root:root:root:root:root .rmx-accrow .rma-plus::before, html:root:root:root:root:root .rmx-accrow .rma-plus::after { content: none !important; }
+/* the filters over the mails stand evenly, in from the bar's ends (Alex, 25 Nov: "centre them a little, not so much at the edges") */
+html:root:root:root:root:root:root .rmx-head .rmx-fbar { -webkit-mask: none; mask: none; }
+html:root:root:root:root:root:root .rmx-head .rmx-filters { justify-content: space-evenly; padding: 0 8px; }

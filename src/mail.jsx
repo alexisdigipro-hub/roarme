@@ -147,12 +147,14 @@ function AccPic({ a, size = 50 }) {
   return <Avatar src={a.avatar} name={a.name} size={size} />
 }
 
-function Crumb({ title, sub, pic, onBack }) {
+// every head inside ROARMAIL is one capsule, as wide and as tall as the folder bar: back at the left, a small picture
+// and the name on one line in the middle, anything else at the right (Alex, 25 Nov: "make the menus alike")
+function Crumb({ title, pic, onBack, end }) {
   return (
-    <div className="rmx-crumb">
-      <button type="button" className="round" onClick={onBack} aria-label="Back" data-back="">{MAIL_I.back}</button>
-      {pic}
-      <span className="rmx-cw"><b>{title}</b>{sub && <small>{sub}</small>}</span>
+    <div className="rmx-crumb rmx-cap">
+      <button type="button" className="round rmx-hback" onClick={onBack} aria-label="Back" data-back="">{MAIL_I.back}</button>
+      <span className="rmx-cw">{pic}<b>{title}</b></span>
+      <span className="rmx-cap-end">{end}</span>
     </div>
   )
 }
@@ -394,7 +396,7 @@ export function MailView({ me, people, book }) {
     const open = (r) => { setFwd(null); setStep({ s: 'list', acc: acc.id, role: r.role, path: r.path, name: r.name }) }
     return (
       <div className="rmx rmx-fl" {...foldSlide}>
-        <Crumb title={acc.name} sub={acc.email} pic={<AccPic a={acc} size={34} />} onBack={() => back({ s: 'accs' })} />
+        <Crumb title={acc.name} pic={<AccPic a={acc} size={26} />} onBack={() => back({ s: 'accs' })} />
         {off && <p className="rmx-note">To read this account here, open RoarMail on your computer: Settings › Roar Account › My mail in RoarMe › Send to RoarMe.</p>}
         <div className="rmx-box">
           {roleRows.map((r) => (
@@ -819,7 +821,7 @@ function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
   const w = who(from)
   return (
     <div className="rmx rmx-rd" {...readSlide}>
-      <Crumb title={m.subject || '(no subject)'} sub={acc?.email} onBack={onBack} />
+      <Crumb title={m.subject || '(no subject)'} onBack={onBack} />
       <article className="rmx-mail">
         <div className="rmx-mh">
           <Avatar src={w.photo} name={w.name || '?'} size={42} />
@@ -886,11 +888,7 @@ function MailContacts({ who, setup, me, book, onBack, onWrite }) {
   const shown = ql ? list.filter((c) => c.name.toLowerCase().includes(ql) || c.email.includes(ql)) : list
   return (
     <div className="rmx rmx-ct">
-      <div className="rmx-ct-head">
-        <button type="button" className="round" onClick={onBack} aria-label="Back" title="Back">{I.left}</button>
-        <b>Contacts</b>
-        <span className="rmx-ct-n">{list.length}</span>
-      </div>
+      <Crumb title="Contacts" onBack={onBack} end={<span className="rmx-ct-n">{list.length}</span>} />
       <label className="search rmx-ct-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" autoCapitalize="off" autoCorrect="off" spellCheck={false} /></label>
       {!shown.length && <p className="rmx-ct-empty">{ql ? 'Nobody found.' : 'No email contacts yet.'}</p>}
       <div className="rooms rmx-ct-list">

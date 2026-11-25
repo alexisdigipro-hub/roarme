@@ -29,6 +29,7 @@ export const NEWS = [
         'Inside RoarMail the bar at the bottom is Contacts, New Mail and Settings. Contacts lists everyone with an email; tap one to write to them.',
         'Every account shows its address under its name, and the unread counts stand in one line.',
         'Over the mails one bar, as wide as the folders: back and the filters; no Unread filter, unread mail shows anyway.',
+        'Every head in RoarMail is the same slim bar: an account\'s folders, an open mail and Contacts.',
         'Slide a mail from the right edge of the screen: Read, Star, Move, Block and Trash come out and stay until you tap.',
         'Hold a mail: Reply, Reply All, Forward, Move To, Archive, All From This Sender, Block Sender and Delete.',
         'New Mail: the round pencil at the bottom right of every RoarMail page. Reply and Forward from an open mail; a forward carries its files.',

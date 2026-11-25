@@ -17,7 +17,8 @@ export const FOOT_I = {
   messages: solid('M12 3c5 0 9 3.6 9 8s-4 8-9 8c-1.6 0-3.1-.3-4.3-1L3 21l1.6-4.6C3.6 15 3 13.1 3 11c0-4.4 4-8 9-8z'),
   tasks: solid('M4 4h16v16H4zM6.8 12.3l2.1-2.1 2 2 4.9-4.9 2.1 2.1-7 7z'),
   // Mail, RoarMail's home in the bar inside ROARMAIL: an envelope, its fold cut out
-  mail: solid('M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM4.4 7.6l7.6 5.3 7.6-5.3-.9-1.3-6.7 4.7-6.7-4.7z'),
+  // one fine outline as the others of the bar (Alex, 25 Nov: "the mail's icon closer to the others of the menu")
+  mail: solid('M5 5.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2zM3.6 7l8.4 6 8.4-6'),
   // New Mail, the middle of the bar inside ROARMAIL (Alex, 25 Nov): a pencil, filled
   newmail: solid('M16.8 2.6a2.3 2.3 0 0 1 3.2 0l1.4 1.4a2.3 2.3 0 0 1 0 3.2L9.2 19.4 3 21l1.6-6.2zM15.4 6.2l2.4 2.4 1.6-1.6-2.4-2.4z'),
   // Pro (Alex, 22 Nov): a briefcase, its handle and the band across it cut out

@@ -55,6 +55,8 @@ export const MAIL_I = {
   read: s(<><path d="M3 10l9-6 9 6v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M3.5 10.5L12 16l8.5-5.5" /></>),
   x: s(<path d="M6 6l12 12M18 6L6 18" />),
   plus: s(<path d="M12 5v14M5 12h14" />),
+  tick: s(<path d="M5 12.5l4.5 4.5L19 7.5" />),
+  select: s(<><circle cx="12" cy="12" r="9" /><path d="M8 12.3l2.8 2.8L16.2 9.5" /></>),
   send: s(<><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></>),
 }
 // eight filters, as RoarMail on the Mac (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL):
@@ -333,6 +335,7 @@ export function MailView({ me, people, book }) {
     const f = (e) => {
       const what = e.detail?.what, st = stepRef.current
       if (what === 'new') setCompose({ mode: 'new', account: st.acc && st.acc !== 'all' ? st.acc : '' })
+      else if (what === 'home') { setFwd(null); setStep({ s: 'accs' }) }
       else if (what === 'contacts') { if (st.s !== 'contacts') { setFwd(null); setStep({ s: 'contacts', from: st }) } }
     }
     window.addEventListener('roarme-mail-cmd', f)
@@ -490,7 +493,7 @@ export function MailView({ me, people, book }) {
 // "as in the chats: it must catch from the edge of the screen, and stay, not jump away"), a long press its menu --------
 const EDGE = 72, ACTS_W = 5 * 64
 let openRow = null // the row whose buttons are out: a touch on any other row puts them away first
-function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking }) {
+function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, checked }) {
   const [x, setX] = useState(0)
   const [drag, setDrag] = useState(false)
   const g = useRef(null), lp = useRef(0), skip = useRef(0), self = useRef(null), row = useRef(null)
@@ -499,7 +502,7 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking }) {
   const settle = (open) => { if (open && !x) haptic(8); setDrag(false); setX(open ? -ACTS_W : 0); if (open) openRow = self; else if (openRow === self) openRow = null; skip.current = Date.now() }
   const h = {
     onTouchStart: (e) => {
-      if (e.touches.length !== 1) return
+      if (e.touches.length !== 1 || selOn) return // while picking several, no slide and no long press
       const t = e.touches[0]
       if (openRow && openRow !== self) { openRow.current(); openRow = null; skip.current = Date.now(); g.current = null; e.stopPropagation(); return }
       const ours = t.clientX > window.innerWidth - EDGE || x !== 0
@@ -546,11 +549,12 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking }) {
         <button type="button" className="rsa-block" onClick={() => tap('block')} tabIndex={x ? 0 : -1}><i>{MAIL_I.block}</i><span>Block</span></button>
         <button type="button" className="rsa-trash" onClick={() => tap('trash')} tabIndex={x ? 0 : -1}><i>{MAIL_I.trash}</i><span>Trash</span></button>
       </div>
-      <button ref={row} type="button" className={`room rmx-row${m.seen ? '' : ' rmx-un'}${picking ? ' rmx-pickme' : ''}`} onContextMenu={(e) => { e.preventDefault(); onMenu(row.current?.getBoundingClientRect()) }}
+      <button ref={row} type="button" className={`room rmx-row${m.seen ? '' : ' rmx-un'}${picking ? ' rmx-pickme' : ''}${selOn ? ' rmx-selrow' : ''}${checked ? ' rmx-checked' : ''}`} onContextMenu={(e) => { e.preventDefault(); if (!selOn) onMenu(row.current?.getBoundingClientRect()) }}
         onClick={() => { if (Date.now() - skip.current < 450) return; if (x) { settle(false); return } onOpen() }}>
+        {selOn && <i className="rmx-check" aria-hidden="true">{checked && MAIL_I.tick}</i>}
         <Avatar src={w.photo} name={w.name || '?'} size={50} />
         <span className="room-main">
-          <span className="room-top"><strong>{w.name || '(no sender)'}</strong>{count > 1 && <em className="rmx-cnt">{count}</em>}<small>{m.files > 0 && <i className="rmx-mi">{MAIL_I.clip}</i>}{m.flagged && <i className="rmx-mi rmx-star">{MAIL_I.starF}</i>}{when(m.date)}</small></span>
+          <span className="room-top"><strong>{w.name || '(no sender)'}</strong>{count > 1 && <em className="rmx-cnt">{count}</em>}<small>{!m.seen && <i className="rmx-udot" />}{m.files > 0 && <i className="rmx-mi">{MAIL_I.clip}</i>}{m.flagged && <i className="rmx-mi rmx-star">{MAIL_I.starF}</i>}{when(m.date)}</small></span>
           <span className="rmx-sub">{m.subject || '(no subject)'}</span>
           <span className="room-bottom"><span className="room-prev rmx-sn">{m.snippet}</span>{!m.seen && <span className="badge dot" />}</span>
         </span>
@@ -561,13 +565,14 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking }) {
 }
 
 // the long-press menu (Alex, 24 Nov: "a long press gives these and more, as on the desktop"), the app's own menu glass
-function MailMenu({ m, at, inJunk, onAct, onClose }) {
-  const H = 520
+function MailMenu({ m, at, inJunk, noSelect, onAct, onClose }) {
+  const H = 560
   const top = at ? (at.bottom + H + 12 < window.innerHeight ? at.bottom + 6 : Math.max(12, at.top - H - 6)) : 80
   const go = (k) => { onClose(); onAct(k) }
   return createPortal(<>
     <button type="button" className="scrim rmx-lpveil" aria-label="Close" onClick={onClose} />
     <div className="menu rmx-lp" style={{ top, left: 16, right: 'auto', bottom: 'auto' }}>
+      {!noSelect && <><button type="button" onClick={() => go('select')}>{MAIL_I.select}<span>Select</span></button><hr /></>}
       <button type="button" onClick={() => go('reply')}>{MAIL_I.reply}<span>Reply</span></button>
       <button type="button" onClick={() => go('replyAll')}>{MAIL_I.replyAll}<span>Reply All</span></button>
       <button type="button" onClick={() => go('forward')}>{MAIL_I.forward}<span>Forward</span></button>
@@ -627,6 +632,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const [open, setOpen] = useState(() => step.open || null)
   const [menu, setMenu] = useState(null)     // { m, at }
   const [moving, setMoving] = useState(null)
+  const [sel, setSel] = useState(null)       // several picked (Alex, 25 Nov: "pick multiple mails and delete or move them in bulk, as on the desktop"): a Set of keys, null when off
   const [flash, setFlash] = useState('')
   const lastOpen = useRef(null)
   const flashT = useRef(0)
@@ -746,13 +752,42 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
         drop(m); noteBlock('domain', d, true); say(`Everyone at @${d} is blocked`)
       } else if (k === 'reply' || k === 'replyAll' || k === 'forward') onCompose({ mode: k, m })
       else if (k === 'sender') { setOpen(null); setThread(''); setSender(m.from); setFilter('sender') }
+      else if (k === 'select') { setOpen(null); setSel(new Set([keyM(m)])) }
     } catch (e) { say(e.message || 'Not done'); load(0) }
+  }
+  // what is done to all the picked mails at once, a few at a time
+  const bulk = async (k) => {
+    const list = shown.filter((m) => sel?.has(keyM(m)))
+    if (!list.length) return
+    if (k === 'move') {
+      if (new Set(list.map((m) => m.account)).size > 1) { say('Pick mails of one account to move them together'); return }
+      setMoving({ ...list[0], _bulk: list }); return
+    }
+    if (k === 'trash' && prefs.askDelete && !window.confirm(`Delete ${list.length} mail${list.length === 1 ? '' : 's'}?`)) return
+    const unread = list.some((m) => !m.seen), unstar = list.every((m) => m.flagged)
+    const one = async (m) => {
+      if (k === 'read') { patch(m, { seen: unread }); await flag(m, 'seen', unread) }
+      else if (k === 'star') { patch(m, { flagged: !unstar }); await flag(m, 'flagged', !unstar) }
+      else if (k === 'trash') { const tr = folderOf(m, 'trash'); drop(m); await cloud({ action: 'delete', account: m.account, path: m.path, uid: m.uid, trash: tr && tr !== m.path ? tr : '' }) }
+      else if (k === 'junk') { const to = folderOf(m, 'spam'); if (!to || to === m.path) return; drop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to }) }
+    }
+    setSel(null)
+    try {
+      for (let i = 0; i < list.length; i += 4) await Promise.all(list.slice(i, i + 4).map(one))
+      say(k === 'trash' ? `${list.length} moved to Trash` : k === 'junk' ? `${list.length} moved to Junk` : k === 'read' ? (unread ? 'Marked as read' : 'Marked as unread') : unstar ? 'Stars removed' : 'Starred')
+    } catch (e) { say(e.message || 'Not all done'); load(0) }
   }
   const moveTo = async (m, to) => {
     setMoving(null)
-    try { drop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to }); say('Moved') } catch (e) { say(e.message || 'Not moved'); load(0) }
+    const list = m._bulk || [m]
+    setSel(null)
+    try {
+      for (let i = 0; i < list.length; i += 4) await Promise.all(list.slice(i, i + 4).map((x) => { drop(x); return cloud({ action: 'move', account: x.account, path: x.path, uid: x.uid, to }) }))
+      say(list.length > 1 ? `${list.length} moved` : 'Moved')
+    } catch (e) { say(e.message || 'Not moved'); load(0) }
   }
   const openMail = (m) => {
+    if (sel) { const k = keyM(m); setSel((s0) => { const n = new Set(s0); if (n.has(k)) n.delete(k); else n.add(k); return n }); return }
     if (filter === 'sender' && !sender) { setSender(m.from); return } // Same sender: the mail tapped picks whose mail to show
     if (conv && !thread && m._n > 1) { setThread(reSubj(m.subject)); return }
     lastOpen.current = m; setOpen(m); if (!m.seen && prefs.markRead) patch(m, { seen: true })
@@ -812,7 +847,13 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
     <div className={`rmx rmx-ml rmx-l${prefs.lines}${prefs.pics ? '' : ' rmx-nopic'}`} {...listSlide}>
       {/* one glass capsule as tall as the folder bar: back and the folder's name, then every filter, sliding sideways
           (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL) */}
-      <div className="rmx-head">
+      {sel ? (
+        <div className="rmx-head rmx-selhead">
+          <button type="button" className="round rmx-hback" onClick={() => setSel(null)} aria-label="Cancel" title="Cancel">{MAIL_I.x}</button>
+          <b className="rmx-selcount">{sel.size ? `${sel.size} Selected` : 'Select Mails'}</b>
+          <button type="button" className="pill-btn rmx-selall" onClick={() => setSel(sel.size === shown.length ? new Set() : new Set(shown.map(keyM)))}>{sel.size === shown.length && shown.length ? 'None' : 'All'}</button>
+        </div>
+      ) : <div className="rmx-head">
         {/* back alone, in the same line as the filters; no folder name or address over the mails (Alex, 25 Nov) */}
         <button type="button" className="round rmx-hback" onClick={thread ? () => setThread('') : onBack} aria-label="Back" title={thread ? 'Back' : `Back · ${step.name}`} data-back="">{MAIL_I.back}</button>
         <div className="rmx-fbar">
@@ -823,7 +864,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
               : <button key={k} type="button" className={`round${isOn(k) ? ' on' : ''}`} aria-label={label} title={label} onClick={() => pick(k)}>{MAIL_I[k]}</button>)}
           </span>
         </div>
-      </div>
+      </div>}
       {filter === 'search' && <label className="search rmx-search">{I.search}<input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search these mails" /></label>}
       {filter === 'sender' && !sender && <p className="rmx-hint">Tap a mail to see all mail from its sender.</p>}
       {((filter === 'sender' && sender) || (filter === 'day' && day)) && <p className="rmx-hint">{sub}</p>}
@@ -834,11 +875,17 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
         : finding && !shown.length ? <p className="muted rooms-none">Looking…</p>
         : !shown.length ? <p className="muted rooms-none">{targets.length ? 'Nothing here.' : 'No account is in RoarMe yet. Send one from RoarMail on your computer.'}</p>
         : shown.map((m) => (
-          <MailRow key={keyM(m)} m={m} who={who} bar={acc.id === 'all' ? colourOf(m.account) : ''} count={m._n || 0} picking={filter === 'sender' && !sender}
+          <MailRow key={keyM(m)} m={m} who={who} bar={acc.id === 'all' ? colourOf(m.account) : ''} count={m._n || 0} picking={filter === 'sender' && !sender} selOn={!!sel} checked={!!sel?.has(keyM(m))}
             onOpen={() => openMail(m)} onAct={(k) => act(k, m)} onMenu={(at) => setMenu({ m, at })} />
         ))}
       {!offline && rows && rows.length > 0 && more && !filter && !thread && <div className="rmx-more"><button type="button" className="pill-btn" disabled={busy} onClick={() => load(page + 1)}>{busy ? 'Loading…' : 'Older Mail'}</button></div>}
       {newBtn}
+      {sel && createPortal(
+        <div className="rmx-selbar" role="toolbar" aria-label="Selected mails">
+          {[['read', shown.some((m) => sel.has(keyM(m)) && !m.seen) ? 'Read' : 'Unread', MAIL_I.read], ['star', 'Star', MAIL_I.star], ['move', 'Move', MAIL_I.move], ['junk', 'Junk', MAIL_I.spam], ['trash', 'Delete', MAIL_I.trash]].map(([k, l, ic]) => (
+            <button key={k} type="button" className={k === 'trash' ? 'danger' : ''} disabled={!sel.size || (k === 'junk' && role === 'spam')} onClick={() => bulk(k)}><i>{ic}</i><span>{l}</span></button>
+          ))}
+        </div>, document.body)}
       {sheets}
     </div>
   )
@@ -1179,7 +1226,7 @@ export function UnreadMail({ m, who, onDrop }) {
   return (
     <div className={`rmx rmx-mu1 rmx-l${prefs.lines}${prefs.pics ? '' : ' rmx-nopic'}`}>
       <MailRow m={m} who={who} bar={setup?.accounts?.find((a) => a.id === m.account)?.color} onOpen={() => openMailFromUnread(m)} onAct={act} onMenu={(at) => setMenu({ at })} />
-      {menu && <MailMenu m={m} at={menu.at} onAct={act} onClose={() => setMenu(null)} />}
+      {menu && <MailMenu m={m} at={menu.at} noSelect onAct={act} onClose={() => setMenu(null)} />}
     </div>
   )
 }

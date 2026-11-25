@@ -1848,7 +1848,9 @@ export default function Chat({ me, setMe }) {
             {inMail ? <>
               {/* inside ROARMAIL: Contacts of the mail · New Mail · Settings (Alex, 25 Nov; no Calls there) */}
               <button type="button" className={`foot-contacts${mailStep === 'contacts' ? ' on' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'contacts' } }))}>{FOOT_I.contacts}<span>Contacts</span></button>
-              <button type="button" className={`foot-main foot-newmail${mailStep !== 'contacts' ? ' on' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'new' } }))}><span className="foot-ico">{FOOT_I.newmail}</span><span>New Mail</span></button>
+              {/* Mail: back to the accounts, RoarMail's home (Alex, 25 Nov: "a button beside the contacts that goes back to where all the mail is") */}
+              <button type="button" className={`foot-main foot-mailhome${mailStep !== 'contacts' ? ' on' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'home' } }))}><span className="foot-ico">{FOOT_I.mail}</span><span>Mail</span></button>
+              <button type="button" className="foot-newmail" onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'new' } }))}><span className="foot-ico">{FOOT_I.newmail}</span><span>New Mail</span></button>
             </> : <>
             <button type="button" className={`foot-contacts${tab === 'contacts' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('contacts')}>{FOOT_I.contacts}<span>Contacts</span></button>
             {prefs.callsTab && <button type="button" className={`foot-calls${tab === 'calls' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('calls')}>{FOOT_I.calls}<span>Calls</span></button>}

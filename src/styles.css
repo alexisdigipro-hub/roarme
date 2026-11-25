@@ -8937,3 +8937,26 @@ html[data-mode='dark']:root:root:root:root:root:root .modal:has(> .modal-body > 
 html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'] { background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent)))) !important; border-radius: 999px !important; box-shadow: 0 2px 8px color-mix(in srgb, var(--halo-mine, var(--accent)) 30%, transparent) !important; }
 html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'], html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'] .tab-name { color: var(--halo-ink, #fff) !important; }
 html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'] small { background: rgba(255, 255, 255, .28) !important; color: var(--halo-ink, #fff) !important; }
+/* picking several mails (Alex, 25 Nov, "as on the desktop"): a round tick before each row, the head says how many with
+   All / None, and a glass bar over the foot with Read, Star, Move, Junk and Delete */
+.rmx-check { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; margin-right: 2px; border: 1.8px solid color-mix(in srgb, currentColor 50%, transparent); color: var(--halo-ink, #fff); transition: background .15s, border-color .15s; }
+.rmx-check svg { width: 15px; height: 15px; stroke-width: 2.6; }
+.rmx-checked .rmx-check { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)); border-color: transparent; }
+html:root:root:root:root:root .rmx .rmx-row.rmx-checked { background: color-mix(in srgb, var(--halo-mine, #3aa7e8) 10%, transparent) !important; }
+html:root:root:root:root:root:root .rmx-selhead { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding-right: 4px; }
+.rmx-selcount { text-align: center; font-size: 15px; font-weight: 600; }
+html:root:root:root:root:root:root .rmx-selall { height: 32px; min-height: 0; padding: 0 14px; font-size: 13.5px; }
+.rmx-selbar { position: fixed; z-index: 60; left: 50%; translate: -50% 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 112px); display: flex; gap: 2px; padding: 5px; border-radius: 26px; background: var(--lg, rgba(255, 255, 255, .9)); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .8)); box-shadow: var(--lg-shadow, 0 10px 30px rgba(40, 50, 80, .16)); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); animation: rmx-selin .22s cubic-bezier(.22, 1, .36, 1); }
+@keyframes rmx-selin { from { opacity: 0; translate: -50% 10px; } }
+html:root:root:root:root:root .rmx-selbar > button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 62px; height: 52px; padding: 6px 6px 4px; border: 0; border-radius: 20px; background: none !important; box-shadow: none !important; color: inherit; font: inherit; font-size: 10.5px; font-weight: 600; }
+html:root:root:root:root:root .rmx-selbar > button:active { background: color-mix(in srgb, currentColor 8%, transparent) !important; }
+html:root:root:root:root:root .rmx-selbar > button.danger { color: #e5483f; }
+html[data-mode='dark'] .rmx-selbar > button.danger { color: #ff6961; }
+.rmx-selbar > button:disabled { opacity: .35; }
+.rmx-selbar > button i { display: grid; }
+.rmx-selbar > button svg { width: 21px; height: 21px; }
+@media (min-width: 761px) { .rmx-selbar { bottom: 24px; } }
+/* with Preview Lines on None the unread dot rides beside the time, so no row is spent on it */
+.rmx-udot { display: none; width: 9px; height: 9px; border-radius: 50%; background: var(--halo-mine, #3aa7e8); margin-right: 6px; flex: none; }
+html:root:root:root:root:root:root .rmx.rmx-l0 .rmx-udot { display: inline-block; }
+html:root:root:root:root:root:root .rmx.rmx-l0 .rmx-row .room-bottom { display: none !important; }

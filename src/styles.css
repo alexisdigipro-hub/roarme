@@ -8844,3 +8844,7 @@ html[data-mode='dark']:root:root:root:root:root .set-page .seg > button.on, html
 /* 8: the brand at the foot of Settings stands whole above the bar at the foot */
 @media (max-width: 760px) { html:root:root:root:root .set-version { margin-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); } }
 html:root:root:root:root .lib-empty { text-align: center; }
+/* the account's unread count stands in the middle of the row's height, just left of the arrow, the same place on every
+   account (Alex, 25 Nov: "one up, one down, nothing lined up") */
+html:root:root:root:root:root .rmx .rmx-accrow { padding-right: 76px; }
+html:root:root:root:root:root .rmx .rmx-accrow .room-bottom .badge { position: absolute; right: 38px; top: 50%; translate: 0 -50%; margin: 0; }

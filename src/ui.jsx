@@ -448,10 +448,10 @@ export const Mark = ({ size = 28, className = '' }) => (
   </svg>
 )
 export const ByTML = () => <span className="by-tml" data-raw="1">by <b>THE<strong>MAD</strong>LIONS</b></span>
-export const Wordmark = ({ by = false }) => (
+export const Wordmark = ({ by = false, b = 'ME' }) => (
   <span className={`wordmark${by ? ' with-by' : ''}`}>
     {by && <Mark size={72} />}
-    <b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">ME</span></b>
+    <b className="wm"><span className="wm-a">ROAR</span><span className="wm-b">{b}</span></b>
     {by && <ByTML />}
   </span>
 )

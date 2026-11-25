@@ -283,6 +283,7 @@ export default function Chat({ me, setMe }) {
   const searchRef = useRef(null)
   // the search box hides and comes out when the list is pulled down at its top (Alex, 17 Oct), as on the iPhone
   const [searchOpen, setSearchOpen] = useState(false)
+  useEffect(() => { if (folder === 'mail') { setSearchOpen(false); setQ('') } }, [folder]) // eslint-disable-line react-hooks/exhaustive-deps
   const listAtTop = (e) => (e.target.closest?.('.rooms')?.scrollTop || 0) <= 0
   const searchBusy = () => !!q.trim() || document.activeElement === searchRef.current
   const onListWheel = (e) => {
@@ -1664,7 +1665,8 @@ export default function Chat({ me, setMe }) {
         {(tab !== 'chats' || !!q.trim()) && <NowPlaying className="in-side" onOpen={(id) => { setTab('chats'); setActiveId(id) }} />}
         {tab === 'chats' && (
           <>
-            <div className={`search-wrap${searchOpen || q.trim() ? ' open' : ''}`}><div>
+            {/* no search over ROARMAIL: a pull down there does not bring it (Alex, 25 Nov) */}
+            <div className={`search-wrap${(searchOpen || q.trim()) && !(mailOn && folder === 'mail') ? ' open' : ''}`}><div>
               <label className="search">{I.search}<input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search (⌘K)" tabIndex={searchOpen ? 0 : -1}
                 onBlur={() => { if (!q.trim()) setTimeout(() => setSearchOpen(false), 1200) }}
                 onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur(); setSearchOpen(false) } }} /></label>

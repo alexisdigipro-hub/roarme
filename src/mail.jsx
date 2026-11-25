@@ -56,6 +56,8 @@ export const MAIL_I = {
   x: s(<path d="M6 6l12 12M18 6L6 18" />),
   plus: s(<path d="M12 5v14M5 12h14" />),
   tick: s(<path d="M5 12.5l4.5 4.5L19 7.5" />),
+  more: s(<><circle cx="6" cy="12" r="1.3" /><circle cx="12" cy="12" r="1.3" /><circle cx="18" cy="12" r="1.3" /></>),
+  grip: s(<path d="M5 9h14M5 15h14" />),
   select: s(<><circle cx="12" cy="12" r="9" /><path d="M8 12.3l2.8 2.8L16.2 9.5" /></>),
   send: s(<><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></>),
 }
@@ -66,6 +68,15 @@ const FILTERS = [['search', 'Search'], ['star', 'Starred'], ['clip', 'With attac
 // the folders every account has, in RoarMail's order; for All Inboxes the same, across the accounts
 const ROLES = [['inbox', 'Inbox'], ['drafts', 'Drafts'], ['sent', 'Sent'], ['spam', 'Junk'], ['trash', 'Trash'], ['archive', 'Archive']]
 const ROLE_I = { inbox: 'inbox', drafts: 'drafts', sent: 'sent', spam: 'spam', trash: 'trash', archive: 'archive', flagged: 'flagged' }
+
+// what RoarMail's home can hold besides All Inboxes and the accounts (Alex, 25 Nov, from Apple Mail's Mailboxes > Edit):
+// a folder of every account at once, or All Inboxes looked at one way
+const SMART = [
+  ['sent', 'All Sent', 'sent', { role: 'sent' }], ['drafts', 'All Drafts', 'drafts', { role: 'drafts' }], ['trash', 'All Trash', 'trash', { role: 'trash' }],
+  ['spam', 'All Junk', 'spam', { role: 'spam' }], ['archive', 'All Archive', 'archive', { role: 'archive' }],
+  ['flagged', 'Flagged', 'flagged', { role: 'inbox', preset: 'star' }], ['unread', 'Unread', 'unread', { role: 'inbox', preset: 'unread' }],
+  ['files', 'Attachments', 'clip', { role: 'inbox', preset: 'clip' }], ['today', 'Today', 'day', { role: 'inbox', preset: 'today' }],
+]
 
 // the gold word, as PROJECTS: ROAR bold in gold, MAIL thin in the words' colour
 export const MailWord = () => <span className="tab-gold"><b>ROAR</b><i>MAIL</i></span>
@@ -149,7 +160,7 @@ const keyM = (m) => `${m.account}|${m.path}|${m.uid}`
 // Settings > ROARMAIL, kept on this phone (Alex, 24 Nov: "the settings of RoarMail in our RoarMail tab")
 const PREF_KEY = 'roarme-mail-prefs'
 const PREF_START = { images: false, markRead: true, lines: 2, oldest: false, askDelete: false, askBlock: true, signature: true,
-  pics: true, quote: true, defAcc: '', countUnread: true, every: 3, autoJunk: true, keep: 150, allHide: [] }
+  pics: true, quote: true, defAcc: '', countUnread: true, every: 3, autoJunk: true, keep: 150, allHide: [], home: null }
 export const mailPrefs = () => { try { return { ...PREF_START, ...JSON.parse(localStorage.getItem(PREF_KEY) || '{}') } } catch { return { ...PREF_START } } }
 const setMailPref = (k, v) => {
   const n = { ...mailPrefs(), [k]: v }
@@ -313,6 +324,49 @@ function useSlide(onRight, onLeft) {
   }
 }
 
+// Edit Mailboxes: a tick shows or hides a row on the home, the grip at the right moves it up or down
+function HomeEdit({ order, rowOf, isShown, onToggle, onOrder }) {
+  const [list, setList] = useState(order)
+  const [held, setHeld] = useState('')
+  useEffect(() => { if (!held) setList(order) }, [order.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
+  const box = useRef(null), g = useRef(null)
+  const down = (e, k) => {
+    e.preventDefault(); e.currentTarget.setPointerCapture?.(e.pointerId)
+    const row = e.currentTarget.closest('.rmx-he-row')
+    g.current = { k, y: e.clientY, h: row?.offsetHeight || 52 }
+    setHeld(k)
+  }
+  const move = (e) => {
+    const s0 = g.current; if (!s0) return
+    const dy = e.clientY - s0.y
+    if (Math.abs(dy) < s0.h * 0.6) return
+    setList((l) => {
+      const i = l.indexOf(s0.k), j = i + (dy > 0 ? 1 : -1)
+      if (j < 0 || j >= l.length) return l
+      const n = [...l]; [n[i], n[j]] = [n[j], n[i]]; return n
+    })
+    s0.y += dy > 0 ? s0.h : -s0.h
+    haptic(6)
+  }
+  const up = () => { if (!g.current) return; g.current = null; setHeld(''); onOrder(list) }
+  return (
+    <div ref={box} className="rmx-he" onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+      {list.map(rowOf).filter(Boolean).map((r) => {
+        const shown = isShown(r.k)
+        return (
+          <div key={r.k} className={`rmx-he-row${held === r.k ? ' held' : ''}`}>
+            <button type="button" className={`rmx-check${shown ? ' on' : ''}`} onClick={() => onToggle(r.k)} aria-label={shown ? `Hide ${r.name}` : `Show ${r.name}`}>{shown && MAIL_I.tick}</button>
+            {r.a ? <AccPic a={r.a} size={34} /> : <span className="av rmx-smart sm">{r.icon}</span>}
+            <span className="rmx-he-name">{r.name}</span>
+            <span className="rmx-he-grip" onPointerDown={(e) => down(e, r.k)} aria-label={`Move ${r.name}`} role="button" tabIndex={0}>{MAIL_I.grip}</span>
+          </div>
+        )
+      })}
+      <p className="rmx-hint">Tick what shows on the home page; drag the lines at the right to put them in order.</p>
+    </div>
+  )
+}
+
 export function MailView({ me, people, book }) {
   const mprefs = usePrefs()
   const [setup, setSetup] = useState(() => lsGet('mail-setup'))       // null loading · { accounts, folders } · { error }
@@ -325,6 +379,7 @@ export function MailView({ me, people, book }) {
   }) // accs · folders { acc } · list { acc, role|path, name } · read
   useEffect(() => { const f = (e) => { pendingOpen = null; const m = e.detail; setStep({ s: 'list', acc: m.account, role: 'inbox', path: m.path, name: 'Inbox', open: m }) }; window.addEventListener('roarme-mail-open', f); return () => window.removeEventListener('roarme-mail-open', f) }, [])
   const [fwd, setFwd] = useState(null) // the step a slide right left, so a slide left can go on to it again
+  const [editHome, setEditHome] = useState(false)
   const [compose, setCompose] = useState(null) // { mode: 'new' | 'reply' | 'replyAll' | 'forward', m?, account? }
   const back = (to) => { setFwd(step); setStep(to) }
   // inside ROARMAIL the bar at the foot is Contacts · New Mail · Settings (Alex, 25 Nov); its buttons speak through
@@ -414,22 +469,44 @@ export function MailView({ me, people, book }) {
       onWrite={(to) => setCompose({ mode: 'new', to, account: '' })} />{composer}</>
   }
   if (step.s === 'accs') {
+    // the home's rows in the order kept (Alex, 25 Nov: "on the home page this must be possible", Apple Mail's Edit):
+    // ids 'all', 'acc:<id>' and the SMART ones; what is not in the order yet goes after, shown by default for All
+    // Inboxes and the accounts, hidden for the smart ones
+    const ids = ['all', ...accounts.map((a) => `acc:${a.id}`), ...SMART.map(([k]) => k)]
+    const kept = mprefs.home || { order: [], hide: [] }
+    const order = [...kept.order.filter((k) => ids.includes(k)), ...ids.filter((k) => !kept.order.includes(k))]
+    const isShown = (k) => (kept.order.includes(k) ? !kept.hide.includes(k) : !SMART.some(([x]) => x === k))
+    const rowOf = (k) => {
+      if (k === 'all') return { k, a: all, name: all.name, sub: all.email, n: total, go: () => setStep({ s: 'folders', acc: 'all' }) }
+      if (k.startsWith('acc:')) {
+        const a = accounts.find((x) => `acc:${x.id}` === k); if (!a) return null
+        const off = on && !on.has(a.id)
+        return { k, a, name: a.name, sub: off ? `${a.email} · not in RoarMe yet` : a.email, n: counts[a.id] || 0, go: () => { if (fwd?.acc !== a.id) setFwd(null); setStep({ s: 'folders', acc: a.id }) } }
+      }
+      const sm = SMART.find(([x]) => x === k); if (!sm) return null
+      return { k, icon: MAIL_I[sm[2]], name: sm[1], sub: sm[3].preset ? 'Across your inboxes' : 'Every account', n: 0, go: () => setStep({ s: 'list', acc: 'all', name: sm[1], ...sm[3] }) }
+    }
+    const hidden = order.filter((k) => !isShown(k))
+    const save = (o, hide) => setMailPref('home', { order: o, hide })
+    const toggle = (k) => save(order, isShown(k) ? [...hidden, k] : hidden.filter((x) => x !== k))
     return (
       <div className="rmx rmx-accl">
-        {[all, ...accounts].map((a) => {
-          const n = a.id === 'all' ? total : counts[a.id] || 0
-          const off = a.id !== 'all' && on && !on.has(a.id)
-          return (
-            <button key={a.id} type="button" className="room rmx-accrow" onClick={() => { if (fwd?.acc !== a.id) setFwd(null); setStep({ s: 'folders', acc: a.id }) }}>
-              <AccPic a={a} />
+        <div className="rmx-crumb rmx-cap rmx-homecap">
+          <span />
+          <span className="rmx-cw"><b>{editHome ? 'Edit Mailboxes' : 'Mailboxes'}</b></span>
+          <button type="button" className={`round rmx-hback rmx-homeedit${editHome ? ' done' : ''}`} onClick={() => setEditHome((v) => !v)} aria-label={editHome ? 'Done' : 'Edit Mailboxes'} title={editHome ? 'Done' : 'Edit Mailboxes'}>{editHome ? MAIL_I.tick : MAIL_I.more}</button>
+        </div>
+        {editHome ? <HomeEdit order={order} rowOf={rowOf} isShown={isShown} onToggle={toggle} onOrder={(o) => save(o, hidden)} />
+          : order.filter(isShown).map(rowOf).filter(Boolean).map((r) => (
+            <button key={r.k} type="button" className="room rmx-accrow" onClick={r.go}>
+              {r.a ? <AccPic a={r.a} /> : <span className="av rmx-smart">{r.icon}</span>}
               <span className="room-main">
-                <span className="room-top"><strong>{a.name}</strong></span>
-                <span className="room-bottom"><span className="room-prev">{off ? `${a.email} · not in RoarMe yet` : a.email}</span>{n > 0 && <span className="badge">{n}</span>}</span>
+                <span className="room-top"><strong>{r.name}</strong></span>
+                <span className="room-bottom"><span className="room-prev">{r.sub}</span>{r.n > 0 && <span className="badge">{r.n}</span>}</span>
               </span>
               <i className="rmx-chev">{MAIL_I.chev}</i>
             </button>
-          )
-        })}
+          ))}
         {newBtn}{composer}
       </div>
     )
@@ -621,12 +698,12 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const [page, setPage] = useState(() => listCache.get(ck)?.page || 0)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
-  const [filter, setFilter] = useState('')   // search · unread · star · clip · day · sender (one at a time)
+  const [filter, setFilter] = useState(() => (step.preset === 'today' ? 'day' : step.preset || ''))   // search · unread · star · clip · day · sender (one at a time); a smart mailbox starts with its own
   const [oldest, setOldest] = useState(() => prefs.oldest)
   const [conv, setConv] = useState(false)
   const [thread, setThread] = useState('')   // a conversation opened
   const [q, setQ] = useState('')
-  const [day, setDay] = useState('')
+  const [day, setDay] = useState(() => (step.preset === 'today' ? new Date().toLocaleDateString('en-CA') : ''))
   const [sender, setSender] = useState(null)
   const [found, setFound] = useState(null)   // { key, rows } from the server for unread, starred, a day, a sender or words
   const [open, setOpen] = useState(() => step.open || null)

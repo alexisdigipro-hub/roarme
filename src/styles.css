@@ -8960,3 +8960,23 @@ html[data-mode='dark'] .rmx-selbar > button.danger { color: #ff6961; }
 .rmx-udot { display: none; width: 9px; height: 9px; border-radius: 50%; background: var(--halo-mine, #3aa7e8); margin-right: 6px; flex: none; }
 html:root:root:root:root:root:root .rmx.rmx-l0 .rmx-udot { display: inline-block; }
 html:root:root:root:root:root:root .rmx.rmx-l0 .rmx-row .room-bottom { display: none !important; }
+/* RoarMail's home with its own head and Edit Mailboxes (Alex, 25 Nov, Apple Mail's Mailboxes > Edit) */
+html:root:root:root:root:root:root:root .rmx-accl .rmx-crumb.rmx-homecap { margin-left: 5px; margin-right: 5px; }
+html:root:root:root:root:root:root .rmx .rmx-homeedit.done { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink, #fff) !important; }
+.rmx-smart { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: color-mix(in srgb, var(--halo-mine, #3aa7e8) 14%, transparent); color: var(--halo-mine, #3aa7e8); flex: none; }
+.rmx-smart svg { width: 24px; height: 24px; }
+.rmx-smart.sm { width: 34px; height: 34px; }
+.rmx-smart.sm svg { width: 18px; height: 18px; }
+.rmx-he { display: flex; flex-direction: column; border-radius: 24px; background: var(--lg, rgba(255, 255, 255, .7)); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .8)); padding: 4px 0; margin: 0 -2px; user-select: none; -webkit-user-select: none; }
+.rmx-he-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 8px 0 14px; position: relative; transition: transform .15s; }
+.rmx-he-row + .rmx-he-row::before { content: ''; position: absolute; top: 0; left: 98px; right: 12px; height: 1px; background: color-mix(in srgb, currentColor 10%, transparent); }
+.rmx-he-row.held { z-index: 2; transform: scale(1.02); background: var(--lg, rgba(255, 255, 255, .95)); box-shadow: 0 8px 22px rgba(30, 40, 70, .16); border-radius: 14px; }
+html:root:root:root:root:root .rmx-he-row .rmx-check { margin: 0; padding: 0; background: none; cursor: pointer; }
+html:root:root:root:root:root .rmx-he-row .rmx-check.on { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; border-color: transparent; }
+.rmx-he-name { flex: 1; min-width: 0; font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rmx-he-grip { flex: none; display: grid; place-items: center; width: 44px; height: 44px; opacity: .45; touch-action: none; cursor: grab; }
+.rmx-he-grip svg { width: 22px; height: 22px; }
+html:root:root:root:root:root:root .rmx .av.rmx-smart { background: color-mix(in srgb, var(--halo-mine, #3aa7e8) 15%, transparent) !important; color: var(--halo-mine, #3aa7e8) !important; box-shadow: none !important; }
+html:root:root:root:root:root:root .rmx .rmx-check:not(.on) { border-color: rgba(120, 124, 138, .55) !important; }
+html[data-mode='dark']:root:root:root:root:root:root .rmx .rmx-check:not(.on) { border-color: rgba(200, 204, 214, .5) !important; }
+html:root:root:root:root:root:root .rmx .rmx-row:not(.rmx-checked) .rmx-check { border-color: rgba(120, 124, 138, .55); }

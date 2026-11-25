@@ -686,6 +686,9 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, ch
         <button type="button" className="rsa-block" onClick={() => tap('block')} tabIndex={x ? 0 : -1}><i>{MAIL_I.block}</i><span>Block</span></button>
         <button type="button" className="rsa-trash" onClick={() => tap('trash')} tabIndex={x ? 0 : -1}><i>{MAIL_I.trash}</i><span>Trash</span></button>
       </div>
+      {/* the part that slides is its own box, not the row's button: a press effect on the button (scale, an animation
+          that holds its transform) can no longer keep it from moving (Alex, 25 Nov: "it is not solid, it overlaps") */}
+      <div className="rmx-slide">
       <button ref={row} type="button" className={`room rmx-row${m.seen ? '' : ' rmx-un'}${picking ? ' rmx-pickme' : ''}${selOn ? ' rmx-selrow' : ''}${checked ? ' rmx-checked' : ''}`} onContextMenu={(e) => { e.preventDefault(); if (!selOn) onMenu(row.current?.getBoundingClientRect()) }}
         onClick={() => { if (Date.now() - skip.current < 450) return; if (x) { settle(false); return } onOpen() }}>
         {selOn && <i className="rmx-check" aria-hidden="true">{checked && MAIL_I.tick}</i>}
@@ -697,6 +700,7 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, ch
         </span>
         {bar && <i className="rmx-abar" style={{ background: bar }} />}
       </button>
+      </div>
     </div>
   )
 }

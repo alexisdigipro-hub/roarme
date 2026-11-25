@@ -1086,6 +1086,7 @@ export default function Chat({ me, setMe }) {
           g.lock = 'row'
           g.rs = dx < 0 ? 'right' : 'left'
           g.w = el.clientWidth || 1
+          g.rowEl.classList.remove('pressing', 'held') // a press effect holds its transform and would keep the chat from moving
           g.rowEl.classList.add('slid')
           g.rowEl.style.transition = 'none'
           g.rowEl.style.animation = 'none' // the list's fade-in animation holds transform and would keep the chat from moving

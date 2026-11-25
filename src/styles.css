@@ -8848,3 +8848,14 @@ html:root:root:root:root .lib-empty { text-align: center; }
    account (Alex, 25 Nov: "one up, one down, nothing lined up") */
 html:root:root:root:root:root .rmx .rmx-accrow { padding-right: 76px; }
 html:root:root:root:root:root .rmx .rmx-accrow .room-bottom .badge { position: absolute; right: 38px; top: 50%; translate: 0 -50%; margin: 0; }
+/* Contacts inside ROARMAIL (Alex, 25 Nov): the head as the mail's, a search, one row per address with a small pencil */
+.rmx-ct { display: flex; flex-direction: column; gap: 10px; padding-bottom: 120px; }
+.rmx-ct-head { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 8px; }
+.rmx-ct-head b { text-align: center; font-size: 17px; font-weight: 600; }
+.rmx-ct-n { justify-self: center; font-size: 12px; opacity: .55; }
+.rmx-ct-empty { text-align: center; opacity: .6; margin: 24px 0; }
+html:root:root:root:root .rmx .rmx-ct-row { align-items: center; padding-right: 48px; position: relative; }
+.rmx-ct-go { position: absolute; right: 14px; top: 50%; translate: 0 -50%; display: grid; color: var(--halo, #3aa7e8); opacity: .8; }
+.rmx-ct-go svg { width: 18px; height: 18px; }
+html:root:root:root:root:root .rmx .rmx-ct-row .room-prev { display: block !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html:root:root:root:root:root .rmx .rmx-ct-row .room-bottom { display: flex !important; }

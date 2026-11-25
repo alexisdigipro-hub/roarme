@@ -281,6 +281,21 @@ export function MailView({ me, people, book }) {
   const [fwd, setFwd] = useState(null) // the step a slide right left, so a slide left can go on to it again
   const [compose, setCompose] = useState(null) // { mode: 'new' | 'reply' | 'replyAll' | 'forward', m?, account? }
   const back = (to) => { setFwd(step); setStep(to) }
+  // inside ROARMAIL the bar at the foot is Contacts · New Mail · Settings (Alex, 25 Nov); its buttons speak through
+  // roarme-mail-cmd, and the step is told back so Contacts can be lit
+  const stepRef = useRef(step)
+  stepRef.current = step
+  useEffect(() => {
+    const f = (e) => {
+      const what = e.detail?.what, st = stepRef.current
+      if (what === 'new') setCompose({ mode: 'new', account: st.acc && st.acc !== 'all' ? st.acc : '' })
+      else if (what === 'contacts') { if (st.s !== 'contacts') { setFwd(null); setStep({ s: 'contacts', from: st }) } }
+    }
+    window.addEventListener('roarme-mail-cmd', f)
+    return () => window.removeEventListener('roarme-mail-cmd', f)
+  }, [])
+  useEffect(() => { window.dispatchEvent(new CustomEvent('roarme-mail-step', { detail: step.s })) }, [step.s])
+  useEffect(() => () => window.dispatchEvent(new CustomEvent('roarme-mail-step', { detail: '' })), [])
   const foldSlide = useSlide(() => back({ s: 'accs' }), fwd && fwd.s === 'list' && fwd.acc === step.acc ? () => setStep(fwd) : null)
   const who = useWho(me, people, book, setup)
   useEffect(() => {
@@ -331,9 +346,14 @@ export function MailView({ me, people, book }) {
   const accOf = (id) => id === 'all' ? all : accounts.find((a) => a.id === id)
   const total = Object.values(counts).reduce((x, n) => x + n, 0)
   // New Mail: a round button of the accent at the foot of every step but the open mail (Alex, 24 Nov: "I found nowhere to write a new mail")
-  const newBtn = <div className="rmx-newwrap"><button type="button" className="round rmx-new" aria-label="New Mail" title="New Mail" onClick={() => setCompose({ mode: 'new', account: step.acc !== 'all' ? step.acc : '' })}>{MAIL_I.compose}</button></div>
+  // New Mail is the bar at the foot's middle button inside ROARMAIL (Alex, 25 Nov: the round pencil "totally off")
+  const newBtn = null
   const composer = compose && <Compose init={compose} accounts={accounts} on={on} setup={setup} who={who} onClose={() => setCompose(null)} />
 
+  if (step.s === 'contacts') {
+    return <><MailContacts who={who} setup={setup} me={me} people={people} book={book} onBack={() => setStep(step.from && step.from.s !== 'contacts' ? step.from : { s: 'accs' })}
+      onWrite={(to) => setCompose({ mode: 'new', to, account: '' })} />{composer}</>
+  }
   if (step.s === 'accs') {
     return (
       <div className="rmx rmx-accl">
@@ -843,6 +863,46 @@ const fmtAddrs = (l) => (l || []).map((a) => (a.name ? `${a.name} <${a.address}>
 const esc = (t) => String(t || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])
 const okAddr = (a) => /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(a.address)
 
+/* Contacts inside ROARMAIL (Alex, 25 Nov, "all together"): everyone with an email in the address book, RoarMail's own
+   contacts and whoever wrote to me in the mail kept on this phone, one row each; a tap writes them a new mail */
+function MailContacts({ who, setup, me, book, onBack, onWrite }) {
+  const [q, setQ] = useState('')
+  const [extra, setExtra] = useState([])
+  useEffect(() => { readKv('ml:all|inbox').then((v) => { if (v?.rows) setExtra(v.rows) }, () => {}) }, [])
+  const list = useMemo(() => {
+    const m = new Map()
+    const add = (email, name) => { const e = String(email || '').trim().toLowerCase(); if (!e || !e.includes('@') || /no[-_.]?reply|mailer-daemon|notifications?@|bounce/.test(e)) return; if (!m.has(e)) m.set(e, name || '') }
+    for (const e of book || keptBook(me?.id)) for (const x of e.emails || []) add(x.value, entryName(e))
+    for (const [e, n] of Object.entries(setup?.contacts || {})) add(e, n)
+    const rows = [...extra]; for (const v of listCache.values()) rows.push(...(v.rows || []))
+    for (const r of rows) add(r.from?.address, r.from?.name)
+    return [...m.entries()].map(([email, name]) => { const w = who({ address: email, name }); return { email, name: w.name || name || email, photo: w.photo, book: w.book } })
+      .sort((a, b) => (b.book - a.book) || a.name.localeCompare(b.name))
+  }, [who, setup, book, me, extra])
+  const ql = q.trim().toLowerCase()
+  const shown = ql ? list.filter((c) => c.name.toLowerCase().includes(ql) || c.email.includes(ql)) : list
+  return (
+    <div className="rmx rmx-ct">
+      <div className="rmx-ct-head">
+        <button type="button" className="round" onClick={onBack} aria-label="Back" title="Back">{I.left}</button>
+        <b>Contacts</b>
+        <span className="rmx-ct-n">{list.length}</span>
+      </div>
+      <label className="search rmx-ct-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" autoCapitalize="off" autoCorrect="off" spellCheck={false} /></label>
+      {!shown.length && <p className="rmx-ct-empty">{ql ? 'Nobody found.' : 'No email contacts yet.'}</p>}
+      <div className="rooms rmx-ct-list">
+        {shown.slice(0, 400).map((c) => (
+          <button key={c.email} type="button" className="room rmx-ct-row" onClick={() => onWrite(c.email)}>
+            <Avatar src={c.photo} name={c.name} size={42} />
+            <span className="room-main"><span className="room-top"><strong>{c.name}</strong></span><span className="room-bottom"><span className="room-prev">{c.email}</span></span></span>
+            <i className="rmx-ct-go">{MAIL_I.compose}</i>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Compose({ init, accounts, on, setup, who, onClose }) {
   const prefs = usePrefs()
   const usable = accounts.filter((a) => on?.has(a.id))
@@ -866,7 +926,7 @@ function Compose({ init, accounts, on, setup, who, onClose }) {
   // the fields of a reply or a forward, once the mail is here
   useEffect(() => {
     if (filled.current) return
-    if (init.mode === 'new') { filled.current = true; const sg = sigOf(from); setBody(sg ? `\n\n${sg}` : ''); return }
+    if (init.mode === 'new') { filled.current = true; if (init.to) setTo(init.to); const sg = sigOf(from); setBody(sg ? `\n\n${sg}` : ''); return }
     if (!mail) return
     filled.current = true
     const mine = new Set(accounts.map((a) => String(a.email).toLowerCase()))

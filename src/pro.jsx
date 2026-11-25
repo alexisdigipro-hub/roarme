@@ -45,6 +45,43 @@ const FIELD_START = ['Artist / Client', 'Title', 'Category'] // no Budget (Alex,
 const CATEGORIES = ['Music Video', 'Commercial', 'Feature Film', 'Short Film', 'Documentary', 'TV Series', 'Branded Content', 'Photoshoot', 'Live Event']
 
 // every project I can see, live
+/* one Workspace background for every project (Alex, 25 Nov: "a setting for all; a project can still have its own"):
+   roar_profiles.ws_bg_all / ws_bg_all_op, kept on the device too. A project with no background of its own shows it; the
+   projects I run that follow it get it written into roar_pro_projects, so everyone in them sees it. 'none' = this
+   project wants no background at all. */
+const WSALL_KEY = 'roarme-wsbg-all'
+export const wsAllNow = () => { try { return JSON.parse(localStorage.getItem(WSALL_KEY) || 'null') } catch { return null } }
+const keepWsAll = (v) => { try { localStorage.setItem(WSALL_KEY, JSON.stringify(v)) } catch { /* private window */ } window.dispatchEvent(new Event('roarme-wsbg-all')) }
+export const wsAllPatch = () => { const v = wsAllNow(); return v?.url ? { ws_bg: v.url, ws_bg_op: v.op ?? 40 } : {} }
+async function wsAllLoad(meId) {
+  const { data } = await supabase.from('roar_profiles').select('ws_bg_all, ws_bg_all_op').eq('id', meId).maybeSingle()
+  if (!data) return
+  const v = data.ws_bg_all ? { url: data.ws_bg_all, op: data.ws_bg_all_op ?? 40 } : null
+  if (JSON.stringify(v) !== JSON.stringify(wsAllNow())) keepWsAll(v)
+}
+export function useWsAll(meId) {
+  const [v, setV] = useState(wsAllNow)
+  useEffect(() => {
+    const f = () => setV(wsAllNow())
+    window.addEventListener('roarme-wsbg-all', f)
+    if (meId) wsAllLoad(meId).catch(() => {})
+    return () => window.removeEventListener('roarme-wsbg-all', f)
+  }, [meId])
+  return v
+}
+async function wsAllSet(meId, v) {
+  const prev = wsAllNow()
+  const { error } = await supabase.from('roar_profiles').update({ ws_bg_all: v?.url || null, ws_bg_all_op: v?.op ?? 40 }).eq('id', meId)
+  if (error) throw error
+  keepWsAll(v)
+  const { data } = await supabase.from('roar_members').select('room_id').eq('user_id', meId).eq('role', 'admin')
+  const ids = (data || []).map((x) => x.room_id)
+  if (!ids.length) return
+  const { data: ps } = await supabase.from('roar_pro_projects').select('room_id, ws_bg').in('room_id', ids)
+  const follow = (ps || []).filter((p) => !p.ws_bg || (prev?.url && p.ws_bg === prev.url)).map((p) => p.room_id)
+  if (follow.length) await supabase.from('roar_pro_projects').update({ ws_bg: v?.url || null, ws_bg_op: v?.op ?? 40 }).in('room_id', follow)
+}
+
 export function useProjects(me, on) {
   const [map, setMap] = useState({})
   const load = useCallback(async () => {
@@ -103,8 +140,9 @@ export const isAsset = (m) => {
   const f = m.file
   if (!f || m.kind === 'voice') return false
   if ((m.kind === 'image' || m.kind === 'file') && f.path) return true
-  // a scheduled meeting stays in the chat as its card (tap it to join) and is listed in Calls & Meetings too (Alex, 22 Nov)
-  return !!(f.location || f.live || f.poll || f.contact || f.groupcall)
+  // a scheduled meeting and a group call's card stay in the chat (tap to join); the Workspace has no Calls tab since
+  // 25 Nov (its three buttons are on the Overview)
+  return !!(f.location || f.live || f.poll || f.contact)
 }
 // the tabs things go to, with the words for one and for many (the line left in the chat)
 export const ASIDE_TABS = { media: ['Media', 'photo or video', 'photos and videos'], files: ['Files', 'file', 'files'], music: ['Music', 'song or sound', 'songs and sounds'], places: ['Places', 'place', 'places'], polls: ['Polls', 'poll', 'polls'], contacts: ['Contacts', 'contact', 'contacts'], calls: ['Calls', 'call', 'calls'] }
@@ -334,7 +372,7 @@ function ProInner({ room, other, project, kit, rooms, titleOf, toast, onJump, on
           <span className="prj-make-ico">{I.folder}</span>
           <b>Make this group a project</b>
           <p>A stage, a due date, a brief, its files in folders and its tasks, beside the chat. The chat stays as it is.</p>
-          <button type="button" className="btn btn-main" onClick={() => save({ status: 'prep', fields: FIELD_START.map((k) => ({ k, v: '' })) }).then(() => hubLink(room.room_id))}>Make It a Project</button>
+          <button type="button" className="btn btn-main" onClick={() => save({ status: 'prep', fields: FIELD_START.map((k) => ({ k, v: '' })), ...wsAllPatch() }).then(() => hubLink(room.room_id))}>Make It a Project</button>
         </div>
         <Section id="files" title="Files" count={files ? files.filter(isFileMsg).length : null}><Files files={files} onJump={onJump} /></Section>
       </>
@@ -370,7 +408,7 @@ function useRoomStuff(roomId) {
       ])
       const hid = new Set((h.data || []).map((x) => x.message_id))
       const keep = (l) => (l || []).filter((m) => !hid.has(m.id))
-      if (!gone) setStuff({ assets: keep(a.data).filter(isAsset), meets: keep(a.data).filter((m) => m.file?.event), words: keep(w.data) })
+      if (!gone) setStuff({ assets: keep(a.data).filter(isAsset), words: keep(w.data) })
     }
     load()
     const ch = supabase.channel(`pro-stuff-${roomId}-${Date.now()}`)
@@ -636,42 +674,6 @@ function CallStrip({ roomId }) {
   )
 }
 
-function Calls({ list, room, people, me, onDrop }) {
-  const [live, setLive] = useState(null)
-  useEffect(() => {
-    let gone = false
-    const look = () => supabase.from('roar_group_calls').select('id, video, started_by, started_at').eq('room_id', room.room_id).is('ended_at', null).order('started_at', { ascending: false }).limit(1)
-      .then(({ data }) => { if (!gone) setLive(data?.[0] || null) })
-    look()
-    const t = setInterval(look, 15000)
-    return () => { gone = true; clearInterval(t) }
-  }, [room.room_id])
-  const go = (video, id) => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: room.room_id, video, ...(id ? { id } : {}) } }))
-  const now = Date.now()
-  const events = list.filter((m) => m.file.event).map((m) => ({ m, ev: m.file.event, s: new Date(m.file.event.start).getTime() }))
-  const soon = events.filter((x) => x.s + 2 * 3600e3 > now).sort((a, b) => a.s - b.s)
-  const past = [...list.filter((m) => m.file.groupcall), ...events.filter((x) => x.s + 2 * 3600e3 <= now).map((x) => x.m)].sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
-  const who = (id) => (id === me.id ? 'You' : nameOf(people[id]).split(' ')[0])
-  return (
-    <div className="prw-calls">
-      <div className="prw-calls-top">
-        <button type="button" className="btn btn-main" onClick={() => go(true)}>{I.video}<span>Video Chat</span></button>
-        <button type="button" className="btn" onClick={() => go(false)}>{I.phone}<span>Voice Call</span></button>
-        <button type="button" className="btn" onClick={() => window.dispatchEvent(new CustomEvent('roarme-roomact', { detail: { what: 'schedule' } }))}>{I.calendar}<span>Schedule</span></button>
-      </div>
-      {live && <div className="prw-call on"><span className="prw-call-ico">{I.video}</span><span className="prj-ftext"><b>{live.video ? 'Video chat' : 'Call'} is on</b><small>Started by {who(live.started_by)} at {new Date(live.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></span><button type="button" className="btn btn-main" onClick={() => go(live.video, live.id)}>Join</button></div>}
-      {soon.length > 0 && <h6 className="prw-h">Meetings</h6>}
-      {soon.map(({ m, ev, s }) => {
-        const open = now >= s - 10 * 60e3
-        return <div key={m.id} className="prw-call"><span className="prw-call-ico sched">{I.calendar}</span><span className="prj-ftext"><b>{ev.title || 'Call'}</b><small>{new Date(s).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span>{open && <button type="button" className="btn btn-main" onClick={() => go(true)}>Join</button>}<Trash onClick={onDrop && (() => onDrop(m, 'this meeting'))} /></div>
-      })}
-      {past.length > 0 && <h6 className="prw-h">Past</h6>}
-      {past.map((m) => <div key={m.id} className="prw-call past"><span className="prw-call-ico past">{m.file.event ? I.calendar : I.video}</span><span className="prj-ftext"><b>{m.file.event ? m.file.event.title || 'Scheduled call' : `${m.file.groupcall?.video === false ? 'Call' : 'Video chat'} by ${who(m.user_id)}`}</b><small>{new Date(m.file.event ? m.file.event.start : m.created_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span><Trash onClick={onDrop && (() => onDrop(m, m.file.event ? 'this meeting' : 'this call'))} /></div>)}
-      {!live && !soon.length && !past.length && <p className="prj-quiet">No calls or meetings yet. Schedule puts a card in the chat that everyone taps to join, and it is listed here.</p>}
-    </div>
-  )
-}
-
 /* ---------- Links and Tags ---------- */
 function Links({ words, people, me, onJump, onDrop, share }) {
   const list = words.flatMap((m) => [...new Set(String(m.body).match(URL_RX) || [])].filter((u) => !isMapLink(u)).map((u) => ({ u, m })))
@@ -843,7 +845,7 @@ const TAB_I = {
   admin: tsv(<><rect x="3.5" y="6.5" width="17" height="13" rx="3" /><path d="M9 6.5V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v1.5M3.5 12h17M12 11v2.5" /></>),
   stats: tsv(<><path d="M4 20h16" /><rect x="5.5" y="11" width="3" height="6.5" rx="1" /><rect x="10.5" y="6" width="3" height="11.5" rx="1" /><rect x="15.5" y="13.5" width="3" height="4" rx="1" /></>),
 }
-const OPTIONAL = [['scout', 'Location Scout'], ['tasks', 'Tasks'], ['links', 'Links'], ['calls', 'Calls & Meetings'], ['stats', 'Stats']]
+const OPTIONAL = [['scout', 'Location Scout'], ['tasks', 'Tasks'], ['links', 'Links'], ['stats', 'Stats']]
 const hiddenKey = (roomId) => `roarme-pro-hide-${roomId}`
 
 /* ---------- a document read inside RoarMe (Alex, 22 Nov: "tap a document and read it, a preview of the text"):
@@ -1594,43 +1596,68 @@ function MembersChats({ room, me, people, boss, toast, onClose }) {
 // that sees it sees it too"): a picture cropped on the device, kept in roar-avatars under my folder, its address and
 // strength in roar_pro_projects (ws_bg, ws_bg_op), so everyone with the Workspace sees the same
 function WsBackground({ room = {}, me = {}, project = {}, save, toast }) {
-  const [crop, setCrop] = useState(null)
-  const [busy, setBusy] = useState(false)
+  const [crop, setCrop] = useState(null) // { file, to: 'this' | 'all' }
+  const [busy, setBusy] = useState('')
+  const all = useWsAll(me.id)
+  const own = project.ws_bg && project.ws_bg !== 'none' && project.ws_bg !== all?.url ? project.ws_bg : null
+  const following = !own && project.ws_bg !== 'none' && !!all?.url
   const [op, setOp] = useState(project.ws_bg_op ?? 40)
   useEffect(() => { setOp(project.ws_bg_op ?? 40) }, [project.ws_bg_op])
+  const [aop, setAop] = useState(all?.op ?? 40)
+  useEffect(() => { setAop(all?.op ?? 40) }, [all?.op])
   const t = useRef(null)
   const pick = useRef(null)
+  const pickTo = useRef('this')
   const upload = async (f) => {
+    const to = crop?.to || 'this'
     setCrop(null)
     if (!f) return
-    setBusy(true)
+    setBusy(to)
     try {
-      const path = `${me.id}/wsbg-${room.room_id}-${Date.now()}.jpg`
+      const path = `${me.id}/wsbg-${to === 'all' ? 'all' : room.room_id}-${Date.now()}.jpg`
       const up = await supabase.storage.from('roar-avatars').upload(path, f, { contentType: 'image/jpeg' })
       if (up.error) throw up.error
-      save({ ws_bg: supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl })
-      toast?.('Background set')
+      const url = supabase.storage.from('roar-avatars').getPublicUrl(path).data.publicUrl
+      if (to === 'all') { await wsAllSet(me.id, { url, op: all?.op ?? 40 }); toast?.('Background set for all projects') }
+      else { save({ ws_bg: url }); toast?.('Background set for this project') }
     } catch (e) { toast?.(errText(e)) }
-    setBusy(false)
+    setBusy('')
   }
+  const reCrop = async (url, to) => { try { const r = await fetch(url); const b = await r.blob(); setCrop({ file: new File([b], 'bg.jpg', { type: b.type || 'image/jpeg' }), to }) } catch { toast?.('Could not open the picture') } }
   const strength = (v) => { setOp(v); clearTimeout(t.current); t.current = setTimeout(() => save({ ws_bg_op: v }), 350) }
+  const allStrength = (v) => { setAop(v); clearTimeout(t.current); t.current = setTimeout(() => wsAllSet(me.id, { url: all.url, op: v }).catch((e) => toast?.(errText(e))), 350) }
+  const setAll = async (v, msg) => { setBusy('all'); try { await wsAllSet(me.id, v); if (msg) toast?.(msg) } catch (e) { toast?.(errText(e)) } setBusy('') }
+  const open = (to) => { pickTo.current = to; pick.current?.click() }
   return (
     <div className="prs2-wsbg">
-      <input ref={pick} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setCrop(f) }} />
+      <input ref={pick} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setCrop({ file: f, to: pickTo.current }) }} />
       <div className="prs2-row prs2-wsbg-top">
         <i className="prs2-ic">{SET_I.banner}</i>
-        <span className="prs2-t"><b>Background</b><small>{project.ws_bg ? 'Everyone who sees the Workspace sees it' : 'A picture of your own behind the Workspace'}</small></span>
-        {project.ws_bg && <span className="prs2-wsbg-thumb" style={{ backgroundImage: `url("${project.ws_bg}")` }} />}
+        <span className="prs2-t"><b>Background · This Project</b><small>{own ? 'Its own, everyone in the Workspace sees it' : following ? 'The one for all projects' : project.ws_bg === 'none' ? 'None here' : 'A picture behind the Workspace'}</small></span>
+        {(own || following) && <span className="prs2-wsbg-thumb" style={{ backgroundImage: `url("${own || all.url}")` }} />}
       </div>
       <div className="prs2-wsbg-acts">
-        <button type="button" className="pill-btn" disabled={busy} onClick={() => pick.current?.click()}>{busy ? 'Uploading…' : project.ws_bg ? 'Change' : 'Upload'}</button>
-        {project.ws_bg && <button type="button" className="pill-btn" onClick={async () => { try { const r = await fetch(project.ws_bg); const b = await r.blob(); setCrop(new File([b], 'bg.jpg', { type: b.type || 'image/jpeg' })) } catch { toast?.('Could not open the picture') } }}>Crop</button>}
-        {project.ws_bg && <button type="button" className="pill-btn danger" onClick={() => save({ ws_bg: null })}>Remove</button>}
+        <button type="button" className="pill-btn" disabled={!!busy} onClick={() => open('this')}>{busy === 'this' ? 'Uploading…' : own ? 'Change' : 'Own Picture'}</button>
+        {own && <button type="button" className="pill-btn" onClick={() => reCrop(own, 'this')}>Crop</button>}
+        {own && all?.url && <button type="button" className="pill-btn" onClick={() => save({ ws_bg: null })}>Use the One for All</button>}
+        {own && !all?.url && <button type="button" className="pill-btn" disabled={!!busy} onClick={() => setAll({ url: own, op: project.ws_bg_op ?? 40 }, 'Now on all projects')}>Use for All Projects</button>}
+        {(own || following) && <button type="button" className="pill-btn danger" onClick={() => save({ ws_bg: all?.url ? 'none' : null })}>{all?.url ? 'None Here' : 'Remove'}</button>}
+        {project.ws_bg === 'none' && all?.url && <button type="button" className="pill-btn" onClick={() => save({ ws_bg: null })}>Use the One for All</button>}
       </div>
-      {project.ws_bg && (
-        <label className="prs2-wsbg-op"><span>Opacity</span><input type="range" min="5" max="100" step="5" value={op} onChange={(e) => strength(Number(e.target.value))} /><b>{op}%</b></label>
-      )}
-      {crop && <CropModal file={crop} wide={0.8} title="Background" onDone={upload} onClose={() => setCrop(null)} />}
+      {own && <label className="prs2-wsbg-op"><span>Opacity</span><input type="range" min="5" max="100" step="5" value={op} onChange={(e) => strength(Number(e.target.value))} /><b>{op}%</b></label>}
+      <div className="prs2-row prs2-wsbg-top">
+        <i className="prs2-ic">{SET_I.banner}</i>
+        <span className="prs2-t"><b>Background · All Projects</b><small>{all?.url ? 'Every project without its own' : 'One picture for every project'}</small></span>
+        {all?.url && <span className="prs2-wsbg-thumb" style={{ backgroundImage: `url("${all.url}")` }} />}
+      </div>
+      <div className="prs2-wsbg-acts">
+        <button type="button" className="pill-btn" disabled={!!busy} onClick={() => open('all')}>{busy === 'all' ? 'Saving…' : all?.url ? 'Change' : 'Upload'}</button>
+        {own && all?.url && own !== all.url && <button type="button" className="pill-btn" disabled={!!busy} onClick={() => setAll({ url: own, op: project.ws_bg_op ?? 40 }, 'This one is now on all projects')}>Use This Project's</button>}
+        {all?.url && <button type="button" className="pill-btn" onClick={() => reCrop(all.url, 'all')}>Crop</button>}
+        {all?.url && <button type="button" className="pill-btn danger" disabled={!!busy} onClick={() => setAll(null, 'Removed from all projects')}>Remove</button>}
+      </div>
+      {all?.url && <label className="prs2-wsbg-op"><span>Opacity</span><input type="range" min="5" max="100" step="5" value={aop} onChange={(e) => allStrength(Number(e.target.value))} /><b>{aop}%</b></label>}
+      {crop && <CropModal file={crop.file} wide={0.8} title="Background" onDone={upload} onClose={() => setCrop(null)} />}
     </div>
   )
 }
@@ -1790,6 +1817,11 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const [ordView, setOrdView] = useState(null)
   const artistOf = () => ((Array.isArray(project.fields) ? project.fields : []).find((f) => f.k === 'Artist / Client')?.v || '').trim()
   const [adminIn, setAdminIn] = useState(room.role === 'admin')
+  // the project's own background, or the one for all projects ('none' = none here)
+  const wsAll = useWsAll(me.id)
+  const ownBg = project.ws_bg && project.ws_bg !== 'none' && project.ws_bg !== wsAll?.url ? project.ws_bg : null
+  const bgUrl = ownBg || (project.ws_bg === 'none' ? null : wsAll?.url || null)
+  const bgOp = ownBg ? (project.ws_bg_op ?? 40) : (wsAll?.op ?? 40)
   // the Admin tab only for the group's admins (Alex, 22 Nov: "nobody else")
   useEffect(() => { setAdminIn(room.role === 'admin') }, [room.role])
   // a song sent on: into this chat again, or a copy of the file into each chosen chat (each chat keeps its own files)
@@ -1931,7 +1963,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const places = assets.filter((m) => m.file.location || m.file.live)
   const polls = assets.filter((m) => m.file.poll)
   const cards = assets.filter((m) => m.file.contact)
-  const calls = [...assets.filter((m) => m.file.groupcall), ...(stuff.meets || []).filter((m) => !gone.has(m.id))]
   const words = stuff.words.filter((m) => !gone.has(m.id) && !m.file?.fromPanel)
   const links = words.filter((m) => URL_RX.test(m.body) && ((URL_RX.lastIndex = 0), true))
   const linkCount = links.reduce((a, m) => a + [...new Set(String(m.body).match(URL_RX) || [])].filter((u) => !isMapLink(u)).length, 0)
@@ -1956,7 +1987,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   const dateName = 'Shoot Day' // the one date a project keeps (Alex, 22 Nov: "only the shoot day, the most important for everything")
   // the order Alex chose (22 Nov): Overview, Media, Files, Location Scout, Tasks, Links, Calls & Meetings, then Admin; no
   // counts on the tabs ("leave them clean")
-  const TABS = [['overview', 'Overview'], ['media', 'Media'], ['files', 'Files'], ['scout', 'Location Scout'], ['tasks', 'Tasks'], ['links', 'Links'], ['calls', 'Calls & Meetings'],
+  const TABS = [['overview', 'Overview'], ['media', 'Media'], ['files', 'Files'], ['scout', 'Location Scout'], ['tasks', 'Tasks'], ['links', 'Links'],
     ...(polls.length ? [['polls', 'Polls']] : []), ...(cards.length ? [['contacts', 'Contacts']] : []),
     adminIn ? ['admin', 'Admin'] : ['stats', 'Stats']].filter(([k]) => !hidden.includes(k))
   // on a phone the project opens on a home of its own (the cover, the songs, the ordino, the details) and tiles for the
@@ -1980,7 +2011,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
     }
   }
   return (
-    <div className={`prw-work${project.ws_bg ? ' has-bg' : ''}${viewOnly ? ' view-only' : ''}`} style={project.ws_bg ? { '--wsbg': `url("${project.ws_bg}")`, '--wsop': (project.ws_bg_op ?? 40) / 100 } : undefined}>
+    <div className={`prw-work${bgUrl ? ' has-bg' : ''}${viewOnly ? ' view-only' : ''}`} style={bgUrl ? { '--wsbg': `url("${bgUrl}")`, '--wsop': bgOp / 100 } : undefined}>
       <div className="prw-top">
         {/* the stage and the shoot day only shown here; both change in Project Settings (Alex, 22 Nov) */}
         <span className="prw-pill stage still" style={{ '--pc': st.c }}><i className="prw-dot" /><span className="prw-st-name">{st.name}</span></span>
@@ -2089,7 +2120,6 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
           )
         })() : <p className="prj-quiet">{stuff.assets === null ? 'Loading…' : 'No files yet. Documents, music and anything else sent in the chat come here.'}</p>)}
         {shownTab === 'scout' && <Scout project={project} save={save} room={room} toast={toast} share={shareBtn} onView={(ph, i) => openMedia(ph.map((p) => ({ id: p.path || p.url, user_id: '', created_at: project.updated_at, file: p, body: '' })), i)} />}
-        {shownTab === 'calls' && <Calls list={calls} room={room} people={people} me={me} onDrop={drop} />}
         {shownTab === 'links' && (linkCount + places.length + maps.length ? (
           <div className="prw-filesecs">
             {linkCount > 0 && <section className="prw-filesec"><h6 className="prw-h">Links<small>{linkCount}</small></h6><Links words={links} people={people} me={me} onJump={onJump} onDrop={drop} share={shareBtn} /></section>}

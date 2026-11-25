@@ -16,6 +16,8 @@ export const FOOT_I = {
   calls: <i className="ic-mask fi-phone" style={{ '--m': `url(${phoneMask})` }} aria-hidden="true" />,
   messages: solid('M12 3c5 0 9 3.6 9 8s-4 8-9 8c-1.6 0-3.1-.3-4.3-1L3 21l1.6-4.6C3.6 15 3 13.1 3 11c0-4.4 4-8 9-8z'),
   tasks: solid('M4 4h16v16H4zM6.8 12.3l2.1-2.1 2 2 4.9-4.9 2.1 2.1-7 7z'),
+  // New Mail, the middle of the bar inside ROARMAIL (Alex, 25 Nov): a pencil, filled
+  newmail: solid('M16.8 2.6a2.3 2.3 0 0 1 3.2 0l1.4 1.4a2.3 2.3 0 0 1 0 3.2L9.2 19.4 3 21l1.6-6.2zM15.4 6.2l2.4 2.4 1.6-1.6-2.4-2.4z'),
   // Pro (Alex, 22 Nov): a briefcase, its handle and the band across it cut out
   pro: solid('M9 3.5h6A1.5 1.5 0 0 1 16.5 5v1.5H20a2 2 0 0 1 2 2V18a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 18V8.5a2 2 0 0 1 2-2h3.5V5A1.5 1.5 0 0 1 9 3.5zM9.5 5.5v1h5v-1zM2 12.2v1.6h8.5V15h3v-1.2H22v-1.6z'),
   // a toothed gear with three spokes (Alex, 12 Nov): filled in every theme (.fi-solid), drawn in lines in Halo's rail (.fi-line)
@@ -315,14 +317,23 @@ export function useLiquid(ref, dep) {
     if (!el) return undefined
     const on = () => document.documentElement.dataset.skin === 'halo' && !calm()
     const fits = () => el.scrollWidth <= el.clientWidth + 2
+    // pan-y (the finger drives the lens) only while every choice fits; once they do not, the bar scrolls sideways with
+    // its own elastic. Asked again whenever a choice comes, goes or changes size (Alex, 25 Nov: "with many folders the bar
+    // hardly moves": it was asked once, before all the folders were there, and stayed locked)
     const fix = () => { el.style.touchAction = on() && fits() ? 'pan-y' : '' }
     fix()
     const ro = new ResizeObserver(fix)
     ro.observe(el)
+    const watch = () => { for (const c of el.children) ro.observe(c) }
+    watch()
+    const mo = new MutationObserver(() => { watch(); fix() })
+    mo.observe(el, { childList: true, subtree: true, characterData: true })
+    el.addEventListener('touchstart', fix, { passive: true })
     let g = null
     const childAt = (x, y) => { const t = document.elementFromPoint(x, y); const c = t && t.closest('button'); return c && c.parentElement === el && !c.disabled ? c : null }
     const put = (x) => { const r = el.getBoundingClientRect(); el.style.setProperty('--fx', `${Math.max(0, Math.min(r.width, x - r.left))}px`) }
     const down = (e) => {
+      fix()
       if (e.button || !on() || !fits() || !el.querySelector(':scope > .on')) return
       g = { x: e.clientX, moved: false, id: e.pointerId }
       put(e.clientX)
@@ -358,7 +369,7 @@ export function useLiquid(ref, dep) {
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', cancel)
-    return () => { ro.disconnect(); el.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel) }
+    return () => { ro.disconnect(); mo.disconnect(); el.removeEventListener('touchstart', fix); el.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel) }
   }, [ref, dep])
 }
 /* A slider that follows the finger at once (Alex, 12 Nov: "smoother, a better answer, easy to catch"): the knob moves on

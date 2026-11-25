@@ -8817,3 +8817,123 @@ html:root:root:root:root:root:root:root .prw-callstrip > .btn-main { background:
 .prw-callstrip > .btn span { overflow: hidden; text-overflow: ellipsis; }
 .prw-callstrip > .btn:active { transform: scale(.97); }
 @media (max-width: 760px) { html:root:root:root:root:root:root:root .prw-callstrip > .btn { height: 30px; font-size: 12px; padding: 0 6px; gap: 5px; } .prw-callstrip > .btn svg, .prw-callstrip > .btn .ic-mask { width: 15px !important; height: 15px !important; } }
+/* every account's address shows under its name, unread or not (Alex, 25 Nov): the chat list's Show Last Message off had
+   hidden the line of rows with no count */
+html:root:root:root:root:root .rmx .rmx-accrow .room-bottom { display: flex !important; align-items: center; min-width: 0; }
+html:root:root:root:root:root .rmx .rmx-accrow .room-prev { display: block !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+
+/* the look list of 24 Nov, points 4 to 8 (Alex: "the app alike everywhere, settings too") */
+/* 4: Microphone, Camera, Speakers as rows with an arrow; the system's list opens from an unseen select over the row */
+.set-devpick { position: relative; cursor: pointer; }
+.set-devpick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; appearance: none; -webkit-appearance: none; border: 0; }
+/* 5: Media's head as every page's: back at the left, the title in the middle; the tabs and the search under it, no line */
+html:root:root:root:root .lib-top { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; column-gap: 8px; row-gap: 10px; border-bottom: 0; box-shadow: none; }
+html:root:root:root:root .lib-top .lib-back { grid-column: 1; grid-row: 1; }
+html:root:root:root:root .lib-top .lib-title { grid-column: 2; grid-row: 1; align-items: center; text-align: center; margin: 0; }
+html:root:root:root:root .lib-top .lib-title b { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+html:root:root:root:root .lib-top .lib-title small { font-size: 12px; }
+html:root:root:root:root .lib-top .lib-seg { grid-column: 1 / -1; grid-row: 2; justify-self: center; max-width: 100%; }
+html:root:root:root:root .lib-top .lib-search { grid-column: 1 / -1; grid-row: 3; justify-self: center; width: 100%; max-width: 560px; }
+@media (max-width: 760px) { html:root:root:root:root .lib-top .lib-seg { justify-self: stretch; } }
+/* 6: What's New's All / Phone / Computer in the middle */
+html:root:root:root:root .wn-seg { align-self: center; margin-left: auto; margin-right: auto; }
+/* 7: by Night the red words read, and a chosen choice in Settings is light glass with white words */
+html[data-mode='dark']:root:root:root:root:root .set-page :is(.set-row.danger, .set-pick.danger) .set-text, html.dark:root:root:root:root:root .set-page :is(.set-row.danger, .set-pick.danger) .set-text { color: #ff6961; }
+html[data-mode='dark']:root:root:root:root:root .set-page .seg.lens::before, html.dark:root:root:root:root:root .set-page .seg.lens::before { background: rgba(255, 255, 255, .16) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1) !important; }
+html[data-mode='dark']:root:root:root:root:root .set-page .seg > button.on, html.dark:root:root:root:root:root .set-page .seg > button.on { color: #fff !important; }
+/* 8: the brand at the foot of Settings stands whole above the bar at the foot */
+@media (max-width: 760px) { html:root:root:root:root .set-version { margin-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); } }
+html:root:root:root:root .lib-empty { text-align: center; }
+/* the account's unread count stands in the middle of the row's height, just left of the arrow, the same place on every
+   account (Alex, 25 Nov: "one up, one down, nothing lined up") */
+html:root:root:root:root:root .rmx .rmx-accrow { padding-right: 76px; }
+html:root:root:root:root:root .rmx .rmx-accrow .room-bottom .badge { position: absolute; right: 38px; top: 50%; translate: 0 -50%; margin: 0; }
+/* Contacts inside ROARMAIL (Alex, 25 Nov): the head as the mail's, a search, one row per address with a small pencil */
+.rmx-ct { display: flex; flex-direction: column; gap: 10px; padding-bottom: 120px; }
+.rmx-ct-head { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 8px; }
+.rmx-ct-head b { text-align: center; font-size: 17px; font-weight: 600; }
+.rmx-ct-n { justify-self: center; font-size: 12px; opacity: .55; }
+.rmx-ct-empty { text-align: center; opacity: .6; margin: 24px 0; }
+html:root:root:root:root .rmx .rmx-ct-row { align-items: center; padding-right: 48px; position: relative; }
+.rmx-ct-go { position: absolute; right: 14px; top: 50%; translate: 0 -50%; display: grid; color: var(--halo, #3aa7e8); opacity: .8; }
+.rmx-ct-go svg { width: 18px; height: 18px; }
+html:root:root:root:root:root .rmx .rmx-ct-row .room-prev { display: block !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html:root:root:root:root:root .rmx .rmx-ct-row .room-bottom { display: flex !important; }
+/* the bar over the mails is one line: back, then the seven filters spread across (Alex, 25 Nov) */
+html:root:root:root:root:root:root .rmx-head .rmx-hback { flex: none; width: 36px; height: 36px; min-width: 36px; background: var(--lg-chip, rgba(255, 255, 255, .9)) !important; border: 0 !important; box-shadow: 0 1px 4px rgba(40, 50, 80, .12) !important; color: inherit; }
+html:root:root:root:root:root:root .rmx-head .rmx-filters { flex: 1; display: flex; justify-content: space-between; min-width: max-content; }
+html:root:root:root:root:root:root .rmx-head .rmx-fbar { flex: 1; min-width: 0; }
+html:root:root:root:root:root:root .rmx-head { margin-left: 5px; margin-right: 5px; }
+/* every head inside ROARMAIL is the same capsule as the filters' bar (Alex, 25 Nov): edge to edge as the folder bar, 44px */
+html:root:root:root:root:root:root .rmx .rmx-crumb.rmx-cap { display: grid; grid-template-columns: 36px minmax(0, 1fr) 36px; align-items: center; gap: 6px; height: 44px; box-sizing: border-box; margin: 2px 5px 10px; padding: 3px; border-radius: 999px; background: var(--lg); border: 1px solid var(--lg-rim, rgba(255, 255, 255, .8)); box-shadow: var(--lg-shadow, 0 10px 30px rgba(40, 50, 80, .12)); -webkit-backdrop-filter: blur(24px) saturate(1.4) !important; backdrop-filter: blur(24px) saturate(1.4) !important; position: relative; z-index: 3; }
+html:root:root:root:root:root:root .rmx .rmx-cap .rmx-hback { width: 36px; height: 36px; min-width: 36px; background: var(--lg-chip, rgba(255, 255, 255, .9)) !important; border: 0 !important; box-shadow: 0 1px 4px rgba(40, 50, 80, .12) !important; color: inherit; }
+html:root:root:root:root:root:root .rmx .rmx-cap .rmx-cw { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+html:root:root:root:root:root:root .rmx .rmx-cap .rmx-cw .av { flex: none; }
+html:root:root:root:root:root:root .rmx .rmx-cap .rmx-cw b { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.rmx-cap-end { display: grid; place-items: center; font-size: 12px; opacity: .6; }
+html:root:root:root:root:root:root:root .rmx-fl .rmx-crumb.rmx-cap { margin-left: -9px; margin-right: -9px; }
+html:root:root:root:root:root:root:root .rmx-rd .rmx-crumb.rmx-cap { margin-left: 17px; margin-right: 17px; }
+/* Settings > ROARMAIL that work (Alex, 25 Nov: "nothing works"): Preview Lines lost to the row rule; now stronger */
+html:root:root:root:root:root:root .rmx.rmx-l0 .room .rmx-sn, html:root:root:root:root:root:root .rmx.rmx-l0 .room .room-prev.rmx-sn { display: none !important; }
+html:root:root:root:root:root:root .rmx.rmx-l1 .room .room-prev.rmx-sn { display: -webkit-box !important; -webkit-line-clamp: 1 !important; line-clamp: 1; white-space: normal; }
+html:root:root:root:root:root:root .rmx.rmx-l2 .room .room-prev.rmx-sn { display: -webkit-box !important; -webkit-line-clamp: 2 !important; line-clamp: 2; white-space: normal; }
+html:root:root:root:root:root:root .rmx.rmx-l0 .room .room-bottom { min-height: 0; }
+/* Sender Pictures off: no round picture beside a mail */
+html:root:root:root:root:root:root .rmx.rmx-nopic .rmx-row > .av { display: none !important; }
+html:root:root:root:root:root:root .rmx.rmx-nopic .rmx-row { padding-left: 14px; }
+/* an account's In All Inboxes switch, a picker row with the system's list over it, the blocked list's arrow */
+.rmx-inall { display: flex; align-items: center; gap: 6px; flex: none; }
+.rmx-inall small { font-size: 11px; opacity: .6; }
+.rmx-pickrow { position: relative; cursor: pointer; }
+.rmx-pickrow select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px; cursor: pointer; border: 0; appearance: none; -webkit-appearance: none; }
+.rmx-chev-down svg { transform: rotate(90deg); transition: transform .2s; }
+.rmx-blockrow .rmx-st b { word-break: break-all; }
+html:root:root:root:root:root:root .rmx-seg { flex: none; display: inline-flex; gap: 2px; }
+html:root:root:root:root:root:root .rmx-seg > button { white-space: nowrap; min-width: 40px; padding: 0 11px; height: 32px; }
+/* ROARMAIL never pans sideways on an iPhone (Alex, 25 Nov): the boxes that hold it take no sideways scroll at all */
+html:root:root:root:root:root .side .rooms-pager:has(.rmx), html:root:root:root:root:root .side .rooms-pager:has(.rmx) .rooms-track, html:root:root:root:root:root .side .rooms-pager:has(.rmx) .rooms { overflow-x: hidden !important; overscroll-behavior-x: none; touch-action: pan-y; }
+html:root:root:root:root:root .rmx .rmx-sw { overflow: hidden; max-width: 100%; }
+/* writing a mail as Apple's Mail (Alex, 25 Nov, its screenshot): the window's own head steps aside; X and the round Send
+   at the top, the title large, hairline rows, then the page for the words */
+html:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) > .modal-head { display: none; }
+html:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) > .modal-body { display: flex; flex-direction: column; padding: 14px 20px 18px; }
+.rmx-c2 { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.rmx-c2-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+html:root:root:root:root:root .rmx-c2-top .round { width: 44px; height: 44px; min-width: 44px; }
+html:root:root:root:root:root .rmx-c2-send:disabled { opacity: .45; }
+html:root:root:root:root:root .rmx-c2-send.on { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink) !important; border-color: transparent !important; }
+.rmx-c2-send svg { width: 20px; height: 20px; }
+.rmx-spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: rmx-spin .8s linear infinite; }
+@keyframes rmx-spin { to { transform: rotate(360deg); } }
+.rmx-c2-title { margin: 0 0 18px; font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+html:root:root:root:root:root .rmx-c2-row { display: flex; align-items: center; gap: 8px; min-height: 46px; margin: 0; padding: 0; border: 0; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); background: none !important; box-shadow: none !important; border-radius: 0; width: 100%; text-align: left; font: inherit; color: inherit; position: relative; }
+.rmx-c2-row > span { flex: none; font-size: 15px; color: var(--muted); }
+html:root:root:root:root:root .rmx-c2-row input { flex: 1; min-width: 0; height: 44px; border: 0 !important; background: none !important; box-shadow: none !important; outline: none; padding: 0; font: inherit; font-size: 16px; color: inherit; border-radius: 0; }
+.rmx-c2-row em { font-style: normal; font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.rmx-c2-more { cursor: pointer; }
+.rmx-c2-from select { position: absolute; inset: 0; opacity: 0; width: 100%; font-size: 16px; cursor: pointer; }
+html:root:root:root:root:root .rmx-c2-plus, html:root:root:root:root:root .rmx-c2-clip { width: 32px; height: 32px; min-width: 32px; flex: none; background: color-mix(in srgb, currentColor 9%, transparent) !important; border: 0 !important; box-shadow: none !important; position: relative; }
+.rmx-c2-plus svg, .rmx-c2-clip svg { width: 18px; height: 18px; }
+.rmx-c2-clip input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.rmx-c2-picks { display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
+html:root:root:root:root:root .rmx-c2-picks button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 9px 4px; border: 0; background: none !important; box-shadow: none !important; text-align: left; color: inherit; font: inherit; border-radius: 0; }
+.rmx-c2-picks b { font-size: 15px; font-weight: 600; }
+.rmx-c2-picks small { font-size: 12.5px; color: var(--muted); }
+html:root:root:root:root:root .rmx-c2-body { flex: 1; min-height: 260px; margin-top: 14px; border: 0 !important; background: none !important; box-shadow: none !important; outline: none; resize: none; padding: 0; font: inherit; font-size: 16px; line-height: 1.45; color: inherit; border-radius: 0; }
+@media (max-width: 760px) {
+  html:root:root:root:root:root .modal-back:has(.rmx-c2) { padding: calc(env(safe-area-inset-top, 0px) + 10px) 0 0 !important; align-items: stretch !important; }
+  html:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) { width: 100% !important; max-width: none !important; height: 100% !important; max-height: 100% !important; margin: 0 !important; border-radius: 28px 28px 0 0 !important; }
+  html:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) > .modal-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); }
+}
+html:root:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) { background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-mode='dark']:root:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2), html.dark:root:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) { background: #1c1c1e !important; }
+/* with the keyboard up in the iPhone app the page for the mail ends at the keyboard's top (the window's own rule, kept) */
+@media (max-width: 760px) {
+  html.kb-native:root:root:root:root:root:root .modal-back:has(.rmx-c2) { padding-bottom: var(--kbh, 0px) !important; }
+  html.kb-native:root:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) { border-radius: 28px !important; height: calc(100dvh - var(--kbh, 0px) - 10px - env(safe-area-inset-top, 0px)) !important; max-height: calc(100dvh - var(--kbh, 0px) - 10px - env(safe-area-inset-top, 0px)) !important; }
+}
+/* ALL stays blue while anything is unread, whichever folder is chosen (Alex, 25 Nov: "on THEMADLIONS the ALL loses its
+   blue; it must stay until I have read them all"): on All the lens itself is blue (above); elsewhere ALL is its own blue pill */
+html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'] { background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent)))) !important; border-radius: 999px !important; box-shadow: 0 2px 8px color-mix(in srgb, var(--halo-mine, var(--accent)) 30%, transparent) !important; }
+html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'], html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'] .tab-name { color: var(--halo-ink, #fff) !important; }
+html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'] small { background: rgba(255, 255, 255, .28) !important; color: var(--halo-ink, #fff) !important; }

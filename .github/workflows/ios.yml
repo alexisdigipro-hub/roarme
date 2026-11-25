@@ -83,6 +83,9 @@ jobs:
           # songs go on with the screen locked, with play / pause / next on the lock screen and AirPods (Alex, 21 Nov)
           /usr/libexec/PlistBuddy -c "Delete :UIBackgroundModes" "$P" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" -c "Add :UIBackgroundModes:0 string audio" "$P"
+          # the iPhone stays upright (Alex, 25 Nov: "turned on its side it goes wild"); an iPad keeps every way round
+          /usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations" "$P" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" "$P"
           /usr/libexec/PlistBuddy -c "Print" "$P"
       - name: iOS 15 and later
         working-directory: mobile/ios/App

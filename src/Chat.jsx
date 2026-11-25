@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { Suspense, lazy, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TRANSFER_BUCKET, USERNAME_RE, thumbOf, videoPoster, cleanUsername, tusUpload, uploadWithProgress, dayLabel, errText, fileLink, fmtBytes, lastSeenText, listTime, nameOf, onlineNow, dotOf, statusOf, shrinkImage, supabase, timeOf, haptic, isIPhone, fold, foldHas, foldKeep, foldRx, appUrl, picLink, picNow } from './lib.js'
 import { Avatar, CropModal, FOOT_I, I, Lens, Modal, OnTop, Wordmark, burst, calm, colorOf, setNameColor, svg, useLens, useLiquid } from './ui.jsx'
-import { ASIDE_TABS, OrdinoCard, OrdinoView, ProChip, ProPanel, asideTab, isAsset, isDelivered, ordinoOf, proOk, useProjects } from './pro.jsx'
+import { ASIDE_TABS, OrdinoCard, OrdinoView, ProChip, ProPanel, asideTab, isAsset, isDelivered, ordinoOf, proOk, useProjects, wsAllPatch } from './pro.jsx'
 import { Moji, isSticker, mojify, mojiCount, mojiOf, mojiSend } from './moji.jsx'
 import { REACTIONS, TEXT_SIZES, chime, folderTint, getPrefs, haloish, inThemeLab, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
@@ -159,6 +159,9 @@ export default function Chat({ me, setMe }) {
   const [activeId, setActiveId] = useState('')
   // RoarMe always opens on All (Alex, 18 Oct: it opened on Archived, the folder left last time)
   const [folder, setFolder] = useState('all')
+  // which step ROARMAIL is on, told by MailView (for the bar at the foot inside it)
+  const [mailStep, setMailStep] = useState('')
+  useEffect(() => { const f = (e) => setMailStep(e.detail || ''); window.addEventListener('roarme-mail-step', f); return () => window.removeEventListener('roarme-mail-step', f) }, [])
   // Unread out of the folder bar (Alex, 23 Nov, https://claude.ai/artifact/HE48Bz3Cb4AnaWyP7VxNBo, "πάμε"): while something is
   // unread a round accent button peeks in from the screen's left edge; a slide right on the bar brings it out whole with the
   // number, pushing only the bar's left end; a tap shows the unread chats, a slide left puts it back
@@ -181,6 +184,7 @@ export default function Chat({ me, setMe }) {
   // the bar at the foot: contacts | calls | chats | settings. A pull to refresh on Contacts comes back to Contacts
   // (Alex, 15 Nov: it landed on Messages)
   const [tab, setTab] = useState(() => { try { const t = sessionStorage.getItem('roarme-tab'); sessionStorage.removeItem('roarme-tab'); return t || 'chats' } catch { return 'chats' } })
+  const inMail = mailOn && tab === 'chats' && folder === 'mail' && !!mailStep // the bar at the foot turns into the mail's
   const [callsFilter, setCallsFilter] = useState('all') // Calls: all | missed (the switch in the head, Alex, 14 Nov)
   const [callsEdit, setCallsEdit] = useState(false) // Calls: the head's ⋯ shows a red minus on every call and + becomes Delete All
   const [callsClear, setCallsClear] = useState(0) // Calls: Delete All asks RecentCalls to clear the list
@@ -272,13 +276,14 @@ export default function Chat({ me, setMe }) {
     return () => { el.removeEventListener('scroll', check); ro.disconnect() }
   }, [tab, prefs.folderTabs, myFolders.length, !q.trim()]) // eslint-disable-line react-hooks/exhaustive-deps
   const [tasksOpen, setTasksOpen] = useState(() => { try { return localStorage.getItem('roarme-tasks') === '1' } catch { return false } })
-  const footLens = useLens(`${tab}|${prefs.callsTab}|${prefs.tasksTab}|${picking}|${tasksOpen}`) // the Settings page open on the right
-  useLiquid(footLens, `${tab}|${picking}`)
+  const footLens = useLens(`${tab}|${prefs.callsTab}|${prefs.tasksTab}|${picking}|${tasksOpen}|${inMail}|${mailStep}`) // the Settings page open on the right
+  useLiquid(footLens, `${tab}|${picking}|${inMail}|${mailStep}`)
   useLiquid(tabsLens, `${tab}|${prefs.folderTabs}|${prefs.theme}|${myFolders.length}|${!q.trim()}`)
   const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
   const searchRef = useRef(null)
   // the search box hides and comes out when the list is pulled down at its top (Alex, 17 Oct), as on the iPhone
   const [searchOpen, setSearchOpen] = useState(false)
+  useEffect(() => { if (folder === 'mail') { setSearchOpen(false); setQ('') } }, [folder]) // eslint-disable-line react-hooks/exhaustive-deps
   const listAtTop = (e) => (e.target.closest?.('.rooms')?.scrollTop || 0) <= 0
   const searchBusy = () => !!q.trim() || document.activeElement === searchRef.current
   const onListWheel = (e) => {
@@ -1660,7 +1665,8 @@ export default function Chat({ me, setMe }) {
         {(tab !== 'chats' || !!q.trim()) && <NowPlaying className="in-side" onOpen={(id) => { setTab('chats'); setActiveId(id) }} />}
         {tab === 'chats' && (
           <>
-            <div className={`search-wrap${searchOpen || q.trim() ? ' open' : ''}`}><div>
+            {/* no search over ROARMAIL: a pull down there does not bring it (Alex, 25 Nov) */}
+            <div className={`search-wrap${(searchOpen || q.trim()) && !(mailOn && folder === 'mail') ? ' open' : ''}`}><div>
               <label className="search">{I.search}<input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search (⌘K)" tabIndex={searchOpen ? 0 : -1}
                 onBlur={() => { if (!q.trim()) setTimeout(() => setSearchOpen(false), 1200) }}
                 onKeyDown={(e) => { if (e.key === 'Escape') { setQ(''); e.currentTarget.blur(); setSearchOpen(false) } }} /></label>
@@ -1839,9 +1845,15 @@ export default function Chat({ me, setMe }) {
         ) : (
           <nav ref={footLens} className="foot lens" data-travel="" onClickCapture={(e) => { if (tasksOpen && !e.target.closest('.foot-tasks') && window.matchMedia('(max-width: 760px)').matches) showTasks(false) }}>
             {/* Contacts · Calls · Messages in the middle, a little bigger · Tasks · Settings (Alex, 19 Oct); AllMedia lives in Settings */}
+            {inMail ? <>
+              {/* inside ROARMAIL: Contacts of the mail · New Mail · Settings (Alex, 25 Nov; no Calls there) */}
+              <button type="button" className={`foot-contacts${mailStep === 'contacts' ? ' on' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'contacts' } }))}>{FOOT_I.contacts}<span>Contacts</span></button>
+              <button type="button" className={`foot-main foot-newmail${mailStep !== 'contacts' ? ' on' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'new' } }))}><span className="foot-ico">{FOOT_I.newmail}</span><span>New Mail</span></button>
+            </> : <>
             <button type="button" className={`foot-contacts${tab === 'contacts' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('contacts')}>{FOOT_I.contacts}<span>Contacts</span></button>
             {prefs.callsTab && <button type="button" className={`foot-calls${tab === 'calls' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('calls')}>{FOOT_I.calls}<span>Calls</span></button>}
             <button type="button" className={`foot-main${tab === 'chats' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('chats')}><span className="foot-ico">{FOOT_I.messages}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Messages</span></button>
+            </>}
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
             {prefs.tasksTab && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}
@@ -1958,7 +1970,7 @@ export default function Chat({ me, setMe }) {
             {/* the long press shows the messages above the menu; a right click asks for them (Alex, 22 Nov) */}
             {roomMenu.mouse && !roomMenu.peek && <button type="button" onClick={(e) => { e.stopPropagation(); setRoomMenu((m) => ({ ...m, peek: true, sub: '' })) }}>{I.chats}<span>Preview Messages</span></button>}
             <button type="button" onClick={() => roomAct('pin')}>{I.pin}<span>{pins.includes(roomMenu.r.room_id) ? 'Unpin' : 'Pin'}</span></button>
-            {proOn && roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }] }).then(() => { toast('Moved to PROjects'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
+            {proOn && roomMenu.r.kind === 'group' && !proKit.map[roomMenu.r.room_id] && <button type="button" onClick={() => { const r = roomMenu.r; setRoomMenu(null); proKit.save(r.room_id, { status: 'prep', fields: [{ k: 'Artist / Client', v: '' }, { k: 'Title', v: '' }, { k: 'Category', v: '' }], ...wsAllPatch() }).then(() => { toast('Moved to PROjects'); setActiveId(r.room_id); hubLink(r.room_id) }, (e) => toast(errText(e))) }}>{FOOT_I.pro}<span>Make It a Project</span></button>}
             {roomMenu.r.muted
               ? <button type="button" onClick={() => roomAct('mute')}>{I.bell}<span>Unmute</span></button>
               : (

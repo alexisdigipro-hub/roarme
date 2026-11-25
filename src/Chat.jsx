@@ -67,7 +67,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { hubLink, hubStart, proSwitchLoad, proSwitchNow } from './hub.jsx'
-import { MAIL_I, MailView, MailWord, mailHere, mailSwitchNow } from './mail.jsx'
+import { MAIL_I, MailUnread, MailView, MailWord, mailHere, mailSwitchNow, useMailUnread } from './mail.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -129,6 +129,8 @@ export default function Chat({ me, setMe }) {
   const [mailSwitch, setMailSwitch] = useState(mailSwitchNow)
   useEffect(() => { const f = (e) => setMailSwitch(!!e.detail); window.addEventListener('roarme-mail-switch', f); return () => window.removeEventListener('roarme-mail-switch', f) }, [])
   const mailOn = inThemeLab(me) && mailHere() && mailSwitch
+  // every account's unread mail joins the app's Unread (Alex, 24 Nov), counted and fetched ahead in the background
+  const mailUn = useMailUnread(mailOn)
   const proKit = useProjects(me, true)
   // Production Hub: on starting, tie my project groups and bring the hub's new projects in as groups (hub.jsx)
   useEffect(() => { if (proOn) hubStart() }, [proOn])
@@ -874,6 +876,7 @@ export default function Chat({ me, setMe }) {
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', up)
   }
+  useEffect(() => { const f = () => setFolder('mail'); window.addEventListener('roarme-mail-open', f); return () => window.removeEventListener('roarme-mail-open', f) }, [])
   useEffect(() => { if (folder !== 'all' && (hiddenF.includes(folder) || (!proOn && (folder === 'projects' || folder === 'direct')) || (!mailOn && folder === 'mail'))) setFolder('all') }, [hiddenF.join(), folder, proOn, mailOn])
   const fits = (r, f) => {
     if (f === 'archived') return r.archived
@@ -1356,7 +1359,7 @@ export default function Chat({ me, setMe }) {
   }
   // the Unread dot also counts a chat marked as unread (one each), so it lights for those too (Alex, 23 Nov)
   const folderUnread = (f) => visible.filter((r) => inFolder(r, f.id) && !r.muted).reduce((a, r) => a + (r.unread || (f.id === 'unread' && marked.includes(r.room_id) ? 1 : 0)), 0)
-  const uCount = folderUnread({ id: 'unread' })
+  const uCount = folderUnread({ id: 'unread' }) + mailUn
   const uShown = (uOpen && uCount > 0) || folder === 'unread'
   const tagsOf = (r) => myFolders.filter((f) => f.rooms.includes(r.room_id)).map((f) => f.name)
 
@@ -1688,8 +1691,8 @@ export default function Chat({ me, setMe }) {
                   <button type="button" className="btn btn-main" onClick={() => setModal('newchat')}>Find someone</button>
                 </div>
               )}
-              {folder === 'mail' && <MailView />}
-              {folder !== 'mail' && rooms.length > 0 && !shown.length && !hits.length && (!q.trim() && myFolders.some((f) => f.id === folder)
+              {folder === 'mail' && <MailView me={me} people={people} book={book} />}
+              {folder !== 'mail' && !(folder === 'unread' && mailUn > 0) && rooms.length > 0 && !shown.length && !hits.length && (!q.trim() && myFolders.some((f) => f.id === folder)
                 // an empty folder of one's own (Alex, 24 Nov, C of https://claude.ai/artifact/GAKLEmbkT2TYJx7eEF8nFP)
                 ? <div className="fold-empty">
                     <p>This folder is empty.</p>
@@ -1730,6 +1733,7 @@ export default function Chat({ me, setMe }) {
                   </div>
                 )
               })()}
+              {folder === 'unread' && mailOn && !q.trim() && <MailUnread me={me} people={people} book={book} />}
               {hits.length > 0 && (
                 <>
                   <div className="hits-head">Messages</div>

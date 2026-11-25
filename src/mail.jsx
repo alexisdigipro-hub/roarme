@@ -1,4 +1,4 @@
-// RoarMail inside RoarMe (Alex, 24 Nov). A switch only Alex sees (Settings, inThemeLab), kept on this device; on, the gold
+// RoarMail inside RoarMe (Alex, 24 Nov; open to everyone on a phone since 25 Nov). A switch in Settings, kept on this device; on, the gold
 // ROARMAIL folder joins the folder bar. Its inside in three steps, as RoarMail on the Mac (sample
 // https://claude.ai/artifact/SodwiHjKHvXDTjZmKjTTAU, "Μ' αρέσει, ξεκίνα"): 1 the accounts (All Inboxes, then each account
 // with its picture and address), 2 an account's folders (Inbox, Drafts, Sent, Junk, Trash, Archive, then its own), 3 the
@@ -100,6 +100,11 @@ async function loadSetup() {
   const contacts = {}, blocked = []
   for (const c of T.contacts || []) { const e = String(c.email || '').toLowerCase(); if (!e) continue; if (c.blocked) blocked.push(e); else if (c.name) contacts[e] = c.name }
   // the block list, as RoarMail keeps it: addresses, names from any address, whole domains
+  // no RoarMail on a computer: the blocks made in RoarMe live in roarmail_cloud_blocks (25 Nov)
+  if (!data) {
+    const { data: own } = await supabase.from('roarmail_cloud_blocks').select('emails, names, domains').maybeSingle()
+    if (own) { blocked.push(...(own.emails || [])); T.block_rules = [...(own.names || []).map((n) => ({ kind: 'name', value: n.value, label: n.label })), ...(own.domains || []).map((d) => ({ kind: 'domain', value: d }))] }
+  }
   const rules = (T.block_rules || []).filter((r) => r && r.value && ['name', 'domain', 'brand'].includes(r.kind)).map((r) => ({ kind: r.kind, value: String(r.value), label: r.label || String(r.value) }))
   const block = { emails: blocked, names: rules.filter((r) => r.kind === 'name').map((r) => r.value), domains: rules.filter((r) => r.kind === 'domain').map((r) => r.value),
     list: [...blocked.map((e) => ({ kind: 'email', value: e, label: e })), ...rules] }
@@ -1769,7 +1774,7 @@ export function MailPage() {
           {seg('keep', 'Keep Up To', [[50, '50'], [150, '150'], [500, '500']])}
         </div>
       </>}
-      {!on && <p className="hb-hint">Only you see this while it is being built. To read an account here, send it from RoarMail on your computer: Settings › Roar Account › My mail in RoarMe.</p>}
+      {!on && <p className="hb-hint">Turn it on and Mail joins the bar at the foot. Add Gmail, iCloud, Outlook or any mail there, or bring the accounts you set up in RoarMail on your computer.</p>}
     </div>
   )
 }

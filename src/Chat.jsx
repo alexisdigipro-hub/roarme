@@ -129,7 +129,7 @@ export default function Chat({ me, setMe }) {
   // RoarMail inside RoarMe (Alex, 24 Nov): a hidden switch only he sees (Settings > RoarMail), kept on the device; on, the gold ROARMAIL folder
   const [mailSwitch, setMailSwitch] = useState(mailSwitchNow)
   useEffect(() => { const f = (e) => setMailSwitch(!!e.detail); window.addEventListener('roarme-mail-switch', f); return () => window.removeEventListener('roarme-mail-switch', f) }, [])
-  const mailOn = inThemeLab(me) && mailHere() && mailSwitch
+  const mailOn = mailHere() && mailSwitch // ROARMAIL for everyone on a phone, turned on in Settings (Alex, 25 Nov)
   newsLab(inThemeLab(me)) // What's New shows the lines of what is still being built only to who sees it
   // every account's unread mail joins the app's Unread (Alex, 24 Nov), counted and fetched ahead in the background
   const mailUn = useMailUnread(mailOn)

@@ -219,6 +219,25 @@ function Crumb({ onBack }) {
   useMailBack(onBack)
   return null
 }
+// The head's ⋯ does what the page in sight does (Alex, 25 Nov: "on every page the dots work for that page"): the home
+// edits the mailboxes, an account's folders move up or down, a folder's mails are picked several at a time, an open
+// mail shows its own menu. Each page registers here; the newest answers.
+const dotsStack = []
+function useMailDots(fn) {
+  const ref = useRef(fn)
+  ref.current = fn
+  useEffect(() => {
+    const h = () => ref.current?.()
+    dotsStack.push(h)
+    return () => { const i = dotsStack.lastIndexOf(h); if (i >= 0) dotsStack.splice(i, 1) }
+  }, [])
+}
+const mailDotsNow = () => { const h = dotsStack[dotsStack.length - 1]; if (h) h() }
+function Dots({ fn }) {
+  useMailDots(fn)
+  return null
+}
+const tellEdit = (on) => window.dispatchEvent(new CustomEvent('roarme-mail-edit', { detail: !!on }))
 
 const listCache = new Map()
 
@@ -367,7 +386,7 @@ function HomeEdit({ order, rowOf, isShown, onToggle, onOrder }) {
         const shown = isShown(r.k)
         return (
           <div key={r.k} className={`rmx-he-row${held === r.k ? ' held' : ''}`}>
-            <button type="button" className={`rmx-check${shown ? ' on' : ''}`} onClick={() => onToggle(r.k)} aria-label={shown ? `Hide ${r.name}` : `Show ${r.name}`}>{shown && MAIL_I.tick}</button>
+            {onToggle && <button type="button" className={`rmx-check${shown ? ' on' : ''}`} onClick={() => onToggle(r.k)} aria-label={shown ? `Hide ${r.name}` : `Show ${r.name}`}>{shown && MAIL_I.tick}</button>}
             {r.a ? <AccPic a={r.a} size={34} /> : <span className="av rmx-smart sm">{r.icon}</span>}
             <span className="rmx-he-name">{r.name}</span>
             <span className="rmx-he-grip" onPointerDown={(e) => down(e, r.k)} aria-label={`Move ${r.name}`} role="button" tabIndex={0}>{MAIL_I.grip}</span>
@@ -393,8 +412,9 @@ export function MailView({ me, people, book }) {
   useEffect(() => { const f = (e) => { pendingOpen = null; const m = e.detail; setStep({ s: 'list', acc: m.account, role: 'inbox', path: m.path, name: 'Inbox', open: m }) }; window.addEventListener('roarme-mail-open', f); return () => window.removeEventListener('roarme-mail-open', f) }, [])
   const [fwd, setFwd] = useState(null) // the step a slide right left, so a slide left can go on to it again
   const [editHome, setEditHome] = useState(false)
-  useEffect(() => { window.dispatchEvent(new CustomEvent('roarme-mail-edit', { detail: editHome })) }, [editHome])
-  useEffect(() => { if (step.s !== 'accs') setEditHome(false) }, [step.s])
+  const [foldEdit, setFoldEdit] = useState(false) // an account's folders moved up or down, from the head's ⋯
+  useEffect(() => { tellEdit(editHome || foldEdit) }, [editHome, foldEdit])
+  useEffect(() => { if (step.s !== 'accs') setEditHome(false); if (step.s !== 'folders') setFoldEdit(false) }, [step.s, step.acc])
   const [compose, setCompose] = useState(null) // { mode: 'new' | 'reply' | 'replyAll' | 'forward', m?, account? }
   const back = (to) => { setFwd(step); setStep(to) }
   // inside ROARMAIL the bar at the foot is Contacts · New Mail · Settings (Alex, 25 Nov); its buttons speak through
@@ -406,7 +426,7 @@ export function MailView({ me, people, book }) {
       const what = e.detail?.what, st = stepRef.current
       if (what === 'new') setCompose({ mode: 'new', account: st.acc && st.acc !== 'all' ? st.acc : '' })
       else if (what === 'home') { setFwd(null); setStep({ s: 'accs' }) }
-      else if (what === 'edit') { if (st.s !== 'accs') { setFwd(null); setStep({ s: 'accs' }); setEditHome(true) } else setEditHome((v) => !v) }
+      else if (what === 'edit') mailDotsNow()
       else if (what === 'contacts') { if (st.s !== 'contacts') { setFwd(null); setStep({ s: 'contacts', from: st }) } }
     }
     window.addEventListener('roarme-mail-cmd', f)
@@ -437,6 +457,9 @@ export function MailView({ me, people, book }) {
     return () => { gone = true; window.removeEventListener('roarme-mail-counts', f); window.removeEventListener('roarme-mail-setup', g) }
   }, [])
   const accounts = setup?.accounts || []
+  // one account: RoarMail opens straight on its folders, Inbox, Drafts, Sent… (Alex, 25 Nov); no step back to a home of one
+  const single = accounts.length === 1 ? accounts[0].id : ''
+  useEffect(() => { if (single && step.s === 'accs') setStep({ s: 'folders', acc: single }) }, [single, step.s]) // eslint-disable-line react-hooks/exhaustive-deps
   const inboxOf = (id) => setup?.folders.find((f) => f.account === id && f.role === 'inbox')?.path || 'INBOX'
   // unread in each Inbox, once the accounts in RoarMe are known
   useEffect(() => {
@@ -507,6 +530,7 @@ export function MailView({ me, people, book }) {
     const toggle = (k) => save(order, isShown(k) ? [...hidden, k] : hidden.filter((x) => x !== k))
     return (
       <div className="rmx rmx-accl">
+        <Dots fn={() => setEditHome((v) => !v)} />
         {editHome ? <HomeEdit order={order} rowOf={rowOf} isShown={isShown} onToggle={toggle} onOrder={(o) => save(o, hidden)} />
           : order.filter(isShown).map(rowOf).filter(Boolean).map((r) => (
             <button key={r.k} type="button" className="room rmx-accrow" onClick={r.go}>
@@ -538,25 +562,42 @@ export function MailView({ me, people, book }) {
     const unreadOf = (r) => r.path ? fcounts[`${acc.id}|${r.path}`] || 0
       : setup.folders.filter((f) => f.role === r.role).reduce((n, f) => n + (fcounts[`${f.account}|${f.path}`] || 0), 0)
     const open = (r) => { setFwd(null); setStep({ s: 'list', acc: acc.id, role: r.role, path: r.path, name: r.name }) }
+    // the folders in the order kept for this account (prefs forder: { [account]: [keys] }); the head's ⋯ moves them
+    const keyOf = (r) => r.key || r.path
+    const rowsAll = [...roleRows, ...own.map((f) => ({ key: f.path, path: f.path, name: f.name, icon: 'folder', own: true }))]
+    const kept = (mprefs.forder || {})[acc.id] || []
+    const ordered = [...kept.map((k) => rowsAll.find((r) => keyOf(r) === k)).filter(Boolean), ...rowsAll.filter((r) => !kept.includes(keyOf(r)))]
+    const saveOrder = (o) => setMailPref('forder', { ...(mprefs.forder || {}), [acc.id]: o })
+    if (foldEdit) {
+      return (
+        <div className="rmx rmx-fl">
+          {!single && <Crumb onBack={() => back({ s: 'accs' })} />}
+          <Dots fn={() => setFoldEdit(false)} />
+          <HomeEdit order={ordered.map(keyOf)} isShown={() => true} onToggle={null} onOrder={saveOrder}
+            rowOf={(k) => { const r = rowsAll.find((x) => keyOf(x) === k); return r && { k, icon: MAIL_I[r.icon], name: r.name } }} />
+          {composer}
+        </div>
+      )
+    }
+    const bump = (r) => (unreadOf(r) > 0 && <span className="badge">{unreadOf(r)}</span>)
     return (
-      <div className="rmx rmx-fl" {...foldSlide}>
-        <Crumb title={acc.name} pic={<AccPic a={acc} size={26} />} onBack={() => back({ s: 'accs' })} />
+      <div className="rmx rmx-fl" {...(single ? {} : foldSlide)}>
+        {!single && <Crumb title={acc.name} pic={<AccPic a={acc} size={26} />} onBack={() => back({ s: 'accs' })} />}
+        <Dots fn={() => setFoldEdit(true)} />
         {off && <p className="rmx-note">To read this account here, open RoarMail on your computer: Settings › Roar Account › My mail in RoarMe › Send to RoarMe.</p>}
         <div className="rmx-box">
-          {roleRows.map((r) => (
+          {ordered.filter((r) => !r.own).map((r) => (
             <button key={r.key} type="button" className="rmx-fr" onClick={() => open(r)}>
-              {MAIL_I[r.icon]}<span>{r.name}</span>
-              {unreadOf(r) > 0 && <span className="badge">{unreadOf(r)}</span>}
-              <i className="rmx-chev">{MAIL_I.chev}</i>
+              {MAIL_I[r.icon]}<span>{r.name}</span>{bump(r)}<i className="rmx-chev">{MAIL_I.chev}</i>
             </button>
           ))}
         </div>
         {own.length > 0 && <>
           <div className="rmx-ft">Folders</div>
           <div className="rmx-box">
-            {own.map((f) => (
+            {ordered.filter((r) => r.own).map((f) => (
               <button key={f.path} type="button" className="rmx-fr" onClick={() => open({ path: f.path, name: f.name })}>
-                {MAIL_I.folder}<span>{f.name}</span>{unreadOf(f) > 0 && <span className="badge">{unreadOf(f)}</span>}<i className="rmx-chev">{MAIL_I.chev}</i>
+                {MAIL_I.folder}<span>{f.name}</span>{bump(f)}<i className="rmx-chev">{MAIL_I.chev}</i>
               </button>
             ))}
           </div>
@@ -654,12 +695,10 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, ch
 
 // the long-press menu (Alex, 24 Nov: "a long press gives these and more, as on the desktop"), the app's own menu glass
 function MailMenu({ m, at, inJunk, noSelect, onAct, onClose }) {
-  const H = 560
-  const top = at ? (at.bottom + H + 12 < window.innerHeight ? at.bottom + 6 : Math.max(12, at.top - H - 6)) : 80
   const go = (k) => { onClose(); onAct(k) }
   return createPortal(<>
     <button type="button" className="scrim rmx-lpveil" aria-label="Close" onClick={onClose} />
-    <div className="menu rmx-lp" style={{ top, left: 16, right: 'auto', bottom: 'auto' }}>
+    <div className="menu rmx-lp">
       {!noSelect && <><button type="button" onClick={() => go('select')}>{MAIL_I.select}<span>Select</span></button><hr /></>}
       <button type="button" onClick={() => go('reply')}>{MAIL_I.reply}<span>Reply</span></button>
       <button type="button" onClick={() => go('replyAll')}>{MAIL_I.replyAll}<span>Reply All</span></button>
@@ -722,6 +761,9 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const [menu, setMenu] = useState(null)     // { m, at }
   const [moving, setMoving] = useState(null)
   const [sel, setSel] = useState(null)       // several picked (Alex, 25 Nov: "pick multiple mails and delete or move them in bulk, as on the desktop"): a Set of keys, null when off
+  useEffect(() => { tellEdit(!!sel); return undefined }, [!!sel]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => tellEdit(false), [])
+  useMailDots(() => { if (open) setMenu({ m: open, at: null }); else setSel((x) => (x ? null : new Set())) })
   const [flash, setFlash] = useState('')
   const lastOpen = useRef(null)
   const flashT = useRef(0)
@@ -916,7 +958,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const isOn = (k) => (k === 'sort' ? oldest : k === 'conv' ? conv : filter === k)
   const flashEl = flash && createPortal(<div className="rmx-flash">{flash}</div>, document.body)
   const sheets = <>
-    {menu && <MailMenu m={menu.m} at={menu.at} inJunk={role === 'spam'} onAct={(k) => act(k, menu.m)} onClose={() => setMenu(null)} />}
+    {menu && <MailMenu m={menu.m} at={menu.at} inJunk={role === 'spam'} noSelect={!!open} onAct={(k) => act(k, menu.m)} onClose={() => setMenu(null)} />}
     {moving && <MovePick m={moving} folders={folders} onPick={(to) => moveTo(moving, to)} onClose={() => setMoving(null)} />}
     {flashEl}
   </>

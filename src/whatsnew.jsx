@@ -18,6 +18,7 @@ export const NEWS = [
       { title: 'Everywhere', items: [
         "PROjects: the Production Hub's Calendar in a project's Overview, above the Team: the month with its dots, the day's events, All types, Not available and +, with everything you see in the hub.",
         'Make the Ordino: its + also lets you add an ordino by its link, so it takes no line of its own.',
+        'PROjects Overview: Video Chat, Voice Call and Schedule in a slim row right under the tabs.',
       ] },
       { title: 'RoarMail', lab: true, items: [
         'Slide a mail from the right edge of the screen: Read, Star, Move, Block and Trash come out and stay until you tap.',

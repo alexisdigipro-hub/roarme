@@ -325,6 +325,16 @@ export function MailView({ me, people, book }) {
     return () => window.removeEventListener('roarme-mail-cmd', f)
   }, [])
   useEffect(() => { window.dispatchEvent(new CustomEvent('roarme-mail-step', { detail: step.s })) }, [step.s])
+  // the list that holds ROARMAIL never stands sideways (Alex, 25 Nov, iPhone: "they still spill over"): WebKit lets a
+  // finger pan a box whose overflow is auto by a few pixels; any sideways scroll there or in its holders goes back to 0
+  useEffect(() => {
+    const host = document.querySelector('.side .rooms-pager')
+    if (!host) return undefined
+    const boxes = [host, host.querySelector('.rooms-track'), ...host.querySelectorAll('.rooms')].filter(Boolean)
+    const fix = (e) => { const b = e.currentTarget; if (b.scrollLeft) b.scrollLeft = 0 }
+    boxes.forEach((b) => { b.scrollLeft = 0; b.addEventListener('scroll', fix, { passive: true }) })
+    return () => boxes.forEach((b) => b.removeEventListener('scroll', fix))
+  }, [step.s])
   useEffect(() => () => window.dispatchEvent(new CustomEvent('roarme-mail-step', { detail: '' })), [])
   const foldSlide = useSlide(() => back({ s: 'accs' }), fwd && fwd.s === 'list' && fwd.acc === step.acc ? () => setStep(fwd) : null)
   const who = useWho(me, people, book, setup)

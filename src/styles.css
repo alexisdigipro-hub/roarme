@@ -8890,3 +8890,6 @@ html:root:root:root:root:root:root .rmx.rmx-nopic .rmx-row { padding-left: 14px;
 .rmx-blockrow .rmx-st b { word-break: break-all; }
 html:root:root:root:root:root:root .rmx-seg { flex: none; display: inline-flex; gap: 2px; }
 html:root:root:root:root:root:root .rmx-seg > button { white-space: nowrap; min-width: 40px; padding: 0 11px; height: 32px; }
+/* ROARMAIL never pans sideways on an iPhone (Alex, 25 Nov): the boxes that hold it take no sideways scroll at all */
+html:root:root:root:root:root .side .rooms-pager:has(.rmx), html:root:root:root:root:root .side .rooms-pager:has(.rmx) .rooms-track, html:root:root:root:root:root .side .rooms-pager:has(.rmx) .rooms { overflow-x: hidden !important; overscroll-behavior-x: none; touch-action: pan-y; }
+html:root:root:root:root:root .rmx .rmx-sw { overflow: hidden; max-width: 100%; }

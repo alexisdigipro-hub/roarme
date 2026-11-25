@@ -4,6 +4,7 @@ import { Avatar, CropModal, I, Lens, Modal } from './ui.jsx'
 import { AUDIO_EXT, mmss, player, shapeOf, usePlayer, useWave } from './player.jsx'
 import { errText, fileLink, nameOf, picLink, shrinkImage, supabase } from './lib.js'
 import { hubCall, hubLink, hubMe, hubPull, hubSoon, hubState } from './hub.jsx'
+import { HubCalendar } from './hubCal.jsx'
 import { getPrefs, setPrefs, usePrefs } from './prefs.js'
 
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
@@ -1930,6 +1931,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
   // the hub's published ordinos of this project come first (roar-hub keeps them; Alex, 22 Nov), then RoarMe's own
   const ordinos = [...(Array.isArray(project.hub_ordinos) ? project.hub_ordinos : []).filter((o) => !ownOrdinos.some((x) => x.url === o.url)), ...ownOrdinos]
   const [ordLink, setOrdLink] = useState(null)
+  const [ordMenu, setOrdMenu] = useState(null) // the + of Make the Ordino: { top, right }
   const addOrdLink = () => {
     const u = String(ordLink || '').trim()
     if (!/^https?:\/\/\S+$/i.test(u)) { toast('Paste the ordino\'s link, starting with https://'); return }
@@ -2004,10 +2006,17 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
                   </span>
                 </div>
               )) : (
-                <button type="button" className="prw-ordmake" onClick={() => setOrdinoOpen(true)}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
+                // one row: its + opens a small menu, Make the Ordino or Add Ordino Link (an ordino made anywhere else, by its
+                // link), so the link takes no line of its own (Alex, 25 Nov)
+                <button type="button" className="prw-ordmake" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setOrdMenu({ top: r.bottom + 6, right: Math.max(10, window.innerWidth - r.right) }) }}><i className="prw-ordino-cal"><b>{TAB_I.files}</b></i><span><b>Make the Ordino</b><small>The call sheet, in Roardino; it stays here and can be sent to any chat</small></span>{I.plus}</button>
               )}
-              {/* an ordino made anywhere else: paste its link (Alex, 22 Nov: "just put a link and it shows there") */}
-              {!ordinos.length && ordLink === null && <button type="button" className="pill-btn prw-ordlink-btn" onClick={() => setOrdLink('')}>{I.plus}<span>Add Ordino Link</span></button>}
+              {ordMenu && createPortal(<>
+                <button type="button" className="scrim prw-ordveil" aria-label="Close" onClick={() => setOrdMenu(null)} />
+                <div className="menu prw-ordmenu" style={{ top: ordMenu.top, right: ordMenu.right, left: 'auto', bottom: 'auto' }}>
+                  <button type="button" onClick={() => { setOrdMenu(null); setOrdinoOpen(true) }}>{TAB_I.files}<span>Make the Ordino</span></button>
+                  <button type="button" onClick={() => { setOrdMenu(null); setOrdLink('') }}>{I.link}<span>Add Ordino Link</span></button>
+                </div>
+              </>, document.body)}
               {ordLink !== null && <form className="prw-ordlink" onSubmit={(e) => { e.preventDefault(); addOrdLink() }}>
                   <input autoFocus type="url" inputMode="url" autoComplete="off" value={ordLink} onChange={(e) => setOrdLink(e.target.value)} placeholder="https://go.themadlions.com/?o/…" />
                   <button type="submit" className="pill-btn on">Add</button>
@@ -2026,6 +2035,8 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
             })()}
             {/* who is in the project, with the visits for those who see Admin, one slim line each (Alex, 22 Nov: "the
                 members, and who visited and for how long, much more minimal, ten people must not be chaos") */}
+            {/* the hub's Calendar, above the Team (Alex, 25 Nov) */}
+            <HubCalendar room={room.room_id} />
             <Team room={room} people={people} me={me} />
           </div>
         )}

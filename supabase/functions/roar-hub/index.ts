@@ -10,6 +10,7 @@
 //   link { room }                         ties one project group (Make It a Project)
 //   unlink { room }                       unties one group (an admin, or who tied it); both sides stay
 //   pay.meta / pay.job / pay.receipt { room } the $ in a project's chat: My Payment and Expenses to the hub (hub-bridge)
+//   cal.get / cal.put / cal.delete { room } the hub's Calendar in a project's Overview, as the caller's hub account sees it
 //   sync { room }                         both ways, for one group: title, stage, shoot day, category, tasks, locations;
 //                                         from the hub only: its cover (also the group's picture, unless it has one of its own),
 //                                         its songs, its locations' photos and its published ordinos
@@ -378,6 +379,17 @@ Deno.serve(async (req) => {
         extra.receipt = r
       }
       try { return json(await hubCall(acc.hub_key, { action, id: l.hub_project, email, ...extra })) } catch (e) { return json({ error: (e as Error).message }, 400) }
+    }
+    // the hub's Calendar in a project's Overview (Alex, 25 Nov): asked of the hub of who tied the project, as the person whose
+    // RoarMe email is a member there (none: that project's events only, to look at)
+    if (action === 'cal.get' || action === 'cal.put' || action === 'cal.delete') {
+      const { data: l } = await db.from('roar_hub_links').select('owner, hub_project').eq('room_id', room).maybeSingle()
+      if (!l?.hub_project) return json({ error: 'This project is not tied to a hub.' }, 400)
+      const acc = await accountOf(l.owner)
+      if (!acc) return json({ error: 'The hub of this project is not connected any more.' }, 400)
+      const email = (await db.auth.admin.getUserById(me)).data?.user?.email || ''
+      const extra = action === 'cal.get' ? { from: body?.from, to: body?.to, feeds: !!body?.feeds } : action === 'cal.put' ? { event: body?.event || {} } : { id: body?.id }
+      try { return json(await hubCall(acc.hub_key, { action, project: l.hub_project, email, ...extra })) } catch (e) { return json({ error: (e as Error).message }, 400) }
     }
     if (action === 'unlink') {
       // Unlink in Project Settings, or Stop Being a Project: the group and the hub's project both stay

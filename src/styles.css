@@ -8751,3 +8751,56 @@ html:root:root:root:root .rmx-send { min-width: 120px; }
 /* an unread mail among the chats in Unread (Alex, 24 Nov, B): a row of the list, not a page */
 html:root:root:root:root .rmx.rmx-mu1 { padding-bottom: 0; }
 .side-brand .calls-seg.u-kind button { min-width: 56px; padding: 0 12px; }
+
+/* The hub's Calendar in a PROject's Overview (Alex, 25 Nov: "exactly the TML Hub's, its phone form, on the phone and the
+   computer"): the hub's phone layout (the type menu, ⊘ and + in one row; the month in a card with round arrows; letters
+   of the days; a dot for each event, up to three; today in the accent, the picked day ringed; holidays red; the picked
+   day's events as tinted cards with a bar of their colour) in the Workspace's matte glass. src/hubCal.jsx */
+.hcal { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.hcal-top { display: flex; align-items: center; gap: 8px; }
+.hcal-types { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; }
+html:root:root:root:root .hcal-types select { width: 100%; height: 44px; padding: 0 40px 0 18px; border-radius: 22px; border: 1px solid var(--mg-rim, rgba(255, 255, 255, .5)); background: var(--mg-2, rgba(255, 255, 255, .35)); color: inherit; font: inherit; font-size: 15.5px; -webkit-appearance: none; appearance: none; outline: none; }
+.hcal-types svg { position: absolute; right: 14px; pointer-events: none; opacity: .55; }
+html:root:root:root:root:root .hcal-round { width: 44px; height: 44px; min-width: 44px; flex: none; color: var(--halo, #3aa7e8); }
+.hcal-card { border-radius: 20px; padding: 10px 8px 12px; background: var(--mg-2, rgba(255, 255, 255, .3)); border: 1px solid var(--mg-rim, rgba(255, 255, 255, .45)); }
+.hcal-nav { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 2px 6px; }
+html:root:root:root:root:root .hcal-arrow { width: 40px; height: 40px; min-width: 40px; }
+.hcal-month { font: inherit; font-weight: 700; font-size: 17px; color: inherit; background: none; border: 0; padding: 4px 10px; border-radius: 10px; cursor: pointer; }
+.hcal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.hcal-dow { text-align: center; font-size: 12px; color: var(--muted); padding: 2px 0 6px; }
+.hcal-cell { font: inherit; background: none; border: 0; border-radius: 10px; padding: 5px 0 4px; min-height: 48px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: inherit; cursor: pointer; }
+.hcal-cell.dim { opacity: .35; }
+.hcal-cell.weekend .hcal-day { color: var(--muted); }
+.hcal-cell.holiday .hcal-day { color: #e5483f; font-weight: 700; }
+.hcal-day { font-size: 15px; line-height: 1; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; font-variant-numeric: tabular-nums; }
+.hcal-cell.sel .hcal-day { box-shadow: inset 0 0 0 1.5px var(--halo, #3aa7e8); }
+.hcal-cell.today .hcal-day { background: linear-gradient(170deg, var(--halo-mine-top, #5cc0f2), var(--halo-mine, #3aa7e8)); color: var(--halo-ink, #fff); font-weight: 700; box-shadow: none; }
+.hcal-dots { display: flex; gap: 3px; height: 6px; }
+.hcal-dots i { width: 6px; height: 6px; border-radius: 50%; display: block; }
+.hcal-list { border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent); margin-top: 6px; padding: 10px 4px 0; }
+.hcal-sel { text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+.hcal-evs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.hcal-ev { display: flex; align-items: stretch; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-radius: 14px; background: color-mix(in srgb, var(--ev) 16%, transparent); box-shadow: inset 3px 0 0 var(--ev); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hcal-ev-time { flex: none; width: 58px; white-space: nowrap; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ev); padding-top: 1px; }
+.hcal-ev-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hcal-ev-title { font-size: 15px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.hcal-ev-sub { font-size: 12.5px; color: var(--muted); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hcal-none { margin: 2px 0 4px; font-size: 13px; color: var(--muted); text-align: center; }
+.hcal-err { margin: 8px 0 0; font-size: 13px; color: #e5483f; text-align: center; }
+.hcal-hint { margin: 0; font-size: 13px; color: var(--muted); }
+.hcal-form { display: flex; flex-direction: column; gap: 12px; }
+.hcal-f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.hcal-f > span:first-child { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+html:root:root:root:root .hcal-f input:not([type='checkbox']), html:root:root:root:root .hcal-f select, html:root:root:root:root .hcal-f textarea { width: 100%; min-width: 0; height: 44px; padding: 0 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); background: color-mix(in srgb, currentColor 5%, transparent); color: inherit; font: inherit; font-size: 15.5px; outline: none; box-sizing: border-box; }
+html:root:root:root:root .hcal-f textarea { height: auto; min-height: 84px; padding: 10px 14px; resize: vertical; }
+.hcal-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.hcal-allday { flex-direction: row; align-items: center; justify-content: space-between; align-self: end; height: 44px; }
+.hcal-loc { display: flex; gap: 8px; align-items: center; }
+html:root:root:root:root:root .hcal-map { width: 44px; height: 44px; min-width: 44px; display: grid; place-items: center; color: inherit; }
+.hcal-foot { display: flex; align-items: center; gap: 8px; width: 100%; }
+.hcal-sp { flex: 1; }
+html:root:root:root:root:root .hcal-del { width: 44px; height: 44px; min-width: 44px; color: #e5483f; }
+@media (min-width: 761px) { .hcal-cell { min-height: 54px; } .hcal-day { width: 34px; height: 34px; font-size: 16px; } }
+/* the + of Make the Ordino: Make the Ordino or Add Ordino Link (Alex, 25 Nov: "not a line of its own") */
+html:root:root:root:root .prw-ordveil { z-index: 90; }
+html:root:root:root:root:root:root:root .menu.prw-ordmenu { position: fixed; z-index: 91; min-width: 220px; margin: 0; transform: none; }

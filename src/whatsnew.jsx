@@ -15,6 +15,9 @@ export const NEWS = [
     id: '2026-11-25',
     date: '25 November 2026',
     sections: [
+      { title: 'On a phone', items: [
+        'RoarMail inside RoarMe: turn it on in Settings > ROARMAIL and Mail joins the bar at the foot. Add Gmail, iCloud, Outlook, Yahoo or any mail, read, reply and keep your inbox tidy.',
+      ] },
       { title: 'Everywhere', items: [
         'Pull down to refresh now catches on every page, and inside Mail too.',
         'Slide right to go back works on every page, even when your finger starts on a button or a colour; from the screen\'s left edge it always goes back.',

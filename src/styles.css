@@ -8817,3 +8817,7 @@ html:root:root:root:root:root:root:root .prw-callstrip > .btn-main { background:
 .prw-callstrip > .btn span { overflow: hidden; text-overflow: ellipsis; }
 .prw-callstrip > .btn:active { transform: scale(.97); }
 @media (max-width: 760px) { html:root:root:root:root:root:root:root .prw-callstrip > .btn { height: 30px; font-size: 12px; padding: 0 6px; gap: 5px; } .prw-callstrip > .btn svg, .prw-callstrip > .btn .ic-mask { width: 15px !important; height: 15px !important; } }
+/* every account's address shows under its name, unread or not (Alex, 25 Nov): the chat list's Show Last Message off had
+   hidden the line of rows with no count */
+html:root:root:root:root:root .rmx .rmx-accrow .room-bottom { display: flex !important; align-items: center; min-width: 0; }
+html:root:root:root:root:root .rmx .rmx-accrow .room-prev { display: block !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }

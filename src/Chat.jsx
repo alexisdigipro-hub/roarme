@@ -7,6 +7,7 @@ import { Moji, isSticker, mojify, mojiCount, mojiOf, mojiSend } from './moji.jsx
 import { REACTIONS, TEXT_SIZES, chime, folderTint, getPrefs, haloish, inThemeLab, isEmojiOnly, setPrefs, swapEmoji, useLocal, usePrefs } from './prefs.js'
 import { formatText, hasMark, plainText, splitQuote, toggleMark, withQuote } from './format.jsx'
 import { RecentCalls, useCalls, CALL_EDGE } from './calls.jsx'
+import { stayGet, staySet } from './stay.js'
 import { tr } from './i18n.js'
 import { E2E_OFF, E2E_ON, endEncrypted, hasStretchKey, isSealed, myDevice, openText, previewText, sealText, startEncrypted, systemText, useEncrypted, useOpened, withoutDevice } from './e2e.js'
 // Settings and a profile load only when opened (Alex, 21 Oct: RoarMe lighter at start)
@@ -156,11 +157,12 @@ export default function Chat({ me, setMe }) {
   }, [])
   useEffect(() => { loadBlocks() }, [loadBlocks])
   const unblock = async (id) => { await supabase.from('roar_blocks').delete().eq('blocked', id); loadBlocks(); toast('Unblocked') }
-  const [activeId, setActiveId] = useState('')
+  const [activeId, setActiveId] = useState(() => stayGet('chat', ''))
   // RoarMe always opens on All (Alex, 18 Oct: it opened on Archived, the folder left last time)
-  const [folder, setFolder] = useState('all')
+  // a pull to refresh comes back to the folder it was on (stay.js; Alex, 25 Nov)
+  const [folder, setFolder] = useState(() => stayGet('folder', 'all'))
   // which step ROARMAIL is on, told by MailView (for the bar at the foot inside it)
-  const [mailStep, setMailStep] = useState('')
+  const [mailStep, setMailStep] = useState(() => (stayGet('folder') === 'mail' ? stayGet('mail', { s: 'accs' }).s : '')) // MailView tells it before this listens, after a reload
   // ROARMAIL as a place of its own (Alex, 25 Nov: "it slides, as if you enter another environment"): the folder bar
   // steps out while it is open, the chats come back with a slide the other way; the folder left is remembered
   const mailBack = useRef('all')
@@ -203,7 +205,10 @@ export default function Chat({ me, setMe }) {
   const [plus, setPlus] = useState(false)
   // the bar at the foot: contacts | calls | chats | settings. A pull to refresh on Contacts comes back to Contacts
   // (Alex, 15 Nov: it landed on Messages)
-  const [tab, setTab] = useState(() => { try { const t = sessionStorage.getItem('roarme-tab'); sessionStorage.removeItem('roarme-tab'); return t || 'chats' } catch { return 'chats' } })
+  const [tab, setTab] = useState(() => stayGet('tab', 'chats'))
+  useEffect(() => { staySet('tab', tab) }, [tab])
+  useEffect(() => { staySet('folder', folder) }, [folder])
+  useEffect(() => { staySet('chat', activeId) }, [activeId])
   const inMail = mailOn && tab === 'chats' && folder === 'mail' && !!mailStep // the bar at the foot turns into the mail's
   const [callsFilter, setCallsFilter] = useState('all') // Calls: all | missed (the switch in the head, Alex, 14 Nov)
   const [callsEdit, setCallsEdit] = useState(false) // Calls: the head's ⋯ shows a red minus on every call and + becomes Delete All
@@ -275,7 +280,8 @@ export default function Chat({ me, setMe }) {
   // the way RoarMe opens (Alex, 16 Oct): the chats slide in from the left, the conversation rises after them
   const [intro, setIntro] = useState(true)
   useEffect(() => { const t = setTimeout(() => setIntro(false), 1400); return () => clearTimeout(t) }, [])
-  const [setPage, setSetPage] = useState('')
+  const [setPage, setSetPage] = useState(() => stayGet('setPage', ''))
+  useEffect(() => { staySet('setPage', setPage) }, [setPage])
   const [folderSeed, setFolderSeed] = useState([]) // chats a new folder starts with
   // a folder is edited on a page of its own in Settings, like Telegram's (Alex, 16 Oct)
   const openFolders = () => { setModal(''); setTab('settings'); setSetPage('folders') }
@@ -395,7 +401,7 @@ export default function Chat({ me, setMe }) {
       cDrag.current = null
       if (!g) return
       cMove(e.currentTarget, 0, true)
-      if (g.p >= 1) { setCPull(2); try { sessionStorage.setItem('roarme-tab', 'contacts') } catch { /* private window */ } setTimeout(() => window.location.reload(), 150); return }
+      if (g.p >= 1) { setCPull(2); setTimeout(() => window.location.reload(), 150); return }
       setCPull(0)
     },
   }

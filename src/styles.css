@@ -9144,3 +9144,44 @@ html:root:root:root:root:root:root .rmx-head .rmx-filters { justify-content: spa
 html:root:root:root:root:root:root:root .side-head .round > svg { width: 24px !important; height: 24px !important; stroke-width: 1.6 !important; }
 html:root:root:root:root:root:root:root .side-head .round > svg * { stroke-width: 1.6 !important; }
 html:root:root:root:root:root:root:root .side-head .round > svg[fill="currentColor"] { width: 22px !important; height: 22px !important; }
+
+/* The chat's calendar (Alex, 25 Nov, sample https://claude.ai/artifact/PQ57XutzNJ5LWw6HLJ7bDc): a tap on a day's chip opens it */
+.day .day-chip { cursor: pointer; transition: transform .12s; }
+.day .day-chip:active { transform: scale(.92); }
+.modal:has(> .modal-body > .ccal) > .modal-head { display: none; }
+.modal:has(> .modal-body > .ccal) > .modal-body { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
+.ccal { position: relative; display: flex; flex-direction: column; min-height: 0; height: min(78vh, 720px); }
+@media (max-width: 760px) { .ccal { height: calc(var(--vvh, 100dvh) - env(safe-area-inset-top, 0px) - 60px); } }
+.ccal-head { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 8px; padding: 14px 14px 6px; flex: none; }
+.ccal-head b { text-align: center; font-size: 16px; font-weight: 700; }
+html:root:root:root:root .ccal-head .ccal-ok { color: var(--halo-ink, #fff) !important; background: linear-gradient(170deg, var(--halo-mine-top, #5cc0f2), var(--halo-mine, #3aa7e8)) !important; border: 0 !important; }
+.ccal-head .ccal-sel { height: 36px; padding: 0 16px; font-weight: 600; }
+.ccal-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 12px 110px; }
+.ccal-note { text-align: center; color: var(--muted); font-size: 14px; margin: 30px 0; }
+.ccal-m h3 { text-align: center; font-size: 16px; font-weight: 700; margin: 16px 0 8px; }
+.ccal-wd, .ccal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.ccal-wd span { text-align: center; font-size: 11px; color: var(--muted); padding-bottom: 6px; }
+.ccal-grid { row-gap: 6px; }
+.ccal-d { position: relative; aspect-ratio: 1; display: grid; place-items: center; margin: 0 4px; padding: 0; border: 0; border-radius: 50%; background: none center / cover no-repeat; color: inherit; font: inherit; font-size: 15px; cursor: pointer; }
+.ccal-d.none { color: color-mix(in srgb, var(--text) 30%, transparent); cursor: default; }
+.ccal-d.text { font-weight: 700; }
+.ccal-d.text::after { content: ""; position: absolute; bottom: 12%; width: 4px; height: 4px; border-radius: 2px; background: var(--halo-l, #3aa7e8); }
+.ccal-d.pic { color: #fff; font-weight: 700; text-shadow: 0 1px 3px rgba(0, 0, 0, .65); background-color: color-mix(in srgb, var(--text) 18%, transparent); }
+.ccal-d.today:not(.pic) { color: var(--halo-l, #3aa7e8); font-weight: 700; }
+.ccal-d:not(.none):active { transform: scale(.92); }
+.ccal-d.picked { box-shadow: 0 0 0 3px var(--bg, #fff), 0 0 0 5px var(--halo-l, #3aa7e8); }
+.ccal-d.picked.text { background: linear-gradient(170deg, var(--halo-mine-top, #5cc0f2), var(--halo-mine, #3aa7e8)); color: var(--halo-ink, #fff); }
+.ccal-d.picked.text::after { background: currentColor; }
+html:root:root:root:root .ccal-clear { position: absolute; left: 14px; right: 14px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); height: 52px; border: 0; border-radius: 26px; color: #fff !important; font: inherit; font-weight: 600; font-size: 16px; background: #e5483f !important; box-shadow: 0 8px 20px rgba(229, 72, 63, .3); cursor: pointer; }
+.ccal-clear:disabled { opacity: .4; box-shadow: none; }
+.ccal-ask { position: absolute; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 2; display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 26px; background: #fff; box-shadow: 0 -4px 30px rgba(0, 0, 0, .22); animation: ccal-up .25s cubic-bezier(.22, 1, .36, 1) both; }
+html[data-mode='dark'] .ccal-ask { background: #2c2c31; }
+@keyframes ccal-up { from { transform: translateY(30px); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .ccal-ask { animation: none } }
+.ccal-ask p { margin: 0 0 6px; text-align: center; font-size: 14px; color: var(--muted); line-height: 1.4; }
+.ccal-ask button { height: 46px; border: 0; border-radius: 23px; font: inherit; font-weight: 600; color: inherit; background: color-mix(in srgb, var(--text) 7%, transparent); cursor: pointer; }
+.ccal-ask button.danger { color: #e5483f; }
+html[data-mode='dark'] .ccal-ask button.danger { color: #ff6961; }
+html:root:root:root:root:root .modal:has(> .modal-body > .ccal) { background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html:root:root:root:root:root[data-mode='dark'] .modal:has(> .modal-body > .ccal) { background: #1c1c1e !important; }
+.ccal-head { background: inherit; position: relative; z-index: 1; }

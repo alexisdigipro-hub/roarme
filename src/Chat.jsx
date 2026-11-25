@@ -1646,7 +1646,7 @@ export default function Chat({ me, setMe }) {
           ) : tab === 'chats' && folder === 'unread' && mailOn ? (
             // Unread with mail: chats and mails together by time, or one kind (Alex, 24 Nov, B: "minimal, no line of its own")
             <Lens className="seg calls-seg u-kind" dep={uKind}>{[['all', 'All'], ['chats', 'Chats'], ['mail', 'Mail']].map(([k, l]) => <button key={k} type="button" className={uKind === k ? 'on' : ''} onClick={() => setUKind(k)}>{l}</button>)}</Lens>
-          ) : <Wordmark />}</span>
+          ) : <Wordmark b={mailOn && tab === 'chats' && folder === 'mail' ? 'MAIL' : 'ME'} />}</span>
           {picking ? (
             <button type="button" className="pill-btn" onClick={() => setPicked(picked.length === shown.length && shown.length ? [] : shown.map((r) => r.room_id))}>{picked.length === shown.length && shown.length ? 'None' : 'All'}</button>
           ) : (

@@ -28,6 +28,7 @@ export const NEWS = [
         'The iPhone app stays upright when you turn the phone on its side.',
       ] },
       { title: 'RoarMail', lab: true, items: [
+        'Inside RoarMail the top reads ROARMAIL.',
         'Inside RoarMail the bar at the bottom is Contacts, New Mail and Settings. Contacts lists everyone with an email; tap one to write to them.',
         'Every account shows its address under its name, and the unread counts stand in one line.',
         'Over the mails one bar, as wide as the folders: back and the filters; no Unread filter, unread mail shows anyway.',

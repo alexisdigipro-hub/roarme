@@ -320,7 +320,10 @@ export default function Chat({ me, setMe }) {
   // like Back at its top (Alex, 19 Oct): the page's own Back button is pressed, so it always goes where Back goes
   useEffect(() => {
     let s = null
-    const NO = 'input, textarea, [contenteditable="true"], .tabs, .themes, .dpick, .wheel, .walls, .seg, .viewer, .modal-back, .call, .menu, input[type="range"], [data-tabs-swipe="mid"], .prw-phone, .chan-swipe'
+    // only what moves sideways itself keeps the slide (a field, a slider, a row that scrolls sideways, a map); buttons, segments
+    // and colour dots do not (Alex, 25 Nov, the third time: "swipe left and right does not work on all pages")
+    const NO = 'input, textarea, select, [contenteditable="true"], canvas, .map, .leaflet-container, .viewer, .modal-back, .call, .menu, [data-tabs-swipe="mid"], .prw-phone, .chan-swipe'
+    const sideScroll = (t, main) => { for (let n = t; n && n !== main; n = n.parentElement) { const ox = getComputedStyle(n).overflowX; if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 2) return true } return false }
     // the page follows the finger as it slides (Alex, 9 Nov: "with a slide it goes to the menu"), like an iPhone: let go
     // past about 90 px (a quarter of a phone's width), or with a quick flick, and it goes back; let go before, and it
     // springs back into place (Alex, 9 Nov: a third of the screen was too far, a normal slide sprang back)
@@ -333,7 +336,8 @@ export default function Chat({ me, setMe }) {
     }
     const start = (e) => {
       const main = e.target.closest?.('.main')
-      s = window.matchMedia('(max-width: 760px)').matches && main && e.touches.length === 1 && !e.target.closest(NO) && backOf(main)
+      const edge = e.touches[0]?.clientX < 30 // from the screen's left edge it always goes back, as on an iPhone
+      s = window.matchMedia('(max-width: 760px)').matches && main && e.touches.length === 1 && !e.target.closest(edge ? 'input, textarea, [contenteditable="true"], .modal-back, .viewer, .call' : NO) && (edge || !sideScroll(e.target, main)) && backOf(main)
         ? { main, x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), on: false } : null
     }
     const move = (e) => {
@@ -347,6 +351,7 @@ export default function Chat({ me, setMe }) {
       }
       const w = s.main.offsetWidth || window.innerWidth
       const d = Math.max(0, dx)
+      s.last = d
       s.main.style.transform = `translate3d(${d}px,0,0)`
       s.main.style.opacity = String(1 - Math.min(0.35, (d / w) * 0.5))
     }
@@ -366,15 +371,19 @@ export default function Chat({ me, setMe }) {
       } else backOf(main)?.click()
     }
     const cancel = () => { if (s?.on) reset(s.main, true); s = null }
-    document.addEventListener('touchstart', start, { passive: true })
-    document.addEventListener('touchmove', move, { passive: true })
-    document.addEventListener('touchend', end, { passive: true })
-    document.addEventListener('touchcancel', cancel, { passive: true })
+    // capture phase: a page's own touch handlers (tabs that slide, a row) can no longer keep the slide back from seeing it.
+    // The iPhone may cancel a touch it hands to scrolling: a slide already clearly on its way still goes back.
+    const o = { passive: true, capture: true }
+    const cancelOr = (e) => { if (s?.on && s.last > Math.min(90, (s.main.offsetWidth || window.innerWidth) / 4)) { const m = s.main; s = null; m.style.transition = 'transform .18s ease-out, opacity .18s'; m.style.transform = `translate3d(${m.offsetWidth || window.innerWidth}px,0,0)`; setTimeout(() => { backOf(m)?.click(); reset(m, false) }, 170) } else cancel(e) }
+    document.addEventListener('touchstart', start, o)
+    document.addEventListener('touchmove', move, o)
+    document.addEventListener('touchend', end, o)
+    document.addEventListener('touchcancel', cancelOr, o)
     return () => {
-      document.removeEventListener('touchstart', start)
-      document.removeEventListener('touchmove', move)
-      document.removeEventListener('touchend', end)
-      document.removeEventListener('touchcancel', cancel)
+      document.removeEventListener('touchstart', start, o)
+      document.removeEventListener('touchmove', move, o)
+      document.removeEventListener('touchend', end, o)
+      document.removeEventListener('touchcancel', cancelOr, o)
     }
   }, [])
   const [pull, setPull] = useState(0) // how far the list is pulled down for a refresh: 0 to 1 (ready), 2 = reloading
@@ -412,18 +421,24 @@ export default function Chat({ me, setMe }) {
   useEffect(() => {
     if (!window.matchMedia('(pointer: coarse)').matches) return undefined
     const SKIP = '.rooms-pager, .contacts, .modal-back, .as-sheet, .room-view, .prw-phone, .bw, .lock, .phx, .rpl, .menu, .ctx, input, textarea, select, [contenteditable], .tabs, .foot'
+    // inside ROARMAIL past its home (folders, a list, an open mail) the chat list's own pull does not run: this one does
+    const OWN = '.rmx:not(.rmx-accl)'
     const scroller = (el) => { for (let n = el; n && n !== document.body; n = n.parentElement) { const o = getComputedStyle(n).overflowY; if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight + 1) return n } return document.scrollingElement }
     let g = null
     const start = (e) => {
       g = null
-      if (e.touches.length !== 1 || !e.target.closest || e.target.closest(SKIP) || !e.target.closest('.app')) return
+      if (e.touches.length !== 1 || !e.target.closest || !e.target.closest('.app')) return
+      if (e.target.closest(SKIP) && !(e.target.closest(OWN) && !e.target.closest('input, textarea, select, [contenteditable], .menu'))) return
       const sc = scroller(e.target)
       if (sc && sc.scrollTop > 0) return
-      g = { y: e.touches[0].clientY, x: e.touches[0].clientX, p: 0, felt: false }
+      g = { y: e.touches[0].clientY, x: e.touches[0].clientX, p: 0, felt: false, sure: false }
     }
     const move = (e) => {
       if (!g) return
-      const dy = e.touches[0].clientY - g.y, dx = e.touches[0].clientX - g.x
+      const dx = e.touches[0].clientX - g.x, dy = e.touches[0].clientY - g.y
+      // the first moves of a finger wobble a little every way: decide only once it has gone 10 px (Alex, 25 Nov: the pull
+      // never caught on the iPhone, its first move was often a pixel sideways or up)
+      if (!g.sure) { if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return; g.sure = true }
       if (dy <= 0 || Math.abs(dx) > dy) { if (g.p) setGPull(0); g = null; return }
       const p = Math.max(0, Math.min(1.15, (dy - 60) / 130))
       if (p >= 1 && !g.felt) { g.felt = true; haptic(8) }
@@ -431,11 +446,13 @@ export default function Chat({ me, setMe }) {
       setGPull(Math.round(p * 20) / 20)
     }
     const end = () => { const x = g; g = null; if (!x) return; if (x.p >= 1) { setGPull(2); setTimeout(() => window.location.reload(), 150) } else setGPull(0) }
-    document.addEventListener('touchstart', start, { passive: true })
-    document.addEventListener('touchmove', move, { passive: true })
-    document.addEventListener('touchend', end)
-    document.addEventListener('touchcancel', end)
-    return () => { document.removeEventListener('touchstart', start); document.removeEventListener('touchmove', move); document.removeEventListener('touchend', end); document.removeEventListener('touchcancel', end) }
+    // in the capture phase: a page's own touch handlers (a row's slide, the mail's slide) may stop the touch from going up
+    const o = { passive: true, capture: true }
+    document.addEventListener('touchstart', start, o)
+    document.addEventListener('touchmove', move, o)
+    document.addEventListener('touchend', end, o)
+    document.addEventListener('touchcancel', end, o)
+    return () => { document.removeEventListener('touchstart', start, o); document.removeEventListener('touchmove', move, o); document.removeEventListener('touchend', end, o); document.removeEventListener('touchcancel', end, o) }
   }, [])
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
@@ -1510,19 +1527,35 @@ export default function Chat({ me, setMe }) {
     if (tasksOpen) showTasks(false)
     if (next === 'mail') { setTab('chats'); setFolder('mail'); return }
     setTab(next)
-    if (next === 'chats') { const f = allFolders[dir > 0 ? 0 : allFolders.length - 1]; if (f) setFolder(f.id) }
+    if (next === 'chats') {
+      // back from Mail: the folder one left for it (Alex, 25 Nov: it landed on Archived); otherwise the near end of the folders
+      if (cur === 'mail') { setFolder(mailBack.current && mailBack.current !== 'mail' ? mailBack.current : 'all'); return }
+      const f = allFolders[dir > 0 ? 0 : allFolders.length - 1]; if (f) setFolder(f.id)
+    }
   }
+  const goStopRef = useRef(null)
+  goStopRef.current = goStop
+  useEffect(() => { const f = (e) => goStopRef.current?.(e.detail > 0 ? 1 : -1); window.addEventListener('roarme-stop', f); return () => window.removeEventListener('roarme-stop', f) }, [])
   pagerNow.current = { allFolders, folder, busy: picking || tabsEdit || !!q.trim(), picking, searchOpen: searchOpen || !!q.trim(), searchBusy, pull, goStop } // what the drags on the list read
   const stopSwipe = useRef(null)
   const onStopTouch = {
     // a call's own slide to Delete (from the screen's right edge, or on a call whose Delete is out) is the call's alone:
     // the screen does not turn under it (Alex, 19 Nov: "it neither deletes nor stays, it goes to the next page")
     onTouchStart: (e) => { const callSlide = e.target.closest?.('.call-row') && (e.touches[0]?.clientX > window.innerWidth - CALL_EDGE || e.target.closest('.call-row.armed, .call-row.slid')); stopSwipe.current = tab !== 'chats' && tab !== 'media' && e.touches.length === 1 && !callSlide && !e.target.closest('.tabs, input, .seg') ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null },
+    onTouchMove: (e) => { const st = stopSwipe.current; if (st) { st.lx = e.touches[0].clientX; st.ly = e.touches[0].clientY } },
     onTouchEnd: (e) => {
       const st = stopSwipe.current
       stopSwipe.current = null
       if (!st || !window.matchMedia('(max-width: 760px)').matches) return
       const dx = e.changedTouches[0].clientX - st.x, dy = e.changedTouches[0].clientY - st.y
+      if (Math.abs(dx) >= 60 && Math.abs(dx) >= Math.abs(dy) * 1.5) goStop(dx < 0 ? 1 : -1)
+    },
+    // the iPhone cancels a touch it hands to the page's scrolling: a clear sideways slide still turns the screen
+    onTouchCancel: () => {
+      const st = stopSwipe.current
+      stopSwipe.current = null
+      if (!st || st.lx == null || !window.matchMedia('(max-width: 760px)').matches) return
+      const dx = st.lx - st.x, dy = st.ly - st.y
       if (Math.abs(dx) >= 60 && Math.abs(dx) >= Math.abs(dy) * 1.5) goStop(dx < 0 ? 1 : -1)
     },
   }
@@ -1892,7 +1925,7 @@ export default function Chat({ me, setMe }) {
           </div>
           </>
         )}
-        {tab === 'settings' && <Suspense fallback={<div className="side-scroll" />}><SettingsMenu me={me} setMe={setMe} page={setPage || 'general'} onPage={setSetPage} onMedia={() => setTab('media')} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
+        {tab === 'settings' && <Suspense fallback={<div className="side-scroll" />}><SettingsMenu me={me} setMe={setMe} page={setPage || 'general'} onPage={setSetPage} onMedia={() => { if (window.matchMedia('(max-width: 760px)').matches) setSetPage(''); setTab('media') }} onRoarMe={officialIds.length && !officialIds.includes(me.id) && !isAdmin ? openRoarMe : null}
           onInbox={isAdmin && officialIds.length ? () => setInboxOpen(true) : null} inboxCount={inboxCount} /></Suspense>}
         {/* the bar above the rail on Settings, with only THEMADLIONS in it, MAD bold, a link to themadlions.com, so every page has the same two bars (Alex, 12 Nov; shown by Halo only) */}
         {tab === 'settings' && <a className="foot-bar-empty" href="https://www.themadlions.com" target="_blank" rel="noopener noreferrer" aria-label="THEMADLIONS website"><span>THE<b>MAD</b>LIONS</span></a>}

@@ -457,6 +457,8 @@ export function MailView({ me, people, book }) {
     return () => boxes.forEach((b) => b.removeEventListener('scroll', fix))
   }, [step.s])
   useEffect(() => () => { window.dispatchEvent(new CustomEvent('roarme-mail-step', { detail: '' })); window.dispatchEvent(new CustomEvent('roarme-mail-edit', { detail: false })) }, [])
+  // one account: its folders are ROARMAIL's home, so a slide goes to the next screen of the bar at the foot (Messages, Settings)
+  const oneSlide = useSlide(() => tell('roarme-stop', -1), () => tell('roarme-stop', 1))
   const foldSlide = useSlide(() => back({ s: 'accs' }), fwd && fwd.s === 'list' && fwd.acc === step.acc ? () => setStep(fwd) : null)
   const who = useWho(me, people, book, setup)
   useEffect(() => {
@@ -608,7 +610,7 @@ export function MailView({ me, people, book }) {
     }
     const bump = (r) => (unreadOf(r) > 0 && <span className="badge">{unreadOf(r)}</span>)
     return (
-      <div className="rmx rmx-fl" {...(single ? {} : foldSlide)}>
+      <div className="rmx rmx-fl" {...(single ? oneSlide : foldSlide)}>
         {!single && <Crumb title={acc.name} pic={<AccPic a={acc} size={26} />} onBack={() => back({ s: 'accs' })} />}
         <Dots fn={() => setFoldEdit(true)} />
         {off && <p className="rmx-note">To read this account here, open RoarMail on your computer: Settings › Roar Account › My mail in RoarMe › Send to RoarMe.</p>}

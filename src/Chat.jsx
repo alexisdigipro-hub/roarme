@@ -405,6 +405,38 @@ export default function Chat({ me, setMe }) {
       setCPull(0)
     },
   }
+  // a pull down to refresh on every other page too (Alex, 25 Nov: "wherever I am, a swipe down refreshes and stays on that
+  // page"): Settings and its pages, Calls, Media and the rest; the chat list, Contacts and the mail have their own, and a
+  // chat, a window, a sheet or a field are left alone. It reloads, and stay.js brings the same page back.
+  const [gPull, setGPull] = useState(0)
+  useEffect(() => {
+    if (!window.matchMedia('(pointer: coarse)').matches) return undefined
+    const SKIP = '.rooms-pager, .contacts, .modal-back, .as-sheet, .room-view, .prw-phone, .bw, .lock, .phx, .rpl, .menu, .ctx, input, textarea, select, [contenteditable], .tabs, .foot'
+    const scroller = (el) => { for (let n = el; n && n !== document.body; n = n.parentElement) { const o = getComputedStyle(n).overflowY; if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight + 1) return n } return document.scrollingElement }
+    let g = null
+    const start = (e) => {
+      g = null
+      if (e.touches.length !== 1 || !e.target.closest || e.target.closest(SKIP) || !e.target.closest('.app')) return
+      const sc = scroller(e.target)
+      if (sc && sc.scrollTop > 0) return
+      g = { y: e.touches[0].clientY, x: e.touches[0].clientX, p: 0, felt: false }
+    }
+    const move = (e) => {
+      if (!g) return
+      const dy = e.touches[0].clientY - g.y, dx = e.touches[0].clientX - g.x
+      if (dy <= 0 || Math.abs(dx) > dy) { if (g.p) setGPull(0); g = null; return }
+      const p = Math.max(0, Math.min(1.15, (dy - 60) / 130))
+      if (p >= 1 && !g.felt) { g.felt = true; haptic(8) }
+      g.p = p
+      setGPull(Math.round(p * 20) / 20)
+    }
+    const end = () => { const x = g; g = null; if (!x) return; if (x.p >= 1) { setGPull(2); setTimeout(() => window.location.reload(), 150) } else setGPull(0) }
+    document.addEventListener('touchstart', start, { passive: true })
+    document.addEventListener('touchmove', move, { passive: true })
+    document.addEventListener('touchend', end)
+    document.addEventListener('touchcancel', end)
+    return () => { document.removeEventListener('touchstart', start); document.removeEventListener('touchmove', move); document.removeEventListener('touchend', end); document.removeEventListener('touchcancel', end) }
+  }, [])
   const [note, setNote] = useState('')
   const noteTimer = useRef(0)
   const toast = useCallback((s) => { setNote(s); clearTimeout(noteTimer.current); noteTimer.current = setTimeout(() => setNote(''), 2200) }, [])
@@ -1150,7 +1182,8 @@ export default function Chat({ me, setMe }) {
         g = null
         if (!open) {
           sheet(0, true)
-          if (pulled >= PULL_OPEN) setSearchOpen(true)
+          // in ROARMAIL a pull reloads at once and comes back to the same page (stay.js), since the mail has no list search (Alex, 25 Nov)
+          if (pulled >= PULL_OPEN) { if (pagerNow.current.folder === 'mail') { setPull(2); setTimeout(() => window.location.reload(), 150) } else setSearchOpen(true) }
           return
         }
         // pulled far enough down with the search open: RoarMe reloads, with any new version (Alex, 19 Oct)
@@ -1890,6 +1923,7 @@ export default function Chat({ me, setMe }) {
         )}
       </aside>
 
+      {gPull > 0 && createPortal(<div className={`ptr ptr-fixed${gPull >= 1 ? ' ready' : ''}${gPull === 2 ? ' spin' : ''}`} style={{ '--p': Math.min(gPull, 1) }} aria-hidden="true">{svg(<><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></>, 20)}</div>, document.body)}
       <main className="main">
         <NowPlaying onOpen={(id) => { setTab('chats'); setActiveId(id) }} />
         {tab === 'settings' ? (

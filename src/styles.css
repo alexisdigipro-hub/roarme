@@ -9001,3 +9001,13 @@ html:root:root:root:root .menu.rmx-lp { inset: 0 !important; margin: auto !impor
 .side-head .plus-wrap:has(> .head-mailsearch) { display: inline-flex; align-items: center; gap: 8px; }
 .side-head .head-mailsearch { width: 44px; height: 44px; flex: none; }
 .side-head .head-mailsearch svg { width: 21px; height: 21px; }
+.ptr.ptr-fixed { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 64px); margin: 0 0 0 -17px; z-index: 90; }
+
+/* The mails' filter bar stays at the top while the list scrolls under it, as the head does (Alex, 25 Nov) */
+html:root:root:root:root:root:root .rmx-ml > .rmx-head { position: sticky; top: 0; z-index: 4; }
+
+/* What a mail's row shows (Settings > ROARMAIL > Reading > Show, Alex, 25 Nov): Sender only, or Subject only */
+html:root:root:root:root:root .rmx.rmx-show-from .rmx-sub { display: none !important; }
+html:root:root:root:root:root .rmx.rmx-show-subject .room-top > strong { display: none !important; }
+html:root:root:root:root:root .rmx.rmx-show-subject .room-top { justify-content: flex-end; }
+html:root:root:root:root:root .rmx.rmx-show-subject .rmx-sub { font-size: 16px; }

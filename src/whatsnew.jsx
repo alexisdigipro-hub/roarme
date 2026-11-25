@@ -16,6 +16,7 @@ export const NEWS = [
     date: '25 November 2026',
     sections: [
       { title: 'Everywhere', items: [
+        'Pull down to refresh on Settings, Calls, Media and the mail too; you come back to the same page.',
         'Unread shows only chats again. Tap the dots there to select several: Delete, Read, Move, Archive.',
         'RoarTransfer: a file that got stuck on its way up (100% and nothing more) now goes on another way by itself and arrives.',
         'Pull to refresh keeps you where you were: the same tab, folder, chat or Settings page.',
@@ -31,6 +32,9 @@ export const NEWS = [
         'The iPhone app stays upright when you turn the phone on its side.',
       ] },
       { title: 'RoarMail', lab: true, items: [
+        'A mail wider than the screen is drawn smaller to fit whole, no longer cut at the sides.',
+        'The filter bar stays at the top while you scroll the mails.',
+        'Settings > RoarMail > Show: the sender and the subject, the sender only, or the subject only.',
         'Search sits at the top beside the +, on every page of the mail. Conversations moved to Settings > RoarMail, so the bar over the mails is shorter.',
         'Swipe between the tabs at the bottom in their order: Contacts, Calls, Messages, Mail, Settings.',
         'The dots at the top work for the page you are on: edit the mailboxes, move folders up or down, select several mails, or the open mail\'s menu.',

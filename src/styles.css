@@ -8988,3 +8988,8 @@ html:root:root:root:root .side.mail-in .rooms-pager, html:root:root:root:root .s
 html:root:root:root:root .side.mail-out .rooms-pager, html:root:root:root:root .side.mail-out .wheel-box { animation: mail-env-out .34s cubic-bezier(.22, 1, .36, 1) both; }
 html[data-lite] .side.mail-in .rooms-pager, html[data-lite] .side.mail-out .rooms-pager, html[data-lite] .side.mail-in .side-head, html[data-lite] .side.mail-out .wheel-box { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .side.mail-in .rooms-pager, .side.mail-out .rooms-pager, .side.mail-in .side-head, .side.mail-out .wheel-box { animation: none !important; } }
+
+/* ROARMAIL's back in the app's head, at the left before the ⋯ (Alex, 25 Nov: "this bar goes; the arrow left, the dots right of it") */
+.side-head .mail-hl { display: inline-flex; align-items: center; gap: 8px; }
+.side-head .mail-hl .mail-hback { width: 44px; height: 44px; flex: none; }
+.side-head .mail-hl .mail-hback svg { width: 22px; height: 22px; }

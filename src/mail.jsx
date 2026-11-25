@@ -199,14 +199,25 @@ function AccPic({ a, size = 50 }) {
 
 // every head inside ROARMAIL is one capsule, as wide and as tall as the folder bar: back at the left, a small picture
 // and the name on one line in the middle, anything else at the right (Alex, 25 Nov: "make the menus alike")
-function Crumb({ title, pic, onBack, end }) {
-  return (
-    <div className="rmx-crumb rmx-cap">
-      <button type="button" className="round rmx-hback" onClick={onBack} aria-label="Back" data-back="">{MAIL_I.back}</button>
-      <span className="rmx-cw">{pic}<b>{title}</b></span>
-      <span className="rmx-cap-end">{end}</span>
-    </div>
-  )
+// The capsule went (Alex, 25 Nov: "this bar goes; the arrow goes left and the dots right of it"): back lives in the
+// app's head at the left, before the ⋯. Each step that can go back registers here; the newest one answers the head's
+// back (roarme-mail-cmd 'back'), and the head is told whether there is one (roarme-mail-canback)
+const backs = []
+const tellBack = () => window.dispatchEvent(new CustomEvent('roarme-mail-canback', { detail: backs.length > 0 }))
+export const mailCanBack = () => backs.length > 0
+function useMailBack(fn) {
+  const ref = useRef(fn)
+  ref.current = fn
+  useEffect(() => {
+    const h = () => ref.current?.()
+    backs.push(h); tellBack()
+    return () => { const i = backs.lastIndexOf(h); if (i >= 0) backs.splice(i, 1); tellBack() }
+  }, [])
+}
+export const mailBackNow = () => { const h = backs[backs.length - 1]; if (h) h() }
+function Crumb({ onBack }) {
+  useMailBack(onBack)
+  return null
 }
 
 const listCache = new Map()
@@ -702,6 +713,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const [oldest, setOldest] = useState(() => prefs.oldest)
   const [conv, setConv] = useState(false)
   const [thread, setThread] = useState('')   // a conversation opened
+  useMailBack(() => (thread ? setThread('') : onBack()))
   const [q, setQ] = useState('')
   const [day, setDay] = useState(() => (step.preset === 'today' ? new Date().toLocaleDateString('en-CA') : ''))
   const [sender, setSender] = useState(null)
@@ -932,7 +944,6 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
         </div>
       ) : <div className="rmx-head">
         {/* back alone, in the same line as the filters; no folder name or address over the mails (Alex, 25 Nov) */}
-        <button type="button" className="round rmx-hback" onClick={thread ? () => setThread('') : onBack} aria-label="Back" title={thread ? 'Back' : `Back · ${step.name}`} data-back="">{MAIL_I.back}</button>
         <div className="rmx-fbar">
           <span className="rmx-filters">
             {FILTERS.map(([k, label]) => k === 'day' && filter !== 'day'

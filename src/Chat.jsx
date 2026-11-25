@@ -68,7 +68,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { hubLink, hubStart, proSwitchLoad, proSwitchNow } from './hub.jsx'
-import { MAIL_I, MailView, MailWord, UnreadMail, mailHere, mailSwitchNow, useMailUnread, useMailWho, useUnreadMails } from './mail.jsx'
+import { MAIL_I, MailView, MailWord, UnreadMail, mailBackNow, mailCanBack, mailHere, mailSwitchNow, useMailUnread, useMailWho, useUnreadMails } from './mail.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -162,6 +162,8 @@ export default function Chat({ me, setMe }) {
   // a pull to refresh comes back to the folder it was on (stay.js; Alex, 25 Nov)
   const [folder, setFolder] = useState(() => stayGet('folder', 'all'))
   // which step ROARMAIL is on, told by MailView (for the bar at the foot inside it)
+  const [mailBack2, setMailBack2] = useState(mailCanBack) // a step inside ROARMAIL that can go back (its back is in the head)
+  useEffect(() => { const f = (e) => setMailBack2(!!e.detail); window.addEventListener('roarme-mail-canback', f); return () => window.removeEventListener('roarme-mail-canback', f) }, [])
   const [mailStep, setMailStep] = useState(() => (stayGet('folder') === 'mail' ? stayGet('mail', { s: 'accs' }).s : '')) // MailView tells it before this listens, after a reload
   // ROARMAIL as a place of its own (Alex, 25 Nov: "it slides, as if you enter another environment"): the folder bar
   // steps out while it is open, the chats come back with a slide the other way; the folder left is remembered
@@ -1625,7 +1627,9 @@ export default function Chat({ me, setMe }) {
         <div className="side-head">
           {inMail ? (
             // inside ROARMAIL the head's own ⋯ is Edit Mailboxes and its + is New Mail (Alex, 25 Nov, from Apple Mail)
-            <button type="button" className={`pill-btn head-edit${mailEdit ? ' on' : ''}`} aria-label={mailEdit ? 'Done' : 'Edit Mailboxes'} title={mailEdit ? 'Done' : 'Edit Mailboxes'} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'edit' } }))}><span className="he-word">{mailEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{mailEdit ? I.check : DOTS3}</span></button>
+            <span className="mail-hl">
+            {mailBack2 && <button type="button" className="round mail-hback" aria-label="Back" title="Back" data-back="" onClick={() => mailBackNow()}>{MAIL_I.back}</button>}
+            <button type="button" className={`pill-btn head-edit${mailEdit ? ' on' : ''}`} aria-label={mailEdit ? 'Done' : 'Edit Mailboxes'} title={mailEdit ? 'Done' : 'Edit Mailboxes'} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'edit' } }))}><span className="he-word">{mailEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{mailEdit ? I.check : DOTS3}</span></button></span>
           ) : tab === 'calls' && !picking && !tabsEdit ? (
             <button type="button" className={`pill-btn head-edit${callsEdit ? ' on' : ''}`} aria-label={callsEdit ? 'Done' : 'Edit calls'} title={callsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); setCallsEdit((v) => !v) }}><span className="he-word">{callsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{callsEdit ? I.check : DOTS3}</span></button>
           ) : tab === 'contacts' && !picking && !tabsEdit ? (

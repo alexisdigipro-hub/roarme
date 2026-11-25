@@ -32,6 +32,7 @@ export const NEWS = [
         'The iPhone app stays upright when you turn the phone on its side.',
       ] },
       { title: 'RoarMail', lab: true, items: [
+        'An open mail keeps room at its left and right edges, so the words never touch the screen.',
         'On a computer, Settings > RoarMail shows what RoarMail is, with the download for Mac and Windows.',
         'A mail wider than the screen is drawn smaller to fit whole, no longer cut at the sides.',
         'The filter bar stays at the top while you scroll the mails.',

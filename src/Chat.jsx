@@ -209,7 +209,7 @@ export default function Chat({ me, setMe }) {
   useEffect(() => { staySet('tab', tab) }, [tab])
   useEffect(() => { staySet('folder', folder) }, [folder])
   useEffect(() => { staySet('chat', activeId) }, [activeId])
-  const inMail = mailOn && tab === 'chats' && folder === 'mail' && !!mailStep // the bar at the foot turns into the mail's
+  const inMail = mailOn && tab === 'chats' && folder === 'mail' && !!mailStep // inside ROARMAIL (its head's ⋯ and +)
   const [callsFilter, setCallsFilter] = useState('all') // Calls: all | missed (the switch in the head, Alex, 14 Nov)
   const [callsEdit, setCallsEdit] = useState(false) // Calls: the head's ⋯ shows a red minus on every call and + becomes Delete All
   const [callsClear, setCallsClear] = useState(0) // Calls: Delete All asks RecentCalls to clear the list
@@ -1876,19 +1876,12 @@ export default function Chat({ me, setMe }) {
         ) : (
           <nav ref={footLens} className="foot lens" data-travel="" onClickCapture={(e) => { if (tasksOpen && !e.target.closest('.foot-tasks') && window.matchMedia('(max-width: 760px)').matches) showTasks(false) }}>
             {/* Contacts · Calls · Messages in the middle, a little bigger · Tasks · Settings (Alex, 19 Oct); AllMedia lives in Settings */}
-            {inMail ? <>
-              {/* inside ROARMAIL: RoarMe (back to the chats) · Mail · New Mail · Settings (Alex, 25 Nov: "take Contacts out, we put it
-                  elsewhere; put RoarMe in the bar and it goes back") */}
-              <button type="button" className="foot-roarme" onClick={() => setFolder(mailBack.current && mailBack.current !== 'mail' ? mailBack.current : 'all')}>{FOOT_I.messages}<span>RoarMe</span></button>
-              {/* Mail: back to the accounts, RoarMail's home (Alex, 25 Nov: "a button beside the contacts that goes back to where all the mail is") */}
-              <button type="button" className={`foot-main foot-mailhome${mailStep !== 'contacts' ? ' on' : ''}`} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'home' } }))}><span className="foot-ico">{FOOT_I.mail}</span><span>Mail</span></button>
-            </> : <>
             <button type="button" className={`foot-contacts${tab === 'contacts' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('contacts')}>{FOOT_I.contacts}<span>Contacts</span></button>
             {prefs.callsTab && <button type="button" className={`foot-calls${tab === 'calls' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('calls')}>{FOOT_I.calls}<span>Calls</span></button>}
             <button type="button" className={`foot-main${tab === 'chats' && folder !== 'mail' && !tasksOpen ? ' on' : ''}`} onClick={() => { setTab('chats'); if (folder === 'mail') setFolder(mailBack.current && mailBack.current !== 'mail' ? mailBack.current : 'all') }}><span className="foot-ico">{FOOT_I.messages}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Messages</span></button>
-            {/* RoarMail, right of Messages (Alex, 25 Nov: "take ROARMAIL off the top and put it in the bar at the foot") */}
-            {mailOn && <button type="button" className={`foot-mail${tab === 'chats' && folder === 'mail' && !tasksOpen ? ' on' : ''}`} onClick={() => { setTab('chats'); setFolder('mail') }}><span className="foot-ico">{FOOT_I.mail}{mailUn > 0 && <i>{mailUn > 99 ? '99+' : mailUn}</i>}</span><span>Mail</span></button>}
-            </>}
+            {/* RoarMail, right of Messages (Alex, 25 Nov: "take ROARMAIL off the top and put it in the bar at the foot"); the same five
+                everywhere, in the mail too ("the bar never changes"); a tap while in the mail goes back to its accounts */}
+            {mailOn && <button type="button" className={`foot-mail${tab === 'chats' && folder === 'mail' && !tasksOpen ? ' on' : ''}`} onClick={() => { setTab('chats'); if (folder === 'mail') window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'home' } })); else setFolder('mail') }}><span className="foot-ico">{FOOT_I.mail}{mailUn > 0 && <i>{mailUn > 99 ? '99+' : mailUn}</i>}</span><span>Mail</span></button>}
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
             {prefs.tasksTab && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}

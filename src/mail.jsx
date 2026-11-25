@@ -284,6 +284,14 @@ function useSlide(onRight, onLeft) {
   const g = useRef(null)
   const el = useRef(null)
   const put = (x, ease) => { const n = el.current; if (!n) return; n.style.transition = ease ? 'transform .26s cubic-bezier(.22,1,.36,1)' : 'none'; n.style.transform = x ? `translate3d(${x}px,0,0)` : '' }
+  const finish = (gr) => {
+    const s = gr.current; gr.current = null
+    put(0, true)
+    if (!s || s.lock !== 'x') return
+    const fast = Math.abs(s.dx || 0) > 30 && Date.now() - s.t < 260
+    if (!(Math.abs(s.dx || 0) > 70 || fast)) return
+    if (s.dx > 0 && onRight) onRight(); else if (s.dx < 0 && onLeft) onLeft()
+  }
   return {
     ref: el,
     onTouchStart: (e) => { put(0); if (e.touches.length !== 1 || e.target.closest('input, textarea, .rmx-files')) { g.current = null; return } g.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: '', t: Date.now() } },
@@ -296,18 +304,10 @@ function useSlide(onRight, onLeft) {
       s.dx = dx
       put(can ? dx * 0.55 : dx * 0.12)
     },
-    onTouchEnd: () => {
-      const s = g.current; g.current = null
-      if (!s || s.lock !== 'x') return
-      const fast = Math.abs(s.dx || 0) > 30 && Date.now() - s.t < 260
-      const go = Math.abs(s.dx || 0) > 80 || fast
-      put(0, true)
-      if (!go) return
-      if (s.dx > 0 && onRight) onRight(); else if (s.dx < 0 && onLeft) onLeft()
-    },
-    // the iPhone cancels a touch once it decides the page is being scrolled: the page goes back to its place, never
-    // left shifted to one side (Alex, 24 Nov: "most pages spill out sideways")
-    onTouchCancel: () => { g.current = null; put(0, true) },
+    onTouchEnd: () => finish(g),
+    // the iPhone cancels a touch once it decides the page is being scrolled: the page goes back to its place, never left
+    // shifted (Alex, 24 Nov); a slide already well on its way still counts (Alex, 25 Nov: "swipe back does not work")
+    onTouchCancel: () => finish(g),
   }
 }
 
@@ -878,7 +878,7 @@ function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
     const body = mail.html || `<pre style="white-space:pre-wrap;font:inherit;margin:0">${(mail.text || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</pre>`
     const csp = `default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:${pics ? ' https: http:' : ''}`
     return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank">
-<style>html,body{margin:0;padding:0;background:#fff;color:#1d1d24;font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;word-wrap:break-word;overflow-wrap:anywhere}body{padding:${mail.html ? '0' : '14px 16px 18px'}}img{max-width:100%;height:auto}table{max-width:100%!important}a{color:#1a7fd0}</style></head><body>${body}</body></html>`
+<style>html,body{touch-action:pan-y pinch-zoom;overflow-x:hidden}html,body{margin:0;padding:0;background:#fff;color:#1d1d24;font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;word-wrap:break-word;overflow-wrap:anywhere}body{padding:${mail.html ? '0' : '14px 16px 18px'}}img{max-width:100%;height:auto}table{max-width:100%!important}a{color:#1a7fd0}</style></head><body>${body}</body></html>`
   }, [mail, pics])
   // the frame as tall as what is in it
   const fit = () => {

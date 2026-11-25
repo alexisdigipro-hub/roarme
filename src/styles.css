@@ -8932,3 +8932,8 @@ html[data-mode='dark']:root:root:root:root:root:root .modal:has(> .modal-body > 
   html.kb-native:root:root:root:root:root:root .modal-back:has(.rmx-c2) { padding-bottom: var(--kbh, 0px) !important; }
   html.kb-native:root:root:root:root:root:root .modal:has(> .modal-body > .rmx-c2) { border-radius: 28px !important; height: calc(100dvh - var(--kbh, 0px) - 10px - env(safe-area-inset-top, 0px)) !important; max-height: calc(100dvh - var(--kbh, 0px) - 10px - env(safe-area-inset-top, 0px)) !important; }
 }
+/* ALL stays blue while anything is unread, whichever folder is chosen (Alex, 25 Nov: "on THEMADLIONS the ALL loses its
+   blue; it must stay until I have read them all"): on All the lens itself is blue (above); elsewhere ALL is its own blue pill */
+html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'] { background: linear-gradient(170deg, var(--halo-mine-top, var(--halo, var(--accent))), var(--halo-mine, var(--halo, var(--accent)))) !important; border-radius: 999px !important; box-shadow: 0 2px 8px color-mix(in srgb, var(--halo-mine, var(--accent)) 30%, transparent) !important; }
+html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'], html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'] .tab-name { color: var(--halo-ink, #fff) !important; }
+html:root:root:root:root:root:root:root .rooms-area .wheel-box.u-has:not(.u-all):not(.u-open) > .tabs > button[data-tab='all'] small { background: rgba(255, 255, 255, .28) !important; color: var(--halo-ink, #fff) !important; }

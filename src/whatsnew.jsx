@@ -18,6 +18,8 @@ export const NEWS = [
       { title: 'Everywhere', items: [
         "PROjects: the Production Hub's Calendar in a project's Overview, above the Team: the month with its dots, the day's events, All types, Not available and +, with everything you see in the hub.",
         'Make the Ordino: its + also lets you add an ordino by its link, so it takes no line of its own.',
+        'ALL stays blue while anything is unread, whichever folder you are in.',
+        'The folder bar slides sideways easily when there are many folders.',
         'PROjects Overview: Video Chat, Voice Call and Schedule in a slim row right under the tabs; the Calls tab is gone.',
         'Settings, alike everywhere: Microphone, Camera and Speakers as rows; Media with the same head as every page; What\'s New with its choices in the middle; red words and chosen choices that read by Night; the brand at the foot of Settings whole above the bar.',
         'PROjects background: one picture for all projects, and any project can still have its own (Project Settings > More > Background).',
@@ -32,6 +34,7 @@ export const NEWS = [
         'RoarMail settings that work, and more: Preview Lines, Sender Pictures, Mail in Unread, Check Every, Quote in Replies, Send New Mail From, an account in All Inboxes or not, how much is kept.',
         'Junk: mail from blocked senders leaves the Inbox by itself; Blocked Senders with Unblock; hold a mail for Move to Junk, Not Junk and Block @domain.',
         'Writing a mail as Apple\'s Mail: a full, clean page, X and a round Send at the top, To with + for your contacts, Cc/Bcc and From folded in one line, Subject with the clip, then the whole page for your words.',
+        'Slide right goes back on every RoarMail page, inside an open mail too.',
         'Every head in RoarMail is the same slim bar: an account\'s folders, an open mail and Contacts.',
         'Slide a mail from the right edge of the screen: Read, Star, Move, Block and Trash come out and stay until you tap.',
         'Hold a mail: Reply, Reply All, Forward, Move To, Archive, All From This Sender, Block Sender and Delete.',

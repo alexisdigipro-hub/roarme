@@ -317,14 +317,23 @@ export function useLiquid(ref, dep) {
     if (!el) return undefined
     const on = () => document.documentElement.dataset.skin === 'halo' && !calm()
     const fits = () => el.scrollWidth <= el.clientWidth + 2
+    // pan-y (the finger drives the lens) only while every choice fits; once they do not, the bar scrolls sideways with
+    // its own elastic. Asked again whenever a choice comes, goes or changes size (Alex, 25 Nov: "with many folders the bar
+    // hardly moves": it was asked once, before all the folders were there, and stayed locked)
     const fix = () => { el.style.touchAction = on() && fits() ? 'pan-y' : '' }
     fix()
     const ro = new ResizeObserver(fix)
     ro.observe(el)
+    const watch = () => { for (const c of el.children) ro.observe(c) }
+    watch()
+    const mo = new MutationObserver(() => { watch(); fix() })
+    mo.observe(el, { childList: true, subtree: true, characterData: true })
+    el.addEventListener('touchstart', fix, { passive: true })
     let g = null
     const childAt = (x, y) => { const t = document.elementFromPoint(x, y); const c = t && t.closest('button'); return c && c.parentElement === el && !c.disabled ? c : null }
     const put = (x) => { const r = el.getBoundingClientRect(); el.style.setProperty('--fx', `${Math.max(0, Math.min(r.width, x - r.left))}px`) }
     const down = (e) => {
+      fix()
       if (e.button || !on() || !fits() || !el.querySelector(':scope > .on')) return
       g = { x: e.clientX, moved: false, id: e.pointerId }
       put(e.clientX)
@@ -360,7 +369,7 @@ export function useLiquid(ref, dep) {
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', cancel)
-    return () => { ro.disconnect(); el.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel) }
+    return () => { ro.disconnect(); mo.disconnect(); el.removeEventListener('touchstart', fix); el.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel) }
   }, [ref, dep])
 }
 /* A slider that follows the finger at once (Alex, 12 Nov: "smoother, a better answer, easy to catch"): the knob moves on

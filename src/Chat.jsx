@@ -816,7 +816,7 @@ export default function Chat({ me, setMe }) {
   const fRank = (id) => { if (id === 'archived') return 1e9; if (id === 'unread') return -1; const i = fOrder.indexOf(id); return i < 0 ? 1e3 : i }
   // the ready-made folders can be renamed and, except All, deleted (Alex, 16 Oct)
   const hiddenF = prefs.hiddenFolders || []
-  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || id === 'unread' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), ...(proOn ? [{ id: 'projects', name: 'PROjects', fixed: true }] : []), ...(mailOn ? [{ id: 'mail', name: 'RoarMail', fixed: true }] : [])]
+  const allFolders = [...BUILTIN.filter(([id]) => id === 'all' || id === 'unread' || !hiddenF.includes(id)).map(([id, name]) => ({ id, name: prefs.folderNames?.[id] || name })), ...myFolders.map((f) => ({ ...f, custom: true })), ...(proOn ? [{ id: 'projects', name: 'PROjects', fixed: true }] : [])]  // ROARMAIL lives in the bar at the foot, right of Messages (Alex, 25 Nov), not among the folders
     .map((f, i) => ({ f, i })).sort((a, b) => fRank(a.f.id) - fRank(b.f.id) || a.i - b.i).map(({ f }) => f)
   const tabsShown = tabDrag?.order ? tabDrag.order.map((id) => allFolders.find((f) => f.id === id)).filter(Boolean) : allFolders
   const editTabs = tabsEdit || picking
@@ -1065,8 +1065,8 @@ export default function Chat({ me, setMe }) {
           const n = pagerNow.current
           const at = n.allFolders.findIndex((f) => f.id === n.folder)
           g.w = el.clientWidth || 1
-          g.prev = n.allFolders[at - 1]?.id || ''
-          g.next = n.allFolders[at + 1]?.id || ''
+          g.prev = at < 0 ? '' : n.allFolders[at - 1]?.id || ''
+          g.next = at < 0 ? '' : n.allFolders[at + 1]?.id || ''
           if (trackRef.current) trackRef.current.style.transition = 'none'
         }
       }
@@ -1129,6 +1129,7 @@ export default function Chat({ me, setMe }) {
           const n = pagerNow.current
           if (n.busy) return
           const dir = dx < 0 ? 1 : -1
+          if (n.folder === 'mail') return
           const id = n.allFolders[n.allFolders.findIndex((f) => f.id === n.folder) + dir]?.id
           if (id) { setSwipedTo(id); setFolder(id) } else n.goStop(dir)
           return
@@ -1884,7 +1885,9 @@ export default function Chat({ me, setMe }) {
             </> : <>
             <button type="button" className={`foot-contacts${tab === 'contacts' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('contacts')}>{FOOT_I.contacts}<span>Contacts</span></button>
             {prefs.callsTab && <button type="button" className={`foot-calls${tab === 'calls' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('calls')}>{FOOT_I.calls}<span>Calls</span></button>}
-            <button type="button" className={`foot-main${tab === 'chats' && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('chats')}><span className="foot-ico">{FOOT_I.messages}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Messages</span></button>
+            <button type="button" className={`foot-main${tab === 'chats' && folder !== 'mail' && !tasksOpen ? ' on' : ''}`} onClick={() => { setTab('chats'); if (folder === 'mail') setFolder(mailBack.current && mailBack.current !== 'mail' ? mailBack.current : 'all') }}><span className="foot-ico">{FOOT_I.messages}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Messages</span></button>
+            {/* RoarMail, right of Messages (Alex, 25 Nov: "take ROARMAIL off the top and put it in the bar at the foot") */}
+            {mailOn && <button type="button" className={`foot-mail${tab === 'chats' && folder === 'mail' && !tasksOpen ? ' on' : ''}`} onClick={() => { setTab('chats'); setFolder('mail') }}><span className="foot-ico">{FOOT_I.mail}{mailUn > 0 && <i>{mailUn > 99 ? '99+' : mailUn}</i>}</span><span>Mail</span></button>}
             </>}
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}

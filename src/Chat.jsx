@@ -51,6 +51,7 @@ const LocationCard = lazy(() => import('./share.jsx').then((m) => ({ default: m.
 const LocationPicker = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationPicker })))
 const LocationView = lazy(() => import('./share.jsx').then((m) => ({ default: m.LocationView })))
 const PdfView = lazy(() => import('./pdfview.jsx').then((m) => ({ default: m.PdfView })))
+const ChatCalendar = lazy(() => import('./chatCal.jsx'))
 const PhotoSend = lazy(() => import('./photoSend.jsx').then((m) => ({ default: m.PhotoSend })))
 const TelegramImport = lazy(() => import('./tgImport.jsx').then((m) => ({ default: m.TelegramImport })))
 const PollCard = lazy(() => import('./poll.jsx').then((m) => ({ default: m.PollCard })))
@@ -2358,6 +2359,13 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   // Delete for Me, and asking someone to delete what they wrote (Alex, 18 Oct; supabase/delete-asks.sql)
   // what I deleted for myself is kept on the device too, so a kept copy of the chat never flashes it (Alex, 19 Nov)
   const [hidden, setHidden] = useState(() => new Set(lsGet(`hides-${room.room_id}`) || []))
+  // the chat's calendar, from a tap on a day's chip (Alex, 25 Nov; src/chatCal.jsx)
+  const [calOpen, setCalOpen] = useState(false)
+  const afterClear = (n, everyone) => {
+    supabase.from('roar_msg_hides').select('message_id').eq('room_id', room.room_id).then(({ data }) => { if (data) setHidden(new Set(data.map((x) => x.message_id))) })
+    load().then((got) => setMsgs((prev) => sameMsgs(prev, got)))
+    toast(`${n} ${n > 1 ? 'days' : 'day'} cleared${everyone ? ' for both' : ' for you'}`)
+  }
   const [asks, setAsks] = useState([])
   useEffect(() => { lsSet(`hides-${room.room_id}`, [...hidden], 200) }, [hidden, room.room_id])
   useEffect(() => {
@@ -3790,7 +3798,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             const said = ks.map((k) => `${n[k]} ${ASIDE_TABS[k][n[k] > 1 ? 2 : 1]}`).join(', ')
             return (
               <div key={m.id} id={`m-${m.id}`}>
-                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+                {newDay && <div className="day"><span role="button" tabIndex={0} className="day-chip" onClick={() => setCalOpen(true)} onKeyDown={(e) => { if (e.key === 'Enter') setCalOpen(true) }} title="Calendar">{dayLabel(m.created_at)}</span></div>}
                 <div className="aside-note"><button type="button" onClick={() => window.dispatchEvent(new CustomEvent('roarme-pro-tab', { detail: { room: room.room_id, tab: ks[0] } }))}><b>{mine ? 'You' : nameOf(who)}</b><span>{said}</span><i>in {ASIDE_TABS[ks[0]][0]}</i></button></div>
               </div>
             )
@@ -3803,7 +3811,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             const nt = nk === 'assign' ? `${mine ? 'You' : nameOf(who)} put you on a task` : nk === 'done' ? `${mine ? 'You' : nameOf(who)} marked your task done` : nk === 'due' ? 'A task of yours is due tomorrow' : 'Notice'
             return (
               <div key={m.id} id={`m-${m.id}`}>
-                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+                {newDay && <div className="day"><span role="button" tabIndex={0} className="day-chip" onClick={() => setCalOpen(true)} onKeyDown={(e) => { if (e.key === 'Enter') setCalOpen(true) }} title="Calendar">{dayLabel(m.created_at)}</span></div>}
                 <div className={`ntc ntc-${nk}`} role="button" tabIndex={0} onClick={() => window.dispatchEvent(new CustomEvent('roarme-pro-tab', { detail: { room: room.room_id, tab: 'tasks' } }))}>
                   <i className="ntc-dot" /><span className="ntc-tx"><b>{nt}:</b> {m.file.notice.title || ''}</span>
                   <button type="button" className="ntc-x" onClick={(e) => { e.stopPropagation(); hideForMe(m) }} aria-label="Dismiss" title="Dismiss"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
@@ -3815,7 +3823,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           if (m.file?.fromPanel && dots.has(m.id) && !m.deleted_at) {
             return (
               <div key={m.id} id={`m-${m.id}`}>
-                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+                {newDay && <div className="day"><span role="button" tabIndex={0} className="day-chip" onClick={() => setCalOpen(true)} onKeyDown={(e) => { if (e.key === 'Enter') setCalOpen(true) }} title="Calendar">{dayLabel(m.created_at)}</span></div>}
                 <div className={`msg-dot${mine ? ' mine' : ''}`}><button type="button" onClick={() => flipDot(m.id)} title="Show" aria-label="Show"><i /></button></div>
               </div>
             )
@@ -3824,14 +3832,14 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
           if (m.kind === 'system') {
             return (
               <div key={m.id} id={`m-${m.id}`}>
-                {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+                {newDay && <div className="day"><span role="button" tabIndex={0} className="day-chip" onClick={() => setCalOpen(true)} onKeyDown={(e) => { if (e.key === 'Enter') setCalOpen(true) }} title="Calendar">{dayLabel(m.created_at)}</span></div>}
                 <div className="sys-note"><span>{m.body === E2E_OFF ? I.unlock : I.lock}<b>{mine ? 'You' : nameOf(who)}</b><span>{systemText(m.body)}</span><small>{timeOf(m.created_at)}</small><button type="button" className="sys-x" onClick={() => hands.current.hideForMe(m)} aria-label="Delete for Me" title="Delete for Me">{I.x}</button></span></div>
               </div>
             )
           }
           return (
             <div key={m.id} id={`m-${m.id}`}>
-              {newDay && <div className="day"><span>{dayLabel(m.created_at)}</span></div>}
+              {newDay && <div className="day"><span role="button" tabIndex={0} className="day-chip" onClick={() => setCalOpen(true)} onKeyDown={(e) => { if (e.key === 'Enter') setCalOpen(true) }} title="Calendar">{dayLabel(m.created_at)}</span></div>}
               <div className={`msg${mine ? ' mine' : ''}${first ? ' first' : ''}${new Date(m.created_at).getTime() > bornAt.current - 1500 ? ' fresh' : ''}${flash === m.id ? ' flash' : ''}${isPicked ? ' picked' : ''}${hit ? ' hit' : ''}${hit && nowId === m.id ? ' hit-now' : ''}${!mine && !m.deleted_at && mentionsMe(m.body, me, roles) ? ' at-me' : ''}${wide ? ' wide-media' : ''}`}
                 onClick={picked ? undefined : (e) => hands.current.onTap(e, m)}
                 // while selecting, a tap anywhere on a message (a photo, a video, a file, a link, its words) only picks it (Alex, 15 Nov)
@@ -4421,6 +4429,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         </Modal>
       )}
       {forward && <Forward msgs={forward} me={me} rooms={rooms} titleOf={titleOf} fromRoom={room.room_id} onClose={() => setForward(null)} onDone={(n) => { setForward(null); setPicked(null); toast(n > 1 ? `${n} messages forwarded` : 'Forwarded') }} />}
+      {calOpen && <Suspense fallback={null}><ChatCalendar room={room} other={room.kind === 'group' ? '' : title} onGo={goTo} onClose={() => setCalOpen(false)} onCleared={afterClear} /></Suspense>}
       {pdfView && <OnTop><Suspense fallback={null}><PdfView url={pdfView.url} name={pdfView.name} onClose={() => setPdfView(null)} /></Suspense></OnTop>}
       {viewer && <OnTop><MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)}
         onShow={(m) => { setViewer(null); setTimeout(() => hands.current.goTo(m.id), 60) }}

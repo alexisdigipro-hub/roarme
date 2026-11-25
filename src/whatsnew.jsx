@@ -19,6 +19,7 @@ export const NEWS = [
         'RoarMail inside RoarMe: turn it on in Settings > ROARMAIL and Mail joins the bar at the foot. Add Gmail, iCloud, Outlook, Yahoo or any mail, read, reply and keep your inbox tidy.',
       ] },
       { title: 'Everywhere', items: [
+        'Calendar in every chat: tap a day like November 23 to see every day with its photos, jump to one, or select days and clear them.',
         'Pull down to refresh now catches on every page, and inside Mail too.',
         'Slide right to go back works on every page, even when your finger starts on a button or a colour; from the screen\'s left edge it always goes back.',
         'Sliding a chat or a mail sideways is steadier: the whole row moves with your finger and its buttons come in whole from the edge, never over the words.',

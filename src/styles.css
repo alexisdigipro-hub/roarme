@@ -8804,3 +8804,16 @@ html:root:root:root:root:root .hcal-del { width: 44px; height: 44px; min-width: 
 /* the + of Make the Ordino: Make the Ordino or Add Ordino Link (Alex, 25 Nov: "not a line of its own") */
 html:root:root:root:root .prw-ordveil { z-index: 90; }
 html:root:root:root:root:root:root:root .menu.prw-ordmenu { position: fixed; z-index: 91; min-width: 220px; margin: 0; transform: none; }
+
+/* the call buttons on the Overview (Alex, 25 Nov: "under the big menu, about its width, centred, thinner than the menu"):
+   a slim row of three even pills right under the Workspace's tabs, same functions as Calls' buttons */
+.prw-callwrap { padding: 8px 18px 2px; flex: none; }
+.prw-callwrap.slide { padding: 6px 10px 2px; }
+.prw-callstrip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; max-width: 100%; margin: 0 auto; }
+html:root:root:root:root:root:root:root .prw-callstrip > .btn { height: 32px; min-height: 0; min-width: 0; padding: 0 10px; gap: 6px; justify-content: center; border-radius: 16px; font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap; box-shadow: none; border: 0; }
+html:root:root:root:root:root:root:root .prw-callstrip > .btn:not(.btn-main) { background: var(--mg, rgba(255, 255, 255, .55)) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; color: inherit; }
+html:root:root:root:root:root:root:root .prw-callstrip > .btn-main { background: linear-gradient(170deg, var(--halo-mine-top), var(--halo-mine)) !important; color: var(--halo-ink) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.prw-callstrip > .btn svg, .prw-callstrip > .btn .ic-mask { width: 16px !important; height: 16px !important; flex: none; }
+.prw-callstrip > .btn span { overflow: hidden; text-overflow: ellipsis; }
+.prw-callstrip > .btn:active { transform: scale(.97); }
+@media (max-width: 760px) { html:root:root:root:root:root:root:root .prw-callstrip > .btn { height: 30px; font-size: 12px; padding: 0 6px; gap: 5px; } .prw-callstrip > .btn svg, .prw-callstrip > .btn .ic-mask { width: 15px !important; height: 15px !important; } }

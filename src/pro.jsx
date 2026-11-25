@@ -624,6 +624,18 @@ function Scout({ project, save, room, toast, onView, share }) {
 }
 
 /* ---------- Calls ---------- */
+// the three call buttons as a slim strip under the Workspace's tabs on the Overview (Alex, 25 Nov)
+function CallStrip({ roomId }) {
+  const go = (video) => window.dispatchEvent(new CustomEvent('roarme-gcall', { detail: { room: roomId, video } }))
+  return (
+    <div className="prw-callstrip">
+      <button type="button" className="btn btn-main" onClick={() => go(true)}>{I.video}<span>Video Chat</span></button>
+      <button type="button" className="btn" onClick={() => go(false)}>{I.phone}<span>Voice Call</span></button>
+      <button type="button" className="btn" onClick={() => window.dispatchEvent(new CustomEvent('roarme-roomact', { detail: { what: 'schedule' } }))}>{I.calendar}<span>Schedule</span></button>
+    </div>
+  )
+}
+
 function Calls({ list, room, people, me, onDrop }) {
   const [live, setLive] = useState(null)
   useEffect(() => {
@@ -1980,6 +1992,7 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
         </span>}
       </div>
       {!viewOnly && <div className={`prw-tabs${phone ? ' slide' : ''}`}><Lens as="nav" className="prw-bar" dep={`${shownTab}${TABS.length}`}>{TABS.map(([k, l]) => <button key={k} type="button" className={shownTab === k ? 'on' : ''} onClick={() => goTab(k)} title={l} aria-label={l}>{phone ? <span className="prw-bi">{TAB_I[k]}</span> : <span className="prw-bl">{TAB_SHORT[k] || l}</span>}</button>)}</Lens></div>}
+      {!viewOnly && shownTab === 'overview' && <div className={`prw-callwrap${phone ? ' slide' : ''}`}><CallStrip roomId={room.room_id} /></div>}
       <div className="prw-body"><div key={shownTab} className="prw-pane">
         {shownTab === 'overview' && (
           <div className="prw-over">

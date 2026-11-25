@@ -161,7 +161,7 @@ const keyM = (m) => `${m.account}|${m.path}|${m.uid}`
 // Settings > ROARMAIL, kept on this phone (Alex, 24 Nov: "the settings of RoarMail in our RoarMail tab")
 const PREF_KEY = 'roarme-mail-prefs'
 const PREF_START = { images: false, markRead: true, lines: 2, oldest: false, askDelete: false, askBlock: true, signature: true,
-  pics: true, conv: false, quote: true, defAcc: '', countUnread: true, every: 3, autoJunk: true, keep: 150, allHide: [], home: null }
+  pics: true, show: 'both', conv: false, quote: true, defAcc: '', countUnread: true, every: 3, autoJunk: true, keep: 150, allHide: [], home: null }
 export const mailPrefs = () => { try { return { ...PREF_START, ...JSON.parse(localStorage.getItem(PREF_KEY) || '{}') } } catch { return { ...PREF_START } } }
 const setMailPref = (k, v) => {
   const n = { ...mailPrefs(), [k]: v }
@@ -987,7 +987,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
     : thread ? 'Conversation' : acc.id === 'all' ? 'All accounts' : acc.email
   const finding = find && found?.key === findKey && !found.rows
   return (
-    <div className={`rmx rmx-ml rmx-l${prefs.lines}${prefs.pics ? '' : ' rmx-nopic'}`} {...listSlide}>
+    <div className={`rmx rmx-ml rmx-l${prefs.lines}${prefs.pics ? '' : ' rmx-nopic'}${prefs.show && prefs.show !== 'both' ? ` rmx-show-${prefs.show}` : ''}`} {...listSlide}>
       {/* one glass capsule as tall as the folder bar: back and the folder's name, then every filter, sliding sideways
           (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL) */}
       {sel ? (
@@ -1073,7 +1073,13 @@ function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
   const fit = () => {
     const f = frame.current
     try {
-      const h = f.contentDocument.documentElement.scrollHeight; f.style.height = `${Math.max(120, h)}px`
+      // a mail wider than the screen (tables of a fixed 600 or 700 px) is drawn smaller to fit whole, as Apple's Mail does
+      // (Alex, 25 Nov: "most of my mails spill out at the left and do not fit at the right"), never cut at the sides
+      const dd = f.contentDocument, W = f.clientWidth
+      dd.body.style.zoom = ''
+      const sw = Math.max(dd.documentElement.scrollWidth, dd.body.scrollWidth)
+      if (W > 0 && sw > W + 2) dd.body.style.zoom = String(Math.max(0.3, W / sw))
+      const h = dd.documentElement.scrollHeight; f.style.height = `${Math.max(120, h)}px`
       // the mail's own frame keeps a finger to itself, so its touches are handed to the page's slide (by screen place)
       const r = () => f.getBoundingClientRect()
       const as = (e) => ({ touches: [...e.touches].map((t) => ({ clientX: t.clientX + r().left, clientY: t.clientY + r().top })), target: f })
@@ -1366,7 +1372,7 @@ export function UnreadMail({ m, who, onDrop }) {
     } catch { warmMail(true) }
   }
   return (
-    <div className={`rmx rmx-mu1 rmx-l${prefs.lines}${prefs.pics ? '' : ' rmx-nopic'}`}>
+    <div className={`rmx rmx-mu1 rmx-l${prefs.lines}${prefs.pics ? '' : ' rmx-nopic'}${prefs.show && prefs.show !== 'both' ? ` rmx-show-${prefs.show}` : ''}`}>
       <MailRow m={m} who={who} bar={setup?.accounts?.find((a) => a.id === m.account)?.color} onOpen={() => openMailFromUnread(m)} onAct={act} onMenu={(at) => setMenu({ at })} />
       {menu && <MailMenu m={m} at={menu.at} noSelect onAct={act} onClose={() => setMenu(null)} />}
     </div>
@@ -1436,6 +1442,7 @@ export function MailPage() {
         <div className="set-box">
           {sw('markRead', 'Mark as Read When Opened')}
           {sw('images', 'Load Images', 'Pictures from the web in every mail, without asking.')}
+          {seg('show', 'Show', [['both', 'Both'], ['from', 'Sender'], ['subject', 'Subject']])}
           {seg('lines', 'Preview Lines', [[0, 'None'], [1, '1'], [2, '2']])}
           {sw('pics', 'Sender Pictures', 'The round picture beside each mail.')}
           {sw('oldest', 'Oldest First', 'The order a folder opens in.')}
@@ -1483,6 +1490,43 @@ export function MailPage() {
         </div>
       </>}
       {!on && <p className="hb-hint">Only you see this while it is being built. To read an account here, send it from RoarMail on your computer: Settings › Roar Account › My mail in RoarMe.</p>}
+    </div>
+  )
+}
+
+// RoarMail on a computer (Alex, 25 Nov: "under PROjects, as on the phone; on the desktop a page that tells people to
+// download the real RoarMail app"): what it is, and the download for the computer in use. Inside the Mac App Store
+// build only the way to its page (an App Store app does not hand out other software's installers).
+const RM_DL = 'https://github.com/alexisdigipro-hub/roarmail/releases/latest/download/'
+export function MailPromo() {
+  const ua = navigator.userAgent
+  const mac = /Mac/i.test(ua), win = /Windows/i.test(ua)
+  const store = !!window.roarDesktop?.store
+  const dl = [
+    ['Mac', 'Apple Silicon', `${RM_DL}RoarMail-Mac-arm64.dmg`],
+    ['Mac', 'Intel', `${RM_DL}RoarMail-Mac-x64.dmg`],
+    ['Windows', '10 and 11', `${RM_DL}RoarMail-Windows-Setup.exe`],
+  ].sort((a, b) => (b[0] === (mac ? 'Mac' : win ? 'Windows' : '')) - (a[0] === (mac ? 'Mac' : win ? 'Windows' : '')))
+  const POINTS = [
+    ['inbox', 'Every mailbox, one inbox', 'Gmail, iCloud, Outlook and your own domain side by side.'],
+    ['block', 'Private', 'Trackers blocked, fakes caught, and no server of ours between you and your mail.'],
+    ['star', 'Made for work', 'Snooze, undo, contacts with their photos, RoarTransfer links and PROjects inside.'],
+    ['mail', 'Here on your phone too', 'Turn it on in RoarMe on your iPhone and your mail is in the bar at the bottom.'],
+  ]
+  return (
+    <div className="rmp">
+      <div className="rmp-hero">
+        <span className="rmp-ico">{MAIL_I.mail}</span>
+        <h2>Every mailbox. One private inbox.</h2>
+        <p>RoarMail is The Mad Lions' mail app for Mac and Windows. Free, and it updates itself.</p>
+      </div>
+      <div className="set-box rmp-points">
+        {POINTS.map(([ic, t, d]) => <div key={t} className="rmp-pt"><span className="rmp-pi">{MAIL_I[ic]}</span><span><b>{t}</b><small>{d}</small></span></div>)}
+      </div>
+      {!store && <div className="rmp-dl">
+        {dl.map(([os, sub, href], i) => <a key={href} className={`pill-btn rmp-btn${i === 0 ? ' main' : ''}`} href={href} target="_blank" rel="noreferrer"><b>Download for {os}</b><small>{sub}</small></a>)}
+      </div>}
+      <a className="pill-btn rmp-more" href="https://themadlions.com/lab/roarmail/" target="_blank" rel="noreferrer">See RoarMail</a>
     </div>
   )
 }

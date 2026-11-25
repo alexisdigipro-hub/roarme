@@ -94,15 +94,22 @@ function CallDevices({ p }) {
   }
   const of = (kind) => (list || []).filter((d) => d.kind === kind)
   const named = (list || []).some((d) => d.label)
-  const pick = (kind, key, label) => (
-    <div className="set-row set-col">
-      <span className="set-text">{label}</span>
-      <select className="input set-select" value={p[key] || ''} onChange={(e) => setPrefs({ [key]: e.target.value })}>
-        <option value="">The device's own choice</option>
-        {of(kind).map((d, n) => <option key={d.deviceId || n} value={d.deviceId}>{d.label || `${label} ${n + 1}`}</option>)}
-      </select>
-    </div>
-  )
+  // a row like every other, the choice in small words and an arrow; the system's own list opens over it (Alex, 24 Nov:
+  // the grey system boxes did not match)
+  const pick = (kind, key, label) => {
+    const devs = of(kind), n = devs.findIndex((d) => d.deviceId === p[key])
+    const now = n < 0 ? "The device's own choice" : devs[n].label || `${label} ${n + 1}`
+    return (
+      <label className="set-row set-pick set-devpick">
+        <span className="set-text">{label}<small>{now}</small></span>
+        <i className="set-chev">{I.right}</i>
+        <select value={p[key] || ''} onChange={(e) => setPrefs({ [key]: e.target.value })} aria-label={label}>
+          <option value="">The device's own choice</option>
+          {devs.map((d, i) => <option key={d.deviceId || i} value={d.deviceId}>{d.label || `${label} ${i + 1}`}</option>)}
+        </select>
+      </label>
+    )
+  }
   return (
     <Box title="Call devices" note="What voice and video calls use on this device.">
       {!named && <button type="button" className="set-row set-pick" onClick={ask}><span className="set-text">Show My Devices<small>{asked ? 'Allow the microphone and camera to see their names' : 'RoarMe asks once for the microphone and camera'}</small></span><i className="set-chev">{I.right}</i></button>}

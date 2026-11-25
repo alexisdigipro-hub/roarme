@@ -19,6 +19,7 @@ export const NEWS = [
         "PROjects: the Production Hub's Calendar in a project's Overview, above the Team: the month with its dots, the day's events, All types, Not available and +, with everything you see in the hub.",
         'Make the Ordino: its + also lets you add an ordino by its link, so it takes no line of its own.',
         'PROjects Overview: Video Chat, Voice Call and Schedule in a slim row right under the tabs; the Calls tab is gone.',
+        'Settings, alike everywhere: Microphone, Camera and Speakers as rows; Media with the same head as every page; What\'s New with its choices in the middle; red words and chosen choices that read by Night; the brand at the foot of Settings whole above the bar.',
         'PROjects background: one picture for all projects, and any project can still have its own (Project Settings > More > Background).',
       ] },
       { title: 'On a phone', items: [

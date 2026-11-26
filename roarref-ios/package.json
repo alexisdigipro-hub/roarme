@@ -2,7 +2,7 @@
   "name": "roarref-ios",
   "private": true,
   "version": "1.0.0",
-  "description": "RoarRef for iPhone: themadlions.com/lab/roarref/app/ in a shell of its own (Capacitor), built on GitHub",
+  "description": "RoarRef for iPhone: themadlions.com/roarref/ in a shell of its own (Capacitor), built on GitHub",
   "author": "THEMADLIONS",
   "dependencies": {
     "@capacitor/core": "^7.0.0",

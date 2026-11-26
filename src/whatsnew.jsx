@@ -18,6 +18,7 @@ export const NEWS = [
       { title: 'Everywhere', items: [
         'More than one account: Settings > Add Account, then switch with one tap, or hold Settings in the bar at the foot. Notifications come from all of them, and a tap opens the right account.',
         'Pulling down to refresh no longer asks for your passcode or Face ID again.',
+        'A big RoarMoji or sticker with a reaction: the reaction and the time sit side by side under it, the time never broken in two.',
         'A delivered project now stays only in PROjects > Archived Projects, out of All, Unread and every other folder. Search still finds it.',
         'Tap a reply to see the message it answers: it lights up for a moment, words, photo or anything. From the calendar the day lights up too, so you see where it starts.',
         'An empty writing box stays one line tall, also beside a project\'s Workspace.',

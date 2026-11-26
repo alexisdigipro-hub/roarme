@@ -163,7 +163,7 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
         <div key={g} className="set-box">
           {PAGES.filter((x) => x[5] === g && !TUCKED.includes(x[0])).map(([id, label, c, ico]) => (
             <button key={id} type="button" className={`set-row set-pick set-nav${page === id ? ' on' : ''}`} onClick={() => onPage(id)}>
-              <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}{SUBS[id] && <small>{SUBS[id]}</small>}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}{id === 'features' && <small className="set-val">{[p.callsTab && 'Calls', p.tasksTab && 'Tasks'].filter(Boolean).flatMap((x, n) => (n ? [' · ', <span key={x}>{x}</span>] : [<span key={x}>{x}</span>]))}{!p.callsTab && !p.tasksTab && <span>Off</span>}</small>}<i className="set-chev">{I.right}</i>
+              <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}{SUBS[id] && <small>{SUBS[id]}</small>}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}{id === 'features' && <small className="set-val">{[p.callsTab && 'Calls', p.tasksTab && inThemeLab(me) && 'Tasks'].filter(Boolean).flatMap((x, n) => (n ? [' · ', <span key={x}>{x}</span>] : [<span key={x}>{x}</span>]))}{!p.callsTab && !(p.tasksTab && inThemeLab(me)) && <span>Off</span>}</small>}<i className="set-chev">{I.right}</i>
             </button>
           ))}
           {/* everything shared in all chats, out of the bar at the foot and in here (Alex, 19 Oct) */}
@@ -216,8 +216,8 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
       <div className={`set-body stagger${goingBack ? ' back' : ''}`} key={page}>
         <Hero id={page} />
         {page === 'profile' && profile}
-        {page === 'general' && <><General p={p} onKeys={() => onPage('keys')} toast={toast} /><Features p={p} /><Language p={p} /><ResetAll toast={toast} /></>}
-        {page === 'features' && <Features p={p} />}
+        {page === 'general' && <><General p={p} onKeys={() => onPage('keys')} toast={toast} /><Features p={p} me={me} /><Language p={p} /><ResetAll toast={toast} /></>}
+        {page === 'features' && <Features p={p} me={me} />}
         {page === 'chats' && (
           <>
             <div className="set-box">
@@ -338,16 +338,16 @@ function General({ p, onKeys, toast }) {
 
 /* Features (Alex, 7 Nov): Calls and Tasks in one place, each switched on or off with what it does said plainly;
    on, it gets its button in the bar at the foot. Calls keeps the microphone, camera and speakers under it */
-function Features({ p }) {
+function Features({ p, me }) {
   return (
     <>
       <Box title="Calls" note="Voice and video calls, one to one. Off: the Calls tab leaves the bar at the foot; the call buttons in a chat stay.">
         <Switch on={p.callsTab} set={(v) => setPrefs({ callsTab: v })} hint="Recent calls and Create New Call, in the bar at the foot">Calls Tab</Switch>
       </Box>
       <CallDevices p={p} />
-      <Box title="Tasks" note="Off: nothing of your tasks is lost. They come back when you turn it on.">
+      {inThemeLab(me) && <Box title="Tasks" note="Off: nothing of your tasks is lost. They come back when you turn it on.">
         <Switch on={p.tasksTab} set={(v) => setPrefs({ tasksTab: v })} hint="To-dos for you and others, reminders and a calendar, in the bar at the foot">Tasks</Switch>
-      </Box>
+      </Box>}
     </>
   )
 }
@@ -1075,7 +1075,7 @@ function ResetAll({ toast }) {
     toast('All settings are back to how RoarMe starts')
   }
   return (
-    <Box note="The look, notifications and sounds, chats, Data and Storage, calls and ROARMAIL's settings go back to how RoarMe starts. The language, your folders, chats, contacts and accounts stay as they are.">
+    <Box note="The look, notifications and sounds, chats, Data and Storage, and calls go back to how RoarMe starts. The language, your folders, chats, contacts and accounts stay as they are.">
       <button type="button" className="set-row set-pick danger" onClick={go}><span className="set-text">Reset All Settings</span></button>
     </Box>
   )

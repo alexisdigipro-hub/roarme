@@ -3,7 +3,7 @@
   "appName": "RoarRef",
   "webDir": "www",
   "server": {
-    "url": "https://themadlions.com/lab/roarref/app/",
+    "url": "https://themadlions.com/roarref/",
     "errorPath": "offline.html"
   },
   "ios": {

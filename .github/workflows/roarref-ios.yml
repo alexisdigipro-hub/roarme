@@ -1,6 +1,6 @@
 name: RoarRef for iPhone
 
-# Builds RoarRef for iPhone from roarref-ios/ (a Capacitor shell that opens themadlions.com/lab/roarref/app/). The Xcode project is made
+# Builds RoarRef for iPhone from roarref-ios/ (a Capacitor shell that opens themadlions.com/roarref/). The Xcode project is made
 # fresh here each time, nothing of it is kept in the repository. It lives in RoarMe's repository only because the
 # App Store Connect key is in this repository's secrets; nothing of it touches RoarMe.
 #  - A pull request that touches roarref-ios/ or this file, and Run workflow with "check": builds for the simulator

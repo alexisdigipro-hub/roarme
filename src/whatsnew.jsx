@@ -25,6 +25,7 @@ export const NEWS = [
         'Unlock with Touch ID in the Mac app: Settings > Privacy and Security > Passcode lock. The lock asks for your finger as soon as RoarMe opens; the passcode still works.',
       ] },
       { title: 'On a phone', items: [
+        'Mail answers faster: what you tap no longer waits behind mail being fetched in the background, and long folders scroll lighter.',
         'Mail stays in step with your other devices: new mail shows by itself every half minute, and mail deleted elsewhere goes. A slide right anywhere on an open mail takes you back.',
         'The buttons that come out when you slide a mail (Read, Star, Move, Block, Trash) work again.',
         'Mail is quicker: RoarMe now keeps your mail accounts connected, so reading, deleting and moving mail no longer waits for a fresh sign-in each time.',

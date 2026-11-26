@@ -9240,3 +9240,7 @@ html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !i
 
 /* the placeholder never wraps, on a computer too, so an empty writing box stays one line (Alex, 26 Nov) */
 .compose-box textarea::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ROARMAIL's rows out of sight are not drawn until they come near the screen (26 Nov: "slow and heavy"), so a long
+   folder (All Mail, up to 1,500) scrolls and opens light */
+.rmx .rmx-sw { content-visibility: auto; contain-intrinsic-size: auto 76px; }

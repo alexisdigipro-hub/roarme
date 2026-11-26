@@ -9187,3 +9187,4 @@ html:root:root:root:root:root[data-mode='dark'] .modal:has(> .modal-body > .ccal
 .ccal-head { background: inherit; position: relative; z-index: 1; }
 /* a day of words only: the number as it is, only the dot under it (Alex, 25 Nov: "only the dot") */
 .ccal-d.text { font-weight: 400; }
+.rmx-more { gap: 8px; flex-wrap: wrap; }

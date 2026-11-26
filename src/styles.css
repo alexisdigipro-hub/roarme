@@ -9301,3 +9301,22 @@ html.ws-pop .prj-grip { display: none !important; }
 html.ws-pop .prw.big > .prj-wrap.big { flex: 1 1 auto; width: auto !important; min-width: 0; }
 html.ws-pop .prw.big .prw-work { border-left: 0 !important; border-right: 0 !important; }
 .prw-popout svg { width: 19px; height: 19px; }
+
+/* The spoiler shimmers so it is seen as something to tap (Alex, 26 Nov, B of https://claude.ai/artifact/XyQ4LKnUCM9aAj4ioj8WGk):
+   a soft block of the words' own colour with a light passing over it every 2.4 s; a tap opens it from left to right. The light
+   is the block's own moving gradient, so a spoiler that runs over two lines shimmers on both. */
+.fmt-spoiler:not(.shown) {
+  color: transparent !important; border-radius: 6px; padding: 0 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background-color: transparent !important;
+  background-image: linear-gradient(100deg, var(--sp-base) 0 38%, var(--sp-light) 50%, var(--sp-base) 62% 100%) !important;
+  background-size: 260% 100% !important; background-repeat: no-repeat !important;
+  animation: sp-shim 2.4s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+.fmt-spoiler { --sp-base: rgba(120, 124, 135, .34); --sp-light: rgba(255, 255, 255, .55); }
+.msg.mine .fmt-spoiler { --sp-base: rgba(255, 255, 255, .3); --sp-light: rgba(255, 255, 255, .75); }
+html[data-mode='dark'] .fmt-spoiler { --sp-base: rgba(255, 255, 255, .18); --sp-light: rgba(255, 255, 255, .45); }
+@keyframes sp-shim { 0%, 30% { background-position: 100% 0; } 75%, 100% { background-position: 0 0; } }
+.fmt-spoiler.shown { background: transparent !important; animation: sp-open .5s ease both; }
+@keyframes sp-open { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+html[data-lite] .fmt-spoiler:not(.shown) { animation: none; }
+@media (prefers-reduced-motion: reduce) { .fmt-spoiler:not(.shown), .fmt-spoiler.shown { animation: none; } }

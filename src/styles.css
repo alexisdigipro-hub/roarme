@@ -9213,3 +9213,18 @@ html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !i
 /* a minimum height on a flex item takes away its own floor of 'as tall as its content', so a long list was squeezed into
    the screen with every row crushed (Alex, 26 Nov, build 256): the page and its rows never shrink */
 .rooms .rmx > * { flex-shrink: 0; }
+
+/* One side gap on a phone (Alex, 26 Nov: "everything with the same gap left and right as the menu at the foot, on every
+   page"): the bar at the foot stands 20px from each edge, so the head's round buttons, the search, the folder bar, the
+   lists, the mail's boxes and its filter bar start and end 20px in too; a row's picture lines up at 20px. */
+@media (max-width: 760px) {
+  html:root:root:root:root .side:not(:has(.rmx-rd)) { padding-left: 20px; padding-right: 20px; }
+  html:root:root:root:root .side .side-head { padding-left: 0; padding-right: 0; }
+  html:root:root:root:root .side:has(.rmx-rd) > .side-col > :not(.rooms-area) { margin-left: 20px; margin-right: 20px; }
+  html:root:root:root:root .side .tabs, html:root:root:root:root .side:has(.rmx-rd) .rooms-area .tabs { margin-left: 0 !important; margin-right: 0 !important; }
+  html:root:root:root:root .side .rooms > .room:not(.contact), html:root:root:root:root .side .rmx-sw, html:root:root:root:root .side .rmx-accl .room { margin-left: -5px; margin-right: -5px; width: calc(100% + 10px); max-width: none !important; }
+  html:root:root:root:root .side .contacts-list .contact { margin-left: -12px; margin-right: -12px; width: calc(100% + 24px); max-width: none !important; }
+  html:root:root:root:root .side > .foot, html:root:root:root:root .side .foot { margin-left: 0 !important; margin-right: 0 !important; }
+  html:root:root:root:root .side .rmx.rmx-fl { padding-left: 0; padding-right: 0; }
+  html:root:root:root:root .side .rmx-ml > .rmx-head { margin-left: 0; margin-right: 0; }
+}

@@ -9291,3 +9291,13 @@ html[data-lite] .wheel-box > .u-pop.round > .u-son { animation: none; display: n
 html:root:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-links:has(> .auth-back) { flex-wrap: wrap; justify-content: center; }
 html:root:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-links:has(> .auth-back) > button { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: visible; text-overflow: clip; }
 html:root:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-links > button.auth-back { flex: 1 0 100%; order: 9; }
+
+/* The Workspace in a window of its own (Alex, 26 Nov; src/wsPop.js, desktop/main.js roar:ws-*): that window shows the
+   group's Workspace alone, the whole window; the chat, the list and the bar at the foot stay in the main window */
+html.ws-pop .app { grid-template-columns: 1fr !important; }
+html.ws-pop .app > .side,
+html.ws-pop .prw.big > .room-view,
+html.ws-pop .prj-grip { display: none !important; }
+html.ws-pop .prw.big > .prj-wrap.big { flex: 1 1 auto; width: auto !important; min-width: 0; }
+html.ws-pop .prw.big .prw-work { border-left: 0 !important; border-right: 0 !important; }
+.prw-popout svg { width: 19px; height: 19px; }

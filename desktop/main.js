@@ -154,6 +154,13 @@ function open() {
   if (b.maximized) win.maximize()
   win.on('resize', keepBounds)
   win.on('move', keepBounds)
+  // the Workspace's own window goes with it while snapped, and hides and comes back with it
+  win.on('move', wsPlace)
+  win.on('resize', wsPlace)
+  win.on('minimize', () => wsWin?.hide())
+  win.on('hide', () => wsWin?.hide())
+  win.on('restore', () => { if (wsWin) { wsWin.showInactive(); wsPlace() } })
+  win.on('show', () => { if (wsWin && !wsWin.isVisible()) { wsWin.showInactive(); wsPlace() } })
   // shown once the page has painted, so it opens on RoarMe and not on an empty frame
   win.once('ready-to-show', () => win?.show())
   setTimeout(() => { if (win && !win.isVisible()) win.show() }, 3000) // a slow or missing network still gets a window
@@ -169,7 +176,7 @@ function open() {
   win.on('close', (e) => {
     if (!quitting && settings.keepRunning) { e.preventDefault(); win.hide() }
   })
-  win.on('closed', () => { win = null })
+  win.on('closed', () => { win = null; if (wsWin) wsWin.destroy() })
   // with the window closed or minimised macOS would put RoarMe to sleep (App Nap) and its connection with it, so no
   // message or sound came (Alex, 18 Oct): while it is out of sight it is kept awake, which costs next to nothing
   win.on('hide', awake)
@@ -177,6 +184,59 @@ function open() {
   win.on('show', asleepOk)
   win.on('restore', asleepOk)
 }
+/* The Workspace of a PROjects group in a window of its own (Alex, 26 Nov: "an extra window that snaps to the chat, but can
+   stand apart too"). The page asks roar:ws-open with the group; a second window loads RoarMe at #ws=<group> and shows that
+   Workspace alone (src/wsPop.js). It starts snapped to the right edge of the main window and moves and grows with it; dragged
+   more than SNAP px away it stands apart, brought back within SNAP of that edge it snaps again. Back to Chat (roar:ws-dock) or
+   closing it puts the Workspace back in the main window. One such window at a time. */
+let wsWin = null
+let wsRoom = ''
+let wsSnapped = true
+let wsPlacing = false
+const SNAP = 32
+const wsTell = () => { if (win && !win.isDestroyed()) win.webContents.send('roar:ws', wsWin ? [wsRoom] : []) }
+function wsPlace() {
+  if (!win || !wsWin || !wsSnapped || win.isMinimized() || win.isFullScreen()) return
+  const b = win.getBounds()
+  const w = wsWin.getBounds().width
+  wsPlacing = true
+  wsWin.setBounds({ x: b.x + b.width, y: b.y, width: w, height: b.height })
+  setTimeout(() => { wsPlacing = false }, 60)
+}
+function wsMoved() {
+  if (wsPlacing || !win || !wsWin) return
+  const b = win.getBounds(), c = wsWin.getBounds()
+  const near = Math.abs(c.x - (b.x + b.width)) < SNAP && c.y < b.y + b.height && c.y + c.height > b.y
+  wsSnapped = near
+  if (near) wsPlace()
+}
+function wsOpenWin(room) {
+  if (!/^[0-9a-f-]{36}$/i.test(room) || !win) return false
+  if (wsWin && wsRoom === room) { wsWin.show(); wsWin.focus(); return true }
+  if (wsWin) { wsWin.destroy(); wsWin = null }
+  wsRoom = room
+  wsSnapped = true
+  const b = win.getBounds()
+  const wa = screen.getDisplayMatching(b).workArea
+  const width = Math.max(520, Math.min(860, Math.round(b.width * 0.6)))
+  // no room at the right on this screen: it opens apart, laid over the main window's right side
+  const fits = b.x + b.width + width <= wa.x + wa.width + 4
+  wsSnapped = fits
+  wsWin = new BrowserWindow({ width, height: b.height, x: fits ? b.x + b.width : Math.max(wa.x, b.x + b.width - width), y: b.y, minWidth: 480, minHeight: 420, title: 'Workspace · RoarMe', ...look })
+  wsWin.once('ready-to-show', () => wsWin?.show())
+  wsWin.loadURL(`${HOME}#ws=${room}`)
+  guard(wsWin)
+  // decided where the drag ends, so a pull away is never fought mid-drag
+  wsWin.on('moved', wsMoved)
+  wsWin.on('closed', () => { wsWin = null; wsRoom = ''; wsTell() })
+  wsTell()
+  return true
+}
+ipcMain.handle('roar:ws-open', (_e, room) => wsOpenWin(String(room || '')))
+ipcMain.handle('roar:ws-dock', () => { if (wsWin) wsWin.close(); win?.show(); win?.focus(); return true })
+ipcMain.handle('roar:ws-focus', () => { if (wsWin) { wsWin.show(); wsWin.focus() } return !!wsWin })
+ipcMain.handle('roar:ws-list', () => (wsWin ? [wsRoom] : []))
+
 let blocker = -1
 function awake() { if (blocker < 0 || !powerSaveBlocker.isStarted(blocker)) blocker = powerSaveBlocker.start('prevent-app-suspension') }
 function asleepOk() { if (blocker >= 0 && powerSaveBlocker.isStarted(blocker)) powerSaveBlocker.stop(blocker); blocker = -1 }

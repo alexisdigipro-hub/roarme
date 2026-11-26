@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { POP_ROOM, wsCan, wsDock, wsOpen } from './wsPop.js'
 import { createPortal } from 'react-dom'
 import { Avatar, CropModal, I, Lens, Modal } from './ui.jsx'
 import { AUDIO_EXT, mmss, player, shapeOf, usePlayer, useWave } from './player.jsx'
@@ -1824,6 +1825,8 @@ function ProSettings({ start = 'home', roomId, room = {}, me = {}, people = {}, 
 }
 
 
+const POPOUT_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="6.5" width="12" height="13" rx="2.5" /><path d="M11 3.5h7a2.5 2.5 0 0 1 2.5 2.5v7" /><path d="M20.5 3.5 13 11" /></svg>
+const DOCK_I = <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3" /><path d="M10 5v14" /><path d="M16.5 9.5 13 12l3.5 2.5" /></svg>
 function Work({ room, project, kit, me, people = {}, toast, title, onJump, onChanged, rooms = [], titleOf = () => '', onSwap, phone = false }) {
   // a member who does not see Pre Production sees only the Overview, and only to look and listen (Alex, 22 Nov)
   const viewOnly = room.role !== 'admin' && !(Array.isArray(room.channels) ? room.channels : ['prod']).includes('pre')
@@ -2039,7 +2042,11 @@ function Work({ room, project, kit, me, people = {}, toast, title, onJump, onCha
         <span className="prw-pill stage still" style={{ '--pc': st.c }}><i className="prw-dot" /><span className="prw-st-name">{st.name}</span></span>
         {project.due && <span className="prw-pill date still"><span className="prw-dlabel">Shoot Day</span><b>{new Date(`${project.due}T12:00:00`).toLocaleDateString('en-GB', { weekday: phone ? 'short' : 'long', day: 'numeric', month: phone ? 'short' : 'long', ...(project.due.slice(0, 4) === String(new Date().getFullYear()) ? {} : { year: 'numeric' }) })}</b></span>}
         <span className="prw-top-gap" />
-        {onSwap && !phone && !viewOnly && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}
+        {onSwap && !phone && !viewOnly && !POP_ROOM && <button type="button" className="round prw-gear prw-swap" onClick={onSwap} title="Swap the chat and this side" aria-label="Swap sides">{SWAP_I}</button>}
+        {/* its own window in the computer apps (src/wsPop.js), and back into the chat's window from there */}
+        {!phone && wsCan() && (POP_ROOM
+          ? <button type="button" className="round prw-gear prw-popout" onClick={wsDock} title="Back into the chat window" aria-label="Back into the chat window">{DOCK_I}</button>
+          : <button type="button" className="round prw-gear prw-popout" onClick={() => wsOpen(room.room_id)} title="Open in its own window" aria-label="Open in its own window">{POPOUT_I}</button>)}
         {!viewOnly && <span className="prw-gear-wrap">
           <button type="button" className={`round prw-gear${setOpen ? ' on' : ''}`} onClick={() => setSetOpen(true)} aria-label="Project settings" title="Project settings">{I.gear}</button>
         </span>}

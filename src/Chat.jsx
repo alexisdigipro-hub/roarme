@@ -61,6 +61,7 @@ import { resumeLive, startLive } from './live.js'
 import { startBattery, stopBattery, batteryText } from './battery.js'
 import { taskNotice, useTasks } from './taskCore.js'
 import { markName, nameHas, useNameMarks } from './fancy.jsx'
+import { POP_ROOM, wsDock, wsFocus, wsWatch } from './wsPop.js'
 import { CAPSULE_BODY, CapsuleCard, CapsuleWindow } from './capsule.jsx'
 import { GroupCallBar, GroupCallCard, GroupCallHost, LinkCallCard, joinCall, startGroupCall, useGroupCall } from './groupcall.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
@@ -144,7 +145,7 @@ export default function Chat({ me, setMe }) {
   const [archOpen, setArchOpen] = useState(() => { try { return localStorage.getItem('roarme-proj-arch') === '1' } catch { return false } })
   const [proShut, setProShut] = useState(() => { try { return localStorage.getItem('roarme-pro-shut') === '1' } catch { return false } })
   useEffect(() => {
-    const f = () => setProShut((v) => { try { localStorage.setItem('roarme-pro-shut', v ? '0' : '1') } catch { /* private window */ } return !v })
+    const f = () => (popActive.current ? wsFocus(activeNow.current) : setProShut((v) => { try { localStorage.setItem('roarme-pro-shut', v ? '0' : '1') } catch { /* private window */ } return !v }))
     window.addEventListener('roarme-pro-toggle', f)
     return () => window.removeEventListener('roarme-pro-toggle', f)
   }, [])
@@ -159,7 +160,13 @@ export default function Chat({ me, setMe }) {
   }, [])
   useEffect(() => { loadBlocks() }, [loadBlocks])
   const unblock = async (id) => { await supabase.from('roar_blocks').delete().eq('blocked', id); loadBlocks(); toast('Unblocked') }
-  const [activeId, setActiveId] = useState(() => stayGet('chat', ''))
+  const [activeId, setActiveId] = useState(() => POP_ROOM || stayGet('chat', ''))
+  // the groups whose Workspace stands in a window of its own (desktop apps, src/wsPop.js): the main window leaves it out
+  const [poppedWs, setPoppedWs] = useState([])
+  useEffect(() => wsWatch(setPoppedWs), [])
+  const popActive = useRef(false); popActive.current = poppedWs.includes(activeId)
+  const activeNow = useRef(''); activeNow.current = activeId
+  const wsShown = (id) => (POP_ROOM ? true : !proShut && !poppedWs.includes(id))
   // RoarMe always opens on All (Alex, 18 Oct: it opened on Archived, the folder left last time)
   // a pull to refresh comes back to the folder it was on (stay.js; Alex, 25 Nov)
   const [folder, setFolder] = useState(() => stayGet('folder', 'all'))
@@ -727,6 +734,7 @@ export default function Chat({ me, setMe }) {
   // a sound and a desktop notification when the window is not looking at that chat
   const notifyRef = useRef(null)
   notifyRef.current = (m) => {
+    if (POP_ROOM) return // the Workspace's own window stays quiet: the main window tells
     const room = roomsRef.current.find((r) => r.room_id === m.room_id)
     const atMe = mentionsMe(m.body, me, rolesRef.current.filter((g) => g.room_id === m.room_id))
     // a muted chat stays quiet, unless the message mentions you (@you, @all, @here or a role of yours)
@@ -778,7 +786,7 @@ export default function Chat({ me, setMe }) {
       return (r.kind === 'group' ? `${nameOf(people[r.last_user])}: ` : '') + tr(what)
     }
     const preview = prefsRef.current.notifyPreview
-    if (me.presence === 'dnd') return
+    if (me.presence === 'dnd' || POP_ROOM) return
     if (prefsRef.current.sound) chime()
     const show = (title, body, icon, roomId) => {
       try {
@@ -2052,12 +2060,12 @@ export default function Chat({ me, setMe }) {
             onFolderMenu={(f, e) => setFolderMenu({ f, x: Math.min(e.clientX, window.innerWidth - 200), y: Math.min(e.clientY, window.innerHeight - 160) })} /></Suspense>
         ) : tab === 'media' ? (
           <Library data={lib} room={libRoom} people={people} me={me} rooms={visible} titleOf={titleOf} onChat={libChat} onBack={() => setTab('settings')} toast={toast} />
-        ) : active ? (<div className={proOn && active.kind === 'group' && proKit.map[active.room_id] && !proShut ? 'prw big' : 'prw-off'}>
+        ) : active ? (<div className={proOn && active.kind === 'group' && proKit.map[active.room_id] && wsShown(active.room_id) ? 'prw big' : 'prw-off'}>
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
             onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
-            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id] && (active.role === 'admin' || (Array.isArray(active.channels) ? active.channels : ['prod']).includes('pre'))} wsOpen={!proShut} payOn={proOn && active.kind === 'group' && !!proKit.map[active.room_id]} proArtist={proOn ? String((proKit.map[active.room_id]?.fields || []).find((f) => f.k === 'Title')?.v || '').trim() : ''} />
-          {proOn && active.kind === 'group' && proKit.map[active.room_id] && !proShut && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
+            blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id] && (active.role === 'admin' || (Array.isArray(active.channels) ? active.channels : ['prod']).includes('pre'))} wsOpen={wsShown(active.room_id) || poppedWs.includes(active.room_id)} payOn={proOn && active.kind === 'group' && !!proKit.map[active.room_id]} proArtist={proOn ? String((proKit.map[active.room_id]?.fields || []).find((f) => f.k === 'Title')?.v || '').trim() : ''} />
+          {proOn && active.kind === 'group' && proKit.map[active.room_id] && wsShown(active.room_id) && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
             <Suspense fallback={null}><Profile inline room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}
               onClose={() => {}} onMessage={() => {}} onOpenRoom={(id) => setActiveId(id)} onChanged={loadRooms} onLeft={() => { setActiveId(''); loadRooms() }} loadPeople={loadPeople}
               blocked={blocks.has(otherOf(active)?.id)} onBlocks={loadBlocks} onCall={(v) => callRoom(active, v)} /></Suspense>
@@ -2071,7 +2079,7 @@ export default function Chat({ me, setMe }) {
       </main>
 
       <ReportHost me={me} people={people} blocks={[...blocks]} onBlocks={loadBlocks} toast={toast} />
-      <WhatsNewHost />
+      {!POP_ROOM && <WhatsNewHost />}
       <GroupCallHost me={me} people={people} rooms={rooms} toast={toast} />
       <PlayerSheet onOpen={(id) => window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id }))} onShare={(file, roomId) => setSongShare({ file, roomId })} />
       {songShare && <ShareSong file={songShare.file} pre={songShare.pre} me={me} rooms={rooms} titleOf={titleOf} toast={toast} onClose={() => setSongShare(null)}
@@ -2079,6 +2087,7 @@ export default function Chat({ me, setMe }) {
         onShowChat={songShare.roomId ? () => { const id = songShare.roomId; setSongShare(null); player.close(); window.dispatchEvent(new CustomEvent('roarme-goroom', { detail: id })) } : null} />}
       <ReminderCards me={me} rooms={rooms} titleOf={titleOf} onOpen={libChat}
         onDue={(r, m) => {
+          if (POP_ROOM) return
           if (prefsRef.current.sound) chime()
           if (!document.hidden || typeof Notification === 'undefined' || Notification.permission !== 'granted') return
           const room = rooms.find((x) => x.room_id === r.room_id)
@@ -4029,7 +4038,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
             {/* a project on a phone: the gold button between the name and the picture opens the project's page (Alex, 22 Nov) */}
             {assetsAside && <span className="prw-sw2 head-sw" role="tablist"><button type="button" className="on" onClick={onInfo} title="Info"><span className="head-sw-name">{proArtist || title}</span></button><button type="button" onClick={() => window.dispatchEvent(new CustomEvent('roarme-pro-open', { detail: { room: room.room_id } }))}><span className="prw-gold">Project</span></button></span>}
             {/* a project on a computer: a round glass button (a window with its right panel, as Safari's sidebar sign; Alex, 22 Nov: "no colour, glass") shows or hides the Workspace at the right (Alex, 22 Nov: the name opens the profile again) */}
-            {assetsAside && <button type="button" className={`round head-ws${wsOpen ? ' ws-open' : ''}`} onClick={() => window.dispatchEvent(new Event('roarme-pro-toggle'))} aria-label={wsOpen ? 'Hide the Workspace' : 'Show the Workspace'} title={wsOpen ? 'Hide the Workspace' : 'Show the Workspace'}>{svg(<><rect x="3.5" y="5" width="17" height="14" rx="3" /><path d="M14.5 5v14" />{wsOpen && <path className="ws-fill" d="M14.5 5h3a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-3z" />}</>)}</button>}
+            {assetsAside && <button type="button" className={`round head-ws${wsOpen ? ' ws-open' : ''}`} onClick={() => (POP_ROOM ? wsDock() : window.dispatchEvent(new Event('roarme-pro-toggle')))} aria-label={wsOpen ? 'Hide the Workspace' : 'Show the Workspace'} title={wsOpen ? 'Hide the Workspace' : 'Show the Workspace'}>{svg(<><rect x="3.5" y="5" width="17" height="14" rx="3" /><path d="M14.5 5v14" />{wsOpen && <path className="ws-fill" d="M14.5 5h3a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-3z" />}</>)}</button>}
             <span className="plus-wrap">
               {/* Halo shows the picture here, round, in place of ⋯ (Alex, 12 Nov, from a picture he sent); it opens the profile, as the name does */}
               <button type="button" className="head-ava" onClick={() => setCallsOpen(true)} aria-label="Call" title="Call"><Avatar src={room.kind === 'group' ? room.avatar_url : other?.avatar_url} name={title} size={44} group={room.kind === 'group'} /></button>

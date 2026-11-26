@@ -153,23 +153,33 @@ const domainOf = (a) => { const d = String(a?.address || '').toLowerCase().split
 const LIVE_URL = 'https://roarmail-live.alexisdigipro.workers.dev'
 const LIVE_ACTS = new Set(['counts', 'list', 'get', 'flag', 'move', 'delete', 'bulk', 'empty'])
 let liveDown = 0
-async function live(body) {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.access_token) return null
+async function liveOnce(body, token) {
   try {
     const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 45e3)
-    const r = await fetch(LIVE_URL, { method: 'POST', signal: ctl.signal, headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const r = await fetch(LIVE_URL, { method: 'POST', signal: ctl.signal, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     clearTimeout(t)
     const j = await r.json().catch(() => null)
     if (r.ok && j) return j
     // a mail error of its own (the server said no, the mail is gone): that is the answer; anything else, the old way
     if (j?.error && (r.status === 502 || r.status === 404 || r.status === 400)) throw Object.assign(new Error(j.error === 'missing' ? 'This account is not in RoarMe yet.' : j.error), { mailError: true })
   } catch (e) { if (e.mailError) throw e }
+  return null
+}
+// Live is asked twice before a call goes the old way (26 Nov: one miss, a container waking, used to send every call to
+// the slow way for two minutes, which logs in afresh each time); after two misses Live is left alone for 20 s only
+async function live(body) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return null
+  const j = await liveOnce(body, session.access_token)
+  if (j) return j
+  await new Promise((ok) => setTimeout(ok, 700))
+  const again = await liveOnce(body, session.access_token)
+  if (again) return again
   liveDown = Date.now()
   return null
 }
 async function cloud(body) {
-  if (LIVE_ACTS.has(body?.action) && Date.now() - liveDown > 120e3) { const j = await live(body); if (j) return j }
+  if (LIVE_ACTS.has(body?.action) && Date.now() - liveDown > 20e3) { const j = await live(body); if (j) return j }
   const { data, error } = await supabase.functions.invoke('roarmail-cloud', { body })
   if (error) {
     let msg = error.message
@@ -359,6 +369,18 @@ export function warmMail(force) {
       const un = (u.items || []).filter((m) => !hide.includes(m.account) && !(junkOn && isBlocked(m.from, setup))).slice(0, 60)
       keepKv('mu', un); tell('roarme-mail-unread', un)
       fetchAhead(un.length ? un : all)
+      // the other folders too (Alex, 26 Nov: "still slow, above all Junk, Deleted"): each account's Junk, Trash, Sent,
+      // Drafts and Archive, read quietly and kept on the phone, so they open at once as the Inboxes do
+      const others = setup.folders.filter((f) => l.some(([id]) => id === f.account) && ['spam', 'trash', 'sent', 'drafts', 'archive'].includes(f.role)).map((f) => ({ account: f.account, path: f.path, role: f.role }))
+      if (others.length) {
+        const o = await cloud({ action: 'list', items: others.map(({ account, path }) => ({ account, path })), limit: 30, bg: true })
+        const rows = o.items || []
+        for (const it of others) keepList(`${it.account}|${it.path}`, { rows: rows.filter((m) => m.account === it.account && m.path === it.path) })
+        for (const role of ['spam', 'trash', 'sent', 'drafts', 'archive']) {
+          const mine = others.filter((it) => it.role === role)
+          if (mine.length) keepList(`all|${role}`, { rows: rows.filter((m) => mine.some((it) => it.account === m.account && it.path === m.path) && !hide.includes(m.account)) })
+        }
+      }
     } catch { /* next time */ } finally { warming = null }
   })()
   return warming

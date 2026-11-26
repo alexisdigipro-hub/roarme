@@ -164,6 +164,8 @@ export default function Chat({ me, setMe }) {
   // the groups whose Workspace stands in a window of its own (desktop apps, src/wsPop.js): the main window leaves it out
   const [poppedWs, setPoppedWs] = useState([])
   useEffect(() => wsWatch(setPoppedWs), [])
+  // the Workspace's own window names its group in the window's title
+  useEffect(() => { if (POP_ROOM) { const r = roomsRef.current.find((x) => x.room_id === POP_ROOM); if (r?.title) document.title = `${r.title} · Workspace` } })
   const popActive = useRef(false); popActive.current = poppedWs.includes(activeId)
   const activeNow = useRef(''); activeNow.current = activeId
   const wsShown = (id) => (POP_ROOM ? true : !proShut && !poppedWs.includes(id))

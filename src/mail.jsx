@@ -475,6 +475,12 @@ export function MailView({ me, people, book }) {
       const what = e.detail?.what, st = stepRef.current
       if (what === 'new') setCompose({ mode: 'new', account: st.acc && st.acc !== 'all' ? st.acc : '' })
       else if (what === 'home') { homeNext = false; setFwd(null); setStep({ s: 'accs' }) }
+      // one step up when no page has said how (the head's back and the slide right, Alex, 26 Nov: "the back arrow went,
+      // and a slide right took me to Messages"): a list goes to its account's folders, folders to the home
+      else if (what === 'up') {
+        if (st.s === 'list') setStep(singleRef.current && st.acc === singleRef.current ? { s: 'folders', acc: st.acc } : { s: 'folders', acc: st.acc || 'all' })
+        else if (st.s !== 'accs' && !(st.s === 'folders' && singleRef.current)) setStep({ s: 'accs' })
+      }
       else if (what === 'edit') mailDotsNow()
       else if (what === 'search') {
         // on a list its own search; elsewhere the Inbox of the account in sight (All Inboxes from the home) with its search open
@@ -486,7 +492,8 @@ export function MailView({ me, people, book }) {
     window.addEventListener('roarme-mail-cmd', f)
     return () => window.removeEventListener('roarme-mail-cmd', f)
   }, [])
-  useEffect(() => { window.dispatchEvent(new CustomEvent('roarme-mail-step', { detail: step.s })) }, [step.s])
+  // the head is told the step; one account's folders are its home, so they count as the home
+  useEffect(() => { window.dispatchEvent(new CustomEvent('roarme-mail-step', { detail: step.s === 'folders' && singleRef.current === step.acc && step.acc ? 'accs' : step.s })) }, [step.s, step.acc, setup])
   // the list that holds ROARMAIL never stands sideways (Alex, 25 Nov, iPhone: "they still spill over"): WebKit lets a
   // finger pan a box whose overflow is auto by a few pixels; any sideways scroll there or in its holders goes back to 0
   useEffect(() => {

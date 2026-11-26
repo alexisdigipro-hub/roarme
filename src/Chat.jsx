@@ -1086,6 +1086,7 @@ export default function Chat({ me, setMe }) {
       if (e.target.closest?.('.row-acts')) { g = null; return } // a tap on Mute, Delete, Unread or Pin
       // inside ROARMAIL past its home a slide goes back or on (mail.jsx), never to another folder, even from the empty
       // space under a short page (Alex, 26 Nov: "on the folders a slide right takes me to Messages")
+      if (n.folder === 'mail' && n.mailStep && n.mailStep !== 'accs') { g = null; return }
       if (e.target.closest?.('.rmx:not(.rmx-accl)') || (!e.target.closest?.('.rmx-accl') && document.querySelector('.rooms .rmx:not(.rmx-accl)'))) { g = null; return }
       // a call's own slide to Delete starts only at the screen's right edge (Alex, 19 Nov: "from the edge only; in the
       // middle the whole screen moves to another tab"); there the page stays put, and an open Delete is shut first
@@ -1541,7 +1542,7 @@ export default function Chat({ me, setMe }) {
   const goStopRef = useRef(null)
   goStopRef.current = goStop
   useEffect(() => { const f = (e) => goStopRef.current?.(e.detail > 0 ? 1 : -1); window.addEventListener('roarme-stop', f); return () => window.removeEventListener('roarme-stop', f) }, [])
-  pagerNow.current = { allFolders, folder, busy: picking || tabsEdit || !!q.trim(), picking, searchOpen: searchOpen || !!q.trim(), searchBusy, pull, goStop } // what the drags on the list read
+  pagerNow.current = { allFolders, folder, mailStep, busy: picking || tabsEdit || !!q.trim(), picking, searchOpen: searchOpen || !!q.trim(), searchBusy, pull, goStop } // what the drags on the list read
   const stopSwipe = useRef(null)
   const onStopTouch = {
     // a call's own slide to Delete (from the screen's right edge, or on a call whose Delete is out) is the call's alone:
@@ -1700,7 +1701,7 @@ export default function Chat({ me, setMe }) {
           {inMail ? (
             // inside ROARMAIL the head's own ⋯ is Edit Mailboxes and its + is New Mail (Alex, 25 Nov, from Apple Mail)
             <span className="mail-hl">
-            {mailBack2 && <button type="button" className="round mail-hback" aria-label="Back" title="Back" data-back="" onClick={() => mailBackNow()}>{MAIL_I.back}</button>}
+            {(mailBack2 || (mailStep && mailStep !== 'accs')) && <button type="button" className="round mail-hback" aria-label="Back" title="Back" data-back="" onClick={() => { if (mailCanBack()) mailBackNow(); else window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'up' } })) }}>{MAIL_I.back}</button>}
             <button type="button" className={`pill-btn head-edit${mailEdit ? ' on' : ''}`} aria-label={mailEdit ? 'Done' : 'Edit Mailboxes'} title={mailEdit ? 'Done' : 'Edit Mailboxes'} onClick={() => window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'edit' } }))}><span className="he-word">{mailEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{mailEdit ? I.check : DOTS3}</span></button></span>
           ) : tab === 'calls' && !picking && !tabsEdit ? (
             <button type="button" className={`pill-btn head-edit${callsEdit ? ' on' : ''}`} aria-label={callsEdit ? 'Done' : 'Edit calls'} title={callsEdit ? 'Done' : 'Edit'} onClick={() => { setPlus(false); setCallsEdit((v) => !v) }}><span className="he-word">{callsEdit ? 'Done' : 'Edit'}</span><span className="he-ico">{callsEdit ? I.check : DOTS3}</span></button>

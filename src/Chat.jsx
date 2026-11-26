@@ -4426,7 +4426,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               }}>{I.edit}<span>Edit</span></button>}
               {canEdit(menu.m) && !menu.m.file?.event && !menu.m.file?.location && !menu.m.file?.roartransfer && <button type="button" onClick={() => { setEditing(menu.m); setText(textOf(menu.m)); setMenu(null) }}>{I.edit}<span>Edit</span></button>}
               <button type="button" onClick={() => pin(menu.m)}>{I.pin}<span>{pinnedSet.has(menu.m.id) ? 'Unpin' : 'Pin'}</span></button>
-              <button type="button" onClick={() => { setRemindFor(menu.m); setMenu(null) }}>{I.bell}<span>Remind Me</span></button>
+              {inThemeLab(me) && <button type="button" onClick={() => { setRemindFor(menu.m); setMenu(null) }}>{I.bell}<span>Remind Me</span></button>}
               {!menu.m.sealed && <button type="button" onClick={() => { setForward([menu.m]); setMenu(null) }}>{I.forward}<span>Forward</span></button>}
               <button type="button" onClick={() => { setPicked([menu.m.id]); setMenu(null) }}>{I.select}<span>Select</span></button>
               {/* who has seen one's own message, then the deletes in one order (Alex, 19 Nov): Report above them,

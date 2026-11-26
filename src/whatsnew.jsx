@@ -15,6 +15,9 @@ export const NEWS = [
     id: '2026-11-26',
     date: '26 November 2026',
     sections: [
+      { title: 'Everywhere', items: [
+        'Tap a reply to see the message it answers: it lights up for a moment, words, photo or anything. From the calendar the day lights up too, so you see where it starts.',
+      ] },
       { title: 'On a phone', items: [
         'Mail goes at once: Delete, Move, Junk and Empty Trash or Junk take the mail away the moment you tap, and the server catches up in the background.',
         'All Mail at the foot of a folder brings every mail in it, and More Results brings the rest of a search.',

@@ -671,6 +671,7 @@ export function MailView({ me, people, book }) {
       <div className="rmx rmx-fl" {...(single ? oneSlide : foldSlide)}>
         {!single && <Crumb title={acc.name} pic={<AccPic a={acc} size={26} />} onBack={() => back({ s: 'accs' })} />}
         <Dots fn={() => setFoldEdit(true)} />
+        <MailCap acc={acc} />
         {off && <p className="rmx-note">To read this account here, open RoarMail on your computer: Settings › Roar Account › My mail in RoarMe › Send to RoarMe.</p>}
         <div className="rmx-box">
           {ordered.filter((r) => !r.own).map((r) => (
@@ -857,6 +858,16 @@ function serverBulk(list, op, extra = {}) {
     if (x === null) return null
     return cloud({ action: 'bulk', account: ms[0].account, path: ms[0].path, uids: ms.map((m) => m.uid), op, ...x })
   }))
+}
+
+// which account a page is in, in one small quiet line at its top (Alex, 26 Nov: "in each account, minimal, which mail
+// it is, somewhere at the top"): the folder, then the address (All Inboxes for every account together)
+function MailCap({ acc, folder }) {
+  if (!acc) return null
+  if (acc.id === 'all') return <p className="rmx-cap"><span>{folder && folder !== 'Inbox' ? folder : 'All Inboxes'} · every account</span></p>
+  const who = acc.email || acc.name
+  const f = folder || ''
+  return <p className="rmx-cap">{f && <b>{f}</b>}{f && <i>·</i>}<span>{who}</span></p>
 }
 
 function MailList({ acc, step, targets, accounts, folders, who, setup, offline, onBack, onCompose, newBtn }) {
@@ -1162,6 +1173,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const finding = find && found?.key === findKey && !found.rows
   return (
     <div className={`rmx rmx-ml rmx-l${prefs.lines}${prefs.pics ? '' : ' rmx-nopic'}${prefs.show && prefs.show !== 'both' ? ` rmx-show-${prefs.show}` : ''}`} {...listSlide}>
+      <MailCap acc={acc} folder={thread ? '' : step.name} />
       {/* one glass capsule as tall as the folder bar: back and the folder's name, then every filter, sliding sideways
           (Alex, 24 Nov, version B of https://claude.ai/artifact/Nmb2XBaCTYcECN2sYubCsL) */}
       {sel ? (

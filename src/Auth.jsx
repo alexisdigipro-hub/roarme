@@ -4,6 +4,7 @@ import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
 import { Wordmark } from './ui.jsx'
 import { pendingInvite } from './invite.jsx'
 import { COUNTRIES, PhoneField, smsErr, toE164, usePhoneAuth } from './phone.jsx'
+import { useAuthBg } from './authBg.js'
 
 // the signs inside the fields (Alex, 21 Nov): an envelope, and the eye that shows or hides the password
 const MAIL_I = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m4 7 8 6 8-6" /></svg>
@@ -31,6 +32,7 @@ function Brand() {
 /* Sign in with a phone number (Alex, 14 Nov: "the main way, with email only an option for some"): the number, then the
    6-digit code from the SMS; the same two steps sign in and sign up. Shown first only while Supabase's phone sign-in is on. */
 export function Auth() {
+  const bg = useAuthBg()
   const invitedBy = pendingInvite()
   const [mode, setMode] = useState('in') // in | up | forgot (the password form)
   const [email, setEmail] = useState('')
@@ -77,7 +79,7 @@ export function Auth() {
 
   // email and password, as RoarMe began (Alex, 14 Nov: the sign-in by a 6-digit email code is gone again)
   return (
-    <div className="auth">
+    <div className={`auth${bg ? ' auth-own' : ''}`} style={bg ? { '--auth-img': `url("${bg}")` } : undefined}>
       {/* with the keyboard up the whole form stays in sight (Alex, 15 Nov: the keyboard covered Sign in): the whole
           card sits just over the keyboard (styles.css, html.kb .auth), and its last row is scrolled into view once it settles */}
       <form className="auth-card" onSubmit={submit} onFocus={(e) => { const f = e.currentTarget; if (e.target.tagName === 'INPUT') setTimeout(() => f.lastElementChild?.scrollIntoView({ block: 'end', behavior: 'smooth' }), 380) }}>

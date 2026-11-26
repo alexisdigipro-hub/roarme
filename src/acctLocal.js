@@ -7,7 +7,7 @@ import { kvOwner } from './cache.js'
    IndexedDB have a database of their own per account (cache.js kvOwner). Only the device itself stays shared: the
    sign-ins (roarme-auth-2, roarme-accounts), the passcode lock and what the device has been shown (What's New). */
 const OWNER = 'roarme-local-owner'
-const DEVICE = new Set(['roarme-auth-2', 'roarme-accounts', OWNER, 'roarme-lock', 'roarme-news-seen', 'roarme-olddb-gone'])
+const DEVICE = new Set(['roarme-auth-2', 'roarme-accounts', OWNER, 'roarme-lock', 'roarme-news-seen', 'roarme-olddb-gone', 'roarme-auth-bg'])
 const mine = (k) => k.startsWith('roarme-') && !k.startsWith('roarme-acct-') && !DEVICE.has(k)
 
 export function bindLocal(uid) {

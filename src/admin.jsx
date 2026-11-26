@@ -4,6 +4,8 @@ import { Avatar, I, Lens, svg, useTabSwipe } from './ui.jsx'
 import { locale } from './i18n.js'
 import { transferAlive, transferIcon } from './transfer.jsx'
 import { WALL_BUCKET, loadWalls, useWalls, wallUrl } from './walls.js'
+import AUTH_DEFAULT from './assets/auth-bg.jpg'
+import { setAuthBg, useAuthBg } from './authBg.js'
 
 /* Admin (Alex, 17 Oct: "only I want to see every user in the database and what files they send"). Settings > Admin,
    shown only to Alex; the database answers only the accounts in roar_admins (supabase/admin.sql), so nobody else gets
@@ -330,6 +332,41 @@ const BUILT_IN = ['soft', 'dots', 'grid', 'night', 'ocean', 'dusk', 'forest', 'e
 const HIDE_I = svg(<><path d="M3 3l18 18" /><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>, 17)
 const SWAP_I = svg(<><path d="M4 8h13l-3-3" /><path d="M20 16H7l3 3" /></>, 17)
 
+// the sign-in and sign-up page's background, for everyone (Alex, 26 Nov): a photo of one's own, or the built-in streaks
+function AuthBgBox() {
+  const now = useAuthBg()
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const pick = useRef(null)
+  const run = async (fn) => { setBusy(true); setErr(''); try { await fn() } catch (e) { setErr(errText(e)) } setBusy(false) }
+  const put = (file) => run(async () => {
+    const img = await shrinkImage(file, 2560, 0.86)
+    const ext = (img.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')
+    const path = `auth/${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from(WALL_BUCKET).upload(path, img, { contentType: img.type, cacheControl: '31536000' })
+    if (error) throw error
+    await setAuthBg(path)
+  })
+  const back = () => { if (window.confirm('Use the original background on the sign-in page again?')) run(() => setAuthBg(null)) }
+  const look = { backgroundImage: `url("${now || AUTH_DEFAULT}")` }
+  return (
+    <div className="adm-abg">
+      <div className="adm-abg-pic" style={look} aria-label="On a phone" />
+      <div className="adm-abg-pic wide" style={look} aria-label="On a computer" />
+      <div className="adm-abg-txt">
+        <strong>Sign-in Background</strong>
+        <small>{now ? 'Your photo, on the sign-in and sign-up page for everyone.' : 'The original streaks. Pick a photo to show it to everyone on the sign-in and sign-up page.'}</small>
+        {err && <small className="adm-err">{err}</small>}
+        <div className="adm-abg-acts">
+          <button type="button" className="btn btn-main" disabled={busy} onClick={() => pick.current?.click()}>{busy ? 'Uploading…' : now ? 'Change Picture' : 'Choose Picture'}</button>
+          {now && <button type="button" className="btn" disabled={busy} onClick={back}>Use the Original</button>}
+        </div>
+        <input ref={pick} type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) put(f) }} />
+      </div>
+    </div>
+  )
+}
+
 function AdminWalls() {
   const walls = useWalls(true)
   const [busy, setBusy] = useState('')
@@ -403,6 +440,7 @@ function AdminWalls() {
   const shown = walls.filter((w) => !w.hidden).length
   return (
     <div className="adm-list">
+      <AuthBgBox />
       {err && <p className="adm-err">{err}</p>}
       <div className="adm-walls-head">
         <span className="muted">{walls.length} wallpapers · {shown} shown to people</span>

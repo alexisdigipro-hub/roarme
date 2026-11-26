@@ -9326,3 +9326,17 @@ html:root:root:root:root:root:root:root:root:root:root .rooms-area .tabs > butto
 
 /* Terms of Service and Privacy Policy on the sign-in page read in light blue on its dark glass (Alex, 26 Nov: "they are black"): the links took an accent that could be dark; here they are always #6cc8ff, bold, no underline. */
 html:root:root:root:root:root:root:root:root .auth:not(.ob) .auth-check-t a, html:root:root:root:root:root:root:root:root .auth:not(.ob) .auth-legal a { color: #6cc8ff !important; font-weight: 600; text-decoration: none; }
+
+/* The sign-in page's own photo (Alex, 26 Nov; Settings > Admin > Wallpapers > Sign-in Background, src/authBg.js): it takes
+   the streaks' place under the same dark veil, so the card reads on any photo. */
+html:root:root:root:root:root[data-glass][data-theme] .auth.auth-own:not(.ob)::before { background-image: var(--auth-img); background-position: center; background-size: cover; }
+.adm-abg { display: flex; gap: 14px; align-items: center; padding: 14px; margin-bottom: 14px; border-radius: 22px; background: var(--lg, rgba(255, 255, 255, .6)); box-shadow: inset 0 0 0 1px var(--lg-rim, rgba(255, 255, 255, .5)); }
+.adm-abg-pic { flex: none; width: 74px; aspect-ratio: 9 / 19.5; border-radius: 14px; background: #0b1220 center / cover no-repeat; box-shadow: 0 6px 16px rgba(0, 0, 0, .18); position: relative; overflow: hidden; }
+.adm-abg-pic::after { content: ''; position: absolute; inset: 0; background: rgba(4, 8, 16, .35); }
+.adm-abg-pic.wide { width: 128px; aspect-ratio: 16 / 10; }
+.adm-abg-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.adm-abg-txt strong { font-size: 15px; }
+.adm-abg-txt small { color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.adm-abg-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.adm-abg-acts .btn { height: 34px; padding: 0 14px; font-size: 13.5px; }
+@media (max-width: 760px) { .adm-abg-pic.wide { display: none; } }

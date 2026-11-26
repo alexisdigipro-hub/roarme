@@ -36,7 +36,7 @@ import { MiniNow, NowPlaying, PlayerSheet, player } from './player.jsx'
 import { PayButton } from './pay.jsx'
 import { fixKept, keepMsgs, keptMsgs, lsGet, lsSet, readMsgs } from './cache.js'
 import { onTyping, sendTyping, watchTyping } from './typing.js'
-import { openForAccount } from './accounts.js'
+import { MAX_ACCOUNTS, accounts, addAccount, openForAccount, switchAccount } from './accounts.js'
 import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
@@ -310,6 +310,19 @@ export default function Chat({ me, setMe }) {
   const [tasksOpen, setTasksOpen] = useState(() => { try { return localStorage.getItem('roarme-tasks') === '1' } catch { return false } })
   const footLens = useLens(`${tab}|${prefs.callsTab}|${prefs.tasksTab}|${picking}|${tasksOpen}|${inMail}|${mailStep}`) // the Settings page open on the right
   useLiquid(footLens, `${tab}|${picking}|${inMail}|${mailStep}`)
+  // holding Settings in the bar at the foot (or a right click on it) shows the accounts on this device, to switch in a
+  // tap (Alex, 26 Nov, from Telegram's); the tap that ends the hold does not open Settings
+  const [accMenu, setAccMenu] = useState(null)
+  const accMenuAt = useRef(0)
+  const accTimer = useRef(0)
+  const openAccMenu = (el) => { const r = el.getBoundingClientRect(); accMenuAt.current = Date.now(); haptic(20); setAccMenu({ right: Math.max(10, window.innerWidth - r.right), bottom: window.innerHeight - r.top + 10 }) }
+  const accHold = {
+    onPointerDown: (e) => { const el = e.currentTarget; clearTimeout(accTimer.current); accTimer.current = setTimeout(() => openAccMenu(el), 480) },
+    onPointerUp: () => clearTimeout(accTimer.current),
+    onPointerLeave: () => clearTimeout(accTimer.current),
+    onPointerCancel: () => clearTimeout(accTimer.current),
+    onContextMenu: (e) => { e.preventDefault(); clearTimeout(accTimer.current); openAccMenu(e.currentTarget) },
+  }
   useLiquid(tabsLens, `${tab}|${prefs.folderTabs}|${prefs.theme}|${myFolders.length}|${!q.trim()}`)
   const [groupWith, setGroupWith] = useState(null) // Create Group from a chat starts with that person in it
   const searchRef = useRef(null)
@@ -1997,11 +2010,22 @@ export default function Chat({ me, setMe }) {
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
             {prefs.tasksTab && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}
-            <button type="button" className={`foot-settings${(tab === 'settings' || tab === 'media') && !tasksOpen ? ' on' : ''}`} onClick={() => setTab('settings')}>{FOOT_I.settings}<span>Settings</span></button>
+            <button type="button" className={`foot-settings${(tab === 'settings' || tab === 'media') && !tasksOpen ? ' on' : ''}`} {...accHold} onClick={() => { if (Date.now() - accMenuAt.current < 700) return; setTab('settings') }}>{FOOT_I.settings}<span>Settings</span></button>
           </nav>
         )}
       </aside>
 
+      {accMenu && createPortal(<>
+        <button type="button" className="scrim acc-veil" aria-label="Close" onClick={() => { if (Date.now() - accMenuAt.current > 600) setAccMenu(null) }} onContextMenu={(e) => e.preventDefault()} />
+        <div className="menu acc-menu" role="menu" style={{ position: 'fixed', right: accMenu.right, bottom: accMenu.bottom, top: 'auto', left: 'auto' }}>
+          {[...accounts()].sort((a, b) => (a.id === me.id ? -1 : b.id === me.id ? 1 : 0)).map((a) => {
+            const mine = a.id === me.id
+            const nm = mine ? nameOf(me) : a.name || (a.username ? '@' + a.username : a.email)
+            return <button key={a.id} type="button" role="menuitem" className={mine ? 'on' : ''} onClick={() => { setAccMenu(null); if (!mine) switchAccount(a.id) }}><Avatar src={mine ? me.avatar_url : a.avatar} name={nm} size={22} /><span>{nm}</span>{mine && <i className="acc-tick">{I.check}</i>}</button>
+          })}
+          {accounts().length < MAX_ACCOUNTS && <><hr /><button type="button" role="menuitem" onClick={() => { setAccMenu(null); addAccount() }}>{I.plus}<span>Add Account</span></button></>}
+        </div>
+      </>, document.body)}
       {gPull > 0 && createPortal(<div className={`ptr ptr-fixed${gPull >= 1 ? ' ready' : ''}${gPull === 2 ? ' spin' : ''}`} style={{ '--p': Math.min(gPull, 1) }} aria-hidden="true">{svg(<><path d="M20 12a8 8 0 1 1-2.3-5.6" /><path d="M20 4v5h-5" /></>, 20)}</div>, document.body)}
       <main className="main">
         <NowPlaying onOpen={(id) => { setTab('chats'); setActiveId(id) }} />

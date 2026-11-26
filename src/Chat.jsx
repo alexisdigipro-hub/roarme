@@ -36,6 +36,7 @@ import { MiniNow, NowPlaying, PlayerSheet, player } from './player.jsx'
 import { PayButton } from './pay.jsx'
 import { fixKept, keepMsgs, keptMsgs, lsGet, lsSet, readMsgs } from './cache.js'
 import { onTyping, sendTyping, watchTyping } from './typing.js'
+import { openForAccount } from './accounts.js'
 import { inApp, onNotificationTap, onPhone, pushFirstTap, pushSync, setBadge } from './push.js'
 import { RoarMeInbox, useInboxCount } from './inbox.jsx'
 import { UpdateCard } from './update.jsx'
@@ -496,7 +497,8 @@ export default function Chat({ me, setMe }) {
         })
         return
       }
-      const c = window.location.hash.match(/^#c=([0-9a-f-]{36})$/)
+      const c = window.location.hash.match(/^#c=([0-9a-f-]{36})(?:&to=([0-9a-f-]{36}))?$/)
+      if (c && openForAccount(c[2], c[1], me.id)) { history.replaceState(null, '', window.location.pathname); return }
       if (c) { setTab('chats'); setActiveId(c[1]); history.replaceState(null, '', window.location.pathname); return }
       const m = window.location.hash.match(/^#m=([0-9a-f-]{36})\/([0-9a-f-]{36})$/)
       if (!m) return
@@ -842,11 +844,11 @@ export default function Chat({ me, setMe }) {
   useEffect(() => {
     const sw = typeof navigator !== 'undefined' ? navigator.serviceWorker : null
     if (!sw) return undefined
-    const on = (e) => { if (e.data?.roarOpen) { setTab('chats'); setActiveId(e.data.roarOpen) } }
+    const on = (e) => { if (e.data?.roarOpen) { if (openForAccount(e.data.to, e.data.roarOpen, me.id)) return; setTab('chats'); setActiveId(e.data.roarOpen) } }
     sw.addEventListener('message', on)
     return () => sw.removeEventListener('message', on)
   }, [])
-  useEffect(() => onNotificationTap((room) => { setTab('chats'); setActiveId(room); loadRooms(); setTimeout(() => window.dispatchEvent(new Event('roarme-wake')), 60) }), [loadRooms])
+  useEffect(() => onNotificationTap((room, to) => { if (openForAccount(to, room, me.id)) return; setTab('chats'); setActiveId(room); loadRooms(); setTimeout(() => window.dispatchEvent(new Event('roarme-wake')), 60) }), [loadRooms])
   // the list too, when the app comes back from the background
   useEffect(() => {
     let last = 0

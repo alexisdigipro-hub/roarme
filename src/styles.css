@@ -9244,3 +9244,12 @@ html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !i
 /* ROARMAIL's rows out of sight are not drawn until they come near the screen (26 Nov: "slow and heavy"), so a long
    folder (All Mail, up to 1,500) scrolls and opens light */
 .rmx .rmx-sw { content-visibility: auto; contain-intrinsic-size: auto 76px; }
+
+/* the accounts on this device, under one's own card in Settings (Alex, 26 Nov, from Telegram's) */
+.set-accs .set-acc { gap: 12px; }
+.set-accs .set-acc .av { flex: none; }
+.set-accs .set-acc.on { cursor: default; }
+.set-accs .set-acc .set-text small { display: block; }
+.set-accs .set-acc-plus { --c: var(--halo-mine, #3aa7e8); }
+.set-accs .set-acc-add .set-text { color: var(--halo, #3aa7e8); }
+.set-accs .set-acc-wait { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; opacity: .5; animation: spin .8s linear infinite; }

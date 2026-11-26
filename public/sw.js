@@ -43,7 +43,7 @@ self.addEventListener('push', (e) => {
       silent: !!d.silent, // the chat's Disable Sound (Alex, 15 Nov)
       icon: 'icon-512.png',
       badge: 'icon-512.png',
-      data: { room: d.room || '' },
+      data: { room: d.room || '', to: d.to || '' },
     })
   })())
 })
@@ -51,13 +51,14 @@ self.addEventListener('push', (e) => {
 self.addEventListener('notificationclick', (e) => {
   e.notification.close()
   const room = (e.notification.data && e.notification.data.room) || ''
-  const url = new URL(room ? `./#c=${room}` : './', APP).href
+  const to = (e.notification.data && e.notification.data.to) || ''
+  const url = new URL(room ? `./#c=${room}${to ? `&to=${to}` : ''}` : './', APP).href
   e.waitUntil((async () => {
     const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
     const open = list.find((c) => c.url.startsWith(APP))
     if (open) {
       await open.focus()
-      if (room) open.postMessage({ roarOpen: room })
+      if (room) open.postMessage({ roarOpen: room, to })
       return
     }
     await self.clients.openWindow(url)

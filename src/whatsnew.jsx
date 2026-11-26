@@ -16,6 +16,7 @@ export const NEWS = [
     date: '26 November 2026',
     sections: [
       { title: 'Everywhere', items: [
+        'More than one account: Settings > Add Account, then switch with one tap. Notifications come from all of them, and a tap opens the right account.',
         'Pulling down to refresh no longer asks for your passcode or Face ID again.',
         'Tap a reply to see the message it answers: it lights up for a moment, words, photo or anything. From the calendar the day lights up too, so you see where it starts.',
         'An empty writing box stays one line tall, also beside a project\'s Workspace.',

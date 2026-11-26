@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib.js'
+import { rememberAccount } from './accounts.js'
 import { watchEmailLinks } from './emailLink.js'
 import { applyLook, applyMode, haloish, setPrefs, themeFor, usePrefs, wearTheme, dressTheme } from './prefs.js'
 import { Auth, MfaGate, NewPassword, Onboarding } from './Auth.jsx'
@@ -70,7 +71,7 @@ export default function App() {
   useEffect(() => {
     if (!uid) { setProfile(undefined); return }
     let alive = true
-    supabase.from('roar_people').select('*').eq('id', uid).maybeSingle().then(({ data }) => { if (alive) setProfile(data || null) })
+    supabase.from('roar_people').select('*').eq('id', uid).maybeSingle().then(({ data }) => { if (alive) setProfile(data || null); if (data) supabase.auth.getSession().then(({ data: d }) => rememberAccount(d.session, data)) })
     return () => { alive = false }
   }, [uid])
   // an account an admin blocked (supabase/suspend.sql) sees why RoarMe is empty, and can only sign out

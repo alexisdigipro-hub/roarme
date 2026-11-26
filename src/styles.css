@@ -9209,4 +9209,7 @@ html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !i
 
 /* A short ROARMAIL page (an account's folders, a few mails) reaches the foot of the screen, so a slide that starts in the
    empty space under it is the page's own slide back (Alex, 26 Nov: it took him to Messages). */
-.rooms .rmx.rmx-fl, .rooms .rmx.rmx-ml, .rooms .rmx.rmx-rd { min-height: calc(100dvh - 190px - env(safe-area-inset-top, 0px)); }
+.rooms .rmx.rmx-fl, .rooms .rmx.rmx-ml, .rooms .rmx.rmx-rd { min-height: calc(100dvh - 190px - env(safe-area-inset-top, 0px)); flex-shrink: 0; }
+/* a minimum height on a flex item takes away its own floor of 'as tall as its content', so a long list was squeezed into
+   the screen with every row crushed (Alex, 26 Nov, build 256): the page and its rows never shrink */
+.rooms .rmx > * { flex-shrink: 0; }

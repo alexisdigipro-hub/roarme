@@ -6,7 +6,7 @@
 // to one hub project in roar_hub_links (supabase/hub-link.sql). Actions:
 //   connect { key } / disconnect           this account's Production Hub (disconnect unties its groups; the hub keeps all)
 //   linkall                               ties every project group I run to a hub project (same title, or a new one) and
-//                                         makes a group for every hub project made since I connected that has none
+//                                         makes a group for every hub project whose Create PROject was pressed
 //   link { room }                         ties one project group (Make It a Project)
 //   unlink { room }                       unties one group (an admin, or who tied it); both sides stay
 //   pay.meta / pay.job / pay.receipt { room } the $ in a project's chat: My Payment and Expenses to the hub (hub-bridge)
@@ -15,7 +15,8 @@
 //                                         from the hub only: its cover (also the group's picture, unless it has one of its own),
 //                                         its songs, its locations' photos and its published ordinos
 //   (pg_cron, x-roar-cron)                every minute, for every linked account: a group for each hub project whose
-//                                         Create PROject was pressed, or that was made in the hub since linking, and a
+//                                         Create PROject was pressed (only that: Alex, 26 Nov, a new hub project makes no
+//                                         group by itself), and a
 //                                         sync of every tied project the hub changed since its last sync (live both ways);
 //                                         a project deleted or unlinked in the hub unties its group (never deletes it), and a
 //                                         group deleted here leaves its hub project marked unlinked
@@ -272,7 +273,9 @@ Deno.serve(async (req) => {
     try { await syncRoom(room.id) } catch { /* next time */ }
     return true
   }
-  const wanted = (acc: any, p: any, taken: Set<string>) => !taken.has(p.id) && !p.room && !p.unlinked && ((p.request && !p.delivered) || (p.createdAt && p.createdAt >= acc.set_at))
+  // only a project whose Create PROject was pressed in the hub (Alex, 26 Nov: "whenever I add a new project, it must not
+  // make a group by itself; I will press the button we have")
+  const wanted = (_acc: any, p: any, taken: Set<string>) => !taken.has(p.id) && !p.room && !p.unlinked && !!p.request && !p.delivered
 
   try {
     if (action === 'connect') {
@@ -288,7 +291,7 @@ Deno.serve(async (req) => {
     }
 
     if (isCron) {
-      // every linked account: a group for each hub project that asked for one (Create PROject) or was made since linking
+      // every linked account: a group for each hub project that asked for one (Create PROject)
       const { data: accs } = await db.from('roar_hub_accounts').select('*')
       let made = 0, synced = 0, gone = 0
       for (const acc of accs || []) {
@@ -340,7 +343,7 @@ Deno.serve(async (req) => {
       for (const r of (projRows || []).map((x: any) => x.room_id).filter((r: string) => !tied.has(r))) {
         try { if (await linkRoom(r, acc, projects)) { joined++; await syncRoom(r) } } catch { /* next time */ }
       }
-      // hub projects made since I connected, with no group: a group for each
+      // hub projects whose Create PROject was pressed, with no group: a group for each
       const taken = new Set(((await db.from('roar_hub_links').select('hub_project')).data || []).map((x: any) => x.hub_project))
       for (const p of projects) if (wanted(acc, p, taken) && await makeGroup(acc, p)) { taken.add(p.id); made++ }
       return json({ ok: true, linked: true, hub: acc.hub_name, joined, made })

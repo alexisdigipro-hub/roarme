@@ -257,6 +257,18 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
     if (!error && admin && !showOld) await supabase.rpc('roar_set_history', { r: room.room_id, u: p.id, sees: false })
     if (error) setErr(errText(error)); else { loadRoles(); loadPeople([p.id]); onChanged(); setHits((h) => h.filter((x) => x.id !== p.id)); toast(`${nameOf(p)} added`) }
   }
+  // Add All Team (Alex, 26 Nov, supabase/hub-team.sql): a project group takes my Hub Members only when I ask
+  const [team, setTeam] = useState(null)
+  useEffect(() => {
+    if (!admin || !room.project) return
+    supabase.from('roar_hub_members').select('member').eq('owner', me.id).then(({ data }) => setTeam((data || []).map((x) => x.member)))
+  }, [admin, room.project, me.id])
+  const teamOut = (team || []).filter((u) => !(room.members || []).includes(u))
+  const addTeam = async () => {
+    const { data, error } = await supabase.rpc('roar_add_hub_team', { r: room.room_id })
+    if (error) { setErr(errText(error)); return }
+    loadRoles(); loadPeople(teamOut); onChanged(); toast(data ? `${data} added` : 'Everyone is in already')
+  }
   const leave = async () => {
     setMore(false)
     if (!window.confirm(`Leave ${title}?`)) return
@@ -460,6 +472,7 @@ export default function Profile({ room, me, people, title, other, rooms, titleOf
               {(adding
                 ? <label className="search">{I.search}<input autoFocus type="search" name="roar-add-people" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} data-1p-ignore="" data-lpignore="true" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Add people by name" /><button type="button" className="link" onClick={() => { setAdding(false); setQ('') }}>Done</button></label>
                 : <button type="button" className="pf-row" onClick={() => setAdding(true)}><span className="pf-row-ico add">{I.plus}</span><span className="pf-row-text"><b>Add people</b></span></button>)}
+              {!adding && admin && room.project && teamOut.length > 0 && <button type="button" className="pf-row" onClick={addTeam}><span className="pf-row-ico add">{I.plus}</span><span className="pf-row-text"><b>Add All Team</b><small>{teamOut.length} of your Hub Members, each in their chats</small></span></button>}
               {adding && admin && (
                 <label className="pf-row pf-hist-opt">
                   <span className="pf-row-ico">{CLOCK_I}</span>

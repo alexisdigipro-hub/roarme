@@ -25,6 +25,8 @@ export const NEWS = [
         'A delivered project now stays only in PROjects > Archived Projects, out of All, Unread and every other folder. Search still finds it.',
         'Tap a reply to see the message it answers: it lights up for a moment, words, photo or anything. From the calendar the day lights up too, so you see where it starts.',
         'An empty writing box stays one line tall, also beside a project\'s Workspace.',
+        'Bold, italic, underline and strike show straight away in the box you write in, with no asterisks to see.',
+        'PROjects: a new project group no longer takes your whole team by itself. Add All Team in the group\'s Members or in Project Settings brings them in with one tap, each in their own chats.',
       ] },
       { title: 'On a computer', items: [
         'Arrow keys: left and right change folder, up and down open the chat above or below. While writing, hold Option (Alt on Windows).',

@@ -400,7 +400,7 @@ function Chats({ p }) {
 }
 
 function Keys({ p }) {
-  const rows = [['⌘K / Ctrl+K', 'Search chats'], ['⌘/ / Ctrl+/', 'Keyboard shortcuts'], ['Enter', p.enterSends ? 'Send' : 'New line'], [p.enterSends ? 'Shift+Enter' : '⌘ / Ctrl+Enter', p.enterSends ? 'New line' : 'Send'], ['↑', 'Edit your last message'], ['Esc', 'Cancel, close'], ['Right click on a message', 'Message menu'], ['Right click on a chat', 'Chat menu'], ['Double click', { react: 'Quick reaction', reply: 'Reply', edit: 'Edit', forward: 'Forward' }[p.doubleTap]]]
+  const rows = [['⌘K / Ctrl+K', 'Search chats'], ['⌘/ / Ctrl+/', 'Keyboard shortcuts'], ['Enter', p.enterSends ? 'Send' : 'New line'], [p.enterSends ? 'Shift+Enter' : '⌘ / Ctrl+Enter', p.enterSends ? 'New line' : 'Send'], ['↑ in an empty writing box', 'Edit your last message'], ['← →', 'Previous or next folder'], ['↑ ↓', 'Chat above or below in the list'], ['⌥ / Alt + arrows', 'The same while writing'], ['Esc', 'Cancel, close, leave the writing box'], ['Right click on a message', 'Message menu'], ['Right click on a chat', 'Chat menu'], ['Double click', { react: 'Quick reaction', reply: 'Reply', edit: 'Edit', forward: 'Forward' }[p.doubleTap]]]
   return <Box>{rows.map(([k, v]) => <div key={k} className="set-row keys"><span className="set-text">{v}</span><kbd>{k}</kbd></div>)}</Box>
 }
 

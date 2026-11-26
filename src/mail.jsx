@@ -387,7 +387,13 @@ export function warmMail(force) {
 }
 const sumOf = (c) => Object.values(c || {}).reduce((a, n) => a + (n || 0), 0)
 /** every account's unread mail, for the app's own Unread (Alex, 24 Nov: "the Unread up at the left shows them all, chats and mails") */
-const sumShown = (c) => { const hide = mailPrefs().allHide || []; return sumOf(Object.fromEntries(Object.entries(c || {}).filter(([k]) => !hide.includes(k)))) }
+// only accounts this RoarMe account really has in RoarMe count (Alex, 26 Nov: "4 mail and not even an account": counts
+// kept from another account, or from an account since removed, are left out)
+const sumShown = (c) => {
+  const hide = mailPrefs().allHide || []
+  const have = new Set((lsGet('mail-on') || []).filter(([, a]) => !a || a.status === 'ok' || a.status == null).map(([k]) => k))
+  return sumOf(Object.fromEntries(Object.entries(c || {}).filter(([k]) => have.has(k) && !hide.includes(k))))
+}
 export function useMailUnread(on) {
   const prefs = usePrefs()
   const [n, setN] = useState(() => sumShown(lsGet('mail-counts')))

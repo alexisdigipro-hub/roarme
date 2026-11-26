@@ -47,7 +47,7 @@ const parentOf = (id) => (id?.startsWith('folder:') ? 'folders' : PARENT[id] || 
 // pages that are no longer doors of their own in the menu: they open from inside General, Chats or Privacy and Security
 const SUBS = { general: 'App, Features, Language', chats: 'Folders, Auto-Reply, Data and Storage', privacy: 'Privacy, Active Sessions' }
 const TUCKED = ['features', 'language', 'transfer', 'folders', 'autoreply', 'data', 'sessions']
-export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : id === 'news' ? "What's New" : id === 'hub' || id === 'projects' ? 'PROjects' : id === 'mail' ? 'RoarMail' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
+export const pageTitle = (id) => (id === 'folder:new' ? 'New Folder' : id?.startsWith('folder:') ? 'Edit Folder' : id === 'profile' ? 'My Profile' : id === 'keys' ? 'Keyboard Shortcuts' : id === 'admin' ? 'Admin' : id === 'news' ? "What's New" : id === 'hub' || id === 'projects' ? 'PROjects' : id === 'mail' ? 'RoarMail' : id === 'tasks' ? 'Tasks' : PAGES.find(([k]) => k === id)?.[1] || 'Settings')
 
 // the top of a page: its icon in its colour and what it holds
 // a settings page opens with its title alone (Alex, 12 Nov): the large sign and the line under it are gone
@@ -72,6 +72,8 @@ const Check = ({ on, onClick, children }) => (
 const Nav = ({ onClick, children, value }) => (
   <button type="button" className="set-row set-pick" onClick={onClick}><span className="set-text">{children}</span>{value && <small className="set-val">{value}</small>}<i className="set-chev">{I.right}</i></button>
 )
+// the gold word on the Tasks door, beside PROJECTS and ROARMAIL
+const TasksWord = () => <span className="tab-gold"><b>TASKS</b></span>
 const Box = ({ title, note, children }) => (
   <section className="set-sec">
     {title && <h4>{title}</h4>}
@@ -163,7 +165,7 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
         <div key={g} className="set-box">
           {PAGES.filter((x) => x[5] === g && !TUCKED.includes(x[0])).map(([id, label, c, ico]) => (
             <button key={id} type="button" className={`set-row set-pick set-nav${page === id ? ' on' : ''}`} onClick={() => onPage(id)}>
-              <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}{SUBS[id] && <small>{SUBS[id]}</small>}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}{id === 'features' && <small className="set-val">{[p.callsTab && 'Calls', p.tasksTab && inThemeLab(me) && 'Tasks'].filter(Boolean).flatMap((x, n) => (n ? [' · ', <span key={x}>{x}</span>] : [<span key={x}>{x}</span>]))}{!p.callsTab && !(p.tasksTab && inThemeLab(me)) && <span>Off</span>}</small>}<i className="set-chev">{I.right}</i>
+              <span className="nav-ico" style={{ '--c': c }}>{ico}</span><span className="set-text">{label}{SUBS[id] && <small>{SUBS[id]}</small>}</span>{id === 'language' && <small className="set-val" data-raw="">{lang() === 'el' ? 'Ελληνικά' : 'English'}</small>}{id === 'features' && <small className="set-val">{[p.callsTab && 'Calls', false].filter(Boolean).flatMap((x, n) => (n ? [' · ', <span key={x}>{x}</span>] : [<span key={x}>{x}</span>]))}{!p.callsTab && <span>Off</span>}</small>}<i className="set-chev">{I.right}</i>
             </button>
           ))}
           {/* everything shared in all chats, out of the bar at the foot and in here (Alex, 19 Oct) */}
@@ -181,6 +183,8 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
       <div className="set-box">
         <button type="button" className={`set-row set-pick set-nav set-proj${page === 'projects' || page === 'hub' ? ' on' : ''}`} onClick={() => onPage('projects')}><span className="nav-ico set-proj-ico">{FOOT_I.pro}</span><span className="set-text"><span className="tab-gold"><b>PRO</b><i>JECTS</i></span><small>Production Hub</small></span><i className="set-chev">{I.right}</i></button>
         {inThemeLab(me) && <button type="button" className={`set-row set-pick set-nav set-proj${page === 'mail' ? ' on' : ''}`} onClick={() => onPage('mail')}><span className="nav-ico set-proj-ico">{MAIL_I.mail}</span><span className="set-text"><MailWord /><small>{mailHere() ? 'Your mail inside RoarMe' : 'Get the RoarMail app'}</small></span><i className="set-chev">{I.right}</i></button>}
+        {/* Tasks and Remind Me behind a gold door, only for the admin (Alex, 26 Nov: "only I see it, and make a gold door for these") */}
+        {inThemeLab(me) && <button type="button" className={`set-row set-pick set-nav set-proj${page === 'tasks' ? ' on' : ''}`} onClick={() => onPage('tasks')}><span className="nav-ico set-proj-ico">{FOOT_I.tasks}</span><span className="set-text"><TasksWord /><small>To-dos, reminders and Remind Me</small></span><i className="set-chev">{I.right}</i></button>}
       </div>
       {/* every update, with its bullets (Alex, 22 Nov) */}
       <div className="set-box">
@@ -209,7 +213,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
         {parentOf(page)
           ? <button type="button" className="round" onClick={() => onPage(parentOf(page))} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>
           : <button type="button" className="round back" onClick={onBack} aria-label="Back" data-back="">{svg(<path d="M15 5l-7 7 7 7" />)}</button>}
-        <strong>{page === 'projects' || page === 'hub' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : page === 'mail' ? <MailWord /> : title}</strong>
+        <strong>{page === 'projects' || page === 'hub' ? <span className="tab-gold"><b>PRO</b><i>JECTS</i></span> : page === 'mail' ? <MailWord /> : page === 'tasks' ? <TasksWord /> : title}</strong>
         {/* the folder is kept as it is typed; the tick takes you out (Alex, 21 Oct) */}
         {page.startsWith('folder:') && <button type="button" className="round set-done" onClick={() => (onFolderDone ? onFolderDone() : onPage('folders'))} aria-label="Done" title="Done">{svg(<path d="M5 12.5l4.5 4.5L19 7.5" />)}</button>}
       </header>
@@ -234,6 +238,11 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
         {page === 'keys' && <Keys p={p} />}
         {page === 'news' && <WhatsNewPage />}
         {(page === 'hub' || page === 'projects') && <ProjectsPage toast={toast} me={me} />}
+        {page === 'tasks' && inThemeLab(me) && (
+          <Box note="Off: nothing of your tasks is lost. They come back when you turn it on. Remind Me in a message's menu is always there for you.">
+            <Switch on={p.tasksTab} set={(v) => setPrefs({ tasksTab: v })} hint="To-dos for you and others, reminders and a calendar, in the bar at the foot">Tasks</Switch>
+          </Box>
+        )}
         {page === 'mail' && inThemeLab(me) && (mailHere() ? <MailPage /> : <MailPromo />)}
         {page === 'notify' && <Notify p={p} toast={toast} />}
         {page === 'autoreply' && <AutoReply toast={toast} />}
@@ -345,9 +354,6 @@ function Features({ p, me }) {
         <Switch on={p.callsTab} set={(v) => setPrefs({ callsTab: v })} hint="Recent calls and Create New Call, in the bar at the foot">Calls Tab</Switch>
       </Box>
       <CallDevices p={p} />
-      {inThemeLab(me) && <Box title="Tasks" note="Off: nothing of your tasks is lost. They come back when you turn it on.">
-        <Switch on={p.tasksTab} set={(v) => setPrefs({ tasksTab: v })} hint="To-dos for you and others, reminders and a calendar, in the bar at the foot">Tasks</Switch>
-      </Box>}
     </>
   )
 }

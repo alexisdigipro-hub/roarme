@@ -113,7 +113,7 @@ async function loadSetup() {
   const signature = {}
   for (const i of T.identities || []) { if (i.signature_id && (i.is_default || !signature[i.account_id])) signature[String(i.account_id)] = sigs[String(i.signature_id)] || '' }
   const settings = Object.fromEntries((T.settings || []).map((x) => [x.key, x.value]))
-  return { accounts, folders, contacts, signature, settings: { previewLines: settings.previewLines, threadOrder: settings.threadOrder }, blockedCount: block.list.length, block }
+  return { accounts, folders, contacts, signature, settings, blockedCount: block.list.length, block }
 }
 
 // a mail from someone on the block list (the same test as RoarMail on the computer: the address, a whole domain, or the
@@ -173,13 +173,41 @@ const keyM = (m) => `${m.account}|${m.path}|${m.uid}`
 
 // Settings > ROARMAIL, kept on this phone (Alex, 24 Nov: "the settings of RoarMail in our RoarMail tab")
 const PREF_KEY = 'roarme-mail-prefs'
-const PREF_START = { images: false, markRead: true, lines: 2, oldest: false, askDelete: false, askBlock: true, signature: true,
-  pics: true, show: 'both', conv: false, quote: true, defAcc: '', countUnread: true, every: 3, autoJunk: true, keep: 150, allHide: [], home: null }
-export const mailPrefs = () => { try { return { ...PREF_START, ...JSON.parse(localStorage.getItem(PREF_KEY) || '{}') } } catch { return { ...PREF_START } } }
+// the desktop RoarMail's settings too (Alex, 25 Nov: "pass all of the desktop RoarMail's settings into RoarMe's"):
+// markRead (On Open / After 3 s / Never), the full slide, privacy (Privacy Mode, Block Trackers, Clean Links), links in
+// plain text, plain text in a fixed face, quotes in colours, Undo Send, the unread counts, account colours, the order of
+// a conversation; whatever is not set here starts from RoarMail on the computer (setup.settings)
+const PREF_START = { images: false, markRead: 'open', lines: 2, oldest: false, askDelete: false, askBlock: true, signature: true,
+  pics: true, show: 'both', conv: false, quote: true, defAcc: '', countUnread: true, every: 3, autoJunk: true, keep: 150, allHide: [], home: null,
+  swipeFull: 'trash', privacy: false, trackers: true, cleanLinks: true, detectLinks: true, plainMono: false, quoteColors: true,
+  undoSend: 5, counts: true, accColours: true, threadOrder: 'newest' }
+const fromDesktop = (d) => {
+  if (!d) return {}
+  const o = {}
+  if (d.markRead) o.markRead = d.markRead
+  if (d.previewLines != null) o.lines = Math.min(2, Number(d.previewLines) || 0)
+  if (d.remoteImages != null) o.images = !!d.remoteImages
+  for (const [k, v] of [['blockTrackers', 'trackers'], ['stripTracking', 'cleanLinks'], ['privacyMode', 'privacy'], ['detectLinks', 'detectLinks'],
+    ['plainMono', 'plainMono'], ['quoteColors', 'quoteColors'], ['accountColours', 'accColours'], ['listAvatars', 'pics']]) if (d[k] != null) o[v] = !!d[k]
+  if (d.undoSendSeconds != null) o.undoSend = Number(d.undoSendSeconds) || 0
+  if (d.threadOrder) o.threadOrder = d.threadOrder
+  if (['archive', 'trash', 'seen', 'flag', 'none'].includes(d.swipeLeft)) o.swipeFull = { seen: 'read', flag: 'star' }[d.swipeLeft] || d.swipeLeft
+  if (d.folderCounter) o.counts = d.folderCounter !== 'none'
+  if (d.listSubject === false) o.show = 'from'
+  return o
+}
+export const mailPrefs = () => {
+  let d = {}; try { d = fromDesktop(JSON.parse(localStorage.getItem('roarme-c-mail-setup') || 'null')?.settings) } catch { /* none */ }
+  let own = {}; try { own = JSON.parse(localStorage.getItem(PREF_KEY) || '{}') } catch { /* private window */ }
+  const p = { ...PREF_START, ...d, ...own }
+  if (p.markRead === true) p.markRead = 'open'; else if (p.markRead === false) p.markRead = 'never'
+  if (p.privacy) { p.images = false; p.trackers = true; p.cleanLinks = true }
+  return p
+}
 const setMailPref = (k, v) => {
-  const n = { ...mailPrefs(), [k]: v }
-  try { localStorage.setItem(PREF_KEY, JSON.stringify(n)) } catch { /* private window */ }
-  window.dispatchEvent(new CustomEvent('roarme-mail-prefs', { detail: n }))
+  let own = {}; try { own = JSON.parse(localStorage.getItem(PREF_KEY) || '{}') } catch { /* private window */ }
+  try { localStorage.setItem(PREF_KEY, JSON.stringify({ ...own, [k]: v })) } catch { /* private window */ }
+  window.dispatchEvent(new CustomEvent('roarme-mail-prefs', { detail: mailPrefs() }))
 }
 function usePrefs() {
   const [p, setP] = useState(mailPrefs)
@@ -434,6 +462,8 @@ export function MailView({ me, people, book }) {
   // roarme-mail-cmd, and the step is told back so Contacts can be lit
   const stepRef = useRef(step)
   stepRef.current = step
+  // Undo Send, or a send that failed: the window comes back as it was
+  useEffect(() => { const f = (e) => e.detail && setCompose(e.detail); window.addEventListener('roarme-mail-reopen', f); return () => window.removeEventListener('roarme-mail-reopen', f) }, [])
   useEffect(() => {
     const f = (e) => {
       const what = e.detail?.what, st = stepRef.current
@@ -534,7 +564,7 @@ export function MailView({ me, people, book }) {
   // New Mail: a round button of the accent at the foot of every step but the open mail (Alex, 24 Nov: "I found nowhere to write a new mail")
   // New Mail is the bar at the foot's middle button inside ROARMAIL (Alex, 25 Nov: the round pencil "totally off")
   const newBtn = null
-  const composer = compose && <Compose init={compose} accounts={accounts} on={on} setup={setup} who={who} abook={book || keptBook(me?.id)} onClose={() => setCompose(null)} />
+  const composer = <>{compose && <Compose key={compose.draft ? 'again' : 'c'} init={compose} accounts={accounts} on={on} setup={setup} who={who} abook={book || keptBook(me?.id)} onClose={() => setCompose(null)} />}<UndoBar /></>
 
   if (step.s === 'contacts') {
     return <><MailContacts who={who} setup={setup} me={me} people={people} book={book} onBack={() => setStep(step.from && step.from.s !== 'contacts' ? step.from : { s: 'accs' })}
@@ -570,7 +600,7 @@ export function MailView({ me, people, book }) {
               {r.a ? <AccPic a={r.a} /> : <span className="av rmx-smart">{r.icon}</span>}
               <span className="room-main">
                 <span className="room-top"><strong>{r.name}</strong></span>
-                <span className="room-bottom"><span className="room-prev">{r.sub}</span>{r.n > 0 && <span className="badge">{r.n}</span>}</span>
+                <span className="room-bottom"><span className="room-prev">{r.sub}</span>{mprefs.counts && r.n > 0 && <span className="badge">{r.n}</span>}</span>
               </span>
               <i className="rmx-chev">{MAIL_I.chev}</i>
             </button>
@@ -613,7 +643,7 @@ export function MailView({ me, people, book }) {
         </div>
       )
     }
-    const bump = (r) => (unreadOf(r) > 0 && <span className="badge">{unreadOf(r)}</span>)
+    const bump = (r) => (mprefs.counts && unreadOf(r) > 0 && <span className="badge">{unreadOf(r)}</span>)
     return (
       <div className="rmx rmx-fl" {...(single ? oneSlide : foldSlide)}>
         {!single && <Crumb title={acc.name} pic={<AccPic a={acc} size={26} />} onBack={() => back({ s: 'accs' })} />}
@@ -689,7 +719,8 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, ch
       if (!s.lock) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; s.lock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'; if (s.lock === 'x') setDrag(true) }
       if (s.lock !== 'x') return
       e.stopPropagation()
-      s.nx = Math.max(-ACTS_W - 36, Math.min(0, s.base + dx))
+      const full = s.full ?? (s.full = mailPrefs().swipeFull)
+      s.nx = Math.max(full && full !== 'none' ? -window.innerWidth : -ACTS_W - 36, Math.min(0, s.base + dx))
       setX(s.nx)
     },
     onTouchEnd: (e) => {
@@ -698,6 +729,8 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, ch
       if (!s || !s.ours) return
       e.stopPropagation()
       if (s.lock !== 'x') { if (s.base && !s.moved) settle(false); return } // a tap on an open row puts its buttons away
+      // the full slide (the desktop's swipe action): past 62% of the screen it does its action at once
+      if (s.full && s.full !== 'none' && s.nx < -window.innerWidth * 0.62) { haptic(14); settle(false); onAct(s.full); return }
       settle(s.nx < (s.base ? -ACTS_W * 0.7 : -ACTS_W * 0.28))
     },
     onTouchCancel: () => { clearTimeout(lp.current); const s = g.current; g.current = null; if (s?.ours) settle(s.lock === 'x' ? s.nx < -ACTS_W / 2 : !!s.base) },
@@ -779,6 +812,26 @@ function MovePick({ m, folders, onPick, onClose }) {
 
 const reSubj = (s) => String(s || '').replace(/^\s*((re|fw|fwd|απ|σχετ)\s*(\[\d+\])?\s*:\s*)+/i, '').trim().toLowerCase()
 
+// What is deleted, moved or emptied leaves the screen at once and the server does it in the background (Alex, 25 Nov:
+// "everything to do with deleting takes very long; delete them instantly, even if the server works behind"). Until the
+// server is done they are kept as gone on the device, so a reload or a refresh never brings them back (15 minutes at most).
+const GONE = 'mail-gone', EMPTIED = 'mail-emptied'
+const goneMap = () => { const g = lsGet(GONE) || {}, t = Date.now(); for (const k of Object.keys(g)) if (t - g[k] > 15 * 60e3) delete g[k]; return g }
+const markGone = (ms, on = true) => { const g = goneMap(); for (const m of ms) { if (on) g[keyM(m)] = Date.now(); else delete g[keyM(m)] } lsSet(GONE, g) }
+const emptying = (k) => { const e = lsGet(EMPTIED) || {}; return e[k] && Date.now() - e[k] < 15 * 60e3 }
+const setEmptying = (k, on) => { const e = lsGet(EMPTIED) || {}; if (on) e[k] = Date.now(); else delete e[k]; lsSet(EMPTIED, e) }
+const notGone = (l) => { const g = goneMap(); return (l || []).filter((m) => !g[keyM(m)]) }
+/** one call per account and folder for many mails: op delete (trash), move (to), flag (flag, on) */
+function serverBulk(list, op, extra = {}) {
+  const by = new Map()
+  for (const m of list) { const k = `${m.account}|${m.path}`; if (!by.has(k)) by.set(k, []); by.get(k).push(m) }
+  return Promise.all([...by.values()].map((ms) => {
+    const x = typeof extra === 'function' ? extra(ms[0]) : extra
+    if (x === null) return null
+    return cloud({ action: 'bulk', account: ms[0].account, path: ms[0].path, uids: ms.map((m) => m.uid), op, ...x })
+  }))
+}
+
 function MailList({ acc, step, targets, accounts, folders, who, setup, offline, onBack, onCompose, newBtn }) {
   const prefs = usePrefs()
   const ck = `${acc.id}|${step.path || step.role}`
@@ -816,7 +869,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
       const j = await cloud({ action: 'list', items: targets, limit: 30, page: p })
       const errs = Object.values(j.errors || {}).filter((e) => e !== 'missing')
       if (errs.length && !(j.items || []).length) setErr(errs[0])
-      const got = j.items || []
+      const got = emptying(ck) ? [] : notGone(j.items)
       setRows((r) => {
         const next = p === 0 ? got : [...(r || []), ...got.filter((x) => !(r || []).some((y) => sameM(x, y)))]
         const hasMore = Object.entries(j.totals || {}).some(([, t]) => t > 30 * (p + 1))
@@ -831,7 +884,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   }
   useEffect(() => {
     if (offline) return
-    if (!rows) readKv(`ml:${ck}`).then((v) => { if (v?.rows) setRows((r) => r || v.rows) })
+    if (!rows) readKv(`ml:${ck}`).then((v) => { if (v?.rows) setRows((r) => r || (emptying(ck) ? [] : notGone(v.rows))) })
     load(0)
   }, [])
   // what the server is asked to look for: every unread or starred (not only the ones loaded), a day, a sender, words
@@ -843,7 +896,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
     let gone = false
     const t = setTimeout(() => {
       setFound((f) => (f?.key === findKey ? f : { key: findKey, rows: null }))
-      cloud({ action: 'list', items: targets, limit: 60, find }).then((j) => { if (!gone) setFound({ key: findKey, rows: j.items || [] }) }, (e) => { if (!gone) { setFound({ key: findKey, rows: [] }); setErr(e.message) } })
+      cloud({ action: 'list', items: targets, limit: 60, find }).then((j) => { if (!gone) setFound({ key: findKey, rows: notGone(j.items), page: 0, total: Object.values(j.totals || {}).reduce((a, n) => a + n, 0) }) }, (e) => { if (!gone) { setFound({ key: findKey, rows: [] }); setErr(e.message) } })
     }, filter === 'search' ? 550 : 0)
     return () => { gone = true; clearTimeout(t) }
   }, [findKey])
@@ -862,13 +915,14 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
       return true
     })
     if (oldest) l = [...l].reverse()
+    if (thread && (prefs.threadOrder === 'oldest') !== oldest) l = [...l].reverse()
     if (conv && !thread) {
       const seen = new Map()
       for (const m of l) { const k = reSubj(m.subject) || keyM(m); const had = seen.get(k); if (had) had.n++; else seen.set(k, { m, n: 1 }) }
       return [...seen.values()].map((x) => ({ ...x.m, _n: x.n }))
     }
     return l
-  }, [base, filter, q, oldest, conv, thread, day, sender, found, who])
+  }, [base, filter, q, oldest, conv, thread, day, sender, found, who, prefs.threadOrder])
   const patchIn = (l, m, p) => (l || []).map((x) => sameM(x, m) ? { ...x, ...p } : x)
   const patch = (m, p) => {
     setRows((r) => { const next = patchIn(r, m, p); keepList(ck, { rows: next, more, page }); return next })
@@ -882,6 +936,15 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   }
   const folderOf = (m, role) => folders.find((f) => f.account === m.account && f.role === role)?.path
   const flag = (m, f, v) => cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: f, on: v })
+  // take mails away now and let the server follow: gone on the device until it answers; on a failure they come back
+  const away = (list, op, extra, done) => {
+    if (!list.length) return
+    for (const m of list) drop(m)
+    markGone(list)
+    if (done) say(done)
+    serverBulk(list, op, extra).then(() => markGone(list, false), (e) => { markGone(list, false); say(e.message || 'Not done, the mail is back'); load(0) })
+  }
+  const trashOf = (m) => { const tr = folderOf(m, 'trash'); return { trash: tr && tr !== m.path ? tr : '' } }
   // every action on a mail, from its slide, its long press or its own page
   const act = async (k, m) => {
     try {
@@ -890,38 +953,35 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
       else if (k === 'move') setMoving(m)
       else if (k === 'archive') {
         const to = folderOf(m, 'archive'); if (!to) throw new Error('This account has no Archive folder.')
-        drop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to }); say('Archived')
+        away([m], 'move', { to }, 'Archived')
       } else if (k === 'trash') {
         if (prefs.askDelete && !window.confirm('Delete this mail?')) return
         const tr = folderOf(m, 'trash')
-        drop(m); await cloud({ action: 'delete', account: m.account, path: m.path, uid: m.uid, trash: tr && tr !== m.path ? tr : '' }); say(tr && tr !== m.path ? 'Moved to Trash' : 'Deleted')
+        away([m], 'delete', trashOf, tr && tr !== m.path ? 'Moved to Trash' : 'Deleted')
       } else if (k === 'block') {
         const name = who(m.from).name || m.from?.address
         if (!m.from?.address) return
         if (prefs.askBlock && !window.confirm(`Block ${name}? Their mail goes to Junk, here and in RoarMail on your computers.`)) return
-        const junk = folderOf(m, 'spam')
-        drop(m); await cloud({ action: 'block', email: m.from.address, name: m.from.name || '', account: m.account, path: m.path, uid: m.uid, junk: junk && junk !== m.path ? junk : '' })
-        noteBlock('email', m.from.address, true); say(`${name} is blocked, their mail goes to Junk`)
-        // every other mail of theirs in this list goes too, as RoarMail on the computer sweeps them
+        noteBlock('email', m.from.address, true)
+        cloud({ action: 'block', email: m.from.address, name: m.from.name || '' }).catch(() => {})
+        // this mail and every other of theirs in the list go to Junk at once, as RoarMail on the computer sweeps them
         const addr = String(m.from.address).toLowerCase()
-        for (const x of (rows || []).filter((r) => !sameM(r, m) && String(r.from?.address || '').toLowerCase() === addr)) {
-          const to = folderOf(x, 'spam'); drop(x)
-          if (to && to !== x.path) cloud({ action: 'move', account: x.account, path: x.path, uid: x.uid, to }).catch(() => {})
-        }
+        const theirs = (rows || []).filter((r) => sameM(r, m) || String(r.from?.address || '').toLowerCase() === addr)
+        away(theirs.some((r) => sameM(r, m)) ? theirs : [m, ...theirs], 'move', (x) => { const to = folderOf(x, 'spam'); return to && to !== x.path ? { to } : null }, `${name} is blocked, their mail goes to Junk`)
       } else if (k === 'junk') {
         const to = folderOf(m, 'spam'); if (!to) throw new Error('This account has no Junk folder.')
-        drop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to }); say('Moved to Junk')
+        away([m], 'move', { to }, 'Moved to Junk')
       } else if (k === 'notjunk') {
         const to = folderOf(m, 'inbox') || 'INBOX'
-        drop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to })
-        if (m.from?.address && isBlocked(m.from, setup)) { await cloud({ action: 'unblock', kind: 'email', value: m.from.address }).catch(() => {}); noteBlock('email', m.from.address, false) }
-        say('Back in the Inbox')
+        away([m], 'move', { to }, 'Back in the Inbox')
+        if (m.from?.address && isBlocked(m.from, setup)) { noteBlock('email', m.from.address, false); cloud({ action: 'unblock', kind: 'email', value: m.from.address }).catch(() => {}) }
       } else if (k === 'domain') {
         const d = domainOf(m.from); if (!d) return
         if (!window.confirm(`Block everyone at @${d}? Their mail goes to Junk, here and in RoarMail on your computers.`)) return
-        const junk = folderOf(m, 'spam')
-        await cloud({ action: 'blockDomain', domain: d, account: m.account, path: m.path, uid: m.uid, junk: junk && junk !== m.path ? junk : '' })
-        drop(m); noteBlock('domain', d, true); say(`Everyone at @${d} is blocked`)
+        noteBlock('domain', d, true)
+        cloud({ action: 'blockDomain', domain: d }).catch((e) => say(e.message || 'Not blocked'))
+        const at = (rows || []).filter((r) => sameM(r, m) || String(r.from?.address || '').toLowerCase().endsWith(`@${d}`))
+        away(at, 'move', (x) => { const to = folderOf(x, 'spam'); return to && to !== x.path ? { to } : null }, `Everyone at @${d} is blocked`)
       } else if (k === 'reply' || k === 'replyAll' || k === 'forward') onCompose({ mode: k, m })
       else if (k === 'sender') { setOpen(null); setThread(''); setSender(m.from); setFilter('sender') }
       else if (k === 'select') { setOpen(null); setSel(new Set([keyM(m)])) }
@@ -937,32 +997,28 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
     }
     if (k === 'trash' && prefs.askDelete && !window.confirm(`Delete ${list.length} mail${list.length === 1 ? '' : 's'}?`)) return
     const unread = list.some((m) => !m.seen), unstar = list.every((m) => m.flagged)
-    const one = async (m) => {
-      if (k === 'read') { patch(m, { seen: unread }); await flag(m, 'seen', unread) }
-      else if (k === 'star') { patch(m, { flagged: !unstar }); await flag(m, 'flagged', !unstar) }
-      else if (k === 'trash') { const tr = folderOf(m, 'trash'); drop(m); await cloud({ action: 'delete', account: m.account, path: m.path, uid: m.uid, trash: tr && tr !== m.path ? tr : '' }) }
-      else if (k === 'junk') { const to = folderOf(m, 'spam'); if (!to || to === m.path) return; drop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to }) }
-    }
     setSel(null)
-    try {
-      for (let i = 0; i < list.length; i += 4) await Promise.all(list.slice(i, i + 4).map(one))
-      say(k === 'trash' ? `${list.length} moved to Trash` : k === 'junk' ? `${list.length} moved to Junk` : k === 'read' ? (unread ? 'Marked as read' : 'Marked as unread') : unstar ? 'Stars removed' : 'Starred')
-    } catch (e) { say(e.message || 'Not all done'); load(0) }
+    const n = list.length
+    if (k === 'trash') { away(list, 'delete', trashOf, `${n} moved to Trash`); return }
+    if (k === 'junk') { away(list.filter((m) => { const to = folderOf(m, 'spam'); return to && to !== m.path }), 'move', (x) => ({ to: folderOf(x, 'spam') }), `${n} moved to Junk`); return }
+    const f = k === 'read' ? 'seen' : 'flagged', on = k === 'read' ? unread : !unstar
+    for (const m of list) patch(m, { [k === 'read' ? 'seen' : 'flagged']: on })
+    say(k === 'read' ? (unread ? 'Marked as read' : 'Marked as unread') : unstar ? 'Stars removed' : 'Starred')
+    serverBulk(list, 'flag', { flag: f, on }).catch((e) => { say(e.message || 'Not all done'); load(0) })
   }
   const moveTo = async (m, to) => {
     setMoving(null)
     const list = m._bulk || [m]
     setSel(null)
-    try {
-      for (let i = 0; i < list.length; i += 4) await Promise.all(list.slice(i, i + 4).map((x) => { drop(x); return cloud({ action: 'move', account: x.account, path: x.path, uid: x.uid, to }) }))
-      say(list.length > 1 ? `${list.length} moved` : 'Moved')
-    } catch (e) { say(e.message || 'Not moved'); load(0) }
+    away(list, 'move', { to }, list.length > 1 ? `${list.length} moved` : 'Moved')
   }
   const openMail = (m) => {
     if (sel) { const k = keyM(m); setSel((s0) => { const n = new Set(s0); if (n.has(k)) n.delete(k); else n.add(k); return n }); return }
     if (filter === 'sender' && !sender) { setSender(m.from); return } // Same sender: the mail tapped picks whose mail to show
     if (conv && !thread && m._n > 1) { setThread(reSubj(m.subject)); return }
-    lastOpen.current = m; setOpen(m); if (!m.seen && prefs.markRead) patch(m, { seen: true })
+    lastOpen.current = m; setOpen(m)
+    if (!m.seen && prefs.markRead === 'open') patch(m, { seen: true })
+    else if (!m.seen && prefs.markRead === 'delay') setTimeout(() => { if (lastOpen.current === m) patch(m, { seen: true }) }, 3000)
   }
   const nextOf = (m) => { const i = shown.findIndex((x) => sameM(x, m)); return i >= 0 ? shown[i + 1] : null }
   const listSlide = useSlide(thread ? () => setThread('') : onBack, lastOpen.current && !open ? () => setOpen(lastOpen.current) : null)
@@ -972,20 +1028,62 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const junked = useRef(new Set())
   useEffect(() => {
     if (!prefs.autoJunk || role !== 'inbox' || !rows?.length) return
+    const out = []
     for (const m of rows) {
       if (!isBlocked(m.from, setup) || junked.current.has(keyM(m))) continue
       junked.current.add(keyM(m))
       const to = folderOf(m, 'spam')
-      drop(m)
-      if (to && to !== m.path) cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to }).catch(() => {})
+      if (to && to !== m.path) out.push(m)
     }
+    if (out.length) away(out, 'move', (x) => ({ to: folderOf(x, 'spam') }))
   }, [rows, prefs.autoJunk, role, setup]) // eslint-disable-line react-hooks/exhaustive-deps
   const emptyable = role === 'trash' || role === 'spam'
   const emptyAll = async () => {
     if (!window.confirm(`Delete every mail in ${role === 'trash' ? 'Trash' : 'Junk'} for good?`)) return
-    setBusy(true)
-    try { for (const t of targets) await cloud({ action: 'empty', account: t.account, path: t.path }); setRows([]); keepList(ck, { rows: [] }); say(role === 'trash' ? 'Trash is empty' : 'Junk is empty') } catch (e) { say(e.message || 'Not emptied') }
-    setBusy(false)
+    // empty at once on the screen; the server deletes in rounds of about half a minute until nothing is left
+    setRows([]); setFound(null); keepList(ck, { rows: [] }); setEmptying(ck, true)
+    say(role === 'trash' ? 'Trash is empty' : 'Junk is empty')
+    const run = async (t) => { for (let i = 0; i < 40; i++) { const j = await cloud({ action: 'empty', account: t.account, path: t.path }); if (!j?.left) return } }
+    Promise.all(targets.map(run)).then(() => setEmptying(ck, false), (e) => { setEmptying(ck, false); say(e.message || 'Not all emptied'); load(0) })
+  }
+  // an Empty that the app left half way (closed, or the phone slept) goes on when the folder is opened again
+  useEffect(() => {
+    if (!emptying(ck) || offline) return
+    const run = async (t) => { for (let i = 0; i < 40; i++) { const j = await cloud({ action: 'empty', account: t.account, path: t.path }); if (!j?.left) return } }
+    Promise.all(targets.map(run)).then(() => setEmptying(ck, false), () => setEmptying(ck, false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // more of the folder (Alex, 25 Nov: "a button to bring more or all the mail, the search does not find them all"):
+  // All Mail brings page after page, up to 1,500, kept on the phone; More Results the next 60 a search found
+  const [allBusy, setAllBusy] = useState(0)
+  const loadAll = async () => {
+    if (allBusy) return
+    let p = page, got = rows?.length || 0
+    setAllBusy(got || 1)
+    try {
+      while (got < 1500) {
+        p += 1
+        const j = await cloud({ action: 'list', items: targets, limit: 30, page: p })
+        const items = notGone(j.items)
+        const left = Object.entries(j.totals || {}).some(([, t]) => t > 30 * (p + 1))
+        setRows((r) => { const next = [...(r || []), ...items.filter((x) => !(r || []).some((y) => sameM(x, y)))]; got = next.length; keepList(ck, { rows: next, more: left, page: p }); return next })
+        setPage(p); setMore(left)
+        await new Promise((res) => setTimeout(res, 0))
+        setAllBusy(got || 1)
+        if (!items.length || !left) break
+      }
+    } catch (e) { say(e.message || 'Could not bring more') }
+    setAllBusy(0)
+  }
+  const [moreBusy, setMoreBusy] = useState(false)
+  const moreFound = async () => {
+    if (!found?.rows || moreBusy) return
+    setMoreBusy(true)
+    try {
+      const p = (found.page || 0) + 1
+      const j = await cloud({ action: 'list', items: targets, limit: 60, page: p, find })
+      setFound((f) => (f && f.key === findKey ? { ...f, page: p, rows: [...f.rows, ...notGone(j.items).filter((x) => !f.rows.some((y) => sameM(x, y)))] } : f))
+    } catch (e) { say(e.message || 'Could not bring more') }
+    setMoreBusy(false)
   }
   const pick = (k) => {
     setThread('')
@@ -1049,10 +1147,18 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
         : finding && !shown.length ? <p className="muted rooms-none">Looking…</p>
         : !shown.length ? <p className="muted rooms-none">{targets.length ? 'Nothing here.' : 'No account is in RoarMe yet. Send one from RoarMail on your computer.'}</p>
         : shown.map((m) => (
-          <MailRow key={keyM(m)} m={m} who={who} bar={acc.id === 'all' ? colourOf(m.account) : ''} count={m._n || 0} picking={filter === 'sender' && !sender} selOn={!!sel} checked={!!sel?.has(keyM(m))}
+          <MailRow key={keyM(m)} m={m} who={who} bar={acc.id === 'all' && prefs.accColours ? colourOf(m.account) : ''} count={m._n || 0} picking={filter === 'sender' && !sender} selOn={!!sel} checked={!!sel?.has(keyM(m))}
             onOpen={() => openMail(m)} onAct={(k) => act(k, m)} onMenu={(at) => setMenu({ m, at })} />
         ))}
-      {!offline && rows && rows.length > 0 && more && !filter && !thread && <div className="rmx-more"><button type="button" className="pill-btn" disabled={busy} onClick={() => load(page + 1)}>{busy ? 'Loading…' : 'Older Mail'}</button></div>}
+      {!offline && rows && rows.length > 0 && more && !filter && !thread && (
+        <div className="rmx-more">
+          <button type="button" className="pill-btn" disabled={busy || !!allBusy} onClick={() => load(page + 1)}>{busy ? 'Loading…' : 'Older Mail'}</button>
+          <button type="button" className="pill-btn" disabled={busy || !!allBusy} onClick={loadAll}>{allBusy ? `Bringing… ${allBusy}` : 'All Mail'}</button>
+        </div>
+      )}
+      {!offline && found?.key === findKey && found.rows && found.total > found.rows.length && (
+        <div className="rmx-more"><button type="button" className="pill-btn" disabled={moreBusy} onClick={moreFound}>{moreBusy ? 'Looking…' : `More Results (${found.total - found.rows.length})`}</button></div>
+      )}
       {newBtn}
       {sel && createPortal(
         <div className="rmx-selbar" role="toolbar" aria-label="Selected mails">
@@ -1075,6 +1181,34 @@ const htmlText = (h) => {
 }
 
 // a mail's own page: what it says drawn in a sealed frame (no scripts, no forms, nothing from outside until Show Images)
+// the reader's privacy and look, as RoarMail's desktop Settings > Privacy and > Fonts & colours
+const TRACKER = /(^|\.)(list-manage\.com|mailchimp\.com|sendgrid\.net|mandrillapp\.com|mailgun\.org|hubspot\.com|hs-analytics\.net|klaviyo\.com|exacttarget\.com|mcsv\.net|google-analytics\.com|doubleclick\.net|mixpanel\.com|intercom\.io|customer\.io|sparkpostmail\.com|pstmrk\.it|mailtrack\.io|yesware\.com|bananatag\.com|getnotify\.com|streak\.com|cmail\d+\.com|createsend\d*\.com|rs6\.net|ct\.sendgrid\.net)$/i
+const QUOTE_CSS = 'blockquote{margin:8px 0;padding:2px 0 2px 12px;border-left:3px solid #3aa7e8;color:#3a6c8f}blockquote blockquote{border-color:#14b89a;color:#2c7a6c}blockquote blockquote blockquote{border-color:#d6338a;color:#8e3966}'
+function cleanHtml(html, prefs) {
+  if (!prefs.trackers) return html
+  // tracking pixels: pictures of 1 or 2 px, and pictures from known trackers, taken out even when pictures are shown
+  return html.replace(/<img\b[^>]*>/gi, (tag) => {
+    if (/\b(width|height)\s*=\s*["']?[0-2](px)?["'\s>/]/i.test(tag) || /(width|height)\s*:\s*[0-2]px/i.test(tag)) return ''
+    const src = (tag.match(/\bsrc\s*=\s*["']?([^"'\s>]+)/i) || [])[1] || ''
+    try { if (/^https?:/i.test(src) && TRACKER.test(new URL(src).hostname)) return '' } catch { /* not a link */ }
+    return tag
+  })
+}
+const escH = (t) => String(t || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])
+function plainHtml(text, prefs) {
+  let h = escH(text)
+  if (prefs.detectLinks) h = h.replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, (u) => `<a href="${u}">${u}</a>`)
+    .replace(/(^|[\s(])([\w.+-]+@[\w-]+\.[\w.-]+\w)/g, (_, a, e) => `${a}<a href="mailto:${e}">${e}</a>`)
+  // quoted lines (> ...) as quotes, so they take their colours by level
+  if (prefs.quoteColors) h = h.split('\n').map((l) => { const m = l.match(/^((?:&gt;\s?)+)(.*)$/); if (!m) return l; const n = (m[1].match(/&gt;/g) || []).length; return '<blockquote>'.repeat(n) + m[2] + '</blockquote>'.repeat(n) }).join('\n').replace(/<\/blockquote>\n<blockquote>/g, '\n')
+  return `<pre style="white-space:pre-wrap;margin:0;font:${prefs.plainMono ? '13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace' : 'inherit'}">${h}</pre>`
+}
+// Clean Links: utm_ and the like taken off a link before it opens
+const TRACK_Q = /^(utm_\w+|fbclid|gclid|mc_cid|mc_eid|_hsenc|_hsmi|mkt_tok|yclid|igshid|ref_src|vero_id|oly_\w+)$/i
+export function cleanLink(href) {
+  try { const u = new URL(href); for (const k of [...u.searchParams.keys()]) if (TRACK_Q.test(k)) u.searchParams.delete(k); return u.toString() } catch { return href }
+}
+
 function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
   const [mail, setMail] = useState(() => keptKv(mailKey(m)) || null)
   const [err, setErr] = useState('')
@@ -1089,17 +1223,19 @@ function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
     // kept on the phone: shown at once (and marked read on the server quietly); else fetched and kept
     readKv(mailKey(m)).then((had) => {
       if (gone) return
-      if (had) { setMail(had); if (!m.seen && prefs.markRead) cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }).catch(() => {}); return }
-      cloud({ action: 'get', account: m.account, path: m.path, uid: m.uid, seen: !!prefs.markRead }).then((j) => { keepMail(m, j); if (!gone) setMail(j) }, (e) => { if (!gone) setErr(e.message || 'Could not open this mail') })
+      if (had) { setMail(had); if (!m.seen && prefs.markRead === 'open') cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }).catch(() => {}); return }
+      cloud({ action: 'get', account: m.account, path: m.path, uid: m.uid, seen: prefs.markRead === 'open' }).then((j) => { keepMail(m, j); if (!gone) setMail(j) }, (e) => { if (!gone) setErr(e.message || 'Could not open this mail') })
     })
-    return () => { gone = true }
+    // After 3 s (the desktop's choice): read once it has been open that long
+    const t = !m.seen && prefs.markRead === 'delay' ? setTimeout(() => cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }).catch(() => {}), 3000) : 0
+    return () => { gone = true; clearTimeout(t) }
   }, [])
   const doc = useMemo(() => {
     if (!mail) return ''
-    const body = mail.html || `<pre style="white-space:pre-wrap;font:inherit;margin:0">${(mail.text || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</pre>`
+    let body = mail.html ? cleanHtml(mail.html, prefs) : plainHtml(mail.text, prefs)
     const csp = `default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:${pics ? ' https: http:' : ''}`
     return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank">
-<style>html,body{touch-action:pan-y pinch-zoom;overflow-x:hidden}html,body{margin:0;padding:0;background:#fff;color:#1d1d24;font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;word-wrap:break-word;overflow-wrap:anywhere}body{padding:${mail.html ? '12px 16px 16px' : '14px 16px 18px'}}img{max-width:100%;height:auto}table{max-width:100%!important}a{color:#1a7fd0}</style></head><body>${body}</body></html>`
+<style>html,body{touch-action:pan-y pinch-zoom;overflow-x:hidden}html,body{margin:0;padding:0;background:#fff;color:#1d1d24;font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;word-wrap:break-word;overflow-wrap:anywhere}body{padding:${mail.html ? '12px 16px 16px' : '14px 16px 18px'}}img{max-width:100%;height:auto}table{max-width:100%!important}a{color:#1a7fd0}${prefs.quoteColors ? QUOTE_CSS : ''}</style></head><body>${body}</body></html>`
   }, [mail, pics])
   // the frame as tall as what is in it
   const fit = () => {
@@ -1116,6 +1252,7 @@ function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
       const r = () => f.getBoundingClientRect()
       const as = (e) => ({ touches: [...e.touches].map((t) => ({ clientX: t.clientX + r().left, clientY: t.clientY + r().top })), target: f })
       const d = f.contentDocument
+      if (prefs.cleanLinks) d.addEventListener('click', (e) => { const a = e.target.closest?.('a[href]'); if (a && /^https?:/i.test(a.href)) a.href = cleanLink(a.href) }, true)
       d.addEventListener('touchstart', (e) => readSlide.onTouchStart(as(e)), { passive: true })
       d.addEventListener('touchmove', (e) => readSlide.onTouchMove(as(e)), { passive: true })
       d.addEventListener('touchend', () => readSlide.onTouchEnd(), { passive: true })
@@ -1466,6 +1603,38 @@ function MailContacts({ who, setup, me, book, onBack, onWrite }) {
   )
 }
 
+// a mail waiting for its Undo, and the bar that shows it (mounted once by MailView)
+let pendingSend = null
+function laterSend(job, secs, again) {
+  const p = { job, again, until: Date.now() + secs * 1000, t: 0 }
+  p.t = setTimeout(async () => {
+    if (pendingSend === p) pendingSend = null
+    tell('roarme-mail-undo', null)
+    try { await cloud(job); tell('roarme-mail-sent', job.account); tell('roarme-mail-toast', 'Sent') }
+    catch (e) { tell('roarme-mail-toast', e.message || 'Not sent'); tell('roarme-mail-reopen', again) }
+  }, secs * 1000)
+  pendingSend = p
+  tell('roarme-mail-undo', p)
+}
+function UndoBar() {
+  const [p, setP] = useState(pendingSend)
+  const [msg, setMsg] = useState('')
+  const [, tick] = useState(0)
+  useEffect(() => {
+    const f = (e) => setP(e.detail)
+    const g = (e) => { setMsg(e.detail); setTimeout(() => setMsg((x) => (x === e.detail ? '' : x)), 2600) }
+    window.addEventListener('roarme-mail-undo', f); window.addEventListener('roarme-mail-toast', g)
+    return () => { window.removeEventListener('roarme-mail-undo', f); window.removeEventListener('roarme-mail-toast', g) }
+  }, [])
+  useEffect(() => { if (!p) return undefined; const t = setInterval(() => tick((n) => n + 1), 250); return () => clearInterval(t) }, [p])
+  if (!p && !msg) return null
+  const undo = () => { clearTimeout(p.t); pendingSend = null; setP(null); tell('roarme-mail-reopen', p.again) }
+  const left = p ? Math.max(1, Math.ceil((p.until - Date.now()) / 1000)) : 0
+  return createPortal(
+    <div className="toast rmx-undo">{p ? <><span>Sending in {left} s</span><button type="button" className="pill-btn" onClick={undo}>Undo</button></> : <span>{msg}</span>}</div>,
+    document.body)
+}
+
 function Compose({ init, accounts, on, setup, who, abook, onClose }) {
   const prefs = usePrefs()
   const usable = accounts.filter((a) => on?.has(a.id))
@@ -1490,6 +1659,7 @@ function Compose({ init, accounts, on, setup, who, abook, onClose }) {
   // the fields of a reply or a forward, once the mail is here
   useEffect(() => {
     if (filled.current) return
+    if (init.draft) { const d = init.draft; filled.current = true; typed.current = true; setTo(d.to); setCc(d.cc); setBcc(d.bcc); setSubject(d.subject); setBody(d.body); setFiles(d.files || []); if (d.from) setFrom(d.from); if (d.cc || d.bcc) setMoreFields(true); return }
     if (init.mode === 'new') { filled.current = true; if (init.to) setTo(init.to); const sg = sigOf(from); setBody(sg ? `\n\n${sg}` : ''); return }
     if (!mail) return
     filled.current = true
@@ -1536,10 +1706,8 @@ function Compose({ init, accounts, on, setup, who, abook, onClose }) {
     if (total > 18e6) { setErr('The files are too big together (18 MB at most).'); return }
     const acc = accounts.find((a) => a.id === from)
     if (!acc) { setErr('Choose the account it goes from.'); return }
-    setBusy(true); setErr('')
-    try {
-      const reply = (init.mode === 'reply' || init.mode === 'replyAll') && mail
-      await cloud({
+    const reply = (init.mode === 'reply' || init.mode === 'replyAll') && mail
+    const job = {
         action: 'send', account: from, fromName: acc.display || '', to: T, cc: C, bcc: B, subject, text: body,
         html: `<div style="white-space:pre-wrap">${esc(body)}</div>`,
         inReplyTo: reply ? mail.msgid || '' : '', references: reply ? mail.msgid || '' : '',
@@ -1547,7 +1715,18 @@ function Compose({ init, accounts, on, setup, who, abook, onClose }) {
         replyOf: reply && m.account === from ? { path: m.path, uid: m.uid } : null,
         forwardOf: init.mode === 'forward' && m ? { account: m.account, path: m.path, uid: m.uid } : null,
         files: files.map(({ name, mime, b64 }) => ({ name, mime, b64 })),
-      })
+    }
+    // Undo Send (the desktop's own, Settings > ROARMAIL > Writing): the window goes at once, the mail waits a few
+    // seconds with Undo, which brings the window back as it was
+    const secs = Number(prefs.undoSend) || 0
+    if (secs > 0) {
+      onClose(true)
+      laterSend(job, secs, { ...init, draft: { to, cc, bcc, subject, body, files, from } })
+      return
+    }
+    setBusy(true); setErr('')
+    try {
+      await cloud(job)
       onClose(true)
       tell('roarme-mail-sent', from)
     } catch (e) { setErr(e.message || 'Not sent') }
@@ -1601,57 +1780,6 @@ function Compose({ init, accounts, on, setup, who, abook, onClose }) {
         </>}
       </div>
     </Modal>
-  )
-}
-
-// the unread mails in the app's own Unread, version B (Alex, 24 Nov: "all together by time, with a minimal choice that
-// takes no line of its own"): Chat.jsx mixes these rows with the unread chats by time, and the head's All · Chats · Mail
-// (in the place of ROARME, as Calls' All | Missed) shows one kind or both
-export function useUnreadMails(on) {
-  const prefs = usePrefs()
-  const [list, setList] = useState(() => keptKv('mu') || null)
-  useEffect(() => {
-    if (!on) return
-    if (!list) readKv('mu').then((v) => { if (v) setList((l) => l || v) })
-    const f = (e) => setList(e.detail || [])
-    window.addEventListener('roarme-mail-unread', f)
-    return () => window.removeEventListener('roarme-mail-unread', f)
-  }, [on])
-  const drop = (m) => setList((l) => { const n = (l || []).filter((x) => !sameM(x, m)); keepKv('mu', n); return n })
-  return { rows: on && prefs.countUnread ? (list || []).filter((m) => !m.seen && !(prefs.allHide || []).includes(m.account)) : [], drop }
-}
-export function useMailWho(me, people, book) { return useWho(me, people, book, lsGet('mail-setup')) }
-
-/** one unread mail among the chats: the same row, slide and long press as in ROARMAIL; what needs the folder opens it there */
-export function UnreadMail({ m, who, onDrop }) {
-  const [menu, setMenu] = useState(null)
-  const setup = lsGet('mail-setup')
-  const prefs = mailPrefs()
-  const folderOf = (role) => setup?.folders?.find((f) => f.account === m.account && f.role === role)?.path
-  const act = async (k) => {
-    try {
-      if (k === 'read') { onDrop(m); await cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }) }
-      else if (k === 'star') await cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'flagged', on: !m.flagged })
-      else if (k === 'archive' && folderOf('archive')) { onDrop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to: folderOf('archive') }) }
-      else if (k === 'trash') { if (prefs.askDelete && !window.confirm('Delete this mail?')) return; onDrop(m); await cloud({ action: 'delete', account: m.account, path: m.path, uid: m.uid, trash: folderOf('trash') || '' }) }
-      else if (k === 'block') {
-        const name = who(m.from).name || m.from?.address
-        if (!m.from?.address || (prefs.askBlock && !window.confirm(`Block ${name}? Their mail goes to Junk, here and in RoarMail on your computers.`))) return
-        onDrop(m); await cloud({ action: 'block', email: m.from.address, name: m.from.name || '', account: m.account, path: m.path, uid: m.uid, junk: folderOf('spam') || '' })
-        noteBlock('email', m.from.address, true)
-      } else if (k === 'junk' && folderOf('spam')) { onDrop(m); await cloud({ action: 'move', account: m.account, path: m.path, uid: m.uid, to: folderOf('spam') }) }
-      else if (k === 'domain') {
-        const d = domainOf(m.from); if (!d || !window.confirm(`Block everyone at @${d}? Their mail goes to Junk, here and in RoarMail on your computers.`)) return
-        onDrop(m); await cloud({ action: 'blockDomain', domain: d, account: m.account, path: m.path, uid: m.uid, junk: folderOf('spam') || '' }); noteBlock('domain', d, true)
-      } else { openMailFromUnread(m); return }
-      warmMail(true)
-    } catch { warmMail(true) }
-  }
-  return (
-    <div className={`rmx rmx-mu1 rmx-l${prefs.lines}${prefs.pics ? '' : ' rmx-nopic'}${prefs.show && prefs.show !== 'both' ? ` rmx-show-${prefs.show}` : ''}`}>
-      <MailRow m={m} who={who} bar={setup?.accounts?.find((a) => a.id === m.account)?.color} onOpen={() => openMailFromUnread(m)} onAct={act} onMenu={(at) => setMenu({ at })} />
-      {menu && <MailMenu m={m} at={menu.at} noSelect onAct={act} onClose={() => setMenu(null)} />}
-    </div>
   )
 }
 
@@ -1726,22 +1854,35 @@ export function MailPage() {
         <p className="hb-hint">The switch puts an account in All Inboxes and in the app's Unread. Add an account at the foot of Mailboxes in ROARMAIL, or bring it from RoarMail on your computer.</p>
         <div className="set-title">Reading</div>
         <div className="set-box">
-          {sw('markRead', 'Mark as Read When Opened')}
-          {sw('images', 'Load Images', 'Pictures from the web in every mail, without asking.')}
+          {seg('markRead', 'Mark as Read', [['open', 'On Open'], ['delay', 'After 3 s'], ['never', 'Never']])}
+          {sw('images', 'Load Images', prefs.privacy ? 'Off while Privacy Mode is on.' : 'Pictures from the web in every mail, without asking.')}
           {seg('show', 'Show', [['both', 'Both'], ['from', 'Sender'], ['subject', 'Subject']])}
           {seg('lines', 'Preview Lines', [[0, 'None'], [1, '1'], [2, '2']])}
           {sw('pics', 'Sender Pictures', 'The round picture beside each mail.')}
           {sw('oldest', 'Oldest First', 'The order a folder opens in.')}
+          {seg('threadOrder', 'In a Conversation', [['newest', 'Newest'], ['oldest', 'Oldest']])}
+          {sw('accColours', 'Account Colours', 'A line of each account’s colour in All Inboxes.')}
+          {sw('counts', 'Unread Counts', 'The numbers beside accounts and folders.')}
+          {sw('detectLinks', 'Detect Links', 'Links and addresses in plain mail can be tapped.')}
+          {sw('plainMono', 'Plain Text in Fixed Width')}
+          {sw('quoteColors', 'Quotes in Colours', 'Each level of a quoted mail in its own colour.')}
+        </div>
+        <div className="set-title">Privacy</div>
+        <div className="set-box">
+          {sw('privacy', 'Privacy Mode', 'No pictures from the web, trackers blocked, clean links, always.')}
+          {sw('trackers', 'Block Trackers', 'Tracking pixels taken out, even when pictures show.')}
+          {sw('cleanLinks', 'Clean Links', 'utm_ and other tracking tags taken off a link before it opens.')}
         </div>
         <div className="set-title">New Mail</div>
         <div className="set-box">
-          {sw('countUnread', 'Mail in Unread', 'Unread mail beside the unread chats, and in the count.')}
+          {sw('countUnread', 'Count on Mail', 'The number of unread mail on Mail in the bar at the foot.')}
           {seg('every', 'Check Every', [[1, '1 min'], [3, '3 min'], [10, '10 min']])}
         </div>
         <div className="set-title">Writing</div>
         <div className="set-box">
           {sw('signature', 'Add My Signature', 'Each account’s signature from RoarMail.')}
           {sw('quote', 'Quote the Mail in Replies', 'The mail you answer, under your words.')}
+          {seg('undoSend', 'Undo Send', [[0, 'Off'], [5, '5 s'], [10, '10 s'], [20, '20 s']])}
           <label className="set-row rmx-setrow rmx-pickrow"><span className="rmx-st"><b>Send New Mail From</b><small>{(setup?.accounts || []).find((a) => a.id === prefs.defAcc)?.email || 'The first account in RoarMe'}</small></span>
             <i className="set-chev">{I.right}</i>
             <select value={prefs.defAcc || ''} onChange={(e) => setMailPref('defAcc', e.target.value)} aria-label="Send New Mail From">
@@ -1751,10 +1892,11 @@ export function MailPage() {
         </div>
         <div className="set-title">Actions</div>
         <div className="set-box">
+          {seg('swipeFull', 'Full Slide', [['trash', 'Trash'], ['archive', 'Archive'], ['read', 'Read'], ['none', 'Off']])}
           {sw('askDelete', 'Ask Before Deleting')}
           {sw('askBlock', 'Ask Before Blocking')}
         </div>
-        <p className="hb-hint">A slide from the right edge of a mail brings out Read, Star, Move, Block and Trash; a long press gives Reply, Forward, Move to Junk, Block and more.</p>
+        <p className="hb-hint">A slide from the right edge of a mail brings out Read, Star, Move, Block and Trash; slide all the way for the Full Slide’s action. A long press gives Reply, Forward, Move to Junk, Block and more.</p>
         <div className="set-title">Junk</div>
         <div className="set-box">
           {sw('autoJunk', 'Blocked Senders to Junk', 'Mail from anyone you blocked leaves the Inbox by itself, here and while RoarMail on the computer is shut.')}

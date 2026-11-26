@@ -12,6 +12,17 @@ export const newsLab = (v) => { LAB = !!v }
 
 export const NEWS = [
   {
+    id: '2026-11-26',
+    date: '26 November 2026',
+    sections: [
+      { title: 'On a phone', items: [
+        'Mail goes at once: Delete, Move, Junk and Empty Trash or Junk take the mail away the moment you tap, and the server catches up in the background.',
+        'All Mail at the foot of a folder brings every mail in it, and More Results brings the rest of a search.',
+        'Settings > ROARMAIL has the settings of RoarMail on the computer: Mark as Read, Privacy Mode, Block Trackers, Clean Links, Undo Send, Full Slide, quotes in colours and more.',
+      ] },
+    ],
+  },
+  {
     id: '2026-11-25',
     date: '25 November 2026',
     sections: [

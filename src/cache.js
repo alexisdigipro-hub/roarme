@@ -8,6 +8,9 @@
 import { dropPics, supabase } from './lib.js'
 
 const PRE = 'roarme-c-'
+// the kept chats and mail live in a database of each account's own (acctLocal.js; Alex, 26 Nov: nothing shared)
+let DB = 'roarme-data'
+export function kvOwner(uid) { const n = uid ? `roarme-data-${uid}` : 'roarme-data'; if (n !== DB) { DB = n; dbp = null; kvMem.clear(); msgMem.clear() } }
 export const lsGet = (k) => { try { return JSON.parse(localStorage.getItem(PRE + k) || 'null') } catch { return null } }
 const lsTimers = {}
 export const lsSet = (k, v, wait = 600) => {
@@ -20,7 +23,7 @@ const openDb = () => {
   if (dbp) return dbp
   dbp = new Promise((ok, bad) => {
     try {
-      const rq = indexedDB.open('roarme-data', 1)
+      const rq = indexedDB.open(DB, 1)
       rq.onupgradeneeded = () => rq.result.createObjectStore('kv')
       rq.onsuccess = () => ok(rq.result)
       rq.onerror = () => bad(rq.error)
@@ -88,7 +91,7 @@ export async function dropKept() {
   const db = dbp ? await dbp : null
   try { db?.close() } catch { /* closed */ }
   dbp = null
-  await new Promise((ok) => { try { const rq = indexedDB.deleteDatabase('roarme-data'); rq.onsuccess = rq.onerror = rq.onblocked = () => ok() } catch { ok() } })
+  await new Promise((ok) => { try { const rq = indexedDB.deleteDatabase(DB); rq.onsuccess = rq.onerror = rq.onblocked = () => ok() } catch { ok() } })
   await dropPics()
 }
 supabase.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') dropKept() })

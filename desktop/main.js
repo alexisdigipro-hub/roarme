@@ -3,7 +3,7 @@
 // next start without a new install. Links that leave RoarMe open in the computer's own browser.
 // The app adds what a browser cannot: the unread count on its icon, a paw in the menu bar, opening at
 // login, and staying on (with notifications and calls) when its window is closed.
-const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, net, powerSaveBlocker, protocol, screen, shell, session } = require('electron')
+const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, nativeTheme, net, powerSaveBlocker, protocol, screen, shell, session, systemPreferences } = require('electron')
 // RoarMe is dark: the glass under the window is dark too, even when the Mac is in light mode (Alex, 16 Oct:
 // the strip while resizing came out white)
 nativeTheme.themeSource = 'dark'
@@ -224,6 +224,12 @@ ipcMain.on('roar:badge', (_e, n) => {
   updateTray()
 })
 ipcMain.handle('roar:get', () => ({ ...settings, openAtLogin: app.getLoginItemSettings().openAtLogin, platform: process.platform }))
+// Touch ID for RoarMe's passcode lock (Alex, 26 Nov): a page inside the app cannot make a passkey that asks for the
+// finger, so the lock asks the Mac itself (LocalAuthentication through Electron)
+ipcMain.handle('roar:touchid-can', () => { try { return process.platform === 'darwin' && systemPreferences.canPromptTouchID() } catch { return false } })
+ipcMain.handle('roar:touchid', async () => {
+  try { await systemPreferences.promptTouchID('unlock RoarMe'); return true } catch { return false }
+})
 ipcMain.handle('roar:set', (_e, key, value) => {
   if (key === 'openAtLogin') app.setLoginItemSettings({ openAtLogin: !!value, openAsHidden: true })
   else if (key in DEFAULTS) { settings[key] = !!value; saveSettings(); updateTray() }

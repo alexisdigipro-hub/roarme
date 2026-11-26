@@ -50,7 +50,11 @@ const native = () => {
   return { isAvailable: (o = {}) => C.nativePromise('NativeBiometric', 'isAvailable', o), verifyIdentity: (o = {}) => C.nativePromise('NativeBiometric', 'verifyIdentity', o) }
 }
 const nativeAsk = async () => { try { await native().verifyIdentity({ reason: 'Unlock RoarMe', title: 'Unlock RoarMe', useFallback: false }); return true } catch { return false } }
+// the Mac app (desktop/, Electron) asks the Mac's own Touch ID; the lock then keeps bio 'mac' (Alex, 26 Nov)
+const macTouch = () => (typeof window !== 'undefined' ? window.roarDesktop?.touchId : null)
+const macAsk = async () => { try { return !!(await macTouch()?.ask()) } catch { return false } }
 export async function bioAvailable() {
+  if (macTouch()) { try { return !!(await macTouch().can()) } catch { return false } }
   if (inApp()) { try { return !!(await native()?.isAvailable({ useFallback: false }))?.isAvailable } catch { return false } }
   try { return !!window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable() } catch { return false }
 }
@@ -58,6 +62,12 @@ export const bioName = () => (/iPhone|iPad/.test(navigator.userAgent) ? 'Face ID
 export async function bioOn() {
   const l = getLock()
   if (!l) return false
+  if (macTouch()) {
+    if (!(await macAsk())) return false
+    localStorage.setItem(KEY, JSON.stringify({ ...l, bio: 'mac' }))
+    window.dispatchEvent(new Event('roarme-lock'))
+    return true
+  }
   if (inApp()) {
     if (!(await nativeAsk())) return false
     localStorage.setItem(KEY, JSON.stringify({ ...l, bio: 'native' }))
@@ -88,6 +98,7 @@ export async function bioCheck() {
   const l = getLock()
   if (!l?.bio) return false
   if (l.bio === 'native') return inApp() ? nativeAsk() : false
+  if (l.bio === 'mac') return macTouch() ? macAsk() : false
   try {
     const got = await navigator.credentials.get({ publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),

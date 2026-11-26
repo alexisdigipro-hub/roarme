@@ -20,6 +20,7 @@ export const NEWS = [
       ] },
       { title: 'On a phone', items: [
         'Mail stays in step with your other devices: new mail shows by itself every half minute, and mail deleted elsewhere goes. A slide right anywhere on an open mail takes you back.',
+        'The buttons that come out when you slide a mail (Read, Star, Move, Block, Trash) work again.',
         'Mail goes at once: Delete, Move, Junk and Empty Trash or Junk take the mail away the moment you tap, and the server catches up in the background.',
         'All Mail at the foot of a folder brings every mail in it, and More Results brings the rest of a search.',
         'A tap on Mail at the foot always takes you to the start of your mail.',

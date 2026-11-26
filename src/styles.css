@@ -9253,3 +9253,13 @@ html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !i
 .set-accs .set-acc-plus { --c: var(--halo-mine, #3aa7e8); }
 .set-accs .set-acc-add .set-text { color: var(--halo, #3aa7e8); }
 .set-accs .set-acc-wait { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; opacity: .5; animation: spin .8s linear infinite; }
+
+/* the accounts menu from holding Settings in the bar at the foot (Alex, 26 Nov) */
+.acc-veil { z-index: 80; }
+.menu.acc-menu { z-index: 81; min-width: 220px; max-width: calc(100vw - 20px); transform-origin: bottom right; }
+.menu.acc-menu > button .av { flex: none; }
+.menu.acc-menu > button.on { font-weight: 600; }
+.menu.acc-menu .acc-tick { margin-left: auto; display: grid; color: var(--halo, #3aa7e8); }
+.foot .foot-settings { -webkit-touch-callout: none; user-select: none; }
+html:root:root:root .menu.acc-menu > button > .av { width: 26px !important; height: 26px !important; min-width: 26px; max-width: 26px; flex: 0 0 26px !important; font-size: 10px; margin: 0; }
+html:root:root:root .menu.acc-menu > button > span:not(.av) { flex: 1 1 auto; min-width: 0; text-align: left; }

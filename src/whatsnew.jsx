@@ -19,6 +19,7 @@ export const NEWS = [
         'Each account on the same phone keeps everything of its own: folders, pins, drafts, appearance, settings and mail. Nothing shows in the other account.',
         'More than one account: Settings > Add Account, then switch with one tap, or hold Settings in the bar at the foot. Notifications come from all of them, and a tap opens the right account.',
         'Pulling down to refresh no longer asks for your passcode or Face ID again.',
+        'The folders at the top share the bar evenly, each one centred in its own part.',
         'The round Unread button sends out soft rings, with the number in the middle.',
         'The Calls sign in the bar at the foot has the same line weight as the signs beside it.',
         'ROARMAIL: Junk, Trash, Sent, Drafts and Archive are read ahead in the background, so they open at once.',

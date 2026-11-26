@@ -9237,3 +9237,6 @@ html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !i
 .rmx-cap b { font-weight: 600; color: var(--text); flex: none; }
 .rmx-cap i { font-style: normal; opacity: .5; flex: none; }
 .rmx-cap span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the placeholder never wraps, on a computer too, so an empty writing box stays one line (Alex, 26 Nov) */
+.compose-box textarea::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

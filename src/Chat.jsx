@@ -2600,6 +2600,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const grew = was.big === bigBox && was.text !== null && text.length >= was.text.length && lines(text) >= lines(was.text)
     sized.current = { text, big: bigBox }
     const max = bigBox ? Math.round(window.innerHeight * 0.55) : 200
+    // an empty box is always one line: measured while the chat was narrow (a project's chat beside its Workspace, a
+    // slide in), the placeholder wrapped and the box kept two lines' height (Alex, 26 Nov)
+    if (!text && !bigBox) { el.style.height = ''; setTall(false); return }
     if (grew) {
       const full = el.scrollHeight
       if (!bigBox && full > el.clientHeight) el.style.height = `${Math.min(max, full)}px`

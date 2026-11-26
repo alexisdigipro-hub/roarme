@@ -18,6 +18,7 @@ export const NEWS = [
       { title: 'Everywhere', items: [
         'Pulling down to refresh no longer asks for your passcode or Face ID again.',
         'Tap a reply to see the message it answers: it lights up for a moment, words, photo or anything. From the calendar the day lights up too, so you see where it starts.',
+        'An empty writing box stays one line tall, also beside a project\'s Workspace.',
       ] },
       { title: 'On a phone', items: [
         'Mail stays in step with your other devices: new mail shows by itself every half minute, and mail deleted elsewhere goes. A slide right anywhere on an open mail takes you back.',

@@ -92,7 +92,7 @@ export function onNotificationTap(open) {
   if (!P) return () => {}
   let h = null
   let gone = false
-  Promise.resolve(P.addListener('pushNotificationActionPerformed', (a) => { const room = a?.notification?.data?.room; if (room) open(room) }))
+  Promise.resolve(P.addListener('pushNotificationActionPerformed', (a) => { const d = a?.notification?.data || {}; if (d.room) open(d.room, d.to || '') }))
     .then((x) => { h = x; if (gone) x.remove() }).catch(() => {})
   return () => { gone = true; try { h?.remove() } catch { /* gone */ } }
 }
@@ -147,6 +147,16 @@ export async function pushOn(preview) {
   if (!key) throw new Error('The notification server did not answer. Try again in a moment.')
   const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: unb64u(key) })
   await keep(sub, preview)
+}
+
+// signing one account out of this device (accounts.js): only that account's row for this device goes; the device stays
+// signed up for the other accounts on it
+export async function pushForget() {
+  try {
+    if (native()) { const t = savedToken(); if (t) await supabase.from('roar_push_subs').delete().eq('endpoint', APNS + t); return }
+    const sub = await current()
+    if (sub) await supabase.from('roar_push_subs').delete().eq('endpoint', sub.endpoint)
+  } catch { /* offline */ }
 }
 
 export async function pushOff() {

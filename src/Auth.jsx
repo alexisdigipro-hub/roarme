@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { accounts, addingAccount, cancelAdd } from './accounts.js'
 import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
 import { Wordmark } from './ui.jsx'
 import { pendingInvite } from './invite.jsx'
@@ -111,6 +112,8 @@ export function Auth() {
         <button className="btn btn-main" disabled={busy}>{busy ? '…' : mode === 'in' ? 'Sign in' : mode === 'up' ? 'Sign up' : 'Send the link'}</button>
         <div className="auth-links">
           {mode === 'in' && <><button type="button" onClick={() => { setMode('up'); setErr('') }}>Create an account</button><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button></>}
+          {/* adding one more account (accounts.js): the way back to the accounts already here */}
+          {addingAccount() && accounts().length > 0 && <button type="button" onClick={cancelAdd}>Back to Your Account</button>}
           {mode !== 'in' && <button type="button" onClick={() => setMode('in')}>I have an account, sign in</button>}
         </div>
       </form>

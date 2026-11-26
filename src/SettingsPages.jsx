@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { dropPics, errText, foldHas, nameOf, statusOf, supabase } from './lib.js'
 import { Avatar, FOOT_I, I, Lens, Modal, Slide, NAME_COLORS, useTabSwipe, Wordmark, colorOf, revealFrom, svg } from './ui.jsx'
 import { PRESENCE, PresenceDot, StatusSheet } from './status.jsx'
+import { MAX_ACCOUNTS, accounts, addAccount, signOutHere, switchAccount } from './accounts.js'
 import { HALO_ACCENTS, DEFAULTS, folderTint, FONTS, REACTIONS, SOUNDS, TEXT_SIZES, applyMode, chime, inThemeLab, setPrefs, usePrefs } from './prefs.js'
 import { WallTiles } from './extras.jsx'
 import { ColorPick } from './themeEditor.jsx'
@@ -147,6 +148,7 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
         </div>
       )}
       {statusOpen && <StatusSheet me={me} setMe={setMe} onClose={() => setStatusOpen(false)} />}
+      <AccountsBox me={me} />
       {/* the RoarMe account, run from your own profile (Alex, 19 Oct: "here in my profile, no other profile"): the admins
           read who writes to RoarMe and answer as RoarMe. My Profile itself is the card above. */}
       {onInbox && (
@@ -185,7 +187,7 @@ export function SettingsMenu({ me, setMe, page, onPage, onMedia, onRoarMe, onInb
         <button type="button" className={`set-row set-pick set-nav${page === 'news' ? ' on' : ''}`} onClick={() => onPage('news')}><span className="nav-ico" style={{ '--c': '#3aa7e8' }}>{svg(<><path d="M12 3l2.2 4.8L19 9l-3.6 3.3.9 5L12 15l-4.3 2.3.9-5L5 9l4.8-1.2z" /></>, 16)}</span><span className="set-text">What's New<small>Every update, what it brought</small></span><i className="set-chev">{I.right}</i></button>
       </div>
       <div className="set-box">
-        <button type="button" className="set-row set-pick set-nav danger" onClick={() => { if (window.confirm('Sign out of RoarMe on this device?')) supabase.auth.signOut() }}><span className="nav-ico" style={{ '--c': '#ff453a' }}>{svg(<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />, 16)}</span><span className="set-text">Sign Out</span></button>
+        <button type="button" className="set-row set-pick set-nav danger" onClick={() => { if (window.confirm(accounts().length > 1 ? 'Sign out of this account? Your other accounts stay.' : 'Sign out of RoarMe on this device?')) signOutHere() }}><span className="nav-ico" style={{ '--c': '#ff453a' }}>{svg(<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />, 16)}</span><span className="set-text">Sign Out</span></button>
       </div>
       <p className="set-version"><Wordmark by /><span>{`RoarMe ${appVersion() ? `${appVersion()} ` : ''}· ${!navigator.userAgent.includes('Electron') ? 'web' : /Windows/.test(navigator.userAgent) ? 'Windows app' : 'Mac app'}`}</span></p>
     </div>
@@ -1321,5 +1323,36 @@ function Folders({ p, folders, onFolders, onFolderMenu }) {
       <Box><Switch on={!!p.folderAlone} set={(v) => setPrefs({ folderAlone: v })} hint="An unread chat shows only in Unread, a chat you put in a folder only there, a group only in Groups; All keeps the rest">Each Chat in One Folder</Switch></Box>
       <Box><Switch on={p.folderTags} set={(v) => setPrefs({ folderTags: v })} hint="The folder names of each chat, in the chat list">Show Folder Tags</Switch></Box>
     </>
+  )
+}
+
+// the accounts on this device (Alex, 26 Nov, from Telegram's Settings): the one in use with a tick, the others a tap
+// away (accounts.js switchAccount), and Add Account while there is room
+const ADD_ACC_I = <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="8" r="3.6" /><path d="M3.5 19.5c.8-3.4 3.4-5.2 6.5-5.2 1.3 0 2.5.3 3.5.9M18 14v6M15 17h6" /></svg>
+function AccountsBox({ me }) {
+  const [list, setList] = useState(accounts)
+  const [busy, setBusy] = useState('')
+  useEffect(() => { const f = () => setList(accounts()); window.addEventListener('roarme-accounts', f); return () => window.removeEventListener('roarme-accounts', f) }, [])
+  const rows = [...list].sort((a, b) => (a.id === me.id ? -1 : b.id === me.id ? 1 : 0))
+  return (
+    <div className="set-box set-accs">
+      {rows.map((a) => {
+        const mine = a.id === me.id
+        const name = mine ? nameOf(me) : a.name || (a.username ? '@' + a.username : a.email)
+        return (
+          <button key={a.id} type="button" className={`set-row set-pick set-acc${mine ? ' on' : ''}`} disabled={!!busy && !mine}
+            onClick={() => { if (mine) return; setBusy(a.id); switchAccount(a.id) }}>
+            <Avatar src={mine ? me.avatar_url : a.avatar} name={name} size={30} />
+            <span className="set-text">{name}{!mine && a.username && <small>@{a.username}</small>}</span>
+            {mine ? <i className="set-tick">{I.check}</i> : busy === a.id ? <i className="set-acc-wait" /> : null}
+          </button>
+        )
+      })}
+      {list.length < MAX_ACCOUNTS && (
+        <button type="button" className="set-row set-pick set-acc-add" disabled={!!busy} onClick={() => { setBusy('add'); addAccount() }}>
+          <span className="nav-ico set-acc-plus">{ADD_ACC_I}</span><span className="set-text">Add Account</span>
+        </button>
+      )}
+    </div>
   )
 }

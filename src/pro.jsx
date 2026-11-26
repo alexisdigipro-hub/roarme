@@ -54,9 +54,10 @@ export const wsAllNow = () => { try { return JSON.parse(localStorage.getItem(WSA
 const keepWsAll = (v) => { try { localStorage.setItem(WSALL_KEY, JSON.stringify(v)) } catch { /* private window */ } window.dispatchEvent(new Event('roarme-wsbg-all')) }
 export const wsAllPatch = () => { const v = wsAllNow(); return v?.url ? { ws_bg: v.url, ws_bg_op: v.op ?? 40 } : {} }
 async function wsAllLoad(meId) {
-  const { data } = await supabase.from('roar_profiles').select('ws_bg_all, ws_bg_all_op').eq('id', meId).maybeSingle()
-  if (!data) return
-  const v = data.ws_bg_all ? { url: data.ws_bg_all, op: data.ws_bg_all_op ?? 40 } : null
+  const { data: rows, error } = await supabase.rpc('roar_ws_bg_all') // roar_profiles is not readable column by column
+  const data = rows?.[0]
+  if (error || !data) return
+  const v = data.url ? { url: data.url, op: data.op ?? 40 } : null
   if (JSON.stringify(v) !== JSON.stringify(wsAllNow())) keepWsAll(v)
 }
 export function useWsAll(meId) {

@@ -106,6 +106,8 @@ function usePeopleSearch(meId) {
 /* ---------- the app ---------- */
 // Bring a folder's tab whole into sight in the folder bar (Alex, 23 Nov): clear of the bar's left edge and of
 // Archived, which is held over the bar's right end, so a tab chosen by a tap or a slide is never half hidden
+// a chat opened by the keyboard's arrows keeps the focus off its writing box, so the next arrow moves on (26 Nov)
+let arrowOpenAt = 0
 function showTab(btn) {
   const nav = btn?.parentElement
   if (!nav || nav.classList.contains('tabs-wheel') || nav.scrollWidth <= nav.clientWidth) return
@@ -1011,6 +1013,41 @@ export default function Chat({ me, setMe }) {
     const list = visible.filter((r) => (t ? fold(titleOf(r)).includes(t) || fold(otherOf(r)?.username).includes(t.replace(/^@/, '')) : inFolder(r, folder)))
     return pinnedFirst(list)
   }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra, marked, prefs.folderAlone, prefs.folderOrder, hiddenF.join()]) // eslint-disable-line react-hooks/exhaustive-deps
+  // the keyboard's arrows on a computer (Alex, 26 Nov): ← → change folder, ↑ ↓ open the chat above or below in the
+  // list; plain arrows only while no field has the cursor, Option / Alt + arrow from anywhere, the writing box too
+  const arrowsNow = useRef({})
+  arrowsNow.current = { tab, folder, shown, activeId, modal, folders: tabsShown.filter((f) => f.id !== 'unread' && f.id !== 'mail').map((f) => f.id) }
+  useEffect(() => {
+    const k = (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) || e.metaKey || e.ctrlKey || e.shiftKey || e.defaultPrevented) return
+      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches || window.innerWidth <= 760) return
+      const n = arrowsNow.current
+      if (n.tab !== 'chats' || n.modal || n.folder === 'mail') return
+      const el = document.activeElement
+      const typing = el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
+      if (typing && !e.altKey) return
+      if (document.querySelector('.menu, .menu-list, .ctx, .msg-menu, .modal-back, .lock, .phx, .bw')) return
+      e.preventDefault()
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const at = n.folders.indexOf(n.folder), to = n.folders[at + (e.key === 'ArrowRight' ? 1 : -1)]
+        if (!to) return
+        setFolder(to)
+        requestAnimationFrame(() => { const b = document.querySelector(`.tabs-scroll > button[data-tab="${CSS.escape(to)}"]`); if (b) showTab(b) })
+        return
+      }
+      const list = n.shown
+      if (!list.length) return
+      const at = list.findIndex((r) => r.room_id === n.activeId)
+      const go = at < 0 ? (e.key === 'ArrowDown' ? 0 : list.length - 1) : at + (e.key === 'ArrowDown' ? 1 : -1)
+      const r = list[go]
+      if (!r) return
+      arrowOpenAt = Date.now()
+      setActiveId(r.room_id)
+      requestAnimationFrame(() => document.querySelector(`.rooms:not(.rooms-ghost) .room[data-rid="${CSS.escape(r.room_id)}"]`)?.scrollIntoView({ block: 'nearest' }))
+    }
+    document.addEventListener('keydown', k)
+    return () => document.removeEventListener('keydown', k)
+  }, [])
   // the chats of another folder, for the page that slides in beside the list while it is dragged
   const listFor = (fid) => {
     const list = visible.filter((r) => inFolder(r, fid))
@@ -2746,6 +2783,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   useEffect(() => {
     if (find !== null) return
     if (window.matchMedia('(pointer: coarse)').matches && !replyTo && !editing) return
+    if (!replyTo && !editing && Date.now() - arrowOpenAt < 800) return
     inputRef.current?.focus()
   }, [room.room_id, replyTo, editing, find])
 
@@ -3477,8 +3515,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     const enterSends = onPhone() ? !!prefs.enterSendsPhone : prefs.enterSends
     const sendKey = enterSends ? e.key === 'Enter' && !e.shiftKey : e.key === 'Enter' && (e.metaKey || e.ctrlKey)
     if (sendKey) { e.preventDefault(); send(); return }
-    if (e.key === 'Escape') { setReplyTo(null); if (editing) { setEditing(null); setText('') } }
-    if (e.key === 'ArrowUp' && !text) {
+    // with nothing to cancel, Esc lets the writing box go, so the keyboard's arrows move about the chats (26 Nov)
+    if (e.key === 'Escape') { if (!replyTo && !editing) e.currentTarget.blur(); setReplyTo(null); if (editing) { setEditing(null); setText('') } }
+    if (e.key === 'ArrowUp' && !text && !e.altKey) {
       const mine = [...msgs].reverse().find((m) => canEdit(m) && !m.deleted_at)
       if (mine) { e.preventDefault(); setEditing(mine); setText(mine.body) }
     }

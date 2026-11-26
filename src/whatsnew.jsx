@@ -21,6 +21,7 @@ export const NEWS = [
         'An empty writing box stays one line tall, also beside a project\'s Workspace.',
       ] },
       { title: 'On a computer', items: [
+        'Arrow keys: left and right change folder, up and down open the chat above or below. While writing, hold Option (Alt on Windows).',
         'Unlock with Touch ID in the Mac app: Settings > Privacy and Security > Passcode lock. The lock asks for your finger as soon as RoarMe opens; the passcode still works.',
       ] },
       { title: 'On a phone', items: [

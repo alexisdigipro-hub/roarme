@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { bindLocal } from './acctLocal.js'
 import { supabase } from './lib.js'
 import { rememberAccount } from './accounts.js'
 import { watchEmailLinks } from './emailLink.js'
@@ -106,5 +107,6 @@ export default function App() {
     )
   }
   if (!profile) return <Onboarding user={session.user} onDone={setProfile} />
+  bindLocal(uid) // this account's own folders, pins and the rest on the device (acctLocal.js)
   return <Chat me={profile} setMe={setProfile} />
 }

@@ -16,7 +16,7 @@ export const NEWS = [
     date: '26 November 2026',
     sections: [
       { title: 'Everywhere', items: [
-        'Each account on the same phone keeps its own folders, pins and favourites; they no longer show in the other account.',
+        'Each account on the same phone keeps everything of its own: folders, pins, drafts, appearance, settings and mail. Nothing shows in the other account.',
         'More than one account: Settings > Add Account, then switch with one tap, or hold Settings in the bar at the foot. Notifications come from all of them, and a tap opens the right account.',
         'Pulling down to refresh no longer asks for your passcode or Face ID again.',
         'The round Unread button sends out soft rings, with the number in the middle.',

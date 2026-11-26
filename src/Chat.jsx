@@ -162,7 +162,9 @@ export default function Chat({ me, setMe }) {
   const [folder, setFolder] = useState(() => stayGet('folder', 'all'))
   // which step ROARMAIL is on, told by MailView (for the bar at the foot inside it)
   const [mailBack2, setMailBack2] = useState(mailCanBack) // a step inside ROARMAIL that can go back (its back is in the head)
-  useEffect(() => { const f = (e) => setMailBack2(!!e.detail); window.addEventListener('roarme-mail-canback', f); return () => window.removeEventListener('roarme-mail-canback', f) }, [])
+  // a mail page that opens with RoarMe (after a pull to refresh it comes back on the same page) says it can go back before
+  // this listens, since a child's effects run first (Alex, 26 Nov: "why no back arrow here"): ask once more here
+  useEffect(() => { const f = (e) => setMailBack2(!!e.detail); window.addEventListener('roarme-mail-canback', f); setMailBack2(mailCanBack()); return () => window.removeEventListener('roarme-mail-canback', f) }, [])
   const [mailStep, setMailStep] = useState(() => (stayGet('folder') === 'mail' ? stayGet('mail', { s: 'accs' }).s : '')) // MailView tells it before this listens, after a reload
   // ROARMAIL as a place of its own (Alex, 25 Nov: "it slides, as if you enter another environment"): the folder bar
   // steps out while it is open, the chats come back with a slide the other way; the folder left is remembered

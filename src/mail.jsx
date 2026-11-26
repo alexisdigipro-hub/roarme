@@ -146,7 +146,30 @@ function noteBlock(kind, value, on) {
 }
 const domainOf = (a) => { const d = String(a?.address || '').toLowerCase().split('@')[1] || ''; return d && !PERSONAL.has(d) && !PERSONAL.has(d.split('.').slice(-2).join('.')) ? d : '' }
 
+// RoarMail Live (Alex, 26 Nov: "delete and new mail at once, as Spark"): an always-on engine on Cloudflare (roarmail
+// repository, live/) that keeps each account's connection open, so reading, deleting, moving and emptying no longer log
+// in afresh every time. Those actions go there first; if it cannot be reached (or answers with no mail error of its
+// own) the call goes to roarmail-cloud as before and Live is left alone for two minutes.
+const LIVE_URL = 'https://roarmail-live.alexisdigipro.workers.dev'
+const LIVE_ACTS = new Set(['counts', 'list', 'get', 'flag', 'move', 'delete', 'bulk', 'empty'])
+let liveDown = 0
+async function live(body) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return null
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 45e3)
+    const r = await fetch(LIVE_URL, { method: 'POST', signal: ctl.signal, headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    clearTimeout(t)
+    const j = await r.json().catch(() => null)
+    if (r.ok && j) return j
+    // a mail error of its own (the server said no, the mail is gone): that is the answer; anything else, the old way
+    if (j?.error && (r.status === 502 || r.status === 404 || r.status === 400)) throw Object.assign(new Error(j.error === 'missing' ? 'This account is not in RoarMe yet.' : j.error), { mailError: true })
+  } catch (e) { if (e.mailError) throw e }
+  liveDown = Date.now()
+  return null
+}
 async function cloud(body) {
+  if (LIVE_ACTS.has(body?.action) && Date.now() - liveDown > 120e3) { const j = await live(body); if (j) return j }
   const { data, error } = await supabase.functions.invoke('roarmail-cloud', { body })
   if (error) {
     let msg = error.message

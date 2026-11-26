@@ -9222,7 +9222,10 @@ html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !i
   html:root:root:root:root .side .side-head { padding-left: 0; padding-right: 0; }
   html:root:root:root:root .side:has(.rmx-rd) > .side-col > :not(.rooms-area) { margin-left: 20px; margin-right: 20px; }
   html:root:root:root:root .side .tabs, html:root:root:root:root .side:has(.rmx-rd) .rooms-area .tabs { margin-left: 0 !important; margin-right: 0 !important; }
-  html:root:root:root:root .side .rooms > .room:not(.contact), html:root:root:root:root .side .rmx-sw, html:root:root:root:root .side .rmx-accl .room { margin-left: -5px; margin-right: -5px; width: calc(100% + 10px); max-width: none !important; }
+  html:root:root:root:root .side .rooms > .room:not(.contact), html:root:root:root:root .side .rmx-accl .room { margin-left: -5px; margin-right: -5px; width: calc(100% + 10px); max-width: none !important; }
+  /* a mail row reaches out only at the left (its picture at 20px): ROARMAIL's list clips sideways, and a row that ran
+     5px past the clip at the right lost the finger there, so the slide for its buttons did not start (26 Nov) */
+  html:root:root:root:root .side .rmx-sw { margin-left: -5px; margin-right: 0; width: calc(100% + 5px); max-width: none !important; }
   html:root:root:root:root .side .contacts-list .contact { margin-left: -12px; margin-right: -12px; width: calc(100% + 24px); max-width: none !important; }
   html:root:root:root:root .side > .foot, html:root:root:root:root .side .foot { margin-left: 0 !important; margin-right: 0 !important; }
   html:root:root:root:root .side .rmx.rmx-fl { padding-left: 0; padding-right: 0; }

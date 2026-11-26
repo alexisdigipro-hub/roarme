@@ -242,6 +242,14 @@ const setMailPref = (k, v) => {
   try { localStorage.setItem(PREF_KEY, JSON.stringify({ ...own, [k]: v })) } catch { /* private window */ }
   window.dispatchEvent(new CustomEvent('roarme-mail-prefs', { detail: mailPrefs() }))
 }
+// Settings > General > Reset All Settings (Alex, 26 Nov): ROARMAIL's settings back to how they start; the order of the
+// mailboxes and of each account's folders (home, forder) is the person's own arrangement and stays
+export function resetMailPrefs() {
+  let own = {}; try { own = JSON.parse(localStorage.getItem(PREF_KEY) || '{}') } catch { /* private window */ }
+  const keep = {}; for (const k of ['home', 'forder']) if (own[k] != null) keep[k] = own[k]
+  try { localStorage.setItem(PREF_KEY, JSON.stringify(keep)) } catch { /* private window */ }
+  window.dispatchEvent(new CustomEvent('roarme-mail-prefs', { detail: mailPrefs() }))
+}
 function usePrefs() {
   const [p, setP] = useState(mailPrefs)
   useEffect(() => { const f = (e) => setP(e.detail); window.addEventListener('roarme-mail-prefs', f); return () => window.removeEventListener('roarme-mail-prefs', f) }, [])

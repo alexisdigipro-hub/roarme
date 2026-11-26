@@ -13,7 +13,7 @@ import { LANGS as UI_LANGS, lang, locale } from './i18n.js'
 import { Admin } from './admin.jsx'
 import { WhatsNewPage } from './whatsnew.jsx'
 import { ProjectsPage } from './hub.jsx'
-import { MAIL_I, MailPage, MailPromo, MailWord, mailHere } from './mail.jsx'
+import { MAIL_I, MailPage, MailPromo, MailWord, mailHere, resetMailPrefs } from './mail.jsx'
 import { MyTransfers } from './transfer.jsx'
 import { useNameMarks } from './fancy.jsx'
 import { PhoneField, showPhone, smsErr, toE164, usePhoneAuth } from './phone.jsx'
@@ -216,7 +216,7 @@ export function SettingsPage({ page, chosen, onPage, onBack, onFolderDone, profi
       <div className={`set-body stagger${goingBack ? ' back' : ''}`} key={page}>
         <Hero id={page} />
         {page === 'profile' && profile}
-        {page === 'general' && <><General p={p} onKeys={() => onPage('keys')} toast={toast} /><Features p={p} /><Language p={p} /></>}
+        {page === 'general' && <><General p={p} onKeys={() => onPage('keys')} toast={toast} /><Features p={p} /><Language p={p} /><ResetAll toast={toast} /></>}
         {page === 'features' && <Features p={p} />}
         {page === 'chats' && (
           <>
@@ -297,13 +297,6 @@ function General({ p, onKeys, toast }) {
   const upd = useAppUpdate()
   const [guide, setGuide] = useState('')
   const get = (kind) => { startDownload(kind); setGuide(kind) }
-  // every setting kept on this device back to the start, but never the language (that would need a restart)
-  const same = Object.keys(DEFAULTS).every((k) => k === 'lang' || JSON.stringify(p[k]) === JSON.stringify(DEFAULTS[k]))
-  const reset = () => {
-    if (!window.confirm('Reset all settings on this device?')) return
-    setPrefs({ ...DEFAULTS, lang: p.lang })
-    toast('Settings are back to how RoarMe starts')
-  }
   return (
     <>
       {guide && <InstallGuide kind={guide} update={desk.on} onClose={() => setGuide('')} />}
@@ -339,9 +332,6 @@ function General({ p, onKeys, toast }) {
           <Nav onClick={onKeys} value="⌘ /">Keyboard Shortcuts</Nav>
         </Box>
       )}
-      <Box note="Everything on this page and on Features, Chats, Appearance, Notifications, Data and Folders goes back to how RoarMe starts. The language, your account and your chats stay as they are.">
-        <button type="button" className="set-row set-pick danger" disabled={same} onClick={reset}><span className="set-text">Reset All Settings</span></button>
-      </Box>
     </>
   )
 }
@@ -1064,6 +1054,30 @@ function Appearance({ p, toast, me, setMe }) {
           </Box>
       </div>
     </>
+  )
+}
+
+// Reset All Settings (Alex, 26 Nov: "a reset somewhere in Settings that takes you to the first settings in everything"):
+// the look, notifications and sounds, chats, Data and Storage, calls and ROARMAIL's settings go back to how RoarMe starts,
+// for this account on this device. Kept: the language, the folders (their order, names, hidden ones), the one-time
+// moves of old settings, and everything that is not a setting (chats, contacts, accounts, mail accounts, the passcode).
+const RESET_KEEP = ['lang', 'folderOrder', 'folderNames', 'hiddenFolders', 'folderExtra', 'folderTags', 'pro']
+function ResetAll({ toast }) {
+  const go = () => {
+    if (!window.confirm('Reset all settings? The look, notifications and sounds, chats, data and mail settings go back to how RoarMe starts. Your chats, contacts, folders and accounts stay.')) return
+    let raw = {}; try { raw = JSON.parse(localStorage.getItem('roarme-prefs') || '{}') || {} } catch { /* private window */ }
+    const next = { ...DEFAULTS }
+    for (const [k, v] of Object.entries(raw)) if (RESET_KEEP.includes(k) || !(k in DEFAULTS)) next[k] = v
+    try { localStorage.setItem('roarme-prefs', JSON.stringify(next)); localStorage.removeItem('roarme-walls') } catch { /* private window */ }
+    window.dispatchEvent(new Event('roarme-prefs'))
+    resetMailPrefs()
+    syncPushSound()
+    toast('All settings are back to how RoarMe starts')
+  }
+  return (
+    <Box note="The look, notifications and sounds, chats, Data and Storage, calls and ROARMAIL's settings go back to how RoarMe starts. The language, your folders, chats, contacts and accounts stay as they are.">
+      <button type="button" className="set-row set-pick danger" onClick={go}><span className="set-text">Reset All Settings</span></button>
+    </Box>
   )
 }
 

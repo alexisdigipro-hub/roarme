@@ -21,6 +21,7 @@ export const NEWS = [
         'Pulling down to refresh no longer asks for your passcode or Face ID again.',
         'The folders at the top share the bar evenly, each one centred in its own part.',
         'Terms of Service and Privacy Policy on the sign-up page are light blue and easy to read.',
+        'Settings > General > Reset All Settings, at the foot of the page: the look, notifications and sounds, chats, data and mail settings go back to how RoarMe starts. Your folders, chats, contacts and accounts stay.',
         'The round Unread button sends out soft rings, with the number in the middle.',
         'The Calls sign in the bar at the foot has the same line weight as the signs beside it.',
         'ROARMAIL: Junk, Trash, Sent, Drafts and Archive are read ahead in the background, so they open at once.',

@@ -541,8 +541,9 @@ export function MailView({ me, people, book }) {
   // Inboxes every account's folder of each kind. Asked 30 at a time, kept for the visit.
   const [fcounts, setFcounts] = useState(() => lsGet('mail-fcounts') || {})
   useEffect(() => {
-    if (step.s !== 'folders' || !setup?.folders || !on || !on.size) return
-    const items = setup.folders.filter((f) => on.has(f.account) && (step.acc === 'all' ? ROLES.some(([r]) => r === f.role) : f.account === step.acc))
+    if ((step.s !== 'folders' && step.s !== 'accs') || !setup?.folders || !on || !on.size) return
+    // the home asks every account's Inbox, Drafts, Sent, Junk, Trash and Archive, so each row shows what its next page shows
+    const items = setup.folders.filter((f) => on.has(f.account) && (step.s === 'accs' || step.acc === 'all' ? ROLES.some(([r]) => r === f.role) : f.account === step.acc))
       .map((f) => ({ account: f.account, path: f.path }))
     if (!items.length) return
     let gone = false
@@ -566,7 +567,16 @@ export function MailView({ me, people, book }) {
   }
   const all = { id: 'all', name: 'All Inboxes', email: `${accounts.length} accounts` }
   const accOf = (id) => id === 'all' ? all : accounts.find((a) => a.id === id)
-  const total = Object.entries(counts).reduce((x, [id, n]) => x + ((mprefs.allHide || []).includes(id) ? 0 : n), 0) // All Inboxes leaves out the accounts kept out of it
+  // a row on the home shows the unread its next page shows (Alex, 26 Nov: "inside it shows unread, outside nothing"):
+  // an account, every folder of it that has a count; All Inboxes, the folders of every kind across the accounts (not the
+  // accounts kept out of it); the Inbox's own count until the folders have been asked
+  const accUnread = (id) => {
+    const ks = Object.keys(fcounts).filter((k) => k.startsWith(`${id}|`))
+    return ks.length ? ks.reduce((n, k) => n + (fcounts[k] || 0), 0) : counts[id] || 0
+  }
+  const total = (setup?.folders || []).some((f) => fcounts[`${f.account}|${f.path}`] != null)
+    ? (setup.folders || []).filter((f) => ROLES.some(([r]) => r === f.role) && !(mprefs.allHide || []).includes(f.account)).reduce((n, f) => n + (fcounts[`${f.account}|${f.path}`] || 0), 0)
+    : Object.entries(counts).reduce((x, [id, n]) => x + ((mprefs.allHide || []).includes(id) ? 0 : n), 0) // All Inboxes leaves out the accounts kept out of it
   // New Mail: a round button of the accent at the foot of every step but the open mail (Alex, 24 Nov: "I found nowhere to write a new mail")
   // New Mail is the bar at the foot's middle button inside ROARMAIL (Alex, 25 Nov: the round pencil "totally off")
   const newBtn = null
@@ -589,7 +599,7 @@ export function MailView({ me, people, book }) {
       if (k.startsWith('acc:')) {
         const a = accounts.find((x) => `acc:${x.id}` === k); if (!a) return null
         const off = on && !on.has(a.id)
-        return { k, a, name: a.name, sub: off ? `${a.email} · not in RoarMe yet` : a.email, n: counts[a.id] || 0, go: () => { if (fwd?.acc !== a.id) setFwd(null); setStep({ s: 'folders', acc: a.id }) } }
+        return { k, a, name: a.name, sub: off ? `${a.email} · not in RoarMe yet` : a.email, n: accUnread(a.id), go: () => { if (fwd?.acc !== a.id) setFwd(null); setStep({ s: 'folders', acc: a.id }) } }
       }
       const sm = SMART.find(([x]) => x === k); if (!sm) return null
       return { k, icon: MAIL_I[sm[2]], name: sm[1], sub: sm[3].preset ? 'Across your inboxes' : 'Every account', n: 0, go: () => setStep({ s: 'list', acc: 'all', name: sm[1], ...sm[3] }) }

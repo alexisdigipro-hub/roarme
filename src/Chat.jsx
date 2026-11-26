@@ -60,7 +60,7 @@ const LOC_WAIT = <span className="locc"><span className="locc-map" /></span>
 import { resumeLive, startLive } from './live.js'
 import { startBattery, stopBattery, batteryText } from './battery.js'
 import { taskNotice, useTasks } from './taskCore.js'
-import { useNameMarks } from './fancy.jsx'
+import { markName, nameHas, useNameMarks } from './fancy.jsx'
 import { CAPSULE_BODY, CapsuleCard, CapsuleWindow } from './capsule.jsx'
 import { GroupCallBar, GroupCallCard, GroupCallHost, LinkCallCard, joinCall, startGroupCall, useGroupCall } from './groupcall.jsx'
 import { RemindMe, ReminderCards, addReminder, reminderText } from './reminders.jsx'
@@ -3539,7 +3539,9 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const applyMark = (mark) => {
     const el = inputRef.current
     if (!el) return
-    const { next, caretA, caretB } = toggleMark(el, text, mark)
+    const r = markSel(el, text, mark)
+    if (!r) return
+    const { next, caretA, caretB } = r
     setText(next)
     requestAnimationFrame(() => { el.focus(); el.selectionStart = caretA; el.selectionEnd = caretB; readSel(el) })
   }
@@ -4290,7 +4292,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
               {sel && (
                 <span className="fmt-bar" role="toolbar" aria-label="Format" onMouseDown={(e) => e.preventDefault()}>
                   {FMT_MARKS.map(([mark, label, face, keys]) => (
-                    <button key={mark} type="button" className={hasMark(text, sel.a, sel.b, mark) ? 'on' : ''} onClick={() => applyMark(mark)} aria-label={label} title={`${label} (${keys})`}>{face}</button>
+                    <button key={mark} type="button" className={selHas(text, sel.a, sel.b, mark) ? 'on' : ''} onClick={() => applyMark(mark)} aria-label={label} title={`${label} (${keys})`}>{face}</button>
                   ))}
                 </span>
               )}
@@ -4983,7 +4985,7 @@ function BigWriter({ text, setText, onClose, onSend, onAttach }) {
   }
   const undo = () => { if (at.current > 0) { at.current--; lastPush.current = 0; setText(past.current[at.current]); tick((n) => n + 1) } }
   const redo = () => { if (at.current < past.current.length - 1) { at.current++; lastPush.current = 0; setText(past.current[at.current]); tick((n) => n + 1) } }
-  const mark = (m) => { const el = ref.current; if (!el) return; const { next, caretA, caretB } = toggleMark(el, text, m); lastPush.current = 0; put(next, caretA, caretB) }
+  const mark = (m) => { const el = ref.current; if (!el) return; const r = markSel(el, text, m); if (!r) return; lastPush.current = 0; put(r.next, r.caretA, r.caretB) }
   const list = () => {
     const el = ref.current
     if (!el) return
@@ -5037,6 +5039,19 @@ const BW_UNDO = svg(<path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />, 2
 const BW_REDO = svg(<path d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />, 22)
 const BW_LIST = svg(<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />, 22)
 
+/* B, I, U and S in the writing box show at once, with no ** or _ to see (Alex, 26 Nov: "not the asterisks, just make it
+   bold where you write"): the chosen letters become Unicode's bold / italic letters or take its combining lines, as names
+   do (fancy.jsx), so the message is plain text that reads styled everywhere. Code and spoiler keep their marks. */
+const UNI_MARK = { '**': 'b', _: 'i', __: 'u', '~~': 's' }
+function markSel(el, text, mark) {
+  const k = UNI_MARK[mark]
+  if (!k) return toggleMark(el, text, mark)
+  const a = el.selectionStart, b = el.selectionEnd
+  if (a === b) return null
+  const r = markName(text, a, b, k)
+  return { next: r.text, caretA: r.a, caretB: r.b }
+}
+const selHas = (text, a, b, mark) => (UNI_MARK[mark] ? nameHas(text.slice(a, b), UNI_MARK[mark]) : hasMark(text, a, b, mark))
 const FMT_MARKS = [
   ['**', 'Bold', <b key="b">B</b>, `${MOD}B`],
   ['_', 'Italic', <i key="i">I</i>, `${MOD}I`],

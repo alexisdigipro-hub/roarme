@@ -1559,6 +1559,26 @@ function MembersChats({ room, me, people, boss, toast, onClose }) {
     setRows(data || [])
   }, [room.room_id])
   useEffect(() => { load() }, [load])
+  // Add All Team (Alex, 26 Nov, supabase/hub-team.sql): my Hub Members, each in their category, in one tap; a new project
+  // group no longer takes them by itself
+  const [team, setTeam] = useState(null)
+  const [extra, setExtra] = useState({})
+  useEffect(() => {
+    if (!boss) return
+    supabase.from('roar_hub_members').select('member').eq('owner', me.id).then(({ data }) => setTeam((data || []).map((x) => x.member)))
+  }, [boss, me.id])
+  const missing = (team || []).filter((u) => rows && !rows.some((r) => r.user_id === u))
+  const [adding, setAdding] = useState(false)
+  const addTeam = async () => {
+    setAdding(true)
+    const { data, error } = await supabase.rpc('roar_add_hub_team', { r: room.room_id })
+    setAdding(false)
+    if (error) { toast(errText(error)); return }
+    const ids = missing.filter((u) => !people[u])
+    if (ids.length) { const { data: ps } = await supabase.from('roar_people').select('*').in('id', ids); setExtra((x) => { const n = { ...x }; for (const q of ps || []) n[q.id] = q; return n }) }
+    toast(data ? `${data} added` : 'Everyone is in already')
+    load()
+  }
   const flip = async (r, k) => {
     const had = r.channels || ['prod']
     const next = had.includes(k) ? had.filter((x) => x !== k) : [...had, k]
@@ -1573,7 +1593,7 @@ function MembersChats({ room, me, people, boss, toast, onClose }) {
       <small className="prs2-cap">Who Sees Which Chat</small>
       <div className="prs2-box">
         {list.map((r) => {
-          const p = people[r.user_id] || {}
+          const p = people[r.user_id] || extra[r.user_id] || {}
           const ch = r.role === 'admin' ? ['pre', 'prod', 'post'] : (r.channels || ['prod'])
           return (
             <div key={r.user_id} className="prs2-row prs2-member">
@@ -1587,7 +1607,8 @@ function MembersChats({ room, me, people, boss, toast, onClose }) {
         })}
       </div>
       {/* adding people is the group's own: its page with Add people (any member may add, members-add.sql) */}
-      <div className="prs2-chips"><button type="button" className="on" onClick={() => { onClose?.(); setTimeout(() => window.dispatchEvent(new Event('roarme-profile')), 60) }}>{I.plus || '+'}Add People</button></div>
+      <div className="prs2-chips"><button type="button" className="on" onClick={() => { onClose?.(); setTimeout(() => window.dispatchEvent(new Event('roarme-profile')), 60) }}>{I.plus || '+'}Add People</button>
+        {boss && missing.length > 0 && <button type="button" disabled={adding} onClick={addTeam}>{adding ? 'Adding…' : `Add All Team (${missing.length})`}</button>}</div>
       {!boss && <p className="prs2-hint">Only an admin of the group can change who sees which chat.</p>}
     </>
   )

@@ -70,7 +70,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { hubLink, hubStart, proSwitchLoad, proSwitchNow } from './hub.jsx'
-import { MAIL_I, MailView, MailWord, mailBackNow, mailCanBack, mailHere, mailHomeNext, mailSwitchNow, useMailUnread } from './mail.jsx'
+import { MAIL_I, MailView, MailWord, mailBackNow, mailCanBack, mailHere, mailHomeNext, mailSwitchNow, openMailFromUnread, useMailUnread } from './mail.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -215,6 +215,18 @@ export default function Chat({ me, setMe }) {
   useEffect(() => { staySet('tab', tab) }, [tab])
   useEffect(() => { staySet('folder', folder) }, [folder])
   useEffect(() => { staySet('chat', activeId) }, [activeId])
+  // a tapped mail notification (26 Nov, roar-push: room 'mail:<account>|<path>|<uid>'): that very mail in ROARMAIL;
+  // one for another account kept here switches to it first
+  const mailOnRef = useRef(mailOn); mailOnRef.current = mailOn
+  function openMailNote(room, to) {
+    const mm = typeof room === 'string' && room.match(/^mail:([^|]+)\|(.+)\|(\d+)$/)
+    if (!mm) return false
+    if (to && to !== me.id && accounts().some((a) => a.id === to)) { switchAccount(to); return true }
+    if (!mailOnRef.current) return true
+    setTab('chats'); setActiveId(null)
+    openMailFromUnread({ account: mm[1], path: mm[2], uid: Number(mm[3]) })
+    return true
+  }
   const inMail = mailOn && tab === 'chats' && folder === 'mail' && !!mailStep // inside ROARMAIL (its head's ⋯ and +)
   const [callsFilter, setCallsFilter] = useState('all') // Calls: all | missed (the switch in the head, Alex, 14 Nov)
   const [callsEdit, setCallsEdit] = useState(false) // Calls: the head's ⋯ shows a red minus on every call and + becomes Delete All
@@ -510,6 +522,8 @@ export default function Chat({ me, setMe }) {
         })
         return
       }
+      const mh = window.location.hash.match(/^#c=(mail:[^&]+)(?:&to=([0-9a-f-]{36}))?$/)
+      if (mh) { history.replaceState(null, '', window.location.pathname); openMailNote(decodeURIComponent(mh[1]), mh[2]); return }
       const c = window.location.hash.match(/^#c=([0-9a-f-]{36})(?:&to=([0-9a-f-]{36}))?$/)
       if (c && openForAccount(c[2], c[1], me.id)) { history.replaceState(null, '', window.location.pathname); return }
       if (c) { setTab('chats'); setActiveId(c[1]); history.replaceState(null, '', window.location.pathname); return }
@@ -857,11 +871,11 @@ export default function Chat({ me, setMe }) {
   useEffect(() => {
     const sw = typeof navigator !== 'undefined' ? navigator.serviceWorker : null
     if (!sw) return undefined
-    const on = (e) => { if (e.data?.roarOpen) { if (openForAccount(e.data.to, e.data.roarOpen, me.id)) return; setTab('chats'); setActiveId(e.data.roarOpen) } }
+    const on = (e) => { if (e.data?.roarOpen) { if (openMailNote(e.data.roarOpen, e.data.to)) return; if (openForAccount(e.data.to, e.data.roarOpen, me.id)) return; setTab('chats'); setActiveId(e.data.roarOpen) } }
     sw.addEventListener('message', on)
     return () => sw.removeEventListener('message', on)
   }, [])
-  useEffect(() => onNotificationTap((room, to) => { if (openForAccount(to, room, me.id)) return; setTab('chats'); setActiveId(room); loadRooms(); setTimeout(() => window.dispatchEvent(new Event('roarme-wake')), 60) }), [loadRooms])
+  useEffect(() => onNotificationTap((room, to) => { if (openMailNote(room, to)) return; if (openForAccount(to, room, me.id)) return; setTab('chats'); setActiveId(room); loadRooms(); setTimeout(() => window.dispatchEvent(new Event('roarme-wake')), 60) }), [loadRooms])
   // the list too, when the app comes back from the background
   useEffect(() => {
     let last = 0

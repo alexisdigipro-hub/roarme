@@ -38,6 +38,7 @@ export const NEWS = [
         'Mail goes at once: Delete, Move, Junk and Empty Trash or Junk take the mail away the moment you tap, and the server catches up in the background.',
         'All Mail at the foot of a folder brings every mail in it, and More Results brings the rest of a search.',
         'A tap on Mail at the foot always takes you to the start of your mail.',
+        'New mail notifies you the moment it arrives, with the sender, the subject and a line of it, even with RoarMe closed; a tap opens that mail. Settings > ROARMAIL > Notifications turns it off, for all or for one account. Blocked senders and Junk stay quiet.',
         'Settings > ROARMAIL has the settings of RoarMail on the computer: Mark as Read, Privacy Mode, Block Trackers, Clean Links, Undo Send, Full Slide, quotes in colours and more.',
       ] },
     ],

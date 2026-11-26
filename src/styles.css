@@ -9284,3 +9284,10 @@ html:root:root:root:root .wheel-box > .u-pop.round > b { position: relative; z-i
 @keyframes u-son { 0% { transform: scale(.4); opacity: .8 } 100% { transform: scale(1.6); opacity: 0 } }
 html[data-lite] .wheel-box > .u-pop.round > .u-son { animation: none; display: none; }
 @media (prefers-reduced-motion: reduce) { html:root:root:root:root .wheel-box > .u-pop.round > .u-son { animation: none; display: none; } }
+
+/* While adding one more account the sign-in card has three pills (Alex, 26 Nov: "here we do not see the buttons", all
+   three cut short): Create an account and Forgot password share the first row, Back to Your Account takes its own row
+   under them, every word whole. */
+html:root:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-links:has(> .auth-back) { flex-wrap: wrap; justify-content: center; }
+html:root:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-links:has(> .auth-back) > button { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: visible; text-overflow: clip; }
+html:root:root:root:root:root[data-glass][data-theme] .auth:not(.ob) .auth-card .auth-links > button.auth-back { flex: 1 0 100%; order: 9; }

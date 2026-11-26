@@ -113,7 +113,7 @@ export function Auth() {
         <div className="auth-links">
           {mode === 'in' && <><button type="button" onClick={() => { setMode('up'); setErr('') }}>Create an account</button><button type="button" onClick={() => setMode('forgot')}>Forgot password?</button></>}
           {/* adding one more account (accounts.js): the way back to the accounts already here */}
-          {addingAccount() && accounts().length > 0 && <button type="button" onClick={cancelAdd}>Back to Your Account</button>}
+          {addingAccount() && accounts().length > 0 && <button type="button" className="auth-back" onClick={cancelAdd}>Back to Your Account</button>}
           {mode !== 'in' && <button type="button" onClick={() => setMode('in')}>I have an account, sign in</button>}
         </div>
       </form>

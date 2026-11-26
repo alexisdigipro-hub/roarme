@@ -9272,3 +9272,15 @@ html:root:root:root:root:root:root .msg.mine .bubble.big-emoji { text-align: rig
 html:root:root:root:root:root:root .bubble.big-emoji > .rx.rx-in,
 html:root:root:root:root:root:root .msg.mine .bubble.big-emoji > .rx.rx-in { float: none !important; position: static !important; display: inline-flex; vertical-align: middle; margin: 2px 6px 0 0 !important; }
 html:root:root:root:root:root:root .bubble.big-emoji > .meta { display: inline-flex !important; align-items: center; gap: 3px; float: none !important; width: auto !important; margin: 2px 0 0 !important; white-space: nowrap; vertical-align: middle; }
+
+/* The round Unread button as a sonar (Alex, 26 Nov, C of https://claude.ai/artifact/PUMpBg54MtDc7bUx9h49n3): two rings in
+   the accent go out from its middle one after the other, with the number in the centre, or a small accent dot when all
+   is read; so it reads as Unread even when empty. Calm with Power Saving and reduced motion. */
+html:root:root:root:root .wheel-box > .u-pop.round { overflow: visible; }
+html:root:root:root:root .wheel-box > .u-pop.round > .u-son { position: absolute; inset: 11px; border-radius: 50%; border: 2px solid var(--halo, var(--accent)); opacity: 0; pointer-events: none; animation: u-son 2.2s ease-out infinite; }
+html:root:root:root:root .wheel-box > .u-pop.round > .u-son + .u-son { animation-delay: 1.1s; }
+html:root:root:root:root .wheel-box > .u-pop.round > .u-core { width: 12px; height: 12px; border-radius: 50%; background: var(--halo, var(--accent)); }
+html:root:root:root:root .wheel-box > .u-pop.round > b { position: relative; z-index: 1; }
+@keyframes u-son { 0% { transform: scale(.4); opacity: .8 } 100% { transform: scale(1.6); opacity: 0 } }
+html[data-lite] .wheel-box > .u-pop.round > .u-son { animation: none; display: none; }
+@media (prefers-reduced-motion: reduce) { html:root:root:root:root .wheel-box > .u-pop.round > .u-son { animation: none; display: none; } }

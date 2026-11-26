@@ -9206,3 +9206,7 @@ html:root:root .scroll .day.day-hl .day-chip { animation: mf-chip 3s ease-out bo
   html:root:root .scroll .msg.flash .bubble, html:root:root .scroll .msg.flash .note { animation: mf-ring 2.3s ease-out !important; }
 }
 html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !important; }
+
+/* A short ROARMAIL page (an account's folders, a few mails) reaches the foot of the screen, so a slide that starts in the
+   empty space under it is the page's own slide back (Alex, 26 Nov: it took him to Messages). */
+.rooms .rmx.rmx-fl, .rooms .rmx.rmx-ml, .rooms .rmx.rmx-rd { min-height: calc(100dvh - 190px - env(safe-area-inset-top, 0px)); }

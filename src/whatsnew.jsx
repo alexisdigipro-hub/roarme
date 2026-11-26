@@ -30,6 +30,7 @@ export const NEWS = [
       ] },
       { title: 'On a computer', items: [
         'Arrow keys: left and right change folder, up and down open the chat above or below. While writing, hold Option (Alt on Windows).',
+        'PROjects in the Mac and Windows apps: the Workspace can open in a window of its own. It sits snapped to the right of the chat window and moves with it; drag it away to keep it apart, for example on a second screen. Back into the chat window brings it home.',
         'Unlock with Touch ID in the Mac app: Settings > Privacy and Security > Passcode lock. The lock asks for your finger as soon as RoarMe opens; the passcode still works.',
       ] },
       { title: 'On a phone', items: [

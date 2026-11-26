@@ -69,7 +69,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { hubLink, hubStart, proSwitchLoad, proSwitchNow } from './hub.jsx'
-import { MAIL_I, MailView, MailWord, mailBackNow, mailCanBack, mailHere, mailSwitchNow, useMailUnread } from './mail.jsx'
+import { MAIL_I, MailView, MailWord, mailBackNow, mailCanBack, mailHere, mailHomeNext, mailSwitchNow, useMailUnread } from './mail.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -1949,7 +1949,7 @@ export default function Chat({ me, setMe }) {
             <button type="button" className={`foot-main${tab === 'chats' && folder !== 'mail' && !tasksOpen ? ' on' : ''}`} onClick={() => { setTab('chats'); if (folder === 'mail') setFolder(mailBack.current && mailBack.current !== 'mail' ? mailBack.current : 'all') }}><span className="foot-ico">{FOOT_I.messages}{unreadAll > 0 && <i>{unreadAll > 99 ? '99+' : unreadAll}</i>}</span><span>Messages</span></button>
             {/* RoarMail, right of Messages (Alex, 25 Nov: "take ROARMAIL off the top and put it in the bar at the foot"); the same five
                 everywhere, in the mail too ("the bar never changes"); a tap while in the mail goes back to its accounts */}
-            {mailOn && <button type="button" className={`foot-mail${tab === 'chats' && folder === 'mail' && !tasksOpen ? ' on' : ''}`} onClick={() => { setTab('chats'); if (folder === 'mail') window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'home' } })); else setFolder('mail') }}><span className="foot-ico">{FOOT_I.mail}{mailUn > 0 && <i>{mailUn > 99 ? '99+' : mailUn}</i>}</span><span>Mail</span></button>}
+            {mailOn && <button type="button" className={`foot-mail${tab === 'chats' && folder === 'mail' && !tasksOpen ? ' on' : ''}`} onClick={() => { setTab('chats'); mailHomeNext(); if (folder !== 'mail') setFolder('mail') }}><span className="foot-ico">{FOOT_I.mail}{mailUn > 0 && <i>{mailUn > 99 ? '99+' : mailUn}</i>}</span><span>Mail</span></button>}
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
             {prefs.tasksTab && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}

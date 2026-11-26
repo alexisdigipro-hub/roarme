@@ -18,6 +18,7 @@ export const NEWS = [
       { title: 'On a phone', items: [
         'Mail goes at once: Delete, Move, Junk and Empty Trash or Junk take the mail away the moment you tap, and the server catches up in the background.',
         'All Mail at the foot of a folder brings every mail in it, and More Results brings the rest of a search.',
+        'A tap on Mail at the foot always takes you to the start of your mail.',
         'Settings > ROARMAIL has the settings of RoarMail on the computer: Mark as Read, Privacy Mode, Block Trackers, Clean Links, Undo Send, Full Slide, quotes in colours and more.',
       ] },
     ],

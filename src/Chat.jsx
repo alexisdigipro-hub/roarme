@@ -138,6 +138,8 @@ export default function Chat({ me, setMe }) {
   newsLab(inThemeLab(me)) // What's New shows the lines of what is still being built only to who sees it
   // every account's unread mail joins the app's Unread (Alex, 24 Nov), counted and fetched ahead in the background
   const mailUn = useMailUnread(mailOn)
+  // Tasks only for the admin (Alex, 26 Nov: "take out tasks too"); a saved tasksTab stays, unused, for everyone else
+  const tasksOn = !!prefs.tasksTab && inThemeLab(me)
   const proKit = useProjects(me, true)
   // Production Hub: on starting, tie my project groups and bring the hub's new projects in as groups (hub.jsx)
   useEffect(() => { if (proOn) hubStart() }, [proOn])
@@ -329,7 +331,7 @@ export default function Chat({ me, setMe }) {
     return () => { el.removeEventListener('scroll', check); ro.disconnect() }
   }, [tab, prefs.folderTabs, myFolders.length, !q.trim()]) // eslint-disable-line react-hooks/exhaustive-deps
   const [tasksOpen, setTasksOpen] = useState(() => { try { return localStorage.getItem('roarme-tasks') === '1' } catch { return false } })
-  const footLens = useLens(`${tab}|${prefs.callsTab}|${prefs.tasksTab}|${picking}|${tasksOpen}|${inMail}|${mailStep}`) // the Settings page open on the right
+  const footLens = useLens(`${tab}|${prefs.callsTab}|${tasksOn}|${picking}|${tasksOpen}|${inMail}|${mailStep}`) // the Settings page open on the right
   useLiquid(footLens, `${tab}|${picking}|${inMail}|${mailStep}`)
   // holding Settings in the bar at the foot (or a right click on it) shows the accounts on this device, to switch in a
   // tap (Alex, 26 Nov, from Telegram's); the tap that ends the hold does not open Settings
@@ -1603,7 +1605,7 @@ export default function Chat({ me, setMe }) {
   // Tasks and its tabs · Settings. Coming into Messages or Tasks from the right lands on its last folder or tab.
   const goStop = (dir) => {
     // the same order as the bar: Mail stands between Messages and Settings while it is on (Alex, 25 Nov)
-    const stops = ['contacts', ...(prefs.callsTab ? ['calls'] : []), 'chats', ...(mailOn ? ['mail'] : []), ...(prefs.tasksTab ? ['tasks'] : []), 'settings']
+    const stops = ['contacts', ...(prefs.callsTab ? ['calls'] : []), 'chats', ...(mailOn ? ['mail'] : []), ...(tasksOn ? ['tasks'] : []), 'settings']
     const cur = tasksOpen ? 'tasks' : tab === 'media' ? 'settings' : tab === 'chats' && folder === 'mail' && mailOn ? 'mail' : tab
     const next = stops[stops.indexOf(cur) + dir]
     if (!next) return
@@ -1646,12 +1648,12 @@ export default function Chat({ me, setMe }) {
   const tasksKit = useTasks(me, loadPeople, (kind, t) => { const s = taskNotice(kind, t, peopleRef.current, () => showTasks(true)); if (s) toast(s) })
   // Tasks is off until turned on in Settings (Alex, 7 Nov); whoever already has tasks keeps it, once, without asking
   useEffect(() => {
-    if (prefs.tasksTab || !tasksKit.tasks.length) return
+    if (prefs.tasksTab || !tasksKit.tasks.length || !inThemeLab(me)) return
     try { if ('tasksTab' in (JSON.parse(localStorage.getItem('roarme-prefs')) || {})) return } catch { /* private window */ }
     setPrefs({ tasksTab: true })
   }, [prefs.tasksTab, tasksKit.tasks.length])
   // turned off: the panel closes too
-  useEffect(() => { if (!prefs.tasksTab && tasksOpen) showTasks(false) }, [prefs.tasksTab]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!tasksOn && tasksOpen) showTasks(false) }, [tasksOn]) // eslint-disable-line react-hooks/exhaustive-deps
   const chatWith = async (p) => {
     const r = rooms.find((x) => x.kind === 'direct' && (x.members || []).includes(p.id))
     if (r) { setTab('chats'); setActiveId(r.room_id); return }
@@ -2035,7 +2037,7 @@ export default function Chat({ me, setMe }) {
             {mailOn && <button type="button" className={`foot-mail${tab === 'chats' && folder === 'mail' && !tasksOpen ? ' on' : ''}`} onClick={() => { setTab('chats'); mailHomeNext(); if (folder !== 'mail') setFolder('mail') }}><span className="foot-ico">{FOOT_I.mail}{mailUn > 0 && <i>{mailUn > 99 ? '99+' : mailUn}</i>}</span><span>Mail</span></button>}
             {/* Tasks in the bar at the foot, beside Settings (Alex, 18 Oct); it opens the panel, it is not a page, so it is marked open, not on.
                 On a phone the bar stays under the open panel, and any other button in it puts the panel away */}
-            {prefs.tasksTab && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}
+            {tasksOn && <button type="button" className={`foot-tasks${tasksOpen ? ' open on' : ''}`} onClick={() => showTasks(!tasksOpen)} title="Tasks"><span className="foot-ico">{FOOT_I.tasks}{tasksKit.count > 0 && <i className={tasksKit.waiting ? 'ask' : ''}>{tasksKit.count > 99 ? '99+' : tasksKit.count}</i>}</span><span>Tasks</span></button>}
             <button type="button" className={`foot-settings${(tab === 'settings' || tab === 'media') && !tasksOpen ? ' on' : ''}`} {...accHold} onClick={() => { if (Date.now() - accMenuAt.current < 700) return; setTab('settings') }}>{FOOT_I.settings}<span>Settings</span></button>
           </nav>
         )}
@@ -2065,7 +2067,7 @@ export default function Chat({ me, setMe }) {
         ) : active ? (<div className={proOn && active.kind === 'group' && proKit.map[active.room_id] && wsShown(active.room_id) ? 'prw big' : 'prw-off'}>
           <Room key={active.room_id} room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} official={active.kind === 'direct' && officialIds.includes(otherOf(active)?.id)} listen={listen} onRead={reloadSoon} onInfo={hands.onInfo} onBack={hands.onBack}
             rooms={rooms} titleOf={titleOf} toast={toast} jump={jump} onJumped={clearJump} prefs={prefs} clearedAt={cleared[active.room_id]} roles={activeRoles.current}
-            onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={prefs.tasksTab ? hands.onTasks : null} tasksCount={tasksKit.count}
+            onAct={hands.onAct} onNewGroup={hands.onNewGroup} onTasks={tasksOn ? hands.onTasks : null} tasksCount={tasksKit.count}
             blocked={active.kind === 'direct' && blocks.has(otherOf(active)?.id)} onUnblock={hands.onUnblock} onCall={hands.onCall} assetsAside={proOn && !!proKit.map[active.room_id] && (active.role === 'admin' || (Array.isArray(active.channels) ? active.channels : ['prod']).includes('pre'))} wsOpen={wsShown(active.room_id) || poppedWs.includes(active.room_id)} payOn={proOn && active.kind === 'group' && !!proKit.map[active.room_id]} proArtist={proOn ? String((proKit.map[active.room_id]?.fields || []).find((f) => f.k === 'Title')?.v || '').trim() : ''} />
           {proOn && active.kind === 'group' && proKit.map[active.room_id] && wsShown(active.room_id) && <ProPanel key={`pro-${active.room_id}`} profile={active.kind === 'direct' ? (
             <Suspense fallback={null}><Profile inline room={active} me={me} people={people} title={titleOf(active)} other={otherOf(active)} rooms={rooms} titleOf={titleOf} toast={toast}

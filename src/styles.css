@@ -9384,3 +9384,6 @@ html[data-lite] html:root:root:root:root:root:root[data-glass][data-theme] .auth
 html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .phone-field > .ax-cc { position: relative; flex: 0 0 96px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 !important; font-size: 16px; cursor: pointer; }
 html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .ax-cc i { font-style: normal; font-size: 13px; opacity: .6; margin-top: -6px; }
 html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .ax-cc select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+/* ROARME 10% smaller (40px) and 45% closer to the two buttons (Alex, 26 Nov, from his phone): line-height 1 and 13px under it */
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-wm { margin-bottom: 13px; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-wm .wordmark b.wm { font-size: 40px; line-height: 1; }

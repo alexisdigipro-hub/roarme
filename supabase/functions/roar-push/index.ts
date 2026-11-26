@@ -7,6 +7,7 @@
 //   POST {reminder} + x-roar-hook   a reminder that is due (supabase/reminders.sql): tell the one who set it
 //   POST {capsule[, by]} + x-roar-hook   a Locked Message opened (supabase/capsule-notify.sql): at its time, tell the chat's
 //                                        other members; reached at its place by someone (by), tell the sender who
+//   POST {mail} + x-live-key   a new mail seen by RoarMail Live's Inbox watch: tell its owner's devices
 //   POST {test: true} + the user's sign-in   Settings > Send Test: after 5 seconds (time to close RoarMe) a test
 //                                            notification to each of that person's devices, and what each push service said
 // The private key never leaves the database table roar_push_conf, which only the server can read.
@@ -339,12 +340,56 @@ async function capsule(id: string, by: string | null) {
   return { sent }
 }
 
+// a new mail (Alex, 26 Nov: "notifications as Spark's"): to each device of its owner, the sender (as saved in their
+// address book when they are there) over the subject and a line of the mail; a tap opens that very mail in ROARMAIL
+// ('mail:' + account|path|uid in place of a chat). Do Not Disturb makes it quiet; whoever turned it off is not asked.
+async function mail(m: any) {
+  const user = String(m.user || '')
+  if (!/^[0-9a-f-]{36}$/i.test(user)) return { sent: 0 }
+  const { data: w } = await sb.from('roarmail_watch').select('enabled, muted').eq('user_id', user).maybeSingle()
+  if (!w?.enabled || (w.muted || []).includes(String(m.account || ''))) return { sent: 0 }
+  const [{ data: subs }, { data: me }] = await Promise.all([
+    sb.from('roar_push_subs').select('*').eq('user_id', user),
+    sb.from('roar_profiles').select('presence').eq('id', user).maybeSingle(),
+  ])
+  if (!subs?.length) return { sent: 0 }
+  const addr = String(m.from?.address || '').toLowerCase()
+  let name = String(m.from?.name || '') || addr || 'New mail'
+  if (addr) {
+    const { data: book } = await sb.from('roar_book').select('first_name, last_name, emails').eq('owner', user).limit(2000)
+    const hit = (book || []).find((e: any) => (e.emails || []).some((x: any) => String(x?.value || '').toLowerCase() === addr))
+    const n = hit ? `${hit.first_name || ''} ${hit.last_name || ''}`.trim() : ''
+    if (n) name = n
+  }
+  const subject = String(m.subject || '').trim() || '(No subject)'
+  const snippet = String(m.snippet || '').trim()
+  const quiet = me?.presence === 'dnd'
+  const note = { title: name.slice(0, 80), body: (snippet ? `${subject}\n${snippet}` : subject).slice(0, 220), room: `mail:${m.account}|${m.path || 'INBOX'}|${Number(m.uid) || 0}`, tag: `mail-${m.account}-${m.uid}`, silent: quiet, passive: quiet }
+  let sent = 0
+  const gone: string[] = []
+  await Promise.all(subs.map(async (t) => {
+    try {
+      const x = await push({ ...t, sound: quiet ? 'off' : t.sound }, note)
+      if (x.ok) sent++
+      else if (x.status === 404 || x.status === 410) gone.push(t.endpoint)
+    } catch (e) { console.log('push failed', String(e)) }
+  }))
+  if (gone.length) await sb.from('roar_push_subs').delete().in('endpoint', gone)
+  return { sent }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method === 'GET') return json({ key: (await getConf()).public_key })
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
   const body = await req.json().catch(() => ({}))
   if (body?.test === true) return test(req)
+  // a new mail from RoarMail Live's Inbox watch (26 Nov), with the key it shares with roarmail-creds
+  if (body?.mail && typeof body.mail === 'object') {
+    const { data: k } = await sb.rpc('roarmail_live_key')
+    if (!k || req.headers.get('x-live-key') !== String(k)) return json({ error: 'not allowed' }, 403)
+    return json(await mail(body.mail))
+  }
   const c = await getConf()
   if (req.headers.get('x-roar-hook') !== String(c.hook_token)) return json({ error: 'not allowed' }, 403)
   if (typeof body?.reminder === 'string') return /^[0-9a-f-]{36}$/i.test(body.reminder) ? json(await remind(body.reminder)) : json({ error: 'no reminder' }, 400)

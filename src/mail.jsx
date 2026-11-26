@@ -399,7 +399,7 @@ export function useMailUnread(on) {
     window.addEventListener('roarme-mail-counts', f)
     document.addEventListener('visibilitychange', v)
     const t = setInterval(v, (Number(prefs.every) || 3) * 60e3)
-    warmMail()
+    warmMail(); ensureWatch().catch(() => {})
     return () => { window.removeEventListener('roarme-mail-counts', f); document.removeEventListener('visibilitychange', v); clearInterval(t) }
   }, [on, prefs.every])
   return on && prefs.countUnread ? n : 0
@@ -1922,6 +1922,38 @@ function Compose({ init, accounts, on, setup, who, abook, onClose }) {
 }
 
 // Settings > ROARMAIL (Alex, 24 Nov: "the settings of RoarMail, from the desktop, in our RoarMail tab"); kept on this phone
+// New-mail notifications (26 Nov, roarmail repository supabase/roarmail-watch.sql): RoarMail Live watches the Inbox of
+// whoever has a row with enabled on and tells roar-push the moment a mail comes; muted holds the accounts kept quiet.
+// The row is made, on, the first time ROARMAIL is used on a device.
+let watchMade = false
+async function myId() { const { data } = await supabase.auth.getSession(); return data?.session?.user?.id || '' }
+export async function ensureWatch() {
+  if (watchMade) return
+  watchMade = true
+  const id = await myId(); if (!id) { watchMade = false; return }
+  await supabase.from('roarmail_watch').upsert({ user_id: id }, { onConflict: 'user_id', ignoreDuplicates: true })
+}
+function useWatch(on) {
+  const [w, setW] = useState(() => lsGet('mail-watch'))
+  useEffect(() => {
+    if (!on) return
+    (async () => {
+      await ensureWatch()
+      const id = await myId(); if (!id) return
+      const { data } = await supabase.from('roarmail_watch').select('enabled, muted').eq('user_id', id).maybeSingle()
+      if (data) { setW(data); lsSet('mail-watch', data) }
+    })()
+  }, [on])
+  const save = async (patch) => {
+    const next = { enabled: true, muted: [], ...(w || {}), ...patch }
+    setW(next); lsSet('mail-watch', next)
+    const id = await myId(); if (!id) return
+    const { error } = await supabase.from('roarmail_watch').upsert({ user_id: id, enabled: next.enabled, muted: next.muted, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    if (error) window.alert('Not saved. Try again.')
+  }
+  return [w || { enabled: true, muted: [] }, save]
+}
+
 export function MailPage() {
   const [on, setOn] = useState(mailSwitchNow)
   const prefs = usePrefs()
@@ -1951,6 +1983,7 @@ export function MailPage() {
     <div className="set-row rmx-setrow"><span className="rmx-st"><b>{label}</b></span>
       <span className="seg rmx-seg">{opts.map(([v, t]) => <button key={String(v)} type="button" className={prefs[k] === v ? 'on' : ''} onClick={() => setMailPref(k, v)}>{t}</button>)}</span></div>
   )
+  const [watch, saveWatch] = useWatch(on)
   const [showBlocked, setShowBlocked] = useState(false)
   const [busy, setBusy] = useState('')
   const [gone, setGone] = useState([])
@@ -1990,6 +2023,16 @@ export function MailPage() {
           {!setup?.accounts?.length && <p className="hb-hint">No accounts yet.</p>}
         </div>
         <p className="hb-hint">The switch puts an account in All Inboxes and in the app's Unread. Add an account at the foot of Mailboxes in ROARMAIL, or bring it from RoarMail on your computer.</p>
+        <div className="set-title">Notifications</div>
+        <div className="set-box">
+          <label className="set-row rmx-setrow"><span className="rmx-st"><b>New Mail</b><small>A notification the moment a mail arrives, even with RoarMe closed.</small></span>
+            <span className="switch"><input type="checkbox" checked={!!watch.enabled} onChange={(e) => saveWatch({ enabled: e.target.checked })} /><span /></span></label>
+          {watch.enabled && (setup?.accounts || []).filter((a) => state?.get(a.id)?.status === 'ok').map((a) => (
+            <label key={a.id} className="set-row rmx-setrow"><span className="rmx-st"><b>{a.name}</b><small>{a.email}</small></span>
+              <span className="switch"><input type="checkbox" checked={!(watch.muted || []).includes(a.id)} onChange={(e) => saveWatch({ muted: e.target.checked ? (watch.muted || []).filter((x) => x !== a.id) : [...(watch.muted || []), a.id] })} /><span /></span></label>
+          ))}
+        </div>
+        <p className="hb-hint">Only the Inbox. Blocked senders and Junk never notify.</p>
         <div className="set-title">Reading</div>
         <div className="set-box">
           {seg('markRead', 'Mark as Read', [['open', 'On Open'], ['delay', 'After 3 s'], ['never', 'Never']])}

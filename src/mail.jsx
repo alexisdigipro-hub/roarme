@@ -703,6 +703,9 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, ch
   const h = {
     onTouchStart: (e) => {
       if (e.touches.length !== 1 || selOn) return // while picking several, no slide and no long press
+      // a finger on one of the buttons the slide brought out is that button's tap: the row must not close under it first
+      // (Alex, 26 Nov: "none of these work"; the row slid back over the button before its click came)
+      if (e.target.closest?.('.rmx-swacts')) { g.current = null; e.stopPropagation(); return }
       const t = e.touches[0]
       if (openRow && openRow !== self) { openRow.current(); openRow = null; skip.current = Date.now(); g.current = null; e.stopPropagation(); return }
       const ours = t.clientX > window.innerWidth - EDGE || x !== 0
@@ -731,6 +734,7 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, ch
     },
     onTouchEnd: (e) => {
       clearTimeout(lp.current)
+      if (e.target.closest?.('.rmx-swacts')) { e.stopPropagation(); return }
       const s = g.current; g.current = null
       if (!s || !s.ours) return
       e.stopPropagation()

@@ -868,26 +868,43 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const lastOpen = useRef(null)
   const flashT = useRef(0)
   const say = (t) => { setFlash(t); clearTimeout(flashT.current); flashT.current = setTimeout(() => setFlash(''), 2400) }
-  const load = async (p = 0) => {
+  const load = async (p = 0, quiet = false) => {
     if (!targets.length) { setRows([]); setMore(false); return }
-    setBusy(true); setErr('')
+    if (!quiet) setBusy(true)
+    setErr('')
     try {
       const j = await cloud({ action: 'list', items: targets, limit: 30, page: p })
       const errs = Object.values(j.errors || {}).filter((e) => e !== 'missing')
       if (errs.length && !(j.items || []).length) setErr(errs[0])
       const got = emptying(ck) ? [] : notGone(j.items)
       setRows((r) => {
-        const next = p === 0 ? got : [...(r || []), ...got.filter((x) => !(r || []).some((y) => sameM(x, y)))]
+        // the newest page is the truth for its time span: what the server no longer has there (deleted or moved on
+        // another device) goes; older mail brought by All Mail or Older Mail stays below it
+        const edge = got.length ? Math.min(...got.map((x) => new Date(x.date).getTime())) : 0
+        const next = p === 0
+          ? [...got, ...(got.length >= 30 ? (r || []).filter((x) => !got.some((y) => sameM(x, y)) && new Date(x.date).getTime() < edge) : [])]
+          : [...(r || []), ...got.filter((x) => !(r || []).some((y) => sameM(x, y)))]
         const hasMore = Object.entries(j.totals || {}).some(([, t]) => t > 30 * (p + 1))
         keepList(ck, { rows: next, more: hasMore, page: p })
         if (p === 0) fetchAhead(got)
         setMore(hasMore)
         return next
       })
-      setPage(p)
-    } catch (e) { setErr(e.message || 'Could not read the mail') }
-    setBusy(false)
+      if (p > 0 || !quiet) setPage(p)
+    } catch (e) { if (!quiet) setErr(e.message || 'Could not read the mail') }
+    if (!quiet) setBusy(false)
   }
+  // new mail comes in by itself while the list is open (Alex, 26 Nov: "they must come at once"): every 30 s, and the
+  // moment RoarMe comes back to the front
+  const loadRef = useRef(load)
+  loadRef.current = load
+  useEffect(() => {
+    if (offline) return undefined
+    const again = () => { if (document.visibilityState === 'visible') loadRef.current(0, true) }
+    const t = setInterval(again, 30e3)
+    document.addEventListener('visibilitychange', again); window.addEventListener('focus', again)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', again); window.removeEventListener('focus', again) }
+  }, [])
   useEffect(() => {
     if (offline) return
     if (!rows) readKv(`ml:${ck}`).then((v) => { if (v?.rows) setRows((r) => r || (emptying(ck) ? [] : notGone(v.rows))) })
@@ -1215,12 +1232,41 @@ export function cleanLink(href) {
   try { const u = new URL(href); for (const k of [...u.searchParams.keys()]) if (TRACK_Q.test(k)) u.searchParams.delete(k); return u.toString() } catch { return href }
 }
 
+// a mail made safe to sit on the page: no scripts, frames, forms or handlers, links only to the web, mail and phone;
+// pictures and CSS from the web only when asked; position: fixed kept inside the mail; body and html rules aimed at it
+const URL_IN_CSS = /url\s*\(\s*(['"]?)\s*(?!data:)[^)]*\)/gi
+function sealMail(mail, prefs, pics) {
+  const src = mail.html ? cleanHtml(mail.html, prefs) : `<body>${plainHtml(mail.text, prefs)}</body>`
+  const doc = new DOMParser().parseFromString(src, 'text/html')
+  doc.querySelectorAll('script, iframe, frame, frameset, object, embed, applet, form, link, meta, base, noscript, template, audio, video, input, button, select, textarea').forEach((n) => n.remove())
+  const css = [...doc.querySelectorAll('style')].map((n) => { const t = n.textContent || ''; n.remove(); return t }).join('\n')
+  for (const el of doc.body.querySelectorAll('*')) {
+    for (const at of [...el.attributes]) {
+      const n = at.name.toLowerCase(), v = at.value.trim()
+      if (n.startsWith('on') || n === 'formaction' || n === 'srcdoc') el.removeAttribute(at.name)
+      else if (n === 'href' || n === 'xlink:href') { if (!['A', 'AREA'].includes(el.tagName) || !/^(https?:|mailto:|tel:|#)/i.test(v)) el.removeAttribute(at.name) }
+      else if (n === 'src' || n === 'srcset' || n === 'background' || n === 'poster') { if (!/^data:image\//i.test(v) && !(pics && /^https?:/i.test(v))) el.removeAttribute(at.name) }
+      else if (n === 'style') {
+        let t = v.replace(/position\s*:\s*fixed/gi, 'position:absolute')
+        if (!pics) t = t.replace(URL_IN_CSS, 'none')
+        el.setAttribute('style', t)
+      }
+    }
+    if (el.tagName === 'A') { el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer') }
+  }
+  let own = css.replace(/@import[^;]*;/gi, '').replace(/position\s*:\s*fixed/gi, 'position:absolute').replace(/(^|[\s,}])(html|body)(?=[\s,.{:#[])/gi, '$1.mb')
+  if (!pics) own = own.replace(URL_IN_CSS, 'none')
+  const base = `:host{display:block;position:relative;contain:layout paint;overflow:hidden;background:#fff;color:#1d1d24;touch-action:pan-y pinch-zoom}
+.mb{font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;padding:${mail.html ? '12px 16px 16px' : '14px 16px 18px'};word-wrap:break-word;overflow-wrap:anywhere;text-align:left}
+.mb img{max-width:100%;height:auto}.mb img:not([src]){display:none}.mb table{max-width:100%!important}.mb a{color:#1a7fd0}${prefs.quoteColors ? QUOTE_CSS.replace(/(^|})blockquote/g, '$1.mb blockquote') : ''}`
+  return `<style>${base}</style><style>${own}</style><div class="mb">${doc.body.innerHTML}</div>`
+}
+
 function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
   const [mail, setMail] = useState(() => keptKv(mailKey(m)) || null)
   const [err, setErr] = useState('')
   const [pics, setPics] = useState(() => !!prefs.images)
   const [busy, setBusy] = useState('')
-  const frame = useRef(null)
   const actsRef = useRef(null)
   const readSlide = useSlide(onBack, onNext)
   const acc = accounts.find((a) => a.id === m.account)
@@ -1236,35 +1282,35 @@ function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
     const t = !m.seen && prefs.markRead === 'delay' ? setTimeout(() => cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }).catch(() => {}), 3000) : 0
     return () => { gone = true; clearTimeout(t) }
   }, [])
-  const doc = useMemo(() => {
-    if (!mail) return ''
-    let body = mail.html ? cleanHtml(mail.html, prefs) : plainHtml(mail.text, prefs)
-    const csp = `default-src 'none'; style-src 'unsafe-inline'; font-src data:; img-src data:${pics ? ' https: http:' : ''}`
-    return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank">
-<style>html,body{touch-action:pan-y pinch-zoom;overflow-x:hidden}html,body{margin:0;padding:0;background:#fff;color:#1d1d24;font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;word-wrap:break-word;overflow-wrap:anywhere}body{padding:${mail.html ? '12px 16px 16px' : '14px 16px 18px'}}img{max-width:100%;height:auto}table{max-width:100%!important}a{color:#1a7fd0}${prefs.quoteColors ? QUOTE_CSS : ''}</style></head><body>${body}</body></html>`
+  // the mail is drawn in a sealed shadow root on the page itself, no frame (Alex, 26 Nov: "swipe right to go back does
+  // not catch on the mail's body"): the iPhone kept a frame's touches to the frame, so a slide never reached the page.
+  // Scripts, forms, frames and handlers are taken out; pictures and CSS from the web only after Show Images.
+  const bodyRef = useRef(null)
+  useEffect(() => {
+    const host = bodyRef.current
+    if (!host || !mail) return
+    const root = host.shadowRoot || host.attachShadow({ mode: 'open' })
+    root.innerHTML = sealMail(mail, prefs, pics)
+    const box = root.querySelector('.mb')
+    // a mail wider than the screen (tables of a fixed 600 or 700 px) is drawn smaller to fit whole, as Apple's Mail does
+    const fit = () => {
+      box.style.zoom = ''
+      const W = host.clientWidth, sw = box.scrollWidth
+      if (W > 0 && sw > W + 2) box.style.zoom = String(Math.max(0.3, W / sw))
+    }
+    fit()
+    const imgs = [...root.querySelectorAll('img')]
+    imgs.forEach((i) => i.addEventListener('load', fit, { once: true }))
+    const click = (e) => {
+      const a = e.composedPath().find((n) => n.tagName === 'A' && n.getAttribute?.('href'))
+      if (!a) return
+      const href = a.getAttribute('href')
+      if (href.startsWith('#')) { e.preventDefault(); return }
+      if (prefs.cleanLinks && /^https?:/i.test(href)) a.setAttribute('href', cleanLink(href))
+    }
+    root.addEventListener('click', click, true)
+    return () => root.removeEventListener('click', click, true)
   }, [mail, pics])
-  // the frame as tall as what is in it
-  const fit = () => {
-    const f = frame.current
-    try {
-      // a mail wider than the screen (tables of a fixed 600 or 700 px) is drawn smaller to fit whole, as Apple's Mail does
-      // (Alex, 25 Nov: "most of my mails spill out at the left and do not fit at the right"), never cut at the sides
-      const dd = f.contentDocument, W = f.clientWidth
-      dd.body.style.zoom = ''
-      const sw = Math.max(dd.documentElement.scrollWidth, dd.body.scrollWidth)
-      if (W > 0 && sw > W + 2) dd.body.style.zoom = String(Math.max(0.3, W / sw))
-      const h = dd.documentElement.scrollHeight; f.style.height = `${Math.max(120, h)}px`
-      // the mail's own frame keeps a finger to itself, so its touches are handed to the page's slide (by screen place)
-      const r = () => f.getBoundingClientRect()
-      const as = (e) => ({ touches: [...e.touches].map((t) => ({ clientX: t.clientX + r().left, clientY: t.clientY + r().top })), target: f })
-      const d = f.contentDocument
-      if (prefs.cleanLinks) d.addEventListener('click', (e) => { const a = e.target.closest?.('a[href]'); if (a && /^https?:/i.test(a.href)) a.href = cleanLink(a.href) }, true)
-      d.addEventListener('touchstart', (e) => readSlide.onTouchStart(as(e)), { passive: true })
-      d.addEventListener('touchmove', (e) => readSlide.onTouchMove(as(e)), { passive: true })
-      d.addEventListener('touchend', () => readSlide.onTouchEnd(), { passive: true })
-      d.addEventListener('touchcancel', () => readSlide.onTouchCancel(), { passive: true })
-    } catch { /* sealed */ }
-  }
   const getFile = async (f) => {
     setBusy(`f${f.i}`)
     try {
@@ -1293,7 +1339,7 @@ function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
         {mail && mail.html && !pics && /<img[^>]+src=["']?https?:/i.test(mail.html) && (
           <button type="button" className="pill-btn rmx-pics" onClick={() => setPics(true)}>{MAIL_I.img}Show Images</button>
         )}
-        {mail && <iframe ref={frame} className="rmx-frame" title="Mail" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" srcDoc={doc} onLoad={fit} />}
+        {mail && <div ref={bodyRef} className="rmx-frame rmx-body" />}
         {mail?.files?.length > 0 && (
           <div className="rmx-files">
             {mail.files.map((f) => (

@@ -9323,3 +9323,6 @@ html[data-lite] .fmt-spoiler:not(.shown) { animation: none; }
 
 /* The folders share the bar evenly (Alex, 26 Nov: "the folders are not centred"): every tab, Archived too, takes an equal part of the bar while they fit; a word is never cut, and with many folders the bar scrolls as before. */
 html:root:root:root:root:root:root:root:root:root:root .rooms-area .tabs > button { flex: 1 1 0; min-width: max-content; justify-content: center; }
+
+/* Terms of Service and Privacy Policy on the sign-in page read in light blue on its dark glass (Alex, 26 Nov: "they are black"): the links took an accent that could be dark; here they are always #6cc8ff, bold, no underline. */
+html:root:root:root:root:root:root:root:root .auth:not(.ob) .auth-check-t a, html:root:root:root:root:root:root:root:root .auth:not(.ob) .auth-legal a { color: #6cc8ff !important; font-weight: 600; text-decoration: none; }

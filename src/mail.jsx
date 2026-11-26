@@ -373,8 +373,8 @@ function useSlide(onRight, onLeft) {
     const s = gr.current; gr.current = null
     put(0, true)
     if (!s || s.lock !== 'x') return
-    const fast = Math.abs(s.dx || 0) > 30 && Date.now() - s.t < 260
-    if (!(Math.abs(s.dx || 0) > 70 || fast)) return
+    const fast = Math.abs(s.dx || 0) > 24 && Date.now() - s.t < 300
+    if (!(Math.abs(s.dx || 0) > 50 || fast)) return
     if (s.dx > 0 && onRight) onRight(); else if (s.dx < 0 && onLeft) onLeft()
   }
   return {

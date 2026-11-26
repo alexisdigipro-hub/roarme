@@ -846,7 +846,7 @@ export default function Chat({ me, setMe }) {
 
   // a chat deleted from one's list stays away until something new is written in it
   const visible = rooms.filter((r) => !hidden[r.room_id] || r.last_message_at > hidden[r.room_id])
-  const unreadAll = visible.filter((r) => !r.archived && !r.muted).reduce((a, r) => a + (r.unread || 0), 0)
+  const unreadAll = visible.filter((r) => !r.archived && !r.muted && !(proOn && isDelivered(proKit.map[r.room_id]))).reduce((a, r) => a + (r.unread || 0), 0)
   useEffect(() => {
     document.title = unreadAll ? `(${unreadAll}) RoarMe` : 'RoarMe'
     window.roarDesktop?.setBadge(prefs.badge === false ? 0 : unreadAll) // the count on the app's icon (Mac/Windows app)
@@ -1014,6 +1014,8 @@ export default function Chat({ me, setMe }) {
   // with each chat in one folder, Unread is the one folder whose chats All shows too (Alex, 21 Nov: "Unread will be the
   // only folder that shows inside All"); a chat read again goes back to its own folder and leaves All
   const inFolder = (r, f) => {
+    // a delivered project lives only in PROjects > Archived Projects (Alex, 26 Nov: "nowhere else"); search still finds it
+    if (proOn && f !== 'projects' && isDelivered(proKit.map[r.room_id])) return false
     if (!prefs.folderAlone) return fits(r, f)
     const home = homeOf(r)
     return home === f || (f === 'all' && home === 'unread')
@@ -1027,7 +1029,7 @@ export default function Chat({ me, setMe }) {
     const t = fold(q.trim())
     const list = visible.filter((r) => (t ? fold(titleOf(r)).includes(t) || fold(otherOf(r)?.username).includes(t.replace(/^@/, '')) : inFolder(r, folder)))
     return pinnedFirst(list)
-  }, [visible, folder, q, titleOf, myFolders, pins, prefs.folderExtra, marked, prefs.folderAlone, prefs.folderOrder, hiddenF.join()]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visible, folder, q, titleOf, myFolders, pins, proKit.map, proOn, prefs.folderExtra, marked, prefs.folderAlone, prefs.folderOrder, hiddenF.join()]) // eslint-disable-line react-hooks/exhaustive-deps
   // the keyboard's arrows on a computer (Alex, 26 Nov): ← → change folder, ↑ ↓ open the chat above or below in the
   // list; plain arrows only while no field has the cursor, Option / Alt + arrow from anywhere, the writing box too
   const arrowsNow = useRef({})

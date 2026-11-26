@@ -9320,3 +9320,6 @@ html[data-mode='dark'] .fmt-spoiler { --sp-base: rgba(255, 255, 255, .18); --sp-
 @keyframes sp-open { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 html[data-lite] .fmt-spoiler:not(.shown) { animation: none; }
 @media (prefers-reduced-motion: reduce) { .fmt-spoiler:not(.shown), .fmt-spoiler.shown { animation: none; } }
+
+/* The folders share the bar evenly (Alex, 26 Nov: "the folders are not centred"): every tab, Archived too, takes an equal part of the bar while they fit; a word is never cut, and with many folders the bar scrolls as before. */
+html:root:root:root:root:root:root:root:root:root:root .rooms-area .tabs > button { flex: 1 1 0; min-width: max-content; justify-content: center; }

@@ -6,7 +6,7 @@
 // RoarMail on the computer keeps); the mail itself is read through RoarMe's Edge Function roarmail-cloud, for the
 // accounts sent there with RoarMail's Send to RoarMe (their passwords locked in Supabase Vault).
 import { stayGet, staySet } from './stay.js'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { SUPABASE_KEY, SUPABASE_URL, haptic, supabase } from './lib.js'
 import { Avatar, I, Modal } from './ui.jsx'
@@ -328,7 +328,7 @@ function fetchAhead(rows) {
   rows.slice(0, 8).forEach((m) => {
     ahead = ahead.then(async () => {
       if (keptKv(mailKey(m)) || await readKv(mailKey(m))) return
-      try { const j = await cloud({ action: 'get', account: m.account, path: m.path, uid: m.uid, seen: false }); keepMail(m, j) } catch { /* next time */ }
+      try { const j = await cloud({ action: 'get', account: m.account, path: m.path, uid: m.uid, seen: false, bg: true }); keepMail(m, j) } catch { /* next time */ }
     })
   })
 }
@@ -351,7 +351,7 @@ export function warmMail(force) {
       const c = await cloud({ action: 'counts', items })
       const counts = {}; for (const it of items) counts[it.account] = c.counts?.[`${it.account}|${it.path}`]?.unseen || 0
       lsSet('mail-counts', counts); tell('roarme-mail-counts', counts)
-      const [j, u] = await Promise.all([cloud({ action: 'list', items, limit: 30 }), cloud({ action: 'list', items, limit: 20, unseen: true })])
+      const [j, u] = await Promise.all([cloud({ action: 'list', items, limit: 30, bg: true }), cloud({ action: 'list', items, limit: 20, unseen: true, bg: true })])
       const hide = mailPrefs().allHide || [], junkOn = mailPrefs().autoJunk
       const all = (j.items || []).filter((m) => !(junkOn && isBlocked(m.from, setup)))
       for (const it of items) keepList(`${it.account}|${it.path}`, { rows: all.filter((m) => m.account === it.account) })
@@ -734,7 +734,7 @@ export function MailView({ me, people, book }) {
 // "as in the chats: it must catch from the edge of the screen, and stay, not jump away"), a long press its menu --------
 const EDGE = 72, ACTS_W = 5 * 64
 let openRow = null // the row whose buttons are out: a touch on any other row puts them away first
-function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, checked }) {
+const MailRow = memo(function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, checked }) {
   const [x, setX] = useState(0)
   const [drag, setDrag] = useState(false)
   const g = useRef(null), lp = useRef(0), skip = useRef(0), self = useRef(null), row = useRef(null)
@@ -814,7 +814,13 @@ function MailRow({ m, who, bar, onOpen, onAct, onMenu, count, picking, selOn, ch
       </div>
     </div>
   )
-}
+}, (a, b) => rowSame(a, b))
+
+// a row is drawn again only when what it shows changes (26 Nov: "slow and heavy"): the list's refresh every 30 s, a
+// selection or a slide elsewhere no longer redraws every mail; its handlers reach the list's newest ones through a ref
+const rowSame = (a, b) => a.who === b.who && a.bar === b.bar && a.count === b.count && a.picking === b.picking && a.selOn === b.selOn && a.checked === b.checked
+  && keyM(a.m) === keyM(b.m) && a.m.seen === b.m.seen && a.m.flagged === b.m.flagged && a.m.answered === b.m.answered && a.m.subject === b.m.subject
+  && a.m.snippet === b.m.snippet && a.m.date === b.m.date && a.m.files === b.m.files && a.m.from?.address === b.m.from?.address && a.m.from?.name === b.m.from?.name
 
 // the long-press menu (Alex, 24 Nov: "a long press gives these and more, as on the desktop"), the app's own menu glass
 function MailMenu({ m, at, inJunk, noSelect, onAct, onClose }) {
@@ -894,6 +900,7 @@ function MailCap({ acc, folder }) {
 }
 
 function MailList({ acc, step, targets, accounts, folders, who, setup, offline, onBack, onCompose, newBtn }) {
+  const rowH = useRef({})
   const prefs = usePrefs()
   const ck = `${acc.id}|${step.path || step.role}`
   const [rows, setRows] = useState(() => listCache.get(ck)?.rows || null)
@@ -1098,6 +1105,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
     if (!m.seen && prefs.markRead === 'open') patch(m, { seen: true })
     else if (!m.seen && prefs.markRead === 'delay') setTimeout(() => { if (lastOpen.current === m) patch(m, { seen: true }) }, 3000)
   }
+  rowH.current = { openMail, act, setMenu }
   const nextOf = (m) => { const i = shown.findIndex((x) => sameM(x, m)); return i >= 0 ? shown[i + 1] : null }
   const listSlide = useSlide(thread ? () => setThread('') : onBack, lastOpen.current && !open ? () => setOpen(lastOpen.current) : null)
   const role = step.role || folders.find((f) => f.account === acc.id && f.path === step.path)?.role
@@ -1227,7 +1235,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
         : !shown.length ? <p className="muted rooms-none">{targets.length ? 'Nothing here.' : 'No account is in RoarMe yet. Send one from RoarMail on your computer.'}</p>
         : shown.map((m) => (
           <MailRow key={keyM(m)} m={m} who={who} bar={acc.id === 'all' && prefs.accColours ? colourOf(m.account) : ''} count={m._n || 0} picking={filter === 'sender' && !sender} selOn={!!sel} checked={!!sel?.has(keyM(m))}
-            onOpen={() => openMail(m)} onAct={(k) => act(k, m)} onMenu={(at) => setMenu({ m, at })} />
+            onOpen={() => rowH.current.openMail(m)} onAct={(k) => rowH.current.act(k, m)} onMenu={(at) => rowH.current.setMenu({ m, at })} />
         ))}
       {!offline && rows && rows.length > 0 && more && !filter && !thread && (
         <div className="rmx-more">

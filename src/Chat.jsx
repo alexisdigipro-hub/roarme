@@ -2704,7 +2704,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
 
   // to a message: from the pinned bar, a quote, a search hit or a copied link
-  const goTo = useCallback(async (id) => {
+  const goTo = useCallback(async (id, opt) => {
     holdNew.current.user = true // going to one message: the newest no longer holds the chat
     let el = document.getElementById(`m-${id}`)
     if (!el) {
@@ -2718,9 +2718,19 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     }
     if (!el) { toast('That message is no longer here.'); return }
     stick.current = false
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    // a day from the chat's calendar (Alex, 26 Nov: "show me strongly where it starts"): its date chip comes to the middle
+    // lit in the accent, and every message of that day glows for a moment, the first one most of all
+    const day = opt?.day ? el.querySelector(':scope > .day') : null
+    ;(day || el).scrollIntoView({ block: 'center', behavior: 'smooth' })
+    if (opt?.day) {
+      const rows = [el]
+      for (let n = el.nextElementSibling; n && !n.querySelector(':scope > .day'); n = n.nextElementSibling) if (n.id?.startsWith('m-')) rows.push(n)
+      day?.classList.add('day-hl')
+      rows.forEach((w) => w.querySelector(':scope > .msg')?.classList.add('day-glow'))
+      setTimeout(() => { day?.classList.remove('day-hl'); rows.forEach((w) => w.querySelector(':scope > .msg')?.classList.remove('day-glow')) }, 3000)
+    }
     setFlash(id)
-    setTimeout(() => setFlash(''), 1600)
+    setTimeout(() => setFlash((f) => (f === id ? '' : f)), 2400)
   }, [room.room_id, toast])
   useEffect(() => { if (jump && msgs.length) { goTo(jump); onJumped() } }, [jump, msgs.length, goTo, onJumped])
 
@@ -4429,7 +4439,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
         </Modal>
       )}
       {forward && <Forward msgs={forward} me={me} rooms={rooms} titleOf={titleOf} fromRoom={room.room_id} onClose={() => setForward(null)} onDone={(n) => { setForward(null); setPicked(null); toast(n > 1 ? `${n} messages forwarded` : 'Forwarded') }} />}
-      {calOpen && <Suspense fallback={null}><ChatCalendar room={room} other={room.kind === 'group' ? '' : title} onGo={goTo} onClose={() => setCalOpen(false)} onCleared={afterClear} /></Suspense>}
+      {calOpen && <Suspense fallback={null}><ChatCalendar room={room} other={room.kind === 'group' ? '' : title} onGo={(id) => goTo(id, { day: true })} onClose={() => setCalOpen(false)} onCleared={afterClear} /></Suspense>}
       {pdfView && <OnTop><Suspense fallback={null}><PdfView url={pdfView.url} name={pdfView.name} onClose={() => setPdfView(null)} /></Suspense></OnTop>}
       {viewer && <OnTop><MediaViewer items={viewer.items} index={viewer.index} onClose={() => setViewer(null)}
         onShow={(m) => { setViewer(null); setTimeout(() => hands.current.goTo(m.id), 60) }}

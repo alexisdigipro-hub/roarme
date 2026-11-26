@@ -9188,3 +9188,21 @@ html:root:root:root:root:root[data-mode='dark'] .modal:has(> .modal-body > .ccal
 /* a day of words only: the number as it is, only the dot under it (Alex, 25 Nov: "only the dot") */
 .ccal-d.text { font-weight: 400; }
 .rmx-more { gap: 8px; flex-wrap: wrap; }
+
+/* Going to a message (a reply's quote, the chat's calendar, search, Show in Chat) shows it clearly (Alex, 26 Nov: "I do
+   not understand which messages; make it stand out for 1-2 s, a message, a photo, anything"): the row lights up in the
+   accent across the chat and fades, the bubble pops once with a glowing ring. From the calendar the day's chip is lit
+   and the day's messages glow softly. Colour only with reduced motion or Power Saving. */
+html:root:root .scroll .msg.flash { animation: mf-row 2.3s ease-out both !important; border-radius: 18px; }
+html:root:root .scroll .msg.flash .bubble, html:root:root .scroll .msg.flash .note { animation: mf-pop .7s cubic-bezier(.25, 1.5, .45, 1), mf-ring 2.3s ease-out !important; }
+html:root:root .scroll .msg.day-glow:not(.flash) { animation: mf-day 3s ease-out both !important; border-radius: 18px; }
+html:root:root .scroll .day.day-hl .day-chip { animation: mf-chip 3s ease-out both !important; }
+@keyframes mf-row { 0%, 45% { background-color: color-mix(in srgb, var(--halo, #3aa7e8) 26%, transparent); } 100% { background-color: transparent; } }
+@keyframes mf-day { 0%, 50% { background-color: color-mix(in srgb, var(--halo, #3aa7e8) 11%, transparent); } 100% { background-color: transparent; } }
+@keyframes mf-pop { 0% { transform: scale(1); } 35% { transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes mf-ring { 0%, 50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--halo, #3aa7e8) 85%, transparent), 0 0 22px 4px color-mix(in srgb, var(--halo, #3aa7e8) 45%, transparent); } 100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; } }
+@keyframes mf-chip { 0%, 60% { background: var(--halo, #3aa7e8); color: #fff; transform: scale(1.35); box-shadow: 0 4px 16px color-mix(in srgb, var(--halo, #3aa7e8) 45%, transparent); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  html:root:root .scroll .msg.flash .bubble, html:root:root .scroll .msg.flash .note { animation: mf-ring 2.3s ease-out !important; }
+}
+html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !important; }

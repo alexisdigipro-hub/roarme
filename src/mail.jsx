@@ -438,6 +438,11 @@ function HomeEdit({ order, rowOf, isShown, onToggle, onOrder }) {
   )
 }
 
+// a tap on Mail in the bar at the foot always opens the mail's home (Alex, 26 Nov: "when I tap Mail, always to the
+// mail's start"); a pull to refresh still comes back to the same step
+let homeNext = false
+export const mailHomeNext = () => { homeNext = true; window.dispatchEvent(new CustomEvent('roarme-mail-cmd', { detail: { what: 'home' } })) }
+
 export function MailView({ me, people, book }) {
   const mprefs = usePrefs()
   const [setup, setSetup] = useState(() => lsGet('mail-setup'))       // null loading · { accounts, folders } · { error }
@@ -446,7 +451,8 @@ export function MailView({ me, people, book }) {
   // a mail tapped in the app's Unread opens here, over its account's Inbox
   const [step, setStep] = useState(() => {
     const m = pendingOpen; pendingOpen = null
-    return m ? { s: 'list', acc: m.account, role: 'inbox', path: m.path, name: 'Inbox', open: m } : stayGet('mail', { s: 'accs' })
+    const home = homeNext; homeNext = false
+    return m ? { s: 'list', acc: m.account, role: 'inbox', path: m.path, name: 'Inbox', open: m } : home ? { s: 'accs' } : stayGet('mail', { s: 'accs' })
   })
   // a pull to refresh comes back to the same step (an open mail comes back as its folder's list)
   useEffect(() => { const { open: _o, from: _f, ...rest } = step; staySet('mail', rest.s === 'folders' || rest.s === 'list' ? rest : { s: 'accs' }) }, [step]) // accs · folders { acc } · list { acc, role|path, name } · read
@@ -468,7 +474,7 @@ export function MailView({ me, people, book }) {
     const f = (e) => {
       const what = e.detail?.what, st = stepRef.current
       if (what === 'new') setCompose({ mode: 'new', account: st.acc && st.acc !== 'all' ? st.acc : '' })
-      else if (what === 'home') { setFwd(null); setStep({ s: 'accs' }) }
+      else if (what === 'home') { homeNext = false; setFwd(null); setStep({ s: 'accs' }) }
       else if (what === 'edit') mailDotsNow()
       else if (what === 'search') {
         // on a list its own search; elsewhere the Inbox of the account in sight (All Inboxes from the home) with its search open

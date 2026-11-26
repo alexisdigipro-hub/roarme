@@ -1,8 +1,8 @@
 # RoarRef for iPhone
 
-RoarRef (character sheets for AI, https://themadlions.com/lab/roarref/app/) as an iPhone app: a Capacitor shell that
+RoarRef (character sheets for AI, https://themadlions.com/roarref/) as an iPhone app: a Capacitor shell that
 opens that page itself, so the app is always the website as it is that minute, with no new build for a change to
-it. Its source is not here: it is `public/site/lab/roarref/app/index.html` of alexisdigipro-hub/themadlions-projects,
+it. Its source is not here: it is `public/site/roarref/index.html` of alexisdigipro-hub/themadlions-projects,
 served from themadlions-site. This folder lives in RoarMe's repository only because the App Store Connect key is in
 this repository's secrets (as roardino-ios/ and transfer-ios/). Nothing of it touches RoarMe the app.
 

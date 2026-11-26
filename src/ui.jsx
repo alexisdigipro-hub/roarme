@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { initialsOf } from './lib.js'
 import phoneMask from './icons/phone.png'
+import phoneBold from './icons/phone-bold.png' // the same handset with a thicker line, for the bar at the foot (Alex, 26 Nov)
 import videoMask from './icons/video.png'
 
 /* ---------- small pieces ---------- */
@@ -13,7 +14,7 @@ export const FOOT_I = {
   contacts: solid('M12 3a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zM3 21a9 9 0 0 1 18 0z'),
   // the same handset as the profile's Call (Alex, 19 Nov: "this design on the icon in the main bar"; the handset with two
   // waves of 13 Nov is gone); it rings when Calls is chosen (themes-glass.css gi-ring on .fi-phone)
-  calls: <i className="ic-mask fi-phone" style={{ '--m': `url(${phoneMask})` }} aria-hidden="true" />,
+  calls: <i className="ic-mask fi-phone" style={{ '--m': `url(${phoneBold})` }} aria-hidden="true" />,
   messages: solid('M12 3c5 0 9 3.6 9 8s-4 8-9 8c-1.6 0-3.1-.3-4.3-1L3 21l1.6-4.6C3.6 15 3 13.1 3 11c0-4.4 4-8 9-8z'),
   tasks: solid('M4 4h16v16H4zM6.8 12.3l2.1-2.1 2 2 4.9-4.9 2.1 2.1-7 7z'),
   // Mail, RoarMail's home in the bar inside ROARMAIL: an envelope, its fold cut out

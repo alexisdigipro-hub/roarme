@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('roarDesktop', {
   setSetting: (key, value) => ipcRenderer.invoke('roar:set', key, value),
   // the Mac App Store's copy: updates come from the App Store, so it has no update below and the page offers no downloads
   store: !!process.mas,
+  // Touch ID for the passcode lock (Mac only)
+  touchId: process.platform === 'darwin' ? { can: () => ipcRenderer.invoke('roar:touchid-can'), ask: () => ipcRenderer.invoke('roar:touchid') } : undefined,
   // updates (1.4.9 on): the app downloads a new version by itself; the page shows it and offers Restart
   update: process.mas ? undefined : {
     state: () => ipcRenderer.invoke('roar:update-state'),

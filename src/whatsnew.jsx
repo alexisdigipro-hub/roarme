@@ -20,6 +20,9 @@ export const NEWS = [
         'Tap a reply to see the message it answers: it lights up for a moment, words, photo or anything. From the calendar the day lights up too, so you see where it starts.',
         'An empty writing box stays one line tall, also beside a project\'s Workspace.',
       ] },
+      { title: 'On a computer', items: [
+        'Unlock with Touch ID in the Mac app: Settings > Privacy and Security > Passcode lock. The lock asks for your finger as soon as RoarMe opens; the passcode still works.',
+      ] },
       { title: 'On a phone', items: [
         'Mail stays in step with your other devices: new mail shows by itself every half minute, and mail deleted elsewhere goes. A slide right anywhere on an open mail takes you back.',
         'The buttons that come out when you slide a mail (Read, Star, Move, Block, Trash) work again.',

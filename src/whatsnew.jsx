@@ -24,7 +24,6 @@ export const NEWS = [
         'Settings > General > Reset All Settings, at the foot of the page: the look, notifications and sounds, chats, data and mail settings go back to how RoarMe starts. Your folders, chats, contacts and accounts stay.',
         'The round Unread button sends out soft rings, with the number in the middle.',
         'The Calls sign in the bar at the foot has the same line weight as the signs beside it.',
-        'ROARMAIL: Junk, Trash, Sent, Drafts and Archive are read ahead in the background, so they open at once.',
         'A big RoarMoji or sticker with a reaction: the reaction and the time sit side by side under it, the time never broken in two.',
         'A delivered project now stays only in PROjects > Archived Projects, out of All, Unread and every other folder. Search still finds it.',
         'Tap a reply to see the message it answers: it lights up for a moment, words, photo or anything. From the calendar the day lights up too, so you see where it starts.',
@@ -38,7 +37,8 @@ export const NEWS = [
         'PROjects in the Mac and Windows apps: the Workspace can open in a window of its own. It sits snapped to the right of the chat window and moves with it; drag it away to keep it apart, for example on a second screen. Back into the chat window brings it home.',
         'Unlock with Touch ID in the Mac app: Settings > Privacy and Security > Passcode lock. The lock asks for your finger as soon as RoarMe opens; the passcode still works.',
       ] },
-      { title: 'On a phone', items: [
+      { title: 'RoarMail', lab: true, items: [
+        'ROARMAIL: Junk, Trash, Sent, Drafts and Archive are read ahead in the background, so they open at once.',
         'Mail answers faster: what you tap no longer waits behind mail being fetched in the background, and long folders scroll lighter.',
         'Mail stays in step with your other devices: new mail shows by itself every half minute, and mail deleted elsewhere goes. A slide right anywhere on an open mail takes you back.',
         'The buttons that come out when you slide a mail (Read, Star, Move, Block, Trash) work again.',
@@ -55,7 +55,7 @@ export const NEWS = [
     id: '2026-11-25',
     date: '25 November 2026',
     sections: [
-      { title: 'On a phone', items: [
+      { title: 'RoarMail', lab: true, items: [
         'RoarMail inside RoarMe: turn it on in Settings > ROARMAIL and Mail joins the bar at the foot. Add Gmail, iCloud, Outlook, Yahoo or any mail, read, reply and keep your inbox tidy.',
       ] },
       { title: 'Everywhere', items: [

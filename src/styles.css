@@ -9387,3 +9387,6 @@ html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .a
 /* ROARME 10% smaller (40px) and 45% closer to the two buttons (Alex, 26 Nov, from his phone): line-height 1 and 13px under it */
 html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-wm { margin-bottom: 13px; }
 html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-wm .wordmark b.wm { font-size: 40px; line-height: 1; }
+/* the two buttons 15% bigger, grown downward so ROARME and the gap over them stay where they were (Alex, 26 Nov) */
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-b { width: 129px; height: 44px; border-radius: 22px; font-size: 15.5px; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-intro { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); }

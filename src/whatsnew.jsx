@@ -16,6 +16,7 @@ export const NEWS = [
     date: '26 November 2026',
     sections: [
       { title: 'Everywhere', items: [
+        'Pulling down to refresh no longer asks for your passcode or Face ID again.',
         'Tap a reply to see the message it answers: it lights up for a moment, words, photo or anything. From the calendar the day lights up too, so you see where it starts.',
       ] },
       { title: 'On a phone', items: [

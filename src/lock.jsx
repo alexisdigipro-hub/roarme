@@ -99,11 +99,17 @@ export async function bioCheck() {
 }
 
 /* locked when the app opens, after the chosen minutes away or idle, or by Lock Now */
+// a reload (the pull to refresh, a new version) is not opening the app (Alex, 26 Nov: "when I refresh it asks for Face
+// ID again, why, it is not needed"): while unlocked the app keeps the time in sessionStorage, which a reload keeps and a
+// fresh start of the app does not, and a reload inside the lock's own minutes stays open
+const SEEN = 'roarme-unlocked-at'
+const stamp = () => { try { sessionStorage.setItem(SEEN, String(Date.now())) } catch { /* private window */ } }
+const fresh = (l) => { try { const t = Number(sessionStorage.getItem(SEEN)); return t > 0 && Date.now() - t < Math.max(1, l.after || 0) * 60000 } catch { return false } }
 export function useAutoLock() {
-  const [locked, setLocked] = useState(() => !!getLock())
+  const [locked, setLocked] = useState(() => { const l = getLock(); return !!l && !fresh(l) })
   const away = useRef(Date.now())
   useEffect(() => {
-    const touch = () => { away.current = Date.now() }
+    const touch = () => { away.current = Date.now(); if (!document.hidden) stamp() }
     const vis = () => {
       const l = getLock()
       if (document.hidden) { away.current = Date.now(); return }
@@ -114,6 +120,7 @@ export function useAutoLock() {
       const l = getLock()
       if (l && !document.hidden && Date.now() - away.current >= l.after * 60000) setLocked(true)
     }, 15000)
+    window.addEventListener('beforeunload', () => { if (!document.hidden) stamp() })
     const now = () => { if (getLock()) setLocked(true) }
     const changed = () => { if (!getLock()) setLocked(false) }
     ;['pointerdown', 'keydown', 'wheel'].forEach((ev) => window.addEventListener(ev, touch, { passive: true }))
@@ -128,6 +135,7 @@ export function useAutoLock() {
       window.removeEventListener('roarme-lock', changed)
     }
   }, [])
+  useEffect(() => { if (locked) { try { sessionStorage.removeItem(SEEN) } catch { /* private window */ } } else stamp() }, [locked])
   return [locked, () => { away.current = Date.now(); setLocked(false) }]
 }
 

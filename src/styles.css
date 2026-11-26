@@ -9340,3 +9340,47 @@ html:root:root:root:root:root[data-glass][data-theme] .auth.auth-own:not(.ob)::b
 .adm-abg-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .adm-abg-acts .btn { height: 34px; padding: 0 14px; font-size: 13.5px; }
 @media (max-width: 760px) { .adm-abg-pic.wide { display: none; } }
+
+
+/* The first screen (Alex, 26 Nov, sample https://claude.ai/artifact/PAGZSPeozxrB9a1guyH2gU, "go, mind the frames and the
+   fields, symmetric and centred, all"): the photo with ROARME over two small pills side by side, Sign in and Sign up; a tap
+   slides the panel up from the foot (Auth.jsx .ax-sheet), the chevron over it or a slide down takes it away. Everything in
+   it is centred: titles, fields (the words in the middle, the same room each side), the mobile number, the boxes, links. */
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax { display: block !important; min-height: 100%; overflow: hidden; padding: 0 !important; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-intro { position: fixed; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 24px calc(env(safe-area-inset-bottom, 0px) + 54px); text-align: center; transition: opacity .35s ease, transform .45s cubic-bezier(.25, 1, .35, 1); }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-wm { display: flex; justify-content: center; margin: 0 0 22px; color: #fff; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-wm .wordmark b.wm { font-size: 44px; letter-spacing: .02em; color: #fff !important; text-shadow: 0 4px 30px rgba(0, 0, 0, .55); }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-acts { display: flex; justify-content: center; align-items: center; gap: 10px; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-b { width: 112px; height: 38px; padding: 0; border-radius: 19px; font-size: 13.5px; font-weight: 600; line-height: 1; font-family: inherit; color: #fff !important; border: 0 !important; cursor: pointer; transition: transform .15s ease; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-b:active { transform: scale(.96); }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-in { background: linear-gradient(180deg, #5cc3ff, #22a8f5) !important; box-shadow: 0 10px 30px rgba(30, 160, 240, .45), inset 0 1px 0 rgba(255, 255, 255, .45) !important; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-up { background: rgba(255, 255, 255, .14) !important; -webkit-backdrop-filter: blur(18px) saturate(1.3); backdrop-filter: blur(18px) saturate(1.3); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .32), 0 8px 24px rgba(0, 0, 0, .25) !important; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-back { width: auto; padding: 0 16px; margin-top: 12px; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax.open .ax-intro { opacity: 0; transform: translateY(-30px) scale(.97); pointer-events: none; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet { position: fixed; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: safe center; padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px + var(--kbh, 0px)); overflow-y: auto; overscroll-behavior: contain; transform: translateY(105%); visibility: hidden; transition: transform .5s cubic-bezier(.22, 1.12, .36, 1), visibility 0s .5s, padding-bottom .28s cubic-bezier(.2, .8, .2, 1); }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax.open .ax-sheet { transform: none; visibility: visible; transition: transform .5s cubic-bezier(.22, 1.12, .36, 1), visibility 0s, padding-bottom .28s cubic-bezier(.2, .8, .2, 1); }
+html.kb html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet { justify-content: flex-end; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-close { flex: none; width: 44px; height: 44px; margin: 0 0 10px; padding: 0; border-radius: 22px; display: grid; place-items: center; color: #fff; border: 0; cursor: pointer; background: rgba(255, 255, 255, .14); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card { flex: none; margin: 0 !important; width: min(380px, 100%); display: flex; flex-direction: column; align-items: stretch; text-align: center; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card :is(h1, .auth-sub, .auth-err, .auth-note, .auth-invite) { text-align: center !important; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .brand { display: flex; justify-content: center; }
+/* fields: the words in the middle, the same 50px each side so the sign at the right does not pull them off centre */
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .field .input { text-align: center; padding: 0 50px !important; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .field .input::placeholder { text-align: center; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 2px 0 16px; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-ptitle { color: rgba(255, 255, 255, .86); font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-ptitle em { font-style: normal; font-weight: 500; color: rgba(255, 255, 255, .55); margin-left: 6px; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .phone-field { display: flex; gap: 8px; width: 100%; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .phone-field > .input { height: 52px; border-radius: 14px; text-align: center; text-align-last: center; padding: 0 10px !important; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .phone-field > select.input { flex: 0 0 112px !important; width: 112px !important; min-width: 0 !important; -webkit-appearance: none; appearance: none; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .phone-field > select.input option { color: #111; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .phone-field > input.input { flex: 1 1 0 !important; width: auto !important; min-width: 0 !important; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-pnote { color: rgba(255, 255, 255, .6); font-size: 12px; line-height: 1.4; text-align: center; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .auth-checks { text-align: left; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .auth-links { flex-direction: column; justify-content: center !important; align-items: center; gap: 10px; flex-wrap: nowrap !important; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .auth-links > button { flex: none !important; min-width: 200px; }
+html[data-lite] html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax :is(.ax-intro, .ax-sheet) { transition: none !important; }
+@media (prefers-reduced-motion: reduce) { html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax :is(.ax-intro, .ax-sheet) { transition: none !important; } }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .phone-field > .ax-cc { position: relative; flex: 0 0 96px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 !important; font-size: 16px; cursor: pointer; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .ax-cc i { font-style: normal; font-size: 13px; opacity: .6; margin-top: -6px; }
+html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-phone .ax-cc select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }

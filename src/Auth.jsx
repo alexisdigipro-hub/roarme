@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { accounts, addingAccount, cancelAdd } from './accounts.js'
 import { USERNAME_RE, appUrl, cleanUsername, errText, supabase } from './lib.js'
 import { Wordmark } from './ui.jsx'
@@ -44,9 +44,16 @@ export function Auth() {
   const [agree, setAgree] = useState(false)
   const [news, setNews] = useState(false)
   const [nudge, setNudge] = useState(false)
+  // the first screen is the photo with ROARME and two buttons; Sign in or Sign up slides the panel up (Alex, 26 Nov)
+  const [shown, setShown] = useState(() => (invitedBy ? 'up' : null))
+  const show = (m) => { setMode(m); setErr(''); setNote(''); setShown(m) }
+  // the mobile number on sign-up, optional (Alex, 26 Nov); kept on the account and checked by SMS at the first entry
+  const [cc, setCc] = useState(COUNTRIES[0][0])
+  const [num, setNum] = useState('')
+  const swipe = useRef(null)
   // a Confirm link from the email that could not be used (emailLink.js)
   useEffect(() => {
-    const on = () => setErr('This link has expired or was used already. Sign in, or ask for a new email.')
+    const on = () => { setShown('in'); setMode('in'); setErr('This link has expired or was used already. Sign in, or ask for a new email.') }
     window.addEventListener('roarme-email-link', on)
     return () => window.removeEventListener('roarme-email-link', on)
   }, [])
@@ -60,9 +67,11 @@ export function Auth() {
         if (error) throw error
       } else if (mode === 'up') {
         if (password.length < 8) throw new Error('The password needs at least 8 characters.')
+        const phone = num.trim() ? toE164(cc, num) : ''
+        if (num.trim() && (!phone || phone.replace(/\D/g, '').length < 8)) throw new Error('Check the mobile number, or leave it empty.')
         if (!agree) { setNudge(true); setTimeout(() => setNudge(false), 700); throw new Error('Please agree to the Terms of Service and the Privacy Policy to continue.') }
         // when the person agreed, and whether they want the emails, kept on the account itself
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: appUrl(), data: { terms_at: new Date().toISOString(), news } } })
+        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: appUrl(), data: { terms_at: new Date().toISOString(), news, ...(phone ? { phone_pending: { cc, num: num.trim() } } : {}) } } })
         if (error) throw error
         if (!data.session) setNote('Almost there: open the link we sent to your email, then sign in here.')
       } else {
@@ -79,12 +88,20 @@ export function Auth() {
 
   // email and password, as RoarMe began (Alex, 14 Nov: the sign-in by a 6-digit email code is gone again)
   return (
-    <div className={`auth${bg ? ' auth-own' : ''}`} style={bg ? { '--auth-img': `url("${bg}")` } : undefined}>
-      {/* with the keyboard up the whole form stays in sight (Alex, 15 Nov: the keyboard covered Sign in): the whole
-          card sits just over the keyboard (styles.css, html.kb .auth), and its last row is scrolled into view once it settles */}
+    <div className={`auth ax${bg ? ' auth-own' : ''}${shown ? ' open' : ''}`} style={bg ? { '--auth-img': `url("${bg}")` } : undefined}>
+      <div className="ax-intro" aria-hidden={shown ? 'true' : undefined}>
+        <div className="ax-wm"><Wordmark /></div>
+        <div className="ax-acts">
+          <button type="button" className="ax-b ax-in" tabIndex={shown ? -1 : 0} onClick={() => show('in')}>Sign in</button>
+          <button type="button" className="ax-b ax-up" tabIndex={shown ? -1 : 0} onClick={() => show('up')}>Sign up</button>
+        </div>
+        {addingAccount() && accounts().length > 0 && <button type="button" className="ax-b ax-up ax-back" onClick={cancelAdd}>Back to Your Account</button>}
+      </div>
+      <div className="ax-sheet" onTouchStart={(e) => { swipe.current = { y: e.touches[0].clientY, top: e.currentTarget.scrollTop } }}
+        onTouchEnd={(e) => { const s0 = swipe.current; swipe.current = null; if (s0 && s0.top <= 0 && e.changedTouches[0].clientY - s0.y > 90 && !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName || '')) setShown(null) }}>
+        <button type="button" className="ax-close" aria-label="Back" onClick={() => setShown(null)}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></button>
       <form className="auth-card" onSubmit={submit} onFocus={(e) => { const f = e.currentTarget; if (e.target.tagName === 'INPUT') setTimeout(() => f.lastElementChild?.scrollIntoView({ block: 'end', behavior: 'smooth' }), 380) }}>
         <Brand />
-        <p className="auth-tag">Born to connect. Built to roar.</p>
         {invitedBy && mode !== 'forgot' && <p className="auth-invite"><b>@{invitedBy}</b> invited you to RoarMe. {mode === 'up' ? 'Create your account and your chat opens.' : 'Sign in and your chat opens.'}</p>}
         {/* the sign-in screen is only the fields and the buttons (Alex, 14 Nov: "take out Welcome back and the words under it") */}
         {mode !== 'in' && <h1>{mode === 'up' ? 'Create your account' : 'Forgot your password?'}</h1>}
@@ -94,7 +111,20 @@ export function Auth() {
           <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
           <i className="lgx-ico" aria-hidden="true">{MAIL_I}</i>
         </label>
-        {mode !== 'forgot' && <PwField label="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'up' ? 'new-password' : 'current-password'} placeholder={mode === 'up' ? 'Password, at least 8 characters' : 'Password'} />}
+        {mode !== 'forgot' && <PwField label="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'up' ? 'new-password' : 'current-password'} placeholder={mode === 'up' ? 'Password, 8 or more' : 'Password'} />}
+        {mode === 'up' && (
+          <div className="ax-phone">
+            <span className="ax-ptitle">Mobile number <em>optional</em></span>
+            <div className="phone-field">
+              {/* the country as its code only (+30), the list keeps the names */}
+              <label className="input ax-cc"><span>{`+${cc}`}</span><i aria-hidden="true">⌄</i>
+                <select value={cc} onChange={(e) => setCc(e.target.value)} aria-label="Country">{COUNTRIES.map(([c, n]) => <option key={c + n} value={c}>{`+${c} ${n}`}</option>)}</select>
+              </label>
+              <input className="input" type="tel" inputMode="tel" autoComplete="tel-national" value={num} onChange={(e) => setNum(e.target.value.replace(/[^\d\s+()-]/g, ''))} placeholder="Mobile number" />
+            </div>
+            <small className="ax-pnote">We send a 6-digit code by SMS, so your friends can find you.</small>
+          </div>
+        )}
         {err && <p className="auth-err">{err}</p>}
         {note && <p className="auth-note">{note}</p>}
         {mode === 'up' && (
@@ -119,6 +149,7 @@ export function Auth() {
           {mode !== 'in' && <button type="button" onClick={() => setMode('in')}>I have an account, sign in</button>}
         </div>
       </form>
+      </div>
     </div>
   )
 }
@@ -160,8 +191,10 @@ export function Onboarding({ user, onDone }) {
   // shown while Supabase's phone sign-in is on (Twilio Verify), checked with an SMS code, skippable
   const phoneOn = usePhoneAuth()
   const [made, setMade] = useState(null) // the profile, once written
-  const [cc, setCc] = useState(COUNTRIES[0][0])
-  const [num, setNum] = useState('')
+  // the number given on sign-up waits here, ready for its SMS code (Alex, 26 Nov)
+  const pending = user.user_metadata?.phone_pending
+  const [cc, setCc] = useState(() => (pending?.cc && COUNTRIES.some(([c]) => c === pending.cc) ? pending.cc : COUNTRIES[0][0]))
+  const [num, setNum] = useState(() => pending?.num || '')
   const [code, setCode] = useState('')
   const [username, setUsername] = useState(() => cleanUsername((user.email || '').split('@')[0]))
   const [free, setFree] = useState(null) // null not checked · true · false (taken)

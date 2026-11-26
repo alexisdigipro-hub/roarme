@@ -9263,3 +9263,12 @@ html[data-lite] .scroll .msg.flash .bubble { animation: mf-ring 2.3s ease-out !i
 .foot .foot-settings { -webkit-touch-callout: none; user-select: none; }
 html:root:root:root .menu.acc-menu > button > .av { width: 26px !important; height: 26px !important; min-width: 26px; max-width: 26px; flex: 0 0 26px !important; font-size: 10px; margin: 0; }
 html:root:root:root .menu.acc-menu > button > span:not(.av) { flex: 1 1 auto; min-width: 0; text-align: left; }
+
+/* A message of only a big RoarMoji or sticker with a reaction (Alex, 26 Nov, the lion at 00:25: the heart squeezed the
+   time's grey chip, "00:2 / 5"): under the picture, on one line at the message's own side, the reactions and then the
+   time's chip, which never wraps. */
+html:root:root:root:root:root:root .bubble.big-emoji { text-align: left; }
+html:root:root:root:root:root:root .msg.mine .bubble.big-emoji { text-align: right; }
+html:root:root:root:root:root:root .bubble.big-emoji > .rx.rx-in,
+html:root:root:root:root:root:root .msg.mine .bubble.big-emoji > .rx.rx-in { float: none !important; position: static !important; display: inline-flex; vertical-align: middle; margin: 2px 6px 0 0 !important; }
+html:root:root:root:root:root:root .bubble.big-emoji > .meta { display: inline-flex !important; align-items: center; gap: 3px; float: none !important; width: auto !important; margin: 2px 0 0 !important; white-space: nowrap; vertical-align: middle; }

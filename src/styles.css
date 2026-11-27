@@ -9415,3 +9415,6 @@ html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-leg
 html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-legal-body .legal :is(h3, .legal-lead) { color: #fff; }
 /* Back to Your Account as wide as Sign in and Sign up together, on one line (Alex, 27 Nov) */
 html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-b.ax-back { width: 268px; height: 44px; padding: 0 12px; margin-top: 10px; white-space: nowrap; }
+/* A list never slides sideways (Alex, 27 Nov, Contacts shifted left: "it spills over"): the rows reach a few pixels past the
+   list's sides (the 20px gutter of 26 Nov), which let the iPhone pan the list; every side list clips sideways now */
+html:root:root:root:root .side-scroll { overflow-x: hidden !important; overscroll-behavior-x: none; }

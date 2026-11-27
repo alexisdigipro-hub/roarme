@@ -1237,6 +1237,9 @@ export default function Chat({ me, setMe }) {
         g.dx = dx
         g.rowEl.style.transform = `translate3d(${Math.sign(dx) * m}px,0,0)`
         g.rowEl.style.opacity = a > g.w * ROW_FAR ? '.5' : '' // dimmed past the point where letting go turns the folder
+        // a tick as the buttons come out whole, and another past the point where letting go turns the folder (27 Nov)
+        const step = a > g.w * ROW_FAR ? 2 : a >= W ? 1 : 0
+        if (step !== (g.step || 0)) { if (step > (g.step || 0)) haptic(step === 2 ? 12 : 6); g.step = step }
         const acts = g.rowEl.parentElement?.querySelector('.row-acts')
         if (acts) { acts.style.transition = 'none'; acts.style.width = `${m}px` }
         return
@@ -1604,7 +1607,7 @@ export default function Chat({ me, setMe }) {
   const cHoldT = useRef(null)
   const cHoldAt = useRef(0)
   const cHoldShut = useRef(0)
-  const cHoldOpen = (key) => { cHoldAt.current = Date.now(); setCHold({ key, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }
+  const cHoldOpen = (key) => { cHoldAt.current = Date.now(); setCHold({ key, at: Date.now() }); haptic(12) }
   const cHoldClose = () => setCHold((h) => (h ? { ...h, out: true } : h))
   useEffect(() => {
     if (!cHold) return undefined
@@ -2377,6 +2380,7 @@ const OFFICIAL = <i className="official" title="Official RoarMe account" aria-la
 /* A message that is deleted dissolves and the ones under it close the gap (Alex, 12 Nov), before it leaves the list.
    back() puts it as it was if the deleting failed. */
 function vanish(ids) {
+  haptic(14) // a firmer tap as a message is taken away (27 Nov)
   const els = ids.map((id) => document.getElementById(`m-${id}`)).filter(Boolean)
   const back = () => els.forEach((el) => { el.classList.remove('msg-out', 'msg-out-go'); el.style.height = '' })
   if (!els.length || calm()) return { done: Promise.resolve(), back }
@@ -2902,6 +2906,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   const send = async ({ quiet = false, level = 0 } = {}) => {
     const body = prefs.autoEmoji ? swapEmoji(text.trim()) : text.trim()
     if (!body && !(editing && editFile)) return
+    haptic(6) // a soft tap as the message leaves (Alex, 27 Nov: micro-vibrations where there were none)
     setErr('')
     // while Encrypted Chat is on the text is locked here, before it leaves the device
     const kept = editing?.reply_to ? splitQuote(editing.body).quote : ''
@@ -3317,6 +3322,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
   }
 
   const react = async (m, emojiChar) => {
+    haptic(8)
     setMenu(null)
     const mine = reacts.find((r) => r.message_id === m.id && r.user_id === me.id)
     if (mine?.emoji === emojiChar) {
@@ -3411,7 +3417,7 @@ const Room = memo(function Room({ room, me, people, title, other, official = fal
     reloadSeal()
   }
   const textOf = (m) => (m.kind === 'system' ? previewText(m.body, 'system') : m.sealed && !m.body ? 'Encrypted message' : m.kind === 'image' ? 'Photo' : m.kind === 'voice' ? 'Voice message' : m.kind === 'file' ? (m.file?.round ? 'Video message' : `${isAudioFile(m.file) ? '🎵 ' : ''}${m.file?.name || 'File'}`) : m.reply_to ? splitQuote(m.body).rest : m.body)
-  const copy = async (s, what = 'Copied') => { try { await navigator.clipboard.writeText(s); toast(what) } catch { toast('Copy did not work here') } }
+  const copy = async (s, what = 'Copied') => { try { await navigator.clipboard.writeText(s); haptic(6); toast(what) } catch { toast('Copy did not work here') } }
   // the first web address written in a message (Alex, 9 Nov: Copy Link only when the message has one, and it copies that)
   const urlIn = (m) => { const t = textOf(m); return typeof t === 'string' ? (t.match(/\bhttps?:\/\/[^\s<>"')\]]+/i)?.[0] || '').replace(/[.,;:!?]+$/, '') : '' }
 

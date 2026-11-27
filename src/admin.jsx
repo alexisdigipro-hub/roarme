@@ -29,7 +29,7 @@ export function Admin() {
   const [tab, setTab] = useState('people')
   // a slide left or right goes to the next tab (Alex, 19 Nov)
   const admRef = useRef(null)
-  useTabSwipe(admRef, ['people', 'reports', 'errors', 'files', 'transfer', 'walls'], tab, setTab)
+  useTabSwipe(admRef, ['people', 'reports', 'errors', 'service', 'files', 'transfer', 'walls'], tab, setTab)
   const [users, setUsers] = useState(null)
   const [files, setFiles] = useState(null)
   const [more, setMore] = useState(false)
@@ -99,11 +99,12 @@ export function Admin() {
           <button type="button" className={tab === 'people' ? 'on' : ''} onClick={() => setTab('people')}>People</button>
           <button type="button" className={tab === 'reports' ? 'on' : ''} onClick={() => setTab('reports')}>Reports{openReports > 0 && <i className="adm-count">{openReports}</i>}</button>
           <button type="button" className={tab === 'errors' ? 'on' : ''} onClick={() => setTab('errors')}>Errors{newErrors > 0 && <i className="adm-count">{newErrors}</i>}</button>
+          <button type="button" className={tab === 'service' ? 'on' : ''} onClick={() => setTab('service')}>Service</button>
           <button type="button" className={tab === 'files' ? 'on' : ''} onClick={() => setTab('files')}>Files</button>
           <button type="button" className={tab === 'transfer' ? 'on' : ''} onClick={() => setTab('transfer')}>RoarTransfer</button>
           <button type="button" className={tab === 'walls' ? 'on' : ''} onClick={() => setTab('walls')}>Wallpapers</button>
         </Lens>
-        {tab !== 'walls' && tab !== 'reports' && tab !== 'errors' && <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : tab === 'transfer' ? 'File or person' : 'File, person or group'} /></label>}
+        {tab !== 'walls' && tab !== 'reports' && tab !== 'errors' && tab !== 'service' && <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : tab === 'transfer' ? 'File or person' : 'File, person or group'} /></label>}
       </div>
       {err && <p className="adm-err">{err}</p>}
 
@@ -161,6 +162,7 @@ export function Admin() {
       )}
       {tab === 'reports' && <AdminReports onCount={setOpenReports} blockedSet={blocked} onBlock={block} />}
       {tab === 'errors' && <AdminErrors onCount={setNewErrors} />}
+      {tab === 'service' && <AdminService blockedSet={blocked} onBlock={block} />}
       {tab === 'transfer' && <AdminTransfers q={s} />}
       {tab === 'walls' && <AdminWalls />}
       <p className="adm-note muted">Only you see this page. It shows who is on RoarMe and what files they sent (name, size, type, when), never what the messages or the files say.</p>
@@ -272,6 +274,156 @@ function AdminErrors({ onCount }) {
           </span>
         </div>
       ))}
+    </div>
+  )
+}
+
+/* Admin > Service and Backup (Alex, 27 Nov: "a button that does a general service when I press it ... and a button under
+   it that makes a backup"). Run Service asks roar_admin_service (supabase/admin-service.sql): security, attacks, fake
+   profiles, spam, health and the data, each a box with a green / yellow / red dot; an account it points at can be blocked
+   from its row; Clean Up takes away what is safe to take away. Claude's weekly look at the code writes its own run
+   (kind 'weekly'), shown under the boxes. Back Up Now copies every RoarMe table (roar_admin_backup); the newest ten stay,
+   one is made by itself every night, and each can be downloaded as one .json file. */
+const PUBLIC_OK = ['roar-avatars', 'roar-walls', 'roarref-share', 'roartransfer-brand']
+const SV_DOT = { ok: 'Green', warn: 'Worth a look', bad: 'Needs you' }
+function SvBox({ title, state, children }) {
+  return (
+    <div className={`adm-sv adm-sv-${state}`}>
+      <div className="adm-sv-h"><i className="adm-sv-dot" aria-label={SV_DOT[state]} /><b>{title}</b><small>{SV_DOT[state]}</small></div>
+      <div className="adm-sv-b">{children}</div>
+    </div>
+  )
+}
+const svWorst = (...xs) => (xs.includes('bad') ? 'bad' : xs.includes('warn') ? 'warn' : 'ok')
+function AdminService({ blockedSet, onBlock }) {
+  const [rep, setRep] = useState(null)
+  const [runs, setRuns] = useState(null)
+  const [busy, setBusy] = useState('')
+  const [err, setErr] = useState('')
+  const [note, setNote] = useState('')
+  const [backups, setBackups] = useState(null)
+  const loadRuns = () => supabase.rpc('roar_admin_service_runs').then(({ data, error }) => {
+    if (error) { setErr(errText(error)); return }
+    setRuns(data || [])
+    const last = (data || []).find((r) => r.kind === 'button')
+    if (last && !rep) setRep({ ...last.report, old: true })
+  })
+  const loadBackups = () => supabase.rpc('roar_admin_backups').then(({ data, error }) => { if (error) setErr(errText(error)); else setBackups(data || []) })
+  useEffect(() => { loadRuns(); loadBackups() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const run = async () => {
+    setBusy('run'); setErr(''); setNote('')
+    const { data, error } = await supabase.rpc('roar_admin_service')
+    setBusy('')
+    if (error) { setErr(errText(error)); return }
+    setRep(data); loadRuns()
+  }
+  const clean = async () => {
+    setBusy('clean')
+    const { data, error } = await supabase.rpc('roar_admin_service_clean')
+    setBusy('')
+    if (error) { setErr(errText(error)); return }
+    setNote(`Cleaned up: ${data.push} old notification records, ${data.errors} old errors.`)
+    run()
+  }
+  const backup = async () => {
+    setBusy('backup'); setErr('')
+    const { data, error } = await supabase.rpc('roar_admin_backup')
+    setBusy('')
+    if (error) { setErr(errText(error)); return }
+    setNote(`Backup made: ${data.tables} tables, ${data.rows.toLocaleString()} rows, ${fmtBytes(data.bytes)}.`)
+    loadBackups()
+  }
+  const download = async (b) => {
+    setBusy(`dl${b.id}`)
+    const { data, error } = await supabase.rpc('roar_admin_backup_get', { i: b.id })
+    setBusy('')
+    if (error || !data) { setErr(error ? errText(error) : 'That backup is gone.'); return }
+    const name = `roarme-backup-${new Date(b.at).toISOString().slice(0, 16).replace(/[:T]/g, '-')}.json`
+    const file = new File([JSON.stringify(data, null, 1)], name, { type: 'application/json' })
+    try {
+      if (window.matchMedia?.('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file] }); return }
+    } catch { return }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000)
+  }
+
+  const r = rep
+  const S = r?.security || {}, A = r?.attacks || {}, H = r?.health || {}, D = r?.data || {}, SP = r?.spam || {}
+  const openBuckets = (S.public_buckets || []).filter((b) => !PUBLIC_OK.includes(b))
+  const secState = (S.no_rls || []).length || openBuckets.length ? 'bad' : (S.loose_functions || []).length ? 'warn' : 'ok'
+  const atkState = (A.fast_senders || []).length || A.signups_hour >= 20 ? 'bad' : A.signups_day > Math.max(10, (A.signups_avg_day || 0) * 5) ? 'warn' : 'ok'
+  const fakeState = (r?.fake || []).some((f) => f.score >= 6) ? 'bad' : (r?.fake || []).length ? 'warn' : 'ok'
+  const spamState = (SP.same_text || []).length ? 'bad' : (SP.new_links || []).length ? 'warn' : 'ok'
+  const healthState = H.reports_old > 0 || (H.jobs_failed || []).length ? 'bad' : H.errors_new > 0 || H.reports_open > 0 ? 'warn' : 'ok'
+  const cleanable = (D.orphan_push || 0) + (D.old_seen_errors || 0)
+  const person = (x, why) => (
+    <div key={x.id + why} className="adm-sv-row">
+      <span><b data-raw="">{x.username ? `@${x.username}` : 'No username'}</b><small data-raw="">{why}</small></span>
+      {blockedSet.has(x.id) ? <em className="adm-tag">Blocked</em> : <button type="button" className="pill-btn danger" onClick={() => onBlock({ id: x.id, username: x.username }, true)}>Block</button>}
+    </div>
+  )
+  const weekly = (runs || []).find((x) => x.kind === 'weekly')
+
+  return (
+    <div className="adm-list adm-svc">
+      <div className="adm-sv-top">
+        <button type="button" className="btn btn-main adm-sv-run" disabled={!!busy} onClick={run}>{busy === 'run' ? 'Running…' : 'Run Service'}</button>
+        <small>{r ? `${r.old ? 'Last run' : 'Ran'} ${ago(r.at)}` : 'Security, attacks, fake profiles, spam and health, in one go.'}</small>
+      </div>
+      {err && <p className="adm-err">{err}</p>}
+      {note && <p className="adm-sv-note">{note}</p>}
+      {r && <>
+        <SvBox title="Security" state={secState}>
+          <p>{(S.no_rls || []).length ? `Tables without their rules: ${S.no_rls.join(', ')}` : 'Every table is behind its rules.'}</p>
+          <p>{(S.loose_functions || []).length ? `Functions to tighten: ${S.loose_functions.join(', ')}` : 'Every privileged function is locked to its place.'}</p>
+          <p>{openBuckets.length ? `Open file stores that should be closed: ${openBuckets.join(', ')}` : 'Only the stores meant to be open are open (profile pictures, wallpapers).'}</p>
+          <p>{S.admins} admin{S.admins === 1 ? '' : 's'}.</p>
+        </SvBox>
+        <SvBox title="Attacks" state={atkState}>
+          <p>Sign-ups: {A.signups_hour} in the last hour, {A.signups_day} today (usually {A.signups_avg_day} a day).</p>
+          {(A.fast_senders || []).length ? (A.fast_senders || []).map((x) => person(x, `${x.n} messages in the last hour`)) : <p>Nobody is sending at an unusual speed.</p>}
+        </SvBox>
+        <SvBox title="Fake profiles" state={fakeState}>
+          {(r.fake || []).length ? r.fake.map((x) => person(x, [!x.display_name && 'no name', x.unanswered > 0 && `${x.unanswered} of ${x.dms} chats never answered`, x.blocked_by > 0 && `blocked by ${x.blocked_by}`, x.reported > 0 && `reported ${x.reported}×`, `joined ${ago(x.created_at)}`].filter(Boolean).join(' · '))) : <p>No new account looks fake.</p>}
+        </SvBox>
+        <SvBox title="Spam" state={spamState}>
+          {(SP.same_text || []).map((x) => person(x, `the same words in ${x.rooms} chats today: “${x.body}”`))}
+          {(SP.new_links || []).map((x) => person(x, `a new account, ${x.n} links today`))}
+          {!(SP.same_text || []).length && !(SP.new_links || []).length && <p>No spam found today.</p>}
+        </SvBox>
+        <SvBox title="Health" state={healthState}>
+          <p>Errors from devices: {H.errors_new} new, {H.errors_week} this week.</p>
+          <p>Reports: {H.reports_open} waiting{H.reports_old ? `, ${H.reports_old} for over a day (the Terms promise 24 hours)` : ''}.</p>
+          <p>{(H.jobs_failed || []).length ? `Scheduled jobs that failed today: ${H.jobs_failed.map((j) => `${j.jobname} (${j.n})`).join(', ')}` : 'Every scheduled job ran fine today.'}</p>
+          <p>{H.blocked_accounts} blocked account{H.blocked_accounts === 1 ? '' : 's'}.</p>
+        </SvBox>
+        <SvBox title="Data" state={cleanable ? 'warn' : 'ok'}>
+          <p>{D.accounts} accounts ({D.accounts_week} this week) · {D.chats} chats · {Number(D.messages).toLocaleString()} messages ({D.messages_day} today)</p>
+          <p>Files {D.files_mb} MB · database {D.db_mb} MB</p>
+          {cleanable > 0
+            ? <div className="adm-sv-row"><span><b>{cleanable} things to clean up</b><small>{D.orphan_push} notification records of gone accounts, {D.old_seen_errors} old errors</small></span><button type="button" className="pill-btn" disabled={!!busy} onClick={clean}>{busy === 'clean' ? 'Cleaning…' : 'Clean Up'}</button></div>
+            : <p>Nothing left to clean up.</p>}
+        </SvBox>
+      </>}
+      <SvBox title="Weekly Code Check" state={weekly ? (weekly.report?.state || 'ok') : 'warn'}>
+        {weekly
+          ? <><p>Last check {ago(weekly.at)}.</p>{(weekly.report?.lines || []).map((l, i) => <p key={i} data-raw="">{l}</p>)}</>
+          : <p>Every Sunday evening Claude checks the code: the smoke test, the stylesheets, security in the code and the libraries, and fixes what it finds. The first check has not run yet.</p>}
+      </SvBox>
+
+      <div className="adm-sv-bk">
+        <div className="adm-sv-top">
+          <button type="button" className="btn adm-sv-run" disabled={!!busy} onClick={backup}>{busy === 'backup' ? 'Backing up…' : 'Back Up Now'}</button>
+          <small>Every RoarMe table, kept in the database (the newest 10), one made by itself every night. Supabase keeps its own daily backups too.</small>
+        </div>
+        {(backups || []).map((b) => (
+          <div key={b.id} className="adm-sv-row">
+            <span><b>{new Date(b.at).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</b><small>{b.kind === 'auto' ? 'Nightly' : 'By hand'} · {b.tables} tables · {Number(b.rows).toLocaleString()} rows · {fmtBytes(b.bytes)}</small></span>
+            <button type="button" className="pill-btn" disabled={!!busy} onClick={() => download(b)}>{busy === `dl${b.id}` ? 'Preparing…' : 'Download'}</button>
+          </div>
+        ))}
+        {backups && !backups.length && <p className="muted">No backups yet.</p>}
+      </div>
     </div>
   )
 }

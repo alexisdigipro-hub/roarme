@@ -9423,3 +9423,9 @@ html:root:root:root:root .side-scroll { overflow-x: hidden !important; overscrol
    with the finger, the wheel or the trackpad, but no bar or indicator is drawn at its side */
 html:root *, html:root { scrollbar-width: none !important; -ms-overflow-style: none; }
 html:root *::-webkit-scrollbar, html:root::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; background: transparent !important; }
+
+/* The circles you pick with are seen (Alex, 27 Nov, Select chats: "they are white, put them in the accent; everywhere"):
+   an empty pick circle has a ring in the accent, wherever one picks (chats, messages, people, folders' chats, roles, mail) */
+html:root:root:root:root:root:root :is(.tick, .nc-tick):not(.on), html:root:root:root:root:root:root .rmx-row:not(.rmx-checked) .rmx-check { border: 2px solid var(--halo, var(--accent)) !important; background: transparent; }
+html:root:root:root:root:root:root .rma-tick:not(.on) { box-shadow: inset 0 0 0 2px var(--halo, var(--accent)) !important; }
+html:root:root:root:root:root:root .tick.on { border-color: transparent !important; background: var(--halo, var(--accent)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 8.5 2.5 2.5L12 5.5' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat !important; }

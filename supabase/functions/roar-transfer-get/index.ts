@@ -31,11 +31,14 @@ const SELF = `${Deno.env.get('SUPABASE_URL')}/functions/v1/roar-transfer-get`
 // deno-lint-ignore no-explicit-any
 async function brandOf(sb: any, id: string | null) {
   if (!id) return null
-  const { data: p } = await sb.from('roar_transfer_pro').select('until, brand_name, brand_logo, brand_bgs').eq('user_id', id).maybeSingle()
-  if (!p || !(p.brand_name || p.brand_logo || (p.brand_bgs || []).length)) return null
+  const { data: p } = await sb.from('roar_transfer_pro').select('*').eq('user_id', id).maybeSingle()
+  const st = p?.brand_style || {}
+  if (!p || !(p.brand_name || p.brand_logo || (p.brand_bgs || []).length || st.accent)) return null
   const { data: a } = await sb.from('roar_admins').select('user_id').eq('user_id', id).maybeSingle()
   if (!a && p.until && new Date(p.until).getTime() <= Date.now()) return null
-  return { name: p.brand_name || '', logo: p.brand_logo || '', bgs: p.brand_bgs || [] }
+  // their look (supabase/transfer-brand-style.sql): colour, how solid the card is, the face; not whether they wear it
+  const style = { accent: st.accent || '', glass: st.glass ?? null, font: st.font || '' }
+  return { name: p.brand_name || '', logo: p.brand_logo || '', bgs: p.brand_bgs || [], style }
 }
 // One last time (Alex, 26 Oct; supabase/transfer-grace.sql): a link sent from a Free account (its files under free/<id>/
 // or week/<id>/; not Pro, not FastTransfer) is kept GRACE past its end, quietly, and someone who makes a NEW account in

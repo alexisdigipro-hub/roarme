@@ -98,7 +98,6 @@ html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.men
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.menu, .menu-list, .rx-pick, .mention-pick, .toast, .vw-menu, .msg-menu, .modal, .as-sheet, .te-sheet) :where(button, a, span, b, strong, small, p, label, h2, h3) { color: inherit !important; }
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.menu, .menu-list, .msg-menu, .modal, .as-sheet) .danger { color: var(--fr-danger) !important; }
 
-
 /* Settings' boxes and the profile card in the bars' glass (Alex, 14 Nov: "the frames in Settings like Create New Call") */
 html:root:root:root:root[data-frost][data-glass][data-skin][data-theme] :is(.set-box, .set-me) {
   background: var(--lg) !important; border: 1px solid var(--lg-rim) !important; box-shadow: var(--lg-shadow) !important;

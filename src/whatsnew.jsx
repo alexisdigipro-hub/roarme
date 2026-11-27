@@ -21,6 +21,7 @@ export const NEWS = [
         'Pulling down to refresh no longer asks for your passcode or Face ID again.',
         'The folders at the top share the bar evenly, each one centred in its own part.',
         'Calls: hold a call and three round buttons appear on it, Voice Call, Video Call and Message, the call blurred behind them.',
+        'Calls: each call shows the name and what happened, centred; the (i) slides in a glass card over that call with its kind, who, the date, the time and how long.',
         'A new first screen: your photo with ROARME and two buttons, Sign in and Sign up; the form slides up from the foot, everything centred. Sign up can take your mobile number too (optional), checked with an SMS code the first time you come in.',
         'Terms of Service and Privacy Policy on the sign-up page are light blue and easy to read.',
         'Settings > General > Reset All Settings, at the foot of the page: the look, notifications and sounds, chats, data and mail settings go back to how RoarMe starts. Your folders, chats, contacts and accounts stay.',

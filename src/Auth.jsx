@@ -5,6 +5,7 @@ import { Wordmark } from './ui.jsx'
 import { pendingInvite } from './invite.jsx'
 import { COUNTRIES, PhoneField, smsErr, toE164, usePhoneAuth } from './phone.jsx'
 import { useAuthBg } from './authBg.js'
+import { LegalDoc, legalTitle } from './legal.jsx'
 
 // the signs inside the fields (Alex, 21 Nov): an envelope, and the eye that shows or hides the password
 const MAIL_I = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m4 7 8 6 8-6" /></svg>
@@ -51,6 +52,8 @@ export function Auth() {
   const [cc, setCc] = useState(COUNTRIES[0][0])
   const [num, setNum] = useState('')
   const swipe = useRef(null)
+  // the Terms and the Privacy Policy open over the page and close back to it (Alex, 26 Nov: "it throws you somewhere you cannot come back from")
+  const [legal, setLegal] = useState(null)
   // a Confirm link from the email that could not be used (emailLink.js)
   useEffect(() => {
     const on = () => { setShown('in'); setMode('in'); setErr('This link has expired or was used already. Sign in, or ask for a new email.') }
@@ -104,7 +107,7 @@ export function Auth() {
         <Brand />
         {invitedBy && mode !== 'forgot' && <p className="auth-invite"><b>@{invitedBy}</b> invited you to RoarMe. {mode === 'up' ? 'Create your account and your chat opens.' : 'Sign in and your chat opens.'}</p>}
         {/* the sign-in screen is only the fields and the buttons (Alex, 14 Nov: "take out Welcome back and the words under it") */}
-        {mode !== 'in' && <h1>{mode === 'up' ? 'Create your account' : 'Forgot your password?'}</h1>}
+        {mode !== 'in' && <h1>{mode === 'up' ? 'Create your RoarAccount' : 'Forgot your password?'}</h1>}
         {mode === 'forgot' && <p className="auth-sub">Type your email and we will send you a link.</p>}
         <label className="field">
           <span>Email</span>
@@ -114,7 +117,7 @@ export function Auth() {
         {mode !== 'forgot' && <PwField label="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'up' ? 'new-password' : 'current-password'} placeholder={mode === 'up' ? 'Password, 8 or more' : 'Password'} />}
         {mode === 'up' && (
           <div className="ax-phone">
-            <span className="ax-ptitle">Mobile number <em>optional</em></span>
+            <span className="ax-ptitle">OPTIONAL</span>
             <div className="phone-field">
               {/* the country as its code only (+30), the list keeps the names */}
               <label className="input ax-cc"><span>{`+${cc}`}</span><i aria-hidden="true">⌄</i>
@@ -122,7 +125,7 @@ export function Auth() {
               </label>
               <input className="input" type="tel" inputMode="tel" autoComplete="tel-national" value={num} onChange={(e) => setNum(e.target.value.replace(/[^\d\s+()-]/g, ''))} placeholder="Mobile number" />
             </div>
-            <small className="ax-pnote">We send a 6-digit code by SMS, so your friends can find you.</small>
+            <small className="ax-pnote">So friends can find you, confirmed by SMS.</small>
           </div>
         )}
         {err && <p className="auth-err">{err}</p>}
@@ -132,12 +135,12 @@ export function Auth() {
             <label className={`auth-check${nudge ? ' nudge' : ''}`}>
               <input type="checkbox" checked={agree} onChange={(e) => { setAgree(e.target.checked); if (e.target.checked) setErr('') }} />
               <span className="auth-box" aria-hidden="true" />
-              <span className="auth-check-t">I agree to the <a href={`${appUrl()}?legal=terms`} target="_blank" rel="noreferrer">Terms of Service</a> and the <a href={`${appUrl()}?legal=privacy`} target="_blank" rel="noreferrer">Privacy Policy</a>, with no tolerance for objectionable content or abusive users.</span>
+              <span className="auth-check-t">I agree to the <a href={`${appUrl()}?legal=terms`} onClick={(e) => { e.preventDefault(); setLegal('terms') }}>Terms</a> and the <a href={`${appUrl()}?legal=privacy`} onClick={(e) => { e.preventDefault(); setLegal('privacy') }}>Privacy Policy</a>. No abuse tolerated.</span>
             </label>
             <label className="auth-check">
               <input type="checkbox" checked={news} onChange={(e) => setNews(e.target.checked)} />
               <span className="auth-box" aria-hidden="true" />
-              <span className="auth-check-t">Send me news and updates from RoarMe by email.</span>
+              <span className="auth-check-t">Send me RoarMe news by email.</span>
             </label>
           </div>
         )}
@@ -150,6 +153,15 @@ export function Auth() {
         </div>
       </form>
       </div>
+      {legal && (
+        <div className="ax-legal" role="dialog" aria-label={legalTitle(legal)}>
+          <div className="ax-legal-head">
+            <strong>{legalTitle(legal)}</strong>
+            <button type="button" className="ax-close" aria-label="Close" onClick={() => setLegal(null)}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+          </div>
+          <div className="ax-legal-body"><LegalDoc doc={legal} /></div>
+        </div>
+      )}
     </div>
   )
 }

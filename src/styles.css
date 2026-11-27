@@ -9413,3 +9413,5 @@ html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-leg
 html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-legal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px max(20px, env(safe-area-inset-left, 0px)) calc(env(safe-area-inset-bottom, 0px) + 30px); }
 html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-legal-body .legal { max-width: 640px; margin: 0 auto; color: rgba(255, 255, 255, .86); font-size: 14.5px; line-height: 1.55; }
 html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-legal-body .legal :is(h3, .legal-lead) { color: #fff; }
+/* Back to Your Account as wide as Sign in and Sign up together, on one line (Alex, 27 Nov) */
+html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-b.ax-back { width: 268px; height: 44px; padding: 0 12px; margin-top: 10px; white-space: nowrap; }

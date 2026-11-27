@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { SUPABASE_KEY, SUPABASE_URL, errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, OnTop, svg } from './ui.jsx'
 import { getPrefs } from './prefs.js'
@@ -420,13 +419,18 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
     clearTimeout(holdT.current)
     if (editing || armed || e.touches.length !== 1) return
     const { clientX: x, clientY: y } = e.touches[0]
-    const box = e.currentTarget.getBoundingClientRect()
-    holdT.current = setTimeout(() => { holdAt.current = Date.now(); setHold({ other, room: r.room_id, x, y, box, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }, 480)
+    holdT.current = setTimeout(() => { holdAt.current = Date.now(); setHold({ id: r.id, other, room: r.room_id, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }, 480)
   }
   const holdStop = () => clearTimeout(holdT.current)
   // the buttons leave as they came (Alex, 27 Nov: "an animation when they come and go"): .out for 220 ms, then gone
   const [holdOut, setHoldOut] = useState(false)
   const closeHold = () => { setHoldOut(true); setTimeout(() => { setHold(null); setHoldOut(false) }, 220) }
+  useEffect(() => {
+    if (!hold) return undefined
+    const off = (e) => { if (Date.now() - hold.at < 450) return; if (!e.target.closest?.('.call-cap.hold')) { infoShut.current = Date.now(); closeHold() } }
+    document.addEventListener('pointerdown', off, true)
+    return () => document.removeEventListener('pointerdown', off, true)
+  }, [hold]) // eslint-disable-line react-hooks/exhaustive-deps
   // the (i) slides a glass layer over that one call with what it was: kind, who, date, time, length (Alex, 27 Nov);
   // a tap anywhere else slides it back out to the right
   const [info, setInfoRaw] = useState(null)
@@ -441,7 +445,7 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
   }
   useEffect(() => {
     if (!info) return undefined
-    const off = (e) => { if (!e.target.closest?.('.call-sheet, .call-info')) { infoShut.current = Date.now(); setInfo(null) } }
+    const off = (e) => { if (!e.target.closest?.('.call-cap.info, .call-info')) { infoShut.current = Date.now(); setInfo(null) } }
     document.addEventListener('pointerdown', off, true)
     return () => document.removeEventListener('pointerdown', off, true)
   }, [info]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -499,10 +503,10 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
         const dur = r.answered_at && r.ended_at ? mmss(new Date(r.ended_at) - new Date(r.answered_at)) : ''
         const label = missed ? 'Missed' : out ? (r.status === 'answered' ? 'Outgoing' : r.status === 'declined' ? 'Declined' : r.status === 'busy' ? 'Busy' : 'No answer') : r.status === 'declined' ? 'Declined' : 'Incoming'
         return (
-          <div key={r.id} className={`call-row${editing ? ' editing' : ''}${armed === r.id ? ' armed' : ''}${!editing && (armed === r.id || drag?.id === r.id) ? ' slid' : ''}${drag?.id === r.id ? ' dragging' : ''}`}
+          <div key={r.id} className={`call-row${hold?.id === r.id || info === r.id || infoOut === r.id ? ' has-cap' : ''}${editing ? ' editing' : ''}${armed === r.id ? ' armed' : ''}${!editing && (armed === r.id || drag?.id === r.id) ? ' slid' : ''}${drag?.id === r.id ? ' dragging' : ''}`}
             style={!editing ? { '--slide': `${drag?.id === r.id ? drag.dx : armed === r.id ? -84 : 0}px` } : undefined}
             onTouchStart={(e) => { tStart(r)(e); holdStart(r, other)(e) }} onTouchMove={(e) => { holdStop(); tMove(e) }} onTouchEnd={() => { holdStop(); tEnd() }} onTouchCancel={() => { holdStop(); tEnd() }}
-            onContextMenu={(e) => { if (editing) return; e.preventDefault(); holdAt.current = Date.now(); setHold({ other, room: r.room_id, x: e.clientX, y: e.clientY, box: e.currentTarget.getBoundingClientRect(), at: Date.now() }) }}>
+            onContextMenu={(e) => { if (editing) return; e.preventDefault(); holdAt.current = Date.now(); setHold({ id: r.id, other, room: r.room_id, at: Date.now() }) }}>
           {editing && <button type="button" className="call-minus" onClick={() => setArmed((a) => (a === r.id ? null : r.id))} aria-label="Delete this call" title="Delete this call"><i /></button>}
           <button type="button" className="room call-log" onClick={() => { if (Date.now() - holdAt.current < 700 || Date.now() - infoShut.current < 500) return; if (editing || armed) setArmed(null); else onCall(other, r.room_id, r.video) }} title={r.video ? 'Video call back' : 'Call back'}>
             <Avatar src={other.avatar_url} name={nameOf(other)} size={48} />
@@ -512,8 +516,17 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
           </button>
           {/* the person's page (Alex, 19 Nov, from the iPhone's Phone app: an (i) at the right of each call) */}
           {!editing && onInfo && <button type="button" className="call-info" onClick={(e) => { e.stopPropagation(); setArmed(null); setInfo((v) => (v === r.id ? null : r.id)) }} aria-label={`About ${nameOf(other)}`} title="Info"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25" /><path d="M12 10.8v6M12 7.6v.1" strokeWidth="1.9" /></svg></button>}
+          {/* the long press: a glass capsule grows out of the (i) to the picture with Voice, Video, Message and the contact (Alex, 27 Nov, B) */}
+          {hold?.id === r.id && (
+            <div className={`call-cap hold${holdOut ? ' out' : ''}`} onClick={(e) => e.stopPropagation()}>
+              <button type="button" className="round" aria-label="Voice Call" title="Voice Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, false) }}>{I.phone}</button>
+              <button type="button" className="round" aria-label="Video Call" title="Video Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, true) }}>{I.video}</button>
+              <button type="button" className="round" aria-label="Message" title="Message" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); window.dispatchEvent(new CustomEvent('roarme-dm', { detail: { id: hold.other.id } })) }}>{I.chats}</button>
+              <button type="button" className="round" aria-label="Contact" title="Contact" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: hold.other.id } })) }}>{I.person}</button>
+            </div>
+          )}
           {(info === r.id || infoOut === r.id) && (
-            <div className={`call-sheet${infoOut === r.id ? ' out' : ''}`} onClick={(e) => e.stopPropagation()}>
+            <div className={`call-cap info${infoOut === r.id ? ' out' : ''}`} onClick={(e) => e.stopPropagation()}>
               <span className="cs-line"><b>{r.video ? 'Video call' : 'Voice call'}</b>{` · ${out ? 'to' : 'from'} ${nameOf(other)}`}</span>
               <span className="cs-line">{new Date(r.started_at).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}{' · '}{new Date(r.started_at).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}{' · '}{dur ? `${dur}` : label}</span>
             </div>
@@ -524,16 +537,6 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
         )
       })}
       </div>
-      {hold && createPortal(
-        <div className={`call-hold-back${holdOut ? ' out' : ''}`} onClick={() => { if (Date.now() - hold.at > 450) closeHold() }} onContextMenu={(e) => e.preventDefault()}>
-          {/* three round buttons in the middle of that very call, the call blurred under them (Alex, 27 Nov) */}
-          <div className={`call-hold-pop${holdOut ? ' out' : ''}`} onClick={(e) => e.stopPropagation()}
-            style={{ left: hold.box.left, top: hold.box.top, width: hold.box.width, height: hold.box.height }}>
-            <button type="button" className="round" aria-label="Voice Call" title="Voice Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, false) }}>{I.phone}</button>
-            <button type="button" className="round" aria-label="Video Call" title="Video Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, true) }}>{I.video}</button>
-            <button type="button" className="round" aria-label="Message" title="Message" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); window.dispatchEvent(new CustomEvent('roarme-dm', { detail: { id: hold.other.id } })) }}>{I.chats}</button>
-          </div>
-        </div>, document.body)}
     </div>
   )
 }

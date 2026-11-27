@@ -9418,3 +9418,8 @@ html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-b.a
 /* A list never slides sideways (Alex, 27 Nov, Contacts shifted left: "it spills over"): the rows reach a few pixels past the
    list's sides (the 20px gutter of 26 Nov), which let the iPhone pan the list; every side list clips sideways now */
 html:root:root:root:root .side-scroll { overflow-x: hidden !important; overscroll-behavior-x: none; }
+
+/* No scroll bars anywhere (Alex, 27 Nov: "I don't want to see a scroll bar, anywhere"): every list and page still scrolls,
+   with the finger, the wheel or the trackpad, but no bar or indicator is drawn at its side */
+html:root *, html:root { scrollbar-width: none !important; -ms-overflow-style: none; }
+html:root *::-webkit-scrollbar, html:root::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; background: transparent !important; }

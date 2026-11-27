@@ -1599,6 +1599,20 @@ export default function Chat({ me, setMe }) {
     return all.sort((x, y) => (y.fav - x.fav) || (contactSort === 'name' ? abc(x, y) : (y.seen - x.seen) || abc(x, y)))
   }, [book, bookGroup, bookPeople, contacts, people, favs, cq, contactSort])
   const [contactsMenu, setContactsMenu] = useState('') // Contacts' ⋯ ('sort') or + ('add') menu open
+  // a long press on a contact: the calls' capsule of round buttons over the row (Alex, 27 Nov)
+  const [cHold, setCHold] = useState(null) // { key, at, out }
+  const cHoldT = useRef(null)
+  const cHoldAt = useRef(0)
+  const cHoldShut = useRef(0)
+  const cHoldOpen = (key) => { cHoldAt.current = Date.now(); setCHold({ key, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }
+  const cHoldClose = () => setCHold((h) => (h ? { ...h, out: true } : h))
+  useEffect(() => {
+    if (!cHold) return undefined
+    if (cHold.out) { const t = setTimeout(() => setCHold(null), 220); return () => clearTimeout(t) }
+    const off = (e) => { if (Date.now() - cHold.at < 450) return; if (!e.target.closest?.('.call-cap.hold')) { cHoldShut.current = Date.now(); cHoldClose() } }
+    document.addEventListener('pointerdown', off, true)
+    return () => document.removeEventListener('pointerdown', off, true)
+  }, [cHold])
   const cardPerson = card ? people[card] : null
   const showTasks = (v) => { setTasksOpen(v); try { localStorage.setItem('roarme-tasks', v ? '1' : '0') } catch { /* private window */ } }
   // on a phone the swipe runs on through the bar at the foot (Alex, 19 Oct): Contacts · Calls · Messages and its folders ·
@@ -1996,7 +2010,10 @@ export default function Chat({ me, setMe }) {
             )}
             <div className={`rooms contacts-list${cq.trim() ? ' searching' : ''}`}>
             {cRows.map((x) => (
-              <div key={x.key} className="room contact" role="button" tabIndex={0} onClick={() => (x.e ? setBookOpen(x.e.id) : setCard(x.p.id))} onKeyDown={(ev) => { if (ev.key === 'Enter') { if (x.e) setBookOpen(x.e.id); else setCard(x.p.id) } }}>
+              <div key={x.key} className={`room contact${cHold?.key === x.key ? ' has-cap' : ''}`} role="button" tabIndex={0}
+                onTouchStart={() => { clearTimeout(cHoldT.current); cHoldT.current = setTimeout(() => cHoldOpen(x.key), 480) }} onTouchMove={() => clearTimeout(cHoldT.current)} onTouchEnd={() => clearTimeout(cHoldT.current)} onTouchCancel={() => clearTimeout(cHoldT.current)}
+                onContextMenu={(e) => { e.preventDefault(); cHoldOpen(x.key) }}
+                onClick={() => { if (Date.now() - cHoldAt.current < 700 || Date.now() - cHoldShut.current < 500) return; if (x.e) setBookOpen(x.e.id); else setCard(x.p.id) }} onKeyDown={(ev) => { if (ev.key === 'Enter') { if (x.e) setBookOpen(x.e.id); else setCard(x.p.id) } }}>
                 <Avatar src={x.e?.photo_url || x.p?.avatar_url} name={x.name} online={x.p ? dotOf(x.p) : undefined} size={prefs.listPreview ? 54 : 48} />
                 <span className="room-main">
                   <span className="room-top"><strong>{x.name}</strong></span>
@@ -2004,6 +2021,20 @@ export default function Chat({ me, setMe }) {
                     ? [x.e && (x.e.job_title || x.e.company) ? [x.e.job_title, x.e.company].filter(Boolean).join(' · ') : (x.p.username ? `@${x.p.username}` : ''), statusOf(x.p) || lastSeenText(x.p)].filter(Boolean).join(' · ')
                     : [x.e.job_title, x.e.company].filter(Boolean).join(' · ') || x.e.phones?.[0]?.value || x.e.emails?.[0]?.value || ''}</span></span>
                 </span>
+                {cHold?.key === x.key && (() => {
+                  const go = (fn) => (e) => { e.stopPropagation(); if (Date.now() - cHold.at < 450) return; setCHold(null); fn() }
+                  const tel = x.e?.phones?.[0]?.value
+                  return (
+                    <div className={`call-cap hold${cHold.out ? ' out' : ''}`} onClick={(e) => e.stopPropagation()}>
+                      {x.p ? <>
+                        <button type="button" className="round" aria-label="Voice Call" title="Voice Call" onClick={go(() => startCall(x.p, directWith(x.p), false))}>{I.phoneHeavy}</button>
+                        <button type="button" className="round" aria-label="Video Call" title="Video Call" onClick={go(() => startCall(x.p, directWith(x.p), true))}>{I.videoHeavy}</button>
+                        <button type="button" className="round" aria-label="Message" title="Message" onClick={go(() => chatWith(x.p))}>{I.chats}</button>
+                      </> : tel ? <button type="button" className="round" aria-label="Phone Call" title="Phone Call" onClick={go(() => { location.href = `tel:${tel.replace(/[^\d+]/g, '')}` })}>{I.phoneHeavy}</button> : null}
+                      <button type="button" className="round" aria-label="Contact" title="Contact" onClick={go(() => (x.e ? setBookOpen(x.e.id) : setCard(x.p.id)))}>{I.person}</button>
+                    </div>
+                  )
+                })()}
               </div>
             ))}
             </div>

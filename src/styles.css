@@ -9535,3 +9535,8 @@ html:root:root:root:root:root:root:root:root:root .calls-list .call-st { margin-
 html:root:root:root:root:root:root:root .contacts-list .contact:active,
 html:root:root:root:root:root:root:root .contacts-list .contact:is(.pressing, .held) { scale: 1 !important; transform: none !important; box-shadow: none !important; outline: none !important; background-color: color-mix(in srgb, currentColor 7%, transparent) !important; border-radius: 16px; }
 .contacts-list .contact, .contacts-list .contact * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* The calls' long-press capsule on a contact too (Alex, 27 Nov) */
+html:root:root:root:root:root:root:root:root .contacts-list .contact { position: relative; overflow: visible !important; content-visibility: visible; }
+html:root:root:root:root:root:root:root:root .contacts-list .contact.has-cap { z-index: 3; }
+html:root:root:root:root:root:root:root:root .contacts-list .contact.has-cap > .room-main { opacity: 0; transition: opacity .18s; }

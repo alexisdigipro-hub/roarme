@@ -424,6 +424,24 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
     holdT.current = setTimeout(() => { holdAt.current = Date.now(); setHold({ other, room: r.room_id, x, y, box, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }, 480)
   }
   const holdStop = () => clearTimeout(holdT.current)
+  // the (i) slides a glass layer over that one call with what it was: kind, who, date, time, length (Alex, 27 Nov);
+  // a tap anywhere else slides it back out to the right
+  const [info, setInfoRaw] = useState(null)
+  const [infoOut, setInfoOut] = useState(null)
+  const infoRef = useRef(null); infoRef.current = info
+  const infoShut = useRef(0) // the tap that closes the layer does not also call back
+  const setInfo = (f) => {
+    const cur = infoRef.current
+    const next = typeof f === 'function' ? f(cur) : f
+    if (cur && cur !== next) { setInfoOut(cur); setTimeout(() => setInfoOut((o) => (o === cur ? null : o)), 320) }
+    setInfoRaw(next)
+  }
+  useEffect(() => {
+    if (!info) return undefined
+    const off = (e) => { if (!e.target.closest?.('.call-sheet, .call-info')) { infoShut.current = Date.now(); setInfo(null) } }
+    document.addEventListener('pointerdown', off, true)
+    return () => document.removeEventListener('pointerdown', off, true)
+  }, [info]) // eslint-disable-line react-hooks/exhaustive-deps
   const tEnd = () => {
     const s = slide.current
     slide.current = null
@@ -483,15 +501,20 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
             onTouchStart={(e) => { tStart(r)(e); holdStart(r, other)(e) }} onTouchMove={(e) => { holdStop(); tMove(e) }} onTouchEnd={() => { holdStop(); tEnd() }} onTouchCancel={() => { holdStop(); tEnd() }}
             onContextMenu={(e) => { if (editing) return; e.preventDefault(); holdAt.current = Date.now(); setHold({ other, room: r.room_id, x: e.clientX, y: e.clientY, box: e.currentTarget.getBoundingClientRect(), at: Date.now() }) }}>
           {editing && <button type="button" className="call-minus" onClick={() => setArmed((a) => (a === r.id ? null : r.id))} aria-label="Delete this call" title="Delete this call"><i /></button>}
-          <button type="button" className="room call-log" onClick={() => { if (Date.now() - holdAt.current < 700) return; if (editing || armed) setArmed(null); else onCall(other, r.room_id, r.video) }} title={r.video ? 'Video call back' : 'Call back'}>
+          <button type="button" className="room call-log" onClick={() => { if (Date.now() - holdAt.current < 700 || Date.now() - infoShut.current < 500) return; if (editing || armed) setArmed(null); else onCall(other, r.room_id, r.video) }} title={r.video ? 'Video call back' : 'Call back'}>
             <Avatar src={other.avatar_url} name={nameOf(other)} size={48} />
-            <span className="room-main">
-              <span className="room-top"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong><small>{new Date(r.started_at).toLocaleDateString(locale(), { day: 'numeric', month: 'numeric', year: '2-digit' })}</small></span>
-              <span className="room-bottom"><span className="room-prev"><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}{dur && ` (${dur})`}</span></span>
-            </span>
+            {/* the name alone, in the middle of the row's height; what happened at the right, also in the middle (Alex, 27 Nov) */}
+            <span className="room-main call-name"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong></span>
+            <span className={`call-st${missed ? ' missed' : ''}`}><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}</span>
           </button>
           {/* the person's page (Alex, 19 Nov, from the iPhone's Phone app: an (i) at the right of each call) */}
-          {!editing && onInfo && <button type="button" className="call-info" onClick={() => { setArmed(null); onInfo(other, r.room_id) }} aria-label={`About ${nameOf(other)}`} title="Info"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25" /><path d="M12 10.8v6M12 7.6v.1" strokeWidth="1.9" /></svg></button>}
+          {!editing && onInfo && <button type="button" className="call-info" onClick={(e) => { e.stopPropagation(); setArmed(null); setInfo((v) => (v === r.id ? null : r.id)) }} aria-label={`About ${nameOf(other)}`} title="Info"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25" /><path d="M12 10.8v6M12 7.6v.1" strokeWidth="1.9" /></svg></button>}
+          {(info === r.id || infoOut === r.id) && (
+            <div className={`call-sheet${infoOut === r.id ? ' out' : ''}`} onClick={(e) => e.stopPropagation()}>
+              <span className="cs-line"><b>{r.video ? 'Video call' : 'Voice call'}</b>{` · ${out ? 'to' : 'from'} ${nameOf(other)}`}</span>
+              <span className="cs-line">{new Date(r.started_at).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}{' · '}{new Date(r.started_at).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}{' · '}{dur ? `${dur}` : label}</span>
+            </div>
+          )}
           {editing && armed === r.id && <button type="button" className="call-del-go" disabled={busy} onClick={() => { setArmed(null); hide([r.id]) }}>Delete</button>}
           {!editing && (armed === r.id || drag?.id === r.id) && <button type="button" className="call-swipe-del" disabled={busy} onClick={() => { setArmed(null); hide([r.id]) }}>Delete</button>}
           </div>

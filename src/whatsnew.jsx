@@ -20,6 +20,7 @@ export const NEWS = [
         'More than one account: Settings > Add Account, then switch with one tap, or hold Settings in the bar at the foot. Notifications come from all of them, and a tap opens the right account.',
         'Pulling down to refresh no longer asks for your passcode or Face ID again.',
         'The folders at the top share the bar evenly, each one centred in its own part.',
+        'Calls: hold a call for Voice Call, Video Call or Message.',
         'A new first screen: your photo with ROARME and two buttons, Sign in and Sign up; the form slides up from the foot, everything centred. Sign up can take your mobile number too (optional), checked with an SMS code the first time you come in.',
         'Terms of Service and Privacy Policy on the sign-up page are light blue and easy to read.',
         'Settings > General > Reset All Settings, at the foot of the page: the look, notifications and sounds, chats, data and mail settings go back to how RoarMe starts. Your folders, chats, contacts and accounts stay.',

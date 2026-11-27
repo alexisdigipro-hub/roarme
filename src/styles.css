@@ -9390,3 +9390,12 @@ html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-wm .word
 /* the two buttons 15% bigger, grown downward so ROARME and the gap over them stay where they were (Alex, 26 Nov) */
 html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-b { width: 129px; height: 44px; border-radius: 22px; font-size: 15.5px; }
 html:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-intro { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); }
+/* The panel's head and foot (Alex, 26 Nov): no sign over ROARME, BY THEMADLIONS half as far under it with BY in capitals and
+   as thin as THE; Create an account and Forgot password side by side; the chevron that puts the panel away under the card */
+html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .rm-mark { display: none !important; }
+html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .wordmark.with-by .by-tml { margin-top: -7px !important; text-transform: uppercase; font-weight: 250; letter-spacing: .16em; }
+html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .auth-links { flex-direction: row !important; flex-wrap: wrap !important; justify-content: center !important; gap: 10px !important; }
+html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .auth-links > button { flex: 1 1 0 !important; min-width: 0 !important; padding: 0 10px !important; }
+html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .auth-links > button:only-child { flex: 0 1 auto !important; min-width: 200px !important; }
+html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .auth-card .auth-links > button.auth-back { flex: 1 0 100% !important; order: 9; }
+html:root:root:root:root:root:root:root[data-glass][data-theme] .auth.ax .ax-sheet .ax-close { order: 2; margin: 14px 0 0; }

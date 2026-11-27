@@ -23,6 +23,8 @@ export const NEWS = [
         'Picking chats with Select works again after a long press.',
         'No scroll bars anywhere; lists no longer slide sideways.',
         'On the first screen, Back to Your Account is as wide as Sign in and Sign up together.',
+        'A soft tap you can feel as a message leaves, on a reaction, a copy, a delete, a held call or contact, and as a chat slides far enough to act.',
+        'If a screen ever falls over, a short line with Reload shows instead of a white page, and we are told about it.',
       ] },
     ],
   },

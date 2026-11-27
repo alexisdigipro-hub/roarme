@@ -8660,3 +8660,25 @@ html:root:root:root:root:root:root:root:root .contacts-list .contact.has-cap > .
 html:root:root[data-glass] .adm-errr { flex-wrap: wrap; }
 html:root:root[data-glass] .adm-errr .adm-main b, html:root:root[data-glass] .adm-errr .adm-main small { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; overflow: visible; }
 html:root:root[data-glass] .adm-err-stack { flex: 1 1 100%; margin: 0; padding: 10px 14px; border-radius: 16px; background: var(--lg-chip); font: 11.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; overflow-x: auto; max-height: 260px; user-select: text; -webkit-user-select: text; }
+
+/* Admin > Service and Backup (27 Nov): boxes in the Settings boxes' glass, a coloured dot for each, rows with Block */
+html:root:root[data-glass] .adm-svc { gap: 12px; }
+html:root:root[data-glass] .adm-sv-top { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 4px 0 2px; }
+html:root:root[data-glass] .adm-sv-top small { color: var(--muted); font-size: 12.5px; max-width: 420px; }
+html:root:root[data-glass] .adm-sv-run { min-width: 200px; height: 46px; border-radius: 23px; font-size: 16px; font-weight: 600; }
+html:root:root[data-glass] .adm-sv-note { margin: 0; text-align: center; font-size: 13px; color: var(--muted); }
+html:root:root[data-glass] .adm-sv, html:root:root[data-glass] .adm-sv-bk { border-radius: 20px; padding: 12px 14px; background: var(--lg, rgba(255, 255, 255, .7)); box-shadow: inset 0 0 0 1px var(--lg-rim, rgba(255, 255, 255, .6)); }
+html:root:root[data-glass] .adm-sv-bk { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+html:root:root[data-glass] .adm-sv-h { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+html:root:root[data-glass] .adm-sv-h b { font-size: 15.5px; font-weight: 600; }
+html:root:root[data-glass] .adm-sv-h small { margin-left: auto; font-size: 12px; color: var(--muted); }
+html:root:root[data-glass] .adm-sv-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: #34c759; box-shadow: 0 0 0 3px rgba(52, 199, 89, .18); }
+html:root:root[data-glass] .adm-sv-warn .adm-sv-dot { background: #ff9f0a; box-shadow: 0 0 0 3px rgba(255, 159, 10, .2); }
+html:root:root[data-glass] .adm-sv-bad .adm-sv-dot { background: #ff3b30; box-shadow: 0 0 0 3px rgba(255, 59, 48, .2); }
+html:root:root[data-glass] .adm-sv-b { display: flex; flex-direction: column; gap: 4px; }
+html:root:root[data-glass] .adm-sv-b p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--text); overflow-wrap: anywhere; }
+html:root:root[data-glass] .adm-sv-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+html:root:root[data-glass] .adm-sv-row > span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html:root:root[data-glass] .adm-sv-row > span b { font-size: 14px; font-weight: 600; }
+html:root:root[data-glass] .adm-sv-row > span small { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+html:root:root[data-glass] .adm-sv-row .pill-btn { flex: none; }

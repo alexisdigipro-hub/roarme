@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { SUPABASE_KEY, SUPABASE_URL, errText, nameOf, supabase } from './lib.js'
+import { SUPABASE_KEY, SUPABASE_URL, errText, haptic, nameOf, supabase } from './lib.js'
 import { Avatar, I, OnTop, svg } from './ui.jsx'
 import { getPrefs } from './prefs.js'
 import { locale, tr } from './i18n.js'
@@ -419,7 +419,7 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
     clearTimeout(holdT.current)
     if (editing || armed || e.touches.length !== 1) return
     const { clientX: x, clientY: y } = e.touches[0]
-    holdT.current = setTimeout(() => { holdAt.current = Date.now(); setHold({ id: r.id, other, room: r.room_id, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }, 480)
+    holdT.current = setTimeout(() => { holdAt.current = Date.now(); setHold({ id: r.id, other, room: r.room_id, at: Date.now() }); haptic(12) }, 480)
   }
   const holdStop = () => clearTimeout(holdT.current)
   // the buttons leave as they came (Alex, 27 Nov: "an animation when they come and go"): .out for 220 ms, then gone

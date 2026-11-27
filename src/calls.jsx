@@ -512,7 +512,7 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
             <Avatar src={other.avatar_url} name={nameOf(other)} size={48} />
             {/* the name alone, in the middle of the row's height; what happened at the right, also in the middle (Alex, 27 Nov) */}
             <span className="room-main call-name"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong></span>
-            <span className={`call-st${missed ? ' missed' : ''}`}><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i>{label}</span>
+            <span className={`call-st${missed ? ' missed' : ''}`} title={label}><i className={`call-dir${out ? ' out' : ''}`}>{r.video ? I.video : I.phone}</i></span>
           </button>
           {/* the person's page (Alex, 19 Nov, from the iPhone's Phone app: an (i) at the right of each call) */}
           {!editing && onInfo && <button type="button" className="call-info" onClick={(e) => { e.stopPropagation(); setArmed(null); setInfo((v) => (v === r.id ? null : r.id)) }} aria-label={`About ${nameOf(other)}`} title="Info"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.25" /><path d="M12 10.8v6M12 7.6v.1" strokeWidth="1.9" /></svg></button>}
@@ -527,8 +527,13 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
           )}
           {(info === r.id || infoOut === r.id) && (
             <div className={`call-cap info${infoOut === r.id ? ' out' : ''}`} onClick={(e) => e.stopPropagation()}>
-              <span className="cs-line"><b>{r.video ? 'Video call' : 'Voice call'}</b>{` · ${out ? 'to' : 'from'} ${nameOf(other)}`}</span>
-              <span className="cs-line">{new Date(r.started_at).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}{' · '}{new Date(r.started_at).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}{' · '}{dur ? `${dur}` : label}</span>
+              {/* what it was, plainly (Alex, 27 Nov: "nicer, not so mixed up"): its sign in a soft round, then
+                  the kind and what happened, and under them the day, the time and how long */}
+              <span className={`cs-ico${missed ? ' missed' : ''}`}>{r.video ? I.videoHeavy : I.phoneHeavy}</span>
+              <span className="cs-text">
+                <span className="cs-l1">{r.video ? 'Video call' : 'Voice call'}<em className={missed ? 'missed' : ''}>{label}</em></span>
+                <span className="cs-l2">{new Date(r.started_at).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' })}{' · '}{new Date(r.started_at).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}{dur ? ` · ${dur}` : ''}</span>
+              </span>
             </div>
           )}
           {editing && armed === r.id && <button type="button" className="call-del-go" disabled={busy} onClick={() => { setArmed(null); hide([r.id]) }}>Delete</button>}

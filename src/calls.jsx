@@ -424,6 +424,9 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
     holdT.current = setTimeout(() => { holdAt.current = Date.now(); setHold({ other, room: r.room_id, x, y, box, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }, 480)
   }
   const holdStop = () => clearTimeout(holdT.current)
+  // the buttons leave as they came (Alex, 27 Nov: "an animation when they come and go"): .out for 220 ms, then gone
+  const [holdOut, setHoldOut] = useState(false)
+  const closeHold = () => { setHoldOut(true); setTimeout(() => { setHold(null); setHoldOut(false) }, 220) }
   // the (i) slides a glass layer over that one call with what it was: kind, who, date, time, length (Alex, 27 Nov);
   // a tap anywhere else slides it back out to the right
   const [info, setInfoRaw] = useState(null)
@@ -522,9 +525,9 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
       })}
       </div>
       {hold && createPortal(
-        <div className="call-hold-back" onClick={() => { if (Date.now() - hold.at > 450) setHold(null) }} onContextMenu={(e) => e.preventDefault()}>
+        <div className={`call-hold-back${holdOut ? ' out' : ''}`} onClick={() => { if (Date.now() - hold.at > 450) closeHold() }} onContextMenu={(e) => e.preventDefault()}>
           {/* three round buttons in the middle of that very call, the call blurred under them (Alex, 27 Nov) */}
-          <div className="call-hold-pop" onClick={(e) => e.stopPropagation()}
+          <div className={`call-hold-pop${holdOut ? ' out' : ''}`} onClick={(e) => e.stopPropagation()}
             style={{ left: hold.box.left, top: hold.box.top, width: hold.box.width, height: hold.box.height }}>
             <button type="button" className="round" aria-label="Voice Call" title="Voice Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, false) }}>{I.phone}</button>
             <button type="button" className="round" aria-label="Video Call" title="Video Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, true) }}>{I.video}</button>

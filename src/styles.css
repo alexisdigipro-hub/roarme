@@ -9481,3 +9481,12 @@ html:root:root:root:root:root .call-sheet .cs-line + .cs-line { color: var(--mut
 @keyframes cs-in { from { transform: translateX(104%); opacity: .4; } }
 @keyframes cs-out { to { transform: translateX(104%); opacity: .4; } }
 @media (prefers-reduced-motion: reduce) { html:root:root:root:root:root .call-sheet { animation: none; } }
+/* the held call: a lighter blur (4px) and the buttons go away as they came; nothing in the calls list or its heading is
+   picked up as text by a long press (Alex, 27 Nov) */
+html:root:root:root:root:root .call-hold-pop { -webkit-backdrop-filter: blur(4px) saturate(1.1) !important; backdrop-filter: blur(4px) saturate(1.1) !important; background: rgba(255, 255, 255, .22); }
+html[data-mode='dark']:root:root:root:root:root .call-hold-pop { background: rgba(28, 28, 32, .26); }
+html:root:root:root:root:root .call-hold-pop.out { animation: chp-out .22s ease both; }
+html:root:root:root:root:root .call-hold-pop.out .round { animation: chp-btn-out .2s cubic-bezier(.4, 0, .6, 1) both; }
+@keyframes chp-out { to { opacity: 0; } }
+@keyframes chp-btn-out { to { opacity: 0; transform: scale(.6); } }
+.recent-calls, .recent-calls *, .calls-empty { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

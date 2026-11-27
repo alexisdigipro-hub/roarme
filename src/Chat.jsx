@@ -1607,12 +1607,18 @@ export default function Chat({ me, setMe }) {
     // the same order as the bar: Mail stands between Messages and Settings while it is on (Alex, 25 Nov)
     const stops = ['contacts', ...(prefs.callsTab ? ['calls'] : []), 'chats', ...(mailOn ? ['mail'] : []), ...(tasksOn ? ['tasks'] : []), 'settings']
     const cur = tasksOpen ? 'tasks' : tab === 'media' ? 'settings' : tab === 'chats' && folder === 'mail' && mailOn ? 'mail' : tab
+    // Calls' All | Missed come before the pages beside it (Alex, 27 Nov): a slide goes All > Missed > Messages and back
+    if (cur === 'calls' && !tasksOpen) {
+      if (dir > 0 && callsFilter === 'all') { setCallsFilter('missed'); return }
+      if (dir < 0 && callsFilter === 'missed') { setCallsFilter('all'); return }
+    }
     const next = stops[stops.indexOf(cur) + dir]
     if (!next) return
     if (next === 'tasks') { try { localStorage.setItem('roarme-tasks-tab', dir > 0 ? 'all' : 'done') } catch { /* private window */ } showTasks(true); return }
     if (tasksOpen) showTasks(false)
     if (next === 'mail') { setTab('chats'); setFolder('mail'); return }
     setTab(next)
+    if (next === 'calls') setCallsFilter(dir > 0 ? 'all' : 'missed')
     if (next === 'chats') {
       // back from Mail: the folder one left for it (Alex, 25 Nov: it landed on Archived); otherwise the near end of the folders
       if (cur === 'mail') { setFolder(mailBack.current && mailBack.current !== 'mail' ? mailBack.current : 'all'); return }

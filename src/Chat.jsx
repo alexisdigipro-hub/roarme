@@ -2011,8 +2011,8 @@ export default function Chat({ me, setMe }) {
             <div className={`rooms contacts-list${cq.trim() ? ' searching' : ''}`}>
             {cRows.map((x) => (
               <div key={x.key} className={`room contact${cHold?.key === x.key ? ' has-cap' : ''}`} role="button" tabIndex={0}
-                onTouchStart={() => { clearTimeout(cHoldT.current); cHoldT.current = setTimeout(() => cHoldOpen(x.key), 480) }} onTouchMove={() => clearTimeout(cHoldT.current)} onTouchEnd={() => clearTimeout(cHoldT.current)} onTouchCancel={() => clearTimeout(cHoldT.current)}
-                onContextMenu={(e) => { e.preventDefault(); cHoldOpen(x.key) }}
+                onTouchStart={() => { clearTimeout(cHoldT.current); if (x.p || x.e?.phones?.[0]?.value) cHoldT.current = setTimeout(() => cHoldOpen(x.key), 480) }} onTouchMove={() => clearTimeout(cHoldT.current)} onTouchEnd={() => clearTimeout(cHoldT.current)} onTouchCancel={() => clearTimeout(cHoldT.current)}
+                onContextMenu={(e) => { e.preventDefault(); if (x.p || x.e?.phones?.[0]?.value) cHoldOpen(x.key) }}
                 onClick={() => { if (Date.now() - cHoldAt.current < 700 || Date.now() - cHoldShut.current < 500) return; if (x.e) setBookOpen(x.e.id); else setCard(x.p.id) }} onKeyDown={(ev) => { if (ev.key === 'Enter') { if (x.e) setBookOpen(x.e.id); else setCard(x.p.id) } }}>
                 <Avatar src={x.e?.photo_url || x.p?.avatar_url} name={x.name} online={x.p ? dotOf(x.p) : undefined} size={prefs.listPreview ? 54 : 48} />
                 <span className="room-main">
@@ -2031,7 +2031,6 @@ export default function Chat({ me, setMe }) {
                         <button type="button" className="round" aria-label="Video Call" title="Video Call" onClick={go(() => startCall(x.p, directWith(x.p), true))}>{I.videoHeavy}</button>
                         <button type="button" className="round" aria-label="Message" title="Message" onClick={go(() => chatWith(x.p))}>{I.chats}</button>
                       </> : tel ? <button type="button" className="round" aria-label="Phone Call" title="Phone Call" onClick={go(() => { location.href = `tel:${tel.replace(/[^\d+]/g, '')}` })}>{I.phoneHeavy}</button> : null}
-                      <button type="button" className="round" aria-label="Contact" title="Contact" onClick={go(() => (x.e ? setBookOpen(x.e.id) : setCard(x.p.id)))}>{I.person}</button>
                     </div>
                   )
                 })()}

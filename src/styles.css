@@ -9437,3 +9437,15 @@ html:root:root:root:root:root:root:root :is(.tick, .nc-tick):not(.on), html:root
 html:root:root:root:root:root:root:root .rma-tick:not(.on) { box-shadow: inset 0 0 0 2px #5a5a62 !important; }
 html[data-mode='dark']:root:root:root:root:root:root:root :is(.tick, .nc-tick):not(.on), html[data-mode='dark']:root:root:root:root:root:root:root .rmx-row:not(.rmx-checked) .rmx-check { border-color: #e4e4ea !important; }
 html[data-mode='dark']:root:root:root:root:root:root:root .rma-tick:not(.on) { box-shadow: inset 0 0 0 2px #e4e4ea !important; }
+
+/* A call under the finger: a soft grey wash on the whole row, no glass lift, no split rim and no second frame round the
+   call's own part (Alex, 27 Nov: "it takes a strange outline") */
+html:root:root:root:root:root:root:root .calls-list .call-row:active { scale: 1 !important; box-shadow: none !important; background-color: color-mix(in srgb, currentColor 7%, transparent) !important; border-radius: 16px; }
+html:root:root:root:root:root:root:root .calls-list .call-row > .call-log:active, html:root:root:root:root:root:root:root .calls-list .call-row > .call-log:focus { box-shadow: none !important; outline: none !important; background: transparent !important; scale: 1 !important; }
+/* the long press on a call: Voice Call, Video Call, Message in the app's menu glass, where the finger was */
+.call-hold-back { position: fixed; inset: 0; z-index: 90; background: rgba(70, 76, 92, .14); animation: chb-in .18s ease; }
+@keyframes chb-in { from { opacity: 0; } }
+html:root:root:root:root:root:root .call-hold-menu { position: fixed; left: var(--hx); top: var(--hy); right: auto; bottom: auto; width: 220px; margin: 0; transform-origin: top left; animation: chm-in .22s cubic-bezier(.25, 1.35, .45, 1); }
+@keyframes chm-in { from { opacity: 0; transform: scale(.86); } }
+.call-hold-menu svg, .call-hold-menu .ic-mask { flex: none; }
+@media (prefers-reduced-motion: reduce) { .call-hold-back, html:root:root:root:root:root:root .call-hold-menu { animation: none; } }

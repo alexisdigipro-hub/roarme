@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { SUPABASE_KEY, SUPABASE_URL, errText, nameOf, supabase } from './lib.js'
 import { Avatar, I, OnTop, svg } from './ui.jsx'
 import { getPrefs } from './prefs.js'
@@ -411,6 +412,17 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
     s.dx = Math.max(-110, Math.min(0, dx + (s.open ? -84 : 0)))
     setDrag({ id: s.id, dx: s.dx })
   }
+  // a long press on a call (or a right click) offers Voice Call, Video Call and Message (Alex, 27 Nov)
+  const [hold, setHold] = useState(null) // { other, room, x, y, at }
+  const holdT = useRef(null)
+  const holdAt = useRef(0)
+  const holdStart = (r, other) => (e) => {
+    clearTimeout(holdT.current)
+    if (editing || armed || e.touches.length !== 1) return
+    const { clientX: x, clientY: y } = e.touches[0]
+    holdT.current = setTimeout(() => { holdAt.current = Date.now(); setHold({ other, room: r.room_id, x, y, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }, 480)
+  }
+  const holdStop = () => clearTimeout(holdT.current)
   const tEnd = () => {
     const s = slide.current
     slide.current = null
@@ -467,9 +479,10 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
         return (
           <div key={r.id} className={`call-row${editing ? ' editing' : ''}${armed === r.id ? ' armed' : ''}${!editing && (armed === r.id || drag?.id === r.id) ? ' slid' : ''}${drag?.id === r.id ? ' dragging' : ''}`}
             style={!editing ? { '--slide': `${drag?.id === r.id ? drag.dx : armed === r.id ? -84 : 0}px` } : undefined}
-            onTouchStart={tStart(r)} onTouchMove={tMove} onTouchEnd={tEnd} onTouchCancel={tEnd}>
+            onTouchStart={(e) => { tStart(r)(e); holdStart(r, other)(e) }} onTouchMove={(e) => { holdStop(); tMove(e) }} onTouchEnd={() => { holdStop(); tEnd() }} onTouchCancel={() => { holdStop(); tEnd() }}
+            onContextMenu={(e) => { if (editing) return; e.preventDefault(); holdAt.current = Date.now(); setHold({ other, room: r.room_id, x: e.clientX, y: e.clientY, at: Date.now() }) }}>
           {editing && <button type="button" className="call-minus" onClick={() => setArmed((a) => (a === r.id ? null : r.id))} aria-label="Delete this call" title="Delete this call"><i /></button>}
-          <button type="button" className="room call-log" onClick={() => (editing || armed ? setArmed(null) : onCall(other, r.room_id, r.video))} title={r.video ? 'Video call back' : 'Call back'}>
+          <button type="button" className="room call-log" onClick={() => { if (Date.now() - holdAt.current < 700) return; if (editing || armed) setArmed(null); else onCall(other, r.room_id, r.video) }} title={r.video ? 'Video call back' : 'Call back'}>
             <Avatar src={other.avatar_url} name={nameOf(other)} size={48} />
             <span className="room-main">
               <span className="room-top"><strong className={missed ? 'missed' : ''}>{nameOf(other)}</strong><small>{new Date(r.started_at).toLocaleDateString(locale(), { day: 'numeric', month: 'numeric', year: '2-digit' })}</small></span>
@@ -484,6 +497,15 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
         )
       })}
       </div>
+      {hold && createPortal(
+        <div className="call-hold-back" onClick={() => { if (Date.now() - hold.at > 450) setHold(null) }} onContextMenu={(e) => e.preventDefault()}>
+          <div className="menu call-hold-menu" role="menu" onClick={(e) => e.stopPropagation()}
+            style={{ '--hx': `${Math.min(Math.max(hold.x - 110, 12), window.innerWidth - 232)}px`, '--hy': `${Math.min(hold.y + 12, window.innerHeight - 190)}px` }}>
+            <button type="button" role="menuitem" onClick={() => { setHold(null); onCall(hold.other, hold.room, false) }}>{I.phone}<span>Voice Call</span></button>
+            <button type="button" role="menuitem" onClick={() => { setHold(null); onCall(hold.other, hold.room, true) }}>{I.video}<span>Video Call</span></button>
+            <button type="button" role="menuitem" onClick={() => { setHold(null); window.dispatchEvent(new CustomEvent('roarme-dm', { detail: { id: hold.other.id } })) }}>{I.chats}<span>Message</span></button>
+          </div>
+        </div>, document.body)}
     </div>
   )
 }

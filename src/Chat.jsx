@@ -1622,7 +1622,9 @@ export default function Chat({ me, setMe }) {
     if (next === 'chats') {
       // back from Mail: the folder one left for it (Alex, 25 Nov: it landed on Archived); otherwise the near end of the folders
       if (cur === 'mail') { setFolder(mailBack.current && mailBack.current !== 'mail' ? mailBack.current : 'all'); return }
-      const f = allFolders[dir > 0 ? 0 : allFolders.length - 1]; if (f) setFolder(f.id)
+      // coming from Calls or Contacts lands on All, never on Unread; Unread is a slide right from All (Alex, 27 Nov)
+      if (dir > 0) { setFolder('all'); return }
+      const f = allFolders[allFolders.length - 1]; if (f) setFolder(f.id)
     }
   }
   const goStopRef = useRef(null)

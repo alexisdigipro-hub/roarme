@@ -12,6 +12,21 @@ create table if not exists roar_service_runs (
 alter table roar_service_runs enable row level security;
 revoke all on roar_service_runs from anon, authenticated;
 
+-- Backup: a copy of every RoarMe table (and the accounts' id, email, phone and dates) kept inside the database, the
+-- newest 10, made by the button and once a day by pg_cron 'roar-backup'; Download hands it to the computer as one file.
+-- Supabase's own daily backups (the Pro plan) stand behind this; this one is ours to keep and take away.
+create table if not exists roar_backups (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  kind text not null default 'auto',
+  tables int,
+  rows bigint,
+  bytes bigint,
+  data jsonb not null
+);
+alter table roar_backups enable row level security;
+revoke all on roar_backups from anon, authenticated;
+
 -- one pass over the database: security, attacks, fake profiles, spam, health; a report of green / yellow / red
 create or replace function roar_admin_service()
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
@@ -129,21 +144,6 @@ begin
   if not roar_is_admin() then raise exception 'not allowed'; end if;
   return query select r.id, r.at, r.kind, r.report from roar_service_runs r order by r.at desc limit 20;
 end $$;
-
--- Backup: a copy of every RoarMe table (and the accounts' id, email, phone and dates) kept inside the database, the
--- newest 10, made by the button and once a day by pg_cron 'roar-backup'; Download hands it to the computer as one file.
--- Supabase's own daily backups (the Pro plan) stand behind this; this one is ours to keep and take away.
-create table if not exists roar_backups (
-  id bigserial primary key,
-  at timestamptz not null default now(),
-  kind text not null default 'auto',
-  tables int,
-  rows bigint,
-  bytes bigint,
-  data jsonb not null
-);
-alter table roar_backups enable row level security;
-revoke all on roar_backups from anon, authenticated;
 
 create or replace function roar_backup_make(k text default 'auto')
 returns jsonb language plpgsql security definer set search_path = public as $$

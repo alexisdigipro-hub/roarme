@@ -14,8 +14,7 @@ enum Glass {
     static let land = Animation.timingCurve(0.25, 1.45, 0.45, 1, duration: 0.3)
     static let spring = Animation.spring(response: 0.42, dampingFraction: 0.68)
     static var calm: Bool { UIAccessibility.isReduceMotionEnabled }
-    // how many windows are open: a sideways slide turns no page while one is, and the site's foot steps aside
-    // (Alex, 25 Nov: it lay over a transfer window and hid its Delete)
+    // how many windows are open: a sideways slide turns no page while one is
     static var windows: Int {
         get { OpenWindows.shared.count }
         set { OpenWindows.shared.count = newValue }
@@ -204,6 +203,8 @@ struct FootPress: ButtonStyle {
 struct GlassWindow<Content: View>: View {
     var title: String
     var close: () -> Void
+    // a red round bin beside the X (Alex, 27 Nov: Delete was lost at the window's foot under the site's foot)
+    var onDelete: (() -> Void)? = nil
     @ViewBuilder var content: Content
     @State private var shown = false
 
@@ -214,6 +215,10 @@ struct GlassWindow<Content: View>: View {
                 HStack {
                     Text(title).font(.system(size: 18, weight: .bold)).foregroundStyle(Theme.text).lineLimit(1)
                     Spacer()
+                    if let onDelete {
+                        Button { onDelete() } label: { Image(systemName: "trash").foregroundStyle(Theme.redHi) }
+                            .buttonStyle(RoundStyle(size: 34)).accessibilityLabel(t("Delete"))
+                    }
                     Button { dismiss() } label: { Image(systemName: "xmark") }.buttonStyle(RoundStyle(size: 34))
                 }
                 .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 8)
@@ -226,7 +231,7 @@ struct GlassWindow<Content: View>: View {
             .overlay(RoundedRectangle(cornerRadius: 30, style: .continuous).stroke(Color.white.opacity(0.18), lineWidth: 1))
             .modifier(ChromaRim(on: !shown && !Glass.calm, strength: 1.4))
             .shadow(color: .black.opacity(0.45), radius: 30, y: 14)
-            .padding(.horizontal, 12).padding(.vertical, 40)
+            .padding(.horizontal, 12).padding(.top, 40).padding(.bottom, SiteFooter.room + 6)
             .scaleEffect(shown || Glass.calm ? 1 : 0.6)
             .opacity(shown ? 1 : 0)
         }

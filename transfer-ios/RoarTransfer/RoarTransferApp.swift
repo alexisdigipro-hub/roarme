@@ -75,7 +75,6 @@ struct RootView: View {
     @EnvironmentObject var lang: Lang
     @EnvironmentObject var pro: ProStore
     @EnvironmentObject var session: Session
-    @ObservedObject private var wins = OpenWindows.shared
 
     var body: some View {
         ZStack {
@@ -139,9 +138,6 @@ struct RootView: View {
             // what scrolls behind it shows blurred through the glass; it stays put under the keyboard
             VStack { Spacer(); SiteFooter().padding(.horizontal, 16).padding(.bottom, 2) }
                 .ignoresSafeArea(.keyboard)
-                .opacity(wins.count > 0 || router.page != nil ? 0 : 1)
-                .allowsHitTesting(wins.count == 0 && router.page == nil)
-                .animation(.easeOut(duration: 0.18), value: wins.count)
 
             if let p = router.page {
                 GlassWindow(title: pageTitle(p), close: { router.page = nil }) {

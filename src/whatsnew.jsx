@@ -12,6 +12,21 @@ export const newsLab = (v) => { LAB = !!v }
 
 export const NEWS = [
   {
+    id: '2026-11-27',
+    date: '27 November 2026',
+    sections: [
+      { title: 'Everywhere', items: [
+        'Contacts: hold a contact for Voice Call, Video Call and Message, in the same glass capsule as Calls.',
+        'Contacts and calls under your finger show a soft grey, no odd lines.',
+        'Calls: a slide goes from All to Missed before the next page, and into Messages it lands on All.',
+        'The circles for picking chats are clear to see, filled with your colour when picked, and level with the pictures.',
+        'Picking chats with Select works again after a long press.',
+        'No scroll bars anywhere; lists no longer slide sideways.',
+        'On the first screen, Back to Your Account is as wide as Sign in and Sign up together.',
+      ] },
+    ],
+  },
+  {
     id: '2026-11-26',
     date: '26 November 2026',
     sections: [

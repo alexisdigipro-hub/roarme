@@ -34,13 +34,13 @@ Deno.serve(async (req) => {
   const { data: adminRow } = await sb.from('roar_admins').select('user_id').eq('user_id', uid).maybeSingle()
   const admin = !!adminRow
 
-  const { data: me } = await sb.from('roar_transfer_pro').select('until, created_at, brand_name, brand_logo, brand_bgs').eq('user_id', uid).maybeSingle()
+  const { data: me } = await sb.from('roar_transfer_pro').select('until, created_at, brand_name, brand_logo, brand_bgs, brand_style').eq('user_id', uid).maybeSingle()
   const pro = admin || (!!me && live(me.until))
 
   // the caller's own: Pro or not, until when, and why (admin or given), and their brand
   if (b.action === 'me') {
     return json({ pro, admin, until: admin ? null : me?.until || null, since: me?.created_at || null,
-      brand: { name: me?.brand_name || '', logo: me?.brand_logo || '', bgs: me?.brand_bgs || [] } })
+      brand: { name: me?.brand_name || '', logo: me?.brand_logo || '', bgs: me?.brand_bgs || [], style: me?.brand_style || {} } })
   }
 
   // ---- what a Pro does with their own ----
@@ -52,10 +52,19 @@ Deno.serve(async (req) => {
     const name = String(b.name || '').trim().slice(0, 80)
     const logo = mine(b.logo) ? b.logo : ''
     const bgs = (Array.isArray(b.bgs) ? b.bgs : []).filter(mine).slice(0, 8)
-    const row = { brand_name: name || null, brand_logo: logo || null, brand_bgs: bgs }
+    // the look (Alex, 27 Nov; supabase/transfer-brand-style.sql): a colour, how solid the card is, a face, and whether
+    // their own RoarTransfer wears it too; anything else is dropped
+    const st = b.style && typeof b.style === 'object' ? b.style : {}
+    const style: Record<string, unknown> = {}
+    if (/^#[0-9a-f]{6}$/i.test(String(st.accent || ''))) style.accent = String(st.accent).toLowerCase()
+    if (st.glass != null && Number.isFinite(Number(st.glass))) style.glass = Math.max(0, Math.min(100, Math.round(Number(st.glass))))
+    if (['jost', 'sans', 'serif'].includes(st.font)) style.font = st.font
+    if (st.self === true) style.self = true
+    const row: Record<string, unknown> = { brand_name: name || null, brand_logo: logo || null, brand_bgs: bgs }
+    if (b.style !== undefined) row.brand_style = style
     const { error } = me ? await sb.from('roar_transfer_pro').update(row).eq('user_id', uid) : await sb.from('roar_transfer_pro').insert({ user_id: uid, ...row })
     if (error) return json({ error: error.message }, 500)
-    return json({ ok: true, brand: { name, logo, bgs } })
+    return json({ ok: true, brand: { name, logo, bgs, style: b.style !== undefined ? style : me?.brand_style || {} } })
   }
 
   // a link they sent (a file's token from My transfers): its upload(s), expiry, password, and what happened to it

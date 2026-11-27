@@ -18,6 +18,7 @@ struct MineView: View {
     @State private var picking = false
     @State private var picked: Set<String> = []
     @State private var askDelete = false
+    @State private var askOne = false
     @State private var deleting = false
 
     var body: some View {
@@ -32,8 +33,8 @@ struct MineView: View {
             .scrollDismissesKeyboard(.interactively)
 
             if let m = open {
-                GlassWindow(title: m.name ?? "file", close: { open = nil }) {
-                    TransferWindow(m: m, isPro: pro.isPro, onChanged: { Task { await load() } }, close: { open = nil })
+                GlassWindow(title: m.name ?? "file", close: { open = nil }, onDelete: m.live && m.source == "link" ? { askOne = true } : nil) {
+                    TransferWindow(m: m, isPro: pro.isPro, onChanged: { Task { await load() } }, close: { open = nil }, asking: $askOne)
                 }
                 .zIndex(5)
             }
@@ -207,9 +208,9 @@ struct TransferWindow: View {
     var isPro: Bool
     var onChanged: () -> Void
     var close: () -> Void
+    @Binding var asking: Bool
     @State private var copied = false
     @State private var share = false
-    @State private var asking = false
     @State private var err = ""
     @State private var det: LinkDetails?
     @State private var until = Date()
@@ -290,9 +291,6 @@ struct TransferWindow: View {
             }
             if isPro && m.proToken != nil && m.source == "link" { proPart }
 
-            if m.live && m.source == "link" {
-                Button { asking = true } label: { Label(t("Delete"), systemImage: "trash").frame(maxWidth: .infinity) }.buttonStyle(PillStyle(danger: true)).padding(.top, 6)
-            }
             if !err.isEmpty { Text(err).font(.system(size: 13)).foregroundStyle(Theme.redHi) }
         }
         .sheet(isPresented: $share) { if let l = link, let u = URL(string: l) { ShareSheet(items: [u]).presentationDetents([.medium, .large]) } }

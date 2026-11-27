@@ -4,6 +4,8 @@ import { initialsOf } from './lib.js'
 import phoneMask from './icons/phone.png'
 import phoneBold from './icons/phone-bold.png' // the same handset with a thicker line, for the bar at the foot (Alex, 26 Nov)
 import videoMask from './icons/video.png'
+import phoneHeavy from './icons/phone-heavy.png' // the handset and the camera with the line of the line-drawn signs beside them (Alex, 27 Nov)
+import videoHeavy from './icons/video-heavy.png'
 
 /* ---------- small pieces ---------- */
 export const svg = (d, w = 20) => <svg viewBox="0 0 24 24" width={w} height={w} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
@@ -55,6 +57,8 @@ export const I = {
   // the two drawings cut from it (src/icons/*.png), worn as masks so they take the colour of the words around them
   phone: <i className="ic-mask" style={{ '--m': `url(${phoneMask})` }} aria-hidden="true" />,
   video: <i className="ic-mask" style={{ '--m': `url(${videoMask})` }} aria-hidden="true" />,
+  phoneHeavy: <i className="ic-mask" style={{ '--m': `url(${phoneHeavy})` }} aria-hidden="true" />,
+  videoHeavy: <i className="ic-mask" style={{ '--m': `url(${videoHeavy})` }} aria-hidden="true" />,
   more: svg(<><circle cx="5" cy="12" r="1.2" fill="currentColor" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /><circle cx="19" cy="12" r="1.2" fill="currentColor" /></>),
   mic: svg(<><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>),
   translate: svg(<><path d="M4 5h8M8 3v2M6 5c0 4 2.5 7 5 8M10 5c-.5 3-2.5 6-6 8" /><path d="m13 21 4-9 4 9M14.5 18h5" /></>, 16),

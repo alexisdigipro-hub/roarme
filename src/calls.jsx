@@ -519,8 +519,8 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
           {/* the long press: a glass capsule grows out of the (i) to the picture with Voice, Video, Message and the contact (Alex, 27 Nov, B) */}
           {hold?.id === r.id && (
             <div className={`call-cap hold${holdOut ? ' out' : ''}`} onClick={(e) => e.stopPropagation()}>
-              <button type="button" className="round" aria-label="Voice Call" title="Voice Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, false) }}>{I.phone}</button>
-              <button type="button" className="round" aria-label="Video Call" title="Video Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, true) }}>{I.video}</button>
+              <button type="button" className="round" aria-label="Voice Call" title="Voice Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, false) }}>{I.phoneHeavy}</button>
+              <button type="button" className="round" aria-label="Video Call" title="Video Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, true) }}>{I.videoHeavy}</button>
               <button type="button" className="round" aria-label="Message" title="Message" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); window.dispatchEvent(new CustomEvent('roarme-dm', { detail: { id: hold.other.id } })) }}>{I.chats}</button>
               <button type="button" className="round" aria-label="Contact" title="Contact" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); window.dispatchEvent(new CustomEvent('roarme-card', { detail: { id: hold.other.id } })) }}>{I.person}</button>
             </div>

@@ -1453,7 +1453,7 @@ export default function Chat({ me, setMe }) {
   // the finger lifting after a long press must not also tap the menu that just opened
   // the finger lifted after the menu opened: its guard time starts again, so the tap the phone makes of that same press
   // picks nothing in the menu or the preview under the finger (Alex, 14 Nov: "when I lift my finger it picks by itself")
-  const pressEnd = (e) => { const was = press.current; clearTimeout(was?.timer); was?.row?.classList.remove('pressing'); press.current = null; if (pressed.current && was) setRoomMenu((m) => (m ? { ...m, at: Date.now() } : m)); if (pressed.current && was && isIPhone() && e?.type === 'touchend') haptic(12); if (pressed.current && e?.cancelable) e.preventDefault() } // an iPhone ticks only as the finger lifts
+  const pressEnd = (e) => { const was = press.current; clearTimeout(was?.timer); was?.row?.classList.remove('pressing'); press.current = null; if (pressed.current && was) setRoomMenu((m) => (m ? { ...m, at: Date.now() } : m)); if (pressed.current && was && isIPhone() && e?.type === 'touchend') haptic(12); if (pressed.current && was && e?.cancelable) e.preventDefault() } // an iPhone ticks only as the finger lifts; only a press of this very touch holds the tap back (27 Nov: a long press that opened Select left pressed on, and every later tap was swallowed)
   // the menu of a chat in the list (right click, or a long press on a phone), as in Telegram: the screen blurs, the chat's
   // last messages show on a card (a tap on it opens the chat) and the actions sit under it
   const openRoomMenu = (e, r) => {
@@ -1754,7 +1754,7 @@ export default function Chat({ me, setMe }) {
     }
     return (
       <button key={r.room_id} type="button" data-rid={r.room_id} className={`room${r.room_id === activeId && !picking ? ' on' : ''}${isPicked ? ' picked' : ''}${roomMenu?.r.room_id === r.room_id ? ' menu-on' : ''}`} onClick={() => { if (pressed.current) { pressed.current = false; return } if (Date.now() - rowSkip.current < 450) return; if (Date.now() - closedAt.current < 500) return; if (picking) setPicked((l) => (isPicked ? l.filter((x) => x !== r.room_id) : [...l, r.room_id])); else setActiveId(r.room_id) }} onContextMenu={(e) => !picking && openRoomMenu(e, r)}
-        onTouchStart={(e) => !picking && pressStart(e, r)} onTouchMove={pressMove} onTouchEnd={pressEnd} onTouchCancel={pressEnd}>
+        onTouchStart={(e) => { if (picking) { pressed.current = false; return } pressStart(e, r) }} onTouchMove={pressMove} onTouchEnd={pressEnd} onTouchCancel={pressEnd}>
         {picking && <span className={`tick${isPicked ? ' on' : ''}`} />}
         <Avatar src={r.kind === 'group' ? r.avatar_url : other?.avatar_url} name={titleOf(r)} group={r.kind === 'group'} online={dotOf(other)} size={prefs.listPreview ? 54 : 48} />
         <span className="room-main">

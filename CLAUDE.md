@@ -666,3 +666,4 @@ Talk to him in Greek, friendly and concrete, no em dashes; the app's own text is
 - No scroll bars anywhere (Alex, 27 Nov): last block of styles.css hides them on every element (scrollbar-width none, ::-webkit-scrollbar display none); everything still scrolls. Do not bring a visible scroll bar back.
 - Pick circles in the accent everywhere (Alex, 27 Nov: "they are white, put them in the accent; everywhere"): an empty .tick, .nc-tick, mail's .rmx-check and .rma-tick has a 2px ring of var(--halo); a picked .tick is filled with it and a white tick (last block of styles.css). Photo pick rings over pictures (.lib-ring) stay white.
 - In Select chats the pick circle stands level with the chat's picture (Alex, 27 Nov; .room > .tick align-self center; it was 13px higher).
+- Empty pick circles are plain grey after all (Alex, 27 Nov): #5a5a62 by Day, #e4e4ea by Night; a picked circle stays filled with the accent and a white tick.

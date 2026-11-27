@@ -420,7 +420,8 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
     clearTimeout(holdT.current)
     if (editing || armed || e.touches.length !== 1) return
     const { clientX: x, clientY: y } = e.touches[0]
-    holdT.current = setTimeout(() => { holdAt.current = Date.now(); setHold({ other, room: r.room_id, x, y, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }, 480)
+    const box = e.currentTarget.getBoundingClientRect()
+    holdT.current = setTimeout(() => { holdAt.current = Date.now(); setHold({ other, room: r.room_id, x, y, box, at: Date.now() }); try { navigator.vibrate?.(8) } catch { /* none */ } }, 480)
   }
   const holdStop = () => clearTimeout(holdT.current)
   const tEnd = () => {
@@ -480,7 +481,7 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
           <div key={r.id} className={`call-row${editing ? ' editing' : ''}${armed === r.id ? ' armed' : ''}${!editing && (armed === r.id || drag?.id === r.id) ? ' slid' : ''}${drag?.id === r.id ? ' dragging' : ''}`}
             style={!editing ? { '--slide': `${drag?.id === r.id ? drag.dx : armed === r.id ? -84 : 0}px` } : undefined}
             onTouchStart={(e) => { tStart(r)(e); holdStart(r, other)(e) }} onTouchMove={(e) => { holdStop(); tMove(e) }} onTouchEnd={() => { holdStop(); tEnd() }} onTouchCancel={() => { holdStop(); tEnd() }}
-            onContextMenu={(e) => { if (editing) return; e.preventDefault(); holdAt.current = Date.now(); setHold({ other, room: r.room_id, x: e.clientX, y: e.clientY, at: Date.now() }) }}>
+            onContextMenu={(e) => { if (editing) return; e.preventDefault(); holdAt.current = Date.now(); setHold({ other, room: r.room_id, x: e.clientX, y: e.clientY, box: e.currentTarget.getBoundingClientRect(), at: Date.now() }) }}>
           {editing && <button type="button" className="call-minus" onClick={() => setArmed((a) => (a === r.id ? null : r.id))} aria-label="Delete this call" title="Delete this call"><i /></button>}
           <button type="button" className="room call-log" onClick={() => { if (Date.now() - holdAt.current < 700) return; if (editing || armed) setArmed(null); else onCall(other, r.room_id, r.video) }} title={r.video ? 'Video call back' : 'Call back'}>
             <Avatar src={other.avatar_url} name={nameOf(other)} size={48} />
@@ -499,11 +500,12 @@ export function RecentCalls({ me, people, loadPeople, onCall, onInfo, empty = nu
       </div>
       {hold && createPortal(
         <div className="call-hold-back" onClick={() => { if (Date.now() - hold.at > 450) setHold(null) }} onContextMenu={(e) => e.preventDefault()}>
-          <div className="menu call-hold-menu" role="menu" onClick={(e) => e.stopPropagation()}
-            style={{ '--hx': `${Math.min(Math.max(hold.x - 110, 12), window.innerWidth - 232)}px`, '--hy': `${Math.min(hold.y + 12, window.innerHeight - 190)}px` }}>
-            <button type="button" role="menuitem" onClick={() => { setHold(null); onCall(hold.other, hold.room, false) }}>{I.phone}<span>Voice Call</span></button>
-            <button type="button" role="menuitem" onClick={() => { setHold(null); onCall(hold.other, hold.room, true) }}>{I.video}<span>Video Call</span></button>
-            <button type="button" role="menuitem" onClick={() => { setHold(null); window.dispatchEvent(new CustomEvent('roarme-dm', { detail: { id: hold.other.id } })) }}>{I.chats}<span>Message</span></button>
+          {/* three round buttons in the middle of that very call, the call blurred under them (Alex, 27 Nov) */}
+          <div className="call-hold-pop" onClick={(e) => e.stopPropagation()}
+            style={{ left: hold.box.left, top: hold.box.top, width: hold.box.width, height: hold.box.height }}>
+            <button type="button" className="round" aria-label="Voice Call" title="Voice Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, false) }}>{I.phone}</button>
+            <button type="button" className="round" aria-label="Video Call" title="Video Call" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); onCall(hold.other, hold.room, true) }}>{I.video}</button>
+            <button type="button" className="round" aria-label="Message" title="Message" onClick={() => { if (Date.now() - hold.at < 450) return; setHold(null); window.dispatchEvent(new CustomEvent('roarme-dm', { detail: { id: hold.other.id } })) }}>{I.chats}</button>
           </div>
         </div>, document.body)}
     </div>

@@ -9495,3 +9495,25 @@ html:root:root:root:root:root .call-hold-pop.out .round { animation: chp-btn-out
 html:root:root:root:root:root:root .call-sheet { inset: 0; border-radius: 0; box-shadow: none; }
 html:root:root:root:root:root:root .call-hold-pop { border-radius: 0; box-shadow: none; }
 html:root:root:root:root:root:root .calls-list .call-row:active { border-radius: 0; }
+
+/* Version B of https://claude.ai/artifact/CsRW8SJqpLovgm1dbG9y4t (Alex, 27 Nov): the (i)'s details and the long press's
+   buttons are one glass capsule that grows out of the (i) towards the picture, the picture staying in sight, with a soft
+   shadow; the name and what happened step aside while it is there; it draws back into the (i) when it goes. Replaces the
+   square layer and the blurred row of the same night. */
+html:root:root:root:root:root:root:root:root .calls-list .call-row { overflow: visible !important; content-visibility: visible; }
+html:root:root:root:root:root:root:root:root .calls-list .call-row.has-cap { z-index: 3; }
+html:root:root:root:root:root:root:root:root .calls-list .call-row.has-cap :is(.call-name, .call-st) { opacity: 0; transition: opacity .18s; }
+html:root:root:root:root:root:root:root:root .call-cap { position: absolute; z-index: 4; top: 50%; right: 4px; left: 64px; height: 48px; margin-top: -24px; display: flex; align-items: center; justify-content: center; border-radius: 24px; background: rgba(255, 255, 255, .92); -webkit-backdrop-filter: blur(14px) !important; backdrop-filter: blur(14px) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .95), 0 8px 22px rgba(30, 40, 80, .16), 0 1px 4px rgba(30, 40, 80, .08); animation: cap-in .4s cubic-bezier(.22, 1.15, .36, 1) both; }
+html[data-mode='dark']html:root:root:root:root:root:root:root:root .call-cap { background: rgba(44, 44, 50, .92); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1), 0 8px 22px rgba(0, 0, 0, .45); }
+html:root:root:root:root:root:root:root:root .call-cap.out { animation: cap-out .24s cubic-bezier(.4, 0, .6, 1) both; pointer-events: none; }
+html:root:root:root:root:root:root:root:root .call-cap.info { flex-direction: column; gap: 2px; padding: 0 18px; text-align: center; }
+html:root:root:root:root:root:root:root:root .call-cap.info .cs-line { font-size: 13px; color: var(--text); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:root:root:root:root:root:root:root:root .call-cap.info .cs-line + .cs-line { font-size: 12px; color: var(--muted); }
+html:root:root:root:root:root:root:root:root .call-cap.hold { gap: 12px; }
+html:root:root:root:root:root:root:root:root .call-cap.hold .round { width: 38px; height: 38px; color: var(--halo-mine, var(--halo)); animation: cap-btn .3s cubic-bezier(.25, 1.45, .45, 1) both .08s; }
+html:root:root:root:root:root:root:root:root .call-cap.hold .round :is(svg, .ic-mask) { width: 19px; height: 19px; }
+html:root:root:root:root:root:root:root:root .call-cap.hold.out .round { animation: none; }
+@keyframes cap-in { from { clip-path: inset(0 0 0 calc(100% - 48px) round 24px); opacity: .6; } to { clip-path: inset(0 0 0 0 round 24px); opacity: 1; } }
+@keyframes cap-out { to { clip-path: inset(0 0 0 calc(100% - 48px) round 24px); opacity: 0; } }
+@keyframes cap-btn { from { opacity: 0; transform: scale(.6); } }
+@media (prefers-reduced-motion: reduce) { html:root:root:root:root:root:root:root:root .call-cap, html:root:root:root:root:root:root:root:root .call-cap .round { animation: none; } }

@@ -84,14 +84,14 @@ html[data-skin='halo'][data-theme='stone'] .tabs button.on small { background: v
 
 /* the bar at the foot (Alex, 12 Nov: "the menu like Mango's, as a design"): a dark rail in the middle of thin outlined
    signs without words; the chosen one a lit chip that slides; the count stays Halo's orange */
-html[data-skin='halo'][data-theme='stone'] .foot { align-self: center; width: auto; gap: 4px; padding: 6px; border-radius: 20px; background: #1c1d20; border: 1px solid rgba(255, 255, 255, .08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 14px 30px rgba(40, 40, 70, .3); }
+html[data-skin='halo'][data-theme='stone'] .foot { width: auto; gap: 4px; padding: 6px; background: #1c1d20; border: 1px solid rgba(255, 255, 255, .08); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 14px 30px rgba(40, 40, 70, .3); }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot { background: #0f1012; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 14px 30px rgba(0, 0, 0, .45); }
-html[data-skin='halo'][data-theme='stone'] .foot button { flex: none; display: grid; place-items: center; width: 54px; height: 42px; padding: 0; border-radius: 14px; color: rgba(255, 255, 255, .5); }
+html[data-skin='halo'][data-theme='stone'] .foot button { flex: none; display: grid; place-items: center; width: 54px; padding: 0; color: rgba(255, 255, 255, .5); }
 html[data-skin='halo'][data-theme='stone'] .foot button.foot-main { flex-grow: 0; }
 html[data-skin='halo'][data-theme='stone'] .foot button > span:last-child { display: none; }
 html[data-skin='halo'][data-theme='stone'] .foot button svg, html[data-skin='halo'][data-theme='stone'] .foot button.foot-main svg { width: 22px; height: 22px; margin: 0; animation: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
 html[data-skin='halo'][data-theme='stone'] .foot button:hover { color: rgba(255, 255, 255, .85); }
-html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 14px; background: rgba(255, 255, 255, .13); border: 1px solid rgba(255, 255, 255, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); box-sizing: border-box; }
+html[data-skin='halo'][data-theme='stone'] .foot.lens::before { box-sizing: border-box; }
 html[data-skin='halo'][data-theme='stone'] .foot.lens.lens-on > .on,
 html[data-skin='halo'][data-theme='stone'] .foot button.on,
 html[data-skin='halo'][data-theme='stone'] .foot button.foot-tasks.open { color: #fff; }
@@ -150,7 +150,7 @@ html[data-skin='halo'][data-theme='stone'] .set-box > .set-row:only-child { bord
 
 /* the rail at the foot (Alex, 12 Nov): room at both ends, the signs as they are in the middle; on a phone it sits lower,
    into the space kept for the home bar */
-html[data-skin='halo'][data-theme='stone'] .foot { padding-left: 22px; padding-right: 22px; }
+
 @media (max-width: 760px) {
   html[data-skin='halo'][data-theme='stone'] .app > .side .foot { margin-bottom: calc(env(safe-area-inset-bottom, 0px) * -.6); }
 }
@@ -161,17 +161,12 @@ html[data-skin='halo'][data-theme='stone'] .foot { align-self: stretch; margin-l
 /* the folders at the foot (Alex, 12 Nov, from a picture he sent): a plain bar of words with a thin rim, the rail's
    very shape (the same height, the same 20px corners, the same 14px chip inside), as wide as the rail, just above it; the chosen folder a soft grey pill; it scrolls when the words run past it.
    Halo does not use the wheel (Chat.jsx wheelOn). The rail itself sits 15px higher. */
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs {
-  align-self: stretch; width: auto; margin: 0 5px 8px; padding: 6px !important; border-radius: 20px;
-  background: rgba(255, 255, 255, .86) !important; border: 1px solid rgba(20, 20, 30, .08) !important;
-  box-shadow: 0 6px 18px rgba(70, 70, 110, .08) !important; -webkit-mask-image: none !important; mask-image: none !important;
-}
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs { align-self: stretch; width: auto; margin: 0 5px 8px; padding: 6px !important; background: rgba(255, 255, 255, .86) !important; border: 1px solid rgba(20, 20, 30, .08) !important; box-shadow: 0 6px 18px rgba(70, 70, 110, .08) !important; -webkit-mask-image: none !important; mask-image: none !important; }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs {
   background: rgba(255, 255, 255, .06) !important; border-color: rgba(255, 255, 255, .12) !important; box-shadow: none !important;
 }
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { flex: none; height: 42px; padding: 0 18px; border-radius: 14px; font-size: 15px; font-weight: 500; color: var(--text); }
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens.lens-on > .on,
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button.on { color: var(--text); }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { flex: none; }
+
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before {
   height: var(--lh, 0); transform: translate(var(--lx, 0), var(--ly, 0)); border-radius: 14px;
   background: rgba(20, 20, 30, .07); border: 0; box-shadow: none;
@@ -196,7 +191,7 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom 
   -webkit-backdrop-filter: var(--blur) !important; backdrop-filter: var(--blur) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09), 0 8px 20px rgba(20, 20, 40, .16) !important;
 }
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 23px; padding: 0 14px; border-radius: 9px; font-size: 13px; color: rgba(255, 255, 255, .58); }
+html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { padding: 0 14px; border-radius: 9px; color: rgba(255, 255, 255, .58); }
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens.lens-on > .on,
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button.on { color: #fff; }
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before,
@@ -204,34 +199,28 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom 
   border-radius: 9px; background: rgba(255, 255, 255, .14); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
 }
 /* on the light page the smoke is thicker, so both bars still read black */
-html[data-skin='halo'][data-theme='stone'][data-mode='light'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(16, 16, 20, .84) !important; }
+
 /* one corner for both bars (Alex, 12 Nov): 15px outside, the chips inside a little less; the folder bar 2px in from the
    rail's ends on each side */
-html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 15px; }
-html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 11px; }
-html[data-skin='halo'][data-theme='stone'] .foot button { border-radius: 11px; }
+
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs { border-radius: 15px; margin-left: 7px; margin-right: 7px; }
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button,
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before,
-html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs.lens::before { border-radius: 11px; }
+
 /* the folders' names always in capitals (Alex, 12 Nov), at the foot or at the top */
 html[data-skin='halo'][data-theme='stone'] .rooms-area .tabs button .tab-name { text-transform: uppercase; letter-spacing: .04em; }
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { font-size: 12px; font-weight: 600; }
 /* one bar cut in two (Alex, 12 Nov): the folder bar 42px with its top corners round and its bottom square, the rail with
    its top square and its bottom corners round, the same 15px, the same width, 5px apart (the column's 12px gap less 7) */
-html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { padding: 4px !important; margin: 0 5px -7px; border-radius: 15px 15px 0 0; }
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 32px; }
-html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 0 0 15px 15px; }
+html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { margin: 0 5px -7px; }
+
 /* the folders' words 6px further in from each end of their bar (Alex, 12 Nov) */
 html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { padding: 4px 10px !important; scroll-padding: 0 10px; }
 /* (Alex, 12 Nov) the outer corners 18px, the inner ones 5px, the chips 15px; the folder bar 38px (4 less), the rail 48px (8 less) */
-html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { border-radius: 18px 18px 5px 5px; }
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 28px; }
+
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button,
 html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs.lens::before,
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .rooms-area.bottom .tabs.lens::before { border-radius: 15px; }
 html[data-skin='halo'][data-theme='stone'] .foot { border-radius: 5px 5px 18px 18px; }
-html[data-skin='halo'][data-theme='stone'] .foot button { height: 34px; border-radius: 15px; }
+html[data-skin='halo'][data-theme='stone'] .foot button { border-radius: 15px; }
 html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 15px; }
 
 /* the two bars float over the list (Alex, 12 Nov: "in the air", option 1): the list runs on under both of them, to the
@@ -245,19 +234,15 @@ html[data-skin='halo'][data-theme='stone'] .app > .side { --hfmb: 0px; --hpb: 12
 }
 html[data-skin='halo'][data-theme='stone'] .app > .side .foot { position: relative; z-index: 4; }
 html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom { margin-bottom: calc(-60px - var(--hfmb) - var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom .tabs { position: relative; z-index: 4; margin-bottom: calc(53px + var(--hfmb) + var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-101px - var(--hfmb) - var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { content: ''; flex: none; height: calc(109px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom .tabs { position: relative; z-index: 4; }
+
+html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { content: ''; flex: none; }
 /* with the list behind them the dark bars need a little more smoke, so the words behind stay a blur and not text */
-html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.foot, .rooms-area.bottom .tabs) { background: rgba(14, 14, 18, .76) !important; }
+
 /* the folder bar's top corners 12px, its chip 7px (Alex, 12 Nov) */
-html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs { border-radius: 12px 12px 5px 5px; }
-html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs button,
-html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs.lens::before { border-radius: 7px; }
+
 /* the folder bar 2px taller, 40px (Alex, 12 Nov); the list under it follows */
-html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs button { height: 30px; }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-103px - var(--hfmb) - var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(111px + var(--hfmb) + var(--hpb)); }
+
 /* the folders' names in capitals on the button itself too (Alex, 12 Nov, again: "always capitals"), and centred in their
    bar while they fit; once they run past it they start from the left and scroll, as before (auto margins fall to 0) */
 html[data-skin='halo'][data-theme='stone'] .rooms-area .tabs button { text-transform: uppercase !important; }
@@ -271,18 +256,14 @@ html[data-skin='halo'][data-theme='stone'][data-mode] .rooms-area.bottom .tabs.l
 html[data-skin='halo'][data-theme='stone'] .foot button,
 html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border-radius: 10px; }
 /* 3px between the two bars (Alex, 12 Nov): the folder bar's lift 48 + 3, the list under it follows */
-html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom .tabs { margin-bottom: calc(51px + var(--hfmb) + var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-101px - var(--hfmb) - var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(109px + var(--hfmb) + var(--hpb)); }
+
 /* the rail's chips sit 4px in from its frame, as the folder bar's do (Alex, 12 Nov): 38px tall in the 48px rail */
 html[data-skin='halo'][data-theme='stone'] .foot { padding-top: 4px; padding-bottom: 4px; }
 html[data-skin='halo'][data-theme='stone'] .foot button { height: 38px; }
 
 /* both bars at the foot (Alex, 12 Nov): a heavier blur of their own, 35px, the one place that does not take --blur, and a
    fine matte grain over the smoke; the rail's chip without a rim, as dense as the folder bar's */
-html[data-skin='halo'][data-theme='stone'] .foot, html[data-skin='halo'][data-theme='stone'] .rooms-area.bottom .tabs { -webkit-backdrop-filter: blur(35px) !important; backdrop-filter: blur(35px) !important; }
-html[data-skin='halo'][data-theme='stone'][data-mode='light'] :is(.foot, .rooms-area.bottom .tabs) { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(16, 16, 20, .84) !important; }
-html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.foot, .rooms-area.bottom .tabs) { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(14, 14, 18, .76) !important; }
+
 html[data-skin='halo'][data-theme='stone'] .foot.lens::before { border: 0; background: rgba(255, 255, 255, .14); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
 
 /* (Alex, 12 Nov) the bars' blur back to the app's own (--blur), the smoke denser, the grain stronger */
@@ -290,9 +271,6 @@ html[data-skin='halo'][data-theme='stone'] .foot, html[data-skin='halo'][data-th
 html[data-skin='halo'][data-theme='stone'][data-mode='light'] :is(.foot, .rooms-area.bottom .tabs) { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(16, 16, 20, .93) !important; }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.foot, .rooms-area.bottom .tabs) { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(14, 14, 18, .9) !important; }
 /* 1px between the two bars (Alex, 12 Nov): the folder bar's lift 48 + 1, the list under it follows */
-html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom .tabs { margin-bottom: calc(49px + var(--hfmb) + var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-99px - var(--hfmb) - var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(107px + var(--hfmb) + var(--hpb)); }
 
 /* the same top bar on every page (Alex, 12 Nov): on Contacts it holds the search (and Find People), on Calls the words
    CREATE NEW CALL; the folder bar's very look (40px, the smoke and grain, 14/5 corners, capitals), 1px above the rail,
@@ -307,40 +285,32 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] :is(.contacts-top, 
 
 /* Calls: the words only, in capitals, white */
 
-html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls { margin-bottom: calc(-101px - var(--hfmb) - var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls::after { content: ''; flex: none; height: calc(99px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls::after { content: ''; flex: none; }
 
 /* Contacts: the search across the bar, Find People a plain sign at its end; it rides at the foot of the list (sticky) */
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts { margin-bottom: calc(-60px - var(--hfmb) - var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-list { flex: 1 0 auto; }
-html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-top { order: 2; position: sticky; z-index: 4; bottom: calc(49px + var(--hfmb) + var(--hpb)); flex: none; gap: 4px; }
-html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts::after { content: ''; order: 3; flex: none; height: calc(41px + var(--hfmb) + var(--hpb)); }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-top { order: 2; position: sticky; z-index: 4; flex: none; gap: 4px; }
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts::after { content: ''; order: 3; flex: none; }
 html[data-skin='halo'][data-theme='stone'] .contacts-top .search { height: 30px; padding: 0 4px; border: 0; border-radius: 8px; background: none; box-shadow: none; color: rgba(255, 255, 255, .58); }
 html[data-skin='halo'][data-theme='stone'] .contacts-top .search svg { width: 15px; height: 15px; }
 html[data-skin='halo'][data-theme='stone'] .contacts-top .search input { color: #fff; font-size: 13px; }
 html[data-skin='halo'][data-theme='stone'] .contacts-top .search input::placeholder { color: rgba(255, 255, 255, .58); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-html[data-skin='halo'][data-theme='stone'] .contacts-top .round { width: 30px; height: 30px; border: 0; border-radius: 8px; background: none; box-shadow: none; color: rgba(255, 255, 255, .58); }
+html[data-skin='halo'][data-theme='stone'] .contacts-top .round { height: 30px; border: 0; border-radius: 8px; background: none; box-shadow: none; color: rgba(255, 255, 255, .58); }
 html[data-skin='halo'][data-theme='stone'] .contacts-top .round:hover { background: rgba(255, 255, 255, .14); color: #fff; }
 html[data-skin='halo'][data-theme='stone'] .contacts-top .round svg { width: 17px; height: 17px; }
 /* 2px between the two bars, on Chats, Contacts and Calls (Alex, 12 Nov) */
 html[data-skin='halo'][data-theme='stone'][data-mode] .app > .side .rooms-area.bottom .tabs { margin-bottom: calc(50px + var(--hfmb) + var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom > .rooms-pager { margin-bottom: calc(-100px - var(--hfmb) - var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .rooms-area.bottom .rooms-pager .rooms::after { height: calc(108px + var(--hfmb) + var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls { margin-bottom: calc(-102px - var(--hfmb) - var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.calls::after { height: calc(100px + var(--hfmb) + var(--hpb)); }
+
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts > .contacts-top { bottom: calc(50px + var(--hfmb) + var(--hpb)); }
 html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.contacts::after { height: calc(42px + var(--hfmb) + var(--hpb)); }
 
 /* Settings: the same bar, empty (Alex, 12 Nov), 2px above the rail, the menu running on under both bars */
-html[data-skin='halo'][data-theme='stone'] .foot-bar-empty {
-  display: block; flex: none; position: relative; z-index: 4; box-sizing: border-box; height: 40px; margin: 0 5px -10px;
-  border-radius: 14px 14px 5px 5px; border: 1px solid rgba(255, 255, 255, .1); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09), 0 8px 20px rgba(20, 20, 40, .16);
-}
+html[data-skin='halo'][data-theme='stone'] .foot-bar-empty { flex: none; position: relative; z-index: 4; box-sizing: border-box; height: 40px; margin: 0 5px -10px; border-radius: 14px 14px 5px 5px; border: 1px solid rgba(255, 255, 255, .1); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .09), 0 8px 20px rgba(20, 20, 40, .16); }
 html[data-skin='halo'][data-theme='stone'][data-mode='light'] .foot-bar-empty { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(16, 16, 20, .93); }
 html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .foot-bar-empty { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), rgba(14, 14, 18, .9); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu { margin-bottom: calc(-102px - var(--hfmb) - var(--hpb)); }
-html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu::after { content: ''; flex: none; height: calc(100px + var(--hfmb) + var(--hpb)); }
+
+html[data-skin='halo'][data-theme='stone'] .app > .side .side-scroll.set-menu::after { content: ''; flex: none; }
 /* the Settings bar carries THEMADLIONS, MAD bold, in the bar's capitals (Alex, 12 Nov) */
 html[data-skin='halo'][data-theme='stone'] .foot-bar-empty { display: flex; align-items: center; justify-content: center; }
 html[data-skin='halo'][data-theme='stone'] .foot-bar-empty span { color: rgba(255, 255, 255, .9); font-size: 12px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
@@ -387,7 +357,7 @@ html[data-skin='halo'][data-theme='stone'][data-mode='dark'] .side-head .head-ed
 /* Edit and + as the picture Alex sent (12 Nov): both 44px circles, the signs 22px, Edit as three full dots, + a little bolder */
 html[data-skin='halo'][data-theme='stone'] .side-head :is(.head-edit, .round) { width: 44px; height: 44px; min-height: 44px; border-radius: 50%; }
 html[data-skin='halo'][data-theme='stone'] .side-head :is(.head-edit .he-ico svg, .round svg) { width: 22px; height: 22px; }
-html[data-skin='halo'][data-theme='stone'] .side-head .round svg { stroke-width: 2.1; }
+
 html[data-skin='halo'][data-theme='stone'] .side-head .round svg { width: 26px; height: 26px; stroke-width: 2; }
 /* the signs in proportion to the picture: + about 44% of its circle, the three dots about 37% */
 html[data-skin='halo'][data-theme='stone'] .side-head .plus-wrap > .round > svg,
@@ -463,47 +433,36 @@ html[data-skin='halo'] .modal:has(.pf) { overflow: hidden; }
 html[data-skin='halo'] .modal:has(.pf) .modal-head { display: none; }
 html[data-skin='halo'] .modal:has(.pf) .modal-body { padding: 0 14px 18px; }
 html[data-skin='halo'] .pf { gap: 14px; }
-html[data-skin='halo'] .pf-head {
-  position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 16px; margin: 0 -14px;
-  min-height: min(112vw, 470px); padding: 70px 14px 16px; box-sizing: border-box; overflow: hidden; isolation: isolate;
-  background: linear-gradient(160deg, #3a3a46, #141419); color: #fff;
-}
-html[data-skin='halo'] .pf-head::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(0, 0, 0, .35) 0, transparent 22%, transparent 52%, rgba(0, 0, 0, .78) 100%); pointer-events: none; }
+html[data-skin='halo'] .pf-head { position: relative; display: flex; flex-direction: column; margin: 0 -14px; box-sizing: border-box; isolation: isolate; background: linear-gradient(160deg, #3a3a46, #141419); color: #fff; }
+html[data-skin='halo'] .pf-head::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
 html[data-skin='halo'] .pf-hero { display: block; position: absolute; inset: 0; z-index: -2; background: center 30% / cover no-repeat; }
-html[data-skin='halo'] .pf-head :is(.pf-back, .pf-edit) {
-  position: absolute; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 2; display: grid; place-items: center; height: 44px; border: 0; cursor: pointer;
-  background: rgba(60, 60, 66, .55); color: #fff; -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-}
-html[data-skin='halo'] .pf-back { left: 14px; width: 44px; border-radius: 50%; }
-html[data-skin='halo'] .pf-edit { right: 14px; padding: 0 18px; border-radius: 22px; font: inherit; font-size: 16px; font-weight: 500; }
-html[data-skin='halo'] .pf-head .pf-top { align-items: flex-start; text-align: left; gap: 2px; padding: 0 6px; }
+html[data-skin='halo'] .pf-head :is(.pf-back, .pf-edit) { position: absolute; z-index: 2; display: grid; place-items: center; border: 0; cursor: pointer; background: rgba(60, 60, 66, .55); color: #fff; -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+html[data-skin='halo'] .pf-back { left: 14px; border-radius: 50%; }
+html[data-skin='halo'] .pf-edit { right: 14px; font: inherit; font-weight: 500; }
+
 html[data-skin='halo'] .pf-head.has-photo .pf-top > :is(.av, .pf-pic) { display: none; }
 html[data-skin='halo'] .pf-head:not(.has-photo) .pf-top > :is(.av, .pf-pic) { align-self: center; margin-bottom: 18px; }
-html[data-skin='halo'] .pf-head .pf-name, html[data-skin='halo'] .pf-head .pf-name-edit { margin: 0; color: #fff; font-size: 26px; font-weight: 600; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+html[data-skin='halo'] .pf-head .pf-name, html[data-skin='halo'] .pf-head .pf-name-edit { margin: 0; color: #fff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 html[data-skin='halo'] .pf-head .pf-name-edit { padding: 2px 6px; margin-left: -6px; }
-html[data-skin='halo'] .pf-head .pf-sub { margin: 0; color: rgba(255, 255, 255, .78); font-size: 15px; font-weight: 400; letter-spacing: 0; text-transform: none; }
-html[data-skin='halo'] .pf-acts { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+html[data-skin='halo'] .pf-head .pf-sub { margin: 0; color: rgba(255, 255, 255, .78); font-weight: 400; letter-spacing: 0; text-transform: none; }
+html[data-skin='halo'] .pf-acts { grid-template-columns: repeat(5, 1fr); }
 html[data-skin='halo'] .pf-acts .pf-a-msg { display: none; }
 html[data-skin='halo'] .pf-acts :is(.pf-a-mute, .pf-a-find) { display: flex; }
-html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)), html[data-skin='halo'] .pf-more > button:not(.scrim) {
-  gap: 4px; padding: 11px 2px 9px; border: 0; border-radius: 16px; color: #fff;
-  background: rgba(255, 255, 255, .14); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-}
-html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)) svg { width: 24px; height: 24px; }
-html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)) span { color: #fff; font-size: 12.5px; text-transform: lowercase; }
+html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)), html[data-skin='halo'] .pf-more > button:not(.scrim) { border: 0; color: #fff; }
+
 html[data-skin='halo'] :is(.pf-acts > button, .pf-more > button:not(.scrim)):hover, html[data-skin='halo'] .pf-more > button:not(.scrim).on { background: rgba(255, 255, 255, .24); }
 html[data-skin='halo'] .pf-menu { top: calc(100% + 8px); bottom: auto; right: 0; z-index: 30; }
 html[data-skin='halo'] .pf-card { border-radius: 26px; background: rgba(255, 255, 255, .92); border: 1px solid #fff; box-shadow: 0 6px 18px rgba(70, 70, 110, .06); }
 html[data-skin='halo'][data-mode='dark'] .pf-card { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .1); box-shadow: none; }
-html[data-skin='halo'] .pf-field { gap: 3px; padding: 13px 54px 13px 18px; }
+html[data-skin='halo'] .pf-field { gap: 3px; }
 html[data-skin='halo'] .pf-field + .pf-field { border-top: 0; background: linear-gradient(color-mix(in srgb, var(--text) 10%, transparent), color-mix(in srgb, var(--text) 10%, transparent)) 18px 0 / calc(100% - 36px) 1px no-repeat; }
-html[data-skin='halo'] .pf-field small { color: var(--text); font-size: 14px; }
-html[data-skin='halo'] .pf-field span { color: var(--halo); font-size: 17px; }
+
+html[data-skin='halo'] .pf-field span { color: var(--halo); }
 html[data-skin='halo'] .pf-field span.pf-note { color: var(--text); }
 html[data-skin='halo'] .pf-field i { color: var(--halo); }
-html[data-skin='halo'] .pf-tabs { padding: 4px; border-radius: 24px; background: rgba(255, 255, 255, .85); border: 1px solid #fff; }
+html[data-skin='halo'] .pf-tabs { background: rgba(255, 255, 255, .85); border: 1px solid #fff; }
 html[data-skin='halo'][data-mode='dark'] .pf-tabs { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .1); }
-html[data-skin='halo'] .pf-tabs button { height: 38px; padding: 0 14px; border-radius: 19px; font-size: 15px; font-weight: 500; color: var(--text); }
+html[data-skin='halo'] .pf-tabs button { font-weight: 500; color: var(--text); }
 html[data-skin='halo'] .pf-tabs button.on { background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); }
 @media (max-width: 760px) {
   html[data-skin='halo'] .modal-back:has(.pf) { padding: 0; }
@@ -544,7 +503,7 @@ html[data-skin='halo'] .rt .rt-plan {
 html[data-skin='halo'][data-mode='dark'] .rt .rt-plan { background: rgba(255, 255, 255, .05) !important; border-color: rgba(255, 255, 255, .1) !important; }
 html[data-skin='halo'] .rt .rt-plan > i { display: none; }
 html[data-skin='halo'] .rt .rt-plan b { font-size: 16px; font-weight: 600; gap: 4px; }
-html[data-skin='halo'] .rt .rt-plan small { display: flex; flex-direction: column; align-items: center; white-space: normal; font-size: 12px; line-height: 1.35; }
+html[data-skin='halo'] .rt .rt-plan small { display: flex; flex-direction: column; align-items: center; white-space: normal; line-height: 1.35; }
 html[data-skin='halo'] .rt .rt-plan small > span + span::before { content: none; }
 html[data-skin='halo'] .rt .rt-plan .rt-leaf svg { width: 13px; height: 13px; }
 html[data-skin='halo'] .rt .rt-plan.on { background: var(--halo-mine) !important; border-color: rgba(255, 255, 255, .28) !important; color: #fff; }
@@ -663,21 +622,12 @@ html[data-skin='halo'] .loc.view .map-credit { left: 10px; right: auto; bottom: 
 
 /* the attach sheet's bar at the foot, glassier (Alex, 12 Nov): a see-through frosted strip with a bright rim and a
    light from above, the chosen one a raised glass chip */
-html[data-skin='halo'] .as-sheet .as-tabs {
-  background: linear-gradient(180deg, rgba(255, 255, 255, .62), rgba(255, 255, 255, .38)) !important;
-  border: 1px solid rgba(255, 255, 255, .85) !important;
-  box-shadow: 0 10px 30px rgba(70, 70, 110, .14), inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -1px 0 rgba(255, 255, 255, .3) !important;
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-}
+html[data-skin='halo'] .as-sheet .as-tabs { border: 1px solid rgba(255, 255, 255, .85) !important; box-shadow: 0 10px 30px rgba(70, 70, 110, .14), inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -1px 0 rgba(255, 255, 255, .3) !important; -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
 html[data-skin='halo'] .as-sheet .as-tabs button.on {
   background: linear-gradient(180deg, rgba(255, 255, 255, .95), rgba(255, 255, 255, .55)) !important;
   box-shadow: 0 4px 12px rgba(70, 70, 110, .12), inset 0 1px 0 #fff, inset 0 0 0 1px rgba(255, 255, 255, .9) !important;
 }
-html[data-skin='halo'][data-mode='dark'] .as-sheet .as-tabs {
-  background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .05)) !important;
-  border-color: rgba(255, 255, 255, .14) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .14) !important;
-}
+html[data-skin='halo'][data-mode='dark'] .as-sheet .as-tabs { border-color: rgba(255, 255, 255, .14) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .14) !important; }
 html[data-skin='halo'][data-mode='dark'] .as-sheet .as-tabs button.on {
   background: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .08)) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 0 0 1px rgba(255, 255, 255, .1) !important;
@@ -694,9 +644,9 @@ html[data-skin='halo'] .halo-accents .acc.on { box-shadow: 0 0 0 3px var(--bg), 
    a plain white menu with dark words */
 html[data-skin='halo'] .pf-head { overflow: visible; z-index: 5; }
 html[data-skin='halo'] .pf-head .pf-hero { border-radius: inherit; }
-html[data-skin='halo'] .pf-more .pf-menu { background: rgba(255, 255, 255, .97); border: 1px solid #fff; box-shadow: 0 16px 40px rgba(20, 20, 40, .22); min-width: 220px; padding: 6px; border-radius: 20px; }
+html[data-skin='halo'] .pf-more .pf-menu { background: rgba(255, 255, 255, .97); border: 1px solid #fff; box-shadow: 0 16px 40px rgba(20, 20, 40, .22); }
 html[data-skin='halo'][data-mode='dark'] .pf-more .pf-menu { background: rgba(32, 32, 38, .97); border-color: rgba(255, 255, 255, .1); }
-html[data-skin='halo'] .pf-more .pf-menu > button { color: var(--text); text-transform: none; height: 44px; border-radius: 14px; }
+html[data-skin='halo'] .pf-more .pf-menu > button { color: var(--text); text-transform: none; border-radius: 14px; }
 html[data-skin='halo'] .pf-more .pf-menu > button svg { width: 19px; height: 19px; padding: 0; background: none; border: 0; }
 html[data-skin='halo'] .pf-more .pf-menu > button span { color: inherit; font-size: 15px; }
 html[data-skin='halo'] .pf-more .pf-menu > button.danger { color: var(--danger); }
@@ -838,7 +788,6 @@ html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile,
 html[data-skin='halo'][data-theme] :is(.room-view, .wall-tile, .set-preview, .te-preview, body.app-wall)[data-bg='halo-candy'] { background-image: radial-gradient(circle at 12% 0%, rgba(170, 182, 251, 0.34), transparent 62%), radial-gradient(circle at 92% 100%, rgba(250, 167, 184, 0.36), transparent 64%), linear-gradient(160deg, rgba(170, 182, 251, 0.1), rgba(250, 167, 184, 0.12)) !important; }
 html[data-skin='halo'][data-theme][data-mode='dark'] :is(.room-view, .wall-tile, .set-preview, .te-preview, body.app-wall)[data-bg='halo-candy'] { background-image: radial-gradient(circle at 12% 0%, rgba(170, 182, 251, 0.3), transparent 62%), radial-gradient(circle at 92% 100%, rgba(250, 167, 184, 0.26), transparent 64%) !important; }
 
-
 /* lighter, second pass (Alex, 12 Nov: "check well, perfect response"):
    - the veils over the whole screen (behind a menu, a window, a sheet) no longer fade in: a blurred layer whose opacity
      moves is blurred again on every frame, and that was under every pop and slide;
@@ -939,7 +888,6 @@ html[data-skin='halo'][data-mode='dark'] body.app-wall[data-wop] { box-shadow: i
 /* a chat does not lay the same wash a second time over the page's: its own shows only when it differs from the app's */
 html[data-skin='halo'] body.app-wall .room-view.same-wall { background-image: none !important; background-color: transparent !important; box-shadow: none !important; }
 
-
 /* the message menu holds its longest line on one row (Alex, 12 Nov: "Ask to Delete for Everyone" and "Delete for
    Everyone (Admin)" broke in two and ran into each other): as wide as Chat.jsx openMenu reckons (250px), no wrapping, a
    line too long for a narrow screen ends in dots; and denser, since without a blur the chat's words showed through */
@@ -983,7 +931,6 @@ html[data-skin='halo'] .smsg .tpick-colon { color: var(--halo); }
 html[data-skin='halo'] .smsg .sch-hint { margin: 0 12px; text-align: center; font-size: 12px; }
 html[data-skin='halo'] .modal:has(.smsg) .modal-foot { padding: 6px 18px 18px; }
 html[data-skin='halo'][data-theme][data-mode] .modal:has(.smsg) .smsg-go { min-height: 48px; border-radius: 999px !important; font-weight: 600; }
-
 
 /* a settings page reached from inside another (Chat Folders, Auto-Reply, Language, a folder) keeps its Back and its Done:
    the rule that clears the chat head's extra round buttons took them away too, so there was no way back and nothing for

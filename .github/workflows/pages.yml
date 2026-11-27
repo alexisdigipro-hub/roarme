@@ -35,6 +35,10 @@ jobs:
             || echo "Jost not fetched: the wordmark falls back to Futura"
           ls -la public/fonts
       - run: npm run build
+      # the smoke test (Alex, 27 Nov): the built app walked on a phone and a computer with made-up data; any error stops
+      # the change before it goes online (scripts/smoke.mjs)
+      - run: npm install --no-save --no-audit --no-fund playwright@1.48.2 && npx playwright install --with-deps chromium
+      - run: node scripts/smoke.mjs dist
       # roarme.app is RoarMe's page and the app lives at /app/ (Alex, 23 Nov): the build moves into dist/app; the page
       # (landing/), the service worker (one registration for the whole site, as before), the person links' 404 page,
       # Apple's association file and RoarTransfer stay at the root

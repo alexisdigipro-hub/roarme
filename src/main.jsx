@@ -1,4 +1,4 @@
-import { StrictMode, Suspense, lazy } from 'react'
+import { Component, StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import { TransferPage } from './transfer.jsx'
@@ -11,11 +11,14 @@ import './themes-frost.css' // Frost, worn only with data-frost on <html> (Alex,
 import { startI18n } from './i18n.js'
 import { dressTheme } from './prefs.js'
 import { nativeTap, swAt } from './lib.js'
+import { reportError, startErrLog } from './errlog.js'
 
 // the Privacy Policy and the Terms come only when opened, not with every start of RoarMe
 const LegalPage = lazy(() => import('./legal.jsx').then((m) => ({ default: m.LegalPage })))
 
 startI18n()
+// what breaks on people's devices is sent to Settings > Admin > Errors (Alex, 27 Nov; src/errlog.js)
+startErrLog()
 // Glass, the one theme, is on <html> before the first paint (prefs.js dressTheme)
 dressTheme()
 
@@ -140,8 +143,28 @@ const legalDoc = params.get('legal')
 // a personal invite link (?u=username): kept until the person is signed in, then their chat opens
 if (!transferToken && !legalDoc) takeInvite()
 
+// a screen that falls over no longer leaves a white page (Alex, 27 Nov): the error is sent (errlog.js) and a short
+// line with Reload stands in its place
+class RootGuard extends Component {
+  constructor(p) { super(p); this.state = { failed: false } }
+  static getDerivedStateFromError() { return { failed: true } }
+  componentDidCatch(err, info) { reportError(err, info?.componentStack?.slice(0, 1500) || '') }
+  render() {
+    if (!this.state.failed) return this.props.children
+    return (
+      <div className="root-fail">
+        <b>Something went wrong.</b>
+        <span>We have been told about it. Reload to carry on.</span>
+        <button type="button" className="pill-btn" onClick={() => window.location.reload()}>Reload</button>
+      </div>
+    )
+  }
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {transferToken ? <TransferPage token={transferToken} /> : legalDoc ? <Suspense fallback={null}><LegalPage doc={legalDoc} /></Suspense> : <><App /><InstallPrompt /></>}
+    <RootGuard>
+      {transferToken ? <TransferPage token={transferToken} /> : legalDoc ? <Suspense fallback={null}><LegalPage doc={legalDoc} /></Suspense> : <><App /><InstallPrompt /></>}
+    </RootGuard>
   </StrictMode>,
 )

@@ -29,7 +29,7 @@ export function Admin() {
   const [tab, setTab] = useState('people')
   // a slide left or right goes to the next tab (Alex, 19 Nov)
   const admRef = useRef(null)
-  useTabSwipe(admRef, ['people', 'reports', 'files', 'transfer', 'walls'], tab, setTab)
+  useTabSwipe(admRef, ['people', 'reports', 'errors', 'files', 'transfer', 'walls'], tab, setTab)
   const [users, setUsers] = useState(null)
   const [files, setFiles] = useState(null)
   const [more, setMore] = useState(false)
@@ -41,11 +41,13 @@ export function Admin() {
   const [meId, setMeId] = useState('')
   const [official, setOfficial] = useState([]) // the RoarMe account: never blocked or deleted
   const [openReports, setOpenReports] = useState(0)
+  const [newErrors, setNewErrors] = useState(0)
 
   useEffect(() => {
     supabase.rpc('roar_admin_users').then(({ data, error }) => { if (error) setErr(errText(error)); else setUsers(data || []) })
     supabase.rpc('roar_admin_blocked').then(({ data }) => setBlocked(new Set(data || [])))
     supabase.rpc('roar_admin_reports', { open_only: true }).then(({ data }) => setOpenReports((data || []).length))
+    supabase.rpc('roar_admin_errors').then(({ data }) => setNewErrors((data || []).filter((e) => !e.seen).length))
     supabase.auth.getUser().then(({ data }) => setMeId(data.user?.id || ''))
     supabase.from('roar_official').select('user_id').then(({ data }) => setOfficial((data || []).map((x) => x.user_id)))
     supabase.rpc('roar_admin_files', { before: null, lim: PAGE }).then(({ data, error }) => {
@@ -96,11 +98,12 @@ export function Admin() {
         <Lens className="seg" dep={tab}>
           <button type="button" className={tab === 'people' ? 'on' : ''} onClick={() => setTab('people')}>People</button>
           <button type="button" className={tab === 'reports' ? 'on' : ''} onClick={() => setTab('reports')}>Reports{openReports > 0 && <i className="adm-count">{openReports}</i>}</button>
+          <button type="button" className={tab === 'errors' ? 'on' : ''} onClick={() => setTab('errors')}>Errors{newErrors > 0 && <i className="adm-count">{newErrors}</i>}</button>
           <button type="button" className={tab === 'files' ? 'on' : ''} onClick={() => setTab('files')}>Files</button>
           <button type="button" className={tab === 'transfer' ? 'on' : ''} onClick={() => setTab('transfer')}>RoarTransfer</button>
           <button type="button" className={tab === 'walls' ? 'on' : ''} onClick={() => setTab('walls')}>Wallpapers</button>
         </Lens>
-        {tab !== 'walls' && tab !== 'reports' && <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : tab === 'transfer' ? 'File or person' : 'File, person or group'} /></label>}
+        {tab !== 'walls' && tab !== 'reports' && tab !== 'errors' && <label className="search adm-search">{I.search}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === 'people' ? 'Name, @username or email' : tab === 'transfer' ? 'File or person' : 'File, person or group'} /></label>}
       </div>
       {err && <p className="adm-err">{err}</p>}
 
@@ -157,6 +160,7 @@ export function Admin() {
         </div>
       )}
       {tab === 'reports' && <AdminReports onCount={setOpenReports} blockedSet={blocked} onBlock={block} />}
+      {tab === 'errors' && <AdminErrors onCount={setNewErrors} />}
       {tab === 'transfer' && <AdminTransfers q={s} />}
       {tab === 'walls' && <AdminWalls />}
       <p className="adm-note muted">Only you see this page. It shows who is on RoarMe and what files they sent (name, size, type, when), never what the messages or the files say.</p>
@@ -223,6 +227,48 @@ function AdminReports({ onCount, blockedSet, onBlock }) {
             {r.message_id && !r.message_gone && <button type="button" className="pill-btn danger" disabled={busy === r.id} onClick={() => removeMsg(r)}>Delete Message</button>}
             {r.reported && !blockedSet.has(r.reported) && <button type="button" className="pill-btn danger" disabled={busy === r.id} onClick={() => onBlock({ id: r.reported, username: r.reported_username }, true)}>Block Account</button>}
             <button type="button" className="pill-btn" disabled={busy === r.id} onClick={() => done(r, !r.handled_at)}>{r.handled_at ? 'Reopen' : 'Done'}</button>
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* Admin > Errors (Alex, 27 Nov: "when the app breaks for someone, we should know at once"): what went wrong on people's
+   devices (src/errlog.js, supabase/app-errors.sql), new ones first: the message, how many times and for how many people,
+   when last, on what device and build, where in the app; the code's own trail opens under it. Seen puts one aside. */
+function AdminErrors({ onCount }) {
+  const [list, setList] = useState(null)
+  const [err, setErr] = useState('')
+  const [open, setOpen] = useState('')
+  const load = () => supabase.rpc('roar_admin_errors').then(({ data, error }) => {
+    if (error) { setErr(errText(error)); return }
+    setList(data || [])
+    onCount?.((data || []).filter((e) => !e.seen).length)
+  })
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const seen = async (id, on) => {
+    const { error } = await supabase.rpc('roar_admin_error_seen', { i: id, s: on })
+    if (error) setErr(errText(error)); else load()
+  }
+  const fresh = (list || []).filter((e) => !e.seen).length
+  return (
+    <div className="adm-list">
+      {fresh > 0 && <div className="adm-rep-top"><button type="button" className="pill-btn" onClick={() => seen(null, true)}>Mark All Seen</button></div>}
+      {err && <p className="adm-err">{err}</p>}
+      {!list && !err && <p className="muted">Loading…</p>}
+      {list && !list.length && <p className="muted">No errors so far. Everything is running smoothly.</p>}
+      {(list || []).map((e) => (
+        <div key={e.id} className={`adm-row adm-errr${e.seen ? ' gone' : ''}`}>
+          <span className="adm-main">
+            <b data-raw="">{e.msg || 'Unknown error'}</b>
+            <small>{many(e.hits, 'time')} · {Number(e.people) === 1 ? '1 person' : `${e.people} people`} · last {ago(e.last_at)}{e.username ? <> · <span data-raw="">@{e.username}</span></> : null}</small>
+            <small data-raw="">{[e.device, e.place].filter(Boolean).join(' · ')}</small>
+          </span>
+          {open === e.id && <pre className="adm-err-stack" data-raw="">{e.stack || 'No trail.'}{e.build ? `\n\nbuild ${e.build} · first ${day(e.first_at)}` : ''}</pre>}
+          <span className="adm-rep-acts">
+            <button type="button" className="pill-btn" onClick={() => setOpen(open === e.id ? '' : e.id)}>{open === e.id ? 'Hide Details' : 'Details'}</button>
+            <button type="button" className="pill-btn" onClick={() => seen(e.id, !e.seen)}>{e.seen ? 'Mark New' : 'Seen'}</button>
           </span>
         </div>
       ))}

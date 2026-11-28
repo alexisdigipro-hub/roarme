@@ -71,7 +71,7 @@ import { RolesWindow, mentionsMe } from './roles.jsx'
 import { BundleCard, CopyLink, TRANSFER_DAYS, TRANSFER_MAX, TransferMark, TransferWindow } from './transfer.jsx'
 import { useWalls, wallLook } from './walls.js'
 import { hubLink, hubStart, proSwitchLoad, proSwitchNow } from './hub.jsx'
-import { MAIL_I, MailView, MailWord, mailBackNow, mailCanBack, mailHere, mailHomeNext, mailSwitchNow, openMailFromUnread, useMailUnread } from './mail.jsx'
+import { MAIL_I, MailView, MailWord, mailBackNow, mailCanBack, mailHere, mailHomeNext, mailSwitchNow, openMailFromUnread, syncMailWatch, useMailUnread } from './mail.jsx'
 import { canCompressVideo, compressVideo, isVideoFile, prepareVideo, releaseVideo } from './videoCompress.js'
 import { AttachSheet, AudioNote, Cinema, LinkVideo, MusicTile, isAudioFile, MediaViewer, SharedMedia, VideoTile, NoteTile, WallTiles, videoLinkOf, peaksOf } from './extras.jsx'
 
@@ -133,6 +133,7 @@ export default function Chat({ me, setMe }) {
   const proOn = proOk() && proSwitch
   // RoarMail inside RoarMe (Alex, 24 Nov): a hidden switch only he sees (Settings > RoarMail), kept on the device; on, the gold ROARMAIL folder
   const [mailSwitch, setMailSwitch] = useState(mailSwitchNow)
+  useEffect(() => { syncMailWatch() }, [])
   useEffect(() => { const f = (e) => setMailSwitch(!!e.detail); window.addEventListener('roarme-mail-switch', f); return () => window.removeEventListener('roarme-mail-switch', f) }, [])
   const mailOn = mailHere() && mailSwitch && inThemeLab(me) // ROARMAIL only for the admin again (Alex, 26 Nov: "only me, the admin"; it was open to everyone on a phone from 25 Nov)
   newsLab(inThemeLab(me)) // What's New shows the lines of what is still being built only to who sees it

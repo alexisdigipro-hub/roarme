@@ -341,6 +341,32 @@ function keepList(ck, val) {
   listCache.set(ck, val)
   keepKv(`ml:${ck}`, { rows: (val.rows || []).slice(0, 60), more: true, page: 0 })
 }
+// what was just changed on this phone (read, unread, star) wins over a server answer that left before it, for three
+// minutes, and every kept list and count follows at once (28 Nov: "when I read it, it does not show as read")
+const LOCALF = new Map()
+const LOCAL_MS = 3 * 60e3
+function withLocal(list) {
+  if (!LOCALF.size || !list) return list
+  const t = Date.now()
+  return list.map((x) => {
+    const o = LOCALF.get(keyM(x))
+    if (!o || t - o.at > LOCAL_MS) return x
+    const seen = o.seen ?? x.seen, flagged = o.flagged ?? x.flagged
+    return seen === x.seen && flagged === x.flagged ? x : { ...x, seen, flagged }
+  })
+}
+function noteFlags(m, p) {
+  if (!m || !('seen' in p || 'flagged' in p)) return
+  const k = keyM(m), had = LOCALF.get(k)
+  const wasSeen = had?.seen ?? m.seen
+  const o = { ...(had || {}), at: Date.now() }
+  if ('seen' in p) o.seen = !!p.seen
+  if ('flagged' in p) o.flagged = !!p.flagged
+  LOCALF.set(k, o)
+  for (const [ck, v] of listCache) if (v?.rows?.some((x) => sameM(x, m))) keepList(ck, { ...v, rows: v.rows.map((x) => (sameM(x, m) ? { ...x, ...p } : x)) })
+  tell('roarme-mail-flags', { m, p })
+  if ('seen' in p && !!p.seen !== !!wasSeen) tell('roarme-mail-delta', { account: m.account, path: m.path, d: p.seen ? -1 : 1 })
+}
 let ahead = Promise.resolve()
 function fetchAhead(rows) {
   rows.slice(0, 8).forEach((m) => {
@@ -371,9 +397,11 @@ export function warmMail(force) {
       lsSet('mail-counts', counts); tell('roarme-mail-counts', counts)
       const [j, u] = await Promise.all([cloud({ action: 'list', items, limit: 30, bg: true }), cloud({ action: 'list', items, limit: 20, unseen: true, bg: true })])
       const hide = mailPrefs().allHide || [], junkOn = mailPrefs().autoJunk
-      const all = (j.items || []).filter((m) => !(junkOn && isBlocked(m.from, setup)))
-      for (const it of items) keepList(`${it.account}|${it.path}`, { rows: all.filter((m) => m.account === it.account) })
-      keepList('all|inbox', { rows: all.filter((m) => !hide.includes(m.account)) })
+      const all = withLocal((j.items || []).filter((m) => !(junkOn && isBlocked(m.from, setup))))
+      const bad = new Set(Object.keys(j.errors || {}))
+      for (const it of items) if (!bad.has(it.account)) keepList(`${it.account}|${it.path}`, { rows: all.filter((m) => m.account === it.account) })
+      const keptAll = (listCache.get('all|inbox')?.rows || []).filter((m) => bad.has(m.account))
+      keepList('all|inbox', { rows: [...all, ...keptAll].filter((m) => !hide.includes(m.account)).sort((a, b) => String(b.date).localeCompare(String(a.date))) })
       const un = (u.items || []).filter((m) => !hide.includes(m.account) && !(junkOn && isBlocked(m.from, setup))).slice(0, 60)
       keepKv('mu', un); tell('roarme-mail-unread', un)
       fetchAhead(un.length ? un : all)
@@ -606,6 +634,9 @@ export function MailView({ me, people, book }) {
   // unread in every folder of the account opened (Alex, 24 Nov: "the numbers of the unread on the folders"); for All
   // Inboxes every account's folder of each kind. Asked 30 at a time, kept for the visit.
   const [fcounts, setFcounts] = useState(() => lsGet('mail-fcounts') || {})
+  const fcountsRef = useRef(fcounts), countsRef = useRef(counts)
+  fcountsRef.current = fcounts
+  countsRef.current = counts
   useEffect(() => {
     if ((step.s !== 'folders' && step.s !== 'accs') || !setup?.folders || !on || !on.size) return
     // the home asks every account's Inbox, Drafts, Sent, Junk, Trash and Archive, so each row shows what its next page shows
@@ -618,6 +649,19 @@ export function MailView({ me, people, book }) {
     }
     return () => { gone = true }
   }, [step.s, step.acc, setup, on])
+  // a mail read or made unread here moves the counts at once, not at the next ask of the server (28 Nov)
+  useEffect(() => {
+    const f = (e) => {
+      const { account, path, d } = e.detail || {}
+      if (!account) return
+      const fc = fcountsRef.current || {}, k = `${account}|${path}`
+      if (k in fc) { const n = { ...fc, [k]: Math.max(0, (fc[k] || 0) + d) }; fcountsRef.current = n; setFcounts(n); lsSet('mail-fcounts', n) }
+      const c = countsRef.current || {}
+      if (path === inboxRef.current(account) && account in c) { const n = { ...c, [account]: Math.max(0, (c[account] || 0) + d) }; countsRef.current = n; lsSet('mail-counts', n); tell('roarme-mail-counts', n) }
+    }
+    window.addEventListener('roarme-mail-delta', f)
+    return () => window.removeEventListener('roarme-mail-delta', f)
+  }, [])
 
   if (setup === null) return <div className="rmx-wait"><span className="rmx-wait-ico">{MAIL_I.mail}</span><p>Looking for your RoarMail accounts…</p></div>
   const addPage = step.s === 'add' && <AddAccount setup={setup?.accounts ? setup : null} on={on} onBack={() => setStep(step.from || { s: 'accs' })} onDone={reload} />
@@ -939,7 +983,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   const rowH = useRef({})
   const prefs = usePrefs()
   const ck = `${acc.id}|${step.path || step.role}`
-  const [rows, setRows] = useState(() => listCache.get(ck)?.rows || null)
+  const [rows, setRows] = useState(() => withLocal(listCache.get(ck)?.rows) || null)
   const [more, setMore] = useState(() => listCache.get(ck)?.more ?? true)
   const [page, setPage] = useState(() => listCache.get(ck)?.page || 0)
   const [err, setErr] = useState('')
@@ -971,16 +1015,20 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
     if (!quiet) setBusy(true)
     setErr('')
     try {
-      const j = await cloud({ action: 'list', items: targets, limit: 30, page: p })
+      // the refresh every 30 s goes on the quiet lane, so a tap on a mail never waits behind it (28 Nov)
+      const j = await cloud({ action: 'list', items: targets, limit: 30, page: p, ...(quiet ? { bg: true } : {}) })
       const errs = Object.values(j.errors || {}).filter((e) => e !== 'missing')
       if (errs.length && !(j.items || []).length) setErr(errs[0])
-      const got = emptying(ck) ? [] : notGone(j.items)
+      const bad = new Set(Object.keys(j.errors || {}))
+      const got = emptying(ck) ? [] : withLocal(notGone(j.items))
       setRows((r) => {
         // the newest page is the truth for its time span: what the server no longer has there (deleted or moved on
         // another device) goes; older mail brought by All Mail or Older Mail stays below it
         const edge = got.length ? Math.min(...got.map((x) => new Date(x.date).getTime())) : 0
+        // an account that did not answer this time keeps what was on screen of it (28 Nov: "not all the mail comes")
+        const kept = (r || []).filter((x) => bad.has(x.account) && !got.some((y) => sameM(x, y)))
         const next = p === 0
-          ? [...got, ...(got.length >= 30 ? (r || []).filter((x) => !got.some((y) => sameM(x, y)) && new Date(x.date).getTime() < edge) : [])]
+          ? [...got, ...kept, ...(got.length >= 30 ? (r || []).filter((x) => !bad.has(x.account) && !got.some((y) => sameM(x, y)) && new Date(x.date).getTime() < edge) : [])].sort((a, b) => String(b.date).localeCompare(String(a.date)))
           : [...(r || []), ...got.filter((x) => !(r || []).some((y) => sameM(x, y)))]
         const hasMore = Object.entries(j.totals || {}).some(([, t]) => t > 30 * (p + 1))
         keepList(ck, { rows: next, more: hasMore, page: p })
@@ -1005,7 +1053,7 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   }, [])
   useEffect(() => {
     if (offline) return
-    if (!rows) readKv(`ml:${ck}`).then((v) => { if (v?.rows) setRows((r) => r || (emptying(ck) ? [] : notGone(v.rows))) })
+    if (!rows) readKv(`ml:${ck}`).then((v) => { if (v?.rows) setRows((r) => r || (emptying(ck) ? [] : withLocal(notGone(v.rows)))) })
     load(0)
   }, [])
   // what the server is asked to look for: every unread or starred (not only the ones loaded), a day, a sender, words
@@ -1046,10 +1094,22 @@ function MailList({ acc, step, targets, accounts, folders, who, setup, offline, 
   }, [base, filter, q, oldest, conv, thread, day, sender, found, who, prefs.threadOrder])
   const patchIn = (l, m, p) => (l || []).map((x) => sameM(x, m) ? { ...x, ...p } : x)
   const patch = (m, p) => {
+    noteFlags(m, p)
     setRows((r) => { const next = patchIn(r, m, p); keepList(ck, { rows: next, more, page }); return next })
     setFound((f) => f && f.rows ? { ...f, rows: patchIn(f.rows, m, p) } : f)
     setOpen((o) => sameM(o, m) ? { ...o, ...p } : o)
   }
+  // read or starred elsewhere on this phone (an open mail, a notification, another list): this list follows at once
+  useEffect(() => {
+    const f = (e) => {
+      const { m, p } = e.detail || {}
+      if (!m) return
+      setRows((r) => (r && r.some((x) => sameM(x, m)) ? patchIn(r, m, p) : r))
+      setFound((x) => (x && x.rows && x.rows.some((y) => sameM(y, m)) ? { ...x, rows: patchIn(x.rows, m, p) } : x))
+    }
+    window.addEventListener('roarme-mail-flags', f)
+    return () => window.removeEventListener('roarme-mail-flags', f)
+  }, [])
   const drop = (m) => {
     setRows((r) => { const next = (r || []).filter((x) => !sameM(x, m)); keepList(ck, { rows: next, more, page }); return next })
     setFound((f) => f && f.rows ? { ...f, rows: f.rows.filter((x) => !sameM(x, m)) } : f)
@@ -1375,11 +1435,12 @@ function MailRead({ m, accounts, who, prefs, onBack, onNext, onAct, onMore }) {
     // kept on the phone: shown at once (and marked read on the server quietly); else fetched and kept
     readKv(mailKey(m)).then((had) => {
       if (gone) return
+      if (!m.seen && prefs.markRead === 'open') noteFlags(m, { seen: true })
       if (had) { setMail(had); if (!m.seen && prefs.markRead === 'open') cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }).catch(() => {}); return }
       cloud({ action: 'get', account: m.account, path: m.path, uid: m.uid, seen: prefs.markRead === 'open' }).then((j) => { keepMail(m, j); if (!gone) setMail(j) }, (e) => { if (!gone) setErr(e.message || 'Could not open this mail') })
     })
     // After 3 s (the desktop's choice): read once it has been open that long
-    const t = !m.seen && prefs.markRead === 'delay' ? setTimeout(() => cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }).catch(() => {}), 3000) : 0
+    const t = !m.seen && prefs.markRead === 'delay' ? setTimeout(() => { noteFlags(m, { seen: true }); cloud({ action: 'flag', account: m.account, path: m.path, uid: m.uid, flag: 'seen', on: true }).catch(() => {}) }, 3000) : 0
     return () => { gone = true; clearTimeout(t) }
   }, [])
   // the mail is drawn in a sealed shadow root on the page itself, no frame (Alex, 26 Nov: "swipe right to go back does

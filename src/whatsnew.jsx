@@ -12,6 +12,17 @@ export const newsLab = (v) => { LAB = !!v }
 
 export const NEWS = [
   {
+    id: '2026-11-28',
+    date: '28 November 2026',
+    sections: [
+      { title: 'RoarMail', lab: true, items: [
+        'Every mail comes in: deleted mail an account keeps hidden no longer pushes real mail out of the list, and an account that is slow to answer keeps its mail on screen.',
+        'A mail you read shows as read at once, in every list, and the unread numbers drop with it.',
+        'Opening a mail no longer waits behind the list checking for new mail.',
+      ] },
+    ],
+  },
+  {
     id: '2026-11-27',
     date: '27 November 2026',
     sections: [

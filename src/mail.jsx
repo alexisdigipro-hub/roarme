@@ -21,6 +21,25 @@ export const mailSwitchNow = () => { try { return localStorage.getItem(KEY) === 
 export const mailSwitchSet = (v) => {
   try { localStorage.setItem(KEY, v ? '1' : '0') } catch { /* private window */ }
   window.dispatchEvent(new CustomEvent('roarme-mail-switch', { detail: !!v }))
+  watchSwitch(!!v)
+}
+// The switch off means no mail notifications at all (Alex, 28 Nov): RoarMail Live watches only rows with enabled on, so
+// the switch writes roarmail_watch.enabled; turned on again it brings back the New Mail choice kept on the phone.
+let watchSync = Promise.resolve()
+function watchSwitch(on) {
+  watchSync = watchSync.then(async () => {
+    const id = await myId(); if (!id) return
+    const enabled = on ? (lsGet('mail-watch')?.enabled ?? true) : false
+    await supabase.from('roarmail_watch').upsert({ user_id: id, enabled, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+  }).catch(() => {})
+  return watchSync
+}
+// once a visit: a phone whose switch is off makes sure the server is not watching (an older build never told it)
+let watchChecked = false
+export function syncMailWatch() {
+  if (watchChecked || !mailHere()) return
+  watchChecked = true
+  if (!mailSwitchNow()) watchSwitch(false)
 }
 
 const s = (d, f) => <svg viewBox="0 0 24 24" width="20" height="20" fill={f ? 'currentColor' : 'none'} stroke={f ? 'none' : 'currentColor'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
@@ -2032,6 +2051,7 @@ function useWatch(on) {
   useEffect(() => {
     if (!on) return
     (async () => {
+      await watchSync
       await ensureWatch()
       const id = await myId(); if (!id) return
       const { data } = await supabase.from('roarmail_watch').select('enabled, muted').eq('user_id', id).maybeSingle()

@@ -178,14 +178,33 @@ async function live(body) {
   liveDown = Date.now()
   return null
 }
+// every mail call noted with its time, its way (Live or the old way) and its errors, in roar_mail_probe (only the
+// person's own rows; kept three days), so a slow or missing mail can be seen from its real numbers (28 Nov)
+const probeBuf = []
+let probeT = 0
+function probe(body, via, t0, j, e) {
+  const errs = j?.errors && Object.keys(j.errors).length ? j.errors : null
+  probeBuf.push({ action: String(body?.action || ''), via, ms: Math.round(performance.now() - t0), ok: !e, err: e ? String(e.message || e).slice(0, 300) : null,
+    n: Array.isArray(j?.items) ? j.items.length : null, accounts: Array.isArray(body?.items) ? new Set(body.items.map((x) => x.account)).size : (body?.account ? 1 : null), errs })
+  clearTimeout(probeT)
+  probeT = setTimeout(() => { const rows = probeBuf.splice(0, 50); if (rows.length) supabase.from('roar_mail_probe').insert(rows).then(() => {}, () => {}) }, 4000)
+}
 async function cloud(body) {
-  if (LIVE_ACTS.has(body?.action) && Date.now() - liveDown > 20e3) { const j = await live(body); if (j) return j }
+  const t0 = performance.now()
+  if (LIVE_ACTS.has(body?.action) && Date.now() - liveDown > 20e3) {
+    let j = null
+    try { j = await live(body) } catch (e) { probe(body, 'live', t0, null, e); throw e }
+    if (j) { probe(body, 'live', t0, j); return j }
+  }
+  const via = LIVE_ACTS.has(body?.action) ? 'cloud-fallback' : 'cloud'
   const { data, error } = await supabase.functions.invoke('roarmail-cloud', { body })
   if (error) {
     let msg = error.message
     try { const j = await error.context?.json?.(); if (j?.error) msg = j.error } catch { /* as is */ }
+    probe(body, via, t0, null, msg)
     throw new Error(msg)
   }
+  probe(body, via, t0, data)
   return data
 }
 
